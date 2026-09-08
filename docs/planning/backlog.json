@@ -1,0 +1,874 @@
+[
+  {
+    "key": "M01",
+    "title": "仕様の優先順位・MVP能力・完了条件を実装用に統合する",
+    "phase": "基盤",
+    "dependencies": [],
+    "why": "旧Draftと後続ADRの矛盾を実装に持ち込まず、全要件を担当Issueへ対応させる。",
+    "scope": [
+      "最新の会話決定→後続Accepted ADR→矛盾しない旧仕様の順を明記し、要求対応表を作る",
+      "Toolは入力AdapterでありCoreのPortとは別、フロントはUI+hooks/state+services、バックエンドはヘキサゴナルとする",
+      "0004の自作ループ、0010の独立ToolLoopAgent、固定DAG、常時3件、訪問3状態、無条件全レスポンス保存を実装対象から除く",
+      "応答形式・submit必須根拠・保存期限・予算の提案値を実装既定値として検討し、採用理由と変更箇所を記録する",
+      "APIキー等の設定後に使える内部MVPと、App Attest・実機・TestFlightが必要な外部配布ゲートを区別する",
+      "旧設計の写真/座標cache、D1生原文14日、固定regex fallback、駅→店を逆向き転用、LLM既定off、user本文のみ保存も後続仕様との読み替えを明記する"
+    ],
+    "acceptance": [
+      "ADR0001〜0011、design0001〜0006、HTMLの全要件が担当Issueまたは明示的な上書き/非対象へ対応している",
+      "iPhone/Expo Dev Client/TypeScript/valibot/Cloudflareの前提を維持する",
+      "営業時間・徒歩・終電が未知の時の表示と、厳格条件を満たさない時の拒否方針が一意である",
+      "未採択の詳細を過去の合意と偽らず、実装判断と根拠を残す"
+    ],
+    "references": [
+      "docs/adr/README.md",
+      "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
+      "docs/adr/0011-cloudflare-led-agent-runtime.md",
+      "docs/design/0002-next-decisions.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ]
+  },
+  {
+    "key": "M02",
+    "title": "Expo・Worker・共有スキーマのモノレポと品質チェックを構築する",
+    "phase": "基盤",
+    "dependencies": [
+      "M01"
+    ],
+    "why": "UIとAPIの2デプロイ面を独立して起動でき、依存方向を継続的に検査できる土台を作る。",
+    "scope": [
+      "apps/mobile、workers/api、packages/schemaをworkspace化しNode/package manager/依存版を固定する",
+      "Expo Dev ClientとCloudflare Workerの起動設定、TypeScript strict、lint、format、testコマンドを用意する",
+      "共有はデータ契約に限定し、CoreからCloudflare/AI/provider SDKへのimport、UIからbackendへのimportを検査する",
+      "Secrets、.dev.vars、ビルド成果物を除外し、READMEと.env.example相当を用意する",
+      "CIでinstall frozen lockfile、型、lint、契約テストを実行する"
+    ],
+    "acceptance": [
+      "新規cloneから手順通りinstallして両アプリを起動できる",
+      "CoreにSDK型を持ち込む変更を検査が失敗させる",
+      "不要な共通Repository/DI層やWebView版を導入していない",
+      "CIは実APIキーなしで再現し、依存版と実行コマンドが記録される"
+    ],
+    "references": [
+      "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
+      "docs/adr/0011-cloudflare-led-agent-runtime.md",
+      "docs/design/0001-iphone-next-spot.md"
+    ]
+  },
+  {
+    "key": "M03",
+    "title": "HTTP・3操作・観測・確定応答のvalibot契約を実装する",
+    "phase": "基盤",
+    "dependencies": [
+      "M01",
+      "M02"
+    ],
+    "why": "モデル向け引数とアプリの共有応答を分離し、境界で不正データを止める。",
+    "scope": [
+      "SearchRequest、2種類のAssistantResponse、Tool I/O、Result/FieldResult、Observation、Issue、prefs/eventsをstrict schemaで定義する",
+      "search/continue、details field列挙、EvidenceText、hero1+alts0〜2と件数/重複/文字数制約を実装する",
+      "thread/turn/response/candidate/observation ID、revision、schema/capability version、出典と保持メタデータを定義する",
+      "モデル指定値とHarness注入値を分け、秘密値・生座標をモデル引数へ入れない",
+      "ABIや保存データの非互換変更時の移行/失効方針を定義する"
+    ],
+    "acceptance": [
+      "正常・境界・未知field・追加property・型不正のテストが通る",
+      "message=keep、cards=replaceを同一の正規応答契約へ変換できる",
+      "SDK schema変換に依存するコードはAdapterに閉じる",
+      "新旧revision/スキーマ不一致を黙って型castして受理しない"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0004-autonomous-response-loop.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ]
+  },
+  {
+    "key": "M04",
+    "title": "Cloudflare Runtimeの適合性をFixtureで検証しSDKを確定する",
+    "phase": "基盤",
+    "dependencies": [
+      "M02",
+      "M03"
+    ],
+    "why": "Thinkを本体へ組み込む前に、公開Tool制限と保存制御を公開APIで満たせるか確かめる。",
+    "scope": [
+      "Thinkと関連SDKの互換版を固定し、実ローカルWorker/DO＋scripted model Providerで検証する",
+      "activeToolsと実行前拒否でモデル公開操作を3つに限定し、default workspace Tool混入を検出する",
+      "messageのみ、cards+message、submit invalid→修正、成功時の空final、HTTP境界、valibotを検証する",
+      "SDK自動保存・Tool結果・compaction・stream再開bufferへの書込みを観測し、保存前制御を確認する",
+      "不適合ならAIChatAgent+streamTextに同一検証を適用し、独自汎用ループを作らず選定ADRを更新する"
+    ],
+    "acceptance": [
+      "3操作以外の定義がモデルに渡らず、不正呼出しの副作用が0である",
+      "保存後フックでの削除を保存禁止の達成と扱っていない",
+      "成功/不適合のログ、SDK版、再現コマンドが残る",
+      "SDK採用条件の通信・キャンセル・修正・保持を満たすか未達理由が明示され、未達の基盤を本番採用しない"
+    ],
+    "references": [
+      "docs/adr/0011-cloudflare-led-agent-runtime.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ]
+  },
+  {
+    "key": "M05",
+    "title": "WorkerのHTTP境界・認証・スレッド所有権を実装する",
+    "phase": "バックエンド",
+    "dependencies": [
+      "M03",
+      "M04"
+    ],
+    "why": "iPhoneから安全にスレッドを開始・継続でき、他端末の候補や履歴へアクセスできない入口を作る。",
+    "scope": [
+      "Honoのversioned search/turn、thread復元/終了/削除、places/photos/events境界を必要な契約に合わせて実装する",
+      "ログインを必須にせず内部開発認証と所有者credentialを分離する。任意Device UUIDやthreadIdだけを認可根拠にしない",
+      "入力サイズ、content type、認証、request ID、HTTP error envelope、rate limitを実装する",
+      "スレッドごとのDOを構成し、許可されていないSDKのRPC/WebSocket/管理ルートを公開しない",
+      "キャンセル・再送キー・versionを受理し、GPS拒否時はIPから位置を推測しない"
+    ],
+    "acceptance": [
+      "別所有者のread/write/delete/replayを拒否するテストが通る",
+      "不正リクエストでモデル/有料APIを呼ばない",
+      "内部MVPはApp Attest未設定でも指定の開発認証で使用できる",
+      "429、401、413、競合、期限切れ、5xxをフロントが区別できる"
+    ],
+    "references": [
+      "docs/design/0001-iphone-next-spot.md",
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ]
+  },
+  {
+    "key": "M06",
+    "title": "候補・観測レジストリと根拠の鮮度管理を実装する",
+    "phase": "バックエンド",
+    "dependencies": [
+      "M03"
+    ],
+    "why": "LLMが取得済みの事実を参照でき、古い値や別店舗の値を混ぜないCoreを作る。",
+    "scope": [
+      "placeRef/provider IDとthread scoped candidateId、不変observationIdを発行する",
+      "登録・読出し・再取得・矛盾・同名別店・移転/閉業・明示除外を扱う",
+      "Clock、fetchedAt/sourceUpdatedAt/freshUntil、位置revision、contextKeyで再利用可否を判定する",
+      "保存店/過去候補を所有権確認後に文脈へ登録し、表示順とcardSet参照を保持する",
+      "能力バージョン・provider保持制約を観測へ結びつける"
+    ],
+    "acceptance": [
+      "再取得は新observation IDでありexpiresAtだけを伸ばさない",
+      "他thread ID、異なる位置/帰宅駅/時刻条件の誤再利用を拒否する",
+      "unknown/unsupported/not_applicable/errorを区別し、競合情報を平均しない",
+      "Adapter自身がApplication状態を変更しない"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0004-autonomous-response-loop.md"
+    ]
+  },
+  {
+    "key": "M07",
+    "title": "3つのToolを入力Adapterとして登録し能力Portへ接続する",
+    "phase": "バックエンド",
+    "dependencies": [
+      "M03",
+      "M04",
+      "M06"
+    ],
+    "why": "アプリの能力をLLM向けインターフェースとして公開し、SDKや供給元を差し替え可能にする。",
+    "scope": [
+      "search_places/get_place_details/submit_cardsの説明・schema・実行BindingをSDK Adapterに実装する",
+      "searchとdetailsはCoreの能力Port、submitはApplicationの確定処理へ接続する",
+      "Catalogはこの3操作のみで、HTTP/SQL/shell/MCP/client toolsを公開しない",
+      "有効fields・地域・駅・取得できない能力をモデルへ供給する",
+      "Tool I/Oを検証し、呼出しID・権限・時計・予算を実行側が注入する"
+    ],
+    "acceptance": [
+      "各モデルstep/再開turnで公開名が正確に3つである",
+      "未知Tool、入力不正、未対応fieldが定義した結果になり副作用を起こさない",
+      "ToolごとのApplication/Core一式や固定Tool順序を新設しない",
+      "Fixture Adapterを実Providerへ変えてもTool/Core契約の変更が不要"
+    ],
+    "references": [
+      "docs/adr/0008-initial-tool-catalog.md",
+      "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
+      "docs/design/0005-tool-contracts-v1.md"
+    ]
+  },
+  {
+    "key": "M08",
+    "title": "実モデルAdapterとLLM主導の文脈・応答生成を実装する",
+    "phase": "バックエンド",
+    "dependencies": [
+      "M04",
+      "M07"
+    ],
+    "why": "原文と会話文脈からLLMが自律的に調査・説明・候補提示を選べるようにする。",
+    "scope": [
+      "現行のTool/structured output対応モデルを公式仕様で選定し、SDK ProviderとSecrets設定を実装する",
+      "原文・許可された履歴・cardSet表示順・選択/除外・条件・能力・根拠・残予算を文脈へ渡す",
+      "検索語の書換え・意図分類・固定探索順序をApplicationで先回りしない",
+      "条件変更はLLMの構造化案＋原文参照でスレッド内に反映し、保存設定を自動変更しない",
+      "2つの終了経路、事実/推定/不明の区別、Tool出力内の指示をデータ扱いするsystem指針を実装する"
+    ],
+    "acceptance": [
+      "キー設定で実モデル経路を使用でき、未設定/失敗時にliveとしてFixture回答を出さない",
+      "「なぜ」「2つ目」「条件変更」「混合意図」を扱い、会話の対象を取り違えない",
+      "GPS座標・Secret・DB handleがモデル要求に含まれない",
+      "廃止済みモデル名やregex/テンプレ検索をliveの自律探索に代用しない"
+    ],
+    "references": [
+      "docs/adr/0007-llm-led-tool-orchestration.md",
+      "docs/adr/0011-cloudflare-led-agent-runtime.md",
+      "docs/design/0004-autonomous-response-loop.md",
+      "docs/design/0003-response-patterns.md"
+    ]
+  },
+  {
+    "key": "M09",
+    "title": "submit_cardsとメッセージの根拠検証・一度だけの応答確定を実装する",
+    "phase": "バックエンド",
+    "dependencies": [
+      "M03",
+      "M06"
+    ],
+    "why": "LLMの選択を尊重しつつ、根拠のない事実や不正な候補UIを確定させない。",
+    "scope": [
+      "候補数/重複/スコープ/観測/出典/鮮度/明示条件を検証する",
+      "営業時間、到着時刻、徒歩秒、終電、LOを別の根拠として評価し、未対応時の扱いを契約に合わせる",
+      "LLMのwhy/diffを保持し、カードの名称・価格・写真等は参照観測から構築する",
+      "messageだけにも根拠参照検証を適用し、意味的忠実性は評価の対象として区別する",
+      "revision条件付きでmessage+cardsを同じresponseIdへ確定し、冪等キーの内容不一致を拒否する"
+    ],
+    "acceptance": [
+      "invalid時の状態変更0、valid時の確定1が競合/再送でも成立する",
+      "0件はmessage、1〜2件を水増しせず、3件超は拒否する",
+      "違反を構造化して返し、Applicationが自動取得・候補差替え・説明書換えをしない",
+      "保存禁止payloadの永続化を成功条件にせず、確定記録と表示payloadを分離する"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ]
+  },
+  {
+    "key": "M10",
+    "title": "SDKの修正ループ・予算・並列・キャンセル・再送を制御する",
+    "phase": "バックエンド",
+    "dependencies": [
+      "M05",
+      "M07",
+      "M08",
+      "M09"
+    ],
+    "why": "検証失敗後にLLMが修正でき、遅延や重複リクエストでも状態を壊さない実行管理を作る。",
+    "scope": [
+      "submit invalidをTool結果として返し、committedのみ終端とする。SDKの汎用ループを二重実装しない",
+      "全体12秒/最終reserve2秒/モデル6step/read8/並列2/upstream20/修正2回の提案値を設定化し計測で確定する",
+      "search/detailsのtimeoutとread再試行1回、SDK retryとの重複防止、single-flight、Retry-Afterを実装する",
+      "read+submit、複数submit、final+Toolの混在をバッチ単位で拒否する",
+      "追加送信・切断・AbortSignal・旧revision・遅着・同一call再配送を扱う",
+      "costUnitsとprovider request/route-element予算は並列実行前に予約し、二重retryと並列時の予算超過を防ぐ"
+    ],
+    "acceptance": [
+      "invalid→LLMがdetails→validが動き、修正上限時に未検証カードを出さない",
+      "成功時final textなしを正常扱いし、任意SDK例外は握り潰さない",
+      "旧turnが最新状態を上書きせず、取消後に新しい有料呼出しを開始しない",
+      "予算切れ後に追加モデル呼出しをせず、失敗表示をLLMメッセージと偽らない"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0006-fixture-runtime-validation.md",
+      "docs/adr/0011-cloudflare-led-agent-runtime.md"
+    ]
+  },
+  {
+    "key": "M11",
+    "title": "Places検索Adapterと安全なページングを実装する",
+    "phase": "外部連携",
+    "dependencies": [
+      "M03",
+      "M06",
+      "M07"
+    ],
+    "why": "search_placesを実際の店舗・スポット検索へ接続する。",
+    "scope": [
+      "Places API New Text Searchのquery/named area/current location/openNow/field maskを現行公式仕様へ対応させる",
+      "identity/営業時間/priceを正規化しprovider順位を保持する",
+      "重複・明示除外を適用し、少数/0件/partial/失敗を区別する",
+      "署名cursorをscope/検索条件/位置revision/5分期限へbindしprovider tokenをモデルへ露出しない",
+      "自動ページ取得・自動半径拡張・独自ランキング・写真/徒歩/終電の先行取得をしない"
+    ],
+    "acceptance": [
+      "位置なしのcurrent_locationはLOCATION_REQUIRED、named areaは検索できる",
+      "429/timeout/5xxを検索0件へ変換しない",
+      "cursor改ざん・別scope・条件変更・期限切れを拒否する",
+      "キーをWorker Secretsへ設定するだけで有効化でき、必要なAPI/field mask/課金設定が文書化される"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0001-iphone-next-spot.md"
+    ]
+  },
+  {
+    "key": "M12",
+    "title": "詳細情報と任意のHot Pepper補足Adapterを実装する",
+    "phase": "外部連携",
+    "dependencies": [
+      "M03",
+      "M06",
+      "M07",
+      "M11"
+    ],
+    "why": "要求された項目だけ追加取得し、掲載営業・価格・施設情報の出典を追えるようにする。",
+    "scope": [
+      "identity/opening_hours/price/photos metadata/contactをPlace Detailsの必要field maskへ接続する",
+      "1〜5候補×指定fieldsをbatch化し、reuse_valid/refreshと項目別部分失敗を実装する",
+      "Hot PepperのLO/価格/施設情報は設定で有効化し、候補照合・同名支店・距離・競合を検査する",
+      "営業時間の跨日/24h/特別日/timezone/LO不明/移転/閉業を正規化する",
+      "価格レベルから円を発明せず、空席・待ち・現時点の静かさを未対応とする"
+    ],
+    "acceptance": [
+      "未要求fieldを取得せず、1店の失敗で他店の成功を消さない",
+      "HPキーなしでも基本経路が動き、facilities等はunsupportedとなる",
+      "別店補足やHP closeを閉店時刻として誤利用しない",
+      "全観測に出典/取得時刻/鮮度/保持分類があり、既知enumと未知fieldのエラーを区別する"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0001-iphone-next-spot.md"
+    ]
+  },
+  {
+    "key": "M13",
+    "title": "方向付き徒歩経路AdapterをRoutesへ接続する",
+    "phase": "外部連携",
+    "dependencies": [
+      "M03",
+      "M06",
+      "M07"
+    ],
+    "why": "直線距離の推測ではなく、実際の経路から徒歩時間と到着時刻を扱う。",
+    "scope": [
+      "ComputeRouteMatrix WALKを必要なorigin/destination集合へbatch化する",
+      "現在地→店と店→駅を方向別に取得し、駅→店で代用しない",
+      "位置取得2分以内/accuracy100m以下を初期値とし、reduced/古い位置ではLOCATION_IMPRECISEを返す",
+      "内部は秒、表示は切上げ分、徒歩条件判定は秒で行う",
+      "要素別error/到達不能、位置revision・移動100mでの失効を扱う"
+    ],
+    "acceptance": [
+      "非対称な経路Fixtureで往復を取り違えない",
+      "GPS不明をIPや固定座標、距離÷速度で埋めない",
+      "行列の一部失敗と空応答を区別する",
+      "上流呼出し数/行列要素数が予算に計上され、対応APIとキー設定が記載される"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0001-iphone-next-spot.md"
+    ]
+  },
+  {
+    "key": "M14",
+    "title": "終電journeyの限定供給・検証・更新を実装する",
+    "phase": "外部連携",
+    "dependencies": [
+      "M03",
+      "M06",
+      "M13"
+    ],
+    "why": "対応範囲で根拠のある終電案内を提供し、未登録経路を「間に合う」と表示しない。",
+    "scope": [
+      "恵比寿/代官山/中目黒/渋谷と対応帰宅駅のjourney schema・取り込み・KV等のAdapterを実装する",
+      "運行日/曜日/祝日/跨日/乗換/validFrom/validThrough/検証元/検証日を検査する",
+      "到着時刻、店→駅、180秒buffer、最低滞在からleaveByとusableを計算する",
+      "LO・閉店・終電退出期限を分け、同駅のnot_applicableでも移動を検証済みにしない",
+      "検証済み実データを準備し、seed投入・期限監視・更新・rollback手順を作る。データなしは能力disabledとする"
+    ],
+    "acceptance": [
+      "古い/未登録/適用日外のjourneyで終電保証をしない",
+      "本番へ架空Fixture時刻を投入しない",
+      "曜日境界・祝日・終電直前・同駅・乗換・到着後滞在の境界テストが通る",
+      "終電対応を謳う配布ゲートは検証済みデータなしに通さず、キーだけでは解消しないデータ依存を明記する"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0001-iphone-next-spot.md"
+    ]
+  },
+  {
+    "key": "M15",
+    "title": "写真の認証付き配信・失効・帰属表示を実装する",
+    "phase": "外部連携",
+    "dependencies": [
+      "M05",
+      "M12"
+    ],
+    "why": "写真を安全に表示し、provider keyや写真参照をクライアント/モデルへ不必要に露出しない。",
+    "scope": [
+      "短寿命の不透明表示handleと認証付きphoto配信を実装する",
+      "HMAC等の改ざん防止、scope/expiry、サイズ上限、許可先固定、stream配信を行う",
+      "photo nameの失効・410・再取得、0枚/一部失敗のplaceholderを扱う",
+      "authorAttributions/Google/HPの必要クレジットをUI契約へ載せる",
+      "写真バイト・署名URL・nameの永続キャッシュ可否をprovider方針に合わせ、モデルへ写真を見たかのような判断をさせない"
+    ],
+    "acceptance": [
+      "無認証・別scope・改ざん・任意URL取得・期限切れを拒否する",
+      "SecretがURL/ログ/アプリbundleへ出ない",
+      "複数写真の各帰属を描画でき、写真欠損でも候補を利用できる",
+      "端末/HTTP cacheを含む保存経路が保持ポリシーに従う"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0001-iphone-next-spot.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ]
+  },
+  {
+    "key": "M16",
+    "title": "サーバー保存ポリシー・削除・復元制御を実装する",
+    "phase": "バックエンド",
+    "dependencies": [
+      "M04",
+      "M05",
+      "M06",
+      "M09"
+    ],
+    "why": "会話の継続性を保ちながら、SDK自動保存を含めprovider由来データの保持制約を守る。",
+    "scope": [
+      "ユーザー原文/参照/候補順/確定記録/provider field/生成文/logを分類しdeny-by-defaultで保存する",
+      "生成文・要約・引用へ保持制約を伝播し、鮮度と保持期限を分離する",
+      "セッション05:00 JST案、provider上限とのmin、削除alarm/読出し時失効を実装する",
+      "SDK履歴/Tool結果/compaction/workspace/replay buffer/DO/KV/D1/log全保存先を棚卸しする",
+      "禁止payloadは実行メモリに留め、確定記録の再送と完全本文復元不可を区別する"
+    ],
+    "acceptance": [
+      "canaryを正常/失敗/切断/再生成経路へ流し禁止内容の永続書込み0を確認する",
+      "期限境界から利用不可、削除遅延目標15分を計測できる",
+      "thread削除後にSDKの再開領域からも復元されない",
+      "一般的な保持許諾を仮定せず、Places等のLLM送信/表示/保存の許諾を別々に根拠付きで記録する",
+      "期限切れ参照を即時拒否し、バックアップ/ログ/物理削除の保証範囲と未確認事項を明記する"
+    ],
+    "references": [
+      "docs/design/0006-fixture-runtime-validation.md",
+      "docs/design/0005-tool-contracts-v1.md"
+    ]
+  },
+  {
+    "key": "M17",
+    "title": "HTMLモックを基準にReact Nativeの画面基盤を実装する",
+    "phase": "フロント",
+    "dependencies": [
+      "M02"
+    ],
+    "why": "既存のima.の見た目をiPhoneネイティブUIへ移植する。",
+    "scope": [
+      "index.htmlから色/余白/24pt角/フォント/コンポーネント構成を移植しStyleSheet+tokensを使う",
+      "Canvas、app bar、drawer、composer、empty/working/results/decided/errorの画面状態を作る",
+      "Dela Gothic One/Noto Sans JPのライセンス同梱と読み込み/splashを実装する",
+      "safe area/keyboard/片手操作/スクロール/VoiceOver/Dynamic Typeを扱う",
+      "机ビュー・偽ステータスバー・WebView・保存3状態を移植しない",
+      "Portraitを基本としiOS最低版はExpo/SDK互換性で決定、主ボタン48ptとdrawer幅min(86%,320)を再現する。workingは実際の処理に対応する表示とし、固定4段/偽進捗/毎回3件作成を表示しない"
+    ],
+    "acceptance": [
+      "390pt等のiPhone幅でモックと比較したスクリーンショットがある",
+      "主候補1＋行形式別案の階層とライム点/クリーム主ボタンを保つ",
+      "キーボードで送信欄が隠れず、UIが画面幅へ対応する",
+      "Expo Dev Clientで起動し、第三のサイドバー機能や標準SDKチャットUIに置換しない"
+    ],
+    "references": [
+      "index.html",
+      "docs/design/0001-iphone-next-spot.md",
+      "docs/adr/0006-lightweight-frontend-hexagonal-backend.md"
+    ]
+  },
+  {
+    "key": "M18",
+    "title": "自由入力・入力候補・位置取得・条件編集を実装する",
+    "phase": "フロント",
+    "dependencies": [
+      "M03",
+      "M17"
+    ],
+    "why": "フォームで探索を固定せず、原文と必要な端末文脈を送れる入口を作る。",
+    "scope": [
+      "例文/検索語候補/入力中候補/追加語を実装し、候補タップは入力追加だけで送信しない",
+      "日本語IME、空入力、文字数、送信/取消/再送、入力保持を扱う",
+      "When In Use位置許可、denied/reduced/timeout/古い位置/設定復帰を実装する",
+      "条件画面で帰宅駅/徒歩/予算を編集し、対応駅/未対応を表示する",
+      "チップ最大4、重複回避、明示条件の解除とスレッド内変更/保存設定を区別する",
+      "位置許可の初回要求は送信を契機にし、空キャンバスを起動時dialogで隠さない。直近位置再利用とSDKの有効性判定を整合させる"
+    ],
+    "acceptance": [
+      "GPS拒否でもエリア明示の入力を送れ、位置を捏造しない",
+      "候補語タップやIME変換中に意図せず送信しない",
+      "ユーザー原文を検索クエリへApplicationで書き換えない",
+      "背景位置/不要permissionを要求せず、精度・取得時刻をAPIへ渡せる"
+    ],
+    "references": [
+      "index.html",
+      "docs/design/0001-iphone-next-spot.md",
+      "docs/design/0004-autonomous-response-loop.md",
+      "docs/design/0005-tool-contracts-v1.md"
+    ]
+  },
+  {
+    "key": "M19",
+    "title": "メッセージ・候補カード・説明・帰属の描画を実装する",
+    "phase": "フロント",
+    "dependencies": [
+      "M03",
+      "M17"
+    ],
+    "why": "LLMが選んだ回答形式を既存UIへ反映し、毎回カードを強制しない。",
+    "scope": [
+      "message=keep、cards=replaceを描画し、messageとcardSetをresponseIdで結ぶ",
+      "HeroCard/AltRow、写真領域だけpaging、店名/徒歩固定、why/diff、価格/営業/終電を描画する",
+      "0/1/2/3件、写真なし、不明/未対応/推定、期限切れ/過去結果を表示する",
+      "会話履歴と参照cardSetを扱い、未確定stream文を確定メッセージと混ぜない",
+      "モデルHTMLを実行せず、出典リンク/帰属を該当情報へ関連付ける"
+    ],
+    "acceptance": [
+      "message応答で候補・順番が勝手に変わらない",
+      "今回0件を過去候補の新規結果と誤表示しない",
+      "photoスワイプが候補入替と混同されない",
+      "NOW/OPEN/LO/徒歩/終電を取得根拠以上に断定しない"
+    ],
+    "references": [
+      "index.html",
+      "docs/design/0006-fixture-runtime-validation.md",
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/adr/0009-contextual-response-presentation.md"
+    ]
+  },
+  {
+    "key": "M20",
+    "title": "候補の入替・決定・却下・地図・LINE共有を実装する",
+    "phase": "フロント",
+    "dependencies": [
+      "M18",
+      "M19"
+    ],
+    "why": "候補を見た後にユーザーの明示操作で行き先を決め、相手へ渡せるようにする。",
+    "scope": [
+      "別案タップで主提案へ昇格し、表示順/選択を次turnの文脈へ反映する",
+      "ここにする/残す/ちがうを分離し、ちがうは今夜限りの除外、決定後はrecover操作とする",
+      "地図をApple Mapsの徒歩URLで開き、保存データ不足/起動不可を扱う",
+      "既定はRN Shareで店名/取得済み徒歩/HTTPS地図リンクを渡し、LINE未導入・キャンセルを扱う",
+      "LINE schemeは任意flagとし、ログイン/Messaging API/自動送信を導入しない",
+      "決定時のhaptics、地図/共有の成功・取消・失敗toastを実際の端末結果へ対応させる"
+    ],
+    "acceptance": [
+      "submitや会話文章だけで保存・決定・共有が実行されない",
+      "「LINEへ送った」と偽らず、シート起動と配送成功を区別する",
+      "ちがうで永久never/訪問ラベルを作らず、LLMの代わりに再検索語を生成しない",
+      "ユーザー選択した正しい店舗のリンク/本文が開く"
+    ],
+    "references": [
+      "docs/adr/0002-cherished-person-lighter-load.md",
+      "docs/design/0001-iphone-next-spot.md",
+      "docs/design/0004-autonomous-response-loop.md"
+    ]
+  },
+  {
+    "key": "M21",
+    "title": "端末SQLiteの履歴・設定・保存リスト・期限処理を実装する",
+    "phase": "フロント",
+    "dependencies": [
+      "M03",
+      "M16",
+      "M17"
+    ],
+    "why": "アプリ再起動後に許可された文脈と保存リストを復元する。",
+    "scope": [
+      "expo-sqlite migrationでthread/turn/参照snapshot/prefs/saved_place/skipを実装する",
+      "残した店starredとdecidedAtを独立保持し、今夜決めたは05:00窓で表示する",
+      "リストの正は端末とし、削除/保存解除/重複/破損時の扱いを実装する",
+      "名前/住所/座標/写真/生成文の保持をprovider policyで制限し、許可IDとユーザー操作を分離する",
+      "起動/復帰/期限境界に利用前失効し、履歴選択時のstale/再取得要否を表示する",
+      "保存画面は残した店/今夜決めたの名前+エリアを基本としサムネなし。内容復元不可は参照IDと再取得要否で表示する"
+    ],
+    "acceptance": [
+      "キル/再起動/オフラインでも許可されたリスト/設定が復元する",
+      "禁止コンテンツがsqlite/端末cacheへ残らず、全文オフライン復元を偽らない",
+      "05:00で保存店自体を消さず、今夜表示と除外だけが仕様どおり失効する",
+      "訪問確認・行った/行かない・共同リストを追加しない"
+    ],
+    "references": [
+      "docs/adr/0002-cherished-person-lighter-load.md",
+      "docs/design/0006-fixture-runtime-validation.md",
+      "docs/design/0001-iphone-next-spot.md"
+    ]
+  },
+  {
+    "key": "M22",
+    "title": "フロントのAPI service・会話state・復元を接続する",
+    "phase": "フロント",
+    "dependencies": [
+      "M05",
+      "M10",
+      "M18",
+      "M19",
+      "M20",
+      "M21"
+    ],
+    "why": "UIとバックエンドをつなぎ、追加送信・履歴切替・遅着応答でも会話を壊さない。",
+    "scope": [
+      "servicesでHTTP/valibot/認証/timeout/Abortを処理しhooks/stateへ正規化した結果を返す",
+      "threadId/turnId/responseId/baseRevisionの整合でkeep/replaceと重複排除を行う",
+      "履歴切替/新規検索/追記/選択変更/連打/キャンセル/再接続を状態遷移へ落とす",
+      "許可されたSQLite復元とサーバ状態、確定済みだが本文復元不可の状態を調停する",
+      "Fixtureモードとliveモードを明示し、キー不足/401/429/timeout/offline/部分失敗を表示する"
+    ],
+    "acceptance": [
+      "旧スレッド/旧turnの応答が現在の画面や入力を上書きしない",
+      "同じresponseが二重に会話へ追加されない",
+      "通信失敗時に入力・既存候補・保存リストを保つ",
+      "Fixtureと同じ共有契約で実Workerとの一連の操作が動く"
+    ],
+    "references": [
+      "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
+      "docs/design/0004-autonomous-response-loop.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ]
+  },
+  {
+    "key": "M23",
+    "title": "4領域のRuntime Fixture統合テストを完成させる",
+    "phase": "検証",
+    "dependencies": [
+      "M10",
+      "M16",
+      "M22"
+    ],
+    "why": "3操作限定・2応答・修正・保存を本物のSDK/DO/HTTP境界で再現検証する。",
+    "scope": [
+      "modelSteps/providerResults/clockEvents/expectedEffectsを持つFixture catalogを作る",
+      "default Tool混入の対照例、未知Tool/型不正、再開時allowlistを検査する",
+      "直接message、検索→cards、1/2/0件、invalid→details→submit、messageへ退避、上限/混在batchを実行する",
+      "切断/並行/再配送/旧revision/DO再生成/05:00/削除/所有権を検査する",
+      "SDKとアプリの実保存先をcanaryで検査し、外部networkを拒否してCIへ組み込む"
+    ],
+    "acceptance": [
+      "design0006の全Fixture行にテストIDと結果が対応する",
+      "SDKループ・Core・保存を成功Mockへ置き換えていない",
+      "禁止副作用0、失敗commit0、成功commit1、保存禁止書込み0を検査する",
+      "モデルFixture合格をLLMの意図理解品質合格と扱わない"
+    ],
+    "references": [
+      "docs/design/0006-fixture-runtime-validation.md",
+      "docs/design/0005-tool-contracts-v1.md"
+    ]
+  },
+  {
+    "key": "M24",
+    "title": "外部Provider契約テストと実APIスモークを整備する",
+    "phase": "検証",
+    "dependencies": [
+      "M11",
+      "M12",
+      "M13",
+      "M14",
+      "M15"
+    ],
+    "why": "実APIの供給可能範囲と正規化を確認し、Fixtureだけの成功で利用可能と判断しない。",
+    "scope": [
+      "Places/Details/Routes/HP/photo/journeyの匿名化レスポンスFixtureと契約テストを作る",
+      "営業跨日/臨休/24h、価格不明、同名別店、経路非対称/要素失敗、429/5xx/timeoutを網羅する",
+      "最小field mask・上流呼出し/要素数・帰属・schemaを検査する",
+      "キー設定時だけ実行するlive smokeと必要API/課金/権限のpreflightを作る",
+      "実データ保持許諾・送信先・利用規約とモデル/データ有効性の検証日を記録する"
+    ],
+    "acceptance": [
+      "CIはライブ料金なしで再現し、live testは明示実行で分離する",
+      "キーあり環境のsearch/details/routes/photoの実結果を証跡に残す",
+      "未設定時をpassやFixture live成功にせずskip/未検証とする",
+      "終電実データ/任意HP有効無効の両方が説明された能力と一致する"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0001-iphone-next-spot.md"
+    ]
+  },
+  {
+    "key": "M25",
+    "title": "実モデルの自律選択・根拠忠実性・応答品質を評価する",
+    "phase": "検証",
+    "dependencies": [
+      "M08",
+      "M10",
+      "M23",
+      "M24"
+    ],
+    "why": "LLMがユーザーの意図に答える品質を、固定呼出し順に依存せず評価する。",
+    "scope": [
+      "応答パターン8種と混合意図/複数turn/保存店参照をgolden datasetにする",
+      "不要検索・過剰確認・無断条件解除・候補取違え・根拠なし断定・未対応能力の捏造を評価する",
+      "店舗文言のprompt injection、GPS拒否、期限切れ、修正失敗、既存候補の維持を評価する",
+      "モデル/プロンプト版を記録し、決定的ルール＋人手レビュー＋補助モデル評価を分離する",
+      "latency p50/p95、モデル/Tool/upstream回数、コストを測定し仮の実行予算を調整する"
+    ],
+    "acceptance": [
+      "全パターンに期待する結果と禁止動作があり、呼出し順完全一致を合格条件にしない",
+      "自由文の正しさをevidence ID存在だけで合格にしない",
+      "重大な店舗捏造・他候補取違え・営業時間/終電の根拠なし保証が0である",
+      "要求充足と待ち時間を主指標にし、カード率/Tool率を最大化しない"
+    ],
+    "references": [
+      "docs/design/0003-response-patterns.md",
+      "docs/design/0004-autonomous-response-loop.md",
+      "docs/design/0005-tool-contracts-v1.md"
+    ]
+  },
+  {
+    "key": "M26",
+    "title": "最小テレメトリ・運用flags・障害時停止を実装する",
+    "phase": "運用",
+    "dependencies": [
+      "M05",
+      "M10",
+      "M16",
+      "M20"
+    ],
+    "why": "探す役の体験と障害・コストを、原文や位置をログへ漏らさず観測する。",
+    "scope": [
+      "search開始/応答/失敗、decide/maps/share-sheet/skip/recover/saveのイベントを最小契約で記録する",
+      "turn/call/provider結果コード/所要時間/token/API要素数のtraceと集計を実装する",
+      "本文/座標/Secret/写真tokenを除外し、保持7日案と削除処理を設定化する",
+      "live/fixtureの分離、provider/HP/終電/share scheme/kill switch/品質範囲表示のflagsを作る",
+      "エラー・予算超過・データ失効の運用確認手順と復旧/rollbackを記録する"
+    ],
+    "acceptance": [
+      "event送信失敗が検索・決定を止めない",
+      "共有シート起動を配送成功、ここにするを訪問成功と計上しない",
+      "本番障害時に架空Fixture店へ切り替えない",
+      "メトリクスから遅延/コスト/失敗原因を特定でき、D1等にraw queryを保存しない"
+    ],
+    "references": [
+      "docs/design/0001-iphone-next-spot.md",
+      "docs/design/0006-fixture-runtime-validation.md",
+      "docs/adr/0002-cherished-person-lighter-load.md"
+    ]
+  },
+  {
+    "key": "M27",
+    "title": "App Attestと外部配布向けの不正利用対策を実装する",
+    "phase": "外部配布",
+    "dependencies": [
+      "M05",
+      "M15",
+      "M22"
+    ],
+    "why": "外部TestFlightで埋込みアプリトークンだけに依存せず、有料APIの濫用とreplayを防ぐ。",
+    "scope": [
+      "Expo Dev Client対応App IntegrityとWorker検証ライブラリの現行互換性を確認する",
+      "nonce発行/enroll/assertion、Apple証明書/アプリID/環境/nonce/カウンタ/リクエストhashを検証する",
+      "challengeを短寿命・単回使用・所有者bindとし、鍵失効/再登録/レート制限を実装する",
+      "search/photos等の有料経路を保護し、未知SDKルートから迂回できないようにする",
+      "内部Simulator/作者用fallbackを明示的に分離し、外部required時はbypass不可にする"
+    ],
+    "acceptance": [
+      "正常実機と改ざん/replay/期限切れ/別device/別pathの試験結果がある",
+      "raw UUIDや共有トークンだけで他threadへアクセスできない",
+      "内部Fixture開発をApple設定不足で止めず、外部配布ゲートでは必須とする",
+      "Appleアカウント/署名等の外部依存がチェックリストに明記される"
+    ],
+    "references": [
+      "docs/design/0001-iphone-next-spot.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ]
+  },
+  {
+    "key": "M28",
+    "title": "Cloudflare・EASの環境構築とキー設定後の起動手順を完成させる",
+    "phase": "運用",
+    "dependencies": [
+      "M02",
+      "M04",
+      "M05",
+      "M14",
+      "M16",
+      "M26"
+    ],
+    "why": "新規cloneから必要なキーと環境設定を入れればMVPを使用できる状態にする。",
+    "scope": [
+      "wrangler.jsonc、compat date/nodejs_compat、DO migration、KV/D1等の必要bindingと型生成を整備する",
+      "dev/staging/production、Secrets、API有効化/課金/権限制限、optional HP、終電データ設定を分ける",
+      "EAS dev/internal/external build profile、bundle ID、permission文言、API endpointを設定する",
+      "環境preflight、install/typecheck/test/dry-run/deploy/build/live smokeをREADMEに記載する",
+      "CIのdry-runとmigration、デプロイ手順、rollback、漏洩検査を整備しSecretを端末bundleへ入れない",
+      "必要なbindingだけを構築し、未採用KV/D1等を形式的に増やさない。CIの最小権限と手動デプロイ入口を整備する"
+    ],
+    "acceptance": [
+      "別環境で手順を再現し、アプリソースの編集なしに環境値で切替できる",
+      "キー不足/無効/任意機能無効を診断し、Fixtureモードはキー不要で動く",
+      "Worker dry-run、型生成チェック、iOS buildが通る",
+      "Cloudflare/Google/モデル/Appleのアカウント・課金・データ投入をキーだけで完了と偽らない"
+    ],
+    "references": [
+      "docs/adr/0011-cloudflare-led-agent-runtime.md",
+      "docs/design/0001-iphone-next-spot.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ]
+  },
+  {
+    "key": "M29",
+    "title": "iPhone E2E・視覚比較・内部MVPの完了監査を行う",
+    "phase": "検証",
+    "dependencies": [
+      "M22",
+      "M23",
+      "M24",
+      "M25",
+      "M26",
+      "M28"
+    ],
+    "why": "HTML準拠のUIから実データ取得・決定・保存までの完成を要求単位で証明する。",
+    "scope": [
+      "新規入力→候補→理由/比較/追加調査→条件変更→決定→地図/共有→保存/履歴復元をiPhoneで通す",
+      "0/1/2候補、GPS拒否/reduced、写真欠損、offline/429/timeout、連打/取消/遅着、05:00/再起動をE2E化する",
+      "HTMLとの視覚比較、VoiceOver、文字拡大、keyboard、390pt/小画面、写真gestureを確認する",
+      "要件対応表の全項目を実ファイル/テスト/スクリーンショット/実行ログへリンクする",
+      "APIキー設定ありliveとキーなしFixtureの両経路を新規setupから確認する"
+    ],
+    "acceptance": [
+      "明示要件の証跡が全てあり、未確認を完了と扱わない",
+      "実モデル/実店舗APIの一連の結果があり、モックだけの成功で閉じない",
+      "内部MVPで残る障害・データ依存・外部ゲートが一覧化される",
+      "モックUIとの差分が仕様上の理由で説明でき、主要操作が実機で使用できる"
+    ],
+    "references": [
+      "index.html",
+      "docs/planning/README.md",
+      "docs/design/0006-fixture-runtime-validation.md",
+      "docs/design/0001-iphone-next-spot.md"
+    ]
+  },
+  {
+    "key": "M30",
+    "title": "TestFlight配布・プライバシー・限定エリアのリリースゲートを完了する",
+    "phase": "外部配布",
+    "dependencies": [
+      "M14",
+      "M27",
+      "M28",
+      "M29"
+    ],
+    "why": "設計に含まれるTestFlightまでの配布条件を内部MVPと混同せず完了させる。",
+    "scope": [
+      "内部/知人/外部TestFlightの順序、招待前の終電/共有/events条件を確認する",
+      "外部配布はApp Attest required、正式Secret/production flags、検証済みjourneyを確認する",
+      "privacy policy URL、データ送信/保持/削除/端末リスト紛失、位置permission、フォントOFL/帰属を整備する",
+      "EAS署名/Apple資格/提出metadata/実機buildを確認し、配布の証跡とrollback手順を残す",
+      "恵比寿・代官山の品質範囲は地理ハードロックにせず、少数の夜の評価計画を用意する"
+    ],
+    "acceptance": [
+      "検証済み終電データやApple権限が欠ければ未完了ゲートとして残す",
+      "未対応地域/能力を全国対応や空席保証と表示しない",
+      "内部MVPと外部配布それぞれの合否が明示される",
+      "利用者への招待/通知はユーザーの明示許可で実施し、配布完了は実際のbuild状態で確認する"
+    ],
+    "references": [
+      "docs/design/0001-iphone-next-spot.md",
+      "docs/adr/0001-in-the-moment-next-spot.md",
+      "docs/adr/0002-cherished-person-lighter-load.md",
+      "docs/design/0005-tool-contracts-v1.md"
+    ]
+  }
+]

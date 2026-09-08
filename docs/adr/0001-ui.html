@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ima — 次どこ行く</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Outfit:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0c0c0d;
+      --bg-2: #121214;
+      --card: #171719;
+      --line: rgba(255,255,255,.07);
+      --text: #ecebe6;
+      --muted: #9a9993;
+      --faint: #6b6a66;
+      --lime: #b7c97a;
+      --cream: #e7e2d6;
+      --sans: "Outfit", "Noto Sans JP", sans-serif;
+      --jp: "Noto Sans JP", sans-serif;
+      --display: "Dela Gothic One", "Noto Sans JP", sans-serif;
+      --radius: 24px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; overflow-x: hidden; }
+    body {
+      font-family: var(--jp);
+      background: #080808;
+      color: var(--text);
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -20%;
+      background: radial-gradient(circle at 50% -20%, rgba(183,201,122,.08), transparent 46%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .studio {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      justify-items: center;
+      padding: 24px 16px 48px;
+      gap: 18px;
+    }
+    body.app-only .studio { padding: 0; }
+    body.app-only .studio-bar { display: none; }
+    body.app-only .phone-wrap { width: 100%; }
+    body.app-only .phone {
+      width: 100%;
+      max-width: 390px;
+      min-height: 100vh;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .studio-bar {
+      width: min(1120px, 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .studio-bar h1 {
+      margin: 0;
+      font-family: var(--display);
+      font-size: 22px;
+      font-weight: 400;
+      letter-spacing: -0.03em;
+    }
+    .studio-bar p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+    .switch {
+      display: flex;
+      background: #111;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px;
+    }
+    .switch button {
+      appearance: none; border: 0; background: transparent;
+      color: var(--muted); font: 700 12px var(--jp);
+      padding: 8px 14px; border-radius: 999px; cursor: pointer;
+    }
+    .switch button[aria-pressed="true"] {
+      background: var(--cream); color: #161616;
+    }
+
+    .phone-wrap, .desktop-wrap { width: min(1120px, 100%); display: none; }
+    .phone-wrap.is-on, .desktop-wrap.is-on { display: block; }
+
+    .phone {
+      width: 390px;
+      max-width: 100%;
+      margin: 0 auto;
+      background: var(--bg);
+      border: 1px solid #222;
+      border-radius: 40px;
+      overflow: hidden;
+      min-height: 780px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      box-shadow: 0 30px 80px rgba(0,0,0,.55);
+    }
+    .thread, .composer, .hero, .alts, .input-row { min-width: 0; max-width: 100%; }
+
+    .status {
+      display: flex; justify-content: space-between;
+      padding: 14px 22px 2px;
+      font: 700 12px var(--sans);
+      color: #bbb;
+    }
+    .appbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 14px 8px;
+    }
+    .icon-btn {
+      width: 38px; height: 38px; border-radius: 13px;
+      border: 1px solid var(--line); background: #141414;
+      color: var(--text); display: grid; place-items: center; cursor: pointer;
+    }
+    .logo {
+      font-family: var(--display);
+      font-size: 22px;
+      letter-spacing: -0.04em;
+    }
+    .logo span { color: var(--lime); }
+
+    .empty {
+      flex: 1; display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 8px 18px 10px; gap: 16px;
+    }
+    .empty h2 {
+      margin: 0;
+      font-family: var(--display);
+      font-size: 38px;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+    }
+    .empty h2 em {
+      font-style: normal;
+      color: var(--lime);
+    }
+    .empty .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      font-weight: 500;
+    }
+    .examples { display: grid; gap: 8px; }
+    .examples button {
+      text-align: left;
+      border: 1px solid #2a2a2a;
+      background: #101010;
+      color: var(--text);
+      border-radius: 18px;
+      padding: 12px 14px;
+      font: 500 13px/1.55 var(--jp);
+      cursor: pointer;
+    }
+    .examples button:active { background: #1a1a1c; }
+
+    .thread {
+      flex: 1; overflow-x: hidden; overflow-y: auto;
+      padding: 6px 14px 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .bubble {
+      margin-left: auto;
+      max-width: 86%;
+      background: #1c1c1c;
+      border: 1px solid #2a2a2a;
+      color: var(--text);
+      border-radius: 22px 22px 6px 22px;
+      padding: 11px 13px;
+      font-size: 13.5px;
+      line-height: 1.65;
+      font-weight: 500;
+    }
+
+    .kicker {
+      display: flex; justify-content: space-between; align-items: center;
+      font: 700 12px var(--jp);
+      color: var(--muted);
+    }
+    .chips {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid var(--line);
+      background: #141416;
+      color: var(--text);
+      font: 500 12px var(--jp);
+      padding: 7px 8px 7px 11px;
+      border-radius: 999px;
+    }
+    .chip button {
+      appearance: none; border: 0; background: transparent;
+      color: var(--faint); cursor: pointer; font-size: 13px; line-height: 1; padding: 0 2px;
+    }
+
+    .hero, .alts article {
+      background: var(--card);
+      border-radius: 26px;
+      overflow: hidden;
+      border: 1px solid #232323;
+    }
+    .photo {
+      position: relative;
+      height: 168px;
+      overflow: hidden;
+    }
+    .photo-scroller {
+      display: flex;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .photo-scroller::-webkit-scrollbar { display: none; }
+    .photo-slide {
+      flex: 0 0 100%;
+      height: 100%;
+      background: #222 center/cover no-repeat;
+      scroll-snap-align: start;
+    }
+    .photo::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 42%, rgba(8,8,8,.88));
+      pointer-events: none;
+    }
+    .dots {
+      position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
+      display: flex; gap: 5px; z-index: 2; pointer-events: none;
+    }
+    .dots i {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(255,255,255,.32);
+    }
+    .dots i.is-on { background: var(--cream); }
+    .badge {
+      position: absolute; left: 10px; top: 10px; right: 10px;
+      display: flex; gap: 6px; z-index: 2;
+      pointer-events: none;
+    }
+    .on-photo { pointer-events: none; }
+    .pill {
+      background: rgba(12,12,13,.72);
+      backdrop-filter: blur(10px);
+      color: var(--text);
+      font: 700 11px var(--jp);
+      padding: 6px 9px;
+      border-radius: 999px;
+    }
+    .pill.live { color: var(--cream); }
+    .on-photo {
+      position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 1;
+      display: flex; justify-content: space-between; align-items: end; gap: 8px;
+    }
+    .on-photo h2 {
+      font-family: var(--display);
+      font-size: 24px;
+      margin: 0;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    .walk {
+      font: 800 22px var(--sans);
+      color: var(--cream);
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .walk small { display: block; font: 600 10px var(--jp); color: var(--muted); letter-spacing: .04em; }
+    .hero-body { padding: 12px 14px 14px; }
+    .why {
+      margin: 0 0 10px; color: #cfcfc8; font-size: 13px; line-height: 1.5; font-weight: 500;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .meta { display: flex; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: 12px; font-weight: 500; margin-bottom: 12px; }
+    .actions { display: grid; grid-template-columns: 1fr 92px; gap: 8px; width: 100%; }
+    .star {
+      margin-left: auto;
+      border: 0; background: rgba(12,12,13,.72); color: var(--cream);
+      border-radius: 999px; padding: 6px 9px; font: 700 11px var(--jp); cursor: pointer;
+      pointer-events: auto;
+    }
+    .star.is-on { color: var(--lime); }
+    .btn {
+      appearance: none; border: 0; cursor: pointer;
+      font: 700 14px var(--jp);
+      border-radius: 16px;
+      padding: 13px 14px; min-height: 48px; width: 100%;
+    }
+    .btn-primary { background: var(--cream); color: #161616; }
+    .hero.is-go .btn-primary { background: var(--lime); color: #161616; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid #2e2e32; }
+    .btn:active { transform: scale(.98); }
+
+    .alts { display: grid; gap: 6px; }
+    .pick {
+      display: grid; grid-template-columns: 56px 1fr;
+      gap: 10px; align-items: center;
+      width: 100%;
+      padding: 6px 8px 6px 6px;
+      border: 1px solid #232323;
+      background: var(--card);
+      border-radius: 16px;
+      color: var(--text);
+      min-height: 64px;
+    }
+    .pick-main {
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 10px; align-items: center;
+      width: 100%; text-align: left;
+      border: 0; background: transparent; color: inherit;
+      font: 600 14px var(--jp); cursor: pointer; padding: 0;
+      min-height: 52px;
+    }
+    .pick-main:active { transform: scale(.99); }
+    .pick .th-scroller {
+      width: 56px; height: 56px; border-radius: 12px;
+      overflow-x: auto; overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      scrollbar-width: none;
+    }
+    .pick .th-scroller::-webkit-scrollbar { display: none; }
+    .pick .th {
+      flex: 0 0 56px;
+      width: 56px; height: 56px;
+      background: #222 center/cover no-repeat;
+      scroll-snap-align: start;
+    }
+    .pick strong { display: block; font-weight: 800; letter-spacing: -.02em; }
+    .pick .diff { color: var(--lime); font: 600 12px var(--jp); }
+    .pick-walk {
+      font: 800 15px var(--sans);
+      color: var(--cream);
+      text-align: right;
+      line-height: 1.15;
+    }
+    .pick-walk small { display: block; font: 500 10px var(--jp); color: var(--muted); }
+
+    .composer { padding: 8px 12px 18px; }
+    .suggest {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 0 2px 8px;
+    }
+    .suggest[hidden] { display: none; }
+    .suggest button {
+      border: 1px solid var(--line);
+      background: #141416;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font: 500 12.5px var(--jp);
+      cursor: pointer;
+      max-width: 100%;
+      text-align: left;
+    }
+    .suggest button em {
+      font-style: normal;
+      color: var(--faint);
+      margin-right: 4px;
+    }
+    .input-row {
+      display: flex; gap: 8px; align-items: flex-end;
+      background: rgba(18,18,20,.92);
+      border: 1px solid #2a2a2e;
+      border-radius: 22px;
+      padding: 6px 6px 6px 14px;
+    }
+    .input-row:focus-within { border-color: rgba(183,201,122,.45); }
+    .input-row textarea {
+      flex: 1; border: 0; background: transparent; color: var(--text);
+      font: 500 14px/1.5 var(--jp); outline: none; min-width: 0;
+      resize: none; max-height: 96px; padding: 8px 0;
+    }
+    .send {
+      width: 40px; height: 40px; border: 0; border-radius: 14px;
+      background: var(--cream); color: #161616; cursor: pointer; font-weight: 800; font-size: 16px;
+    }
+
+    .agent {
+      background: #141416;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px 16px;
+    }
+    .agent .now { font-weight: 700; font-size: 14px; margin: 0 0 8px; }
+    .agent .sub { margin: 0; color: var(--muted); font-size: 12px; }
+    .bar { height: 3px; background: #2a2a2e; border-radius: 99px; overflow: hidden; margin-top: 12px; }
+    .bar > i {
+      display: block; height: 100%; width: 0;
+      background: var(--lime);
+      transition: width .35s ease;
+    }
+
+    .toast {
+      display: none; margin: 0 14px 6px;
+      background: #1c1c1e; color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 14px; padding: 10px 12px;
+      font-size: 13px; font-weight: 600;
+    }
+    .toast.is-on { display: block; }
+
+    .desktop {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 760px;
+      background: var(--bg);
+      border: 1px solid #222;
+      border-radius: 28px;
+      overflow: hidden;
+    }
+    .desk-main { display: flex; flex-direction: column; min-width: 0; }
+    .desk-thread {
+      flex: 1; padding: 28px 36px 12px; overflow: auto;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .desk-empty {
+      flex: 1; display: flex; flex-direction: column; justify-content: center;
+      align-items: flex-start; gap: 16px; padding: 48px;
+    }
+    .desk-empty h2 {
+      font-family: var(--display); font-size: 52px; margin: 0;
+      line-height: 1; letter-spacing: -.04em;
+    }
+    .desk-empty h2 em { font-style: normal; color: var(--lime); }
+    .desk-empty p { margin: 0; color: var(--muted); max-width: 420px; }
+    .desk-empty .examples { width: min(680px, 100%); grid-template-columns: 1fr 1fr; }
+    .desk-grid { display: grid; grid-template-columns: 1.25fr .85fr; gap: 12px; align-items: start; }
+    .desk-alts { display: grid; gap: 8px; }
+    .desk-composer { padding: 12px 36px 24px; }
+    .desk-thread .bubble { max-width: 56%; }
+
+    .phone { position: relative; }
+    .scrim {
+      display: none;
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,.46);
+      z-index: 8;
+    }
+    .scrim.is-on { display: block; }
+    .drawer {
+      position: absolute; inset: 0 auto 0 0;
+      width: min(86%, 320px);
+      background: #0a0a0b;
+      border-right: 1px solid #1c1c1c;
+      z-index: 9;
+      transform: translateX(-105%);
+      transition: transform .22s ease;
+      overflow: auto;
+    }
+    .drawer.is-on { transform: none; }
+    .side {
+      background: #0a0a0a;
+      border-right: 1px solid #1c1c1c;
+      padding: 16px 12px 24px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+    .side-list { flex: 1; }
+    .side-foot {
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+    }
+    .side-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 4px 8px 12px;
+    }
+    .side-head .logo { font-size: 22px; }
+    .side button.new {
+      width: 100%; border: 0; background: var(--cream); color: #161616;
+      border-radius: 16px; padding: 12px; font: 700 14px var(--jp);
+      cursor: pointer; margin: 0 0 18px;
+    }
+    .nav-label {
+      color: var(--faint); font: 700 11px var(--jp);
+      padding: 10px 8px 6px; letter-spacing: .08em;
+    }
+    .side-item {
+      display: grid; gap: 2px;
+      width: 100%; text-align: left;
+      padding: 10px 12px; border: 0; border-radius: 14px;
+      background: transparent; color: var(--text);
+      font: 600 13.5px var(--jp); cursor: pointer;
+    }
+    .side-item small { color: var(--muted); font-weight: 500; font-size: 11px; }
+    .side-item.is-on, .side-item:hover { background: #161618; }
+    .side-place {
+      display: grid; grid-template-columns: 44px 1fr auto;
+      gap: 10px; align-items: center;
+      width: 100%; text-align: left;
+      padding: 8px; border: 0; border-radius: 14px;
+      background: transparent; color: var(--text);
+      font: 600 13px var(--jp); cursor: pointer;
+    }
+    .side-place:hover { background: #161618; }
+    .side-place .th {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: #222 center/cover no-repeat;
+    }
+    .side-place > div { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+    .side-place span { display: block; color: var(--muted); font-size: 11px; font-weight: 500; }
+    .side-empty { color: var(--faint); font-size: 12px; padding: 4px 12px 8px; }
+    .freq { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 4px 8px; }
+    .freq button {
+      border: 1px solid var(--line); background: #141416; color: var(--text);
+      border-radius: 999px; padding: 7px 10px; font: 500 12px var(--jp); cursor: pointer;
+    }
+    .want-btn {
+      width: 100%; margin-top: 8px;
+      border: 0; background: transparent; color: var(--muted);
+      font: 600 12px var(--jp); cursor: pointer; text-align: left;
+    }
+    .want-btn.is-on { color: var(--lime); }
+    .pref {
+      display: grid; grid-template-columns: 64px 1fr;
+      gap: 8px; align-items: center;
+      padding: 6px 8px;
+    }
+    .pref span { color: var(--muted); font-size: 12px; }
+    .pref button {
+      border: 1px solid var(--line); background: #141416; color: var(--text);
+      border-radius: 12px; padding: 8px 10px; font: 600 13px var(--jp);
+      cursor: pointer; text-align: left;
+    }
+    .side-tools { display: grid; gap: 6px; padding: 4px 4px 8px; }
+    .side-tools button {
+      border: 1px solid var(--line); background: #121214; color: var(--text);
+      border-radius: 14px; padding: 10px 12px; font: 600 13px var(--jp);
+      cursor: pointer; text-align: left;
+    }
+    .nav-row {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; text-align: left; gap: 8px;
+      padding: 12px 12px; border: 0; border-radius: 12px;
+      background: transparent; color: var(--text);
+      font: 500 15px var(--jp); cursor: pointer;
+    }
+    .nav-row:hover { background: #161618; }
+    .nav-row em {
+      font-style: normal; color: var(--faint); font-size: 13px; font-weight: 500;
+    }
+    .side-back {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; border: 0; background: transparent; color: var(--muted);
+      font: 600 13px var(--jp); cursor: pointer;
+      padding: 4px 8px 12px; text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="studio">
+    <div class="studio-bar">
+      <div>
+        <h1>サイドバーは、履歴と機能2つ。</h1>
+        <p>今夜の検索が並び、機能は条件と保存だけ。</p>
+      </div>
+      <div class="switch" role="tablist">
+        <button id="btnPhone" aria-pressed="true">電話</button>
+        <button id="btnDesk" aria-pressed="false">机</button>
+      </div>
+    </div>
+
+    <div class="phone-wrap is-on" id="phoneView">
+      <div class="phone" id="phoneApp"></div>
+    </div>
+
+    <div class="desktop-wrap" id="deskView">
+      <div class="desktop">
+        <aside class="side" id="deskSide"></aside>
+        <section class="desk-main" id="deskMain">
+          <div class="desk-empty" id="deskEmpty"></div>
+          <div class="desk-thread" id="deskApp"></div>
+          <div class="desk-composer" id="deskComposer"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const places = [
+      {
+        id: "cacao",
+        name: "Melt",
+        area: "恵比寿",
+        photo: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=1200&q=80",
+        photos: [
+          "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=1200&q=80"
+        ],
+        walk: 6,
+        why: "食後にちょうどいい甘さ。写真映えするし、声も埋もれない。",
+        meta: ["¥2–3,000", "スイーツ", "LO 21:30"],
+        open: "NOW",
+        diff: "今夜これ"
+      },
+      {
+        id: "quiet",
+        name: "無音",
+        area: "代官山",
+        photo: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
+        photos: [
+          "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1501339848180-c7b60ea5f275?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=1200&q=80"
+        ],
+        walk: 8,
+        why: "もっと静か。ちょっと歩いて空気変えたいとき。",
+        meta: ["¥1–2,000", "カフェ", "21:00まで"],
+        open: "OPEN",
+        diff: "より静か"
+      },
+      {
+        id: "near",
+        name: "4min",
+        area: "恵比寿西",
+        photo: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=1200&q=80",
+        photos: [
+          "https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1200&q=80",
+          "https://images.unsplash.com/photo-1546171753-97d7676e4602?auto=format&fit=crop&w=1200&q=80"
+        ],
+        walk: 4,
+        why: "一番近い。甘いの飽きたら、短い一杯で終われる。",
+        meta: ["¥3–4,000", "バー", "LO 23:00"],
+        open: "OPEN",
+        diff: "もっと近い"
+      }
+    ];
+
+    const examples = [
+      "恵比寿、ご飯終わり。静かめで甘いもの。徒歩10分。終電まで。",
+      "雨だから屋内。まだ話していたい。高すぎない二軒目。",
+      "少し疲れた。座れて、すぐ着く。甘いものはもういらない。"
+    ];
+
+    const state = {
+      phase: "empty",
+      query: "",
+      draft: "",
+      chips: [],
+      order: [0, 1, 2],
+      going: null,
+      toast: "",
+      step: 0,
+      sidebarOpen: false,
+      nights: [
+        { id: "n-rain", query: "雨だから屋内。まだ話していたい。高すぎない二軒目。", label: "雨 · 二軒目", time: "20:06" }
+      ],
+      been: ["quiet"],
+      want: ["near"],
+      freq: ["終電", "徒歩10分", "静か"],
+      never: [],
+      prefs: { station: "渋谷", walk: 10, budget: "普通" },
+      sideView: "home",
+      suggestOpen: false
+    };
+
+    const TERMS = [
+      "食後", "甘いもの", "静か", "二軒目", "座れる", "すぐ着く",
+      "雨で屋内", "終電まで", "会話したい", "写真映え", "安め",
+      "まだ帰りたくない", "甘いものはいらない", "歩きたくない",
+      "恵比寿", "代官山"
+    ];
+
+    const STATIONS = ["渋谷", "新宿", "池袋", "なし"];
+    const WALKS = [5, 10, 15];
+    const BUDGETS = ["安め", "普通", "気にしない"];
+    const MOODS = ["食後", "二軒目", "雨で屋内"];
+
+    const agentCopy = [
+      ["状況を読んでる", "位置と時刻はもう取ってある"],
+      ["近くで開いてるとこ見てる", "閉まってる店は出さない"],
+      ["歩けるか、終電に間に合うか見てる", "残りの時間で絞る"],
+      ["3件つくる", "主提案と、理由の違う別案"]
+    ];
+
+    function parseChips(q) {
+      const rules = [
+        [/恵比寿|渋谷|代官山/, "恵比寿"],
+        [/ご飯|食後|食べ/, "食後"],
+        [/静か/, "静か"],
+        [/甘い|スイーツ|チョコ/, "甘い"],
+        [/徒歩|歩/, "徒歩10分"],
+        [/終電/, "終電"],
+        [/雨|屋内/, "屋内"],
+        [/疲れ|座る|座れて/, "座れる"],
+        [/すぐ|近い/, "近い"]
+      ];
+      const out = [];
+      for (const [re, label] of rules) if (re.test(q) && !out.includes(label)) out.push(label);
+      return out.length ? out : ["いまここ"];
+    }
+
+    const svgMenu = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h10M3 8h10M3 11h10"/></svg>`;
+
+    function suggestionPool() {
+      const p = state.prefs;
+      const pool = [];
+      if (p.station !== "なし") pool.push(`終電 ${p.station}`);
+      pool.push(`徒歩${p.walk}分`);
+      if (p.budget !== "気にしない") pool.push(p.budget);
+      pool.push(...MOODS, ...state.freq, ...TERMS);
+      state.nights.forEach(n => pool.push(n.label, n.query));
+      state.want.forEach(id => {
+        const pl = places.find(x => x.id === id);
+        if (pl) pool.push(pl.name);
+      });
+      return [...new Set(pool.filter(Boolean))];
+    }
+
+    function suggestionsFor(draft) {
+      const text = (draft || "").trim();
+      const pool = suggestionPool();
+      if (!text) return pool.filter(t => t.length <= 18).slice(0, 8);
+      const last = text.split(/[、,，\s]+/).pop() || text;
+      const matched = pool.filter(t => t !== text && (t.includes(last) || t.startsWith(last)));
+      const extra = pool.filter(t => t.length <= 12 && !text.includes(t));
+      const out = [];
+      for (const t of [...matched, ...extra]) {
+        if (!out.includes(t)) out.push(t);
+        if (out.length >= 6) break;
+      }
+      return out;
+    }
+
+    function suggestButtons() {
+      const items = suggestionsFor(state.draft);
+      if (!items.length) return "";
+      const hasDraft = Boolean(state.draft.trim());
+      return items.map(t => {
+        const append = hasDraft && !t.startsWith(state.draft.trim()) && t.length <= 12;
+        return `<button type="button" data-suggest-term="${t.replace(/"/g, "&quot;")}">${append ? "<em>+</em>" : ""}${t}</button>`;
+      }).join("");
+    }
+
+    function paintSuggest() {
+      document.querySelectorAll("[data-suggest]").forEach(el => {
+        const html = suggestButtons();
+        el.innerHTML = html;
+        el.hidden = !state.suggestOpen || !html;
+      });
+    }
+
+    function applySuggest(term) {
+      const cur = state.draft.trim();
+      if (!cur) state.draft = term;
+      else if (term.startsWith(cur) || term.includes(cur)) state.draft = term;
+      else state.draft = /[、。]$/.test(cur) ? cur + term : cur + "、" + term;
+      document.querySelectorAll("textarea[name=q]").forEach(box => {
+        box.value = state.draft;
+        box.focus();
+      });
+      paintSuggest();
+    }
+
+    function composer(placeholder) {
+      return `
+        <div class="suggest" data-suggest ${state.suggestOpen ? "" : "hidden"}>${suggestButtons()}</div>
+        <form class="input-row" data-form>
+          <textarea name="q" rows="1" placeholder="${placeholder}">${state.draft}</textarea>
+          <button class="send" type="submit">↑</button>
+        </form>`;
+    }
+
+    function exampleList() {
+      return `<div class="examples">${examples.map(t =>
+        `<button type="button" data-example="${t.replace(/"/g, "&quot;")}">${t}</button>`
+      ).join("")}</div>`;
+    }
+
+    function pics(place) {
+      return place.photos && place.photos.length ? place.photos : [place.photo];
+    }
+
+    function card(place, kind) {
+      const going = state.going === place.id;
+      const saved = state.want.includes(place.id);
+      const shots = pics(place);
+      if (kind === "hero") {
+        return `
+          <article class="hero ${going ? "is-go" : ""}">
+            <div class="photo">
+              <div class="photo-scroller" data-photos>
+                ${shots.map(src => `<div class="photo-slide" style="background-image:url('${src}')"></div>`).join("")}
+              </div>
+              <div class="badge">
+                <span class="pill live">${place.open}</span>
+                <button class="star ${saved ? "is-on" : ""}" data-want="${place.id}">${saved ? "残した" : "残す"}</button>
+              </div>
+              <div class="on-photo">
+                <h2>${place.name}</h2>
+                <div class="walk">${place.walk}分<small>徒歩</small></div>
+              </div>
+              <div class="dots">${shots.map((_, i) => `<i class="${i === 0 ? "is-on" : ""}"></i>`).join("")}</div>
+            </div>
+            <div class="hero-body">
+              <p class="why">${place.why}</p>
+              <div class="meta">${place.meta.join(" · ")}</div>
+              <div class="actions">
+                ${going
+                  ? `<button class="btn btn-primary" data-go="${place.id}">地図を開く</button>
+                     <button class="btn btn-ghost" data-line="${place.id}">LINEで送る</button>`
+                  : `<button class="btn btn-primary" data-go="${place.id}">ここにする</button>
+                     <button class="btn btn-ghost" data-skip="${place.id}">ちがう</button>`}
+            </div>
+          </article>`;
+      }
+      return `
+        <div class="pick">
+          <div class="th-scroller" data-photos>
+            ${shots.map(src => `<div class="th" style="background-image:url('${src}')"></div>`).join("")}
+          </div>
+          <button class="pick-main" data-promote="${place.id}">
+            <div>
+              <strong>${place.name}</strong>
+              <span class="diff">${place.diff}</span>
+            </div>
+            <div class="pick-walk">${place.walk}分<small>${place.meta[0]}</small></div>
+          </button>
+        </div>`;
+    }
+
+    function prefChips() {
+      const p = state.prefs;
+      const list = [];
+      if (p.station && p.station !== "なし") list.push(`終電 ${p.station}`);
+      list.push(`徒歩${p.walk}分`);
+      if (p.budget !== "気にしない") list.push(p.budget);
+      return list;
+    }
+
+    function visiblePlaces() {
+      return state.order
+        .map(i => places[i])
+        .filter(p => p && !state.never.includes(p.id));
+    }
+
+    function chipRow() {
+      const raw = [...prefChips(), ...state.chips];
+      const all = [];
+      for (const c of raw) {
+        if (all.includes(c)) continue;
+        if (c === "終電" && all.some(x => x.startsWith("終電 "))) continue;
+        if (c.startsWith("徒歩") && all.some(x => x.startsWith("徒歩"))) continue;
+        all.push(c);
+      }
+      const shown = all.slice(0, 4);
+      if (!shown.length) return "";
+      return `<div class="chips">${shown.map(c =>
+        `<span class="chip">${c}<button type="button" data-chip="${c}" aria-label="${c}を外す">×</button></span>`
+      ).join("")}</div>`;
+    }
+
+    function agentPanel() {
+      const [title, sub] = agentCopy[Math.min(state.step, agentCopy.length - 1)];
+      const pct = ((state.step + 1) / agentCopy.length) * 100;
+      return `
+        <div class="agent">
+          <p class="now">${title}</p>
+          <p class="sub">${sub}</p>
+          <div class="bar"><i style="width:${pct}%"></i></div>
+        </div>`;
+    }
+
+    function nightLabel(query, chips) {
+      if (chips && chips.length) return chips.slice(0, 2).join(" · ");
+      return (query || "新しい検索").slice(0, 16);
+    }
+
+    function placeList(ids, empty, action) {
+      const rows = ids.map(id => places.find(p => p.id === id)).filter(Boolean);
+      if (!rows.length) return `<div class="side-empty">${empty}</div>`;
+      const key = action || "open-place";
+      return rows.map(pl => `
+        <button class="side-place" data-${key}="${pl.id}">
+          <div class="th" style="background-image:url('${pl.photo}')"></div>
+          <div>${pl.name}<span>${key === "unnever" ? "タップで戻す" : ""}</span></div>
+        </button>`).join("");
+    }
+
+    function sideDrill(title, body) {
+      return `
+        <div class="side-head">
+          <div class="logo">ima<span>.</span></div>
+        </div>
+        <button class="side-back" data-view="home">← ${title}</button>
+        ${body}`;
+    }
+
+    function sideHTML() {
+      const p = state.prefs;
+      const view = state.sideView;
+      if (view === "prefs") {
+        return sideDrill("条件", `
+          <div class="pref"><span>終電</span><button type="button" data-cycle="station">${p.station === "なし" ? "設定しない" : p.station + " 方面"}</button></div>
+          <div class="pref"><span>徒歩</span><button type="button" data-cycle="walk">${p.walk}分まで</button></div>
+          <div class="pref"><span>予算</span><button type="button" data-cycle="budget">${p.budget}</button></div>`);
+      }
+      if (view === "saved") {
+        return sideDrill("保存", `
+          <div class="nav-label">行った</div>
+          ${placeList(state.been, "まだない")}
+          <div class="nav-label">また行きたい</div>
+          ${placeList(state.want, "カードの「残す」で入る")}
+          <div class="nav-label">行かない</div>
+          ${placeList(state.never, "「ちがう」で入る", "unnever")}`);
+      }
+      const nights = state.nights.length
+        ? state.nights.map(n => `<button class="side-item ${n.query === state.query ? "is-on" : ""}" data-night="${n.id}">${n.label}<small>${n.time}</small></button>`).join("")
+        : `<div class="side-empty">まだ今夜の検索はない</div>`;
+      return `
+        <div class="side-head">
+          <div class="logo">ima<span>.</span></div>
+        </div>
+        <button class="new" data-new>新しい検索</button>
+        <div class="side-list">${nights}</div>
+        <div class="side-foot">
+          <button class="nav-row" data-view="prefs">条件</button>
+          <button class="nav-row" data-view="saved">保存</button>
+        </div>`;
+    }
+
+    function phoneHTML() {
+      const chrome = `
+        <div class="scrim ${state.sidebarOpen ? "is-on" : ""}" data-close-side></div>
+        <aside class="drawer side ${state.sidebarOpen ? "is-on" : ""}">${sideHTML()}</aside>
+        <div class="status"><span>21:14</span><span>恵比寿</span></div>
+        <div class="appbar">
+          <button class="icon-btn" data-menu aria-label="メニュー">${svgMenu}</button>
+          <div class="logo">ima<span>.</span></div>
+          <button class="icon-btn" data-new aria-label="新しい検索">＋</button>
+        </div>`;
+
+      if (state.phase === "empty") {
+        return `
+          ${chrome}
+          <div class="empty">
+            <h2>次どこ<br>行く<em>?</em></h2>
+            <p class="lead">いまの状況、そのまま書いて。近くで今いけるとこ出す。</p>
+            ${exampleList()}
+          </div>
+          <div class="composer">${composer("いま何してる？そのまま書いて")}</div>`;
+      }
+
+      if (state.phase === "working") {
+        return `
+          ${chrome}
+          <div class="thread">
+            <div class="bubble">${state.query}</div>
+            ${agentPanel()}
+          </div>
+          <div class="composer">${composer("ちがう条件も、そのまま書いて")}</div>`;
+      }
+
+      const shown = visiblePlaces();
+      const [a, b, c] = shown;
+      return `
+        ${chrome}
+        <div class="thread">
+          <div class="bubble">${state.query}</div>
+          ${chipRow()}
+          ${a ? card(a, "hero") : `<div class="side-empty">条件に合う店がない。条件を外してみて</div>`}
+          ${b || c ? `<div class="kicker"><span>別案</span><span>タップで入れ替え</span></div>` : ""}
+          <div class="alts">${b ? card(b, "alt") : ""}${c ? card(c, "alt") : ""}</div>
+        </div>
+        <div class="toast ${state.toast ? "is-on" : ""}">${state.toast}</div>
+        <div class="composer">${composer("ちがう条件も、そのまま書いて")}</div>`;
+    }
+
+    function deskEmptyHTML() {
+      return `
+        <h2>次どこ<br>行く<em>?</em></h2>
+        <p>いまの状況、そのまま書いて。近くで今いけるとこ出す。</p>
+        ${exampleList()}`;
+    }
+
+    function deskHTML() {
+      if (state.phase === "working") {
+        return `<div class="bubble">${state.query}</div>${agentPanel()}`;
+      }
+      const shown = visiblePlaces();
+      const [a, b, c] = shown;
+      return `
+        <div class="bubble">${state.query}</div>
+        ${chipRow()}
+        <div class="desk-grid">
+          ${a ? card(a, "hero") : ""}
+          <div class="desk-alts">
+            ${b || c ? `<div class="kicker"><span>別案</span><span>タップで入れ替え</span></div>` : ""}
+            ${b ? card(b, "alt") : ""}
+            ${c ? card(c, "alt") : ""}
+          </div>
+        </div>`;
+    }
+
+    function render() {
+      document.getElementById("phoneApp").innerHTML = phoneHTML();
+      document.getElementById("deskSide").innerHTML = sideHTML();
+      document.getElementById("deskEmpty").innerHTML = deskEmptyHTML();
+      document.getElementById("deskApp").innerHTML = deskHTML();
+      const ph = state.phase === "empty" ? "いま何してる？そのまま書いて" : "ちがう条件も、そのまま書いて";
+      document.getElementById("deskComposer").innerHTML = composer(ph);
+      document.getElementById("deskEmpty").style.display = state.phase === "empty" ? "flex" : "none";
+      document.getElementById("deskApp").style.display = state.phase === "empty" ? "none" : "flex";
+      document.querySelectorAll("[data-photos]").forEach(el => {
+        el.onscroll = () => {
+          const w = el.clientWidth || 1;
+          const i = Math.round(el.scrollLeft / w);
+          const dots = el.parentElement.querySelectorAll(".dots i");
+          dots.forEach((d, n) => d.classList.toggle("is-on", n === i));
+        };
+      });
+    }
+
+    function rememberNight(query) {
+      const chips = parseChips(query);
+      const label = nightLabel(query, chips);
+      state.nights = [
+        { id: "n-" + Date.now(), query, label, time: "21:14", chips },
+        ...state.nights.filter(n => n.query !== query)
+      ].slice(0, 8);
+      chips.forEach(c => {
+        if (!state.freq.includes(c)) state.freq = [c, ...state.freq].slice(0, 6);
+      });
+    }
+
+    let searchTimer = 0;
+
+    function sendQuery(text) {
+      const q = (text || "").trim();
+      if (!q) return;
+      state.query = q;
+      state.draft = "";
+      state.suggestOpen = false;
+      state.phase = "working";
+      state.step = 0;
+      state.going = null;
+      state.toast = "";
+      state.chips = [...new Set([...parseChips(q), ...prefChips()])];
+      if (q.includes("近い") || q.includes("すぐ")) state.order = [2, 0, 1];
+      else if (q.includes("静か") || q.includes("疲")) state.order = [1, 0, 2];
+      else state.order = [0, 1, 2];
+      render();
+      clearInterval(searchTimer);
+      searchTimer = setInterval(() => {
+        state.step += 1;
+        if (state.step >= agentCopy.length) {
+          clearInterval(searchTimer);
+          state.phase = "results";
+          rememberNight(state.query);
+        }
+        render();
+      }, 420);
+    }
+
+    function newSearch() {
+      clearInterval(searchTimer);
+      Object.assign(state, {
+        phase: "empty", query: "", draft: "", chips: [], going: null, toast: "",
+        step: 0, order: [0, 1, 2], sidebarOpen: false, sideView: "home", suggestOpen: false
+      });
+      render();
+    }
+
+    function openNight(id) {
+      const n = state.nights.find(x => x.id === id);
+      if (!n) return;
+      clearInterval(searchTimer);
+      state.query = n.query;
+      state.chips = n.chips || parseChips(n.query);
+      state.phase = "results";
+      state.sidebarOpen = false;
+      state.sideView = "home";
+      state.going = null;
+      if (n.query.includes("近い") || n.query.includes("すぐ")) state.order = [2, 0, 1];
+      else if (n.query.includes("静か") || n.query.includes("疲") || n.query.includes("雨")) state.order = [1, 0, 2];
+      else state.order = [0, 1, 2];
+      render();
+    }
+
+    function openPlace(id) {
+      const idx = places.findIndex(p => p.id === id);
+      if (idx < 0) return;
+      state.order = [idx, ...state.order.filter(i => i !== idx)];
+      state.phase = "results";
+      if (!state.query) {
+        state.query = `${places[idx].name} のあたり`;
+        state.chips = parseChips(state.query);
+      }
+      state.sidebarOpen = false;
+      state.sideView = "home";
+      render();
+    }
+
+    function toggleWant(id) {
+      if (state.want.includes(id)) state.want = state.want.filter(x => x !== id);
+      else state.want = [id, ...state.want];
+      const p = places.find(x => x.id === id);
+      state.toast = state.want.includes(id) ? `${p.name} をまた行きたいに残した` : `${p.name} を外した`;
+      render();
+    }
+
+    function promote(id) {
+      const idx = places.findIndex(p => p.id === id);
+      state.order = [idx, ...state.order.filter(i => i !== idx)];
+      state.going = null;
+      render();
+    }
+
+    function skip(id) {
+      const idx = places.findIndex(p => p.id === id);
+      state.order = [...state.order.filter(i => i !== idx), idx];
+      if (!state.never.includes(id)) state.never = [id, ...state.never];
+      state.going = null;
+      state.toast = `${places[idx].name} を行かないに入れた。`;
+      render();
+    }
+
+    function go(id) {
+      state.going = id;
+      if (!state.been.includes(id)) state.been = [id, ...state.been];
+      const p = places.find(x => x.id === id);
+      state.toast = `${p.name} まで徒歩${p.walk}分。地図を開ける。`;
+      render();
+    }
+
+    document.body.addEventListener("click", (e) => {
+      const skipBtn = e.target.closest("[data-skip]");
+      const goBtn = e.target.closest("[data-go]");
+      const promoteEl = e.target.closest("[data-promote]");
+      const example = e.target.closest("[data-example]");
+      const newer = e.target.closest("[data-new]");
+      const chip = e.target.closest("[data-chip]");
+      const menu = e.target.closest("[data-menu]");
+      const closeSide = e.target.closest("[data-close-side]");
+      const night = e.target.closest("[data-night]");
+      const openPlaceBtn = e.target.closest("[data-open-place]");
+      const wantBtn = e.target.closest("[data-want]");
+      const freq = e.target.closest("[data-freq]");
+      const cycle = e.target.closest("[data-cycle]");
+      const mood = e.target.closest("[data-mood]");
+      const share = e.target.closest("[data-share]");
+      const unnever = e.target.closest("[data-unnever]");
+      const viewBtn = e.target.closest("[data-view]");
+      const lineBtn = e.target.closest("[data-line]");
+      const sug = e.target.closest("[data-suggest-term]");
+      if (skipBtn) skip(skipBtn.dataset.skip);
+      if (goBtn) go(goBtn.dataset.go);
+      if (lineBtn) {
+        const p = places.find(x => x.id === lineBtn.dataset.line);
+        state.toast = p ? `${p.name} をLINEに送った。徒歩${p.walk}分。` : "";
+        render();
+      }
+      if (promoteEl) promote(promoteEl.dataset.promote);
+      if (sug) {
+        applySuggest(sug.dataset.suggestTerm);
+        return;
+      }
+      if (example) sendQuery(example.dataset.example);
+      if (newer) newSearch();
+      if (menu) { state.sidebarOpen = true; render(); }
+      if (closeSide) { state.sidebarOpen = false; render(); }
+      if (night) openNight(night.dataset.night);
+      if (openPlaceBtn) openPlace(openPlaceBtn.dataset.openPlace);
+      if (wantBtn) toggleWant(wantBtn.dataset.want);
+      if (freq) {
+        state.sidebarOpen = false;
+        state.sideView = "home";
+        sendQuery(state.query ? `${state.query} ${freq.dataset.freq}` : freq.dataset.freq);
+      }
+      if (viewBtn) {
+        state.sideView = viewBtn.dataset.view;
+        render();
+      }
+      if (mood) {
+        state.sidebarOpen = false;
+        state.sideView = "home";
+        sendQuery(mood.dataset.mood);
+      }
+      if (cycle) {
+        const key = cycle.dataset.cycle;
+        const lists = { station: STATIONS, walk: WALKS, budget: BUDGETS };
+        const list = lists[key];
+        const i = list.indexOf(state.prefs[key]);
+        state.prefs[key] = list[(i + 1) % list.length];
+        if (state.phase === "results") state.chips = [...new Set([...parseChips(state.query), ...prefChips()])];
+        render();
+      }
+      if (share) {
+        state.toast = "今夜のリンクをコピーした。相手と同じ候補を見られる。";
+        render();
+      }
+      if (unnever) {
+        e.preventDefault();
+        state.never = state.never.filter(id => id !== unnever.dataset.unnever);
+        render();
+      }
+      if (chip) {
+        state.chips = state.chips.filter(c => c !== chip.dataset.chip);
+        state.toast = `「${chip.dataset.chip}」を外した。`;
+        render();
+      }
+    });
+    document.body.addEventListener("input", (e) => {
+      if (!e.target.matches("textarea[name=q]")) return;
+      state.draft = e.target.value;
+      state.suggestOpen = true;
+      paintSuggest();
+    });
+    document.body.addEventListener("focusin", (e) => {
+      if (!e.target.matches("textarea[name=q]")) return;
+      state.suggestOpen = true;
+      paintSuggest();
+    });
+    document.body.addEventListener("submit", (e) => {
+      if (e.target.matches("[data-form]")) {
+        e.preventDefault();
+        sendQuery(e.target.querySelector("textarea").value);
+      }
+    });
+    document.body.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey && e.target.matches("textarea[name=q]")) {
+        e.preventDefault();
+        sendQuery(e.target.value);
+      }
+    });
+
+    const btnPhone = document.getElementById("btnPhone");
+    const btnDesk = document.getElementById("btnDesk");
+    btnPhone.onclick = () => {
+      btnPhone.setAttribute("aria-pressed", "true");
+      btnDesk.setAttribute("aria-pressed", "false");
+      document.getElementById("phoneView").classList.add("is-on");
+      document.getElementById("deskView").classList.remove("is-on");
+    };
+    btnDesk.onclick = () => {
+      btnDesk.setAttribute("aria-pressed", "true");
+      btnPhone.setAttribute("aria-pressed", "false");
+      document.getElementById("deskView").classList.add("is-on");
+      document.getElementById("phoneView").classList.remove("is-on");
+    };
+
+    const params = new URLSearchParams(location.search);
+    if (params.get("view") === "desktop") btnDesk.click();
+    if (params.get("view") === "app") document.body.classList.add("app-only");
+    if (params.get("state") === "results") {
+      state.phase = "results";
+      state.query = examples[0];
+      state.chips = parseChips(examples[0]);
+      rememberNight(examples[0]);
+    }
+    if (params.get("state") === "working") {
+      state.phase = "working";
+      state.query = examples[0];
+      state.step = 1;
+    }
+    if (params.get("side") === "1") state.sidebarOpen = true;
+    if (params.get("suggest") === "1") {
+      state.suggestOpen = true;
+      state.draft = params.get("q") || "";
+    }
+    render();
+  </script>
+</body>
+</html>
