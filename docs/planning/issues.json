@@ -1,0 +1,337 @@
+{
+  "repository": "takapom/ima-app",
+  "parent": {
+    "number": 1,
+    "url": "https://github.com/takapom/ima-app/issues/1"
+  },
+  "issues": [
+    {
+      "key": "M01",
+      "number": 2,
+      "url": "https://github.com/takapom/ima-app/issues/2",
+      "title": "[M01] 仕様の優先順位・MVP能力・完了条件を実装用に統合する",
+      "dependencies": []
+    },
+    {
+      "key": "M02",
+      "number": 3,
+      "url": "https://github.com/takapom/ima-app/issues/3",
+      "title": "[M02] Expo・Worker・共有スキーマのモノレポと品質チェックを構築する",
+      "dependencies": [
+        2
+      ]
+    },
+    {
+      "key": "M03",
+      "number": 4,
+      "url": "https://github.com/takapom/ima-app/issues/4",
+      "title": "[M03] HTTP・3操作・観測・確定応答のvalibot契約を実装する",
+      "dependencies": [
+        2,
+        3
+      ]
+    },
+    {
+      "key": "M04",
+      "number": 5,
+      "url": "https://github.com/takapom/ima-app/issues/5",
+      "title": "[M04] Cloudflare Runtimeの適合性をFixtureで検証しSDKを確定する",
+      "dependencies": [
+        3,
+        4
+      ]
+    },
+    {
+      "key": "M05",
+      "number": 6,
+      "url": "https://github.com/takapom/ima-app/issues/6",
+      "title": "[M05] WorkerのHTTP境界・認証・スレッド所有権を実装する",
+      "dependencies": [
+        4,
+        5
+      ]
+    },
+    {
+      "key": "M06",
+      "number": 7,
+      "url": "https://github.com/takapom/ima-app/issues/7",
+      "title": "[M06] 候補・観測レジストリと根拠の鮮度管理を実装する",
+      "dependencies": [
+        4
+      ]
+    },
+    {
+      "key": "M07",
+      "number": 8,
+      "url": "https://github.com/takapom/ima-app/issues/8",
+      "title": "[M07] 3つのToolを入力Adapterとして登録し能力Portへ接続する",
+      "dependencies": [
+        4,
+        5,
+        7
+      ]
+    },
+    {
+      "key": "M08",
+      "number": 9,
+      "url": "https://github.com/takapom/ima-app/issues/9",
+      "title": "[M08] 実モデルAdapterとLLM主導の文脈・応答生成を実装する",
+      "dependencies": [
+        5,
+        8
+      ]
+    },
+    {
+      "key": "M09",
+      "number": 10,
+      "url": "https://github.com/takapom/ima-app/issues/10",
+      "title": "[M09] submit_cardsとメッセージの根拠検証・一度だけの応答確定を実装する",
+      "dependencies": [
+        4,
+        7
+      ]
+    },
+    {
+      "key": "M10",
+      "number": 11,
+      "url": "https://github.com/takapom/ima-app/issues/11",
+      "title": "[M10] SDKの修正ループ・予算・並列・キャンセル・再送を制御する",
+      "dependencies": [
+        6,
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "key": "M11",
+      "number": 12,
+      "url": "https://github.com/takapom/ima-app/issues/12",
+      "title": "[M11] Places検索Adapterと安全なページングを実装する",
+      "dependencies": [
+        4,
+        7,
+        8
+      ]
+    },
+    {
+      "key": "M12",
+      "number": 13,
+      "url": "https://github.com/takapom/ima-app/issues/13",
+      "title": "[M12] 詳細情報と任意のHot Pepper補足Adapterを実装する",
+      "dependencies": [
+        4,
+        7,
+        8,
+        12
+      ]
+    },
+    {
+      "key": "M13",
+      "number": 14,
+      "url": "https://github.com/takapom/ima-app/issues/14",
+      "title": "[M13] 方向付き徒歩経路AdapterをRoutesへ接続する",
+      "dependencies": [
+        4,
+        7,
+        8
+      ]
+    },
+    {
+      "key": "M14",
+      "number": 15,
+      "url": "https://github.com/takapom/ima-app/issues/15",
+      "title": "[M14] 終電journeyの限定供給・検証・更新を実装する",
+      "dependencies": [
+        4,
+        7,
+        14
+      ]
+    },
+    {
+      "key": "M15",
+      "number": 16,
+      "url": "https://github.com/takapom/ima-app/issues/16",
+      "title": "[M15] 写真の認証付き配信・失効・帰属表示を実装する",
+      "dependencies": [
+        6,
+        13
+      ]
+    },
+    {
+      "key": "M16",
+      "number": 17,
+      "url": "https://github.com/takapom/ima-app/issues/17",
+      "title": "[M16] サーバー保存ポリシー・削除・復元制御を実装する",
+      "dependencies": [
+        5,
+        6,
+        7,
+        10
+      ]
+    },
+    {
+      "key": "M17",
+      "number": 18,
+      "url": "https://github.com/takapom/ima-app/issues/18",
+      "title": "[M17] HTMLモックを基準にReact Nativeの画面基盤を実装する",
+      "dependencies": [
+        3
+      ]
+    },
+    {
+      "key": "M18",
+      "number": 19,
+      "url": "https://github.com/takapom/ima-app/issues/19",
+      "title": "[M18] 自由入力・入力候補・位置取得・条件編集を実装する",
+      "dependencies": [
+        4,
+        18
+      ]
+    },
+    {
+      "key": "M19",
+      "number": 20,
+      "url": "https://github.com/takapom/ima-app/issues/20",
+      "title": "[M19] メッセージ・候補カード・説明・帰属の描画を実装する",
+      "dependencies": [
+        4,
+        18
+      ]
+    },
+    {
+      "key": "M20",
+      "number": 21,
+      "url": "https://github.com/takapom/ima-app/issues/21",
+      "title": "[M20] 候補の入替・決定・却下・地図・LINE共有を実装する",
+      "dependencies": [
+        19,
+        20
+      ]
+    },
+    {
+      "key": "M21",
+      "number": 22,
+      "url": "https://github.com/takapom/ima-app/issues/22",
+      "title": "[M21] 端末SQLiteの履歴・設定・保存リスト・期限処理を実装する",
+      "dependencies": [
+        4,
+        17,
+        18
+      ]
+    },
+    {
+      "key": "M22",
+      "number": 23,
+      "url": "https://github.com/takapom/ima-app/issues/23",
+      "title": "[M22] フロントのAPI service・会話state・復元を接続する",
+      "dependencies": [
+        6,
+        11,
+        19,
+        20,
+        21,
+        22
+      ]
+    },
+    {
+      "key": "M23",
+      "number": 24,
+      "url": "https://github.com/takapom/ima-app/issues/24",
+      "title": "[M23] 4領域のRuntime Fixture統合テストを完成させる",
+      "dependencies": [
+        11,
+        17,
+        23
+      ]
+    },
+    {
+      "key": "M24",
+      "number": 25,
+      "url": "https://github.com/takapom/ima-app/issues/25",
+      "title": "[M24] 外部Provider契約テストと実APIスモークを整備する",
+      "dependencies": [
+        12,
+        13,
+        14,
+        15,
+        16
+      ]
+    },
+    {
+      "key": "M25",
+      "number": 26,
+      "url": "https://github.com/takapom/ima-app/issues/26",
+      "title": "[M25] 実モデルの自律選択・根拠忠実性・応答品質を評価する",
+      "dependencies": [
+        9,
+        11,
+        24,
+        25
+      ]
+    },
+    {
+      "key": "M26",
+      "number": 27,
+      "url": "https://github.com/takapom/ima-app/issues/27",
+      "title": "[M26] 最小テレメトリ・運用flags・障害時停止を実装する",
+      "dependencies": [
+        6,
+        11,
+        17,
+        21
+      ]
+    },
+    {
+      "key": "M27",
+      "number": 28,
+      "url": "https://github.com/takapom/ima-app/issues/28",
+      "title": "[M27] App Attestと外部配布向けの不正利用対策を実装する",
+      "dependencies": [
+        6,
+        16,
+        23
+      ]
+    },
+    {
+      "key": "M28",
+      "number": 29,
+      "url": "https://github.com/takapom/ima-app/issues/29",
+      "title": "[M28] Cloudflare・EASの環境構築とキー設定後の起動手順を完成させる",
+      "dependencies": [
+        3,
+        5,
+        6,
+        15,
+        17,
+        27
+      ]
+    },
+    {
+      "key": "M29",
+      "number": 30,
+      "url": "https://github.com/takapom/ima-app/issues/30",
+      "title": "[M29] iPhone E2E・視覚比較・内部MVPの完了監査を行う",
+      "dependencies": [
+        23,
+        24,
+        25,
+        26,
+        27,
+        29
+      ]
+    },
+    {
+      "key": "M30",
+      "number": 31,
+      "url": "https://github.com/takapom/ima-app/issues/31",
+      "title": "[M30] TestFlight配布・プライバシー・限定エリアのリリースゲートを完了する",
+      "dependencies": [
+        15,
+        28,
+        29,
+        30
+      ]
+    }
+  ]
+}
