@@ -27,8 +27,8 @@
       "url": "https://github.com/takapom/ima-app/issues/4",
       "title": "[M03] HTTP・3操作・観測・確定応答のvalibot契約を実装する",
       "dependencies": [
-        2,
-        3
+        3,
+        32
       ]
     },
     {
@@ -68,7 +68,8 @@
       "dependencies": [
         4,
         5,
-        7
+        7,
+        10
       ]
     },
     {
@@ -111,19 +112,18 @@
       "dependencies": [
         4,
         7,
-        8
+        32
       ]
     },
     {
       "key": "M12",
       "number": 13,
       "url": "https://github.com/takapom/ima-app/issues/13",
-      "title": "[M12] 詳細情報と任意のHot Pepper補足Adapterを実装する",
+      "title": "[M12] Places詳細Adapterと項目別取得・部分結果を実装する",
       "dependencies": [
         4,
         7,
-        8,
-        12
+        32
       ]
     },
     {
@@ -134,14 +134,14 @@
       "dependencies": [
         4,
         7,
-        8
+        32
       ]
     },
     {
       "key": "M14",
       "number": 15,
       "url": "https://github.com/takapom/ima-app/issues/15",
-      "title": "[M14] 終電journeyの限定供給・検証・更新を実装する",
+      "title": "[M14] 終電journeyの検証・計算・取込みコードを実装する",
       "dependencies": [
         4,
         7,
@@ -167,7 +167,8 @@
         5,
         6,
         7,
-        10
+        10,
+        32
       ]
     },
     {
@@ -216,8 +217,8 @@
       "title": "[M21] 端末SQLiteの履歴・設定・保存リスト・期限処理を実装する",
       "dependencies": [
         4,
-        17,
-        18
+        18,
+        32
       ]
     },
     {
@@ -228,6 +229,7 @@
       "dependencies": [
         6,
         11,
+        17,
         19,
         20,
         21,
@@ -240,16 +242,16 @@
       "url": "https://github.com/takapom/ima-app/issues/24",
       "title": "[M23] 4領域のRuntime Fixture統合テストを完成させる",
       "dependencies": [
+        6,
         11,
-        17,
-        23
+        17
       ]
     },
     {
       "key": "M24",
       "number": 25,
       "url": "https://github.com/takapom/ima-app/issues/25",
-      "title": "[M24] 外部Provider契約テストと実APIスモークを整備する",
+      "title": "[M24] Provider契約テストとキー任意のlive smokeコマンドを整備する",
       "dependencies": [
         12,
         13,
@@ -262,12 +264,11 @@
       "key": "M25",
       "number": 26,
       "url": "https://github.com/takapom/ima-app/issues/26",
-      "title": "[M25] 実モデルの自律選択・根拠忠実性・応答品質を評価する",
+      "title": "[M25] 実モデル＋Fixture供給で自律選択・根拠忠実性を評価する",
       "dependencies": [
         9,
         11,
-        24,
-        25
+        24
       ]
     },
     {
@@ -278,8 +279,7 @@
       "dependencies": [
         6,
         11,
-        17,
-        21
+        17
       ]
     },
     {
@@ -297,12 +297,9 @@
       "key": "M28",
       "number": 29,
       "url": "https://github.com/takapom/ima-app/issues/29",
-      "title": "[M28] Cloudflare・EASの環境構築とキー設定後の起動手順を完成させる",
+      "title": "[M28] 環境設定・デプロイ・復旧手順を最終統合する",
       "dependencies": [
-        3,
-        5,
-        6,
-        15,
+        35,
         17,
         27
       ]
@@ -315,10 +312,10 @@
       "dependencies": [
         23,
         24,
-        25,
         26,
         27,
-        29
+        29,
+        36
       ]
     },
     {
@@ -327,10 +324,63 @@
       "url": "https://github.com/takapom/ima-app/issues/31",
       "title": "[M30] TestFlight配布・プライバシー・限定エリアのリリースゲートを完了する",
       "dependencies": [
-        15,
         28,
         29,
-        30
+        30,
+        34,
+        33
+      ]
+    },
+    {
+      "key": "M31",
+      "number": 32,
+      "url": "https://github.com/takapom/ima-app/issues/32",
+      "title": "[M31] 保存・能力・外部利用の共通ポリシー契約を先に確定する",
+      "dependencies": [
+        2
+      ]
+    },
+    {
+      "key": "M32",
+      "number": 33,
+      "url": "https://github.com/takapom/ima-app/issues/33",
+      "title": "[M32] 任意Hot Pepper Adapterの店舗照合・LO・施設補足を実装する",
+      "dependencies": [
+        4,
+        13,
+        32
+      ]
+    },
+    {
+      "key": "M33",
+      "number": 34,
+      "url": "https://github.com/takapom/ima-app/issues/34",
+      "title": "[M33] 対応終電journeyの実データを検証・投入する",
+      "dependencies": [
+        15,
+        35
+      ]
+    },
+    {
+      "key": "M34",
+      "number": 35,
+      "url": "https://github.com/takapom/ima-app/issues/35",
+      "title": "[M34] 非本番Worker・EASの最小環境とSecrets設定口を先行整備する",
+      "dependencies": [
+        3,
+        5
+      ]
+    },
+    {
+      "key": "M35",
+      "number": 36,
+      "url": "https://github.com/takapom/ima-app/issues/36",
+      "title": "[M35] キー設定後の実API・モデル接続を非本番環境で検収する",
+      "dependencies": [
+        9,
+        25,
+        35,
+        32
       ]
     }
   ]

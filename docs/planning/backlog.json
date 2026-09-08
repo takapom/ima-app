@@ -25,7 +25,9 @@
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
       "docs/design/0002-next-decisions.md",
       "docs/design/0006-fixture-runtime-validation.md"
-    ]
+    ],
+    "deliverables": "docs/design/implementation-baseline.md と要件差分表（仕様判断）",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M02",
@@ -52,15 +54,17 @@
       "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
       "docs/design/0001-iphone-next-spot.md"
-    ]
+    ],
+    "deliverables": "workspace設定・CI骨格・依存境界検査（業務実装なし）",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M03",
     "title": "HTTP・3操作・観測・確定応答のvalibot契約を実装する",
     "phase": "基盤",
     "dependencies": [
-      "M01",
-      "M02"
+      "M02",
+      "M31"
     ],
     "why": "モデル向け引数とアプリの共有応答を分離し、境界で不正データを止める。",
     "scope": [
@@ -68,19 +72,25 @@
       "search/continue、details field列挙、EvidenceText、hero1+alts0〜2と件数/重複/文字数制約を実装する",
       "thread/turn/response/candidate/observation ID、revision、schema/capability version、出典と保持メタデータを定義する",
       "モデル指定値とHarness注入値を分け、秘密値・生座標をモデル引数へ入れない",
-      "ABIや保存データの非互換変更時の移行/失効方針を定義する"
+      "ABIや保存データの非互換変更時の移行/失効方針を定義する",
+      "公開HTTP/描画型だけpackages/schemaへ置き、内部Port/観測/Tool引数契約はworkers/apiのCore側へ置く。frontendへ内部能力契約を輸出しない",
+      "contracts-v1.mdにmethod/path、request/response例、error→HTTP対応、requestId/turnId/revision/冪等性、cancel/再開/終了/削除、写真・保存店再取得・eventsを固定する。API handlerはM05",
+      "turnConstraintsをいつモデルから受け取り検証へ適用するか、追加ToolなしのSDK対応形式を定義する。M04で互換性確認後に同じ契約へ修正を戻す"
     ],
     "acceptance": [
       "正常・境界・未知field・追加property・型不正のテストが通る",
       "message=keep、cards=replaceを同一の正規応答契約へ変換できる",
       "SDK schema変換に依存するコードはAdapterに閉じる",
-      "新旧revision/スキーマ不一致を黙って型castして受理しない"
+      "新旧revision/スキーマ不一致を黙って型castして受理しない",
+      "複数Tool同時出力・構造化message・submit invalid/success・条件変更を含む具体JSON例があり、M04/M05/M07が別解釈で実装しない"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0004-autonomous-response-loop.md",
       "docs/design/0006-fixture-runtime-validation.md"
-    ]
+    ],
+    "deliverables": "contracts-v1.md・packages/schemaの公開型・workers/api/Coreの内部契約・schema tests",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M04",
@@ -96,18 +106,22 @@
       "activeToolsと実行前拒否でモデル公開操作を3つに限定し、default workspace Tool混入を検出する",
       "messageのみ、cards+message、submit invalid→修正、成功時の空final、HTTP境界、valibotを検証する",
       "SDK自動保存・Tool結果・compaction・stream再開bufferへの書込みを観測し、保存前制御を確認する",
-      "不適合ならAIChatAgent+streamTextに同一検証を適用し、独自汎用ループを作らず選定ADRを更新する"
+      "不適合ならAIChatAgent+streamTextに同一検証を適用し、独自汎用ループを作らず選定ADRを更新する",
+      "SDK探索はstubの業務Portで行い、M09/M10/M16の本実装を要求しない。SDKのstep全体を副作用前に検査できるか、turnConstraints適用と終端制御も検証する"
     ],
     "acceptance": [
       "3操作以外の定義がモデルに渡らず、不正呼出しの副作用が0である",
       "保存後フックでの削除を保存禁止の達成と扱っていない",
       "成功/不適合のログ、SDK版、再現コマンドが残る",
-      "SDK採用条件の通信・キャンセル・修正・保持を満たすか未達理由が明示され、未達の基盤を本番採用しない"
+      "SDK採用条件の通信・キャンセル・修正・保持を満たすか未達理由が明示され、未達の基盤を本番採用しない",
+      "不適合という調査結果だけでも記録できるが、後続実装開始には選定候補の必須ゲート合格が必要。両候補不適合なら後続はblockedにし自作へ逃げない"
     ],
     "references": [
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
       "docs/design/0006-fixture-runtime-validation.md"
-    ]
+    ],
+    "deliverables": "SDK spike・再利用可能なmodel Fixture・採用ADR・適合性結果",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M05",
@@ -119,11 +133,12 @@
     ],
     "why": "iPhoneから安全にスレッドを開始・継続でき、他端末の候補や履歴へアクセスできない入口を作る。",
     "scope": [
-      "Honoのversioned search/turn、thread復元/終了/削除、places/photos/events境界を必要な契約に合わせて実装する",
+      "M03のHTTP契約に沿うrouting・認証・入力/出力検証を実装しApplication handlerは注入する。検索業務はM10、photo本文はM15、events記録はM26が担当。stub境界で本Issueを検収する",
       "ログインを必須にせず内部開発認証と所有者credentialを分離する。任意Device UUIDやthreadIdだけを認可根拠にしない",
       "入力サイズ、content type、認証、request ID、HTTP error envelope、rate limitを実装する",
       "スレッドごとのDOを構成し、許可されていないSDKのRPC/WebSocket/管理ルートを公開しない",
-      "キャンセル・再送キー・versionを受理し、GPS拒否時はIPから位置を推測しない"
+      "キャンセル・再送キー・versionを受理し、GPS拒否時はIPから位置を推測しない",
+      "内部MVPのowner credentialは端末で生成した十分なentropyの秘密値をSecureStoreへ保存し、サーバー側はhashでscopeを導出する契約をM03へ反映する。共有app tokenと公開device IDだけで所有権を作らない。外部enrollmentはM27"
     ],
     "acceptance": [
       "別所有者のread/write/delete/replayを拒否するテストが通る",
@@ -135,7 +150,9 @@
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0006-fixture-runtime-validation.md"
-    ]
+    ],
+    "deliverables": "HTTP routing/auth/middleware/handler interface と境界テスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M06",
@@ -161,7 +178,9 @@
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0004-autonomous-response-loop.md"
-    ]
+    ],
+    "deliverables": "Coreのcandidate/observation registry・Clock/freshness と単体テスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M07",
@@ -170,7 +189,8 @@
     "dependencies": [
       "M03",
       "M04",
-      "M06"
+      "M06",
+      "M09"
     ],
     "why": "アプリの能力をLLM向けインターフェースとして公開し、SDKや供給元を差し替え可能にする。",
     "scope": [
@@ -178,7 +198,8 @@
       "searchとdetailsはCoreの能力Port、submitはApplicationの確定処理へ接続する",
       "Catalogはこの3操作のみで、HTTP/SQL/shell/MCP/client toolsを公開しない",
       "有効fields・地域・駅・取得できない能力をモデルへ供給する",
-      "Tool I/Oを検証し、呼出しID・権限・時計・予算を実行側が注入する"
+      "Tool I/Oを検証し、呼出しID・権限・時計・予算を実行側が注入する",
+      "Bindingの単体試験は検索/詳細PortのFixtureで完結する。予算の契約を受け取るが実際のrun全体制御はM10が所有する"
     ],
     "acceptance": [
       "各モデルstep/再開turnで公開名が正確に3つである",
@@ -190,7 +211,9 @@
       "docs/adr/0008-initial-tool-catalog.md",
       "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
       "docs/design/0005-tool-contracts-v1.md"
-    ]
+    ],
+    "deliverables": "SDK Tool Binding・allowlist・Portへの変換とAdapter tests",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M08",
@@ -219,7 +242,9 @@
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
       "docs/design/0004-autonomous-response-loop.md",
       "docs/design/0003-response-patterns.md"
-    ]
+    ],
+    "deliverables": "モデルProvider Adapter・prompt/context builder・条件更新変換とテスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M09",
@@ -235,7 +260,8 @@
       "営業時間、到着時刻、徒歩秒、終電、LOを別の根拠として評価し、未対応時の扱いを契約に合わせる",
       "LLMのwhy/diffを保持し、カードの名称・価格・写真等は参照観測から構築する",
       "messageだけにも根拠参照検証を適用し、意味的忠実性は評価の対象として区別する",
-      "revision条件付きでmessage+cardsを同じresponseIdへ確定し、冪等キーの内容不一致を拒否する"
+      "revision条件付きでmessage+cardsを同じresponseIdへ確定し、冪等キーの内容不一致を拒否する",
+      "このIssueは純粋な検証器とApplicationのCommitPort契約＋in-memory CAS試験を所有する。実DO transaction/保存ポリシーはM16、実SDK停止とbatch実行はM10へ委譲する"
     ],
     "acceptance": [
       "invalid時の状態変更0、valid時の確定1が競合/再送でも成立する",
@@ -246,7 +272,9 @@
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0006-fixture-runtime-validation.md"
-    ]
+    ],
+    "deliverables": "Core検証器・Application確定要求・CommitPort/in-memory CAS tests",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M10",
@@ -265,7 +293,8 @@
       "search/detailsのtimeoutとread再試行1回、SDK retryとの重複防止、single-flight、Retry-Afterを実装する",
       "read+submit、複数submit、final+Toolの混在をバッチ単位で拒否する",
       "追加送信・切断・AbortSignal・旧revision・遅着・同一call再配送を扱う",
-      "costUnitsとprovider request/route-element予算は並列実行前に予約し、二重retryと並列時の予算超過を防ぐ"
+      "costUnitsとprovider request/route-element予算は並列実行前に予約し、二重retryと並列時の予算超過を防ぐ",
+      "最初はM16の完成を待たずin-memory CommitPortで試験する。本番compositionはM16と結合するM23で検証する"
     ],
     "acceptance": [
       "invalid→LLMがdetails→validが動き、修正上限時に未検証カードを出さない",
@@ -277,7 +306,9 @@
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/adr/0011-cloudflare-led-agent-runtime.md"
-    ]
+    ],
+    "deliverables": "SDK Runtime Adapterのstep/予算/batch/取消制御と統合テスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M11",
@@ -286,7 +317,7 @@
     "dependencies": [
       "M03",
       "M06",
-      "M07"
+      "M31"
     ],
     "why": "search_placesを実際の店舗・スポット検索へ接続する。",
     "scope": [
@@ -294,7 +325,8 @@
       "identity/営業時間/priceを正規化しprovider順位を保持する",
       "重複・明示除外を適用し、少数/0件/partial/失敗を区別する",
       "署名cursorをscope/検索条件/位置revision/5分期限へbindしprovider tokenをモデルへ露出しない",
-      "自動ページ取得・自動半径拡張・独自ランキング・写真/徒歩/終電の先行取得をしない"
+      "自動ページ取得・自動半径拡張・独自ランキング・写真/徒歩/終電の先行取得をしない",
+      "外部Provider Adapterの契約テストはHTTP Fixture＋Core Portで完結させ、SDK Tool Bindingの完成を依存にしない。モデル向けレジストリ登録はM06/M07の責務"
     ],
     "acceptance": [
       "位置なしのcurrent_locationはLOCATION_REQUIRED、named areaは検索できる",
@@ -305,36 +337,40 @@
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md"
-    ]
+    ],
+    "deliverables": "Places search outbound Adapter・cursor service・HTTP契約テスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M12",
-    "title": "詳細情報と任意のHot Pepper補足Adapterを実装する",
+    "title": "Places詳細Adapterと項目別取得・部分結果を実装する",
     "phase": "外部連携",
     "dependencies": [
       "M03",
       "M06",
-      "M07",
-      "M11"
+      "M31"
     ],
     "why": "要求された項目だけ追加取得し、掲載営業・価格・施設情報の出典を追えるようにする。",
     "scope": [
       "identity/opening_hours/price/photos metadata/contactをPlace Detailsの必要field maskへ接続する",
       "1〜5候補×指定fieldsをbatch化し、reuse_valid/refreshと項目別部分失敗を実装する",
-      "Hot PepperのLO/価格/施設情報は設定で有効化し、候補照合・同名支店・距離・競合を検査する",
+      "Hot Pepper補足はM32へ分離し、このIssueはPlacesで供給可能な項目だけ取得する。facilities等の未提供能力はunsupportedを返す",
       "営業時間の跨日/24h/特別日/timezone/LO不明/移転/閉業を正規化する",
-      "価格レベルから円を発明せず、空席・待ち・現時点の静かさを未対応とする"
+      "価格レベルから円を発明せず、空席・待ち・現時点の静かさを未対応とする",
+      "外部Provider Adapterの契約テストはHTTP Fixture＋Core Portで完結させ、SDK Tool Bindingの完成を依存にしない。モデル向けレジストリ登録はM06/M07の責務"
     ],
     "acceptance": [
       "未要求fieldを取得せず、1店の失敗で他店の成功を消さない",
       "HPキーなしでも基本経路が動き、facilities等はunsupportedとなる",
-      "別店補足やHP closeを閉店時刻として誤利用しない",
+      "跨日/24h/特別日/timezone/移転/閉業を扱い、曖昧な営業/価格を捏造しない",
       "全観測に出典/取得時刻/鮮度/保持分類があり、既知enumと未知fieldのエラーを区別する"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md"
-    ]
+    ],
+    "deliverables": "Places details outbound Adapter・field正規化・HTTP契約テスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M13",
@@ -343,7 +379,7 @@
     "dependencies": [
       "M03",
       "M06",
-      "M07"
+      "M31"
     ],
     "why": "直線距離の推測ではなく、実際の経路から徒歩時間と到着時刻を扱う。",
     "scope": [
@@ -351,7 +387,8 @@
       "現在地→店と店→駅を方向別に取得し、駅→店で代用しない",
       "位置取得2分以内/accuracy100m以下を初期値とし、reduced/古い位置ではLOCATION_IMPRECISEを返す",
       "内部は秒、表示は切上げ分、徒歩条件判定は秒で行う",
-      "要素別error/到達不能、位置revision・移動100mでの失効を扱う"
+      "要素別error/到達不能、位置revision・移動100mでの失効を扱う",
+      "外部Provider Adapterの契約テストはHTTP Fixture＋Core Portで完結させ、SDK Tool Bindingの完成を依存にしない。モデル向けレジストリ登録はM06/M07の責務"
     ],
     "acceptance": [
       "非対称な経路Fixtureで往復を取り違えない",
@@ -362,11 +399,13 @@
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md"
-    ]
+    ],
+    "deliverables": "Routes outbound Adapter・方向/秒/位置検証テスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M14",
-    "title": "終電journeyの限定供給・検証・更新を実装する",
+    "title": "終電journeyの検証・計算・取込みコードを実装する",
     "phase": "外部連携",
     "dependencies": [
       "M03",
@@ -379,18 +418,20 @@
       "運行日/曜日/祝日/跨日/乗換/validFrom/validThrough/検証元/検証日を検査する",
       "到着時刻、店→駅、180秒buffer、最低滞在からleaveByとusableを計算する",
       "LO・閉店・終電退出期限を分け、同駅のnot_applicableでも移動を検証済みにしない",
-      "検証済み実データを準備し、seed投入・期限監視・更新・rollback手順を作る。データなしは能力disabledとする"
+      "取込みvalidator/期限監視/更新/rollbackコマンドをFixtureで実装する。実データの収集・検証・投入はM33に分離し、データなしでは能力disabledとする"
     ],
     "acceptance": [
       "古い/未登録/適用日外のjourneyで終電保証をしない",
       "本番へ架空Fixture時刻を投入しない",
       "曜日境界・祝日・終電直前・同駅・乗換・到着後滞在の境界テストが通る",
-      "終電対応を謳う配布ゲートは検証済みデータなしに通さず、キーだけでは解消しないデータ依存を明記する"
+      "コード完了は再現可能なFixtureとimport検査で判定する。終電対応を謳う配布はM33の実データ検収を必須とする"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md"
-    ]
+    ],
+    "deliverables": "journey reader/import validator・時計計算・合成データテスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M15",
@@ -418,7 +459,9 @@
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0006-fixture-runtime-validation.md"
-    ]
+    ],
+    "deliverables": "photo handler・handle署名/認可・stream/帰属テスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M16",
@@ -428,7 +471,8 @@
       "M04",
       "M05",
       "M06",
-      "M09"
+      "M09",
+      "M31"
     ],
     "why": "会話の継続性を保ちながら、SDK自動保存を含めprovider由来データの保持制約を守る。",
     "scope": [
@@ -436,7 +480,8 @@
       "生成文・要約・引用へ保持制約を伝播し、鮮度と保持期限を分離する",
       "セッション05:00 JST案、provider上限とのmin、削除alarm/読出し時失効を実装する",
       "SDK履歴/Tool結果/compaction/workspace/replay buffer/DO/KV/D1/log全保存先を棚卸しする",
-      "禁止payloadは実行メモリに留め、確定記録の再送と完全本文復元不可を区別する"
+      "禁止payloadは実行メモリに留め、確定記録の再送と完全本文復元不可を区別する",
+      "CommitPortのDO実装でrevision CASと確定記録をtransaction化する。応答payloadは保持許可時だけ同一ポリシーで扱い、M09の検証ロジックを複製しない"
     ],
     "acceptance": [
       "canaryを正常/失敗/切断/再生成経路へ流し禁止内容の永続書込み0を確認する",
@@ -448,7 +493,9 @@
     "references": [
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/design/0005-tool-contracts-v1.md"
-    ]
+    ],
+    "deliverables": "DO CommitPort/保持Adapter・削除/再生成/保存canary tests",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M17",
@@ -476,7 +523,9 @@
       "index.html",
       "docs/design/0001-iphone-next-spot.md",
       "docs/adr/0006-lightweight-frontend-hexagonal-backend.md"
-    ]
+    ],
+    "deliverables": "画面shell・tokens・fonts・UI primitive・視覚比較",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M18",
@@ -506,7 +555,9 @@
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0004-autonomous-response-loop.md",
       "docs/design/0005-tool-contracts-v1.md"
-    ]
+    ],
+    "deliverables": "composer/location/prefs hooksとUIテスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M19",
@@ -535,7 +586,9 @@
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/design/0005-tool-contracts-v1.md",
       "docs/adr/0009-contextual-response-presentation.md"
-    ]
+    ],
+    "deliverables": "message/card renderer・表示契約FixtureとUIテスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M20",
@@ -552,7 +605,8 @@
       "地図をApple Mapsの徒歩URLで開き、保存データ不足/起動不可を扱う",
       "既定はRN Shareで店名/取得済み徒歩/HTTPS地図リンクを渡し、LINE未導入・キャンセルを扱う",
       "LINE schemeは任意flagとし、ログイン/Messaging API/自動送信を導入しない",
-      "決定時のhaptics、地図/共有の成功・取消・失敗toastを実際の端末結果へ対応させる"
+      "決定時のhaptics、地図/共有の成功・取消・失敗toastを実際の端末結果へ対応させる",
+      "このIssueは注入したstate/action/storage serviceのFakeでUI操作を検収する。SQLite接続はM21、実HTTPへの接続と状態調停はM22に限定する"
     ],
     "acceptance": [
       "submitや会話文章だけで保存・決定・共有が実行されない",
@@ -564,7 +618,9 @@
       "docs/adr/0002-cherished-person-lighter-load.md",
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0004-autonomous-response-loop.md"
-    ]
+    ],
+    "deliverables": "明示操作handler・Share/Linking/haptics servicesとFake試験",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M21",
@@ -572,8 +628,8 @@
     "phase": "フロント",
     "dependencies": [
       "M03",
-      "M16",
-      "M17"
+      "M17",
+      "M31"
     ],
     "why": "アプリ再起動後に許可された文脈と保存リストを復元する。",
     "scope": [
@@ -582,7 +638,8 @@
       "リストの正は端末とし、削除/保存解除/重複/破損時の扱いを実装する",
       "名前/住所/座標/写真/生成文の保持をprovider policyで制限し、許可IDとユーザー操作を分離する",
       "起動/復帰/期限境界に利用前失効し、履歴選択時のstale/再取得要否を表示する",
-      "保存画面は残した店/今夜決めたの名前+エリアを基本としサムネなし。内容復元不可は参照IDと再取得要否で表示する"
+      "保存画面は残した店/今夜決めたの名前+エリアを基本としサムネなし。内容復元不可は参照IDと再取得要否で表示する",
+      "M31の共通保持Fixtureを端末テストへ適用する。サーバー実装M16は依存にせず、相互整合はM22/M23で検証する"
     ],
     "acceptance": [
       "キル/再起動/オフラインでも許可されたリスト/設定が復元する",
@@ -594,7 +651,9 @@
       "docs/adr/0002-cherished-person-lighter-load.md",
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/design/0001-iphone-next-spot.md"
-    ]
+    ],
+    "deliverables": "SQLite migrations/local services・共通保持Fixture試験",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M22",
@@ -603,6 +662,7 @@
     "dependencies": [
       "M05",
       "M10",
+      "M16",
       "M18",
       "M19",
       "M20",
@@ -614,7 +674,8 @@
       "threadId/turnId/responseId/baseRevisionの整合でkeep/replaceと重複排除を行う",
       "履歴切替/新規検索/追記/選択変更/連打/キャンセル/再接続を状態遷移へ落とす",
       "許可されたSQLite復元とサーバ状態、確定済みだが本文復元不可の状態を調停する",
-      "Fixtureモードとliveモードを明示し、キー不足/401/429/timeout/offline/部分失敗を表示する"
+      "Fixtureモードとliveモードを明示し、キー不足/401/429/timeout/offline/部分失敗を表示する",
+      "HTTP応答→stateの決定的テスト（keep/replace、二重配送、旧revision、履歴切替）は本Issueの成果物。実機全体E2EはM29"
     ],
     "acceptance": [
       "旧スレッド/旧turnの応答が現在の画面や入力を上書きしない",
@@ -626,16 +687,18 @@
       "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
       "docs/design/0004-autonomous-response-loop.md",
       "docs/design/0006-fixture-runtime-validation.md"
-    ]
+    ],
+    "deliverables": "HTTP services・会話stateの実接続とcontract tests",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M23",
     "title": "4領域のRuntime Fixture統合テストを完成させる",
     "phase": "検証",
     "dependencies": [
+      "M05",
       "M10",
-      "M16",
-      "M22"
+      "M16"
     ],
     "why": "3操作限定・2応答・修正・保存を本物のSDK/DO/HTTP境界で再現検証する。",
     "scope": [
@@ -643,10 +706,11 @@
       "default Tool混入の対照例、未知Tool/型不正、再開時allowlistを検査する",
       "直接message、検索→cards、1/2/0件、invalid→details→submit、messageへ退避、上限/混在batchを実行する",
       "切断/並行/再配送/旧revision/DO再生成/05:00/削除/所有権を検査する",
-      "SDKとアプリの実保存先をcanaryで検査し、外部networkを拒否してCIへ組み込む"
+      "SDKとアプリの実保存先をcanaryで検査し、外部networkを拒否してCIへ組み込む",
+      "M04の試験資産を拡張しSDK→業務→実DO保存を結合する。完成したiPhone UIには依存せず、HTTP consumerで応答を検証する"
     ],
     "acceptance": [
-      "design0006の全Fixture行にテストIDと結果が対応する",
+      "design0006のサーバー/SDK対象行を全てテストIDへ対応する。frontend state行はM22、端末SQLite行はM21、実機行はM29の証跡へリンクする",
       "SDKループ・Core・保存を成功Mockへ置き換えていない",
       "禁止副作用0、失敗commit0、成功commit1、保存禁止書込み0を検査する",
       "モデルFixture合格をLLMの意図理解品質合格と扱わない"
@@ -654,11 +718,13 @@
     "references": [
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/design/0005-tool-contracts-v1.md"
-    ]
+    ],
+    "deliverables": "実SDK/Worker/DOのサーバー回帰suite・要求→test対応表",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M24",
-    "title": "外部Provider契約テストと実APIスモークを整備する",
+    "title": "Provider契約テストとキー任意のlive smokeコマンドを整備する",
     "phase": "検証",
     "dependencies": [
       "M11",
@@ -673,28 +739,30 @@
       "営業跨日/臨休/24h、価格不明、同名別店、経路非対称/要素失敗、429/5xx/timeoutを網羅する",
       "最小field mask・上流呼出し/要素数・帰属・schemaを検査する",
       "キー設定時だけ実行するlive smokeと必要API/課金/権限のpreflightを作る",
-      "実データ保持許諾・送信先・利用規約とモデル/データ有効性の検証日を記録する"
+      "利用条件の共通仕様はM31、契約アカウント確認と実接続検収はM35へ分離する。本Issueは再現可能なテスト/コマンドを作る",
+      "基本契約suiteはPlaces/Details/Routes/photo/journeyで独立完結。HPの契約suiteはM32が所有し、利用可能になった時に集約する。HP実装待ちで基本smokeコマンドを止めない"
     ],
     "acceptance": [
       "CIはライブ料金なしで再現し、live testは明示実行で分離する",
-      "キーあり環境のsearch/details/routes/photoの実結果を証跡に残す",
+      "キーなしで全契約テストが通り、smokeコマンドは未設定を明示的skip/失敗として検出する。実API成功証跡はM35が所有する",
       "未設定時をpassやFixture live成功にせずskip/未検証とする",
-      "終電実データ/任意HP有効無効の両方が説明された能力と一致する"
+      "終電の合成Fixtureと未投入disabledを検査する。HP未実装時は基本suiteを妨げず、その有効/無効試験の担当をM32へ対応付ける"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md"
-    ]
+    ],
+    "deliverables": "Provider回帰suite・live smoke CLI・キーなしCI",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M25",
-    "title": "実モデルの自律選択・根拠忠実性・応答品質を評価する",
+    "title": "実モデル＋Fixture供給で自律選択・根拠忠実性を評価する",
     "phase": "検証",
     "dependencies": [
       "M08",
       "M10",
-      "M23",
-      "M24"
+      "M23"
     ],
     "why": "LLMがユーザーの意図に答える品質を、固定呼出し順に依存せず評価する。",
     "scope": [
@@ -702,19 +770,23 @@
       "不要検索・過剰確認・無断条件解除・候補取違え・根拠なし断定・未対応能力の捏造を評価する",
       "店舗文言のprompt injection、GPS拒否、期限切れ、修正失敗、既存候補の維持を評価する",
       "モデル/プロンプト版を記録し、決定的ルール＋人手レビュー＋補助モデル評価を分離する",
-      "latency p50/p95、モデル/Tool/upstream回数、コストを測定し仮の実行予算を調整する"
+      "latency p50/p95、モデル/Tool/upstream回数、コストを測定し仮の実行予算を調整する",
+      "実モデル＋固定Provider Fixtureで評価し、店舗APIや終電実データの準備を待たない。live供給との組合せ確認はM29"
     ],
     "acceptance": [
       "全パターンに期待する結果と禁止動作があり、呼出し順完全一致を合格条件にしない",
       "自由文の正しさをevidence ID存在だけで合格にしない",
       "重大な店舗捏造・他候補取違え・営業時間/終電の根拠なし保証が0である",
-      "要求充足と待ち時間を主指標にし、カード率/Tool率を最大化しない"
+      "要求充足と待ち時間を主指標にし、カード率/Tool率を最大化しない",
+      "初期基準: 8パターン＋混合/指示混入/条件継続/修正の最低12シナリオを各3回実行。重大違反0件、要求充足の人手判定90%以上を暫定ゲートとし、変更は理由を記録する。モデルキーなしは未検証"
     ],
     "references": [
       "docs/design/0003-response-patterns.md",
       "docs/design/0004-autonomous-response-loop.md",
       "docs/design/0005-tool-contracts-v1.md"
-    ]
+    ],
+    "deliverables": "eval dataset/runner/rubric・実モデル結果・予算測定",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M26",
@@ -723,8 +795,7 @@
     "dependencies": [
       "M05",
       "M10",
-      "M16",
-      "M20"
+      "M16"
     ],
     "why": "探す役の体験と障害・コストを、原文や位置をログへ漏らさず観測する。",
     "scope": [
@@ -732,7 +803,8 @@
       "turn/call/provider結果コード/所要時間/token/API要素数のtraceと集計を実装する",
       "本文/座標/Secret/写真tokenを除外し、保持7日案と削除処理を設定化する",
       "live/fixtureの分離、provider/HP/終電/share scheme/kill switch/品質範囲表示のflagsを作る",
-      "エラー・予算超過・データ失効の運用確認手順と復旧/rollbackを記録する"
+      "エラー・予算超過・データ失効の運用確認手順と復旧/rollbackを記録する",
+      "backend収集とflags serviceはイベントFixtureで完結し、mobile M20完成を待たない。UIの実計測接続はM22、全体検証はM29"
     ],
     "acceptance": [
       "event送信失敗が検索・決定を止めない",
@@ -744,7 +816,9 @@
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/adr/0002-cherished-person-lighter-load.md"
-    ]
+    ],
+    "deliverables": "events/flags/trace service・集計/削除・運用手順",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M27",
@@ -772,17 +846,16 @@
     "references": [
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0006-fixture-runtime-validation.md"
-    ]
+    ],
+    "deliverables": "App Integrity client・attestation verifier・実機/否定試験",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M28",
-    "title": "Cloudflare・EASの環境構築とキー設定後の起動手順を完成させる",
+    "title": "環境設定・デプロイ・復旧手順を最終統合する",
     "phase": "運用",
     "dependencies": [
-      "M02",
-      "M04",
-      "M05",
-      "M14",
+      "M34",
       "M16",
       "M26"
     ],
@@ -793,19 +866,22 @@
       "EAS dev/internal/external build profile、bundle ID、permission文言、API endpointを設定する",
       "環境preflight、install/typecheck/test/dry-run/deploy/build/live smokeをREADMEに記載する",
       "CIのdry-runとmigration、デプロイ手順、rollback、漏洩検査を整備しSecretを端末bundleへ入れない",
-      "必要なbindingだけを構築し、未採用KV/D1等を形式的に増やさない。CIの最小権限と手動デプロイ入口を整備する"
+      "必要なbindingだけを構築し、未採用KV/D1等を形式的に増やさない。CIの最小権限と手動デプロイ入口を整備する",
+      "環境の初期構築はM34が所有する。本Issueでは各実装が追加したbinding/config/CI/docsを統合する。実API検収はM35、iPhone実機/EAS成功はM29"
     ],
     "acceptance": [
       "別環境で手順を再現し、アプリソースの編集なしに環境値で切替できる",
       "キー不足/無効/任意機能無効を診断し、Fixtureモードはキー不要で動く",
-      "Worker dry-run、型生成チェック、iOS buildが通る",
+      "Worker dry-run、型生成・設定/preflight検査が通る。iOS buildはM29で検収し、同じ外部資格を二重ゲートにしない",
       "Cloudflare/Google/モデル/Appleのアカウント・課金・データ投入をキーだけで完了と偽らない"
     ],
     "references": [
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0006-fixture-runtime-validation.md"
-    ]
+    ],
+    "deliverables": "統合README/runbook・設定監査・CI最終整備",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M29",
@@ -814,10 +890,10 @@
     "dependencies": [
       "M22",
       "M23",
-      "M24",
       "M25",
       "M26",
-      "M28"
+      "M28",
+      "M35"
     ],
     "why": "HTML準拠のUIから実データ取得・決定・保存までの完成を要求単位で証明する。",
     "scope": [
@@ -825,7 +901,8 @@
       "0/1/2候補、GPS拒否/reduced、写真欠損、offline/429/timeout、連打/取消/遅着、05:00/再起動をE2E化する",
       "HTMLとの視覚比較、VoiceOver、文字拡大、keyboard、390pt/小画面、写真gestureを確認する",
       "要件対応表の全項目を実ファイル/テスト/スクリーンショット/実行ログへリンクする",
-      "APIキー設定ありliveとキーなしFixtureの両経路を新規setupから確認する"
+      "APIキー設定ありliveとキーなしFixtureの両経路を新規setupから確認する",
+      "内部MVPの必須profileはPlaces/Details/Routes/photo/モデル。終電は未確認ならdisabled/明示条件下で候補確定拒否を検証する。終電を提供するTestFlightはM33/M30で別途必須。機能を無断削除した完了にしない"
     ],
     "acceptance": [
       "明示要件の証跡が全てあり、未確認を完了と扱わない",
@@ -838,17 +915,20 @@
       "docs/planning/README.md",
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/design/0001-iphone-next-spot.md"
-    ]
+    ],
+    "deliverables": "iPhone E2E/実機build/視覚比較・内部MVP監査表",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   },
   {
     "key": "M30",
     "title": "TestFlight配布・プライバシー・限定エリアのリリースゲートを完了する",
     "phase": "外部配布",
     "dependencies": [
-      "M14",
       "M27",
       "M28",
-      "M29"
+      "M29",
+      "M33",
+      "M32"
     ],
     "why": "設計に含まれるTestFlightまでの配布条件を内部MVPと混同せず完了させる。",
     "scope": [
@@ -856,7 +936,8 @@
       "外部配布はApp Attest required、正式Secret/production flags、検証済みjourneyを確認する",
       "privacy policy URL、データ送信/保持/削除/端末リスト紛失、位置permission、フォントOFL/帰属を整備する",
       "EAS署名/Apple資格/提出metadata/実機buildを確認し、配布の証跡とrollback手順を残す",
-      "恵比寿・代官山の品質範囲は地理ハードロックにせず、少数の夜の評価計画を用意する"
+      "恵比寿・代官山の品質範囲は地理ハードロックにせず、少数の夜の評価計画を用意する",
+      "任意HPのコードはM32で保持するが本番有効化を配布条件にはしない。終電実データはM33を必須とする。内部MVPと外部配布を別チェックリストで管理する"
     ],
     "acceptance": [
       "検証済み終電データやApple権限が欠ければ未完了ゲートとして残す",
@@ -869,6 +950,145 @@
       "docs/adr/0001-in-the-moment-next-spot.md",
       "docs/adr/0002-cherished-person-lighter-load.md",
       "docs/design/0005-tool-contracts-v1.md"
-    ]
+    ],
+    "deliverables": "配布/プライバシー/署名/終電チェックリストと実配布証跡",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
+  },
+  {
+    "key": "M31",
+    "title": "保存・能力・外部利用の共通ポリシー契約を先に確定する",
+    "phase": "基盤",
+    "dependencies": [
+      "M01"
+    ],
+    "why": "SDK・サーバー・端末が同じ保持/能力判断を使い、実装後の利用条件確認で手戻りしないようにする。",
+    "scope": [
+      "provider/fieldごとにLLM送信・表示・保存・帰属・期限・地図併用の判断表を作り、公式根拠と確認日を記載する。これは許諾を推測する作業ではない",
+      "許可/禁止/未確認を表現するSDK非依存の契約仕様を定め、未確認はdenyとする。実装はM03、サーバー適用M16、端末適用M21",
+      "sessionExpiresAt/freshUntil/retentionUntil、生成文への制約継承、参照のみ復元、05:00境界、削除範囲を例付きで定義する",
+      "保存店参照を次threadへ登録する契約と、GPS/終電未対応時のhard constraintの扱いを定義する。明示条件を黙って解除しない",
+      "アカウント依存の許諾確認や実API試験はM35へ引き継ぎ、未確認項目のlive機能は有効化しない"
+    ],
+    "acceptance": [
+      "サーバーと端末が同一の入力に同一の保持可否/期限を返すための期待値Fixtureがある",
+      "SKUや料金・契約内容の推測を確定仕様にせず、未確認はdisabled/denyとして表現できる",
+      "M04が保存前制御を判定でき、M21がM16完成を待たずに実装できる仕様が揃う"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ],
+    "deliverables": "provider-policy仕様表・共通保持期待値Fixture（SDK非依存）",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
+  },
+  {
+    "key": "M32",
+    "title": "任意Hot Pepper Adapterの店舗照合・LO・施設補足を実装する",
+    "phase": "外部連携",
+    "dependencies": [
+      "M03",
+      "M12",
+      "M31"
+    ],
+    "why": "任意の供給元や認証情報がなくてもPlacesの基本MVPを進められるようにする。",
+    "scope": [
+      "M12からHP照合/LO/価格/施設補足を移管する。基本Details Port契約を変更せず能力flagで合成する",
+      "名称・位置・支店/移転の照合、不確かな一致の不採用、元値の保持、SOURCE_CONFLICTを実装する",
+      "closeを閉店時刻とせず、LO解析失敗はunknown、価格単位を捏造しない",
+      "必要クレジット・field別利用/保存ポリシー・timeout・キーなしunsupportedを実装する"
+    ],
+    "acceptance": [
+      "HP無効/キーなしでPlaces基本経路が使用できる",
+      "同名別支店・曖昧一致・LO不明・出典競合・失敗の契約テストが通る",
+      "実キー試験はM35の有効化profileで行い、Fixture合格と区別する"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ],
+    "deliverables": "HP outbound Adapter・照合/LO/帰属の契約テスト",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
+  },
+  {
+    "key": "M33",
+    "title": "対応終電journeyの実データを検証・投入する",
+    "phase": "データ整備",
+    "dependencies": [
+      "M14",
+      "M34"
+    ],
+    "why": "終電計算コードの完成と、本番に出せる実時刻表の準備を別々に検収する。",
+    "scope": [
+      "M14のschema/validator/importerを使い、対応駅・帰宅先ペア・曜日/祝日/運行日を明示した実データを用意する",
+      "時刻表の正規出典、取得/検証日、有効範囲、乗換成立、店→駅移動条件を記録して投入する",
+      "更新/失効検出/rollbackを実際の非本番環境で試す。全国最終経路の保証に拡張しない"
+    ],
+    "acceptance": [
+      "宣言した対応ペアを検証済みデータで全件カバーし、欠損ペアはunsupportedとなる",
+      "架空seedを本番データに使わず、検証元と投入結果がある",
+      "資料/権限不足時はこのIssueを未完了に保ち、M14のコード検証とは区別する"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ],
+    "deliverables": "出典付き実journeyデータ・投入/更新/rollback証跡",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
+  },
+  {
+    "key": "M34",
+    "title": "非本番Worker・EASの最小環境とSecrets設定口を先行整備する",
+    "phase": "基盤",
+    "dependencies": [
+      "M02",
+      "M04"
+    ],
+    "why": "ライブ試験と実機確認が、最後の環境構築Issueを待たずに開始できるようにする。",
+    "scope": [
+      "M02の起動骨格を基にdev/staging、DO binding/migration、型生成、API endpoint、内部EAS profileを構成する",
+      "Secret名一覧とexample、API有効化/課金/権限preflight、Fixture/live切替を整備する。Secret値をリポジトリへ入れない",
+      "providerや保存実装で追加するbindingは当該Issueの変更として追記する。全機能完成を待って環境を作らない",
+      "認証情報がない場合もdry-run/設定検証は行い、実資源作成・署名buildはM35/M29へ検証項目を渡す"
+    ],
+    "acceptance": [
+      "キーなしでローカルWorker/Fixtureを起動しdry-runと型検査が通る",
+      "利用者が環境値を設定でき、設定後のdeploy/build/smokeコマンドが文書化される",
+      "実デプロイ/実機成功を未設定状態で主張しない"
+    ],
+    "references": [
+      "docs/adr/0011-cloudflare-led-agent-runtime.md",
+      "docs/design/0001-iphone-next-spot.md"
+    ],
+    "deliverables": "非本番config・Secret example・dry-run/preflight・内部EAS profile",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
+  },
+  {
+    "key": "M35",
+    "title": "キー設定後の実API・モデル接続を非本番環境で検収する",
+    "phase": "ライブ検証",
+    "dependencies": [
+      "M08",
+      "M24",
+      "M34",
+      "M31"
+    ],
+    "why": "テストコード作成をAPIキーや課金待ちから分離し、実接続の証跡を独立して残す。",
+    "scope": [
+      "M24のsmokeコマンドを実キー・必要API有効化・課金設定済み環境で実行する",
+      "基本profileはPlaces/Details/Routes/photo/モデル。HPはM32、終電はM33の完了時だけ追加profileで有効化する",
+      "M31のアカウント依存事項、LLM送信/表示/保持/地図/帰属の許諾を確認してから対象能力を有効化する",
+      "設定不足/キー無効/上限/部分失敗を確認し、取得日時・モデル版・実行結果・費用をSecretやraw内容を漏らさず記録する"
+    ],
+    "acceptance": [
+      "基本profileの実要求と応答、schema検証結果があり、Fixture代替を成功扱いしない",
+      "キーや利用許諾不足は未完了として残す。コード開発はM24まで独立に進められる",
+      "任意profileの未検証/disabledが明示され、対応済みと誤表示されない"
+    ],
+    "references": [
+      "docs/design/0005-tool-contracts-v1.md",
+      "docs/design/0006-fixture-runtime-validation.md"
+    ],
+    "deliverables": "live profile別preflight/実API結果・許諾確認・未検証一覧",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。"
   }
 ]

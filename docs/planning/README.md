@@ -14,7 +14,7 @@ Cloudflare側へ実行管理を集約しThinkを先に検証、不適合ならAI
 
 ## 実施順序
 
-まずM01→M02→M03→M04。SDK適合性が確定したらバックエンドを進める。M17のUI移植はM02後に独立着手できる。外部Provider実装とUIを契約で接続し、Fixture→実API→実モデル→iPhone E2E→配布ゲートの順に検証する。依存欄は完了をブロックする直接依存であり、将来の統合Issueを基盤Issueの依存にはしない。
+まずM01を完了し、M02（起動基盤）とM31（保存・能力ポリシー）を進める。M03（契約）はその両方を受け、M04（SDK適合性）へ進む。SDK適合性が確定したらバックエンドを進める。M17のUI移植はM02後に独立着手できる。外部Provider実装とUIを契約で接続し、SDK/サーバーFixture（M23）はUI完成を待たず、実モデル＋固定供給の評価（M25）は実店舗APIを待たず進める。M34で非本番環境を先行整備し、実API検収M35、iPhone E2E M29、実終電データM33を含む配布M30へ進む。依存欄は完了をブロックする直接依存であり、将来の統合Issueを基盤Issueの依存にはしない。
 
 ## 要件対応表
 
@@ -41,39 +41,54 @@ Cloudflare側へ実行管理を集約しThinkを先に検証、不適合ならAI
 - APIキー、課金/API有効化、Cloudflare資源、Apple署名/資格、実終電データの供給は明示的な環境依存。コード完了・Fixture合格だけでlive/配布検証済みとは扱わない。
 - Hot Pepperは任意設定。無効時も基本MVPを動かし、未提供能力はunsupportedとする。終電は実データなしでdisabledとし、対応を謳う配布の代替にしない。
 
+## 分割レビューの反映
+
+[レビュー記録](./review-2026-09-08.md)。30件をレビューし、任意HP・実終電データ・保存/能力契約・非本番環境・live検収を分離して35件へ更新。全件を親Issueの正式なsub-issueとして管理する。
+
+- M31: M03/M04/M16/M21で使う共通保持・能力契約。サーバー完成待ちを端末へ伝播させない。
+- M32: 任意HP実装。Places基本機能から分離。
+- M33: 実終電データ検証・投入。M14のコード完成と分離。
+- M34: 初期環境。最後のM28は手順統合のみ。
+- M35: 実キー・実API検収。契約テスト作成M24から分離。
+
 ## Issue一覧
 
-[親Issue #1](https://github.com/takapom/ima-app/issues/1)で全体進捗を管理する。実装Issueは30件、作成時点では全件Open・未実装。原本は[backlog.json](./backlog.json)。各Issueに目的・実装範囲・完了条件・直接依存・根拠文書を記載する。
+[親Issue #1](https://github.com/takapom/ima-app/issues/1)で全体進捗を管理する。実装Issueは35件、作成時点では全件Open・未実装。原本は[backlog.json](./backlog.json)。各Issueに目的・実装範囲・完了条件・直接依存・根拠文書を記載する。
 
 | ID | フェーズ | タスク | 直接依存 |
 |---|---|---|---|
 | [M01 / #2](https://github.com/takapom/ima-app/issues/2) | 基盤 | 仕様の優先順位・MVP能力・完了条件を実装用に統合する | なし |
-| [M02 / #3](https://github.com/takapom/ima-app/issues/3) | 基盤 | Expo・Worker・共有スキーマのモノレポと品質チェックを構築する | M01 |
-| [M03 / #4](https://github.com/takapom/ima-app/issues/4) | 基盤 | HTTP・3操作・観測・確定応答のvalibot契約を実装する | M01, M02 |
-| [M04 / #5](https://github.com/takapom/ima-app/issues/5) | 基盤 | Cloudflare Runtimeの適合性をFixtureで検証しSDKを確定する | M02, M03 |
-| [M05 / #6](https://github.com/takapom/ima-app/issues/6) | バックエンド | WorkerのHTTP境界・認証・スレッド所有権を実装する | M03, M04 |
-| [M06 / #7](https://github.com/takapom/ima-app/issues/7) | バックエンド | 候補・観測レジストリと根拠の鮮度管理を実装する | M03 |
-| [M07 / #8](https://github.com/takapom/ima-app/issues/8) | バックエンド | 3つのToolを入力Adapterとして登録し能力Portへ接続する | M03, M04, M06 |
-| [M08 / #9](https://github.com/takapom/ima-app/issues/9) | バックエンド | 実モデルAdapterとLLM主導の文脈・応答生成を実装する | M04, M07 |
-| [M09 / #10](https://github.com/takapom/ima-app/issues/10) | バックエンド | submit_cardsとメッセージの根拠検証・一度だけの応答確定を実装する | M03, M06 |
-| [M10 / #11](https://github.com/takapom/ima-app/issues/11) | バックエンド | SDKの修正ループ・予算・並列・キャンセル・再送を制御する | M05, M07, M08, M09 |
-| [M11 / #12](https://github.com/takapom/ima-app/issues/12) | 外部連携 | Places検索Adapterと安全なページングを実装する | M03, M06, M07 |
-| [M12 / #13](https://github.com/takapom/ima-app/issues/13) | 外部連携 | 詳細情報と任意のHot Pepper補足Adapterを実装する | M03, M06, M07, M11 |
-| [M13 / #14](https://github.com/takapom/ima-app/issues/14) | 外部連携 | 方向付き徒歩経路AdapterをRoutesへ接続する | M03, M06, M07 |
-| [M14 / #15](https://github.com/takapom/ima-app/issues/15) | 外部連携 | 終電journeyの限定供給・検証・更新を実装する | M03, M06, M13 |
-| [M15 / #16](https://github.com/takapom/ima-app/issues/16) | 外部連携 | 写真の認証付き配信・失効・帰属表示を実装する | M05, M12 |
-| [M16 / #17](https://github.com/takapom/ima-app/issues/17) | バックエンド | サーバー保存ポリシー・削除・復元制御を実装する | M04, M05, M06, M09 |
-| [M17 / #18](https://github.com/takapom/ima-app/issues/18) | フロント | HTMLモックを基準にReact Nativeの画面基盤を実装する | M02 |
-| [M18 / #19](https://github.com/takapom/ima-app/issues/19) | フロント | 自由入力・入力候補・位置取得・条件編集を実装する | M03, M17 |
-| [M19 / #20](https://github.com/takapom/ima-app/issues/20) | フロント | メッセージ・候補カード・説明・帰属の描画を実装する | M03, M17 |
-| [M20 / #21](https://github.com/takapom/ima-app/issues/21) | フロント | 候補の入替・決定・却下・地図・LINE共有を実装する | M18, M19 |
-| [M21 / #22](https://github.com/takapom/ima-app/issues/22) | フロント | 端末SQLiteの履歴・設定・保存リスト・期限処理を実装する | M03, M16, M17 |
-| [M22 / #23](https://github.com/takapom/ima-app/issues/23) | フロント | フロントのAPI service・会話state・復元を接続する | M05, M10, M18, M19, M20, M21 |
-| [M23 / #24](https://github.com/takapom/ima-app/issues/24) | 検証 | 4領域のRuntime Fixture統合テストを完成させる | M10, M16, M22 |
-| [M24 / #25](https://github.com/takapom/ima-app/issues/25) | 検証 | 外部Provider契約テストと実APIスモークを整備する | M11, M12, M13, M14, M15 |
-| [M25 / #26](https://github.com/takapom/ima-app/issues/26) | 検証 | 実モデルの自律選択・根拠忠実性・応答品質を評価する | M08, M10, M23, M24 |
-| [M26 / #27](https://github.com/takapom/ima-app/issues/27) | 運用 | 最小テレメトリ・運用flags・障害時停止を実装する | M05, M10, M16, M20 |
-| [M27 / #28](https://github.com/takapom/ima-app/issues/28) | 外部配布 | App Attestと外部配布向けの不正利用対策を実装する | M05, M15, M22 |
-| [M28 / #29](https://github.com/takapom/ima-app/issues/29) | 運用 | Cloudflare・EASの環境構築とキー設定後の起動手順を完成させる | M02, M04, M05, M14, M16, M26 |
-| [M29 / #30](https://github.com/takapom/ima-app/issues/30) | 検証 | iPhone E2E・視覚比較・内部MVPの完了監査を行う | M22, M23, M24, M25, M26, M28 |
-| [M30 / #31](https://github.com/takapom/ima-app/issues/31) | 外部配布 | TestFlight配布・プライバシー・限定エリアのリリースゲートを完了する | M14, M27, M28, M29 |
+| [M02 / #3](https://github.com/takapom/ima-app/issues/3) | 基盤 | Expo・Worker・共有スキーマのモノレポと品質チェックを構築する | [M01 / #2](https://github.com/takapom/ima-app/issues/2) |
+| [M03 / #4](https://github.com/takapom/ima-app/issues/4) | 基盤 | HTTP・3操作・観測・確定応答のvalibot契約を実装する | [M02 / #3](https://github.com/takapom/ima-app/issues/3), [M31 / #32](https://github.com/takapom/ima-app/issues/32) |
+| [M04 / #5](https://github.com/takapom/ima-app/issues/5) | 基盤 | Cloudflare Runtimeの適合性をFixtureで検証しSDKを確定する | [M02 / #3](https://github.com/takapom/ima-app/issues/3), [M03 / #4](https://github.com/takapom/ima-app/issues/4) |
+| [M05 / #6](https://github.com/takapom/ima-app/issues/6) | バックエンド | WorkerのHTTP境界・認証・スレッド所有権を実装する | [M03 / #4](https://github.com/takapom/ima-app/issues/4), [M04 / #5](https://github.com/takapom/ima-app/issues/5) |
+| [M06 / #7](https://github.com/takapom/ima-app/issues/7) | バックエンド | 候補・観測レジストリと根拠の鮮度管理を実装する | [M03 / #4](https://github.com/takapom/ima-app/issues/4) |
+| [M07 / #8](https://github.com/takapom/ima-app/issues/8) | バックエンド | 3つのToolを入力Adapterとして登録し能力Portへ接続する | [M03 / #4](https://github.com/takapom/ima-app/issues/4), [M04 / #5](https://github.com/takapom/ima-app/issues/5), [M06 / #7](https://github.com/takapom/ima-app/issues/7), [M09 / #10](https://github.com/takapom/ima-app/issues/10) |
+| [M08 / #9](https://github.com/takapom/ima-app/issues/9) | バックエンド | 実モデルAdapterとLLM主導の文脈・応答生成を実装する | [M04 / #5](https://github.com/takapom/ima-app/issues/5), [M07 / #8](https://github.com/takapom/ima-app/issues/8) |
+| [M09 / #10](https://github.com/takapom/ima-app/issues/10) | バックエンド | submit_cardsとメッセージの根拠検証・一度だけの応答確定を実装する | [M03 / #4](https://github.com/takapom/ima-app/issues/4), [M06 / #7](https://github.com/takapom/ima-app/issues/7) |
+| [M10 / #11](https://github.com/takapom/ima-app/issues/11) | バックエンド | SDKの修正ループ・予算・並列・キャンセル・再送を制御する | [M05 / #6](https://github.com/takapom/ima-app/issues/6), [M07 / #8](https://github.com/takapom/ima-app/issues/8), [M08 / #9](https://github.com/takapom/ima-app/issues/9), [M09 / #10](https://github.com/takapom/ima-app/issues/10) |
+| [M11 / #12](https://github.com/takapom/ima-app/issues/12) | 外部連携 | Places検索Adapterと安全なページングを実装する | [M03 / #4](https://github.com/takapom/ima-app/issues/4), [M06 / #7](https://github.com/takapom/ima-app/issues/7), [M31 / #32](https://github.com/takapom/ima-app/issues/32) |
+| [M12 / #13](https://github.com/takapom/ima-app/issues/13) | 外部連携 | Places詳細Adapterと項目別取得・部分結果を実装する | [M03 / #4](https://github.com/takapom/ima-app/issues/4), [M06 / #7](https://github.com/takapom/ima-app/issues/7), [M31 / #32](https://github.com/takapom/ima-app/issues/32) |
+| [M13 / #14](https://github.com/takapom/ima-app/issues/14) | 外部連携 | 方向付き徒歩経路AdapterをRoutesへ接続する | [M03 / #4](https://github.com/takapom/ima-app/issues/4), [M06 / #7](https://github.com/takapom/ima-app/issues/7), [M31 / #32](https://github.com/takapom/ima-app/issues/32) |
+| [M14 / #15](https://github.com/takapom/ima-app/issues/15) | 外部連携 | 終電journeyの検証・計算・取込みコードを実装する | [M03 / #4](https://github.com/takapom/ima-app/issues/4), [M06 / #7](https://github.com/takapom/ima-app/issues/7), [M13 / #14](https://github.com/takapom/ima-app/issues/14) |
+| [M15 / #16](https://github.com/takapom/ima-app/issues/16) | 外部連携 | 写真の認証付き配信・失効・帰属表示を実装する | [M05 / #6](https://github.com/takapom/ima-app/issues/6), [M12 / #13](https://github.com/takapom/ima-app/issues/13) |
+| [M16 / #17](https://github.com/takapom/ima-app/issues/17) | バックエンド | サーバー保存ポリシー・削除・復元制御を実装する | [M04 / #5](https://github.com/takapom/ima-app/issues/5), [M05 / #6](https://github.com/takapom/ima-app/issues/6), [M06 / #7](https://github.com/takapom/ima-app/issues/7), [M09 / #10](https://github.com/takapom/ima-app/issues/10), [M31 / #32](https://github.com/takapom/ima-app/issues/32) |
+| [M17 / #18](https://github.com/takapom/ima-app/issues/18) | フロント | HTMLモックを基準にReact Nativeの画面基盤を実装する | [M02 / #3](https://github.com/takapom/ima-app/issues/3) |
+| [M18 / #19](https://github.com/takapom/ima-app/issues/19) | フロント | 自由入力・入力候補・位置取得・条件編集を実装する | [M03 / #4](https://github.com/takapom/ima-app/issues/4), [M17 / #18](https://github.com/takapom/ima-app/issues/18) |
+| [M19 / #20](https://github.com/takapom/ima-app/issues/20) | フロント | メッセージ・候補カード・説明・帰属の描画を実装する | [M03 / #4](https://github.com/takapom/ima-app/issues/4), [M17 / #18](https://github.com/takapom/ima-app/issues/18) |
+| [M20 / #21](https://github.com/takapom/ima-app/issues/21) | フロント | 候補の入替・決定・却下・地図・LINE共有を実装する | [M18 / #19](https://github.com/takapom/ima-app/issues/19), [M19 / #20](https://github.com/takapom/ima-app/issues/20) |
+| [M21 / #22](https://github.com/takapom/ima-app/issues/22) | フロント | 端末SQLiteの履歴・設定・保存リスト・期限処理を実装する | [M03 / #4](https://github.com/takapom/ima-app/issues/4), [M17 / #18](https://github.com/takapom/ima-app/issues/18), [M31 / #32](https://github.com/takapom/ima-app/issues/32) |
+| [M22 / #23](https://github.com/takapom/ima-app/issues/23) | フロント | フロントのAPI service・会話state・復元を接続する | [M05 / #6](https://github.com/takapom/ima-app/issues/6), [M10 / #11](https://github.com/takapom/ima-app/issues/11), [M16 / #17](https://github.com/takapom/ima-app/issues/17), [M18 / #19](https://github.com/takapom/ima-app/issues/19), [M19 / #20](https://github.com/takapom/ima-app/issues/20), [M20 / #21](https://github.com/takapom/ima-app/issues/21), [M21 / #22](https://github.com/takapom/ima-app/issues/22) |
+| [M23 / #24](https://github.com/takapom/ima-app/issues/24) | 検証 | 4領域のRuntime Fixture統合テストを完成させる | [M05 / #6](https://github.com/takapom/ima-app/issues/6), [M10 / #11](https://github.com/takapom/ima-app/issues/11), [M16 / #17](https://github.com/takapom/ima-app/issues/17) |
+| [M24 / #25](https://github.com/takapom/ima-app/issues/25) | 検証 | Provider契約テストとキー任意のlive smokeコマンドを整備する | [M11 / #12](https://github.com/takapom/ima-app/issues/12), [M12 / #13](https://github.com/takapom/ima-app/issues/13), [M13 / #14](https://github.com/takapom/ima-app/issues/14), [M14 / #15](https://github.com/takapom/ima-app/issues/15), [M15 / #16](https://github.com/takapom/ima-app/issues/16) |
+| [M25 / #26](https://github.com/takapom/ima-app/issues/26) | 検証 | 実モデル＋Fixture供給で自律選択・根拠忠実性を評価する | [M08 / #9](https://github.com/takapom/ima-app/issues/9), [M10 / #11](https://github.com/takapom/ima-app/issues/11), [M23 / #24](https://github.com/takapom/ima-app/issues/24) |
+| [M26 / #27](https://github.com/takapom/ima-app/issues/27) | 運用 | 最小テレメトリ・運用flags・障害時停止を実装する | [M05 / #6](https://github.com/takapom/ima-app/issues/6), [M10 / #11](https://github.com/takapom/ima-app/issues/11), [M16 / #17](https://github.com/takapom/ima-app/issues/17) |
+| [M27 / #28](https://github.com/takapom/ima-app/issues/28) | 外部配布 | App Attestと外部配布向けの不正利用対策を実装する | [M05 / #6](https://github.com/takapom/ima-app/issues/6), [M15 / #16](https://github.com/takapom/ima-app/issues/16), [M22 / #23](https://github.com/takapom/ima-app/issues/23) |
+| [M28 / #29](https://github.com/takapom/ima-app/issues/29) | 運用 | 環境設定・デプロイ・復旧手順を最終統合する | [M34 / #35](https://github.com/takapom/ima-app/issues/35), [M16 / #17](https://github.com/takapom/ima-app/issues/17), [M26 / #27](https://github.com/takapom/ima-app/issues/27) |
+| [M29 / #30](https://github.com/takapom/ima-app/issues/30) | 検証 | iPhone E2E・視覚比較・内部MVPの完了監査を行う | [M22 / #23](https://github.com/takapom/ima-app/issues/23), [M23 / #24](https://github.com/takapom/ima-app/issues/24), [M25 / #26](https://github.com/takapom/ima-app/issues/26), [M26 / #27](https://github.com/takapom/ima-app/issues/27), [M28 / #29](https://github.com/takapom/ima-app/issues/29), [M35 / #36](https://github.com/takapom/ima-app/issues/36) |
+| [M30 / #31](https://github.com/takapom/ima-app/issues/31) | 外部配布 | TestFlight配布・プライバシー・限定エリアのリリースゲートを完了する | [M27 / #28](https://github.com/takapom/ima-app/issues/28), [M28 / #29](https://github.com/takapom/ima-app/issues/29), [M29 / #30](https://github.com/takapom/ima-app/issues/30), [M33 / #34](https://github.com/takapom/ima-app/issues/34), [M32 / #33](https://github.com/takapom/ima-app/issues/33) |
+| [M31 / #32](https://github.com/takapom/ima-app/issues/32) | 基盤 | 保存・能力・外部利用の共通ポリシー契約を先に確定する | [M01 / #2](https://github.com/takapom/ima-app/issues/2) |
+| [M32 / #33](https://github.com/takapom/ima-app/issues/33) | 外部連携 | 任意Hot Pepper Adapterの店舗照合・LO・施設補足を実装する | [M03 / #4](https://github.com/takapom/ima-app/issues/4), [M12 / #13](https://github.com/takapom/ima-app/issues/13), [M31 / #32](https://github.com/takapom/ima-app/issues/32) |
+| [M33 / #34](https://github.com/takapom/ima-app/issues/34) | データ整備 | 対応終電journeyの実データを検証・投入する | [M14 / #15](https://github.com/takapom/ima-app/issues/15), [M34 / #35](https://github.com/takapom/ima-app/issues/35) |
+| [M34 / #35](https://github.com/takapom/ima-app/issues/35) | 基盤 | 非本番Worker・EASの最小環境とSecrets設定口を先行整備する | [M02 / #3](https://github.com/takapom/ima-app/issues/3), [M04 / #5](https://github.com/takapom/ima-app/issues/5) |
+| [M35 / #36](https://github.com/takapom/ima-app/issues/36) | ライブ検証 | キー設定後の実API・モデル接続を非本番環境で検収する | [M08 / #9](https://github.com/takapom/ima-app/issues/9), [M24 / #25](https://github.com/takapom/ima-app/issues/25), [M34 / #35](https://github.com/takapom/ima-app/issues/35), [M31 / #32](https://github.com/takapom/ima-app/issues/32) |
