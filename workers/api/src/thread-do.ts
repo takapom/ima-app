@@ -1,69 +1,33 @@
 import { Think } from '@cloudflare/think';
-import { DurableObject } from 'cloudflare:workers';
-
-export type ThreadState = 'active' | 'cancelled' | 'ended' | 'restarted' | 'resumed';
-
-export type ThreadSnapshot = {
-  readonly threadId: string;
-  readonly ownerScopeRef: string;
-  readonly revision: number;
-  readonly active: boolean;
-  readonly state: ThreadState;
-};
-
-export type ThreadAuthorization =
-  | { readonly allowed: true }
-  | { readonly allowed: false; readonly reason: 'NOT_FOUND' | 'FORBIDDEN' };
-
-export type ThreadStateErrorCode = 'NOT_FOUND' | 'FORBIDDEN';
-
-export type ThreadConflictErrorCode = 'REVISION_CONFLICT' | 'IDEMPOTENCY_CONFLICT';
-export type ThreadOperationErrorCode = ThreadStateErrorCode | ThreadConflictErrorCode;
-
-/** Internal DO error; bootstrap maps it to the public status without exposing scope values. */
-export class ThreadStateError extends Error {
-  readonly code: ThreadStateErrorCode;
-
-  constructor(code: ThreadStateErrorCode) {
-    super('thread state is unavailable');
-    this.name = 'ThreadStateError';
-    this.code = code;
-  }
-}
-
-/** RPC may deserialize Error instances without preserving their prototype. */
-export const isThreadStateError = (value: unknown): value is ThreadStateError => {
-  if (value instanceof ThreadStateError) return true;
-  if (typeof value !== 'object' || value === null) return false;
-  if (!('name' in value) || value.name !== 'ThreadStateError') return false;
-  if (!('code' in value)) return false;
-  return value.code === 'NOT_FOUND' || value.code === 'FORBIDDEN';
-};
-
-export class ThreadConflictError extends Error {
-  readonly code: ThreadConflictErrorCode;
-
-  constructor(code: ThreadConflictErrorCode) {
-    super('thread operation conflicts with current state');
-    this.name = 'ThreadConflictError';
-    this.code = code;
-  }
-}
-
-export const isThreadConflictError = (value: unknown): value is ThreadConflictError => {
-  if (value instanceof ThreadConflictError) return true;
-  if (typeof value !== 'object' || value === null) return false;
-  if (!('name' in value) || value.name !== 'ThreadConflictError') return false;
-  if (!('code' in value)) return false;
-  return value.code === 'REVISION_CONFLICT' || value.code === 'IDEMPOTENCY_CONFLICT';
-};
-
-export type ThreadSnapshotResult =
-  | { readonly ok: true; readonly snapshot: ThreadSnapshot }
-  | { readonly ok: false; readonly code: ThreadOperationErrorCode };
-
-export type ThreadDeleteResult =
-  { readonly ok: true } | { readonly ok: false; readonly code: ThreadOperationErrorCode };
+import {
+  isThreadConflictError,
+  isThreadStateError,
+  ThreadConflictError,
+  ThreadStateError,
+  type ThreadAuthorization,
+  type ThreadDeleteResult,
+  type ThreadSnapshot,
+  type ThreadSnapshotResult,
+  type ThreadState,
+} from './thread-types';
+export { RateLimitDO } from './rate-limit-do';
+export type { RateLimitCheckInput, RateLimitCheckResult, RateLimitConfig } from './rate-limit-do';
+export {
+  isThreadConflictError,
+  isThreadStateError,
+  ThreadConflictError,
+  ThreadStateError,
+} from './thread-types';
+export type {
+  ThreadAuthorization,
+  ThreadConflictErrorCode,
+  ThreadDeleteResult,
+  ThreadOperationErrorCode,
+  ThreadSnapshot,
+  ThreadSnapshotResult,
+  ThreadState,
+  ThreadStateErrorCode,
+} from './thread-types';
 
 type ThreadRow = {
   readonly thread_id: string;
@@ -369,98 +333,5 @@ export class ThreadDO extends Think<Cloudflare.Env> {
       }
       throw error;
     }
-  }
-}
-
-export type RateLimitConfig = {
-  readonly windowMs: number;
-  readonly devicePerWindow: number;
-  readonly ownerPerWindow: number;
-};
-
-export type RateLimitCheckInput = {
-  readonly ownerScopeRef: string;
-  readonly deviceId: string;
-  readonly route: string;
-  readonly config: RateLimitConfig;
-};
-
-export type RateLimitCheckResult =
-  | { readonly allowed: true; readonly retryAfterSeconds: null }
-  | { readonly allowed: false; readonly retryAfterSeconds: number };
-
-type RateWindowRow = {
-  readonly key: string;
-  readonly started_at: number;
-  readonly count: number;
-};
-
-const validRateConfig = (config: RateLimitConfig): boolean =>
-  Number.isSafeInteger(config.windowMs) &&
-  config.windowMs > 0 &&
-  Number.isSafeInteger(config.devicePerWindow) &&
-  config.devicePerWindow > 0 &&
-  Number.isSafeInteger(config.ownerPerWindow) &&
-  config.ownerPerWindow > 0;
-
-export class RateLimitDO extends DurableObject {
-  private readonly ready: Promise<void>;
-
-  constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
-    super(ctx, env);
-    this.ready = ctx.blockConcurrencyWhile(() =>
-      Promise.resolve().then(() => {
-        ctx.storage.sql.exec(`
-          CREATE TABLE IF NOT EXISTS rate_window (
-            key TEXT PRIMARY KEY,
-            started_at INTEGER NOT NULL,
-            count INTEGER NOT NULL
-          )
-        `);
-      }),
-    );
-  }
-
-  private window(key: string): RateWindowRow | undefined {
-    return this.ctx.storage.sql
-      .exec<RateWindowRow>('SELECT key, started_at, count FROM rate_window WHERE key = ?', key)
-      .toArray()[0];
-  }
-
-  private writeWindow(key: string, startedAt: number, count: number): void {
-    this.ctx.storage.sql.exec(
-      'INSERT INTO rate_window (key, started_at, count) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET started_at = excluded.started_at, count = excluded.count',
-      key,
-      startedAt,
-      count,
-    );
-  }
-
-  async check(input: RateLimitCheckInput): Promise<RateLimitCheckResult> {
-    await this.ready;
-    if (!validRateConfig(input.config)) throw new Error('RATE_LIMIT_CONFIGURATION');
-    void input.route;
-    const now = Date.now();
-    const ownerKey = `owner:${input.ownerScopeRef}`;
-    const deviceKey = `device:${input.deviceId}`;
-    const owner = this.window(ownerKey);
-    const device = this.window(deviceKey);
-    const ownerActive = owner !== undefined && now - owner.started_at < input.config.windowMs;
-    const deviceActive = device !== undefined && now - device.started_at < input.config.windowMs;
-    const ownerCount = ownerActive ? owner.count : 0;
-    const deviceCount = deviceActive ? device.count : 0;
-    const ownerLimited = ownerCount >= input.config.ownerPerWindow;
-    const deviceLimited = deviceCount >= input.config.devicePerWindow;
-    if (ownerLimited || deviceLimited) {
-      const startedAt = ownerLimited ? owner?.started_at : device?.started_at;
-      const retryAfterSeconds = Math.max(
-        1,
-        Math.ceil(((startedAt ?? now) + input.config.windowMs - now) / 1_000),
-      );
-      return { allowed: false, retryAfterSeconds };
-    }
-    this.writeWindow(ownerKey, ownerActive ? (owner?.started_at ?? now) : now, ownerCount + 1);
-    this.writeWindow(deviceKey, deviceActive ? (device?.started_at ?? now) : now, deviceCount + 1);
-    return { allowed: true, retryAfterSeconds: null };
   }
 }
