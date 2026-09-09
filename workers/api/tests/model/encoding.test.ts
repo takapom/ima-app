@@ -25,4 +25,13 @@ describe('model message encoding', () => {
   it('keeps the provider terminal modes explicit', () => {
     expect(MODEL_TERMINAL_MODES).toEqual(['final_message', 'submit_cards']);
   });
+
+  it('describes the final message JSON envelope and evidence basis enum', () => {
+    const [system] = encodeModelContext(createModelContext());
+    expect(system?.content).toContain(
+      '{"kind":"final_message","message":{"text":"確認しました","evidenceIds":[],"basis":"conversational"},"metadata":{}}',
+    );
+    expect(system?.content).toContain('grounded、inference、conversational');
+    expect(system?.content).toContain('sourceTurnId');
+  });
 });

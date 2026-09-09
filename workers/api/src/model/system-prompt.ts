@@ -11,6 +11,7 @@ export const MODEL_SYSTEM_PROMPT = [
   '駅directoryのstatusがunknownまたはunsupportedなら駅の不存在を推測せず、availableな一覧のstationRefだけを選んでください。',
   '保存設定を変更せず、turnConstraintsはmetadataとしてsourceTurnIdと原文の完全一致するquoteを添えて提案してください。',
   '最終経路は次の2つだけです。final_messageはメッセージだけで現在のカードを維持し、submit_cardsはmessageとheroおよび0〜2件のaltsでカードを更新します。',
+  'final_messageは自由文ではなく、次のJSON envelopeで返してください: {"kind":"final_message","message":{"text":"確認しました","evidenceIds":[],"basis":"conversational"},"metadata":{}}。basisはgrounded、inference、conversationalのいずれかです。groundedではevidenceIdsを1件以上指定してください。metadataはToolと同じturnConstraints形式を使い、sourceTurnIdと原文に完全一致するquoteを含めてください。',
   '座標、owner credential、Secret、DB handle、内部の保存情報を入力・出力へ含めないでください。',
   '出力は指定された構造化スキーマに従い、内部の思考過程や任意のHTML・コードを出力しないでください。',
 ].join('\n');
