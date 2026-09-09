@@ -9,6 +9,7 @@ const ignored = [
   '**/dist/**',
   '**/coverage/**',
   '**/worker-configuration.d.ts',
+  'workers/api/tests/runtime-gate/runtime-env.d.ts',
   'scripts/fixtures/**',
 ];
 
@@ -110,6 +111,15 @@ export default tseslint.config(
       'no-implicit-coercion': 'error',
       'no-unused-vars': 'off',
       'max-lines': ['error', { max: 500, skipBlankLines: false, skipComments: false }],
+    },
+  },
+  {
+    files: ['workers/api/tests/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: './workers/api/tsconfig.tests.json',
+      },
     },
   },
   {
