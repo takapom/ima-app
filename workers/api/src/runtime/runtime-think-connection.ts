@@ -67,6 +67,8 @@ export type RuntimeThinkStepProjection = (
 export type RuntimeThinkComposition<Response = unknown> = {
   /** The unwrapped, explicitly injected AI SDK V3 model. */
   readonly model: RuntimeModelGuardModel;
+  /** Provider-specific options injected into every AI SDK model call for this turn. */
+  readonly providerOptions?: TurnConfig['providerOptions'];
   /** Runtime factory owns tools, budget, cancellation, and Core Port adapters. */
   readonly turn: RuntimeTurnHandle;
   /** The current server-owned retention policy used at every persistence boundary. */
@@ -285,8 +287,13 @@ export class RuntimeThinkConnection<Response = unknown> {
     this.assertTurnUsable(active);
     const base = await active.composition.turn.hooks.beforeTurn(context);
     this.assertTurnUsable(active);
+    const providerOptions =
+      active.composition.providerOptions === undefined
+        ? base?.providerOptions
+        : { ...(base?.providerOptions ?? {}), ...active.composition.providerOptions };
     return {
       ...(base ?? {}),
+      ...(providerOptions === undefined ? {} : { providerOptions }),
       experimental_transform: active.composition.retention.transform,
     };
   }

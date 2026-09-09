@@ -2,6 +2,7 @@ import * as v from 'valibot';
 import { env } from 'cloudflare:test';
 import { AssistantResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
+import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../src/model/provider-options';
 import type { ThreadDO } from './runtime-native-worker';
 import { RUNTIME_NATIVE_OWNER } from './runtime-native-ports';
 import type { RuntimeNativeScenario } from './runtime-native-provider';
@@ -98,6 +99,11 @@ describe('native Think runtime fixture', () => {
     expect(report.scenario).toBe('invalid-submit-details-valid');
     expect(report.model.calls).toBe(3);
     expect(report.model.requests).toHaveLength(3);
+    expect(report.model.providerOptionsSeen).toEqual([
+      OPENAI_PROVIDER_REQUEST_OPTIONS,
+      OPENAI_PROVIDER_REQUEST_OPTIONS,
+      OPENAI_PROVIDER_REQUEST_OPTIONS,
+    ]);
     expect(
       report.model.requests.every((request) => request.toolNames.includes('submit_cards')),
     ).toBe(true);

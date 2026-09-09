@@ -2,6 +2,7 @@ import type { Session } from '@cloudflare/think';
 import production from '../../src/index';
 import { RateLimitDO, ThreadDO as ProductionThreadDO } from '../../src/thread-do';
 import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../src/runtime/runtime-budget';
+import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../src/model/provider-options';
 import { sanitizeRuntimeCompactionSummary } from '../../src/runtime/runtime-retention';
 import {
   createRuntimeTurnComposition,
@@ -108,7 +109,11 @@ export class ThreadDO extends ProductionThreadDO {
           revision: request.revision,
           serverNow: request.serverNow,
         });
-        const modelReport: RuntimeNativeModelReport = { calls: 0, requests: [] };
+        const modelReport: RuntimeNativeModelReport = {
+          calls: 0,
+          requests: [],
+          providerOptionsSeen: [],
+        };
         const startedAtMs = performance.now();
         const budget = new RuntimeBudget({
           config: DEFAULT_RUNTIME_BUDGET,
@@ -121,6 +126,7 @@ export class ThreadDO extends ProductionThreadDO {
           request,
           context: fixture.context,
           model: createRuntimeNativeModel(scenario, fixture.inputs, modelReport),
+          providerOptions: OPENAI_PROVIDER_REQUEST_OPTIONS,
           modelContext: {
             userText: inputText,
             history: [],

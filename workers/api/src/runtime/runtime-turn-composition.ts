@@ -79,6 +79,7 @@ type RuntimeTurnCompositionBaseOptions = {
   readonly request: RuntimeCompositionTurnRequest;
   readonly context: HarnessContext;
   readonly model: RuntimeModelGuardModel;
+  readonly providerOptions?: TurnConfig['providerOptions'];
   readonly modelContext: RuntimeCompositionModelContext;
   readonly retention: RuntimeRetentionContext | (() => RuntimeRetentionContext);
   readonly budget: RuntimeBudget;
@@ -396,6 +397,7 @@ export function createRuntimeTurnComposition(
 
   return {
     model: options.model,
+    ...(options.providerOptions === undefined ? {} : { providerOptions: options.providerOptions }),
     turn,
     retention: { context: options.retention, transform },
     projectStep,

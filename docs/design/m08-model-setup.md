@@ -29,6 +29,17 @@ Provider依存の同期後に、Worker Adapterがこの設定境界を使ってP
 `ModelProviderConfigurationError`（`MODEL_PROVIDER_KEY_MISSING`）になる。
 このエラーはlive設定不備を示し、SDK実行やFixture成功を意味しない。
 
+## Runtimeへの受渡し
+
+Providerが返す`model`と`providerOptions`は、Workerの`createRuntimeTurnComposition`へ一緒に渡す。
+`RuntimeThinkConnection.beforeTurn()`が設定をThinkへ渡し、各モデル呼出しに適用する。
+固定値は`store: false`、`reasoningEffort: low`、`strictJsonSchema: false`である。
+これらはリクエスト単位のProvider設定であり、API keyをモデル入力へ渡すものではない。
+
+[`runtime-native.test.ts`](../../workers/api/tests/runtime-native/runtime-native.test.ts)で、
+実Thinkが呼ぶscripted V3 modelの3回すべてに固定設定が届くことを確認した。
+これはSDK内の配線検証であり、未導入のOpenAI Provider実装や外部通信の検証とは区別する。
+
 ## 検証範囲
 
 [`provider-config.test.ts`](../../workers/api/tests/model/provider-config.test.ts) は、

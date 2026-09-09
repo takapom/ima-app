@@ -23,7 +23,16 @@ export const isRuntimeNativeScenario = (value: string): value is RuntimeNativeSc
 export type RuntimeNativeModel = RuntimeGateModel;
 export type RuntimeNativeModelCallOptions = RuntimeGateModelCallOptions;
 export type RuntimeNativeModelStreamPart = RuntimeGateModelStreamPart;
-export type RuntimeNativeModelReport = RuntimeGateModelReport;
+export type RuntimeNativeProviderOptions = {
+  readonly openai?: {
+    readonly reasoningEffort?: string;
+    readonly strictJsonSchema?: boolean;
+    readonly store?: boolean;
+  };
+};
+export type RuntimeNativeModelReport = RuntimeGateModelReport & {
+  readonly providerOptionsSeen: (RuntimeNativeProviderOptions | undefined)[];
+};
 export type RuntimeNativeToolName = 'get_place_details' | 'submit_cards';
 
 export type RuntimeNativeInputs = {
@@ -229,11 +238,30 @@ const toolNames = (options: RuntimeNativeModelCallOptions): string[] => {
   return Object.keys(options.tools ?? {}).sort();
 };
 
+const observedProviderOptions = (
+  value: RuntimeNativeModelCallOptions['providerOptions'],
+): RuntimeNativeProviderOptions | undefined => {
+  const openai = value?.openai;
+  if (typeof openai !== 'object' || openai === null || Array.isArray(openai)) return undefined;
+  return {
+    openai: {
+      ...(typeof openai.reasoningEffort === 'string'
+        ? { reasoningEffort: openai.reasoningEffort }
+        : {}),
+      ...(typeof openai.strictJsonSchema === 'boolean'
+        ? { strictJsonSchema: openai.strictJsonSchema }
+        : {}),
+      ...(typeof openai.store === 'boolean' ? { store: openai.store } : {}),
+    },
+  };
+};
+
 const recordUnexpectedRequest = (
   report: RuntimeNativeModelReport,
   call: number,
   options: RuntimeNativeModelCallOptions,
 ): void => {
+  report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
   report.calls += 1;
   const prompt = JSON.stringify(options.prompt) ?? '';
   report.requests.push({
@@ -283,6 +311,7 @@ export const createRuntimeNativeModel = (
     doStream: async (options) => {
       const currentCall = call;
       call += 1;
+      report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
       const step = plan.steps[currentCall];
       if (step === undefined) {
         throw new RuntimeNativeProviderError('EXTRA_MODEL_CALL');
