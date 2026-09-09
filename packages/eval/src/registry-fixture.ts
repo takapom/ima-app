@@ -1,4 +1,10 @@
-import { CandidateObservationRegistry, type ClockPort, type RegistryIdPort } from '@ima/core';
+import {
+  CandidateObservationRegistry,
+  type CardSetIdPort,
+  type ClockPort,
+  type RegistryIdPort,
+  type SavedPlaceIdPort,
+} from '@ima/core';
 
 export class FixedClock implements ClockPort {
   constructor(private value: string) {}
@@ -12,12 +18,14 @@ export class FixedClock implements ClockPort {
   }
 }
 
-export class FixedIdPort implements RegistryIdPort {
+export class FixedIdPort implements RegistryIdPort, SavedPlaceIdPort, CardSetIdPort {
   private call = 0;
   private place = 0;
   private candidate = 0;
   private observation = 0;
   private response = 0;
+  private savedPlace = 0;
+  private cardSet = 0;
 
   nextCallId(): string {
     this.call += 1;
@@ -42,6 +50,16 @@ export class FixedIdPort implements RegistryIdPort {
   nextResponseId(): string {
     this.response += 1;
     return `eval-response-${this.response}`;
+  }
+
+  nextSavedPlaceRef(): string {
+    this.savedPlace += 1;
+    return `eval-saved-${this.savedPlace}`;
+  }
+
+  nextCardSetId(): string {
+    this.cardSet += 1;
+    return `eval-card-set-${this.cardSet}`;
   }
 }
 

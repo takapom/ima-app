@@ -74,6 +74,8 @@ export type ThreadId = v.InferOutput<typeof ThreadIdSchema>;
 export type TurnId = v.InferOutput<typeof TurnIdSchema>;
 export type CandidateId = v.InferOutput<typeof CandidateIdSchema>;
 export type ObservationId = v.InferOutput<typeof ObservationIdSchema>;
+export type SavedPlaceRef = v.InferOutput<typeof SavedPlaceRefSchema>;
+export type CardSetId = v.InferOutput<typeof CardSetIdSchema>;
 
 export const RevisionSchema = v.pipe(
   v.number(),

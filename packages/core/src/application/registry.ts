@@ -101,6 +101,10 @@ function candidateKey(
   return JSON.stringify([ownerScopeRef, threadId, provider, recordRef]);
 }
 
+function reuseKey(scope: RegistryScope, candidateId: CandidateId, field: string): string {
+  return JSON.stringify([scope.ownerScopeRef, scope.threadId, candidateId, field]);
+}
+
 function assertScope(scope: RegistryScope): void {
   if (!v.safeParse(RegistryScopeSchema, scope).success) {
     throw new RegistryError('INVALID_ARGUMENT', 'registry scope is invalid');
@@ -144,6 +148,8 @@ export class CandidateObservationRegistry implements CandidateObservationRegistr
   private readonly candidates = new Map<CandidateId, Readonly<CandidateRecord>>();
   private readonly observations = new Map<string, ReadonlyStoredObservation>();
   private readonly observationIdsByCandidate = new Map<CandidateId, string[]>();
+  private readonly blockedReuse = new Map<string, ReadonlySet<string>>();
+  private readonly suppressedReuse = new Map<string, Set<string>>();
 
   constructor(
     private readonly clock: ClockPort,
@@ -195,6 +201,36 @@ export class CandidateObservationRegistry implements CandidateObservationRegistr
     this.candidateIdsByKey.set(key, candidateId);
     this.candidates.set(candidateId, record);
     return record;
+  }
+
+  importCandidate(
+    sourceScope: RegistryScope,
+    targetScope: RegistryScope,
+    candidateId: CandidateId,
+    details: Pick<CandidateRegistration, 'displayName' | 'status'>,
+  ): Readonly<CandidateRecord> | undefined {
+    assertScope(sourceScope);
+    assertScope(targetScope);
+    const source = this.readCandidate(sourceScope, candidateId);
+    if (source === undefined || source.ownerScopeRef !== targetScope.ownerScopeRef) {
+      return undefined;
+    }
+    if (sourceScope.threadId === targetScope.threadId) {
+      throw new RegistryError(
+        'INVALID_ARGUMENT',
+        'candidate import target must be a different thread',
+      );
+    }
+    if (typeof details !== 'object' || details === null) {
+      throw new RegistryError('INVALID_ARGUMENT', 'candidate import details are invalid');
+    }
+    return this.registerCandidate({
+      ...targetScope,
+      provider: source.provider,
+      recordRef: source.recordRef,
+      displayName: details.displayName,
+      status: details.status,
+    });
   }
 
   readCandidate(
@@ -332,6 +368,44 @@ export class CandidateObservationRegistry implements CandidateObservationRegistr
     return result;
   }
 
+  invalidateObservationReuse(scope: RegistryScope, candidateId: CandidateId, field: string): void {
+    this.requireCandidate(scope, candidateId);
+    const key = reuseKey(scope, candidateId, field);
+    const suppressed = this.suppressedReuse.get(key);
+    const activeIds = this.listObservations(scope, candidateId)
+      .filter(
+        (observation) =>
+          observation.field === field && !(suppressed?.has(observation.observationId) ?? false),
+      )
+      .map((observation) => observation.observationId);
+    this.blockedReuse.set(key, new Set(activeIds));
+  }
+
+  restoreObservationReuse(
+    scope: RegistryScope,
+    candidateId: CandidateId,
+    field: string,
+    observationIds: readonly string[],
+  ): boolean {
+    this.requireCandidate(scope, candidateId);
+    const key = reuseKey(scope, candidateId, field);
+    const blocked = this.blockedReuse.get(key);
+    if (blocked === undefined) return true;
+    const suppressed = this.suppressedReuse.get(key);
+    const hasNewObservation = observationIds.some((observationId) => {
+      if (blocked.has(observationId) || (suppressed?.has(observationId) ?? false)) return false;
+      const observation = this.readObservation(scope, observationId);
+      return observation?.candidateId === candidateId && observation.field === field;
+    });
+    if (!hasNewObservation) return false;
+
+    const nextSuppressed = suppressed ?? new Set<string>();
+    for (const observationId of blocked) nextSuppressed.add(observationId);
+    this.suppressedReuse.set(key, nextSuppressed);
+    this.blockedReuse.delete(key);
+    return true;
+  }
+
   evaluateObservationReuse(query: ObservationReuseQuery): ObservationReuseResult {
     assertScope(query.scope);
     if (
@@ -343,9 +417,19 @@ export class CandidateObservationRegistry implements CandidateObservationRegistr
     const candidate = this.candidates.get(query.candidateId);
     if (candidate === undefined) return { status: 'missing' };
     if (scopeError(query.scope, candidate) !== undefined) return { status: 'context_mismatch' };
+    const key = reuseKey(query.scope, query.candidateId, query.field);
+    if (this.blockedReuse.has(key)) return { status: 'missing' };
+    const suppressed = this.suppressedReuse.get(key);
     const observations = this.listObservations(query.scope, query.candidateId).filter(
-      (observation) => observation.field === query.field,
+      (observation) =>
+        observation.field === query.field && !(suppressed?.has(observation.observationId) ?? false),
     );
+    if (
+      query.observationId !== undefined &&
+      !observations.some((observation) => observation.observationId === query.observationId)
+    ) {
+      return { status: 'missing' };
+    }
     if (observations.length === 0) return { status: 'missing' };
     const contextKey = contextKeyForObservation(query.context, query.field);
     const matching = observations.filter(
@@ -361,6 +445,13 @@ export class CandidateObservationRegistry implements CandidateObservationRegistr
     if (fresh.length === 0) return { status: 'expired' };
     const distinctValues = new Set(fresh.map((observation) => valueKey(observation.value)));
     if (distinctValues.size > 1) return { status: 'conflict', observations: fresh };
+    if (query.observationId !== undefined) {
+      const requested = fresh.find(
+        (observation) => observation.observationId === query.observationId,
+      );
+      if (requested === undefined) return { status: 'expired' };
+      return { status: 'reusable', observation: requested };
+    }
     const selected = [...fresh].sort((left, right) => {
       const time = Date.parse(right.fetchedAt) - Date.parse(left.fetchedAt);
       return time === 0 ? right.observationId.localeCompare(left.observationId) : time;

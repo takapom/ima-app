@@ -1,4 +1,5 @@
 export * from './constraints';
+export * from './continuity';
 export * from './evidence';
 export * from './freshness';
 export * from './issue';

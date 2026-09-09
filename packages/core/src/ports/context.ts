@@ -140,6 +140,14 @@ export interface IdPort {
   nextResponseId(): string;
 }
 
+export interface SavedPlaceIdPort {
+  nextSavedPlaceRef(): string;
+}
+
+export interface CardSetIdPort {
+  nextCardSetId(): string;
+}
+
 export interface RegistryIdPort extends IdPort {
   nextPlaceRef(): string;
 }

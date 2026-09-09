@@ -3,7 +3,7 @@ import type { Observation, SourceRef } from './evidence';
 import type { ObservationContext, RegistryScope } from './freshness';
 import type { RetentionMetadata } from './retention';
 import { OpaqueIdSchema, Text } from './primitives';
-import type { CandidateId, IsoTimestamp, OpaqueId } from './primitives';
+import type { CandidateId, IsoTimestamp, ObservationId, OpaqueId } from './primitives';
 
 export const CandidateStatusSchema = v.picklist([
   'operational',
@@ -68,6 +68,7 @@ export type ObservationReuseQuery = {
   candidateId: CandidateId;
   field: string;
   context: ObservationContext;
+  observationId?: ObservationId;
 };
 
 export type ObservationReuseResult =
