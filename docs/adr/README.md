@@ -13,7 +13,8 @@
 | [0009](./0009-contextual-response-presentation.md) | 質問に応じて候補UIとメッセージを組み合わせる | Accepted（詳細契約は未決） | 2026-09-08 | |
 | [0010](./0010-sdk-based-agent-runtime.md) | AI SDKとCloudflare Agents SDKで実行基盤を構成する | Accepted | 2026-09-08 | |
 | [0011](./0011-cloudflare-led-agent-runtime.md) | Cloudflare側にAgentの実行管理を集約する | Accepted（0010を部分上書き） | 2026-09-08 | |
+| [0012](./0012-package-dependency-boundaries.md) | package境界で依存方向を固定する | Accepted（0006の配置を部分上書き） | 2026-09-09 | |
 
-現在のアーキテクチャの正は0006、LLM主導の実行方針は0007、初期Toolカタログは0008、提示方針は0009、実行SDKの方針は0011。次の未決論点は[次の設計決定一覧](../design/0002-next-decisions.md)を参照。
+現在の責務分割の正は0006、package配置・依存方向は0012、LLM主導の実行方針は0007、初期Toolカタログは0008、提示方針は0009、実行SDKの方針は0011。次の未決論点は[次の設計決定一覧](../design/0002-next-decisions.md)を参照。
 
 新しい決定は次の連番で追加し、既存の決定を覆す場合は双方に `Supersedes` / `Superseded by` を書く。

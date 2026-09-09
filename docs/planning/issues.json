@@ -16,7 +16,7 @@
       "key": "M02",
       "number": 3,
       "url": "https://github.com/takapom/ima-app/issues/3",
-      "title": "[M02] Expo・Worker・共有スキーマのモノレポと品質チェックを構築する",
+      "title": "[M02] 5つのpackageのモノレポと依存境界・品質チェックを構築する",
       "dependencies": [
         2
       ]
@@ -168,7 +168,8 @@
         6,
         7,
         10,
-        32
+        32,
+        11
       ]
     },
     {
@@ -233,14 +234,15 @@
         19,
         20,
         21,
-        22
+        22,
+        27
       ]
     },
     {
       "key": "M23",
       "number": 24,
       "url": "https://github.com/takapom/ima-app/issues/24",
-      "title": "[M23] 4領域のRuntime Fixture統合テストを完成させる",
+      "title": "[M23] Worker側で4領域のSDK・HTTP・DO Fixture統合テストを完成させる",
       "dependencies": [
         6,
         11,
