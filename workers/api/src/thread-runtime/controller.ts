@@ -175,9 +175,6 @@ export class ThreadRuntimeController {
     const result = this.options.storage.transactionSync(() => {
       const binding = this.bindingFor(target);
       if (binding === undefined) return runtimeFailure('NOT_FOUND');
-      if (binding.revision !== target.revision || !binding.active) {
-        return runtimeFailure('STALE_TURN');
-      }
       const same = this.rowSync(target);
       if (same !== undefined) {
         if (
@@ -193,6 +190,9 @@ export class ThreadRuntimeController {
         }
         if (same.status === 'cancelled') return resultFromRow(same);
         return runtimeFailure('TURN_ALREADY_ACTIVE');
+      }
+      if (binding.revision !== target.revision || !binding.active) {
+        return runtimeFailure('STALE_TURN');
       }
       const byKey = this.rowByIdempotencySync(input.idempotencyKey);
       if (byKey !== undefined) return runtimeFailure('IDEMPOTENCY_CONFLICT');
