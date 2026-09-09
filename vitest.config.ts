@@ -12,6 +12,7 @@ export default defineConfig({
       'workers/api/tests/runtime-gate/runtime-gate-sse.test.ts',
       'workers/api/tests/runtime-gate/retention/retention.test.ts',
       'workers/api/tests/runtime-gate/retention/retention-audit.test.ts',
+      'workers/api/tests/runtime-gate/http/runtime-gate-http.test.ts',
     ],
     exclude: [
       'tests/worker.test.ts',

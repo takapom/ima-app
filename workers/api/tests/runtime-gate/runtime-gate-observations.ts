@@ -101,7 +101,7 @@ function source<T>(
   };
 }
 
-type RuntimeGateObservation = Observation<PlaceIdentity> | Observation<OpeningHours>;
+export type RuntimeGateObservation = Observation<PlaceIdentity> | Observation<OpeningHours>;
 
 const observations: Readonly<Record<string, RuntimeGateObservation>> = Object.freeze({
   'candidate-1:identity': source(
