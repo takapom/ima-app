@@ -224,6 +224,15 @@ describe('public contract primitives', () => {
         }),
       }).success,
     ).toBe(false);
+    expect(
+      v.safeParse(textSchema, {
+        text: 'セッション期限を延長',
+        evidenceIds: ['obs-1'],
+        evidence: [unknownSourceWithLongerTarget],
+        basis: 'grounded',
+        retention: deniedRetention({ sessionExpiresAt: '2026-09-10T05:00:00+09:00' }),
+      }).success,
+    ).toBe(false);
     const hiddenSource = {
       ...evidence,
       retention: deniedRetention({ displayPolicyStatus: 'disabled_m35' }),

@@ -153,6 +153,7 @@ export const PublicEvidenceTextSchema = (maxLength: number) =>
         const noLaterThanOrAbsent = (candidate: string | null, bound: string | null) =>
           bound === null ? candidate === null : noLaterThan(candidate, bound);
         return (
+          Date.parse(value.retention.sessionExpiresAt) <= Date.parse(source.sessionExpiresAt) &&
           (source.displayPolicyStatus === 'available' ||
             value.retention.displayPolicyStatus !== 'available') &&
           noLaterThanOrAbsent(value.retention.freshUntil, source.freshUntil) &&
