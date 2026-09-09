@@ -44,3 +44,25 @@ compactionと復旧経路も観測対象に含め、未実測を成功として�
 
 実装: `workers/api/tests/think-gate/`。
 公開hookの参照: [Think lifecycle hooks](https://developers.cloudflare.com/agents/harnesses/think/lifecycle-hooks/)。
+
+## 共通の実行制御構成
+
+`workers/api/tests/think-runtime/` に共通構成を分離し、実Worker/DOで10テスト成功。
+
+```sh
+bunx vitest run --config vitest.think-runtime.config.ts workers/api/tests/think-runtime/think-runtime.test.ts
+```
+
+全caseで3操作の制限、完全stepの副作用前検査、成功commitで停止する条件、
+保存用streamの構造的再構築を有効にする。tool入力・結果は保存用に固定値へ置換し、
+必要な生データは現turnのメモリから公開hookへ投影する。provider由来IDも再発行する。
+canaryは観測にのみ用い、sanitizerの条件判定には使わない。
+
+Core公開Portにサーバー発行の実行文脈とCancellationTokenを渡す。
+invalid→details→valid、修復上限、空finalを待たないcommit成功、混在step拒否、
+未知tool・不正入力、timeout・取消、任意canaryの保存先・ログ不在を確認する。
+`assistant_messages`と`cf_ai_chat_stream_chunks`は読取り成功と0件を必須とする。
+SQLから非公開の`_cf_KV`と`_cf_METADATA`は未観測として区別する。
+
+この10ケースはSDK採用の部分証拠。保持期限・compaction・再生成・HTTP/mobileの
+統合検証はまだ未完了で、M04全体やM10本実装の完了を意味しない。

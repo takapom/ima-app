@@ -1,0 +1,11 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "ima-think-runtime-test",
+  "main": "tests/think-runtime/think-runtime-worker.ts",
+  "compatibility_date": "2026-08-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [{ "name": "THINK_RUNTIME", "class_name": "ThinkRuntimeGateAgent" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ThinkRuntimeGateAgent"] }],
+}
