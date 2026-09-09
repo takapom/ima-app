@@ -61,6 +61,16 @@ export const SearchResponseSchema = v.strictObject({
 });
 export type SearchResponse = v.InferOutput<typeof SearchResponseSchema>;
 
+export type ParseResult<T> =
+  { success: true; data: T } | { success: false; issues: readonly string[] };
+
+export const parseSearchResponse = (input: unknown): ParseResult<SearchResponse> => {
+  const parsed = v.safeParse(SearchResponseSchema, input);
+  return parsed.success
+    ? { success: true, data: parsed.output }
+    : { success: false, issues: parsed.issues.map((issue) => issue.message) };
+};
+
 /** JSON descriptor for a successful image response; the HTTP body is image bytes. */
 export const PhotoResponseDescriptorSchema = v.strictObject({
   schemaVersion: SchemaVersionSchema,

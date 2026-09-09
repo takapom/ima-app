@@ -24,6 +24,8 @@ import {
   PhotoResponseDescriptorSchema,
   SearchResponseSchema,
 } from './response';
+import type { AssistantCardsResponse, AssistantMessageResponse, ParseResult } from './response';
+import type { RetentionMetadata } from './public';
 
 export const APP_TOKEN_HEADER = 'X-App-Token' as const;
 export const DEVICE_ID_HEADER = 'X-Device-Id' as const;
@@ -90,14 +92,51 @@ export const LifecycleRouteRequestSchema = v.strictObject({
 
 const threadMessageMeta = v.omit(AssistantMessageResponseSchema, ['schemaVersion', 'threadId']);
 const threadCardsMeta = v.omit(AssistantCardsResponseSchema, ['schemaVersion', 'threadId']);
-const ThreadMessageRecordSchema = v.strictObject({
-  ...threadMessageMeta.entries,
-  restoreMode: v.literal('full'),
-});
-const ThreadCardsRecordSchema = v.strictObject({
-  ...threadCardsMeta.entries,
-  restoreMode: v.literal('full'),
-});
+
+const canRestoreFull = (retention: RetentionMetadata) =>
+  retention.retentionDecision === 'allow' && retention.restoreMode === 'full';
+
+const canRestoreText = (text: AssistantMessageResponse['message'][number]) =>
+  canRestoreFull(text.retention) &&
+  text.evidence.every((evidence) => canRestoreFull(evidence.retention));
+
+type CardFact =
+  AssistantCardsResponse['cards']['hero']['facts'][keyof AssistantCardsResponse['cards']['hero']['facts']];
+
+const canRestoreCardFact = (fact: CardFact | undefined) =>
+  fact === undefined ||
+  fact.status !== 'known' ||
+  fact.evidence.every((evidence) => canRestoreFull(evidence.retention));
+
+const canRestoreCards = (cards: AssistantCardsResponse['cards']) =>
+  Object.values(cards.hero.facts).every(canRestoreCardFact) &&
+  cards.alts.every((card) => Object.values(card.facts).every(canRestoreCardFact)) &&
+  canRestoreText(cards.hero.why) &&
+  (cards.hero.diff === undefined || canRestoreText(cards.hero.diff)) &&
+  cards.alts.every(
+    (card) => canRestoreText(card.why) && (card.diff === undefined || canRestoreText(card.diff)),
+  );
+
+const ThreadMessageRecordSchema = v.pipe(
+  v.strictObject({
+    ...threadMessageMeta.entries,
+    restoreMode: v.literal('full'),
+  }),
+  v.check(
+    (record) => record.message.every(canRestoreText),
+    'full thread message requires fully restorable retention metadata',
+  ),
+);
+const ThreadCardsRecordSchema = v.pipe(
+  v.strictObject({
+    ...threadCardsMeta.entries,
+    restoreMode: v.literal('full'),
+  }),
+  v.check(
+    (record) => record.message.every(canRestoreText) && canRestoreCards(record.cards),
+    'full thread cards require fully restorable retention metadata',
+  ),
+);
 const ThreadMessageRestoredRecordSchema = v.strictObject({
   ...v.omit(threadMessageMeta, ['message']).entries,
   restoreMode: v.picklist(['reference_only', 'unavailable']),
@@ -112,6 +151,7 @@ export const ThreadResponseRecordSchema = v.union([
   ThreadMessageRestoredRecordSchema,
   ThreadCardsRestoredRecordSchema,
 ]);
+export type ThreadResponseRecord = v.InferOutput<typeof ThreadResponseRecordSchema>;
 
 export const ThreadReadResponseSchema = v.pipe(
   v.strictObject({
@@ -124,12 +164,22 @@ export const ThreadReadResponseSchema = v.pipe(
   }),
   v.check((snapshot) => {
     const responseIds = snapshot.responses.map((response) => response.responseId);
+    const revisions = snapshot.responses.map((response) => response.revision);
     return (
       new Set(responseIds).size === responseIds.length &&
+      new Set(revisions).size === revisions.length &&
       snapshot.responses.every((response) => response.revision <= snapshot.revision)
     );
-  }, 'thread records must be unique and no newer than the snapshot'),
+  }, 'thread records must have unique IDs and revisions and be no newer than the snapshot'),
 );
+export type ThreadReadResponse = v.InferOutput<typeof ThreadReadResponseSchema>;
+
+export const parseThreadSnapshot = (input: unknown): ParseResult<ThreadReadResponse> => {
+  const parsed = v.safeParse(ThreadReadResponseSchema, input);
+  return parsed.success
+    ? { success: true, data: parsed.output }
+    : { success: false, issues: parsed.issues.map((issue) => issue.message) };
+};
 
 export const LifecycleResponseSchema = v.strictObject({
   schemaVersion: SchemaVersionSchema,
