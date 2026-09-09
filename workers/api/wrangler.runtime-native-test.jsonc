@@ -1,0 +1,14 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "ima-api-runtime-native-test",
+  "main": "tests/runtime-native/runtime-native-worker.ts",
+  "compatibility_date": "2026-08-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      { "name": "THREADS", "class_name": "ThreadDO" },
+      { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
+    ],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ThreadDO", "RateLimitDO"] }],
+}
