@@ -1,0 +1,444 @@
+import { stepCountIs, streamText, tool } from 'ai';
+import { z } from 'zod';
+import { describe, expect, it } from 'vitest';
+import {
+  DEFAULT_RUNTIME_BUDGET,
+  RuntimeBudget,
+  type RuntimeBudgetConfig,
+} from '../../src/runtime/runtime-budget';
+import {
+  RUNTIME_MODEL_MAX_RETRIES,
+  type RuntimeModelGuardAcceptance,
+  type RuntimeModelGuardCallOptions,
+  type RuntimeModelGuardGenerateResult,
+  type RuntimeModelGuardModel,
+  type RuntimeModelGuardStreamPart,
+  wrapRuntimeModelGuard,
+} from '../../src/runtime/runtime-model-guard';
+import type { RuntimeModelGuardError } from '../../src/runtime/runtime-model-guard';
+
+type GenerateContent = RuntimeModelGuardGenerateResult['content'][number];
+
+const usage = {
+  inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+  outputTokens: { total: 1, text: 1, reasoning: 0 },
+} satisfies Extract<RuntimeModelGuardStreamPart, { type: 'finish' }>['usage'];
+
+const finish = (
+  unified: 'stop' | 'tool-calls',
+): Extract<RuntimeModelGuardStreamPart, { type: 'finish' }> => ({
+  type: 'finish',
+  usage,
+  finishReason: { unified, raw: unified },
+});
+
+const streamOf = (
+  parts: readonly RuntimeModelGuardStreamPart[],
+): ReadableStream<RuntimeModelGuardStreamPart> =>
+  new ReadableStream({
+    start(controller) {
+      parts.forEach((part) => controller.enqueue(part));
+      controller.close();
+    },
+  });
+
+const toolParts = (toolName: string, id = `call-${toolName}`): RuntimeModelGuardStreamPart[] => [
+  { type: 'tool-input-start', id, toolName },
+  { type: 'tool-input-delta', id, delta: '{}' },
+  { type: 'tool-input-end', id },
+  { type: 'tool-call', toolCallId: id, toolName, input: '{}' },
+];
+
+const textParts = (text = 'done'): RuntimeModelGuardStreamPart[] => [
+  { type: 'text-start', id: 'text-1' },
+  { type: 'text-delta', id: 'text-1', delta: text },
+  { type: 'text-end', id: 'text-1' },
+];
+
+const validFinal = (): RuntimeModelGuardStreamPart[] => [
+  { type: 'stream-start', warnings: [] },
+  ...textParts(),
+  finish('stop'),
+];
+
+const budget = (
+  overrides: Partial<RuntimeBudgetConfig> = {},
+  options: { now?: () => number; isStale?: () => boolean; signal?: AbortSignal } = {},
+): RuntimeBudget =>
+  new RuntimeBudget({
+    config: { ...DEFAULT_RUNTIME_BUDGET, ...overrides },
+    startedAtMs: 0,
+    now: options.now ?? (() => 1),
+    ...(options.isStale === undefined ? {} : { isStale: options.isStale }),
+    ...(options.signal === undefined ? {} : { signal: options.signal }),
+  });
+
+type ModelScript = {
+  readonly streamParts?: readonly RuntimeModelGuardStreamPart[];
+  readonly generateResult?: RuntimeModelGuardGenerateResult;
+  readonly pendingStream?: boolean;
+  readonly calls: { stream: number; generate: number };
+  readonly seenSignals: AbortSignal[];
+};
+
+const modelFor = (script: ModelScript): RuntimeModelGuardModel => ({
+  specificationVersion: 'v3',
+  provider: 'runtime-model-guard-fixture',
+  modelId: 'runtime-model-guard-fixture',
+  supportedUrls: {},
+  doGenerate: (options: RuntimeModelGuardCallOptions) => {
+    script.calls.generate += 1;
+    if (options.abortSignal !== undefined) script.seenSignals.push(options.abortSignal);
+    if (script.generateResult === undefined) {
+      return Promise.reject(new Error('RUNTIME_MODEL_GUARD_GENERATE_NOT_CONFIGURED'));
+    }
+    return Promise.resolve(script.generateResult);
+  },
+  doStream: (options: RuntimeModelGuardCallOptions) => {
+    script.calls.stream += 1;
+    if (options.abortSignal !== undefined) script.seenSignals.push(options.abortSignal);
+    if (script.pendingStream === true) return new Promise(() => undefined);
+    return Promise.resolve({ stream: streamOf(script.streamParts ?? validFinal()) });
+  },
+});
+
+const modelScript = (
+  streamParts?: readonly RuntimeModelGuardStreamPart[],
+  extra: Partial<Pick<ModelScript, 'generateResult' | 'pendingStream'>> = {},
+): ModelScript =>
+  streamParts === undefined
+    ? { calls: { stream: 0, generate: 0 }, seenSignals: [], ...extra }
+    : { streamParts, calls: { stream: 0, generate: 0 }, seenSignals: [], ...extra };
+
+const guarded = (
+  script: ModelScript,
+  options: Partial<Parameters<typeof wrapRuntimeModelGuard>[1]> = {},
+): RuntimeModelGuardModel => {
+  const turnBudget = budget();
+  return wrapRuntimeModelGuard(modelFor(script), {
+    budget: turnBudget,
+    remainingTimeMs: (finalResponse) => turnBudget.remainingModelTimeMs(finalResponse),
+    ...options,
+  });
+};
+
+const readAll = async (stream: ReadableStream<RuntimeModelGuardStreamPart>): Promise<void> => {
+  const reader = stream.getReader();
+  try {
+    while (!(await reader.read()).done) {
+      // The guard already performed the meaningful validation; this drains its replay stream.
+    }
+  } finally {
+    reader.releaseLock();
+  }
+};
+
+const streamCall = (model: RuntimeModelGuardModel, signal?: AbortSignal) =>
+  model.doStream({ prompt: [], ...(signal === undefined ? {} : { abortSignal: signal }) });
+
+const expectGuardCode = async (
+  call: PromiseLike<unknown>,
+  code: RuntimeModelGuardError['code'],
+) => {
+  await expect(call).rejects.toMatchObject({ code });
+};
+
+describe('wrapRuntimeModelGuard', () => {
+  it('reserves before the provider and reports acceptance only after a complete valid step', async () => {
+    const script = modelScript([...toolParts('search_places'), finish('tool-calls')]);
+    const accepted: RuntimeModelGuardAcceptance[] = [];
+    const model = guarded(script, { onAccepted: (value) => accepted.push(value) });
+
+    const result = await streamCall(model);
+    await readAll(result.stream);
+
+    expect(script.calls.stream).toBe(1);
+    expect(accepted).toEqual([expect.objectContaining({ terminal: 'none', emptyFinal: false })]);
+  });
+
+  it.each([
+    [
+      'read and submit',
+      [...toolParts('search_places'), ...toolParts('submit_cards'), finish('tool-calls')],
+      'MIXED_TERMINAL_ACTION',
+    ],
+    [
+      'multiple submit',
+      [
+        ...toolParts('submit_cards', 'submit-1'),
+        ...toolParts('submit_cards', 'submit-2'),
+        finish('tool-calls'),
+      ],
+      'MULTIPLE_SUBMIT',
+    ],
+    [
+      'final and tool',
+      [...toolParts('search_places'), ...textParts('late final'), finish('stop')],
+      'FINAL_WITH_TOOL',
+    ],
+    ['unknown tool', [...toolParts('delete_everything'), finish('tool-calls')], 'UNKNOWN_TOOL'],
+  ] as const)('rejects %s before acceptance', async (_name, parts, code) => {
+    const script = modelScript(parts);
+    const accepted: RuntimeModelGuardAcceptance[] = [];
+    const model = guarded(script, { onAccepted: (value) => accepted.push(value) });
+
+    await expectGuardCode(streamCall(model), code);
+    expect(accepted).toEqual([]);
+  });
+
+  it('rejects a mixed provider step before AI SDK tools or step metadata run', async () => {
+    const script = modelScript([
+      ...toolParts('search_places'),
+      ...toolParts('submit_cards'),
+      finish('tool-calls'),
+    ]);
+    const effects: string[] = [];
+    const model = wrapRuntimeModelGuard(modelFor(script), {
+      budget: budget(),
+      remainingTimeMs: () => DEFAULT_RUNTIME_BUDGET.wholeTurnMs,
+      onAccepted: () => effects.push('accepted'),
+    });
+    const generated = streamText({
+      model,
+      prompt: 'fixture',
+      maxRetries: RUNTIME_MODEL_MAX_RETRIES,
+      stopWhen: stepCountIs(1),
+      tools: {
+        search_places: tool<unknown, { ok: boolean }>({
+          inputSchema: z.object({}),
+          execute: () => {
+            effects.push('search_places');
+            return { ok: true };
+          },
+        }),
+        submit_cards: tool<unknown, { ok: boolean }>({
+          inputSchema: z.object({}),
+          execute: () => {
+            effects.push('submit_cards');
+            return { ok: true };
+          },
+        }),
+      },
+    });
+
+    await expect(generated.text).rejects.toBeDefined();
+    expect(effects).toEqual([]);
+  });
+
+  it('rejects provider executed and dynamic tool parts', async () => {
+    const providerScript = modelScript([
+      {
+        type: 'tool-input-start',
+        id: 'provider',
+        toolName: 'search_places',
+        providerExecuted: true,
+      },
+      finish('tool-calls'),
+    ]);
+    await expectGuardCode(streamCall(guarded(providerScript)), 'UNSUPPORTED_PART');
+
+    const dynamicScript = modelScript([
+      {
+        type: 'tool-call',
+        toolCallId: 'dynamic',
+        toolName: 'search_places',
+        input: '{}',
+        dynamic: true,
+      },
+      finish('tool-calls'),
+    ]);
+    await expectGuardCode(streamCall(guarded(dynamicScript)), 'UNSUPPORTED_PART');
+  });
+
+  it('applies the same size limits to generate results and rejects source/file payloads', async () => {
+    const textResult = {
+      content: [{ type: 'text', text: 'too large' } satisfies GenerateContent],
+      finishReason: { unified: 'stop', raw: 'stop' },
+      usage,
+      warnings: [],
+    } satisfies RuntimeModelGuardGenerateResult;
+    const script = modelScript(undefined, { generateResult: textResult });
+    const model = guarded(script, { maxParts: 1, maxBytes: 1 });
+    await expectGuardCode(model.doGenerate({ prompt: [] }), 'MODEL_STREAM_LIMIT');
+
+    const sourceResult = {
+      ...textResult,
+      content: [
+        {
+          type: 'source',
+          sourceType: 'url',
+          id: 'source-1',
+          url: 'https://example.test',
+          title: 'fixture',
+        } satisfies GenerateContent,
+      ],
+    } satisfies RuntimeModelGuardGenerateResult;
+    const sourceScript = modelScript(undefined, { generateResult: sourceResult });
+    await expectGuardCode(guarded(sourceScript).doGenerate({ prompt: [] }), 'UNSUPPORTED_PART');
+  });
+
+  it('accepts an empty final and keeps retry configuration at zero', async () => {
+    const script = modelScript([{ type: 'stream-start', warnings: [] }, finish('stop')]);
+    const accepted: RuntimeModelGuardAcceptance[] = [];
+    const finalFlags: boolean[] = [];
+    const model = guarded(script, {
+      isFinalResponse: () => true,
+      remainingTimeMs: (finalResponse) => {
+        finalFlags.push(finalResponse);
+        return 10_000;
+      },
+      onAccepted: (value) => accepted.push(value),
+    });
+    const result = await streamCall(model);
+    await readAll(result.stream);
+
+    expect(RUNTIME_MODEL_MAX_RETRIES).toBe(0);
+    expect(finalFlags).toEqual([true]);
+    expect(accepted).toEqual([expect.objectContaining({ terminal: 'message', emptyFinal: true })]);
+  });
+
+  it('propagates an arbitrary provider rejection without relabeling it', async () => {
+    const providerError = new Error('fixture provider failure');
+    const script = modelScript();
+    const model = wrapRuntimeModelGuard(
+      {
+        ...modelFor(script),
+        doStream: () => Promise.reject(providerError),
+      },
+      {
+        budget: budget(),
+        remainingTimeMs: () => DEFAULT_RUNTIME_BUDGET.wholeTurnMs,
+      },
+    );
+
+    await expect(streamCall(model)).rejects.toBe(providerError);
+  });
+
+  it.each([
+    ['stale', budget({}, { isStale: () => true }), 'STALE_TURN'],
+    ['deadline', budget({}, { now: () => DEFAULT_RUNTIME_BUDGET.wholeTurnMs }), 'DEADLINE'],
+    ['step budget', budget({ maxModelSteps: 1 }), 'BUDGET_EXCEEDED'],
+  ] as const)('denies %s before entering the provider', async (_name, deniedBudget, code) => {
+    const script = modelScript();
+    if (code === 'BUDGET_EXCEEDED') {
+      expect(deniedBudget.reserveModelStep().ok).toBe(true);
+    }
+    const model = wrapRuntimeModelGuard(modelFor(script), {
+      budget: deniedBudget,
+      remainingTimeMs: (finalResponse) => deniedBudget.remainingModelTimeMs(finalResponse),
+    });
+
+    await expectGuardCode(streamCall(model), code);
+    expect(script.calls.stream).toBe(0);
+  });
+
+  it('rejects zero remaining allowance before the provider call starts', async () => {
+    const script = modelScript();
+    const model = guarded(script, { remainingTimeMs: () => 0 });
+
+    await expectGuardCode(streamCall(model), 'DEADLINE');
+    expect(script.calls.stream).toBe(0);
+  });
+
+  it('denies a caller-cancelled call and a late stream without returning provider output', async () => {
+    const caller = new AbortController();
+    caller.abort();
+    const cancelledScript = modelScript();
+    await expectGuardCode(streamCall(guarded(cancelledScript), caller.signal), 'CANCELLED');
+    expect(cancelledScript.calls.stream).toBe(0);
+
+    let cancelledUpstream = false;
+    const lateScript = modelScript();
+    const lateModel = wrapRuntimeModelGuard(
+      {
+        ...modelFor(lateScript),
+        doStream: (options: RuntimeModelGuardCallOptions) => {
+          lateScript.calls.stream += 1;
+          if (options.abortSignal !== undefined) {
+            lateScript.seenSignals.push(options.abortSignal);
+          }
+          return Promise.resolve({
+            stream: new ReadableStream<RuntimeModelGuardStreamPart>({
+              cancel: () => {
+                cancelledUpstream = true;
+              },
+            }),
+          });
+        },
+      },
+      {
+        budget: budget(),
+        remainingTimeMs: () => DEFAULT_RUNTIME_BUDGET.wholeTurnMs,
+        maxBufferMs: 1_000,
+      },
+    );
+    const lateCaller = new AbortController();
+    const pending = streamCall(lateModel, lateCaller.signal);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    lateCaller.abort();
+    await expectGuardCode(pending, 'MODEL_STREAM_ABORTED');
+    expect(cancelledUpstream).toBe(true);
+    expect(lateScript.seenSignals[0]?.aborted).toBe(true);
+  });
+
+  it('cancels a provider that ignores the signal when the whole call timeout expires', async () => {
+    const script = modelScript(undefined, { pendingStream: true });
+    const model = guarded(script, {
+      maxBufferMs: 10,
+      remainingTimeMs: () => 10,
+    });
+
+    await expectGuardCode(streamCall(model), 'MODEL_STREAM_TIMEOUT');
+    expect(script.seenSignals[0]?.aborted).toBe(true);
+  });
+
+  it('cancels the upstream stream on a part limit and tolerates fine-grained valid chunks', async () => {
+    let cancelled = false;
+    const parts = [...textParts('a'), finish('stop')];
+    const script = modelScript();
+    const model = wrapRuntimeModelGuard(
+      {
+        ...modelFor(script),
+        doStream: (options: RuntimeModelGuardCallOptions) => {
+          script.calls.stream += 1;
+          if (options.abortSignal !== undefined) script.seenSignals.push(options.abortSignal);
+          let index = 0;
+          return Promise.resolve({
+            stream: new ReadableStream<RuntimeModelGuardStreamPart>({
+              pull(controller) {
+                const part = parts[index];
+                if (part === undefined) return;
+                index += 1;
+                controller.enqueue(part);
+              },
+              cancel: () => {
+                cancelled = true;
+              },
+            }),
+          });
+        },
+      },
+      {
+        budget: budget(),
+        remainingTimeMs: () => DEFAULT_RUNTIME_BUDGET.wholeTurnMs,
+        maxParts: 1,
+      },
+    );
+    await expectGuardCode(streamCall(model), 'MODEL_STREAM_LIMIT');
+    expect(cancelled).toBe(true);
+
+    const fineGrained = modelScript([
+      { type: 'stream-start', warnings: [] },
+      ...Array.from({ length: 200 }, (_, index) => ({
+        type: 'text-delta' as const,
+        id: 'text-fine',
+        delta: index === 199 ? '!' : 'a',
+      })),
+      finish('stop'),
+    ]);
+    const fineModel = guarded(fineGrained);
+    const result = await streamCall(fineModel);
+    await readAll(result.stream);
+    expect(fineGrained.calls.stream).toBe(1);
+  });
+});

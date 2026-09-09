@@ -226,6 +226,12 @@ export class RuntimeBudget {
     };
   }
 
+  /** Returns the provider-call wall-clock allowance using this budget's monotonic clock. */
+  remainingModelTimeMs(finalResponse = false): number {
+    const limit = finalResponse ? this.deadlineAtMs : this.finalReserveAtMs;
+    return Math.max(0, limit - this.monotonicTime());
+  }
+
   /** Returns the admission decision without reserving counters or changing cancellation state. */
   checkAdmission(finalResponse = false): RuntimeBudgetDenial | undefined {
     if (this.completed) return denial('COMMITTED', 'turn already has a committed response');
