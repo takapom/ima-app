@@ -1,3 +1,5 @@
 # Copy to workers/api/.dev.vars for local Worker secrets.
 # Never commit the copied file or real values.
 APP_TOKEN=replace-me
+# Required only for the live OpenAI model profile; leave empty until configured locally.
+OPENAI_API_KEY=
