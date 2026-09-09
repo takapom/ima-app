@@ -1,6 +1,6 @@
 # 決定済み構成と、残る設計決定
 
-> 2026-09-09: [ADR 0012](../adr/0012-package-dependency-boundaries.md)により、mobile → contracts、api → contracts/core、eval → coreのpackage境界を採択。旧packages/schemaはcontractsへ、Worker内部Coreはpackages/coreへ読み替える。具体的なlint/CI設定は未実装・別途設計する。
+> 2026-09-09: [ADR 0012](../adr/0012-package-dependency-boundaries.md)により、mobile → contracts、api → contracts/core、eval → coreのpackage境界を採択。旧packages/schemaはcontractsへ、Worker内部Coreはpackages/coreへ読み替える。lint/CI方針と500行/PR2,000行制約は[ADR0013](../adr/0013-quality-harness-and-size-limits.md)で決定済み。M02で設定実装・検収を行う。
 
 > SDK方針の更新: [ADR 0011](../adr/0011-cloudflare-led-agent-runtime.md)によりCloudflare側へ実行管理を集約。Thinkを第一候補として検証し、不適合ならAIChatAgent + streamTextを使用する。独立したToolLoopAgentを重ねず、AI SDKは必要な下位依存として扱う。Coreの契約と外側のSDK Adapterは分離する。
 

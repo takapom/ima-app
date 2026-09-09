@@ -44,7 +44,7 @@ flowchart TD
 4. 依存lintで相対パスやaliasによるpackage越境、循環依存、禁止SDKへの依存を検査する。型importも対象。
 5. Core内部のレイヤ依存と、UIからの直接I/Oも検査する。package分割だけで責務が守られたとは判断しない。
 
-具体的なlint製品・独自ルール・CI設定は次の設計事項。先のlint比較案をこの決定で一括採択しない。今回はコード・workspace・lint・CIを実装しない。
+具体的なlint製品・独自ルールの導入方針・CI/行数制約は後続の[ADR0013](./0013-quality-harness-and-size-limits.md)で決定済み。設定実装と検収はM02が担当する。
 
 ## 既存資料の読み替えと次の作業
 

@@ -10,6 +10,12 @@ HTMLモックを基準としたiPhone React Nativeアプリから、LLMが初期
 
 2026-09-09採択: [ADR 0012](../adr/0012-package-dependency-boundaries.md)。mobile→contracts、api→contracts/core、eval→core。公開DTOとCore内部型はWorkerで変換する。全35件の成果物・配置・完了条件を更新済み（[影響対応表](./package-impact-2026-09-09.md)）。コードとlint/CIは未実装。
 
+## 品質ハーネスの決定
+
+[ADR0013](../adr/0013-quality-harness-and-size-limits.md)を親と全35件へ反映。ESLint＋typescript-eslint、Prettier、dependency-cruiserを採用し、CIを必須ゲート、hooksを補助とする。手書きコード/テスト/設定は空行・コメント込み500行以内。生成物/lockfile/Markdown/既存HTMLモックはファイル制約の対象外だが、PR追加＋削除2,000行検査には文書・生成物・lockfileも含める。
+
+M02は設計決定済み・実装未完了。製品選定を再度着手条件にせず、正常/違反/行数境界の検査とCI・保護設定を実装する。後段のM28で統合、M29で監査する。Issueの依存関係・35件の分割は維持する。
+
 ## 仕様の優先順位
 
 ユーザーの最新決定と後続ADRを優先する。フロントはUI + hooks/state + services、バックエンドはヘキサゴナル。ToolはLLM向け入力Adapter、CoreのPortとは別の入口である。SDKの型と外部サービス依存をCoreへ持ち込まない。
@@ -29,6 +35,7 @@ Cloudflare側へ実行管理を集約しThinkを先に検証、不適合ならAI
 | ADR0007〜0009：LLM主導、3操作、任意提示 | M03, M06〜M10, M19, M23, M25 |
 | ADR0010〜0011：SDK、Think適合性、fallback、依存隔離 | M02, M04, M07〜M10, M23, M28 |
 | ADR0012：package境界・公開入口・試験配置 | 全35件（[影響対応表](./package-impact-2026-09-09.md)） |
+| ADR0013：lint/CI・500行/PR2,000行 | M02が基盤、全35件へ適用、M28統合/M29監査 |
 | design0001：RN/Expo、地図/共有、位置、SQLite、供給、API/認証、運用、TF | M01〜M03, M05, M11〜M22, M24, M26〜M30 |
 | design0002：未決契約、根拠、実行、状態、provider、評価 | M01, M03〜M16, M21〜M30 |
 | design0003〜0004：パターン、文脈、2終端、履歴、原文条件更新 | M03, M06〜M10, M18〜M23, M25 |

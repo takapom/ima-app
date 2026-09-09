@@ -10,14 +10,14 @@
 - 保持ポリシーは仕様/期待値を共通化し、端末がCoreをimportする設計にはしない。
 - M10はruntimeの注入入口、M16は実DO Adapterの配線、M23は本番構成の試験を所有する。統合試験Issueへ実装を先送りしない。
 - M16にM10（runtime注入入口）、M22にM26（events/flagsの実接続）を直接依存として追加する。循環なし。package間の依存とIssueの完了依存は別。新規Issueは不要で、各既存担当に配置を明記する。
-- 具体的なlint製品・独自ルールの詳細は未採択。M02の実装前に確定し、今回の決定と混同しない。
+- 後続[ADR0013](../adr/0013-quality-harness-and-size-limits.md)でlint/CIと行数制約を決定済み。M02は設定実装・検収へ進む。
 
 ## 全件対応表
 
 | Issue | 所有する配置 | 変更・検収の焦点 |
 |---|---|---|
 | [M01 / #2](https://github.com/takapom/ima-app/issues/2) | docs/design | 実装基準に5つのpackageの責務・許可依存・公開入口・テスト配置を記載する。 ADR0012を含む全要件の担当が一意で、package分割とデプロイ面の追加を混同しない。 |
-| [M02 / #3](https://github.com/takapom/ima-app/issues/3) | workspace設定・CI | 5つのworkspaceのpackage.json/exportsとpackage単位の型検査・ビルド・テストを構成する。依存lintの具体製品と独自ルールは実装前に設計を確定し、未採択案を採択済みと扱わない。 contracts/coreを独立検査し、相対パス・alias・type import・再export・循環・未宣言依存・内部へのdeep importの違反例を検出する。UI直接I/OとCore内部レイヤも検査対象とし、evalを本番成果物へ含めない。 |
+| [M02 / #3](https://github.com/takapom/ima-app/issues/3) | workspace設定・CI | 5つのworkspaceのpackage.json/exportsとpackage単位の型検査・ビルド・テストを構成する。ESLint＋typescript-eslint、Prettier、dependency-cruiserとADR0013のルールを採用済みとして実装する。互換版と設定の細部を確認・固定する。 contracts/coreを独立検査し、相対パス・alias・type import・再export・循環・未宣言依存・内部へのdeep importの違反例を検出する。UI直接I/OとCore内部レイヤも検査対象とし、evalを本番成果物へ含めない。 |
 | [M03 / #4](https://github.com/takapom/ima-app/issues/4) | packages/contracts・packages/core | contractsはHTTP/描画/端末保持メタデータ、coreは能力Port・観測・業務入力/結果を所有する。両者の対応表と変換例を定義し、変換実装はM05/M07/M15等のWorker Adapterが担当する。 両packageは相互importなしで検査でき、公開schemaに内部Port/SDK型/内部観測全体を露出しない。端末に必要な保持情報が公開契約に含まれる。 |
 | [M04 / #5](https://github.com/takapom/ima-app/issues/5) | workers/api（spike・tests） | scripted modelとSDK/DO適合性FixtureはWorker内の検証用コードに置く。packages/evalにはSDKを導入しない。 spikeがcoreの公開Portをstub実装でき、Cloudflare/モデルSDKの型と自動保存制御がWorker側で完結する。 |
 | [M05 / #6](https://github.com/takapom/ima-app/issues/6) | workers/api（HTTP・bootstrap） | 公開DTOとCore内部入力/結果の変換、HTTP error変換、認証をWorkerに置く。bootstrapの注入入口を定義し、CoreはRequest/Response/Envを受け取らない。 HTTP境界をstub handlerで検証し、公開DTO変換の欠落・内部情報の漏出を検出する。後段の具象Adapterをbootstrapから注入できる。 |

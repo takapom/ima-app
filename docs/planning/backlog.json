@@ -13,14 +13,16 @@
       "APIキー等の設定後に使える内部MVPと、App Attest・実機・TestFlightが必要な外部配布ゲートを区別する",
       "旧設計の写真/座標cache、D1生原文14日、固定regex fallback、駅→店を逆向き転用、LLM既定off、user本文のみ保存も後続仕様との読み替えを明記する",
       "ADR0012を実装基準へ反映する。mobile→contracts、api→contracts/core、eval→core。coreとcontractsは相互に依存しない",
-      "ADR0012の配置・責務: 実装基準に5つのpackageの責務・許可依存・公開入口・テスト配置を記載する。"
+      "ADR0012の配置・責務: 実装基準に5つのpackageの責務・許可依存・公開入口・テスト配置を記載する。",
+      "ADR0013のlint/CI採用と500行/PR2,000行制限を実装基準へ統合し、M02を設計決定済み・実装未完了として扱う。"
     ],
     "acceptance": [
-      "ADR0001〜0012、design0001〜0006、HTMLの全要件が担当Issueまたは明示的な上書き/非対象へ対応している",
+      "ADR0001〜0013、design0001〜0006、HTMLの全要件が担当Issueまたは明示的な上書き/非対象へ対応している",
       "iPhone/Expo Dev Client/TypeScript/valibot/Cloudflareの前提を維持する",
       "営業時間・徒歩・終電が未知の時の表示と、厳格条件を満たさない時の拒否方針が一意である",
       "未採択の詳細を過去の合意と偽らず、実装判断と根拠を残す",
-      "package境界: ADR0012を含む全要件の担当が一意で、package分割とデプロイ面の追加を混同しない。"
+      "package境界: ADR0012を含む全要件の担当が一意で、package分割とデプロイ面の追加を混同しない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/adr/README.md",
@@ -28,10 +30,11 @@
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
       "docs/design/0002-next-decisions.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "docs/design：docs/design/implementation-baseline.md と要件差分表（仕様判断）",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "docs/design"
   },
   {
@@ -49,7 +52,12 @@
       "Secrets、.dev.vars、ビルド成果物を除外し、READMEと.env.example相当を用意する",
       "CIでinstall frozen lockfile、型、lint、契約テストを実行する",
       "package.jsonとexportsで公開依存を限定する。相対パス・alias・型importによる越境と循環をCIで検査し、Core内部の依存方向も維持する",
-      "ADR0012の配置・責務: 5つのworkspaceのpackage.json/exportsとpackage単位の型検査・ビルド・テストを構成する。依存lintの具体製品と独自ルールは実装前に設計を確定し、未採択案を採択済みと扱わない。"
+      "ADR0012の配置・責務: 5つのworkspaceのpackage.json/exportsとpackage単位の型検査・ビルド・テストを構成する。ESLint＋typescript-eslint、Prettier、dependency-cruiserとADR0013のルールを採用済みとして実装する。互換版と設定の細部を確認・固定する。",
+      "ADR0013に従い型安全/Promise/Result分岐/React Hooks/整形ルールを設定する。Coreの時計・乱数・環境/I/O、UI直接I/O、Worker内SDK依存を担当境界で制限する。既存検査を先に使い、検出不足がある場合だけローカルルールを追加する。",
+      "ESLint max-lines（max:500、skipBlankLines:false、skipComments:false）と設定ファイル向け補助検査を実装する。除外は生成物/lockfile/Markdown/既存HTMLモックを明示し、通常の手書きテストを除外しない。",
+      "PRのmerge-base→headの追加＋削除2,000行制限を独立実装する。文書/lockfile/生成物も計上し、バイナリは容量/レビュー方法を別記する。取得不足はfailとする。",
+      "format/lint（500行含む）/architecture/typecheck/test/build/pr-sizeを必須CIへ接続し、branch保護のrequired checksを検収する。hooksは補助。未構築の後段機能の実測をM02の成功と混同しない。",
+      "lint例外の理由・不要disable検出を設定する。行数制約のdisable回避を認めない。検査用の違反Fixtureは専用パスからテスト実行し、正しい診断をassertする。"
     ],
     "acceptance": [
       "新規cloneから手順通りinstallして両アプリを起動できる",
@@ -57,16 +65,22 @@
       "不要な共通Repository/DI層やWebView版を導入していない",
       "CIは実APIキーなしで再現し、依存版と実行コマンドが記録される",
       "mobile→contracts、api→contracts/core、eval→core以外のアプリ内依存を拒否し、Coreと公開契約を別々に型検査できる",
-      "package境界: contracts/coreを独立検査し、相対パス・alias・type import・再export・循環・未宣言依存・内部へのdeep importの違反例を検出する。UI直接I/OとCore内部レイヤも検査対象とし、evalを本番成果物へ含めない。"
+      "package境界: contracts/coreを独立検査し、相対パス・alias・type import・再export・循環・未宣言依存・内部へのdeep importの違反例を検出する。UI直接I/OとCore内部レイヤも検査対象とし、evalを本番成果物へ含めない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。",
+      "ESLint/TypeScriptの正常例が通り、未処理Promise/不正any利用/分岐漏れ/禁止SDK/UI直接I/Oが失敗する。type import・alias・再export・deep import・未宣言依存・循環・本番→Fixtureも検出する。",
+      "499/500行は合格、501行は失敗。空行/コメント/末尾改行/LF/CRLFで補助検査とESLintの算定が一致し、手書き設定/テストにも適用される。",
+      "PR1,999/2,000行は合格、2,001行は失敗し、生成物/lockfile/文書が計上される。500行除外との混同、浅い履歴等による誤った0行成功を防ぐ。",
+      "CI各チェックとmerge保護の有効化を確認し、失敗PRのmergeがブロックされる証拠がある。保護設定の権限/プラン制約があれば未完了として明示し、稼働済みと扱わない。"
     ],
     "references": [
       "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
       "docs/design/0001-iphone-next-spot.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
-    "deliverables": "workspace設定・CI：workspace設定・CI骨格・依存境界検査（業務実装なし）",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "deliverables": "workspace設定・CI：workspace設定・CI骨格・依存境界検査（業務実装なし）・ADR0013のlint/format/型/境界設定・500行検査・PR2,000行検査・違反Fixture・hooks・必須CI/保護設定の証跡",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workspace設定・CI"
   },
   {
@@ -88,7 +102,8 @@
       "contracts-v1.mdにmethod/path、request/response例、error→HTTP対応、requestId/turnId/revision/冪等性、cancel/再開/終了/削除、写真・保存店再取得・eventsを固定する。API handlerはM05",
       "turnConstraintsをいつモデルから受け取り検証へ適用するか、追加ToolなしのSDK対応形式を定義する。M04で互換性確認後に同じ契約へ修正を戻す",
       "coreとcontractsは互いにimportせず、公開HTTP契約と内部Port型の変換はworkers/api Adapterで行う。SDK Tool Bindingの型もCoreへ持ち込まない",
-      "ADR0012の配置・責務: contractsはHTTP/描画/端末保持メタデータ、coreは能力Port・観測・業務入力/結果を所有する。両者の対応表と変換例を定義し、変換実装はM05/M07/M15等のWorker Adapterが担当する。"
+      "ADR0012の配置・責務: contractsはHTTP/描画/端末保持メタデータ、coreは能力Port・観測・業務入力/結果を所有する。両者の対応表と変換例を定義し、変換実装はM05/M07/M15等のWorker Adapterが担当する。",
+      "品質ゲート: 公開契約と内部型の正常/不正例を型検査し、switch分岐追加漏れと型import越境を品質ゲートで防ぐ。"
     ],
     "acceptance": [
       "正常・境界・未知field・追加property・型不正のテストが通る",
@@ -96,16 +111,18 @@
       "SDK schema変換に依存するコードはAdapterに閉じる",
       "新旧revision/スキーマ不一致を黙って型castして受理しない",
       "複数Tool同時出力・構造化message・submit invalid/success・条件変更を含む具体JSON例があり、M04/M05/M07が別解釈で実装しない",
-      "package境界: 両packageは相互importなしで検査でき、公開schemaに内部Port/SDK型/内部観測全体を露出しない。端末に必要な保持情報が公開契約に含まれる。"
+      "package境界: 両packageは相互importなしで検査でき、公開schemaに内部Port/SDK型/内部観測全体を露出しない。端末に必要な保持情報が公開契約に含まれる。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0004-autonomous-response-loop.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "packages/contracts・packages/core：contracts-v1.md・packages/contractsの公開型・packages/coreの内部契約・schema tests",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "packages/contracts・packages/core"
   },
   {
@@ -132,15 +149,17 @@
       "成功/不適合のログ、SDK版、再現コマンドが残る",
       "SDK採用条件の通信・キャンセル・修正・保持を満たすか未達理由が明示され、未達の基盤を本番採用しない",
       "不適合という調査結果だけでも記録できるが、後続実装開始には選定候補の必須ゲート合格が必要。両候補不適合なら後続はblockedにし自作へ逃げない",
-      "package境界: spikeがcoreの公開Portをstub実装でき、Cloudflare/モデルSDKの型と自動保存制御がWorker側で完結する。"
+      "package境界: spikeがcoreの公開Portをstub実装でき、Cloudflare/モデルSDKの型と自動保存制御がWorker側で完結する。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（spike・tests）：SDK spike・再利用可能なmodel Fixture・採用ADR・適合性結果",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（spike・tests）"
   },
   {
@@ -166,16 +185,18 @@
       "不正リクエストでモデル/有料APIを呼ばない",
       "内部MVPはApp Attest未設定でも指定の開発認証で使用できる",
       "429、401、413、競合、期限切れ、5xxをフロントが区別できる",
-      "package境界: HTTP境界をstub handlerで検証し、公開DTO変換の欠落・内部情報の漏出を検出する。後段の具象Adapterをbootstrapから注入できる。"
+      "package境界: HTTP境界をstub handlerで検証し、公開DTO変換の欠落・内部情報の漏出を検出する。後段の具象Adapterをbootstrapから注入できる。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（HTTP・bootstrap）：HTTP routing/auth/middleware/handler interface と境界テスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（HTTP・bootstrap）"
   },
   {
@@ -192,22 +213,25 @@
       "Clock、fetchedAt/sourceUpdatedAt/freshUntil、位置revision、contextKeyで再利用可否を判定する",
       "保存店/過去候補を所有権確認後に文脈へ登録し、表示順とcardSet参照を保持する",
       "能力バージョン・provider保持制約を観測へ結びつける",
-      "ADR0012の配置・責務: registry/Clock Port/鮮度判定はcore、再利用するCore専用の固定時計・観測Fixtureとシナリオはevalに置く。core自体の単体テストはcoreに置く。"
+      "ADR0012の配置・責務: registry/Clock Port/鮮度判定はcore、再利用するCore専用の固定時計・観測Fixtureとシナリオはevalに置く。core自体の単体テストはcoreに置く。",
+      "品質ゲート: Clock/ID生成を注入し、Coreの直接時計・乱数・SDK依存制限に従う。"
     ],
     "acceptance": [
       "再取得は新observation IDでありexpiresAtだけを伸ばさない",
       "他thread ID、異なる位置/帰宅駅/時刻条件の誤再利用を拒否する",
       "unknown/unsupported/not_applicable/errorを区別し、競合情報を平均しない",
       "Adapter自身がApplication状態を変更しない",
-      "package境界: coreからeval/Worker/contractsへのimportなしで単体試験でき、evalもcoreの公開入口だけで観測・スコープ・期限のシナリオを実行できる。"
+      "package境界: coreからeval/Worker/contractsへのimportなしで単体試験でき、evalもcoreの公開入口だけで観測・スコープ・期限のシナリオを実行できる。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0004-autonomous-response-loop.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "packages/core・packages/eval：Coreのcandidate/observation registry・Clock/freshness と単体テスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "packages/core・packages/eval"
   },
   {
@@ -235,16 +259,18 @@
       "未知Tool、入力不正、未対応fieldが定義した結果になり副作用を起こさない",
       "ToolごとのApplication/Core一式や固定Tool順序を新設しない",
       "Fixture Adapterを実Providerへ変えてもTool/Core契約の変更が不要",
-      "package境界: SDK型の変換とallowlistをWorker側で試験し、Toolの追加packageやToolごとのCoreを作らずにProviderを差し替えられる。"
+      "package境界: SDK型の変換とallowlistをWorker側で試験し、Toolの追加packageやToolごとのCoreを作らずにProviderを差し替えられる。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/adr/0008-initial-tool-catalog.md",
       "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
       "docs/design/0005-tool-contracts-v1.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（Tool Binding）：SDK Tool Binding・allowlist・Portへの変換とAdapter tests",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（Tool Binding）"
   },
   {
@@ -269,17 +295,19 @@
       "「なぜ」「2つ目」「条件変更」「混合意図」を扱い、会話の対象を取り違えない",
       "GPS座標・Secret・DB handleがモデル要求に含まれない",
       "廃止済みモデル名やregex/テンプレ検索をliveの自律探索に代用しない",
-      "package境界: 文脈・条件検証をSDKなしで試験でき、SDK用message組立テストはWorker側に閉じる。ユーザー原文を維持する。"
+      "package境界: 文脈・条件検証をSDKなしで試験でき、SDK用message組立テストはWorker側に閉じる。ユーザー原文を維持する。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/adr/0007-llm-led-tool-orchestration.md",
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
       "docs/design/0004-autonomous-response-loop.md",
       "docs/design/0003-response-patterns.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（model Adapter）・packages/core：モデルProvider Adapter・prompt/context builder・条件更新変換とテスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（model Adapter）・packages/core"
   },
   {
@@ -298,22 +326,25 @@
       "messageだけにも根拠参照検証を適用し、意味的忠実性は評価の対象として区別する",
       "revision条件付きでmessage+cardsを同じresponseIdへ確定し、冪等キーの内容不一致を拒否する",
       "このIssueは純粋な検証器とApplicationのCommitPort契約＋in-memory CAS試験を所有する。実DO transaction/保存ポリシーはM16、実SDK停止とbatch実行はM10へ委譲する",
-      "ADR0012の配置・責務: 確定検証・内部表示結果・CommitPortはcoreに置く。Core専用in-memory CAS Fixtureはeval、公開AssistantResponseへの変換はWorkerの担当とする。"
+      "ADR0012の配置・責務: 確定検証・内部表示結果・CommitPortはcoreに置く。Core専用in-memory CAS Fixtureはeval、公開AssistantResponseへの変換はWorkerの担当とする。",
+      "品質ゲート: Coreの検証とCommitPortにSDK/公開DTOを持ち込まず、Result分岐を網羅する。"
     ],
     "acceptance": [
       "invalid時の状態変更0、valid時の確定1が競合/再送でも成立する",
       "0件はmessage、1〜2件を水増しせず、3件超は拒否する",
       "違反を構造化して返し、Applicationが自動取得・候補差替え・説明書換えをしない",
       "保存禁止payloadの永続化を成功条件にせず、確定記録と表示payloadを分離する",
-      "package境界: coreの業務検証を独立試験し、evalから公開入口を使って競合/再送/invalidの状態変更を検証する。カード組立のためにcontractsへ依存しない。"
+      "package境界: coreの業務検証を独立試験し、evalから公開入口を使って競合/再送/invalidの状態変更を検証する。カード組立のためにcontractsへ依存しない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "packages/core・packages/eval：Core検証器・Application確定要求・CommitPort/in-memory CAS tests",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "packages/core・packages/eval"
   },
   {
@@ -342,16 +373,18 @@
       "成功時final textなしを正常扱いし、任意SDK例外は握り潰さない",
       "旧turnが最新状態を上書きせず、取消後に新しい有料呼出しを開始しない",
       "予算切れ後に追加モデル呼出しをせず、失敗表示をLLMメッセージと偽らない",
-      "package境界: Worker内テスト用in-memory Adapterで制御試験を実行できる。独自汎用ループやpackages/evalへの実行時依存を作らない。"
+      "package境界: Worker内テスト用in-memory Adapterで制御試験を実行できる。独自汎用ループやpackages/evalへの実行時依存を作らない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（runtime・bootstrap）：SDK Runtime Adapterのstep/予算/batch/取消制御と統合テスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（runtime・bootstrap）"
   },
   {
@@ -378,15 +411,17 @@
       "429/timeout/5xxを検索0件へ変換しない",
       "cursor改ざん・別scope・条件変更・期限切れを拒否する",
       "キーをWorker Secretsへ設定するだけで有効化でき、必要なAPI/field mask/課金設定が文書化される",
-      "package境界: Worker内のHTTP FixtureでPort適合性を試験し、providerレスポンス型がcore/contracts/mobileへ漏れない。"
+      "package境界: Worker内のHTTP FixtureでPort適合性を試験し、providerレスポンス型がcore/contracts/mobileへ漏れない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（Places検索Adapter）：Places search outbound Adapter・cursor service・HTTP契約テスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（Places検索Adapter）"
   },
   {
@@ -413,15 +448,17 @@
       "HPキーなしでも基本経路が動き、facilities等はunsupportedとなる",
       "跨日/24h/特別日/timezone/移転/閉業を扱い、曖昧な営業/価格を捏造しない",
       "全観測に出典/取得時刻/鮮度/保持分類があり、既知enumと未知fieldのエラーを区別する",
-      "package境界: Worker内のprovider契約試験がcoreの公開型で検収でき、contractsへprovider SDK型を追加しない。"
+      "package境界: Worker内のprovider契約試験がcoreの公開型で検収でき、contractsへprovider SDK型を追加しない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（Places詳細Adapter）：Places details outbound Adapter・field正規化・HTTP契約テスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（Places詳細Adapter）"
   },
   {
@@ -448,15 +485,17 @@
       "GPS不明をIPや固定座標、距離÷速度で埋めない",
       "行列の一部失敗と空応答を区別する",
       "上流呼出し数/行列要素数が予算に計上され、対応APIとキー設定が記載される",
-      "package境界: HTTPエラー・行列変換はWorkerで、秒単位の条件判定はcoreで検査し、CoreからRoutesを直接呼ばない。"
+      "package境界: HTTPエラー・行列変換はWorkerで、秒単位の条件判定はcoreで検査し、CoreからRoutesを直接呼ばない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（Routes Adapter）・packages/core：Routes outbound Adapter・方向/秒/位置検証テスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（Routes Adapter）・packages/core"
   },
   {
@@ -482,15 +521,17 @@
       "本番へ架空Fixture時刻を投入しない",
       "曜日境界・祝日・終電直前・同駅・乗換・到着後滞在の境界テストが通る",
       "コード完了は再現可能なFixtureとimport検査で判定する。終電対応を謳う配布はM33の実データ検収を必須とする",
-      "package境界: 合成データでcoreの計算を独立検査でき、取込み/保存先の結合試験はWorkerで行う。公開契約に実時刻表全体を含めない。"
+      "package境界: 合成データでcoreの計算を独立検査でき、取込み/保存先の結合試験はWorkerで行う。公開契約に実時刻表全体を含めない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "packages/core・workers/api：journey reader/import validator・時計計算・合成データテスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "packages/core・workers/api"
   },
   {
@@ -515,16 +556,18 @@
       "SecretがURL/ログ/アプリbundleへ出ない",
       "複数写真の各帰属を描画でき、写真欠損でも候補を利用できる",
       "端末/HTTP cacheを含む保存経路が保持ポリシーに従う",
-      "package境界: Worker内試験で認証/失効/streamを検証し、contractsには表示に必要なhandle/帰属のみを公開する。"
+      "package境界: Worker内試験で認証/失効/streamを検証し、contractsには表示に必要なhandle/帰属のみを公開する。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（photo Adapter）：photo handler・handle署名/認可・stream/帰属テスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（photo Adapter）"
   },
   {
@@ -555,15 +598,17 @@
       "thread削除後にSDKの再開領域からも復元されない",
       "一般的な保持許諾を仮定せず、Places等のLLM送信/表示/保存の許諾を別々に根拠付きで記録する",
       "期限切れ参照を即時拒否し、バックアップ/ログ/物理削除の保証範囲と未確認事項を明記する",
-      "package境界: 保持判定はCore単体、永続書込み/削除/CASはWorker統合試験で検証する。実配線は本Issueの成果物とし、M23へ実装を先送りしない。"
+      "package境界: 保持判定はCore単体、永続書込み/削除/CASはWorker統合試験で検証する。実配線は本Issueの成果物とし、M23へ実装を先送りしない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/design/0005-tool-contracts-v1.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "packages/core・workers/api：DO CommitPort/保持Adapter・削除/再生成/保存canary tests",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "packages/core・workers/api"
   },
   {
@@ -581,23 +626,26 @@
       "safe area/keyboard/片手操作/スクロール/VoiceOver/Dynamic Typeを扱う",
       "机ビュー・偽ステータスバー・WebView・保存3状態を移植しない",
       "Portraitを基本としiOS最低版はExpo/SDK互換性で決定、主ボタン48ptとdrawer幅min(86%,320)を再現する。workingは実際の処理に対応する表示とし、固定4段/偽進捗/毎回3件作成を表示しない",
-      "ADR0012の配置・責務: UI/tokens/fontsはmobile内部へ配置する。hooks/state/servicesの軽量構成を維持し、packageは画面やレイヤごとに増やさない。"
+      "ADR0012の配置・責務: UI/tokens/fontsはmobile内部へ配置する。hooks/state/servicesの軽量構成を維持し、packageは画面やレイヤごとに増やさない。",
+      "品質ゲート: React HooksとUI直接I/O制限を適用し、画面は500行以内の責務単位に分ける。既存HTMLは参照資料であり、移植後のTSXは制約対象。"
     ],
     "acceptance": [
       "390pt等のiPhone幅でモックと比較したスクリーンショットがある",
       "主候補1＋行形式別案の階層とライム点/クリーム主ボタンを保つ",
       "キーボードで送信欄が隠れず、UIが画面幅へ対応する",
       "Expo Dev Clientで起動し、第三のサイドバー機能や標準SDKチャットUIに置換しない",
-      "package境界: 画面からWorker/core/evalをimportせず、UIからHTTP/SQLite等を直接呼ばない。"
+      "package境界: 画面からWorker/core/evalをimportせず、UIからHTTP/SQLite等を直接呼ばない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "index.html",
       "docs/design/0001-iphone-next-spot.md",
       "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "apps/mobile（UI）：画面shell・tokens・fonts・UI primitive・視覚比較",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "apps/mobile（UI）"
   },
   {
@@ -623,17 +671,19 @@
       "候補語タップやIME変換中に意図せず送信しない",
       "ユーザー原文を検索クエリへApplicationで書き換えない",
       "背景位置/不要permissionを要求せず、精度・取得時刻をAPIへ渡せる",
-      "package境界: 位置serviceのFakeでUIを検証でき、ネイティブSDKへのアクセスがservicesに閉じる。"
+      "package境界: 位置serviceのFakeでUIを検証でき、ネイティブSDKへのアクセスがservicesに閉じる。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "index.html",
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0004-autonomous-response-loop.md",
       "docs/design/0005-tool-contracts-v1.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "apps/mobile（UI・hooks・services）：composer/location/prefs hooksとUIテスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "apps/mobile（UI・hooks・services）"
   },
   {
@@ -658,17 +708,19 @@
       "今回0件を過去候補の新規結果と誤表示しない",
       "photoスワイプが候補入替と混同されない",
       "NOW/OPEN/LO/徒歩/終電を取得根拠以上に断定しない",
-      "package境界: 公開応答Fixtureだけでkeep/replace/帰属/欠損表示を検証でき、Coreの業務判定をrendererへ複製しない。"
+      "package境界: 公開応答Fixtureだけでkeep/replace/帰属/欠損表示を検証でき、Coreの業務判定をrendererへ複製しない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "index.html",
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/design/0005-tool-contracts-v1.md",
       "docs/adr/0009-contextual-response-presentation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "apps/mobile（renderer・tests）：message/card renderer・表示契約FixtureとUIテスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "apps/mobile（renderer・tests）"
   },
   {
@@ -695,16 +747,18 @@
       "「LINEへ送った」と偽らず、シート起動と配送成功を区別する",
       "ちがうで永久never/訪問ラベルを作らず、LLMの代わりに再検索語を生成しない",
       "ユーザー選択した正しい店舗のリンク/本文が開く",
-      "package境界: mobile内Fakeで検査でき、Worker/SDK Tool/Coreを直接呼ばずHTTP service契約へ引き継げる。"
+      "package境界: mobile内Fakeで検査でき、Worker/SDK Tool/Coreを直接呼ばずHTTP service契約へ引き継げる。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/adr/0002-cherished-person-lighter-load.md",
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0004-autonomous-response-loop.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "apps/mobile（actions・services）：明示操作handler・Share/Linking/haptics servicesとFake試験",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "apps/mobile（actions・services）"
   },
   {
@@ -732,16 +786,18 @@
       "禁止コンテンツがsqlite/端末cacheへ残らず、全文オフライン復元を偽らない",
       "05:00で保存店自体を消さず、今夜表示と除外だけが仕様どおり失効する",
       "訪問確認・行った/行かない・共同リストを追加しない",
-      "package境界: Worker未完成でも公開契約Fixtureで保存・失効を試験できる。未確認/不足メタデータはdenyとなり、サーバー内部型の共有を要しない。"
+      "package境界: Worker未完成でも公開契約Fixtureで保存・失効を試験できる。未確認/不足メタデータはdenyとなり、サーバー内部型の共有を要しない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/adr/0002-cherished-person-lighter-load.md",
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/design/0001-iphone-next-spot.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "apps/mobile（SQLite services・tests）：SQLite migrations/local services・共通保持Fixture試験",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "apps/mobile（SQLite services・tests）"
   },
   {
@@ -773,16 +829,18 @@
       "同じresponseが二重に会話へ追加されない",
       "通信失敗時に入力・既存候補・保存リストを保つ",
       "Fixtureと同じ共有契約で実Workerとの一連の操作が動く",
-      "package境界: 端末側のkeep/replace/再送/保持整合を公開契約で試験でき、バックエンド内部実装の変更でmobileの依存が増えない。"
+      "package境界: 端末側のkeep/replace/再送/保持整合を公開契約で試験でき、バックエンド内部実装の変更でmobileの依存が増えない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
       "docs/design/0004-autonomous-response-loop.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "apps/mobile（HTTP services・state）：HTTP services・会話stateの実接続とcontract tests",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "apps/mobile（HTTP services・state）"
   },
   {
@@ -802,22 +860,25 @@
       "切断/並行/再配送/旧revision/DO再生成/05:00/削除/所有権を検査する",
       "SDKとアプリの実保存先をcanaryで検査し、外部networkを拒否してCIへ組み込む",
       "M04の試験資産を拡張しSDK→業務→実DO保存を結合する。完成したiPhone UIには依存せず、HTTP consumerで応答を検証する",
-      "ADR0012の配置・責務: SDK/HTTP/実DOの4領域suiteとmodel/provider FixtureはWorker内に置く。packages/evalの対象はCore専用試験に限定し、このsuiteを移さない。"
+      "ADR0012の配置・責務: SDK/HTTP/実DOの4領域suiteとmodel/provider FixtureはWorker内に置く。packages/evalの対象はCore専用試験に限定し、このsuiteを移さない。",
+      "品質ゲート: SDK動的Tool公開/確定/保存は統合Fixtureで検収する。lint成功を実行時保証へ置き換えない。検査コードも500行対象。"
     ],
     "acceptance": [
       "design0006のサーバー/SDK対象行を全てテストIDへ対応する。frontend state行はM22、端末SQLite行はM21、実機行はM29の証跡へリンクする",
       "SDKループ・Core・保存を成功Mockへ置き換えていない",
       "禁止副作用0、失敗commit0、成功commit1、保存禁止書込み0を検査する",
       "モデルFixture合格をLLMの意図理解品質合格と扱わない",
-      "package境界: M10/M16の本番bootstrapを使い、テストだけの別配線で欠落を隠さない。Core eval・mobile state・SQLite・実機の証跡を参照し、相互package importは増やさない。"
+      "package境界: M10/M16の本番bootstrapを使い、テストだけの別配線で欠落を隠さない。Core eval・mobile state・SQLite・実機の証跡を参照し、相互package importは増やさない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/design/0005-tool-contracts-v1.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（SDK・HTTP・DO tests）：実SDK/Worker/DOのサーバー回帰suite・要求→test対応表",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（SDK・HTTP・DO tests）"
   },
   {
@@ -846,15 +907,17 @@
       "キーなしで全契約テストが通り、smokeコマンドは未設定を明示的skip/失敗として検出する。実API成功証跡はM35が所有する",
       "未設定時をpassやFixture live成功にせずskip/未検証とする",
       "終電の合成Fixtureと未投入disabledを検査する。HP未実装時は基本suiteを妨げず、その有効/無効試験の担当をM32へ対応付ける",
-      "package境界: キーなしsuiteとlive smokeが分離され、検証コード/Fixtureが本番bootstrap・デプロイ成果物へ含まれない。"
+      "package境界: キーなしsuiteとlive smokeが分離され、検証コード/Fixtureが本番bootstrap・デプロイ成果物へ含まれない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0001-iphone-next-spot.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（provider tests・smoke）：Provider回帰suite・live smoke CLI・キーなしCI",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（provider tests・smoke）"
   },
   {
@@ -874,7 +937,8 @@
       "モデル/プロンプト版を記録し、決定的ルール＋人手レビュー＋補助モデル評価を分離する",
       "latency p50/p95、モデル/Tool/upstream回数、コストを測定し仮の実行予算を調整する",
       "実モデル＋固定Provider Fixtureで評価し、店舗APIや終電実データの準備を待たない。live供給との組合せ確認はM29",
-      "ADR0012の配置・責務: 実モデルを呼ぶrunner・固定供給Fixture・rubricはWorker側の検証用コードへ置く。packages/evalはCore専用であり、SDKやWorkerをimportするrunnerを置かない。"
+      "ADR0012の配置・責務: 実モデルを呼ぶrunner・固定供給Fixture・rubricはWorker側の検証用コードへ置く。packages/evalはCore専用であり、SDKやWorkerをimportするrunnerを置かない。",
+      "品質ゲート: 意図理解/根拠忠実性は実モデル評価で検収する。静的検査やCore Fixture成功と区別し、runnerも500行対象。"
     ],
     "acceptance": [
       "全パターンに期待する結果と禁止動作があり、呼出し順完全一致を合格条件にしない",
@@ -882,16 +946,18 @@
       "重大な店舗捏造・他候補取違え・営業時間/終電の根拠なし保証が0である",
       "要求充足と待ち時間を主指標にし、カード率/Tool率を最大化しない",
       "初期基準: 8パターン＋混合/指示混入/条件継続/修正の最低12シナリオを各3回実行。重大違反0件、要求充足の人手判定90%以上を暫定ゲートとし、変更は理由を記録する。モデルキーなしは未検証",
-      "package境界: 評価runnerは本番配布されず、Worker→evalの依存なしで固定供給を注入できる。Core evalの結果と実モデル品質評価の結果を区別する。"
+      "package境界: 評価runnerは本番配布されず、Worker→evalの依存なしで固定供給を注入できる。Core evalの結果と実モデル品質評価の結果を区別する。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0003-response-patterns.md",
       "docs/design/0004-autonomous-response-loop.md",
       "docs/design/0005-tool-contracts-v1.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（model eval tooling）：eval dataset/runner/rubric・実モデル結果・予算測定",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（model eval tooling）"
   },
   {
@@ -918,16 +984,18 @@
       "共有シート起動を配送成功、ここにするを訪問成功と計上しない",
       "本番障害時に架空Fixture店へ切り替えない",
       "メトリクスから遅延/コスト/失敗原因を特定でき、D1等にraw queryを保存しない",
-      "package境界: Worker内event Fixtureで検証でき、mobileは公開HTTP契約だけで送信する。"
+      "package境界: Worker内event Fixtureで検証でき、mobileは公開HTTP契約だけで送信する。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/adr/0002-cherished-person-lighter-load.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（telemetry・flags）・packages/contracts：events/flags/trace service・集計/削除・運用手順",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（telemetry・flags）・packages/contracts"
   },
   {
@@ -953,15 +1021,17 @@
       "raw UUIDや共有トークンだけで他threadへアクセスできない",
       "内部Fixture開発をApple設定不足で止めず、外部配布ゲートでは必須とする",
       "Appleアカウント/署名等の外部依存がチェックリストに明記される",
-      "package境界: Apple/Expo/Cloudflare型がcontracts/coreに漏れず、認証を迂回する別のSDK入口を公開しない。"
+      "package境界: Apple/Expo/Cloudflare型がcontracts/coreに漏れず、認証を迂回する別のSDK入口を公開しない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "apps/mobile・workers/api・packages/contracts：App Integrity client・attestation verifier・実機/否定試験",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "apps/mobile・workers/api・packages/contracts"
   },
   {
@@ -982,23 +1052,26 @@
       "CIのdry-runとmigration、デプロイ手順、rollback、漏洩検査を整備しSecretを端末bundleへ入れない",
       "必要なbindingだけを構築し、未採用KV/D1等を形式的に増やさない。CIの最小権限と手動デプロイ入口を整備する",
       "環境の初期構築はM34が所有する。本Issueでは各実装が追加したbinding/config/CI/docsを統合する。実API検収はM35、iPhone実機/EAS成功はM29",
-      "ADR0012の配置・責務: M02のpackage検査とM34以後の設定を統合する。contracts/coreの独立検査とビルド順、eval/検証runnerの本番除外をrunbookへ記載する。"
+      "ADR0012の配置・責務: M02のpackage検査とM34以後の設定を統合する。contracts/coreの独立検査とビルド順、eval/検証runnerの本番除外をrunbookへ記載する。",
+      "品質ゲート: M02が導入した必須CI/保護設定と500行/PR2,000行検査を最終構成へ統合する。追加設定にも500行を適用し、初回ハーネス実装を本Issueへ先送りしない。"
     ],
     "acceptance": [
       "別環境で手順を再現し、アプリソースの編集なしに環境値で切替できる",
       "キー不足/無効/任意機能無効を診断し、Fixtureモードはキー不要で動く",
       "Worker dry-run、型生成・設定/preflight検査が通る。iOS buildはM29で検収し、同じ外部資格を二重ゲートにしない",
       "Cloudflare/Google/モデル/Appleのアカウント・課金・データ投入をキーだけで完了と偽らない",
-      "package境界: 2つのデプロイ面のみを生成し、packageごとの型/境界検査と本番bundleの検証コード除外を確認できる。"
+      "package境界: 2つのデプロイ面のみを生成し、packageごとの型/境界検査と本番bundleの検証コード除外を確認できる。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
       "docs/design/0001-iphone-next-spot.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "docs・workspace CI・apps/mobile・workers/api設定：統合README/runbook・設定監査・CI最終整備",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "docs・workspace CI・apps/mobile・workers/api設定"
   },
   {
@@ -1021,24 +1094,27 @@
       "要件対応表の全項目を実ファイル/テスト/スクリーンショット/実行ログへリンクする",
       "APIキー設定ありliveとキーなしFixtureの両経路を新規setupから確認する",
       "内部MVPの必須profileはPlaces/Details/Routes/photo/モデル。終電は未確認ならdisabled/明示条件下で候補確定拒否を検証する。終電を提供するTestFlightはM33/M30で別途必須。機能を無断削除した完了にしない",
-      "ADR0012の配置・責務: E2Eは実アプリとHTTP境界を通し、Core/Worker内部のimportでサービスを置き換えない。各packageの試験証跡と要求対応を監査する。"
+      "ADR0012の配置・責務: E2Eは実アプリとHTTP境界を通し、Core/Worker内部のimportでサービスを置き換えない。各packageの試験証跡と要求対応を監査する。",
+      "品質ゲート: 内部MVP監査で必須品質ゲート・ファイル上限・PR上限の証跡を確認し、実機/実APIの証跡とは区別する。"
     ],
     "acceptance": [
       "明示要件の証跡が全てあり、未確認を完了と扱わない",
       "実モデル/実店舗APIの一連の結果があり、モックだけの成功で閉じない",
       "内部MVPで残る障害・データ依存・外部ゲートが一覧化される",
       "モックUIとの差分が仕様上の理由で説明でき、主要操作が実機で使用できる",
-      "package境界: 依存境界検査の合格とmobile/Worker実接続の両方があり、Core evalだけでUI/SDK統合成功と判定しない。"
+      "package境界: 依存境界検査の合格とmobile/Worker実接続の両方があり、Core evalだけでUI/SDK統合成功と判定しない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "index.html",
       "docs/planning/README.md",
       "docs/design/0006-fixture-runtime-validation.md",
       "docs/design/0001-iphone-next-spot.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "apps/mobile（E2E）・docs（監査）：iPhone E2E/実機build/視覚比較・内部MVP監査表",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "apps/mobile（E2E）・docs（監査）"
   },
   {
@@ -1060,24 +1136,27 @@
       "EAS署名/Apple資格/提出metadata/実機buildを確認し、配布の証跡とrollback手順を残す",
       "恵比寿・代官山の品質範囲は地理ハードロックにせず、少数の夜の評価計画を用意する",
       "任意HPのコードはM32で保持するが本番有効化を配布条件にはしない。終電実データはM33を必須とする。内部MVPと外部配布を別チェックリストで管理する",
-      "ADR0012の配置・責務: 配布チェックへ2デプロイ面・本番bundleの秘密値/Fixture/評価runner除外を追加する。"
+      "ADR0012の配置・責務: 配布チェックへ2デプロイ面・本番bundleの秘密値/Fixture/評価runner除外を追加する。",
+      "品質ゲート: 配布対象の品質ゲート合格・検証コード除外を確認する。文書はファイル500行の対象外だが、PR2,000行には含める。"
     ],
     "acceptance": [
       "検証済み終電データやApple権限が欠ければ未完了ゲートとして残す",
       "未対応地域/能力を全国対応や空席保証と表示しない",
       "内部MVPと外部配布それぞれの合否が明示される",
       "利用者への招待/通知はユーザーの明示許可で実施し、配布完了は実際のbuild状態で確認する",
-      "package境界: 配布する実成果物を確認し、packages/evalやテスト専用モデルが本番経路へ混入していない。"
+      "package境界: 配布する実成果物を確認し、packages/evalやテスト専用モデルが本番経路へ混入していない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0001-iphone-next-spot.md",
       "docs/adr/0001-in-the-moment-next-spot.md",
       "docs/adr/0002-cherished-person-lighter-load.md",
       "docs/design/0005-tool-contracts-v1.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "docs（配布）・apps/mobile/Worker成果物：配布/プライバシー/署名/終電チェックリストと実配布証跡",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "docs（配布）・apps/mobile/Worker成果物"
   },
   {
@@ -1100,15 +1179,17 @@
       "サーバー内部入力→公開保持メタデータ→端末適用の対応例があり、共通制約の保持可否/期限/denyを各境界で検証する期待値Fixtureがある",
       "SKUや料金・契約内容の推測を確定仕様にせず、未確認はdisabled/denyとして表現できる",
       "M04が保存前制御を判定でき、M21がM16完成を待たずに実装できる仕様が揃う",
-      "package境界: 公開契約だけで端末の許可/期限/denyを判断でき、内部観測とのWorker変換例がある。期待例にSDK実装を含めず、M03/M16/M21の責務が明確である。"
+      "package境界: 公開契約だけで端末の許可/期限/denyを判断でき、内部観測とのWorker変換例がある。期待例にSDK実装を含めず、M03/M16/M21の責務が明確である。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "docs（policy仕様・データのみの期待例）：provider-policy仕様表・共通保持期待値Fixture（SDK非依存）",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "docs（policy仕様・データのみの期待例）"
   },
   {
@@ -1132,15 +1213,17 @@
       "HP無効/キーなしでPlaces基本経路が使用できる",
       "同名別支店・曖昧一致・LO不明・出典競合・失敗の契約テストが通る",
       "実キー試験はM35の有効化profileで行い、Fixture合格と区別する",
-      "package境界: HP SDK型やレスポンスを公開契約/Coreへ漏らさず、Worker内の契約試験でキーなし/競合を検証できる。"
+      "package境界: HP SDK型やレスポンスを公開契約/Coreへ漏らさず、Worker内の契約試験でキーなし/競合を検証できる。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（HP Adapter）：HP outbound Adapter・照合/LO/帰属の契約テスト",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（HP Adapter）"
   },
   {
@@ -1162,15 +1245,17 @@
       "宣言した対応ペアを検証済みデータで全件カバーし、欠損ペアはunsupportedとなる",
       "架空seedを本番データに使わず、検証元と投入結果がある",
       "資料/権限不足時はこのIssueを未完了に保ち、M14のコード検証とは区別する",
-      "package境界: 本番データと合成Fixtureの入力元が分離され、更新/rollbackが公開Core検証入口を通る。"
+      "package境界: 本番データと合成Fixtureの入力元が分離され、更新/rollbackが公開Core検証入口を通る。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（データ・取込み運用）・docs（出典）：出典付き実journeyデータ・投入/更新/rollback証跡",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（データ・取込み運用）・docs（出典）"
   },
   {
@@ -1187,21 +1272,24 @@
       "Secret名一覧とexample、API有効化/課金/権限preflight、Fixture/live切替を整備する。Secret値をリポジトリへ入れない",
       "providerや保存実装で追加するbindingは当該Issueの変更として追記する。全機能完成を待って環境を作らない",
       "認証情報がない場合もdry-run/設定検証は行い、実資源作成・署名buildはM35/M29へ検証項目を渡す",
-      "ADR0012の配置・責務: WorkerのEnv/binding/型生成はWorker内、EAS/端末設定はmobile内へ閉じる。contracts/coreにはCloudflare/Expo設定を持ち込まない。"
+      "ADR0012の配置・責務: WorkerのEnv/binding/型生成はWorker内、EAS/端末設定はmobile内へ閉じる。contracts/coreにはCloudflare/Expo設定を持ち込まない。",
+      "品質ゲート: 手書き環境設定へ500行制約を適用し、生成binding型の除外パス/生成元と再生成・型検査を記録する。生成物/lockfileもPR行数には含める。"
     ],
     "acceptance": [
       "キーなしでローカルWorker/Fixtureを起動しdry-runと型検査が通る",
       "利用者が環境値を設定でき、設定後のdeploy/build/smokeコマンドが文書化される",
       "実デプロイ/実機成功を未設定状態で主張しない",
-      "package境界: 5つのworkspaceでもデプロイ面はmobile/Workerの2つで、evalは検証ジョブだけに使う。"
+      "package境界: 5つのworkspaceでもデプロイ面はmobile/Workerの2つで、evalは検証ジョブだけに使う。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/adr/0011-cloudflare-led-agent-runtime.md",
       "docs/design/0001-iphone-next-spot.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api・apps/mobile（環境設定）：非本番config・Secret example・dry-run/preflight・内部EAS profile",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api・apps/mobile（環境設定）"
   },
   {
@@ -1226,15 +1314,17 @@
       "基本profileの実要求と応答、schema検証結果があり、Fixture代替を成功扱いしない",
       "キーや利用許諾不足は未完了として残す。コード開発はM24まで独立に進められる",
       "任意profileの未検証/disabledが明示され、対応済みと誤表示されない",
-      "package境界: 実配線・公開HTTP応答・本番対象の依存構成を検収し、Fixtureやevalがlive成功を作っていない。"
+      "package境界: 実配線・公開HTTP応答・本番対象の依存構成を検収し、Fixtureやevalがlive成功を作っていない。",
+      "ADR0013の品質ゲートを満たす。手書きコード・テスト・設定は空行/コメント込み1ファイル500行以内（生成物/lockfile/Markdown/既存HTMLモックはこの制約の対象外、除外パス明示）。PRはmerge-base→headの追加＋削除2,000行以内で、文書/テスト/生成物/lockfileも含む。担当packageのlint/依存/型/関連テストを検証し、未実装CIを稼働済みと扱わない。"
     ],
     "references": [
       "docs/design/0005-tool-contracts-v1.md",
       "docs/design/0006-fixture-runtime-validation.md",
-      "docs/adr/0012-package-dependency-boundaries.md"
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0013-quality-harness-and-size-limits.md"
     ],
     "deliverables": "workers/api（live検収）・docs（証跡）：live profile別preflight/実API結果・許諾確認・未検証一覧",
-    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。",
+    "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（live検収）・docs（証跡）"
   }
 ]
