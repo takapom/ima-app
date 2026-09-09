@@ -1,0 +1,116 @@
+{
+  "fixtureVersion": "m31-v1",
+  "provenance": "generated",
+  "liveProvider": false,
+  "activationProfile": "fixture_only",
+  "liveActivationProfile": "disabled_until_m35",
+  "purpose": "GPS・終電の未対応を理由に明示hard constraintを解除しない",
+  "cases": [
+    {
+      "id": "gps-denied-with-walk-limit",
+      "threadId": "thread-gps",
+      "input": {
+        "userConstraint": {
+          "kind": "max_walk_minutes",
+          "value": 15,
+          "hard": true,
+          "source": "user_turn"
+        },
+        "location": { "status": "denied", "value": null },
+        "requestedFields": ["identity", "walking_route"]
+      },
+      "providerResult": {
+        "identity": { "status": "known", "provenance": "generated" },
+        "walking_route": {
+          "status": "unsupported",
+          "code": "LOCATION_REQUIRED",
+          "provenance": "generated"
+        }
+      },
+      "expected": {
+        "searchByNamedArea": "allow_if_user_provides_area",
+        "hardConstraint": "preserved",
+        "submit": "deny",
+        "errorCode": "LOCATION_REQUIRED",
+        "conditionChange": "none",
+        "policyStatus": "policy_withheld"
+      }
+    },
+    {
+      "id": "gps-reduced-with-walk-limit",
+      "threadId": "thread-gps-reduced",
+      "input": {
+        "userConstraint": {
+          "kind": "max_walk_minutes",
+          "value": 15,
+          "hard": true,
+          "source": "user_turn"
+        },
+        "location": { "status": "reduced", "accuracyMeters": null, "value": null },
+        "requestedFields": ["walking_route"]
+      },
+      "providerResult": {
+        "walking_route": {
+          "status": "unsupported",
+          "code": "LOCATION_IMPRECISE",
+          "provenance": "generated"
+        }
+      },
+      "expected": {
+        "hardConstraint": "preserved",
+        "submit": "deny",
+        "errorCode": "LOCATION_IMPRECISE",
+        "ipFallback": "deny",
+        "conditionChange": "none"
+      }
+    },
+    {
+      "id": "last-train-disabled-with-hard-stay",
+      "threadId": "thread-train",
+      "input": {
+        "userConstraint": {
+          "kind": "last_train_and_minimum_stay",
+          "homeStationRef": "home-station-001",
+          "minimumStayMinutes": 30,
+          "hard": true,
+          "source": "user_turn"
+        },
+        "capability": { "last_train": "disabled", "provenance": "generated" },
+        "requestedFields": ["last_train"]
+      },
+      "providerResult": {
+        "last_train": {
+          "status": "unsupported",
+          "code": "UNSUPPORTED_FIELD",
+          "provenance": "generated"
+        }
+      },
+      "expected": {
+        "hardConstraint": "preserved",
+        "submit": "deny",
+        "errorCode": "UNSUPPORTED_FIELD",
+        "conditionChange": "none",
+        "fallbackToNoTrainCheck": "deny",
+        "policyStatus": "disabled_capability"
+      }
+    },
+    {
+      "id": "train-unknown-missing-route",
+      "threadId": "thread-train-unknown",
+      "input": {
+        "userConstraint": {
+          "kind": "last_train_and_minimum_stay",
+          "hard": true,
+          "source": "user_turn"
+        },
+        "providerResult": { "last_train": { "status": "unknown", "provenance": "generated" } }
+      },
+      "expected": {
+        "hardConstraint": "preserved",
+        "submit": "deny",
+        "errorCode": "MISSING_EVIDENCE",
+        "conditionChange": "none"
+      }
+    }
+  ]
+}

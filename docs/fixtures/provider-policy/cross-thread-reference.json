@@ -1,0 +1,82 @@
+{
+  "fixtureVersion": "m31-v1",
+  "provenance": "generated",
+  "liveProvider": false,
+  "activationProfile": "fixture_only",
+  "liveActivationProfile": "disabled_until_m35",
+  "purpose": "保存place_id参照を次threadへ明示登録し、内容を自動移送しない",
+  "sourceThread": {
+    "threadId": "thread-a",
+    "ownerScope": "owner-1",
+    "candidateId": "candidate-a",
+    "candidateRefRetentionUntil": "sessionExpiresAt",
+    "observation": {
+      "observationId": "obs-a",
+      "provider": "google_places",
+      "field": "place_id",
+      "value": "generated-place-id-001",
+      "provenance": "generated",
+      "freshUntil": null,
+      "retentionUntil": null,
+      "retentionMode": "identifier_indefinite_owner_scoped"
+    },
+    "savedPlace": {
+      "savedPlaceRef": "saved-ref-001",
+      "explicitUserAction": true,
+      "provider": "google_places",
+      "field": "place_id",
+      "value": "generated-place-id-001",
+      "retentionDecision": "allow",
+      "retentionUntil": null,
+      "deletionPolicy": "until_explicit_user_delete",
+      "payload": {
+        "display_name": { "stored": false },
+        "formatted_address": { "stored": false },
+        "location": { "stored": false },
+        "photos": { "stored": false },
+        "route": { "stored": false },
+        "generated_text": { "stored": false }
+      }
+    }
+  },
+  "targetThread": {
+    "threadId": "thread-b",
+    "ownerScope": "owner-1",
+    "register": {
+      "operation": "register_saved_place_ref",
+      "savedPlaceRef": "saved-ref-001",
+      "explicit": true,
+      "authorization": "same_owner_scope"
+    },
+    "expected": {
+      "newCandidateId": "candidate-b",
+      "oldCandidateIdUsable": false,
+      "oldObservationUsable": false,
+      "providerIdMayBeResolvedInternally": true,
+      "providerPayloadMustBeRefetched": true,
+      "freshUntilBeforeRefetch": null,
+      "crossOwnerRead": "deny",
+      "llmExposure": {
+        "savedPlaceRef": "opaque_reference_only",
+        "providerPlaceId": "policy_withheld",
+        "unfetchedContent": "policy_withheld"
+      }
+    }
+  },
+  "negativeCases": [
+    {
+      "case": "implicit_thread_copy",
+      "input": { "threadId": "thread-b", "candidateId": "candidate-a" },
+      "expected": { "result": "deny", "reason": "explicit registration required" }
+    },
+    {
+      "case": "different_owner",
+      "input": {
+        "threadId": "thread-b",
+        "ownerScope": "owner-2",
+        "savedPlaceRef": "saved-ref-001"
+      },
+      "expected": { "result": "deny", "reason": "owner scope mismatch" }
+    }
+  ]
+}

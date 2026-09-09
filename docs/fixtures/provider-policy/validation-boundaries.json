@@ -1,0 +1,122 @@
+{
+  "fixtureVersion": "m31-v1",
+  "provenance": "generated",
+  "liveProvider": false,
+  "activationProfile": "fixture_only",
+  "liveActivationProfile": "disabled_until_m35",
+  "purpose": "公開保持メタデータの欠落・不正時にfail closedする",
+  "cases": [
+    {
+      "id": "missing-retention-decision",
+      "input": {
+        "provider": "google_places",
+        "field": "display_name",
+        "sessionExpiresAt": "2026-09-08T05:00:00+09:00",
+        "freshUntil": "2026-09-08T04:50:00+09:00",
+        "retentionUntil": null
+      },
+      "expected": {
+        "persistence": "deny",
+        "displayAfterFreshUntil": "deny",
+        "reason": "retention decision missing"
+      }
+    },
+    {
+      "id": "missing-session-expiry",
+      "input": {
+        "provider": "google_places",
+        "field": "location",
+        "retentionDecision": "allow",
+        "retentionUntil": "2026-09-08T05:00:00+09:00",
+        "freshUntil": "2026-09-08T04:50:00+09:00"
+      },
+      "expected": {
+        "persistence": "deny",
+        "display": "deny",
+        "reason": "sessionExpiresAt required for provider payload"
+      }
+    },
+    {
+      "id": "malformed-timestamp",
+      "input": {
+        "provider": "google_places",
+        "field": "location",
+        "sessionExpiresAt": "2026-09-08 05:00 JST",
+        "freshUntil": "not-a-timestamp",
+        "retentionUntil": "2026-09-08T05:00:00+09:00"
+      },
+      "expected": {
+        "persistence": "deny",
+        "display": "deny",
+        "evidenceUse": "deny",
+        "reason": "timestamps must be ISO-8601 with offset"
+      }
+    },
+    {
+      "id": "retention-after-session",
+      "input": {
+        "provider": "google_places",
+        "field": "location",
+        "sessionExpiresAt": "2026-09-08T05:00:00+09:00",
+        "freshUntil": "2026-09-08T04:50:00+09:00",
+        "providerRetentionUntil": "2026-10-08T04:20:00+09:00",
+        "retentionUntil": "2026-10-08T04:20:00+09:00"
+      },
+      "expected": {
+        "persistence": "deny",
+        "reason": "retentionUntil must be min(sessionExpiresAt, providerRetentionUntil)"
+      }
+    },
+    {
+      "id": "photo-attribution-missing",
+      "input": {
+        "provider": "google_places",
+        "field": "photos[].name",
+        "photoResponse": {
+          "authorAttributions": null,
+          "attributionFieldStatus": "missing",
+          "googleMapsAttribution": "present"
+        },
+        "displayUntil": "2026-09-08T04:30:00+09:00"
+      },
+      "expected": {
+        "display": "deny",
+        "persistence": "deny",
+        "policyStatus": "attribution_missing",
+        "reason": "provider response lost the required authorAttributions field"
+      }
+    },
+    {
+      "id": "photo-attribution-legitimately-empty",
+      "input": {
+        "provider": "google_places",
+        "field": "photos[].name",
+        "photoResponse": {
+          "authorAttributions": [],
+          "attributionFieldStatus": "present",
+          "googleMapsAttribution": "present"
+        },
+        "displayUntil": "2026-09-08T04:30:00+09:00"
+      },
+      "expected": {
+        "display": "allow_with_conditions",
+        "persistence": "deny",
+        "authorAttributions": "none_supplied",
+        "reason": "empty author list is distinct from a missing field; Google Maps attribution remains required"
+      }
+    },
+    {
+      "id": "deletion-sla",
+      "input": {
+        "retentionUntil": "2026-09-08T05:00:00+09:00",
+        "deletionScheduledAt": "2026-09-08T05:00:00+09:00",
+        "appStopped": true
+      },
+      "expected": {
+        "useBeforeStartupCleanup": "deny",
+        "deletionTarget": "within_15_minutes",
+        "strictPhysicalDeletionUnverified": "persistence_deny"
+      }
+    }
+  ]
+}
