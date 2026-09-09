@@ -31,6 +31,10 @@ import type {
   ThreadDO,
   ThreadState,
 } from './thread-do';
+import {
+  createRuntimeApplicationHandler,
+  type RuntimeCancellationClassification,
+} from './bootstrap-runtime';
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;
@@ -51,6 +55,8 @@ export type BootstrapOptions = {
   readonly requestIdFactory?: () => string;
   readonly maxBodyBytes?: number;
   readonly rateLimit?: RateLimitConfig;
+  readonly waitUntil?: (promise: Promise<void>) => void;
+  readonly onCancellationError?: (classification: RuntimeCancellationClassification) => void;
 };
 
 const unavailable = (): HttpBoundaryError =>
@@ -112,31 +118,9 @@ const lifecycleState = (
 
 const threadStub = (env: BootstrapEnv, threadId: string) => env.THREADS.getByName(threadId);
 
-const readThread = async (
-  env: BootstrapEnv,
-  operation: Extract<ApplicationOperation, { kind: 'read_thread' | 'replay_thread' }>,
-  context: HandlerContext,
-): Promise<ApplicationResult> => {
-  const snapshot = requireSnapshot(
-    await threadCall(
-      async () => await threadStub(env, operation.path.threadId).read(context.ownerScopeRef),
-    ),
-  );
-  return {
-    kind: operation.kind,
-    response: {
-      schemaVersion: 'v1',
-      requestId: context.requestId,
-      threadId: snapshot.threadId,
-      revision: snapshot.revision,
-      active: snapshot.active,
-      responses: [],
-    },
-  };
-};
-
 const handleApplication = async (
   env: BootstrapEnv,
+  runtime: ApplicationHandler,
   operation: ApplicationOperation,
   context: HandlerContext,
 ): Promise<ApplicationResult> => {
@@ -161,7 +145,9 @@ const handleApplication = async (
     }
     case 'read_thread':
     case 'replay_thread':
-      return readThread(env, operation, context);
+    case 'turn':
+    case 'search':
+      return runtime.handle(operation, context);
     case 'lifecycle': {
       const snapshot = requireSnapshot(
         await threadCall(
@@ -200,31 +186,26 @@ const handleApplication = async (
         ),
       );
       return { kind: 'delete_thread', response: null };
-    case 'turn':
-      requireSnapshot(
-        await threadCall(
-          async () => await threadStub(env, operation.path.threadId).read(context.ownerScopeRef),
-        ),
-      );
-      throw unavailable();
-    case 'search':
-      requireSnapshot(
-        await threadCall(
-          async () => await threadStub(env, operation.input.threadId).read(context.ownerScopeRef),
-        ),
-      );
-      throw unavailable();
     case 'place':
     case 'saved_reference_refresh':
       throw unavailable();
   }
 };
 
-const createApplication = (env: BootstrapEnv): ApplicationHandler => ({
-  handle(operation, context) {
-    return handleApplication(env, operation, context);
-  },
-});
+const createApplication = (env: BootstrapEnv, options: BootstrapOptions): ApplicationHandler => {
+  const runtime = createRuntimeApplicationHandler({
+    threads: env.THREADS,
+    ...(options.waitUntil === undefined ? {} : { waitUntil: options.waitUntil }),
+    ...(options.onCancellationError === undefined
+      ? {}
+      : { onCancellationError: options.onCancellationError }),
+  });
+  return {
+    handle(operation, context) {
+      return handleApplication(env, runtime, operation, context);
+    },
+  };
+};
 
 const createUnavailablePhoto = (): PhotoBodyHandler => ({
   read() {
@@ -299,7 +280,7 @@ export const createHttpRouterConfig = (
   options: BootstrapOptions,
 ): HttpRouterConfig => {
   const handlers: HandlerDependencies = {
-    application: createApplication(env),
+    application: createApplication(env, options),
     photo: createUnavailablePhoto(),
     events: createUnavailableEvents(),
     rateLimiter: new DurableRateLimiter(

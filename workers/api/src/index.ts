@@ -11,7 +11,11 @@ type HealthResponse = {
 };
 
 export default {
-  async fetch(request: Request, env: BootstrapEnv): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: BootstrapEnv,
+    executionContext: ExecutionContext,
+  ): Promise<Response> {
     const { pathname } = new URL(request.url);
     if (request.method === 'GET' && pathname === '/health') {
       const body: HealthResponse = { status: 'ok' };
@@ -22,6 +26,7 @@ export default {
       request,
       createHttpRouterConfig(env, {
         ownership,
+        waitUntil: (promise) => executionContext.waitUntil(promise),
       }),
     );
   },
