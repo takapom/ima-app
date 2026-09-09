@@ -1,11 +1,51 @@
 # M04 Runtime compatibility evidence
 
-- **Status:** runtime gates unverified; no runtime adoption decision
+- **Status:** partial runtime evidence; mandatory gates incomplete; no runtime adoption decision
 - **Date:** 2026-09-09
-- **Scope:** M04 first-gate feasibility only
+- **Scope:** M04 isolated feasibility and PM review checkpoints
 - **Isolation:** `/tmp/ima-m04-spike` (the repository lockfile and production files were not changed)
 
 ## Conclusion
+
+Local Workers/DO execution is available. Later runs exercised the real Think
+and AIChat SDKs; the earlier rejected `wrangler --version` command did not
+establish that runtime testing was blocked. The following checkpoint supersedes
+the initial smoke-test conclusion below, but does not establish SDK adoption.
+
+### PM checkpoint: 2026-09-09 21:33 JST
+
+| Evidence                          | PM observation                                                                                                     | Limit                                                                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| Think active-tool gate            | Real Worker/DO test passed: three exposed tools, rejected `read`, positive search control                          | Does not cover every continuation/recovery path                                                                          |
+| Provider-step and SSE gate        | Four tests passed, including mixed terminal-step rejection before effects and structurally sanitized stream chunks | Native-loop integration and remaining robustness corrections are pending                                                 |
+| Core → AI SDK contract gate       | 21 tests passed against the actual Core public entry, including strict final envelope and malformed tool arguments | Isolated aliases; not proof of workspace installation or provider strict-generation support                              |
+| Public DTO → mobile service/state | 27 contract/mobile tests passed; committed in `3597fc7`                                                            | Actual SDK HTTP response → mobile integration remains pending                                                            |
+| Native repair/idempotency loop    | Five tests passed, but PM rejected the evidence as sufficient for adoption                                         | Paid-I/O counter, pre-model replay, actual Core schemas, and combined step/persistence control need correction           |
+| Retention/recovery                | Six tests passed, but PM rejected the evidence as sufficient for adoption                                          | Private SDK deletion, history expiry, distinct retention/display boundaries, and failure commit behavior need correction |
+
+The last two rows intentionally record tests whose assertions were insufficient.
+A green runner is not an acceptance result when source review finds that the
+fixture bypasses the required boundary or omits the side effect being measured.
+Sub-agents are correcting these fixtures; neither candidate is declared adopted
+or comprehensively incompatible on this evidence.
+
+Temporary reproduction commands, run from the repository root:
+
+```sh
+node_modules/.bin/vitest run --config /tmp/ima-m04-spike/vitest.gate.config.mjs
+node_modules/.bin/vitest run --config /tmp/ima-m04-spike/vitest.step.config.mjs
+node_modules/.bin/vitest run --config /tmp/ima-m04-contract-gate/vitest.config.mjs
+```
+
+These paths are local investigation artifacts, not a fresh-clone test setup.
+Before M04 completion, the accepted fixture sources, dependency declarations,
+complete lockfile, and repeatable tests must be integrated into the Worker
+package and pass repository checks. Core's pending Valibot dependency install
+was rejected by the host; temporary test aliases do not resolve that prerequisite.
+M05 remains gated by M03 and M04. Paid APIs, live models, and production deletion
+timing have not been tested.
+
+### Initial smoke-test observation
 
 The pinned packages can be imported in an isolated Node environment and the
 real Think workspace factory can be called. That is a registration smoke test
