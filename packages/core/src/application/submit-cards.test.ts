@@ -195,4 +195,43 @@ describe('submit-cards pure validation and card assembly', () => {
       );
     }
   });
+
+  it('rejects an observation ID suppressed by refresh even when a newer ID is reusable', () => {
+    const fixture = makeFixture();
+    const ids = idsFor(fixture);
+    fixture.registry.invalidateObservationReuse(fixture.context.scope, 'candidate-1', 'identity');
+    const refreshedIdentity = addObservation(
+      fixture.registry,
+      fixture.context,
+      'candidate-1',
+      'identity',
+      {
+        name: '店 candidate-1 refreshed',
+        area: '恵比寿',
+        address: null,
+        category: 'cafe',
+        businessStatus: 'operational',
+        sourceUrl: null,
+      },
+    );
+    expect(
+      fixture.registry.restoreObservationReuse(fixture.context.scope, 'candidate-1', 'identity', [
+        refreshedIdentity,
+      ]),
+    ).toBe(true);
+
+    const oldSelection = makeSelection('candidate-1', ids);
+    expect(
+      validateSubmitCards(makeInput([oldSelection]), fixture.context, fixture.registry).status,
+    ).toBe('invalid');
+
+    const newSelection = makeSelection('candidate-1', ids);
+    newSelection.evidenceIds = newSelection.evidenceIds.map((id) =>
+      id === ids.identity ? refreshedIdentity : id,
+    );
+    newSelection.why.evidenceIds = [refreshedIdentity];
+    expect(
+      validateSubmitCards(makeInput([newSelection]), fixture.context, fixture.registry).status,
+    ).toBe('valid');
+  });
 });

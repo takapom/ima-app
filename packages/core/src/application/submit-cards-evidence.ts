@@ -302,6 +302,7 @@ export const resolveObservation = (
     candidateId: observation.candidateId,
     field: observation.field,
     context: context.expectedObservationContext,
+    observationId,
   });
   if (reuse.status === 'conflict') {
     return {
