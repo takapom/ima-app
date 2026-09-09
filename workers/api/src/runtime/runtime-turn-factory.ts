@@ -39,6 +39,11 @@ export type RuntimeTurnFactoryOptions = {
   readonly budget: RuntimeBudget;
   readonly ids: Pick<IdPort, 'nextCallId'>;
   readonly ports: RuntimeTurnPortDependencies;
+  /** Rebuilds the submit adapter with the current clock and effective conditions for each call. */
+  readonly buildSubmitPort?: (input: {
+    readonly now: string;
+    readonly conditions: TurnConditionValues;
+  }) => SubmitCardsPort;
   /** Original user turns used by Core to validate quoted turn-constraint proposals. */
   readonly constraintContext: ConstraintValidationContext;
   /** M07 applies validated metadata and the resulting effective conditions to this turn. */
@@ -77,6 +82,8 @@ export type RuntimeTurnHandle = {
   readonly baseContext: HarnessContext;
   readonly context: HarnessContext;
   readonly getConditions: () => TurnConditionValues;
+  /** Applies one already parsed metadata envelope through the same turn update path as Tools. */
+  readonly applyMetadata: (metadata: ModelActionMetadata) => ModelActionMetadata;
   readonly budget: RuntimeBudget;
   readonly signal: AbortSignal;
   readonly dependencies: ToolBindingDependencies;
@@ -146,14 +153,17 @@ const submitDenial = (denial: {
   };
 };
 
-const budgetedSubmit = (port: SubmitCardsPort, budget: RuntimeBudget): SubmitCardsPort => ({
+const budgetedSubmit = (
+  currentPort: () => SubmitCardsPort,
+  budget: RuntimeBudget,
+): SubmitCardsPort => ({
   async submit(input, execution, cancellation) {
     const reservation = budget.reserveSubmit();
     if (!reservation.ok) return submitDenial(reservation.denial);
     if (cancellation.isCancelled()) {
       return submitDenial({ code: 'CANCELLED', message: 'submit was cancelled' });
     }
-    const result = await port.submit(input, execution, cancellation);
+    const result = await currentPort().submit(input, execution, cancellation);
     if (result.status === 'committed') budget.markCommitted();
     return result;
   },
@@ -212,6 +222,24 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     options.isStale?.() === true ||
     options.budget.isCancelled();
 
+  const applyMetadataToTurn = (metadata: ModelActionMetadata): ModelActionMetadata => {
+    if (isCancelled())
+      throw new RuntimeTurnFactoryError(factoryErrorCode(disposed, options.isStale));
+    const validatedMetadata = validateModelActionMetadata(metadata, options.constraintContext);
+    let nextConditions = conditions;
+    if (validatedMetadata.turnConstraints !== undefined) {
+      nextConditions = applyTurnConstraintsForTurn(
+        conditions,
+        validatedMetadata.turnConstraints,
+        options.constraintContext,
+      );
+    }
+    options.applyMetadata(validatedMetadata, nextConditions);
+    conditions = nextConditions;
+    context = contextWithConditions(baseContext, conditions);
+    return validatedMetadata;
+  };
+
   const runtime: ToolRuntimeFactory = (operation, invocation, metadata) => {
     if (isCancelled(invocation.abortSignal)) {
       throw new RuntimeTurnFactoryError(factoryErrorCode(disposed, options.isStale));
@@ -240,22 +268,11 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
         remainingRepairs: budgetRepairCount(options.budget),
       };
     }
-    const validatedMetadata = validateModelActionMetadata(metadata, options.constraintContext);
-    let nextConditions = conditions;
-    if (validatedMetadata.turnConstraints !== undefined) {
-      nextConditions = applyTurnConstraintsForTurn(
-        conditions,
-        validatedMetadata.turnConstraints,
-        options.constraintContext,
-      );
-    }
+    applyMetadataToTurn(metadata);
     const callId = options.ids.nextCallId();
     if (isCancelled(invocation.abortSignal)) {
       throw new RuntimeTurnFactoryError(factoryErrorCode(disposed, options.isStale));
     }
-    options.applyMetadata(validatedMetadata, nextConditions);
-    conditions = nextConditions;
-    context = contextWithConditions(baseContext, conditions);
     const callContext = cloneContext(context);
     serverCalls.set(invocation.toolCallId, { operation, callId, context: callContext });
     metadataByCall.set(invocation.toolCallId, metadataJson);
@@ -275,7 +292,14 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     };
   };
 
-  const submit = budgetedSubmit(options.ports.submit, options.budget);
+  const submit = budgetedSubmit(
+    () =>
+      options.buildSubmitPort?.({
+        now: options.ports.clock(),
+        conditions: { ...conditions },
+      }) ?? options.ports.submit,
+    options.budget,
+  );
   const dependencies: ToolBindingDependencies = Object.freeze({
     ...options.ports,
     submit,
@@ -333,6 +357,7 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
       return cloneContext(context);
     },
     getConditions: () => ({ ...conditions }),
+    applyMetadata: applyMetadataToTurn,
     budget: options.budget,
     signal: disposeController.signal,
     dependencies,

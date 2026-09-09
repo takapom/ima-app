@@ -131,7 +131,10 @@ type PortCalls = {
   readonly submits: ToolExecutionContext[];
 };
 
-const createPorts = (calls: PortCalls): RuntimeTurnPortDependencies => {
+const createPorts = (
+  calls: PortCalls,
+  clock: () => string = () => context.serverNow,
+): RuntimeTurnPortDependencies => {
   const registry = createToolRegistry().registry;
   const search: PlaceSearchPort = {
     search: (_input, receivedContext, execution) => {
@@ -152,7 +155,7 @@ const createPorts = (calls: PortCalls): RuntimeTurnPortDependencies => {
       return Promise.resolve(committedResult);
     },
   };
-  return { registry, clock: () => context.serverNow, search, details, submit };
+  return { registry, clock, search, details, submit };
 };
 
 const createBudget = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudget =>
@@ -162,7 +165,11 @@ const createBudget = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudg
     now: () => 1,
   });
 
-const createFactory = (calls: PortCalls, overrides: Partial<RuntimeTurnFactoryOptions> = {}) => {
+const createFactory = (
+  calls: PortCalls,
+  overrides: Partial<RuntimeTurnFactoryOptions> = {},
+  clock: () => string = () => context.serverNow,
+) => {
   let call = 0;
   const applied: Array<{ readonly maxWalkMinutes: number | null }> = [];
   const stopWhen: NonNullable<RuntimeTurnFactoryOptions['stopWhen']> = () => true;
@@ -170,7 +177,7 @@ const createFactory = (calls: PortCalls, overrides: Partial<RuntimeTurnFactoryOp
     context,
     budget: createBudget(),
     ids: { nextCallId: () => `server-call-${++call}` },
-    ports: createPorts(calls),
+    ports: createPorts(calls, clock),
     constraintContext: {
       threadId: context.threadId,
       originalTurns: [
@@ -397,6 +404,46 @@ describe('createRuntimeTurnFactory', () => {
       issues: [{ code: 'BUDGET_EXCEEDED' }],
     });
     expect(calls.submits).toHaveLength(1);
+  });
+
+  it('builds the submit adapter with the latest clock and turn conditions', async () => {
+    const calls: PortCalls = { searches: [], searchExecutions: [], details: [], submits: [] };
+    let now = context.serverNow;
+    const built: Array<{ now: string; maxWalkMinutes: number | null }> = [];
+    const dynamicSubmit: SubmitCardsPort = {
+      submit: () => Promise.resolve(committedResult),
+    };
+    const { factory } = createFactory(
+      calls,
+      {
+        buildSubmitPort: ({ now: sampledNow, conditions }) => {
+          built.push({ now: sampledNow, maxWalkMinutes: conditions.maxWalkMinutes });
+          return dynamicSubmit;
+        },
+      },
+      () => now,
+    );
+    await invokePublicToolEnvelope(
+      'search_places',
+      envelope({
+        turnConstraints: {
+          changes: [
+            { maxWalkMinutes: 20, sourceTurnId: 'turn-source', quote: '最大徒歩を20分に変更する' },
+          ],
+        },
+      }),
+      factory.dependencies,
+      { toolCallId: 'sdk-search-for-submit' },
+    );
+    now = '2026-09-10T00:01:00Z';
+    const result = await invokePublicToolEnvelope(
+      'submit_cards',
+      { input: submitInput, metadata: {} },
+      factory.dependencies,
+      { toolCallId: 'sdk-submit-fresh-context' },
+    );
+    expect(result).toEqual(committedResult);
+    expect(built).toEqual([{ now, maxWalkMinutes: 20 }]);
   });
 
   it('propagates caller abort and dispose to the factory signal before a Port call', async () => {
