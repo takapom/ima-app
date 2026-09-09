@@ -10,7 +10,7 @@ export default defineConfig({
   test: {
     name: 'runtime-gate',
     setupFiles: ['./workers/api/tests/runtime-setup.ts'],
-    include: ['workers/api/tests/runtime-gate/**/*.test.ts'],
+    include: ['workers/api/tests/runtime-gate/**/*.test.ts', 'tests/runtime-http-mobile.test.ts'],
     exclude: [
       'workers/api/tests/runtime-gate/runtime-gate-contract.test.ts',
       'workers/api/tests/runtime-gate/runtime-gate-core.test.ts',
