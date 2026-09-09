@@ -13,6 +13,7 @@ export const RUNTIME_NATIVE_SCENARIOS = [
   'empty-final-after-submit',
   'mixed-batch',
   'unexpected-sdk-error',
+  'waiting-for-cancellation',
 ] as const;
 
 export type RuntimeNativeScenario = (typeof RUNTIME_NATIVE_SCENARIOS)[number];
@@ -32,6 +33,8 @@ export type RuntimeNativeProviderOptions = {
 };
 export type RuntimeNativeModelReport = RuntimeGateModelReport & {
   readonly providerOptionsSeen: (RuntimeNativeProviderOptions | undefined)[];
+  waitingStarted: boolean;
+  abortObserved: boolean;
 };
 export type RuntimeNativeToolName = 'get_place_details' | 'submit_cards';
 
@@ -61,7 +64,7 @@ export type RuntimeNativeExpectedResult = {
   readonly providerToolCalls: readonly RuntimeNativeToolName[];
   /** Durable reference-only commit count expected from the connected Core application. */
   readonly commitWrites: 0 | 1;
-  readonly terminal: 'submit' | 'empty-final' | 'guard-rejected' | 'provider-error';
+  readonly terminal: 'submit' | 'empty-final' | 'guard-rejected' | 'provider-error' | 'waiting';
   readonly guardError: 'MIXED_TERMINAL_ACTION' | null;
   readonly providerError: 'UNEXPECTED_SDK_ERROR' | null;
 };
@@ -214,6 +217,20 @@ export const createRuntimeNativeScenarioPlan = (
       },
     };
   }
+  if (scenario === 'waiting-for-cancellation') {
+    return {
+      scenario,
+      steps: [],
+      expected: {
+        modelCalls: 1,
+        providerToolCalls: [],
+        commitWrites: 0,
+        terminal: 'waiting',
+        guardError: null,
+        providerError: null,
+      },
+    };
+  }
   return {
     scenario,
     steps: [{ actions: [], finish: 'provider-error' }],
@@ -275,12 +292,52 @@ const recordUnexpectedRequest = (
   });
 };
 
+type RuntimeNativeStreamResult = Awaited<ReturnType<RuntimeNativeModel['doStream']>>;
+
+const waitForAbort = (
+  signal: AbortSignal,
+  report: RuntimeNativeModelReport,
+): Promise<RuntimeNativeStreamResult> =>
+  new Promise((resolve) => {
+    const onAbort = (): void => {
+      report.abortObserved = true;
+      signal.removeEventListener('abort', onAbort);
+      resolve({ stream: streamOf([]) });
+    };
+    if (signal.aborted) onAbort();
+    else signal.addEventListener('abort', onAbort, { once: true });
+  });
+
 /** Reuses the existing Worker V3 fixture for normal steps and only extends its error case. */
 export const createRuntimeNativeModel = (
   scenario: RuntimeNativeScenario,
   inputs: RuntimeNativeInputs,
   report: RuntimeNativeModelReport,
 ): RuntimeNativeModel => {
+  if (scenario === 'waiting-for-cancellation') {
+    let call = 0;
+    return {
+      specificationVersion: 'v3',
+      provider: 'm10-runtime-native-scripted-provider',
+      modelId: scenario,
+      supportedUrls: {},
+      doGenerate: (options) => {
+        recordUnexpectedRequest(report, call, options);
+        call += 1;
+        return Promise.reject(new RuntimeNativeProviderError('GENERATE_NOT_CONFIGURED'));
+      },
+      doStream: (options) => {
+        recordUnexpectedRequest(report, call, options);
+        call += 1;
+        report.waitingStarted = true;
+        const signal = options.abortSignal;
+        return signal === undefined
+          ? Promise.reject(new RuntimeNativeProviderError('GENERATE_NOT_CONFIGURED'))
+          : waitForAbort(signal, report);
+      },
+    };
+  }
+
   const plan = createRuntimeNativeScenarioPlan(scenario, inputs);
   if (scenario === 'unexpected-sdk-error') {
     let call = 0;

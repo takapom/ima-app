@@ -113,6 +113,8 @@ export class ThreadDO extends ProductionThreadDO {
           calls: 0,
           requests: [],
           providerOptionsSeen: [],
+          waitingStarted: false,
+          abortObserved: false,
         };
         const startedAtMs = performance.now();
         const budget = new RuntimeBudget({
