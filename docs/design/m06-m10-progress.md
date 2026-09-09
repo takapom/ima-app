@@ -29,6 +29,9 @@
 - M10の検証済み最終テキスト受渡しを`039283d`（#11、81行）、HTTP中断から対象turnへの取消dispatchを`6988c52`（#11、248行）にコミット。親がそれぞれ18・6テストと対象lint/formatを確認。DOへの組込は未完。
 - M08のResponses設定と最終JSON形式を`b2fd345`（#9、59行）、M07のread完了時刻に基づく鮮度判定を`db7b9a3`（#8、281行）、M10のread Port費用予約・重複抑止・再試行を`0af8b4e`（#11、775行）にコミット。親が関連9ファイル54テストと対象lint/formatを確認。await中に期限切れとなる観測の拒否も検証した。
 - M10接続準備としてThread公開型とRateLimit DOを`e0d3949`（#11、344行）で分離。親が既存Worker 9テストと対象lint/formatを確認。業務判断とSDK依存をCoreへ移さず、Worker内の責務分割を維持した。
+- M10のHTTP中断通知を`957fa61`（#11、54行）にコミット。親がHTTP 13テストと対象lint/formatを確認。AbortSignalはWorker内だけで扱い、DO RPCやCore Portへ転送しない。
+- M10のThink lifecycle接続とsubmit直前の時計・条件更新を`1de20c4`（#11、1,008行）にコミット。親が関連13テストと対象lint/formatを確認。Worker tests型検査は未導入のOpenAI Provider参照のみエラー。途中時点のNode全体54ファイル321テストも通過した。
+- 具体的なturn構成、実Thread DOのadmission・取消・再送、HTTPへの初回公開DTO接続は未完。これらの新規差分を既存テストの成功に含めない。
 - M08の実Provider接続、M10の保存前制御・Think/DO接続は実装中。途中時点のNode全287テストは通過したが、変更完了後の最終検査ではない。
 - 作業はmain上。各コミットは実在sub-issueに紐づけ、追加＋削除2,000行以内。
   実装はLuna/max、主担当が差分・契約・テストをレビューする。
