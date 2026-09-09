@@ -25,6 +25,7 @@ import {
   type SubmitCardsPortResult,
   type ToolExecutionContext,
 } from '@ima/core';
+import { TurnConstraintError } from '@ima/core';
 import type {
   PublicToolInvocation,
   PublicToolName,
@@ -147,7 +148,13 @@ export const runtimeFor = (
   let supplied: unknown;
   try {
     supplied = factory(operation, invocation, metadata);
-  } catch {
+  } catch (error: unknown) {
+    if (error instanceof TurnConstraintError) {
+      return {
+        ok: false,
+        error: issue('INVALID_ARGUMENT', 'metadata', 'model action metadata is invalid'),
+      };
+    }
     return {
       ok: false,
       error: issue('MISSING_CONTEXT', null, 'tool execution context is unavailable'),
