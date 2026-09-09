@@ -1,11 +1,89 @@
 # M04 Runtime compatibility evidence
 
-- **Status:** partial runtime evidence; mandatory gates incomplete; no runtime adoption decision
-- **Date:** 2026-09-09
-- **Scope:** M04 isolated feasibility and PM review checkpoints
-- **Isolation:** `/tmp/ima-m04-spike` (the repository lockfile and production files were not changed)
+- **Status:** Think selected for the controlled configuration in ADR0014; live-provider and production checks remain separate
+- **Date:** 2026-09-10
+- **Scope:** M04 feasibility, repository integration, and PM review checkpoints
+- **Locations:** historical isolated probes in `/tmp/ima-m04-spike`; formal fixtures in `workers/api/tests/runtime-gate`
 
 ## Conclusion
+
+### Current checkpoint: 2026-09-10 03:11 JST
+
+[ADR0014](../adr/0014-think-runtime-adoption.md) selects Think 0.17.0 with the
+explicit V3 model injection, complete-step validation, persistence transform,
+current-turn-only input projection, public Session expiry/compaction controls,
+and reference-only replay demonstrated by the formal fixture.
+
+The PM ran all 162 tests successfully: Node unit 108, Worker 3, AIChat comparison
+22, Think public-API comparison 5, and the common Think configuration 24.
+The common Think configuration covers native controls (12), retention (9), and
+HTTP/mobile (3). The root HTTP test's missing array-element guard was corrected;
+the root TypeScript rerun passed, as did package typechecks, lint, format,
+31 architecture fixtures, Worker dry-run, and Expo iOS export.
+
+Commit `6ede1bb` integrates the selected Think configuration; `683b153` records
+digest-only replay and reference-only DTO tests. Native raw input is withheld
+before SDK persistence but reaches the current model turn, and does not return
+in the next turn or after eviction. Compaction always withholds unknown-origin
+summaries. Exact replay after eviction returns the same response ID/revision
+without model work or body reconstruction. Stop conditions are common to every
+scenario, including empty final text after commit.
+
+AIChat remains a comparison candidate, not an adopted fallback. Its context-free
+native input path still lacks the selected Think input guard. Its 22 passing
+comparison tests do not establish full suitability.
+
+This completes the local M04 adoption gate. GitHub issue closure and push are
+separate actions. M05 and M06–M10 implementation have not been completed.
+Live model quality, paid APIs, production alarms/backups, and device UI behavior
+remain unmeasured; see ADR0014 for the scope of the decision.
+
+### Historical checkpoint: 2026-09-10 02:43 JST
+
+The user installed the declared SDK dependencies and updated the complete Bun
+lockfile. Normal workspace resolution runs the real Think and AIChatAgent Worker/DO
+fixtures. Five Think public-API comparison tests and nine retention-policy unit
+tests pass and are committed. The existing 67 unit tests, three Worker tests,
+Expo iOS export, and Worker dry-run build also passed after installation.
+Workspace typecheck and 31 architecture fixtures passed during integration.
+These results do not establish runtime adoption or M06–M10 completion.
+
+At the 02:43 JST checkpoint, the PM ran 91 Node unit tests, the complete workspace
+typecheck, and 31 architecture fixtures successfully. The real Think configuration
+passed 21 tests (native control, retention, and HTTP/mobile); the AIChat configuration
+passed 26 tests. These counts are execution results, not adoption approval.
+Source review still found a scenario-specific AIChat stop condition and different
+input persistence paths between the Think native and retention routes. Those
+corrections, mixed-policy compaction, and a final combined rerun remain pending.
+This supersedes the earlier isolated green counts and previous integration failures.
+
+See [Think public-API probes](think-public-api-probes.md) for the five comparison
+cases and their limits, and [retention fixture policy](retention-fixture-policy.md)
+for the distinction between policy unit tests, SQL pre-write observation, and
+KV post-write reads. Commits `00599a2` and `6bedd25` record these independent
+fixtures; neither is an SDK adoption decision. Further commits `9fd21f1`,
+`eabfa08`, `4d951f6`, and `9fca65e` record public Core Port injection, native
+Think controls, SSE pre-persistence transformation, and explicit unreadable-SQL
+reporting. Each commit was checked against the 2,000 changed-line limit.
+
+Dependency warnings have different causes:
+
+- Think 0.17.0 brings workers-ai-provider 4.0.0, whose AI SDK peer is 7.x and
+  whose model specification is v4. Installed AI SDK 6.0.182 accepts v2/v3 only
+  (`ai/dist/index.mjs`, `resolveLanguageModel`). The default Workers AI path
+  is incompatible. The scripted V3 model injected by the fixture does not use
+  that path; this is not evidence that every Think configuration is incompatible.
+- Agents 0.22.0 brings Babel decorators 8 while Expo uses Babel 7. The Agents
+  Babel integration is in `agents/dist/vite.js`; the current Worker imports its
+  root entry and does not enable that Vite integration. The successful iOS
+  export is limited build evidence, not a reason to upgrade Expo's Babel major.
+
+Runtime Binding declarations are generated from `wrangler.runtime-test.jsonc`
+using the command recorded in `runtime-env.d.ts`. That exact generated path is
+excluded from formatting and handwritten lint-directive checks; it remains
+part of commit line accounting.
+
+The dated checkpoints below are historical and retain their original limitations.
 
 Local Workers/DO execution is available. Later runs exercised the real Think
 and AIChat SDKs; the earlier rejected `wrangler --version` command did not

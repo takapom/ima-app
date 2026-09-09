@@ -20,7 +20,8 @@
     "lint": "eslint . && node scripts/check-file-lines.mjs && node scripts/check-lint-disables.mjs && node scripts/check-eslint-fixtures.mjs",
     "architecture": "dependency-cruiser --validate .dependency-cruiser.cjs apps packages workers && node scripts/check-manifest-boundaries.mjs && node scripts/check-architecture-fixtures.mjs",
     "typecheck": "bun run scripts/run-workspaces.mjs typecheck && tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --config vitest.config.ts && vitest run --config vitest.worker.config.ts",
+    "test": "vitest run --config vitest.config.ts && vitest run --config vitest.worker.config.ts && bun run test:runtime",
+    "test:runtime": "vitest run --config vitest.runtime.config.ts && vitest run --config vitest.think.config.ts && vitest run --config vitest.think-runtime.config.ts",
     "build": "bun run scripts/run-workspaces.mjs build",
     "commit-size": "node scripts/check-commit-size.mjs"
   },

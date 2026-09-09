@@ -4,6 +4,7 @@
 - **Date:** 2026-09-08
 - **Deciders:** プロダクトオーナー（本議論）
 - **Supersedes (in part):** [0010](./0010-sdk-based-agent-runtime.md) の独立したToolLoopAgentを主実行ループとして採用する構成
+- **Superseded by (in part):** [0014](./0014-think-runtime-adoption.md)でFixture適合性を確認し、制御付きThinkを選定した。
 
 ## Decision
 
