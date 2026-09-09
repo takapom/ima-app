@@ -1,0 +1,23 @@
+{
+  "name": "@ima/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "start:clear": "expo start --dev-client --clear",
+    "typecheck": "tsc --noEmit",
+    "build": "expo export --platform ios"
+  },
+  "dependencies": {
+    "@ima/contracts": "workspace:*",
+    "expo": "57.0.21",
+    "expo-dev-client": "57.0.18",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "typescript": "5.9.3"
+  }
+}

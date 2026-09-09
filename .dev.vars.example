@@ -1,0 +1,3 @@
+# Copy to workers/api/.dev.vars for local Worker secrets.
+# Never commit the copied file or real values.
+APP_TOKEN=replace-me

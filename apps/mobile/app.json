@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "ima",
+    "slug": "ima",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "scheme": "ima",
+    "plugins": ["expo-dev-client"],
+    "ios": {
+      "supportsTablet": false
+    }
+  }
+}
