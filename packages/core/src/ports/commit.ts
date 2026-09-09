@@ -11,20 +11,18 @@ import {
   Text,
 } from '../domain/primitives';
 
-export const CommitReferencesSchema = v.pipe(
-  v.strictObject({
-    candidateIds: v.pipe(
-      v.array(CandidateIdSchema),
-      v.maxLength(3),
-      v.check((ids) => new Set(ids).size === ids.length, 'candidate IDs must be unique'),
-    ),
-    observationIds: v.pipe(
-      v.array(ObservationIdSchema),
-      v.maxLength(256),
-      v.check((ids) => new Set(ids).size === ids.length, 'observation IDs must be unique'),
-    ),
-  }),
-);
+export const CommitReferencesSchema = v.strictObject({
+  candidateIds: v.pipe(
+    v.array(CandidateIdSchema),
+    v.maxLength(3),
+    v.check((ids) => new Set(ids).size === ids.length, 'candidate IDs must be unique'),
+  ),
+  observationIds: v.pipe(
+    v.array(ObservationIdSchema),
+    v.maxLength(256),
+    v.check((ids) => new Set(ids).size === ids.length, 'observation IDs must be unique'),
+  ),
+});
 export type CommitReferences = v.InferOutput<typeof CommitReferencesSchema>;
 
 const CommitExpectedRevisionSchema = v.pipe(
