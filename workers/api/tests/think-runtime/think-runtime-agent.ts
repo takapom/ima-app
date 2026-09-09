@@ -23,13 +23,10 @@ import {
   SubmitCardsInputSchema,
 } from '@ima/core';
 import type {
-  GetPlaceDetailsInput,
   GetPlaceDetailsOutput,
   HarnessContext,
   Result,
-  SearchPlacesInput,
   SearchPlacesOutput,
-  SubmitCardsInput,
   SubmitCardsPortResult,
 } from '@ima/core';
 import * as v from 'valibot';
@@ -37,14 +34,12 @@ import {
   getPlaceDetailsEnvelopeSchema,
   searchPlacesEnvelopeSchema,
   submitCardsEnvelopeSchema,
-  type RuntimeGateToolEnvelope,
 } from '../runtime-gate/runtime-gate-contract';
 import {
   RuntimeGateCore,
   runtimeGateCancellation,
   runtimeGateExecutionContext,
   runtimeGateHarnessContext,
-  type RuntimeGateCoreReport,
 } from '../runtime-gate/runtime-gate-core';
 import {
   DENIED_MARKER,
@@ -59,9 +54,9 @@ import {
   wrapRuntimeGateStepBuffer,
   type RuntimeGateStepReport,
 } from '../runtime-gate/runtime-gate-step';
-import { markerRowsByTable, type ThinkRuntimeTableObservation } from './think-runtime-audit';
 import { modelWithCanary } from './think-runtime-canary';
 import {
+  projectThinkRuntimeCurrentTurnContent,
   projectThinkRuntimeEphemeralResults,
   waitForThinkRuntimeCancellation,
   type ThinkRuntimeEphemeralToolCall,
@@ -73,65 +68,33 @@ import {
   type ThinkRuntimeToolResultObserver,
   type ThinkRuntimeTransformReport,
 } from './think-runtime-transform';
+import {
+  buildThinkRuntimePublicReport,
+  saveResult,
+  TOOL_ALLOWLIST,
+  type RuntimeGateDetailsEnvelope,
+  type RuntimeGateSearchEnvelope,
+  type RuntimeGateSubmitEnvelope,
+  type RuntimeGateToolInput,
+  type RuntimeGateToolName,
+  type ThinkRuntimeLogEntry,
+  type ThinkRuntimePublicReport,
+  type ThinkRuntimeResult,
+  type ThinkRuntimeToolExecution,
+} from './think-runtime-report';
+import {
+  emptyThinkRuntimeReplay,
+  queryRevision,
+  queryText,
+  resolveThinkRuntimeReplay,
+  storeThinkRuntimeReplay,
+  type ThinkRuntimeReplayReport,
+  type ThinkRuntimeState,
+} from './think-runtime-replay';
+import { handleThinkRetentionRequest } from './retention/think-retention-operations';
+import { ThinkRetentionRuntimeSurface } from './retention/think-retention-runtime';
 
-type RuntimeGateToolName = 'search_places' | 'get_place_details' | 'submit_cards';
-type RuntimeGateToolInput = SearchPlacesInput | GetPlaceDetailsInput | SubmitCardsInput;
-type RuntimeGateSearchEnvelope = RuntimeGateToolEnvelope<SearchPlacesInput>;
-type RuntimeGateDetailsEnvelope = RuntimeGateToolEnvelope<GetPlaceDetailsInput>;
-type RuntimeGateSubmitEnvelope = RuntimeGateToolEnvelope<SubmitCardsInput>;
-
-type ThinkRuntimeToolExecution = {
-  name: RuntimeGateToolName;
-  input: RuntimeGateToolInput;
-  abortSignalPassed: boolean;
-};
-
-type ThinkRuntimeResult = {
-  requestId: string;
-  status: string;
-  error: string | null;
-};
-
-type ThinkRuntimeLogEntry = {
-  toolName: string;
-  success: boolean;
-  errorCode: string | null;
-};
-
-export type ThinkRuntimePublicReport = {
-  scenario: RuntimeGateScenario;
-  result: ThinkRuntimeResult | null;
-  nativeSdkStarted: boolean;
-  toolAllowlist: RuntimeGateToolName[];
-  beforeTurnSteps: number;
-  beforeStepNumbers: number[];
-  beforeToolCalls: string[];
-  toolExecutions: ThinkRuntimeToolExecution[];
-  logEntries: ThinkRuntimeLogEntry[];
-  model: RuntimeGateModelReport;
-  core: RuntimeGateCoreReport;
-  step: RuntimeGateStepReport;
-  transform: ThinkRuntimeTransformReport;
-  ephemeralResultsCaptured: number;
-  ephemeralResultsProjected: number;
-  canary: {
-    value: string;
-    liveCacheMarkerPresent: boolean;
-    sessionHistoryMarkerPresent: boolean;
-    storageMarkerCounts: Record<string, ThinkRuntimeTableObservation>;
-  } | null;
-  persistence: {
-    liveCacheMarkerPresent: boolean;
-    sessionHistoryMarkerPresent: boolean;
-    storageMarkerCounts: Record<string, ThinkRuntimeTableObservation>;
-  };
-};
-
-const TOOL_ALLOWLIST: RuntimeGateToolName[] = [
-  'search_places',
-  'get_place_details',
-  'submit_cards',
-];
+export type { ThinkRuntimePublicReport } from './think-runtime-report';
 
 function isJsonValue(value: unknown): value is JSONValue {
   if (value === null) return true;
@@ -169,23 +132,12 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function saveResult(result: {
-  requestId: string;
-  status: string;
-  error?: unknown;
-}): ThinkRuntimeResult {
-  return {
-    requestId: result.requestId,
-    status: result.status,
-    error: result.error === undefined ? null : errorText(result.error),
-  };
-}
-
-export class ThinkRuntimeGateAgent extends Think {
+export class ThinkRuntimeGateAgent extends Think<Cloudflare.Env, ThinkRuntimeState> {
   override workspaceBash = false;
   override includeMcpTools = false;
   override fetchTools = false as const;
   override maxSteps = 6;
+  initialState: ThinkRuntimeState = {};
 
   private core!: RuntimeGateCore;
   private harnessContext!: HarnessContext;
@@ -207,15 +159,28 @@ export class ThinkRuntimeGateAgent extends Think {
   private sessionHistoryMarkerPresent = false;
   private sessionHistoryCanaryPresent = false;
   private ephemeralResultsProjected = 0;
+  private replayReport: ThinkRuntimeReplayReport = emptyThinkRuntimeReplay();
+  private nativeContentForTurn: string | null = null;
+  private readonly retention: ThinkRetentionRuntimeSurface;
 
   constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
     super(ctx, env);
+    this.retention = new ThinkRetentionRuntimeSurface(this, ctx.storage, (policy) =>
+      this.initialize(
+        policy === 'failure' ? 'structured-error' : policy === 'disconnect' ? 'cancel' : 'sequence',
+      ),
+    );
     this.initialize('sequence');
   }
 
-  private initialize(scenario: RuntimeGateScenario, canary: string | null = null): void {
+  private initialize(
+    scenario: RuntimeGateScenario,
+    canary: string | null = null,
+    nativeContent: string | null = null,
+  ): void {
     this.scenario = scenario;
     this.canary = canary;
+    this.nativeContentForTurn = nativeContent;
     this.core = new RuntimeGateCore();
     this.harnessContext = runtimeGateHarnessContext({
       threadId: 'think-runtime-fixture',
@@ -241,7 +206,7 @@ export class ThinkRuntimeGateAgent extends Think {
       redactedToolErrorParts: 0,
       rejectedPartTypes: [],
     };
-    const baseModel = modelFor(scenario, this.modelReport);
+    const baseModel = modelFor(scenario, this.modelReport, () => this.nativeContentForTurn);
     const checkedModel = wrapRuntimeGateStepBuffer(baseModel, this.stepReport, {
       maxMs: scenario === 'timeout' ? 50 : 2_000,
     });
@@ -258,6 +223,7 @@ export class ThinkRuntimeGateAgent extends Think {
     this.sessionHistoryMarkerPresent = false;
     this.sessionHistoryCanaryPresent = false;
     this.ephemeralResultsProjected = 0;
+    this.replayReport = emptyThinkRuntimeReplay('run');
   }
 
   override getModel(): LanguageModel {
@@ -265,7 +231,11 @@ export class ThinkRuntimeGateAgent extends Think {
   }
 
   override configureSession(session: Session): Session {
-    return session;
+    return session.onCompaction((messages) =>
+      Promise.resolve(
+        this.retention.compactionResult(messages, 'untrusted SDK compaction summary'),
+      ),
+    );
   }
 
   private recordTool(
@@ -377,9 +347,18 @@ export class ThinkRuntimeGateAgent extends Think {
 
   override beforeStep(ctx: PrepareStepContext) {
     this.beforeStepNumbers.push(ctx.stepNumber);
+    const currentTurnMessages = projectThinkRuntimeCurrentTurnContent(
+      ctx.messages,
+      this.turnModelMessageStart,
+      this.nativeContentForTurn,
+    );
+    const messages =
+      ctx.stepNumber === 0
+        ? currentTurnMessages
+        : this.projectEphemeralResults(currentTurnMessages);
     return {
       activeTools: [...TOOL_ALLOWLIST],
-      ...(ctx.stepNumber === 0 ? {} : { messages: this.projectEphemeralResults(ctx.messages) }),
+      ...(this.nativeContentForTurn !== null || ctx.stepNumber !== 0 ? { messages } : {}),
     };
   }
 
@@ -407,12 +386,12 @@ export class ThinkRuntimeGateAgent extends Think {
   }
 
   private report(result: ThinkRuntimeResult | null): ThinkRuntimePublicReport {
-    const serialized = JSON.stringify(this.messages);
-    return {
+    return buildThinkRuntimePublicReport({
       scenario: this.scenario,
       result,
+      messages: this.messages,
       nativeSdkStarted: this.nativeSdkStarted,
-      toolAllowlist: [...TOOL_ALLOWLIST],
+      replay: this.replayReport,
       beforeTurnSteps: this.beforeTurnSteps,
       beforeStepNumbers: this.beforeStepNumbers,
       beforeToolCalls: this.beforeToolCalls,
@@ -424,33 +403,39 @@ export class ThinkRuntimeGateAgent extends Think {
       transform: this.transformReport,
       ephemeralResultsCaptured: this.ephemeralToolResults.size,
       ephemeralResultsProjected: this.ephemeralResultsProjected,
-      canary:
-        this.canary === null
-          ? null
-          : {
-              value: this.canary,
-              liveCacheMarkerPresent: serialized.includes(this.canary),
-              sessionHistoryMarkerPresent: this.sessionHistoryCanaryPresent,
-              storageMarkerCounts: markerRowsByTable(this.ctx.storage.sql, this.canary),
-            },
-      persistence: {
-        liveCacheMarkerPresent: serialized.includes(DENIED_MARKER),
-        sessionHistoryMarkerPresent: this.sessionHistoryMarkerPresent,
-        storageMarkerCounts: markerRowsByTable(this.ctx.storage.sql, DENIED_MARKER),
-      },
-    };
+      canary: this.canary,
+      sessionHistoryMarkerPresent: this.sessionHistoryMarkerPresent,
+      sessionHistoryCanaryPresent: this.sessionHistoryCanaryPresent,
+      storageSql: this.ctx.storage.sql,
+    });
   }
 
   override async onRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    const retentionResponse = await handleThinkRetentionRequest(request, this.retention);
+    if (retentionResponse !== undefined) return retentionResponse;
+    if (url.pathname === '/replay' && request.method === 'GET') {
+      const replay = await resolveThinkRuntimeReplay(url, this.state.replay, this.beforeTurnSteps);
+      this.initialize(this.scenario);
+      this.replayReport = replay.report;
+      return Response.json(this.report(replay.result));
+    }
     if (url.pathname !== '/run' || request.method !== 'GET') {
       return new Response('Not Found', { status: 404 });
     }
 
     const canaryValue = url.searchParams.get('canary');
     const canary = canaryValue === null ? null : canaryValue.slice(0, 128);
-    this.initialize(normalizeScenario(url.searchParams.get('case')), canary);
-    const payload = url.searchParams.get('content')?.slice(0, 256) ?? 'same payload';
+    const payload = queryText(url, 'content', 'same payload');
+    this.initialize(normalizeScenario(url.searchParams.get('case')), canary, payload);
+    const idempotencyKey = queryText(url, 'idempotencyKey', 'think-runtime-key');
+    const turnId = queryText(url, 'turnId', 'turn-think-runtime');
+    const revision = queryRevision(url);
+    this.harnessContext = runtimeGateHarnessContext({
+      threadId: queryText(url, 'threadId', 'think-runtime-fixture'),
+      turnId,
+      revision,
+    });
     const abortController = this.scenario === 'cancel' ? new AbortController() : undefined;
     const cancelTimer =
       abortController === undefined
@@ -460,7 +445,7 @@ export class ThinkRuntimeGateAgent extends Think {
 
     let result: ThinkRuntimeResult | null = null;
     try {
-      const saved = await this.saveMessages(
+      const saved = await this.retention.saveMessages(
         [
           {
             id: `think-runtime-user-${crypto.randomUUID()}`,
@@ -479,6 +464,23 @@ export class ThinkRuntimeGateAgent extends Think {
       };
     } finally {
       if (cancelTimer !== undefined) clearTimeout(cancelTimer);
+      this.nativeContentForTurn = null;
+    }
+
+    const commit = this.core.report.commits.at(-1);
+    if (result?.status === 'completed' && commit !== undefined) {
+      this.replayReport = await storeThinkRuntimeReplay(
+        {
+          idempotencyKey,
+          payload,
+          turnId,
+          revision,
+          responseId: `response-think-runtime-${this.core.report.commits.length}`,
+          candidateIds: [...commit.candidateIds],
+          evidenceIds: [...commit.evidenceIds],
+        },
+        (state) => this.setState(state),
+      );
     }
 
     const sessionHistory = JSON.stringify(await this.session.getHistory());

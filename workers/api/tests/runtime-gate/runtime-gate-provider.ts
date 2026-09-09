@@ -34,6 +34,8 @@ export type RuntimeGateModelRequest = {
   sawIdentityObservation: boolean;
   sawOpeningHoursObservation: boolean;
   sawMissingEvidence: boolean;
+  sawNativeContent: boolean;
+  sawStaleNativeContent: boolean;
 };
 
 export type RuntimeGateModelReport = {
@@ -144,6 +146,8 @@ export const TURN_CONSTRAINTS = {
 
 export const PUBLIC_TOOLS = ['search_places', 'get_place_details', 'submit_cards'] as const;
 export const DENIED_MARKER = 'M04_PROVIDER_FIELD_DENIED';
+/** Audit-only marker used to prove a previous native input is not re-injected. */
+export const STALE_NATIVE_CONTENT_CANARY = 'M04_NATIVE_CONTENT_OLD_CANARY';
 
 function stepEnvelope(
   input: RuntimeGateModelInput,
@@ -426,6 +430,7 @@ export function normalizeScenario(value: string | null): RuntimeGateScenario {
 export function modelFor(
   scenario: RuntimeGateScenario,
   report: RuntimeGateModelReport,
+  nativeContent: () => string | null = () => null,
 ): RuntimeGateModel {
   let call = 0;
   return {
@@ -438,6 +443,7 @@ export function modelFor(
       const currentCall = call;
       call += 1;
       const prompt = JSON.stringify(options.prompt);
+      const currentNativeContent = nativeContent();
       report.calls += 1;
       report.requests.push({
         call: currentCall,
@@ -447,6 +453,8 @@ export function modelFor(
           observationFor('candidate-1', 'opening_hours').observationId,
         ),
         sawMissingEvidence: prompt.includes('MISSING_EVIDENCE'),
+        sawNativeContent: currentNativeContent !== null && prompt.includes(currentNativeContent),
+        sawStaleNativeContent: prompt.includes(STALE_NATIVE_CONTENT_CANARY),
       });
       return Promise.resolve({
         stream:

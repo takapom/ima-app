@@ -12,6 +12,38 @@ export type ThinkRuntimeEphemeralToolCall = {
   input: Record<string, unknown>;
 };
 
+/**
+ * Add a caller-owned message to the current model prompt without touching the
+ * Session history. The caller clears the value when the turn finishes.
+ */
+export function projectThinkRuntimeCurrentTurnContent(
+  messages: ModelMessage[],
+  start: number,
+  content: string | null,
+): ModelMessage[] {
+  if (content === null) return messages;
+  const currentTurnStart = Math.max(0, start - 1);
+  let userIndex = -1;
+  for (let index = messages.length - 1; index >= currentTurnStart; index -= 1) {
+    if (messages[index]?.role === 'user') {
+      userIndex = index;
+      break;
+    }
+  }
+  if (userIndex < 0) return messages;
+  const user = messages[userIndex];
+  if (user === undefined || user.role !== 'user') return messages;
+  const ephemeralPart = { type: 'text' as const, text: content };
+  const projectedUser: ModelMessage = {
+    ...user,
+    content:
+      typeof user.content === 'string'
+        ? `${user.content}\n${content}`
+        : [...user.content, ephemeralPart],
+  };
+  return [...messages.slice(0, userIndex), projectedUser, ...messages.slice(userIndex + 1)];
+}
+
 export function projectThinkRuntimeEphemeralResults(
   messages: ModelMessage[],
   start: number,

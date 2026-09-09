@@ -1,7 +1,18 @@
-import { SELF } from 'cloudflare:test';
+import { env, evictDurableObject, SELF } from 'cloudflare:test';
 import { expect, it, vi } from 'vitest';
-import type { ThinkRuntimePublicReport } from './think-runtime-agent';
+import type { ThinkRuntimeGateAgent, ThinkRuntimePublicReport } from './think-runtime-agent';
 import type { ThinkRuntimeTableObservation } from './think-runtime-audit';
+import { STALE_NATIVE_CONTENT_CANARY } from '../runtime-gate/runtime-gate-provider';
+
+const NATIVE_CONTENT_AGENT = `think-native-content-${crypto.randomUUID()}`;
+
+type ThinkRuntimeTestEnv = Cloudflare.Env & {
+  THINK_RUNTIME: DurableObjectNamespace<ThinkRuntimeGateAgent>;
+};
+
+function hasThinkRuntime(value: unknown): value is ThinkRuntimeTestEnv {
+  return typeof value === 'object' && value !== null && 'THINK_RUNTIME' in value;
+}
 
 async function runFixture(
   scenario: string,
@@ -52,6 +63,11 @@ function expectNoPersistedCanary(report: ThinkRuntimePublicReport): void {
 function expectNoLoggedCanary(report: ThinkRuntimePublicReport, canary: string): void {
   expect(report.logEntries.length).toBeGreaterThan(0);
   expect(JSON.stringify(report.logEntries)).not.toContain(canary);
+}
+
+async function evictNativeContentAgent(): Promise<void> {
+  if (!hasThinkRuntime(env)) throw new Error('THINK_RUNTIME_BINDING_MISSING');
+  await evictDurableObject(env.THINK_RUNTIME.getByName(NATIVE_CONTENT_AGENT));
 }
 
 it('runs Think native loop through Core details and commit with a persistent transform', async () => {
@@ -172,7 +188,7 @@ it('stops repair attempts at three, accepts an empty final, and handles timeout'
   expect(empty.result?.status).toBe('completed');
   expect(empty.model.calls).toBe(1);
   expect(empty.core.commits).toHaveLength(1);
-  expect(empty.step.acceptedSteps.at(-1)?.toolNames).toEqual(['submit_cards']);
+  expect(empty.step.acceptedSteps.map((step) => step.toolNames)).toEqual([['submit_cards']]);
 
   const timeout = await runFixture('timeout');
   expect(timeout.result?.status).toBe('error');
@@ -206,6 +222,45 @@ it('withholds a random tool metadata canary from every persistence surface', asy
   ]);
   expect(report.core.commits).toHaveLength(1);
   expectNoPersistedCanary(report);
+});
+
+it('withholds metadata-free native content before SDK persistence on success, error, and cancel', async () => {
+  for (const scenario of ['sequence', 'structured-error', 'cancel'] as const) {
+    const canary = `M04_CONTENT_CANARY_${scenario}_${crypto.randomUUID()}`;
+    const report = await runFixture(scenario, { content: canary, canary });
+    expectNoPersistedCanary(report);
+  }
+});
+
+it('projects metadata-free native content only for the current turn before and after eviction', async () => {
+  const first = await runFixture('message', {
+    id: NATIVE_CONTENT_AGENT,
+    content: STALE_NATIVE_CONTENT_CANARY,
+    canary: STALE_NATIVE_CONTENT_CANARY,
+  });
+  expect(first.model.requests[0]?.sawNativeContent).toBe(true);
+  expectNoPersistedCanary(first);
+
+  const nextContent = `M04_NATIVE_CONTENT_NEXT_${crypto.randomUUID()}`;
+  const next = await runFixture('message', {
+    id: NATIVE_CONTENT_AGENT,
+    content: nextContent,
+    canary: nextContent,
+  });
+  expect(next.model.requests[0]?.sawNativeContent).toBe(true);
+  expect(next.model.requests.every((request) => request.sawStaleNativeContent)).toBe(false);
+  expectNoPersistedCanary(next);
+
+  await evictNativeContentAgent();
+  const reopenedContent = `M04_NATIVE_CONTENT_REOPENED_${crypto.randomUUID()}`;
+  const reopened = await runFixture('message', {
+    id: NATIVE_CONTENT_AGENT,
+    content: reopenedContent,
+    canary: reopenedContent,
+  });
+  expect(reopened.model.requests[0]?.sawNativeContent).toBe(true);
+  expect(reopened.model.requests.every((request) => request.sawStaleNativeContent)).toBe(false);
+  expectNoPersistedCanary(reopened);
 });
 
 it('keeps random canaries out of Think tool logs on success, provider error, and cancellation', async () => {

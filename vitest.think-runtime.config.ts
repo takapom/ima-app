@@ -8,6 +8,10 @@ export default defineConfig({
   test: {
     name: 'think-runtime',
     setupFiles: ['./workers/api/tests/runtime-setup.ts'],
-    include: ['workers/api/tests/think-runtime/**/*.test.ts'],
+    include: [
+      'workers/api/tests/think-runtime/**/*.test.ts',
+      'tests/think-runtime-http-mobile.test.ts',
+    ],
+    exclude: ['workers/api/tests/think-runtime/think-runtime-replay.test.ts'],
   },
 });
