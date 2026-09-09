@@ -7,10 +7,12 @@ export default defineConfig({
       wrangler: {
         configPath: './workers/api/wrangler.jsonc',
       },
+      miniflare: { bindings: { APP_TOKEN: 'test-app-token' } },
     }),
   ],
   test: {
     name: 'worker',
-    include: ['tests/worker.test.ts'],
+    setupFiles: ['./workers/api/tests/runtime-setup.ts'],
+    include: ['tests/worker.test.ts', 'workers/api/tests/http/integration/*.test.ts'],
   },
 });

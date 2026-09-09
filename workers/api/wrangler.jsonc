@@ -5,6 +5,13 @@
   "compatibility_date": "2026-08-22",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "durable_objects": {
+    "bindings": [
+      { "name": "THREADS", "class_name": "ThreadDO" },
+      { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
+    ],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ThreadDO", "RateLimitDO"] }],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,

@@ -1,14 +1,30 @@
+import {
+  createHttpRouterConfig,
+  createThreadScopeAuthorizer,
+  type BootstrapEnv,
+} from './bootstrap';
+import { routeRequest } from './http/router';
+import { RateLimitDO, ThreadDO } from './thread-do';
+
 type HealthResponse = {
   readonly status: 'ok';
 };
 
 export default {
-  fetch(request: Request): Response {
+  async fetch(request: Request, env: BootstrapEnv): Promise<Response> {
     const { pathname } = new URL(request.url);
     if (request.method === 'GET' && pathname === '/health') {
       const body: HealthResponse = { status: 'ok' };
       return Response.json(body);
     }
-    return new Response('Not Found', { status: 404 });
+    const ownership = createThreadScopeAuthorizer(env.THREADS);
+    return routeRequest(
+      request,
+      createHttpRouterConfig(env, {
+        ownership,
+      }),
+    );
   },
-} satisfies ExportedHandler;
+} satisfies ExportedHandler<BootstrapEnv>;
+
+export { RateLimitDO, ThreadDO };
