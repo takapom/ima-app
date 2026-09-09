@@ -55,7 +55,7 @@
     },
     {
       "command": "wrangler --version",
-      "result": "blocked_by_host_policy",
+      "result": "blocked_by_host_policy_for_this_command",
       "output": "Rejected(\"approval required by policy, but AskForApproval is set to Never\")"
     }
   ],
@@ -86,11 +86,13 @@
   },
   "runtimeBoundary": {
     "workerDoExecuted": false,
-    "reason": "wrangler execution rejected by host approval policy",
-    "classification": "blocked_execution_boundary_not_sdk_incompatibility",
+    "wranglerVersionCommand": "blocked_by_host_approval_policy",
+    "workersVitestPool1": "independently_reported_allowed_not_run_here",
+    "reason": "only the wrangler --version command was rejected; this fixture did not execute the Worker/DO suite",
+    "classification": "command_boundary_not_sdk_incompatibility",
     "additionalInstallOrAlternateRunner": false,
     "adoptionAdr": false,
-    "dependentM05": "blocked"
+    "dependentM05": "gated_on_m04_and_m03_contracts"
   },
   "primarySources": [
     "https://developers.cloudflare.com/agents/api-reference/think/",

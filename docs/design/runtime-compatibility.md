@@ -1,6 +1,6 @@
 # M04 Runtime compatibility evidence
 
-- **Status:** blocked; no runtime adoption decision
+- **Status:** runtime gates unverified; no runtime adoption decision
 - **Date:** 2026-09-09
 - **Scope:** M04 first-gate feasibility only
 - **Isolation:** `/tmp/ima-m04-spike` (the repository lockfile and production files were not changed)
@@ -13,21 +13,23 @@ only. It does not prove that a model request exposes exactly three tools, that
 an invalid or malicious call has no side effect, or that any persistence path is
 sanitized before writing.
 
-The local Worker/DO scripted-model run could not be started: the host rejected
-`wrangler --version` with
+The isolated `wrangler --version` command was rejected by the host with
 `Rejected("approval required by policy, but AskForApproval is set to Never")`.
-No alternative runner or installer was used. M04 and dependent M05 therefore
-remain blocked pending a host setting that permits the prescribed local Worker/
-DO command. This is an execution-boundary result, not an SDK-incompatibility
-claim, and no adoption ADR is proposed.
+No alternative runner or installer was used. This records that one CLI command
+was rejected, not that all local Worker execution is unavailable. Foundation
+independently reported that the prescribed Workers Vitest pool-1 test was
+allowed; it was not run by this spike. The M04 runtime gates remain unverified,
+M05 remains gated on M04 and the M03 contracts, and no adoption ADR is proposed.
 
 ```mermaid
 flowchart LR
   P[Pinned packages] --> F[Real workspace factory]
   F --> S[Registration smoke: passed]
   P --> W[Local Worker/DO + scripted model]
-  W --> X[wrangler execution: host rejected]
-  X --> U[All runtime gates: unresolved]
+  W --> X[wrangler version command: host rejected]
+  W --> V[Workers Vitest pool 1: independently allowed]
+  X --> U[Runtime gates: unresolved here]
+  V --> U
 ```
 
 ## Pinned isolated packages
@@ -62,6 +64,10 @@ runtime boundary was rejected.
 5. `wrangler --version` from the isolated directory was rejected by the host
    approval policy. The command was not retried through `workerd` or another
    path, and no paid model API or Durable Object request ran.
+6. Foundation independently reported that the prescribed Workers Vitest pool-1
+   test was allowed. This spike did not run that test. After M03 contracts are
+   available, the next evidence is the dedicated pool-1 Worker/DO scripted-model
+   suite, not another Wrangler command.
 
 The exact factory script is kept in `/tmp/ima-m04-spike/spike.mjs`; the reduced
 reproducer below is intentionally documentation-only and must run only after
@@ -136,7 +142,8 @@ or sanitizer guarantees. The source files are under
 Until these statuses have runtime evidence, do not add an adoption ADR or wire
 Think/AIChat into production. ADR 0011's alternative (AIChatAgent +
 `streamText`) must receive the same gates; a custom generic loop is outside the
-accepted architecture.
+accepted architecture. M05 is gated by this unresolved evidence and the M03
+contracts, rather than by the single rejected Wrangler version command.
 
 ## Primary references
 
