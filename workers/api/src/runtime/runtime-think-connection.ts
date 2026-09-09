@@ -8,6 +8,7 @@ import type {
   TurnConfig,
   TurnContext,
 } from '@cloudflare/think';
+import type { ThreadTurnRequest } from '@ima/contracts';
 import type { ModelMessage, UIMessage } from 'ai';
 import {
   attachRuntimeRetentionContext,
@@ -33,6 +34,8 @@ export type RuntimeThinkTurnRequest = {
   readonly turnId: string;
   readonly revision: number;
   readonly messages: readonly UIMessage[];
+  /** Validated Worker input for the turn builder; this is never sent as an SDK message. */
+  readonly runtimeInput?: ThreadTurnRequest;
   readonly signal?: AbortSignal;
   readonly isStale?: () => boolean;
 };

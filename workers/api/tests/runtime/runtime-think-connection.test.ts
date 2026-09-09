@@ -9,6 +9,7 @@ import type {
   SubmitCardsPort,
   SubmitCardsPortResult,
 } from '@ima/core';
+import type { ThreadTurnRequest } from '@ima/contracts';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
 import {
@@ -33,6 +34,34 @@ import { createToolRegistry } from '../tools/registry-fixture';
 import { createThinkGateModel } from '../think-gate/think-gate-provider';
 
 const NOW = '2026-09-10T00:00:00Z';
+
+const runtimeInput = {
+  schemaVersion: 'v1',
+  requestId: 'runtime-input-request',
+  turnId: 'turn-runtime-connection',
+  revision: 1,
+  text: '入力の条件',
+  clientNow: NOW,
+  location: {
+    status: 'unavailable',
+    lat: null,
+    lng: null,
+    accuracyMeters: null,
+    precise: false,
+    capturedAt: null,
+  },
+  prefs: {
+    homeStationRef: null,
+    maxWalkMinutes: null,
+    minimumStayMinutes: null,
+    areaText: '渋谷',
+    budget: 'normal',
+  },
+  savedPlaceRefs: [],
+  excludeCandidateIds: [],
+  mode: 'search',
+  idempotencyKey: 'runtime-input-key',
+} satisfies ThreadTurnRequest;
 
 const RETENTION = {
   retentionDecision: 'deny',
@@ -280,7 +309,8 @@ describe('RuntimeThinkConnection', () => {
     };
     const connection = createRuntimeThinkConnection<{ readonly responseId: string }>({
       clock: () => NOW,
-      buildTurn: () => {
+      buildTurn: (request) => {
+        expect(request.runtimeInput).toBe(runtimeInput);
         const composition = buildComposition(
           (acceptance) => {
             if (acceptance.finalText !== null) accepted.push(acceptance.finalText);
@@ -310,6 +340,7 @@ describe('RuntimeThinkConnection', () => {
       turnId: context.turnId,
       revision: context.revision,
       messages: [userMessage('secret-user-body')],
+      runtimeInput,
     });
 
     expect(result).toEqual({

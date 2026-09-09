@@ -1,4 +1,4 @@
-import { env, evictDurableObject } from 'cloudflare:test';
+import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import type { ThreadDO } from '../../../src/thread-do';
 
@@ -81,5 +81,36 @@ describe('ThreadDO atomic owner and lifecycle boundaries', () => {
     const ownerB = await afterEviction.read(OWNER_B);
     expect(ownerA).toEqual({ ok: false, code: 'NOT_FOUND' });
     expect(ownerB).toEqual({ ok: false, code: 'NOT_FOUND' });
+  });
+
+  it('clears Think history when deletion starts from a cold Durable Object', async () => {
+    const threadId = `cold-delete-${crypto.randomUUID()}`;
+    const namespace = testEnv(env).THREADS;
+    const stub = namespace.getByName(threadId);
+    await initialize(stub, OWNER_A, threadId);
+
+    await runInDurableObject(stub, async (instance) => {
+      await instance.lifecycle.start();
+      await instance.addMessages([
+        {
+          id: 'cold-delete-message',
+          role: 'user',
+          parts: [{ type: 'text', text: '削除対象のThink履歴' }],
+        },
+      ]);
+      expect(await instance.getMessages()).toHaveLength(1);
+    });
+
+    await evictDurableObject(stub);
+    const coldStub = namespace.getByName(threadId);
+    await expect(coldStub.deleteThread(OWNER_A, null, 1, 'cold-delete-key')).resolves.toEqual({
+      ok: true,
+    });
+
+    const messages = await runInDurableObject(coldStub, async (instance) => {
+      await instance.lifecycle.start();
+      return instance.getMessages();
+    });
+    expect(messages).toEqual([]);
   });
 });

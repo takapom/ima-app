@@ -1,4 +1,16 @@
-import { Think } from '@cloudflare/think';
+import * as v from 'valibot';
+import { AssistantResponseSchema } from '@ima/contracts';
+import { RuntimeThinkHost } from './thread-runtime/runtime-host';
+import { ThreadRuntimeController, type RuntimeThreadBinding } from './thread-runtime/controller';
+import {
+  type ThreadRuntimeCancelResult,
+  type ThreadRuntimeReplayResult,
+  type ThreadRuntimeResponseMetadata,
+  type ThreadRuntimeTarget,
+  type ThreadRuntimeTurnInput,
+  type ThreadRuntimeTurnResult,
+  runtimeFailure,
+} from './thread-runtime/admission';
 import {
   isThreadConflictError,
   isThreadStateError,
@@ -69,11 +81,12 @@ const stateOf = (value: string): ThreadState => {
  * the owner-bound state methods. M10 can add the native loop without creating
  * a second per-thread object or migrating the binding.
  */
-export class ThreadDO extends Think<Cloudflare.Env> {
+export class ThreadDO extends RuntimeThinkHost<Cloudflare.Env> {
   override includeMcpTools = false;
   override workspaceBash = false;
   override fetchTools = false as const;
   private readonly ready: Promise<void>;
+  private readonly runtimeController: ThreadRuntimeController;
 
   constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
     super(ctx, env);
@@ -102,8 +115,53 @@ export class ThreadDO extends Think<Cloudflare.Env> {
             result_state TEXT NOT NULL
           )
         `);
+        ctx.storage.sql.exec(`
+          CREATE TABLE IF NOT EXISTS runtime_turn (
+            turn_id TEXT NOT NULL,
+            owner_scope_ref TEXT NOT NULL,
+            thread_id TEXT NOT NULL,
+            revision INTEGER NOT NULL,
+            idempotency_key TEXT NOT NULL,
+            input_digest TEXT NOT NULL,
+            status TEXT NOT NULL CHECK (status IN ('running', 'cancel_requested', 'cancelled', 'stale', 'completed', 'failed')),
+            request_id TEXT,
+            response_id TEXT,
+            response_revision INTEGER,
+            response_kind TEXT CHECK (response_kind IN ('message', 'cards')),
+            response_presentation TEXT CHECK (response_presentation IN ('keep', 'replace')),
+            response_card_set_id TEXT,
+            PRIMARY KEY (thread_id, turn_id, revision),
+            UNIQUE (idempotency_key)
+          )
+        `);
       }),
     );
+    this.runtimeController = new ThreadRuntimeController({
+      storage: ctx.storage,
+      ready: () => this.ready,
+      readBinding: (): RuntimeThreadBinding | undefined => {
+        const row = this.rowSync();
+        if (row === undefined) return undefined;
+        return {
+          threadId: row.thread_id,
+          ownerScopeRef: row.owner_scope_ref,
+          revision: row.revision,
+          active: row.active === 1,
+          deleted: row.deleted === 1,
+        };
+      },
+      getConnection: () => this.ensureRuntimeThinkConnection(),
+      execute: (input, target, isStale) => this.executeRuntimeTurn(input, target, isStale),
+      commitResponse: (target, responseRevision) =>
+        ctx.storage.sql.exec(
+          'UPDATE thread_state SET revision = ? WHERE singleton = 1 AND thread_id = ? AND owner_scope_ref = ? AND revision = ? AND active = 1 AND deleted = 0',
+          responseRevision,
+          target.threadId,
+          target.ownerScopeRef,
+          target.revision,
+        ).rowsWritten === 1,
+      clearMessages: () => this.clearRuntimeMessages(),
+    });
   }
 
   private async row(): Promise<ThreadRow | undefined> {
@@ -279,6 +337,12 @@ export class ThreadDO extends Think<Cloudflare.Env> {
         );
         return this.snapshot(updated);
       });
+      this.runtimeController.cancelRuntimeForLifecycle(
+        ownerScopeRef,
+        snapshot.threadId,
+        expectedRevision,
+        turnId,
+      );
       return { ok: true, snapshot };
     } catch (error: unknown) {
       if (isThreadStateError(error) || isThreadConflictError(error)) {
@@ -295,6 +359,7 @@ export class ThreadDO extends Think<Cloudflare.Env> {
     idempotencyKey: string,
   ): Promise<ThreadDeleteResult> {
     await this.ready;
+    let cleanupRequired = false;
     try {
       this.ctx.storage.transactionSync(() => {
         const current = this.checkOwnerIncludingDeleted(this.rowSync(), ownerScopeRef);
@@ -305,11 +370,15 @@ export class ThreadDO extends Think<Cloudflare.Env> {
           turnId,
           expectedRevision,
         );
-        if (prior !== undefined) return;
+        if (prior !== undefined) {
+          cleanupRequired = true;
+          return;
+        }
         if (current.deleted === 1) throw new ThreadStateError('NOT_FOUND');
         if (expectedRevision !== current.revision) {
           throw new ThreadConflictError('REVISION_CONFLICT');
         }
+        cleanupRequired = true;
         this.ctx.storage.sql.exec(
           'UPDATE thread_state SET active = 0, state = ?, deleted = 1 WHERE singleton = 1',
           'ended',
@@ -326,6 +395,7 @@ export class ThreadDO extends Think<Cloudflare.Env> {
           'ended',
         );
       });
+      if (cleanupRequired) await this.runtimeController.cleanupForDelete();
       return { ok: true };
     } catch (error: unknown) {
       if (isThreadStateError(error) || isThreadConflictError(error)) {
@@ -333,5 +403,76 @@ export class ThreadDO extends Think<Cloudflare.Env> {
       }
       throw error;
     }
+  }
+
+  private async executeRuntimeTurn(
+    input: ThreadRuntimeTurnInput,
+    target: ThreadRuntimeTarget,
+    isStale: () => boolean,
+  ): Promise<ThreadRuntimeTurnResult> {
+    const runtime = this.requireRuntimeThinkConnection();
+    const request = {
+      ownerScopeRef: target.ownerScopeRef,
+      threadId: target.threadId,
+      turnId: target.turnId,
+      revision: target.revision,
+      messages: [
+        {
+          id: input.input.requestId,
+          role: 'user' as const,
+          parts: [{ type: 'text' as const, text: input.input.text }],
+        },
+      ],
+      runtimeInput: input.input,
+      isStale,
+    };
+    const nativeResult = await runtime.run(request);
+    if (nativeResult.status === 'completed') {
+      const parsed = v.safeParse(AssistantResponseSchema, nativeResult.response);
+      if (!parsed.success) {
+        return runtimeFailure('RUNTIME_FAILED', nativeResult.requestId);
+      }
+      return {
+        status: 'completed',
+        requestId: nativeResult.requestId,
+        response: parsed.output,
+      };
+    }
+    if (nativeResult.status === 'aborted') {
+      return {
+        status: isStale() ? 'stale' : 'cancelled',
+        requestId: nativeResult.requestId,
+        response: null,
+        code: isStale() ? 'STALE_TURN' : 'CANCELLED',
+      };
+    }
+    if (nativeResult.status === 'skipped') {
+      return {
+        status: 'stale',
+        requestId: nativeResult.requestId,
+        response: null,
+        code: 'STALE_TURN',
+      };
+    }
+    if (nativeResult.status === 'error') {
+      throw new Error(nativeResult.error ?? 'runtime Think turn failed');
+    }
+    throw new Error('runtime Think turn returned an unknown status');
+  }
+
+  async runRuntimeTurn(value: unknown): Promise<ThreadRuntimeTurnResult> {
+    return this.runtimeController.runRuntimeTurn(value);
+  }
+
+  async cancelRuntimeTurn(value: unknown): Promise<ThreadRuntimeCancelResult> {
+    return this.runtimeController.cancelRuntimeTurn(value);
+  }
+
+  async replayRuntimeTurn(value: unknown): Promise<ThreadRuntimeReplayResult> {
+    return this.runtimeController.replayRuntimeTurn(value);
+  }
+
+  async listRuntimeResponses(ownerScopeRef: string): Promise<ThreadRuntimeResponseMetadata[]> {
+    return this.runtimeController.listRuntimeResponses(ownerScopeRef);
   }
 }
