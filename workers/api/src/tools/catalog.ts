@@ -109,10 +109,12 @@ const searchPlaces = async (
   }
   const result = parseSearchResult(returned);
   if (result === undefined) return resultError(invalidOutput('result'));
-  if (result.status === 'error') {
-    return projectSearchResult(result, checked.runtime.context, dependencies.registry);
-  }
-  return projectSearchResult(result, checked.runtime.context, dependencies.registry);
+  return projectSearchResult(
+    result,
+    checked.runtime.context,
+    dependencies.registry,
+    dependencies.clock(),
+  );
 };
 
 const getPlaceDetails = async (
@@ -173,12 +175,22 @@ const getPlaceDetails = async (
   const result = parseDetailsResult(returned);
   if (result === undefined) return resultError(invalidOutput('result'));
   if (result.status === 'error') {
-    return projectDetailsResult(result, checked.runtime.context, dependencies.registry);
+    return projectDetailsResult(
+      result,
+      checked.runtime.context,
+      dependencies.registry,
+      dependencies.clock(),
+    );
   }
   if (!matchesDetailsRequest(parsedInput.value, result.data)) {
     return resultError(mismatchedDetails());
   }
-  return projectDetailsResult(result, checked.runtime.context, dependencies.registry);
+  return projectDetailsResult(
+    result,
+    checked.runtime.context,
+    dependencies.registry,
+    dependencies.clock(),
+  );
 };
 
 const submitCards = async (

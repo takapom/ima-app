@@ -110,6 +110,7 @@ const safeObservation = <T>(
   expectedField: DetailField,
   context: HarnessContext,
   registry: ProjectionRegistry,
+  now: string,
 ): SafeObservationDecision<T> => {
   if (observation.candidateId !== expectedCandidateId || observation.field !== expectedField) {
     return observationIssue(
@@ -182,7 +183,7 @@ const safeObservation = <T>(
         sources: stored.sources,
         retention: stored.retention,
       },
-      context.serverNow,
+      now,
     );
   } catch {
     return observationIssue(
@@ -264,6 +265,7 @@ const projectFieldResult = <T>(
   expectedField: DetailField,
   context: HarnessContext,
   registry: ProjectionRegistry,
+  now: string,
 ): ModelSafeFieldResult<T> => {
   if (result.status === 'error') {
     return { status: 'error', error: safePortIssue(result.error) };
@@ -271,7 +273,7 @@ const projectFieldResult = <T>(
   if (result.status !== 'known') return unavailableField(result.status);
 
   const decisions = result.observations.map((observation) =>
-    safeObservation(observation, candidateId, expectedField, context, registry),
+    safeObservation(observation, candidateId, expectedField, context, registry, now),
   );
   const observations = decisions
     .filter(
@@ -300,6 +302,7 @@ const projectSearchData = (
   data: SearchPlacesOutput,
   context: HarnessContext,
   registry: ProjectionRegistry,
+  now: string,
 ): SafeSearchPlacesOutput => ({
   searchId: data.searchId,
   candidates: data.candidates.map((candidate) => ({
@@ -310,6 +313,7 @@ const projectSearchData = (
       'identity',
       context,
       registry,
+      now,
     ),
     openingHours: projectFieldResult(
       candidate.openingHours,
@@ -317,8 +321,16 @@ const projectSearchData = (
       'opening_hours',
       context,
       registry,
+      now,
     ),
-    price: projectFieldResult(candidate.price, candidate.candidateId, 'price', context, registry),
+    price: projectFieldResult(
+      candidate.price,
+      candidate.candidateId,
+      'price',
+      context,
+      registry,
+      now,
+    ),
   })),
   applied: data.applied,
   nextCursor: data.nextCursor,
@@ -330,6 +342,7 @@ const projectDetailsFields = (
   candidateId: string,
   context: HarnessContext,
   registry: ProjectionRegistry,
+  now: string,
 ): SafePlaceFields => {
   const projected: {
     identity?: ModelSafeFieldResult<DetailsFieldValue<'identity'>>;
@@ -348,6 +361,7 @@ const projectDetailsFields = (
       'identity',
       context,
       registry,
+      now,
     );
   }
   if (fields.opening_hours !== undefined) {
@@ -357,13 +371,28 @@ const projectDetailsFields = (
       'opening_hours',
       context,
       registry,
+      now,
     );
   }
   if (fields.price !== undefined) {
-    projected.price = projectFieldResult(fields.price, candidateId, 'price', context, registry);
+    projected.price = projectFieldResult(
+      fields.price,
+      candidateId,
+      'price',
+      context,
+      registry,
+      now,
+    );
   }
   if (fields.photos !== undefined) {
-    projected.photos = projectFieldResult(fields.photos, candidateId, 'photos', context, registry);
+    projected.photos = projectFieldResult(
+      fields.photos,
+      candidateId,
+      'photos',
+      context,
+      registry,
+      now,
+    );
   }
   if (fields.contact !== undefined) {
     projected.contact = projectFieldResult(
@@ -372,6 +401,7 @@ const projectDetailsFields = (
       'contact',
       context,
       registry,
+      now,
     );
   }
   if (fields.facilities !== undefined) {
@@ -381,6 +411,7 @@ const projectDetailsFields = (
       'facilities',
       context,
       registry,
+      now,
     );
   }
   if (fields.walking_route !== undefined) {
@@ -390,6 +421,7 @@ const projectDetailsFields = (
       'walking_route',
       context,
       registry,
+      now,
     );
   }
   if (fields.last_train !== undefined) {
@@ -399,6 +431,7 @@ const projectDetailsFields = (
       'last_train',
       context,
       registry,
+      now,
     );
   }
   return projected;
@@ -408,10 +441,11 @@ const projectDetailsData = (
   data: GetPlaceDetailsOutput,
   context: HarnessContext,
   registry: ProjectionRegistry,
+  now: string,
 ): SafeGetPlaceDetailsOutput => ({
   items: data.items.map((item) => ({
     candidateId: item.candidateId,
-    fields: projectDetailsFields(item.fields, item.candidateId, context, registry),
+    fields: projectDetailsFields(item.fields, item.candidateId, context, registry, now),
   })),
 });
 
@@ -419,6 +453,7 @@ export const projectSearchResult = (
   result: Result<SearchPlacesOutput>,
   context: HarnessContext,
   registry: ProjectionRegistry,
+  now: string,
 ): SearchToolResult => {
   if (result.status === 'error') return { status: 'error', error: safePortIssue(result.error) };
   const ownershipIssue = candidateOwnershipIssue(
@@ -430,7 +465,7 @@ export const projectSearchResult = (
   if (ownershipIssue !== undefined) return { status: 'error', error: ownershipIssue };
   return {
     status: result.status,
-    data: projectSearchData(result.data, context, registry),
+    data: projectSearchData(result.data, context, registry, now),
     warnings: result.warnings.map(safePortIssue),
   };
 };
@@ -439,6 +474,7 @@ export const projectDetailsResult = (
   result: Result<GetPlaceDetailsOutput>,
   context: HarnessContext,
   registry: ProjectionRegistry,
+  now: string,
 ): DetailsToolResult => {
   if (result.status === 'error') return { status: 'error', error: safePortIssue(result.error) };
   const ownershipIssue = candidateOwnershipIssue(
@@ -450,7 +486,7 @@ export const projectDetailsResult = (
   if (ownershipIssue !== undefined) return { status: 'error', error: ownershipIssue };
   return {
     status: result.status,
-    data: projectDetailsData(result.data, context, registry),
+    data: projectDetailsData(result.data, context, registry, now),
     warnings: result.warnings.map(safePortIssue),
   };
 };

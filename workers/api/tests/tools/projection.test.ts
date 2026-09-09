@@ -205,7 +205,12 @@ const searchResultFor = (candidateId: string): Result<SearchPlacesOutput> => ({
 describe('model-facing tool projection', () => {
   it('rebuilds an allowlisted observation without internal context, retention, or record refs', () => {
     const returned = detailsResult(allowedRetention);
-    const result = projectDetailsResult(returned, context, registryFor(returned));
+    const result = projectDetailsResult(
+      returned,
+      context,
+      registryFor(returned),
+      context.serverNow,
+    );
 
     expect(result.status).toBe('ok');
     if (result.status === 'ok') {
@@ -239,7 +244,12 @@ describe('model-facing tool projection', () => {
 
   it('withholds a value when the provider retention policy denies model input', () => {
     const returned = detailsResult(deniedRetention);
-    const result = projectDetailsResult(returned, context, registryFor(returned));
+    const result = projectDetailsResult(
+      returned,
+      context,
+      registryFor(returned),
+      context.serverNow,
+    );
 
     expect(result.status).toBe('ok');
     if (result.status === 'ok') {
@@ -255,7 +265,7 @@ describe('model-facing tool projection', () => {
     const stored = detailsResult(allowedRetention);
     const forgedIdentity = { ...identity, name: 'forged provider value' };
     const returned = detailsResult(allowedRetention, forgedIdentity);
-    const result = projectDetailsResult(returned, context, registryFor(stored));
+    const result = projectDetailsResult(returned, context, registryFor(stored), context.serverNow);
 
     expect(result.status).toBe('ok');
     if (result.status === 'ok') {
@@ -289,7 +299,7 @@ describe('model-facing tool projection', () => {
       },
       warnings: [],
     };
-    const result = projectDetailsResult(returned, context, registryFor(stored));
+    const result = projectDetailsResult(returned, context, registryFor(stored), context.serverNow);
 
     expect(result.status).toBe('ok');
     if (result.status === 'ok') {
@@ -308,6 +318,7 @@ describe('model-facing tool projection', () => {
       unknownDetailsResult,
       context,
       createToolRegistry().registry,
+      context.serverNow,
     );
     expect(unknown).toMatchObject({
       status: 'ok',
@@ -317,7 +328,12 @@ describe('model-facing tool projection', () => {
     });
 
     const unregistered = detailsResult(allowedRetention);
-    const missing = projectDetailsResult(unregistered, context, createToolRegistry().registry);
+    const missing = projectDetailsResult(
+      unregistered,
+      context,
+      createToolRegistry().registry,
+      context.serverNow,
+    );
     expect(missing).toMatchObject({
       status: 'ok',
       data: {
@@ -335,12 +351,17 @@ describe('model-facing tool projection', () => {
     });
 
     const unavailableFixture = createToolRegistry();
-    const unavailable = projectDetailsResult(unregistered, context, {
-      readCandidate: unavailableFixture.registry.readCandidate.bind(unavailableFixture.registry),
-      readObservation: () => {
-        throw new Error('registry read failed');
+    const unavailable = projectDetailsResult(
+      unregistered,
+      context,
+      {
+        readCandidate: unavailableFixture.registry.readCandidate.bind(unavailableFixture.registry),
+        readObservation: () => {
+          throw new Error('registry read failed');
+        },
       },
-    });
+      context.serverNow,
+    );
     expect(unavailable).toMatchObject({
       status: 'ok',
       data: {
@@ -364,6 +385,7 @@ describe('model-facing tool projection', () => {
       searchResultFor(fixture.otherThreadCandidateId),
       context,
       fixture.registry,
+      context.serverNow,
     );
 
     expect(result).toMatchObject({
@@ -372,6 +394,30 @@ describe('model-facing tool projection', () => {
         code: 'UNKNOWN_CANDIDATE',
         path: 'result.candidates.candidateId',
       },
+    });
+  });
+
+  it('uses the post-read clock for future observations and expiry', () => {
+    const returned = detailsResult(allowedRetention);
+    const registry = registryFor(returned);
+    const beforeRead = { ...context, serverNow: '2026-09-09T23:59:00Z' };
+    const known = projectDetailsResult(returned, beforeRead, registry, '2026-09-10T00:01:00Z');
+    expect(known).toMatchObject({
+      status: 'ok',
+      data: { items: [{ fields: { identity: { status: 'known' } } }] },
+    });
+
+    const shortRetention = { ...allowedRetention, freshUntil: '2026-09-10T12:30:00Z' };
+    const shortReturned = detailsResult(shortRetention);
+    const expired = projectDetailsResult(
+      shortReturned,
+      beforeRead,
+      registryFor(shortReturned),
+      '2026-09-10T12:00:00Z',
+    );
+    expect(expired).toMatchObject({
+      status: 'ok',
+      data: { items: [{ fields: { identity: { status: 'stale' } } }] },
     });
   });
 });

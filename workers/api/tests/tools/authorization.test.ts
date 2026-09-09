@@ -97,6 +97,7 @@ const makeDependencies = (
   };
   return {
     registry,
+    clock: () => context.serverNow,
     search,
     details,
     submit,

@@ -152,7 +152,7 @@ const createPorts = (calls: PortCalls): RuntimeTurnPortDependencies => {
       return Promise.resolve(committedResult);
     },
   };
-  return { registry, search, details, submit };
+  return { registry, clock: () => context.serverNow, search, details, submit };
 };
 
 const createBudget = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudget =>

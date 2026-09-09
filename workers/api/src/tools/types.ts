@@ -53,6 +53,8 @@ export type SubmitToolEnvelope = PublicToolEnvelope<SubmitCardsInput>;
 export type ToolBindingDependencies = {
   /** Read-only candidate authorization; the registry remains the Application owner. */
   readonly registry: Pick<CandidateObservationRegistryPort, 'readCandidate' | 'readObservation'>;
+  /** Server-owned wall clock sampled after a read Port settles for freshness projection. */
+  readonly clock: () => string;
   readonly search: PlaceSearchPort;
   readonly details: PlaceDetailsPort;
   readonly submit: SubmitCardsPort;
