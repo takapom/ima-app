@@ -130,6 +130,7 @@ module.exports = {
       severity: 'error',
       from: {
         path: '^(?:apps/mobile|workers/api|packages/contracts|packages/core)(?:/|$)',
+        pathNot: '(^|/)(?:test|tests)(/|$)|\\.(?:test|spec)\\.[^/]+$',
       },
       to: { path: '(^|/)(?:fixtures|packages/eval)(/|$)' },
     },

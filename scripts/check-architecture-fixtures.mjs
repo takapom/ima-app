@@ -198,6 +198,19 @@ const cases = [
     target: 'packages/contracts/src/undeclared.test.ts',
     addUndeclared: true,
   },
+  {
+    name: 'worker-runtime-test-may-import-fixture',
+    source: "import '../fixtures/runtime.js';\n",
+    target: 'workers/api/src/runtime.test.ts',
+    addFixture: true,
+  },
+  {
+    name: 'worker-production-cannot-import-fixture',
+    source: "import '../fixtures/runtime.js';\n",
+    target: 'workers/api/src/runtime.ts',
+    rule: 'no-fixture-in-production',
+    addFixture: true,
+  },
 ];
 
 function writeFixture(root, files) {
@@ -257,6 +270,11 @@ function runFixture(testCase) {
           version: '1.0.0',
         }),
         'node_modules/undeclared-fixture-package/index.js': 'module.exports = {};\n',
+      });
+    }
+    if (testCase.addFixture) {
+      writeFixture(root, {
+        'workers/api/fixtures/runtime.js': 'export const fixture = true;\n',
       });
     }
     if (testCase.addAlias) {
