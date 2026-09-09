@@ -25,6 +25,10 @@
 - M10のモデル予算・全stepの副作用前検証・期限Abortを`b75233f`（#11、902行）にコミット。親が関連29テスト、Worker全体tests型検査、対象lint/format、依存境界31ケースを確認。
 - M10の保存前本文制御・現turnの期限付きTool根拠復元を`6f9316e`（#11、1,926行）にコミット。親が関連12テスト、Worker全体tests型検査、対象lint/formatを確認。SDK user本文は現turnも再利用せず、Core投影後の文脈を別途注入する。
 - M10のターンfactory・安定call ID・条件snapshot・Abort/disposeを`fefb1cf`（#11、782行）にコミット。親が関連6テスト、Worker全体tests型検査、対象lint/formatを確認。read Portの実予算接続とThink/DOへの組込は別単位で実装中。
+- M10の最終JSON検証・Core確定応答からの公開DTO構築を`b838b02`（#11、845行）にコミット。親が関連7テストと対象lint/formatを確認。モデル出力のカード本文を公開応答へ直接流さない。
+- M10の検証済み最終テキスト受渡しを`039283d`（#11、81行）、HTTP中断から対象turnへの取消dispatchを`6988c52`（#11、248行）にコミット。親がそれぞれ18・6テストと対象lint/formatを確認。DOへの組込は未完。
+- M08のResponses設定と最終JSON形式を`b2fd345`（#9、59行）、M07のread完了時刻に基づく鮮度判定を`db7b9a3`（#8、281行）、M10のread Port費用予約・重複抑止・再試行を`0af8b4e`（#11、775行）にコミット。親が関連9ファイル54テストと対象lint/formatを確認。await中に期限切れとなる観測の拒否も検証した。
+- M10接続準備としてThread公開型とRateLimit DOを`e0d3949`（#11、344行）で分離。親が既存Worker 9テストと対象lint/formatを確認。業務判断とSDK依存をCoreへ移さず、Worker内の責務分割を維持した。
 - M08の実Provider接続、M10の保存前制御・Think/DO接続は実装中。途中時点のNode全287テストは通過したが、変更完了後の最終検査ではない。
 - 作業はmain上。各コミットは実在sub-issueに紐づけ、追加＋削除2,000行以内。
   実装はLuna/max、主担当が差分・契約・テストをレビューする。
