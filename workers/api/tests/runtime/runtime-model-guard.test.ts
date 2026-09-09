@@ -153,7 +153,9 @@ describe('wrapRuntimeModelGuard', () => {
     await readAll(result.stream);
 
     expect(script.calls.stream).toBe(1);
-    expect(accepted).toEqual([expect.objectContaining({ terminal: 'none', emptyFinal: false })]);
+    expect(accepted).toEqual([
+      expect.objectContaining({ terminal: 'none', finalText: null, emptyFinal: false }),
+    ]);
   });
 
   it.each([
@@ -294,7 +296,48 @@ describe('wrapRuntimeModelGuard', () => {
 
     expect(RUNTIME_MODEL_MAX_RETRIES).toBe(0);
     expect(finalFlags).toEqual([true]);
-    expect(accepted).toEqual([expect.objectContaining({ terminal: 'message', emptyFinal: true })]);
+    expect(accepted).toEqual([
+      expect.objectContaining({ terminal: 'message', finalText: '', emptyFinal: true }),
+    ]);
+  });
+
+  it('captures only validated terminal text for stream and generate acceptance', async () => {
+    const streamAccepted: RuntimeModelGuardAcceptance[] = [];
+    const streamScript = modelScript([
+      { type: 'reasoning-start', id: 'reasoning-1' },
+      { type: 'reasoning-delta', id: 'reasoning-1', delta: 'private reasoning' },
+      { type: 'reasoning-end', id: 'reasoning-1' },
+      ...textParts('stream final'),
+      finish('stop'),
+    ]);
+    const streamModel = guarded(streamScript, {
+      onAccepted: (value) => streamAccepted.push(value),
+    });
+    const streamed = await streamCall(streamModel);
+    await readAll(streamed.stream);
+
+    const generatedAccepted: RuntimeModelGuardAcceptance[] = [];
+    const generatedResult = {
+      content: [
+        { type: 'reasoning', text: 'private reasoning' } satisfies GenerateContent,
+        { type: 'text', text: 'generated final' } satisfies GenerateContent,
+      ],
+      finishReason: { unified: 'stop', raw: 'stop' },
+      usage,
+      warnings: [],
+    } satisfies RuntimeModelGuardGenerateResult;
+    const generateModel = guarded(modelScript(undefined, { generateResult: generatedResult }), {
+      onAccepted: (value) => generatedAccepted.push(value),
+    });
+    await generateModel.doGenerate({ prompt: [] });
+
+    expect(streamAccepted[0]).toMatchObject({ terminal: 'message', finalText: 'stream final' });
+    expect(generatedAccepted[0]).toMatchObject({
+      terminal: 'message',
+      finalText: 'generated final',
+    });
+    expect(streamAccepted[0]).not.toHaveProperty('reasoning');
+    expect(generatedAccepted[0]).not.toHaveProperty('provider');
   });
 
   it('propagates an arbitrary provider rejection without relabeling it', async () => {

@@ -48,6 +48,8 @@ export const isRuntimeModelGuardError = (value: unknown): value is RuntimeModelG
 
 export type RuntimeModelGuardAcceptance = {
   readonly terminal: 'none' | 'message' | 'submit';
+  /** Batch-validated final text; Core message and evidence validation are still required. */
+  readonly finalText: string | null;
   readonly emptyFinal: boolean;
   readonly partCount: number;
   readonly bytes: number;
@@ -128,9 +130,12 @@ const validateActions = (
   return batch;
 };
 
-const actionsFromStream = (
-  parts: readonly RuntimeModelGuardStreamPart[],
-): Extract<RuntimeBatchResult, { readonly ok: true }> => {
+type ValidatedModelStep = {
+  readonly batch: Extract<RuntimeBatchResult, { readonly ok: true }>;
+  readonly finalText: string | null;
+};
+
+const actionsFromStream = (parts: readonly RuntimeModelGuardStreamPart[]): ValidatedModelStep => {
   const finishes = parts.filter(
     (part): part is Extract<RuntimeModelGuardStreamPart, { type: 'finish' }> =>
       part.type === 'finish',
@@ -167,14 +172,15 @@ const actionsFromStream = (
   if (hasText || finish.finishReason.unified !== 'tool-calls') {
     actions.push({ kind: 'final', text });
   }
-  return validateActions(actions);
+  const batch = validateActions(actions);
+  return { batch, finalText: batch.terminal === 'message' ? text : null };
 };
 
 const actionsFromGenerate = (
   result: RuntimeModelGuardGenerateResult,
   maxParts: number,
   maxBytes: number,
-): Extract<RuntimeBatchResult, { readonly ok: true }> => {
+): ValidatedModelStep => {
   if (result.content.length > maxParts) {
     throw new RuntimeModelGuardError('MODEL_STREAM_LIMIT');
   }
@@ -199,7 +205,8 @@ const actionsFromGenerate = (
   if (hasText || result.finishReason.unified !== 'tool-calls') {
     actions.push({ kind: 'final', text });
   }
-  return validateActions(actions);
+  const batch = validateActions(actions);
+  return { batch, finalText: batch.terminal === 'message' ? text : null };
 };
 
 const jsonBytes = (value: unknown): number => {
@@ -367,12 +374,13 @@ const checkAfterProvider = (
 };
 
 const accepted = (
-  batch: Extract<RuntimeBatchResult, { readonly ok: true }>,
+  step: ValidatedModelStep,
   partCount: number,
   bytes: number,
 ): RuntimeModelGuardAcceptance => ({
-  terminal: batch.terminal,
-  emptyFinal: batch.emptyFinal,
+  terminal: step.batch.terminal,
+  finalText: step.finalText,
+  emptyFinal: step.batch.emptyFinal,
   partCount,
   bytes,
 });
@@ -418,8 +426,8 @@ export const wrapRuntimeModelGuard = (
           }
           checkAfterProvider(options.budget, finalResponse);
           const bytes = jsonBytes(result.content);
-          const batch = actionsFromGenerate(result, maxParts, maxBytes);
-          options.onAccepted?.(accepted(batch, result.content.length, bytes));
+          const step = actionsFromGenerate(result, maxParts, maxBytes);
+          options.onAccepted?.(accepted(step, result.content.length, bytes));
           return result;
         } finally {
           managed?.cleanup();
@@ -440,8 +448,8 @@ export const wrapRuntimeModelGuard = (
             throw abortError(managed, true);
           }
           checkAfterProvider(options.budget, finalResponse);
-          const batch = actionsFromStream(buffered.parts);
-          options.onAccepted?.(accepted(batch, buffered.parts.length, buffered.bytes));
+          const step = actionsFromStream(buffered.parts);
+          options.onAccepted?.(accepted(step, buffered.parts.length, buffered.bytes));
           return { ...result, stream: streamFrom(buffered.parts) };
         } finally {
           managed?.cleanup();
