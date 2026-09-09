@@ -140,6 +140,10 @@ export interface IdPort {
   nextResponseId(): string;
 }
 
+export interface RegistryIdPort extends IdPort {
+  nextPlaceRef(): string;
+}
+
 export interface ClockPort {
   now(): string;
 }

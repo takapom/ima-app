@@ -6,6 +6,7 @@ import {
   ObservationIdSchema,
   Text,
 } from './primitives';
+import { ObservationContextSchema } from './freshness';
 import { AttributionSchema, RetentionMetadataSchema, retentionDoesNotExceed } from './retention';
 
 export const SourceRefSchema = v.strictObject({
@@ -27,13 +28,17 @@ export const ObservationSchema = <T extends v.GenericSchema>(value: T) =>
       fetchedAt: IsoTimestampSchema,
       sourceUpdatedAt: v.nullable(IsoTimestampSchema),
       expiresAt: IsoTimestampSchema,
+      freshUntil: v.optional(IsoTimestampSchema),
       contextKey: Text(256),
+      context: v.optional(ObservationContextSchema),
       sources: v.pipe(v.array(SourceRefSchema), v.minLength(1), v.maxLength(8)),
       retention: RetentionMetadataSchema,
     }),
     v.check(
       (observation) =>
-        Date.parse(observation.fetchedAt ?? '') <= Date.parse(observation.expiresAt ?? ''),
+        Date.parse(observation.fetchedAt ?? '') <= Date.parse(observation.expiresAt ?? '') &&
+        (observation.freshUntil === undefined ||
+          Date.parse(observation.fetchedAt ?? '') <= Date.parse(observation.freshUntil)),
       'observation expiry must be at or after fetch time',
     ),
   );

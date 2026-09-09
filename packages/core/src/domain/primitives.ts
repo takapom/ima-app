@@ -69,6 +69,12 @@ export const SavedPlaceRefSchema = OpaqueIdSchema;
 export const RequestIdSchema = OpaqueIdSchema;
 export const CardSetIdSchema = OpaqueIdSchema;
 
+export type OpaqueId = v.InferOutput<typeof OpaqueIdSchema>;
+export type ThreadId = v.InferOutput<typeof ThreadIdSchema>;
+export type TurnId = v.InferOutput<typeof TurnIdSchema>;
+export type CandidateId = v.InferOutput<typeof CandidateIdSchema>;
+export type ObservationId = v.InferOutput<typeof ObservationIdSchema>;
+
 export const RevisionSchema = v.pipe(
   v.number(),
   v.safeInteger(),
