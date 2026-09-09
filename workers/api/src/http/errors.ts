@@ -14,6 +14,17 @@ export type BoundaryFailure = {
   };
 }[PublicError['status']];
 
+/** Typed adapter failures cross the Worker boundary without exposing internal error text. */
+export class HttpBoundaryError extends Error {
+  readonly failure: BoundaryFailure;
+
+  constructor(failure: BoundaryFailure) {
+    super('HTTP boundary failure');
+    this.name = 'HttpBoundaryError';
+    this.failure = failure;
+  }
+}
+
 const PUBLIC_MESSAGES: Record<PublicError['code'], string> = {
   INVALID_ARGUMENT: 'The request is invalid.',
   LOCATION_REQUIRED: 'A usable location is required.',
