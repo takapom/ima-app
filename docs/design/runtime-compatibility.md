@@ -45,6 +45,36 @@ was rejected by the host; temporary test aliases do not resolve that prerequisit
 M05 remains gated by M03 and M04. Paid APIs, live models, and production deletion
 timing have not been tested.
 
+### PM checkpoint: 2026-09-09 22:07 JST
+
+The PM reran the corrected sources, rather than relying on sub-agent summaries:
+
+- Core/SDK adapter: isolated strict TypeScript check and 21 contract tests passed.
+- Native loop: six Worker/DO tests passed, using the shared step validator,
+  actual Core schemas, pre-model replay checks, and deadline-signal error mapping.
+- Shared step/SSE: four tests passed. Final wire uses `final_message` and the
+  Core validator; plain/malformed finals and mixed terminal steps are rejected.
+  A module-private WeakSet prevents provider errors from impersonating internal
+  policy errors. The empty-text step exception is not a public response commit.
+- Retention: seven tests passed. Denied messages are rebuilt from permitted
+  fields, including probes in reasoning, tool output, and metadata. Public SDK
+  lifecycle/history-clear paths replace internal method/table writes. Session
+  expiry and provider windows are separate; saved references survive thread
+  deletion and expiry sweep, and have their own explicit delete operation.
+- HTTP/mobile: two tests passed: one actual committed candidate travels through
+  a Worker public-DTO response into mobile state; an error report with a commit
+  is rejected. The earlier seven-case test-side conversion was superseded.
+
+These remain **bounded, isolated results**. The HTTP fixture registry assigns
+`obs-details-1` identity/allow metadata while the loop Details stub uses that ID
+for opening-hours/unknown metadata. It therefore does not prove a consistent
+Core observation/policy-to-DTO transformation. Message and multiple-candidate
+HTTP cases, multi-turn history expiry, all persistence surfaces, and all required
+cases under one selected configuration remain unverified. Retention and loop
+fixtures are still separate configurations. No SDK adoption ADR or M05 code is
+approved by this checkpoint. Fresh-clone installation and repository quality
+checks remain outstanding; see [implementation progress](implementation-progress.md).
+
 ### Initial smoke-test observation
 
 The pinned packages can be imported in an isolated Node environment and the
@@ -163,7 +193,7 @@ or sanitizer guarantees. The source files are under
 | `@cloudflare/ai-chat/dist/index.js:2965-2977`     | internal sanitization calls the user hook                                                                                       | Hook invocation is source evidence, not proof that all forbidden payloads are removed           |
 | `@cloudflare/ai-chat/dist/index.js:3365-3377`     | a streaming approval snapshot is sanitized and inserted directly into the same SQL table                                        | Stream writes require a dedicated canary test                                                   |
 
-## Gate status
+## Initial gate status (before the later Worker runs above)
 
 | M04 gate                                                                                                  | status         | missing evidence                                                                         |
 | --------------------------------------------------------------------------------------------------------- | -------------- | ---------------------------------------------------------------------------------------- |
