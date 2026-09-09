@@ -5,6 +5,7 @@ import {
   NOW,
   context,
   createComposition,
+  retention,
   searchResult,
   RecordingCommit,
 } from './runtime-turn-composition-fixture';
@@ -97,6 +98,38 @@ describe('createRuntimeTurnComposition', () => {
     });
     expect(commit.requests).toHaveLength(1);
     expect(commit.requests[0]?.record.presentation).toBe('keep');
+    composition.dispose();
+  });
+
+  it('maps the committed response with the receipt identity when public dependencies are injected', async () => {
+    const commit = new RecordingCommit('receipt-public-response');
+    const { composition } = createComposition(
+      commit,
+      1,
+      retention,
+      () => NOW,
+      { digest: () => 'composition-digest' },
+      { textRetention: retention.retention },
+    );
+    composition.onAccepted({
+      terminal: 'message',
+      finalText: JSON.stringify({
+        kind: 'final_message',
+        message: { text: '公開応答', evidenceIds: [], basis: 'conversational' },
+      }),
+      emptyFinal: false,
+      partCount: 2,
+      bytes: 64,
+    });
+    const response = await composition.getCommittedResponse();
+    expect(response).toMatchObject({
+      kind: 'message',
+      presentation: 'keep',
+      responseId: 'receipt-public-response',
+      revision: 2,
+      cardSetId: null,
+      message: [{ text: '公開応答' }],
+    });
     composition.dispose();
   });
 });

@@ -1,5 +1,6 @@
 import type { PrepareStepContext, Session, TurnConfig } from '@cloudflare/think';
 import type { ToolSet } from 'ai';
+import type { AssistantResponse } from '@ima/contracts';
 import type {
   CandidateObservationRegistryPort,
   ClockPort,
@@ -51,6 +52,10 @@ import type {
 } from './runtime-model-guard';
 import type { RuntimeBudget } from './runtime-budget';
 import {
+  mapCommittedResponseToPublic,
+  type RuntimePublicResponseOptions,
+} from './runtime-response';
+import {
   currentBudget,
   observationResultIsReusable,
   observedWindow,
@@ -70,7 +75,7 @@ export type RuntimeCompositionValidationContext =
 
 export type RuntimeCompositionPersistMessages = RuntimeThinkPersistMessages;
 
-export type RuntimeTurnCompositionOptions = {
+type RuntimeTurnCompositionBaseOptions = {
   readonly request: RuntimeCompositionTurnRequest;
   readonly context: HarnessContext;
   readonly model: RuntimeModelGuardModel;
@@ -95,10 +100,27 @@ export type RuntimeTurnCompositionOptions = {
   readonly idempotencyKey?: string;
 };
 
-export type RuntimeTurnComposition = RuntimeThinkComposition<CommittedResponse> & {
-  /** RuntimeThinkConnection passes this to its required configureSession option. */
-  readonly configureSession: (session: Session) => Session;
+export type RuntimePublicResponseDependencies = Omit<
+  RuntimePublicResponseOptions,
+  'threadId' | 'turnId' | 'responseId' | 'revision'
+>;
+
+export type RuntimeTurnCompositionCoreOptions = RuntimeTurnCompositionBaseOptions & {
+  readonly publicResponse?: undefined;
 };
+
+export type RuntimeTurnCompositionPublicOptions = RuntimeTurnCompositionBaseOptions & {
+  readonly publicResponse: RuntimePublicResponseDependencies;
+};
+
+export type RuntimeTurnCompositionOptions =
+  RuntimeTurnCompositionCoreOptions | RuntimeTurnCompositionPublicOptions;
+
+export type RuntimeTurnComposition<Response = CommittedResponse> =
+  RuntimeThinkComposition<Response> & {
+    /** RuntimeThinkConnection passes this to its required configureSession option. */
+    readonly configureSession: (session: Session) => Session;
+  };
 
 export { RuntimeTurnCompositionError } from './runtime-turn-composition-support';
 
@@ -193,9 +215,15 @@ const configureCompaction = (session: Session): Session =>
  * here once: read calls pass through the budget adapter, submit calls create a Core application
  * port with the latest clock/conditions, and model history is rebuilt from Core projection.
  */
-export const createRuntimeTurnComposition = (
+export function createRuntimeTurnComposition(
+  options: RuntimeTurnCompositionPublicOptions,
+): RuntimeTurnComposition<AssistantResponse>;
+export function createRuntimeTurnComposition(
+  options: RuntimeTurnCompositionCoreOptions,
+): RuntimeTurnComposition<CommittedResponse>;
+export function createRuntimeTurnComposition(
   options: RuntimeTurnCompositionOptions,
-): RuntimeTurnComposition => {
+): RuntimeTurnComposition<CommittedResponse | AssistantResponse> {
   if (!sameIdentity(options.request, options.context)) {
     throw new RuntimeTurnCompositionError('CONTEXT_MISMATCH');
   }
@@ -228,6 +256,7 @@ export const createRuntimeTurnComposition = (
   const calls = new Map<string, RuntimeRetentionEphemeralToolCall>();
   const results = new Map<string, RuntimeRetentionEphemeralToolResult>();
   let responseId: string | undefined;
+  let responseRevision: number | undefined;
   let acceptedFinal: RuntimeFinalMessage | undefined;
   const scope = (): RuntimeRetentionContext => {
     const current = retentionContext(options.retention);
@@ -281,7 +310,10 @@ export const createRuntimeTurnComposition = (
     return {
       submit: async (input, execution, cancellation) => {
         const result = await port.submit(input, execution, cancellation);
-        if (result.status === 'committed') responseId = result.responseId;
+        if (result.status === 'committed') {
+          responseId = result.responseId;
+          responseRevision = result.revision;
+        }
         return result;
       },
     };
@@ -395,14 +427,25 @@ export const createRuntimeTurnComposition = (
           throw new RuntimeTurnCompositionError('FINAL_COMMIT_INVALID');
         }
         responseId = result.receipt.responseId;
+        responseRevision = result.receipt.revision;
         options.budget.markCommitted();
       }
       if (responseId === undefined) return undefined;
-      return application.getCommittedResponse(
+      if (responseRevision === undefined) return undefined;
+      const committed = application.getCommittedResponse(
         { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
         options.context.turnId,
         responseId,
       );
+      if (committed === undefined) return undefined;
+      if (options.publicResponse === undefined) return committed;
+      return mapCommittedResponseToPublic(committed, {
+        ...options.publicResponse,
+        threadId: options.context.threadId,
+        turnId: options.context.turnId,
+        responseId,
+        revision: responseRevision,
+      });
     },
     dispose: () => {
       if (disposed) return;
@@ -420,4 +463,4 @@ export const createRuntimeTurnComposition = (
     onAccepted,
     configureSession: configureCompaction,
   };
-};
+}

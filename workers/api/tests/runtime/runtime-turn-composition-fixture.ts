@@ -26,7 +26,9 @@ import {
   type RuntimeCompositionModelContext,
   type RuntimeCompositionPersistMessages,
   type RuntimeCompositionTurnRequest,
-  type RuntimeTurnCompositionOptions,
+  type RuntimePublicResponseDependencies,
+  type RuntimeTurnCompositionCoreOptions,
+  type RuntimeTurnCompositionPublicOptions,
 } from '../../src/runtime/runtime-turn-composition';
 import type { RuntimeRetentionContext } from '../../src/runtime/runtime-retention';
 import type { RuntimeTurnPortDependencies } from '../../src/runtime/runtime-turn-factory';
@@ -156,16 +158,18 @@ export const searchResult: Result<SearchPlacesOutput> = {
 export class RecordingCommit implements CommitPort {
   readonly requests: CommitRequest[] = [];
 
+  constructor(private readonly receiptResponseId?: string) {}
+
   commit(request: CommitRequest): CommitPortResult {
     this.requests.push(request);
     return {
       status: 'committed',
       receipt: {
-        responseId: request.record.responseId,
+        responseId: this.receiptResponseId ?? request.record.responseId,
         revision: request.record.revision,
         payloadDigest: request.record.payloadDigest,
         presentation: request.record.presentation,
-        replayed: false,
+        replayed: this.receiptResponseId !== undefined,
       },
     };
   }
@@ -240,6 +244,7 @@ export const createComposition = (
   retentionValue: RuntimeRetentionContext = retention,
   clock: () => string = () => NOW,
   hashes: CommitHashPort = { digest: () => 'composition-digest' },
+  publicResponse?: RuntimePublicResponseDependencies,
 ) => {
   const calls = { search: [] as number[] };
   const fixture = createToolRegistry();
@@ -254,7 +259,7 @@ export const createComposition = (
   };
   const persistMessages: RuntimeCompositionPersistMessages = () =>
     Promise.resolve({ requestId: 'composition-request', status: 'completed' });
-  const options: RuntimeTurnCompositionOptions = {
+  const baseOptions = {
     request,
     context,
     model,
@@ -277,9 +282,16 @@ export const createComposition = (
     isFinalResponse: () => true,
     ...(currentTurnStart === undefined ? {} : { currentTurnStart }),
     idempotencyKey: 'composition-idempotency',
-  };
+  } satisfies Omit<RuntimeTurnCompositionCoreOptions, 'publicResponse'>;
+  const composition =
+    publicResponse === undefined
+      ? createRuntimeTurnComposition(baseOptions)
+      : createRuntimeTurnComposition({
+          ...baseOptions,
+          publicResponse,
+        } satisfies RuntimeTurnCompositionPublicOptions);
   return {
-    composition: createRuntimeTurnComposition(options),
+    composition,
     calls,
     model,
     registry,
