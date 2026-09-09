@@ -1,0 +1,41 @@
+name: quality
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.8
+      - run: bun install --frozen-lockfile
+      - run: bun run format
+      - run: bun run lint
+      - run: bun run architecture
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run build
+      - name: Check every pushed commit
+        env:
+          BEFORE: ${{ github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: |
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            EMPTY_TREE=$(git hash-object -t tree --stdin </dev/null)
+            node scripts/check-commit-size.mjs --range "$EMPTY_TREE" "$HEAD" --root
+          else
+            node scripts/check-commit-size.mjs --range "$BEFORE" "$HEAD"
+          fi

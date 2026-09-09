@@ -22,7 +22,7 @@ for (const workspace of workspaces) {
     console.error(`${workspace}: missing required script ${command}`);
     process.exit(1);
   }
-  const result = spawnSync('bun', ['--cwd', workspace, 'run', command], { stdio: 'inherit' });
+  const result = spawnSync('bun', ['run', '--cwd', workspace, command], { stdio: 'inherit' });
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }

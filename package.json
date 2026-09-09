@@ -14,10 +14,15 @@
   ],
   "scripts": {
     "install:ci": "bun install --frozen-lockfile",
-    "dev:mobile": "bun --cwd apps/mobile start",
-    "dev:worker": "bun --cwd workers/api dev",
-    "typecheck": "bun run scripts/run-workspaces.mjs typecheck",
-    "build": "bun run scripts/run-workspaces.mjs build"
+    "dev:mobile": "bun run --cwd apps/mobile start",
+    "dev:worker": "bun run --cwd workers/api dev",
+    "format": "prettier --check .",
+    "lint": "eslint . && node scripts/check-file-lines.mjs && node scripts/check-lint-disables.mjs && node scripts/check-eslint-fixtures.mjs",
+    "architecture": "dependency-cruiser --validate .dependency-cruiser.cjs apps packages workers && node scripts/check-manifest-boundaries.mjs && node scripts/check-architecture-fixtures.mjs",
+    "typecheck": "bun run scripts/run-workspaces.mjs typecheck && tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --config vitest.config.ts && vitest run --config vitest.worker.config.ts",
+    "build": "bun run scripts/run-workspaces.mjs build",
+    "commit-size": "node scripts/check-commit-size.mjs"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.22.0",
