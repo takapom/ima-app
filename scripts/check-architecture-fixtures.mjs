@@ -66,6 +66,23 @@ const baseFiles = {
 const cases = [
   { name: 'allowed-public-entries-and-core-direction', expected: null },
   {
+    name: 'worker-tests-may-import-pool-virtual-module',
+    source: "import { env } from 'cloudflare:test';\nexport { env };\n",
+    target: 'workers/api/tests/runtime.test.ts',
+  },
+  {
+    name: 'worker-production-cannot-import-pool-virtual-module',
+    source: "import 'cloudflare:test';\n",
+    target: 'workers/api/src/index.ts',
+    rule: 'cloudflare-test-only-worker-tests',
+  },
+  {
+    name: 'core-tests-cannot-import-pool-virtual-module',
+    source: "import 'cloudflare:test';\n",
+    target: 'packages/core/src/runtime.test.ts',
+    rule: 'cloudflare-test-only-worker-tests',
+  },
+  {
     name: 'mobile-cannot-import-core',
     source: "import '@ima/core';\n",
     rule: 'mobile-only-contracts',
@@ -304,7 +321,7 @@ function runFixture(testCase) {
     });
     const output = `${result.stdout}\n${result.stderr}`;
     const manifestOutput = `${manifestResult.stdout}\n${manifestResult.stderr}`;
-    if (testCase.expected === null && testCase.rule === undefined && result.status !== 0) {
+    if (testCase.rule === undefined && result.status !== 0) {
       throw new Error(`${testCase.name}: expected graph success, got\n${output}`);
     }
     if (testCase.rule !== undefined && (result.status === 0 || !output.includes(testCase.rule))) {
