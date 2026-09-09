@@ -103,6 +103,20 @@ export class RuntimeTurnFactoryError extends Error {
   }
 }
 
+const THINK_WORKSPACE_TOOL_NAMES = [
+  'bash',
+  'delete',
+  'edit',
+  'find',
+  'grep',
+  'list',
+  'read',
+  'write',
+] as const;
+
+const isThinkWorkspaceToolName = (name: string): boolean =>
+  THINK_WORKSPACE_TOOL_NAMES.some((workspaceName) => workspaceName === name);
+
 const sameNames = (names: readonly string[]): boolean =>
   names.length === PUBLIC_TOOL_NAMES.length &&
   PUBLIC_TOOL_NAMES.every((name) => names.includes(name));
@@ -177,7 +191,13 @@ const factoryErrorCode = (
 
 const toolSetMismatch = (context: TurnContext): RuntimeTurnFactoryError | undefined => {
   const names = Object.keys(context.tools);
-  return sameNames(names) ? undefined : new RuntimeTurnFactoryError('TOOL_SET_MISMATCH');
+  const publicNames = names.filter(isPublicToolName);
+  const hasUnexpectedTool = names.some(
+    (name) => !isPublicToolName(name) && !isThinkWorkspaceToolName(name),
+  );
+  return !hasUnexpectedTool && sameNames(publicNames)
+    ? undefined
+    : new RuntimeTurnFactoryError('TOOL_SET_MISMATCH');
 };
 
 /**

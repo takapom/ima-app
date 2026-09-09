@@ -230,9 +230,22 @@ describe('createRuntimeTurnFactory', () => {
       stopWhen,
     });
 
+    const thinkManagedTurn: TurnContext = {
+      ...turn,
+      tools: {
+        ...factory.tools,
+        bash: factory.tools.search_places,
+        read: factory.tools.search_places,
+        write: factory.tools.search_places,
+      },
+    };
+    await expect(factory.hooks.beforeTurn(thinkManagedTurn)).resolves.toMatchObject({
+      activeTools: ['search_places', 'get_place_details', 'submit_cards'],
+    });
+
     const extraToolTurn: TurnContext = {
       ...turn,
-      tools: { ...factory.tools, read: factory.tools.search_places },
+      tools: { ...factory.tools, unknown_tool: factory.tools.search_places },
     };
     await expect(factory.hooks.beforeTurn(extraToolTurn)).rejects.toMatchObject({
       code: 'TOOL_SET_MISMATCH',
