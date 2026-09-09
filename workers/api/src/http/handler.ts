@@ -37,6 +37,8 @@ export type HandlerContext = {
   readonly appVersion: string;
   readonly serverNow: string;
   readonly cancellation: CancellationToken;
+  /** Worker-local HTTP cancellation; never serialize this signal into a DO RPC or Core Port. */
+  readonly signal: AbortSignal;
 };
 
 export type ApplicationOperation =

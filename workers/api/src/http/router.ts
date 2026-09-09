@@ -84,7 +84,7 @@ const makeContext = (
   serverNow: string,
 ): HandlerContext => {
   const cancellation: CancellationToken = { isCancelled: () => request.signal.aborted };
-  return { ...auth, serverNow, cancellation };
+  return { ...auth, serverNow, cancellation, signal: request.signal };
 };
 
 const validatedServerNow = (config: HttpRouterConfig): string => {
