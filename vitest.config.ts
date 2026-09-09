@@ -7,6 +7,7 @@ export default defineConfig({
       'tests/**/*.test.ts',
       'packages/*/src/**/*.test.ts',
       'apps/*/src/**/*.test.ts',
+      'workers/api/tests/http/*.test.ts',
       'workers/api/tests/runtime-gate/runtime-gate-contract.test.ts',
       'workers/api/tests/runtime-gate/runtime-gate-core.test.ts',
       'workers/api/tests/runtime-gate/runtime-gate-sse.test.ts',
