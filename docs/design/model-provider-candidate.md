@@ -31,3 +31,15 @@ APIキー未設定時は設定エラーとし、Fixture回答をliveとして返
 - [GPT-5.6 Lunaの対応機能](https://developers.openai.com/api/docs/models/gpt-5.6-luna)
 - [OpenAI Provider 3.0.69の公開metadata](https://registry.npmjs.org/@ai-sdk/openai/3.0.69)
 - ローカル確認: `npm view @ai-sdk/openai@3.0.69 version dependencies peerDependencies --json`
+
+## Provider導入時のschema検証
+
+AI SDK 6ではOpenAIの`strictJsonSchema`が既定で有効になっている。
+[AI SDK 6移行資料](https://ai-sdk.dev/docs/migration-guides/migration-guide-6-0)を確認した。
+OpenAIのstrict形式では全プロパティのrequired指定などの制約がある。
+[Structured Outputs仕様](https://developers.openai.com/api/docs/guides/structured-outputs)が根拠となる。
+
+現在のM04/M07 wire schemaは任意metadata項目を含むため、そのままstrictで
+受理されるとは扱わない。Provider導入時にstrict設定またはwire schemaの変換を明示し、
+実Providerの要求生成を検証する。Core/Valibotによる業務検証はどちらの方式でも維持する。
+この設定・transport検証は未完了であり、Fixtureの通過で代替しない。
