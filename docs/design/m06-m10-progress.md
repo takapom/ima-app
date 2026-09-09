@@ -31,8 +31,17 @@
 - M10接続準備としてThread公開型とRateLimit DOを`e0d3949`（#11、344行）で分離。親が既存Worker 9テストと対象lint/formatを確認。業務判断とSDK依存をCoreへ移さず、Worker内の責務分割を維持した。
 - M10のHTTP中断通知を`957fa61`（#11、54行）にコミット。親がHTTP 13テストと対象lint/formatを確認。AbortSignalはWorker内だけで扱い、DO RPCやCore Portへ転送しない。
 - M10のThink lifecycle接続とsubmit直前の時計・条件更新を`1de20c4`（#11、1,008行）にコミット。親が関連13テストと対象lint/formatを確認。Worker tests型検査は未導入のOpenAI Provider参照のみエラー。途中時点のNode全体54ファイル321テストも通過した。
-- 具体的なturn構成、実Thread DOのadmission・取消・再送、HTTPへの初回公開DTO接続は未完。これらの新規差分を既存テストの成功に含めない。
-- M08の実Provider接続、M10の保存前制御・Think/DO接続は実装中。途中時点のNode全287テストは通過したが、変更完了後の最終検査ではない。
+- Core・Tool・文脈の具体的構成と取消時の即時失効を`7fe1bea`（#11、1,566行）にコミット。親が関連7テストと対象lint/formatを確認。現在turnの境界固定、観測ごとの期限・失効再照合、hash中の取消後にCommitPortを呼ばない回帰を含む。
+- 確定receiptから初回公開DTOへの変換を`4fd913a`（#11、118行）にコミット。親が関連15テストと対象lint/formatを確認。Core receiptのresponseId/revisionを利用し、写真の内部参照は公開しない。
+- Think内部ツールとモデル公開3操作の区別を`494997d`（#11、37行）にコミット。親がfactory 7テストと対象lint/formatを確認。SDK内部のworkspaceツールをモデルへ公開しない。
+- ThreadDOの受付・取消・公開応答・履歴削除を`e20cd82`（#11、1,681行）にコミット。親がWorker 15テスト、Node関連9テストと対象lint/formatを確認。取消済みSQL記録への遅着確定を拒否し、cold DOのThink履歴削除も検証した。
+- HTTPからの実行・中断・参照再送を`2149a39`（#11、674行）にコミット。親が関連15テストと対象lint/formatを確認。初回は公開DTO、再送は参照のみとし、同一POSTの参照結果を新規応答として返さない。
+- 実Thinkの修正・空final・混在拒否・SDK例外を`db3fec5`（#11、1,204行）にコミット。親が実SDK 4テストと対象lint/formatを確認。修正はmodel 3回・commit 1回、失敗2ケースはPort副作用・commitとも0件。既存SDKゲート51テストも再検査を通過した。
+- 実HTTP経由の成功・replay・重複POST・旧turn・SDK例外を`25e5ab6`（#11、235行）にコミット。同一POSTは409 `CONFLICT`、別の旧turnは409 `STALE_TURN`へ区別した。
+- Provider optionsの実呼出しへの配線を`27022e6`（#9、65行）にコミット。親がnative全8テストと対象lint/formatを確認し、実Thinkの3回すべてに`store: false`・`reasoningEffort: low`・`strictJsonSchema: false`が届くことを検証した。
+- 実Thinkの取消・旧turn差替えを`9e7ef4c`（#11、261行）にコミット。取消後はモデル追加呼出し・Port副作用・commitがなく、旧turnが新revisionの応答を上書きしないことを検証した。
+- 最終の`bun run test`は73ファイル415テストを通過（Node 339、Worker 15、既存SDK 51、native統合10）。全体format・ファイル行数・lint抑制検査も通過した。
+- M08の実Provider依存はlockfile未同期で、全品質ゲート合格・M06〜M10完了とは扱わない。全体lint・依存境界・Worker型検査の残件はいずれも未導入OpenAI参照である。Provider factoryとmanifestの追加差分は未コミットで、依存同期後の型・transport検証が必要。
 - 作業はmain上。各コミットは実在sub-issueに紐づけ、追加＋削除2,000行以内。
   実装はLuna/max、主担当が差分・契約・テストをレビューする。
 
