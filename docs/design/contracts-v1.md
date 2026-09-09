@@ -28,7 +28,7 @@
 | `retentionUntil` / `deletionScheduledAt`           | 保存利用期限と削除予約。provider内容はsession/provider上限の短い方 |
 | `restoreMode` / `policyStatus` / `attribution`     | reference-only復元、M31 policy状態、表示時の帰属                   |
 
-`allow` のprovider payloadは`retentionUntil`を必須とし、`identifier_indefinite_owner_scoped` の明示保存参照だけは期限なしを許す。`deny`/`unknown` は保存期限（`retentionUntil`）と削除予約を持たないが、セッション内の一時表示のため`freshUntil`/`displayUntil`を持てる。これらもsession期限を越えず、生成文の表示・鮮度期限はsource evidenceより延長しない。M31の確認前はfixture-only、liveはdisabledであり、contractsのparse成功をprovider許諾と扱わない。
+`allow` のprovider payloadは`retentionUntil`を必須とし、`identifier_indefinite_owner_scoped` の明示保存参照だけは期限なしを許す。`deny`/`unknown` は保存期限（`retentionUntil`）と削除予約を持たないが、セッション内の一時表示のため`freshUntil`/`displayUntil`を持てる。これらもsession期限を越えず、生成文の`sessionExpiresAt`は参照したsource evidenceの最短期限を越えず、表示・鮮度・保存期限もsource evidenceより延長しない。M31の確認前はfixture-only、liveはdisabledであり、contractsのparse成功をprovider許諾と扱わない。
 
 画面用fieldは `known`、`unknown`、`unsupported`、`not_applicable`、`error` を区別する。`not_applicable`（例: 電車移動不要）を欠損やprovider失敗へ変換しない。known値には最小限の`EvidenceRef[]`を付け、内部Observation全体は返さない。
 
@@ -104,3 +104,202 @@ M05はhandlerを注入し、Workerで認証・parse・DTO変換・error envelope
 4. HTTPのrequest ID、owner scope、error status、cancel/restart/end/delete、events、photo/保存参照の期限。
 
 ABI・保存データ・schema/capability versionの非互換変更は、旧payloadを黙ってcastせず、明示移行または失効して`SCHEMA_MISMATCH`を返す。Fixtureの合格はSDKの保存前制御、provider許諾、live APIの合格ではない。M04の実SDK検証結果を受け、Coreのmodel envelopeやAdapter変換を更新する。
+
+## Core内部対応表と具体JSON
+
+M03で実装したCoreの責務を、公開DTOとの変換境界とともに固定する。Coreは`packages/contracts`をimportせず、Worker Adapterが一方向に変換する。
+
+| Core契約                                    | 正規化する内容                                      | Worker Adapterで行う変換                     | M03で扱わないこと                                        |
+| ------------------------------------------- | --------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------- |
+| `Observation` / `FieldResult` / `Result`    | 候補・field単位の観測、出典、鮮度、保持、失敗       | `EvidenceRef`と画面用fieldへ最小化           | 現在時刻での期限切れ判定、DB保存                         |
+| `PlaceSearchPort`                           | `search` / `continue`のstrict入力と候補field結果    | HTTP `SearchRequest`とprovider応答を相互変換 | provider呼出し、ランキング                               |
+| `PlaceDetailsPort`                          | field列挙、候補重複禁止、観測のcandidate/field対応  | 公開place factsへ射影                        | 未要求fieldの自動取得                                    |
+| `WalkingRoutePort` / `LastTrainJourneyPort` | Harness注入の座標・駅条件と構造化結果               | 公開route/last-train factsへ射影             | 経路・時刻表計算本体                                     |
+| `ModelRequest` / `ModelDecision`            | 座標・owner scopeを除いた文脈、1 step内の複数action | M04で選定するSDKのTool/response形式へ接続    | SDKループ、SDK型、互換性の先取り                         |
+| `SubmitCardsPort`                           | `invalid` / `committed` と `replace` の構造契約     | responseId/revisionを付けて公開cardsへ確定   | candidate registry、鮮度、atomic commitの実装（M09/M10） |
+
+`PhotoInfo` はCore内で写真ごとの`photoRef`と複数の`displayName`/`uri`帰属を保持する。Worker Adapterは情報を落とさず公開`photoToken`と帰属配列へ変換し、providerの生参照を端末へ渡さない。
+
+モデルの1 stepは単一actionに限定しない。`ModelDecision.actions` は複数のsearch/detailsを表現でき、`ModelPort.respond` はSDK Adapterとの境界に留める。ループ、再試行、Toolの実行順、submit後の確定はCloudflare/AI SDKの検証結果に従い、Coreが独自に実装しない。`callId`はモデルが自由に決めるIDではなく、Harnessの実行コンテキストと`IdPort`で付与する。
+
+### 正常な検索と複数読み取り
+
+```json
+{
+  "modelDecision": {
+    "actions": [
+      {
+        "kind": "search_places",
+        "input": {
+          "mode": "search",
+          "query": "静かなカフェ",
+          "area": { "kind": "named_area", "name": "恵比寿" },
+          "openNow": true,
+          "limit": 6,
+          "excludeCandidateIds": []
+        }
+      },
+      {
+        "kind": "get_place_details",
+        "input": {
+          "requests": [{ "candidateId": "candidate-1", "fields": ["identity", "opening_hours"] }],
+          "freshness": "reuse_valid"
+        }
+      }
+    ],
+    "metadata": {}
+  }
+}
+```
+
+`submit_cards`または通常の最終messageをreadと同じstepに置く、複数submitを置く、といった混在はCore契約で拒否する。M04ではSDK Adapterが副作用前にこの拒否を実現できるかを検証する。Tool公開面とwire schemaの互換性は未検証であり、上のJSONをSDKへそのまま渡せることを意味しない。
+
+### 観測・FieldResult・期限の異常
+
+```json
+{
+  "status": "known",
+  "observations": [
+    {
+      "observationId": "observation-1",
+      "candidateId": "candidate-1",
+      "field": "identity",
+      "value": { "name": "Melt" },
+      "basis": "provider_reported",
+      "fetchedAt": "2026-09-09T12:00:00Z",
+      "sourceUpdatedAt": null,
+      "expiresAt": "2026-09-09T13:00:00Z",
+      "contextKey": "thread-1:identity",
+      "sources": [
+        { "provider": "fixture", "recordRef": "record-1", "attribution": null, "publicUrl": null }
+      ],
+      "retention": {
+        "retentionDecision": "unknown",
+        "retentionMode": "provider_limited",
+        "sessionExpiresAt": "2026-09-09T13:00:00Z",
+        "freshUntil": "2026-09-09T12:30:00Z",
+        "displayUntil": "2026-09-09T12:30:00Z",
+        "retentionUntil": null,
+        "deletionScheduledAt": null,
+        "attribution": null,
+        "restoreMode": "reference_only",
+        "policyStatus": "policy_withheld",
+        "displayPolicyStatus": "available"
+      }
+    }
+  ]
+}
+```
+
+`expiresAt`が`fetchedAt`より前、同一FieldResult内の`observationId`重複、Tool結果のcandidate/fieldと観測の不一致は受理しない。`EvidenceText`はgroundedなら一意な非空evidence IDを持ち、metadataだけ存在して`evidenceIds`から参照されない根拠も拒否する。
+
+### submitの正常・invalid結果
+
+```json
+{
+  "submitInput": {
+    "message": [{ "text": "候補です", "evidenceIds": [], "basis": "conversational" }],
+    "hero": {
+      "candidateId": "candidate-1",
+      "evidenceIds": [],
+      "why": { "text": "候補です", "evidenceIds": [], "basis": "conversational" }
+    },
+    "alts": [
+      {
+        "candidateId": "candidate-2",
+        "evidenceIds": [],
+        "why": { "text": "別案です", "evidenceIds": [], "basis": "conversational" },
+        "diff": { "text": "駅に近い", "evidenceIds": [], "basis": "conversational" }
+      }
+    ]
+  },
+  "result": {
+    "status": "committed",
+    "responseId": "response-1",
+    "revision": 1,
+    "presentation": "replace",
+    "cards": {
+      "message": [{ "text": "候補です", "evidenceIds": [], "basis": "conversational" }],
+      "hero": {
+        "candidateId": "candidate-1",
+        "evidenceIds": [],
+        "why": { "text": "候補です", "evidenceIds": [], "basis": "conversational" }
+      },
+      "alts": [
+        {
+          "candidateId": "candidate-2",
+          "evidenceIds": [],
+          "why": { "text": "別案です", "evidenceIds": [], "basis": "conversational" },
+          "diff": { "text": "駅に近い", "evidenceIds": [], "basis": "conversational" }
+        }
+      ]
+    }
+  }
+}
+```
+
+追加property、hero/altsのcandidate重複、別案の`diff`欠落、4件超のmessageはshape不正であり、実行時は次のような修正可能な`invalid`結果へ変換する。
+
+```json
+{
+  "status": "invalid",
+  "issues": [
+    {
+      "code": "MISSING_EVIDENCE",
+      "path": "hero.why",
+      "message": "根拠が必要",
+      "missingFields": ["evidenceIds"]
+    }
+  ],
+  "repairable": true,
+  "remainingRepairs": 2
+}
+```
+
+Coreで定義するのはこの入出力のschema/typeとPort境界である。正常結果のresponseId/revision発行、根拠のturn内登録、観測鮮度、条件充足、atomic commitの実装は後続Application/Harness（M09/M10）が担う。M03のshape-only helperは公開しない。
+
+### turnConstraintsの受理・拒否
+
+```json
+{
+  "metadata": {
+    "turnConstraints": {
+      "changes": [
+        { "maxWalkMinutes": 15, "sourceTurnId": "turn-1", "quote": "徒歩15分以内" },
+        {
+          "homeStationRef": "station-shibuya",
+          "minimumStayMinutes": 20,
+          "sourceTurnId": "turn-2",
+          "quote": "渋谷駅に帰りたい"
+        }
+      ]
+    }
+  }
+}
+```
+
+各changeは少なくとも1つの制約値と`sourceTurnId`・原文quoteを必要とし、同じturnの重複変更、unknown property、制約値なしを拒否する。SDKがこのmetadataをどのwire形式で保持できるかは未検証で、M04で正常・追加property・型不正・修正例を実測してAdapterへ反映する。
+
+例えば、制約値がなく追加propertyを含むchangeは拒否する。
+
+```json
+{
+  "metadata": {
+    "turnConstraints": {
+      "changes": [{ "sourceTurnId": "turn-1", "quote": "徒歩条件", "unknown": true }]
+    }
+  }
+}
+```
+
+Adapterは副作用前にこの入力をinvalidとして扱い、未知propertyを捨てて成功扱いにしない。修正例は同じ`sourceTurnId`に明示的な制約値を1つ以上追加する。
+
+```json
+{
+  "metadata": {
+    "turnConstraints": {
+      "changes": [{ "maxWalkMinutes": 15, "sourceTurnId": "turn-1", "quote": "徒歩15分以内" }]
+    }
+  }
+}
+```
