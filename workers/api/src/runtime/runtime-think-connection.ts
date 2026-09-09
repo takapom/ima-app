@@ -138,6 +138,12 @@ type ActiveTurn<Response> = {
   readonly request: RuntimeThinkTurnBuildRequest;
   readonly composition: RuntimeThinkComposition<Response>;
   readonly model: RuntimeModelGuardModel;
+  readonly controller: AbortController;
+};
+
+type RuntimeThinkCleanup = {
+  readonly run: () => void;
+  readonly error: () => unknown;
 };
 
 const retentionContext = (retention: RuntimeThinkRetention): RuntimeRetentionContext =>
@@ -214,6 +220,37 @@ const linkAbortSignal = (
 
 const thrownError = (value: unknown): Error =>
   value instanceof Error ? value : new Error(String(value));
+
+const cleanupFor = <Response>(
+  composition: RuntimeThinkComposition<Response>,
+): RuntimeThinkCleanup => {
+  let completed = false;
+  let firstError: unknown;
+  return {
+    run: () => {
+      if (completed) return;
+      completed = true;
+      try {
+        composition.dispose();
+      } catch (error) {
+        firstError = error;
+      }
+      try {
+        composition.turn.dispose();
+      } catch (error) {
+        firstError ??= error;
+      }
+    },
+    error: () => firstError,
+  };
+};
+
+const linkCleanupToAbort = (signal: AbortSignal, cleanup: RuntimeThinkCleanup): (() => void) => {
+  const onAbort = (): void => cleanup.run();
+  if (signal.aborted) onAbort();
+  else signal.addEventListener('abort', onAbort, { once: true });
+  return () => signal.removeEventListener('abort', onAbort);
+};
 
 /**
  * Adapts one injected RuntimeTurnFactory composition to Think's public lifecycle surface.
@@ -323,6 +360,8 @@ export class RuntimeThinkConnection<Response = unknown> {
     };
     this.active = { request: buildRequest, controller };
     let composition: RuntimeThinkComposition<Response> | undefined;
+    let cleanup: RuntimeThinkCleanup | undefined;
+    let unlinkCleanup: (() => void) | undefined;
     let result: RuntimeThinkTurnResult<Response> | undefined;
     let primaryError: unknown;
     let hasPrimaryError = false;
@@ -333,6 +372,9 @@ export class RuntimeThinkConnection<Response = unknown> {
         throw new RuntimeThinkConnectionError('COMPOSITION_INVALID');
       }
       composition = built;
+      const compositionCleanup = cleanupFor(composition);
+      cleanup = compositionCleanup;
+      unlinkCleanup = linkCleanupToAbort(controller.signal, compositionCleanup);
       if (buildRequest.signal?.aborted === true || requestAborted(request)) {
         throw new RuntimeThinkConnectionError('CANCELLED');
       }
@@ -353,7 +395,12 @@ export class RuntimeThinkConnection<Response = unknown> {
         onAccepted: composition.onAccepted,
       };
       const model = wrapRuntimeModelGuard(composition.model, guardOptions);
-      this.active = { request: buildRequest, composition, model };
+      this.active = {
+        request: buildRequest,
+        composition,
+        model,
+        controller,
+      };
       const saved = await this.saveMessages([...request.messages], {
         signal: composition.turn.signal,
       });
@@ -378,18 +425,9 @@ export class RuntimeThinkConnection<Response = unknown> {
       hasPrimaryError = true;
       primaryError = error;
     } finally {
-      if (composition !== undefined) {
-        try {
-          composition.dispose();
-        } catch (error) {
-          cleanupError = error;
-        }
-        try {
-          composition.turn.dispose();
-        } catch (error) {
-          cleanupError ??= error;
-        }
-      }
+      cleanup?.run();
+      cleanupError = cleanup?.error();
+      unlinkCleanup?.();
       unlinkAbort();
       controller.abort();
       this.active = undefined;
@@ -403,11 +441,7 @@ export class RuntimeThinkConnection<Response = unknown> {
   cancel(): void {
     const active = this.active;
     if (active === undefined) return;
-    if ('controller' in active) {
-      active.controller.abort();
-      return;
-    }
-    active.composition.turn.dispose();
+    active.controller.abort();
   }
 
   isActive(): boolean {
