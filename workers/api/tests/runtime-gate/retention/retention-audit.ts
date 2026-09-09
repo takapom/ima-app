@@ -42,6 +42,12 @@ export type RetentionTableObservation = {
   forbiddenRows: number;
 };
 
+export type RetentionSqlUnobservedTable = {
+  tableName: '_cf_KV' | '_cf_METADATA';
+  status: 'platform-owned';
+  reason: 'not-publicly-readable';
+};
+
 export type RetentionAuditReport = {
   messages: {
     entries: number;
@@ -61,6 +67,7 @@ export type RetentionAuditReport = {
     observed: boolean;
     readErrors: number;
     tables: readonly RetentionTableObservation[];
+    unobservedTables: readonly RetentionSqlUnobservedTable[];
   };
 };
 
@@ -68,6 +75,7 @@ export type RetentionWriteAuditInstallReport = {
   observed: boolean;
   readErrors: number;
   installErrors: number;
+  unobservedTables: readonly RetentionSqlUnobservedTable[];
 };
 
 export type RetentionWriteAuditReport = {
@@ -82,6 +90,23 @@ const WRITE_OPERATIONS: readonly ('INSERT' | 'UPDATE' | 'DELETE')[] = [
   'UPDATE',
   'DELETE',
 ];
+
+const UNOBSERVED_SQL_TABLES: readonly RetentionSqlUnobservedTable[] = [
+  {
+    tableName: '_cf_KV',
+    status: 'platform-owned',
+    reason: 'not-publicly-readable',
+  },
+  {
+    tableName: '_cf_METADATA',
+    status: 'platform-owned',
+    reason: 'not-publicly-readable',
+  },
+];
+
+function isUnobservedSqlTable(tableName: string): tableName is '_cf_KV' | '_cf_METADATA' {
+  return tableName === '_cf_KV' || tableName === '_cf_METADATA';
+}
 
 function nonEmptyMarkers(markers: readonly string[]): readonly string[] {
   return markers.filter((marker) => marker.length > 0);
@@ -213,13 +238,26 @@ export function installRetentionWriteAudit(
       )
     `);
   } catch {
-    return { observed: false, readErrors: 1, installErrors: 1 };
+    return {
+      observed: false,
+      readErrors: 1,
+      installErrors: 1,
+      unobservedTables: UNOBSERVED_SQL_TABLES,
+    };
   }
   const names = tableNames(sql);
-  if (names === undefined) return { observed: false, readErrors: 1, installErrors: 0 };
+  if (names === undefined) {
+    return {
+      observed: false,
+      readErrors: 1,
+      installErrors: 0,
+      unobservedTables: UNOBSERVED_SQL_TABLES,
+    };
+  }
   let installErrors = 0;
   let readErrors = 0;
   for (const tableName of names) {
+    if (isUnobservedSqlTable(tableName)) continue;
     if (tableName === 'retention_write_audit' || tableName.startsWith('retention_')) continue;
     const columns = tableColumns(sql, tableName);
     if (columns === undefined) {
@@ -246,7 +284,7 @@ export function installRetentionWriteAudit(
       }
     }
   }
-  return { observed: true, readErrors, installErrors };
+  return { observed: true, readErrors, installErrors, unobservedTables: UNOBSERVED_SQL_TABLES };
 }
 
 /** Remove only fixture audit rows; it does not touch SDK-owned tables. */
@@ -341,18 +379,23 @@ function auditSql(
   sql: RetentionSqlReader | undefined,
   markers: readonly string[],
 ): RetentionAuditReport['sql'] {
-  if (sql === undefined) return { observed: false, readErrors: 0, tables: [] };
+  if (sql === undefined) {
+    return { observed: false, readErrors: 0, tables: [], unobservedTables: [] };
+  }
   const tableResult = readSql(
     sql,
     "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
   );
-  if ('error' in tableResult) return { observed: false, readErrors: 1, tables: [] };
+  if ('error' in tableResult) {
+    return { observed: false, readErrors: 1, tables: [], unobservedTables: UNOBSERVED_SQL_TABLES };
+  }
 
   const tables: RetentionTableObservation[] = [];
   let readErrors = 0;
   for (const row of tableResult.rows) {
     const tableName = row.name;
     if (typeof tableName !== 'string') continue;
+    if (isUnobservedSqlTable(tableName)) continue;
     const tableResultForRows = readSql(sql, `SELECT * FROM ${quoteIdentifier(tableName)}`);
     if ('error' in tableResultForRows) {
       readErrors += 1;
@@ -374,7 +417,7 @@ function auditSql(
       forbiddenRows,
     });
   }
-  return { observed: true, readErrors, tables };
+  return { observed: true, readErrors, tables, unobservedTables: UNOBSERVED_SQL_TABLES };
 }
 
 /** Read-only diagnostics for messages, public KV, and an explicitly supplied public SQL view. */
