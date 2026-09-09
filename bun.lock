@@ -47,6 +47,9 @@
     "packages/core": {
       "name": "@ima/core",
       "version": "0.0.0",
+      "dependencies": {
+        "valibot": "1.4.2",
+      },
     },
     "packages/eval": {
       "name": "@ima/eval",

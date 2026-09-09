@@ -13,5 +13,7 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit"
   },
-  "dependencies": {}
+  "dependencies": {
+    "valibot": "1.4.2"
+  }
 }
