@@ -226,8 +226,28 @@ export class RuntimeBudget {
     };
   }
 
+  /** Returns the admission decision without reserving counters or changing cancellation state. */
+  checkAdmission(finalResponse = false): RuntimeBudgetDenial | undefined {
+    if (this.completed) return denial('COMMITTED', 'turn already has a committed response');
+    if (this.isStale?.() === true) return denial('STALE_TURN', 'turn revision is stale');
+    if (this.cancelledCode !== null || this.signal?.aborted === true) {
+      return denial('CANCELLED', 'turn was cancelled');
+    }
+    const now = this.monotonicTime();
+    if (now >= this.deadlineAtMs) return denial('DEADLINE', 'turn wall-clock budget is exhausted');
+    if (!finalResponse && now >= this.finalReserveAtMs) {
+      return denial('FINAL_RESERVE', 'final response reserve is active');
+    }
+    return undefined;
+  }
+
+  /** Read operations must fit before the final response reserve begins. */
+  remainingReadTimeMs(): number {
+    return Math.max(0, this.finalReserveAtMs - this.monotonicTime());
+  }
+
   reserveModelStep(finalResponse = false): RuntimeBudgetResult<void> {
-    const blocked = this.admission(finalResponse);
+    const blocked = this.checkAdmission(finalResponse);
     if (blocked !== undefined) return { ok: false, denial: blocked };
     if (this.modelSteps >= this.config.maxModelSteps) {
       return { ok: false, denial: denial('BUDGET_EXCEEDED', 'model step budget is exhausted') };
@@ -244,7 +264,7 @@ export class RuntimeBudget {
     const reservedCostUnits = request.costUnits;
     const reservedProviderHttpRequests = request.providerHttpRequests;
     const reservedRouteElements = request.routeElements;
-    const blocked = this.admission(false);
+    const blocked = this.checkAdmission(false);
     if (blocked !== undefined) return { ok: false, denial: blocked };
     if (this.activeReads >= this.config.maxParallelReads) {
       return { ok: false, denial: denial('PARALLEL_LIMIT', 'read parallelism is exhausted') };
@@ -274,7 +294,7 @@ export class RuntimeBudget {
           denial: denial('RETRY_NOT_ALLOWED', 'released reads cannot be retried'),
         };
       }
-      const blocked = this.admission(false);
+      const blocked = this.checkAdmission(false);
       if (blocked !== undefined) return { ok: false, denial: blocked };
       if (failure === 'argument' || failure === 'reference') {
         return {
@@ -297,7 +317,7 @@ export class RuntimeBudget {
           denial: denial('BUDGET_EXCEEDED', 'provider HTTP request budget is exhausted'),
         };
       }
-      const waitUntil = this.currentTime() + retryAfterMs;
+      const waitUntil = this.monotonicTime() + retryAfterMs;
       if (waitUntil > this.finalReserveAtMs) {
         return {
           ok: false,
@@ -317,7 +337,7 @@ export class RuntimeBudget {
   }
 
   reserveSubmit(): RuntimeBudgetResult<RuntimeSubmitReservation> {
-    const blocked = this.admission(true);
+    const blocked = this.checkAdmission(true);
     if (blocked !== undefined) return { ok: false, denial: blocked };
     const attempt = this.submitAttempts;
     if (attempt > this.config.maxRepairAttempts) {
@@ -332,24 +352,6 @@ export class RuntimeBudget {
     };
   }
 
-  private admission(finalResponse: boolean): RuntimeBudgetDenial | undefined {
-    if (this.completed) return denial('COMMITTED', 'turn already has a committed response');
-    if (this.isStale?.() === true) {
-      this.cancelledCode = 'STALE_TURN';
-      return denial('STALE_TURN', 'turn revision is stale');
-    }
-    if (this.cancelledCode !== null || this.signal?.aborted === true) {
-      this.cancelledCode = 'CANCELLED';
-      return denial('CANCELLED', 'turn was cancelled');
-    }
-    const now = this.currentTime();
-    if (now >= this.deadlineAtMs) return denial('DEADLINE', 'turn wall-clock budget is exhausted');
-    if (!finalResponse && now >= this.finalReserveAtMs) {
-      return denial('FINAL_RESERVE', 'final response reserve is active');
-    }
-    return undefined;
-  }
-
   private fits(costUnits: number, providerHttpRequests: number, routeElements: number): boolean {
     return (
       this.providerHttpRequests + providerHttpRequests <= this.config.maxProviderHttpRequests &&
@@ -358,7 +360,7 @@ export class RuntimeBudget {
     );
   }
 
-  private currentTime(): number {
+  private monotonicTime(): number {
     const observed = this.now();
     if (!validClockValue(observed)) return this.deadlineAtMs;
     this.lastNowMs = Math.max(this.lastNowMs, observed);

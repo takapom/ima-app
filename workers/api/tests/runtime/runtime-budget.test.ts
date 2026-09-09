@@ -208,6 +208,29 @@ describe('RuntimeBudget', () => {
     });
   });
 
+  it('checks read admission without mutating counters or cancellation state', () => {
+    let now = 1;
+    const budget = new RuntimeBudget({
+      config: config({ wholeTurnMs: 12_000, finalReserveMs: 2_000 }),
+      startedAtMs: 0,
+      now: () => now,
+    });
+    const before = budget.snapshot();
+
+    expect(budget.checkAdmission()).toBeUndefined();
+    expect(budget.remainingReadTimeMs()).toBe(9_999);
+    expect(budget.snapshot()).toEqual(before);
+
+    now = 100;
+    expect(budget.remainingReadTimeMs()).toBe(9_900);
+    now = 1;
+    expect(budget.remainingReadTimeMs()).toBe(9_900);
+
+    now = 10_000;
+    expect(budget.checkAdmission()).toMatchObject({ code: 'FINAL_RESERVE' });
+    expect(budget.snapshot()).toEqual(before);
+  });
+
   it('denies all further reservations after a committed response', () => {
     const budget = new RuntimeBudget({ startedAtMs: 0, now: () => 1 });
     budget.markCommitted();
