@@ -1,0 +1,11 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "ima-runtime-gate-test",
+  "main": "tests/runtime-gate/runtime-gate-worker.ts",
+  "compatibility_date": "2026-08-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [{ "name": "RUNTIME_GATE", "class_name": "RuntimeGateAgent" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RuntimeGateAgent"] }],
+}

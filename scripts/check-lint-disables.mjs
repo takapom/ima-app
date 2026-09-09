@@ -3,11 +3,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import * as typescript from 'typescript';
 
 export function parseSourceFileList(output) {
-  return output
-    .split('\0')
-    .filter(Boolean)
-    .filter((file) => existsSync(file))
-    .filter((file) => file !== 'scripts/check-lint-disables.mjs');
+  return (
+    output
+      .split('\0')
+      .filter(Boolean)
+      .filter((file) => existsSync(file))
+      // Wrangler owns the generated declaration, including its blanket lint directive.
+      .filter((file) => file !== 'workers/api/tests/runtime-gate/runtime-env.d.ts')
+      .filter((file) => file !== 'scripts/check-lint-disables.mjs')
+  );
 }
 
 export function findUndocumentedDisables(files, readFile = (file) => readFileSync(file, 'utf8')) {

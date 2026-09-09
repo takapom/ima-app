@@ -4,6 +4,7 @@ node_modules
 dist
 coverage
 bun.lock
+workers/api/tests/runtime-gate/runtime-env.d.ts
 docs/adr/0001-ui.html
 *.png
 
