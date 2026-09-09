@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { OpaqueIdSchema, SchemaVersionSchema, Text } from './common.js';
+import { OpaqueIdSchema, SchemaVersionSchema, Text } from './common';
 
 const publicErrorBase = {
   schemaVersion: SchemaVersionSchema,

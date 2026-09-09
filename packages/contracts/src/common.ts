@@ -3,13 +3,10 @@ import * as v from 'valibot';
 const idPattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 
 const isoDatePattern = /^(\d{4})-(\d{2})-(\d{2})T/;
+const calendarDatePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 const isoOffsetPattern = /([+-])(\d{2}):(\d{2})$/;
-const validCalendarDate = (value: string) => {
-  const match = isoDatePattern.exec(value);
-  if (!match) return false;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
+const isLeapYear = (year: number) => year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+const validCalendarDateParts = (year: number, month: number, day: number) => {
   if (month < 1 || month > 12 || day < 1) return false;
   const daysInMonth = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][
     month - 1
@@ -18,7 +15,18 @@ const validCalendarDate = (value: string) => {
   return day <= daysInMonth;
 };
 
-const isLeapYear = (year: number) => year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+const validIsoCalendarDate = (value: string) => {
+  const match = isoDatePattern.exec(value);
+  return match === null
+    ? false
+    : validCalendarDateParts(Number(match[1]), Number(match[2]), Number(match[3]));
+};
+const validDateOnly = (value: string) => {
+  const match = calendarDatePattern.exec(value);
+  return match === null
+    ? false
+    : validCalendarDateParts(Number(match[1]), Number(match[2]), Number(match[3]));
+};
 const validIsoOffset = (value: string) => {
   if (value.endsWith('Z')) return true;
   const match = isoOffsetPattern.exec(value);
@@ -31,10 +39,16 @@ const validIsoOffset = (value: string) => {
 export const IsoTimestampSchema = v.pipe(
   v.string(),
   v.isoTimestamp(),
-  v.check(validCalendarDate, 'timestamp contains an invalid calendar date'),
+  v.check(validIsoCalendarDate, 'timestamp contains an invalid calendar date'),
   v.check(validIsoOffset, 'timestamp contains an invalid UTC offset'),
 );
 export type IsoTimestamp = v.InferOutput<typeof IsoTimestampSchema>;
+
+export const CalendarDateSchema = v.pipe(
+  v.string(),
+  v.regex(calendarDatePattern),
+  v.check(validDateOnly, 'date contains an invalid calendar date'),
+);
 
 export const OpaqueIdSchema = v.pipe(
   v.string(),

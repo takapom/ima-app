@@ -5,7 +5,7 @@ import {
   IsoTimestampSchema,
   OpaqueIdSchema,
   Text,
-} from './common.js';
+} from './common';
 
 const RestoreModeSchema = v.picklist(['full', 'reference_only', 'unavailable']);
 const PolicyStatusSchema = v.picklist([
@@ -79,6 +79,7 @@ export const RetentionMetadataSchema = v.pipe(
 
       return (
         metadata.retentionUntil !== null &&
+        metadata.deletionScheduledAt !== null &&
         (metadata.freshUntil === null || metadata.displayUntil !== null) &&
         atOrBefore(metadata.retentionUntil, metadata.sessionExpiresAt) &&
         atOrBefore(metadata.freshUntil, metadata.displayUntil) &&
@@ -165,6 +166,7 @@ export const PublicEvidenceTextSchema = (maxLength: number) =>
       return (
         new Set(value.evidenceIds).size === value.evidenceIds.length &&
         value.evidenceIds.every((id) => ids.has(id)) &&
+        value.evidence.every((item) => value.evidenceIds.includes(item.evidenceId)) &&
         (value.basis !== 'grounded' || value.evidenceIds.length > 0) &&
         (value.evidence.length === 0 ||
           value.retention.retentionDecision !== 'allow' ||

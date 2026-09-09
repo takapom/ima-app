@@ -1,0 +1,276 @@
+import * as v from 'valibot';
+import {
+  DetailFieldSchema,
+  IsoTimestampSchema,
+  OpaqueIdSchema,
+  RequestIdSchema,
+  RevisionSchema,
+  SchemaVersionSchema,
+  Text,
+} from './common';
+import {
+  CreateThreadRequestSchema,
+  CreateThreadResponseSchema,
+  EventsRequestSchema,
+  SearchRequestSchema,
+  ThreadTurnRequestSchema,
+} from './preferences';
+import { PublicErrorSchema } from './errors';
+import { PublicCandidateRefSchema } from './public';
+import { PublicPlaceDetailsDataSchema } from './values';
+import {
+  AssistantCardsResponseSchema,
+  AssistantMessageResponseSchema,
+  PhotoResponseDescriptorSchema,
+  SearchResponseSchema,
+} from './response';
+
+export const APP_TOKEN_HEADER = 'X-App-Token' as const;
+export const DEVICE_ID_HEADER = 'X-Device-Id' as const;
+export const OWNER_CREDENTIAL_HEADER = 'X-Ima-Owner-Credential' as const;
+export const REQUEST_ID_HEADER = 'X-Ima-Request-Id' as const;
+export const APP_VERSION_HEADER = 'X-App-Version' as const;
+export const OWNER_CREDENTIAL_BYTES = 32 as const;
+export const OWNER_CREDENTIAL_BASE64URL_LENGTH = 43 as const;
+
+export const OwnerCredentialHeaderSchema = v.pipe(
+  v.string(),
+  v.length(OWNER_CREDENTIAL_BASE64URL_LENGTH),
+  // 32 bytes encode to 42 full base64url chars plus a final 4-bit char.
+  v.regex(/^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$/),
+);
+
+export const RequestHeadersSchema = v.strictObject({
+  appToken: Text(256),
+  deviceId: OpaqueIdSchema,
+  ownerCredential: OwnerCredentialHeaderSchema,
+  requestId: RequestIdSchema,
+  appVersion: Text(64),
+});
+export type RequestHeaders = v.InferOutput<typeof RequestHeadersSchema>;
+
+export const LifecycleCommandSchema = v.strictObject({
+  schemaVersion: SchemaVersionSchema,
+  requestId: RequestIdSchema,
+  turnId: v.nullable(OpaqueIdSchema),
+  revision: RevisionSchema,
+  idempotencyKey: OpaqueIdSchema,
+});
+export type LifecycleCommand = v.InferOutput<typeof LifecycleCommandSchema>;
+
+export const PhotoPathSchema = v.strictObject({
+  token: v.pipe(v.string(), v.minLength(1), v.maxLength(512)),
+});
+
+export const PlacePathSchema = v.strictObject({
+  candidateId: OpaqueIdSchema,
+});
+
+export const PlaceQuerySchema = v.strictObject({
+  fields: v.pipe(
+    v.array(DetailFieldSchema),
+    v.minLength(1),
+    v.maxLength(8),
+    v.check((fields) => new Set(fields).size === fields.length, 'duplicate field'),
+  ),
+});
+
+export const SavedReferencePathSchema = v.strictObject({
+  savedPlaceRef: OpaqueIdSchema,
+});
+
+export const ThreadPathSchema = v.strictObject({
+  threadId: OpaqueIdSchema,
+});
+
+export const LifecycleRouteRequestSchema = v.strictObject({
+  path: ThreadPathSchema,
+  body: LifecycleCommandSchema,
+});
+
+const threadMessageMeta = v.omit(AssistantMessageResponseSchema, ['schemaVersion', 'threadId']);
+const threadCardsMeta = v.omit(AssistantCardsResponseSchema, ['schemaVersion', 'threadId']);
+const ThreadMessageRecordSchema = v.strictObject({
+  ...threadMessageMeta.entries,
+  restoreMode: v.literal('full'),
+});
+const ThreadCardsRecordSchema = v.strictObject({
+  ...threadCardsMeta.entries,
+  restoreMode: v.literal('full'),
+});
+const ThreadMessageRestoredRecordSchema = v.strictObject({
+  ...v.omit(threadMessageMeta, ['message']).entries,
+  restoreMode: v.picklist(['reference_only', 'unavailable']),
+});
+const ThreadCardsRestoredRecordSchema = v.strictObject({
+  ...v.omit(threadCardsMeta, ['message', 'cards']).entries,
+  restoreMode: v.picklist(['reference_only', 'unavailable']),
+});
+export const ThreadResponseRecordSchema = v.union([
+  ThreadMessageRecordSchema,
+  ThreadCardsRecordSchema,
+  ThreadMessageRestoredRecordSchema,
+  ThreadCardsRestoredRecordSchema,
+]);
+
+export const ThreadReadResponseSchema = v.pipe(
+  v.strictObject({
+    schemaVersion: SchemaVersionSchema,
+    requestId: RequestIdSchema,
+    threadId: OpaqueIdSchema,
+    revision: RevisionSchema,
+    active: v.boolean(),
+    responses: v.array(ThreadResponseRecordSchema),
+  }),
+  v.check((snapshot) => {
+    const responseIds = snapshot.responses.map((response) => response.responseId);
+    return (
+      new Set(responseIds).size === responseIds.length &&
+      snapshot.responses.every((response) => response.revision <= snapshot.revision)
+    );
+  }, 'thread records must be unique and no newer than the snapshot'),
+);
+
+export const LifecycleResponseSchema = v.strictObject({
+  schemaVersion: SchemaVersionSchema,
+  requestId: RequestIdSchema,
+  threadId: OpaqueIdSchema,
+  turnId: v.nullable(OpaqueIdSchema),
+  revision: RevisionSchema,
+  state: v.picklist(['active', 'cancelled', 'ended', 'restarted', 'resumed']),
+});
+
+export const EmptyResponseSchema = v.null();
+
+export const PlaceResponseSchema = v.strictObject({
+  schemaVersion: SchemaVersionSchema,
+  requestId: RequestIdSchema,
+  threadId: OpaqueIdSchema,
+  revision: RevisionSchema,
+  data: PublicPlaceDetailsDataSchema,
+});
+
+export const SavedReferenceResponseSchema = v.strictObject({
+  schemaVersion: SchemaVersionSchema,
+  requestId: RequestIdSchema,
+  savedPlaceRef: OpaqueIdSchema,
+  candidate: PublicCandidateRefSchema,
+  data: PublicPlaceDetailsDataSchema,
+});
+
+export const EventsAcceptedResponseSchema = v.null();
+
+export const ErrorResponseSchema = PublicErrorSchema;
+
+/** Adapter result for a photo route: metadata is validated, while the HTTP body is bytes. */
+export const PhotoBinaryRouteResponseSchema = v.strictObject({
+  bodyKind: v.literal('binary'),
+  descriptor: PhotoResponseDescriptorSchema,
+});
+
+export const RouteContracts = {
+  search: {
+    method: 'POST',
+    path: '/v1/search',
+    request: SearchRequestSchema,
+    response: SearchResponseSchema,
+    successStatus: 200,
+  },
+  photos: {
+    method: 'GET',
+    path: '/v1/photos/:token',
+    request: PhotoPathSchema,
+    response: PhotoBinaryRouteResponseSchema,
+    successStatus: 200,
+  },
+  place: {
+    method: 'GET',
+    path: '/v1/places/:candidateId',
+    request: v.strictObject({ path: PlacePathSchema, query: PlaceQuerySchema }),
+    response: PlaceResponseSchema,
+    successStatus: 200,
+  },
+  savedReferenceRefresh: {
+    method: 'GET',
+    path: '/v1/saved/:savedPlaceRef/refresh',
+    request: SavedReferencePathSchema,
+    response: SavedReferenceResponseSchema,
+    successStatus: 200,
+  },
+  events: {
+    method: 'POST',
+    path: '/v1/events',
+    request: EventsRequestSchema,
+    response: EventsAcceptedResponseSchema,
+    successStatus: 204,
+  },
+  createThread: {
+    method: 'POST',
+    path: '/v1/threads',
+    request: CreateThreadRequestSchema,
+    response: CreateThreadResponseSchema,
+    successStatus: 201,
+  },
+  turn: {
+    method: 'POST',
+    path: '/v1/threads/:threadId/turns',
+    request: v.strictObject({ path: ThreadPathSchema, body: ThreadTurnRequestSchema }),
+    response: SearchResponseSchema,
+    successStatus: 200,
+  },
+  readThread: {
+    method: 'GET',
+    path: '/v1/threads/:threadId',
+    request: ThreadPathSchema,
+    response: ThreadReadResponseSchema,
+    successStatus: 200,
+  },
+  replayThread: {
+    method: 'GET',
+    path: '/v1/threads/:threadId/replay',
+    request: ThreadPathSchema,
+    response: ThreadReadResponseSchema,
+    successStatus: 200,
+  },
+  cancel: {
+    method: 'POST',
+    path: '/v1/threads/:threadId/cancel',
+    request: LifecycleRouteRequestSchema,
+    response: LifecycleResponseSchema,
+    successStatus: 200,
+  },
+  resume: {
+    method: 'POST',
+    path: '/v1/threads/:threadId/resume',
+    request: LifecycleRouteRequestSchema,
+    response: LifecycleResponseSchema,
+    successStatus: 200,
+  },
+  restart: {
+    method: 'POST',
+    path: '/v1/threads/:threadId/restart',
+    request: LifecycleRouteRequestSchema,
+    response: LifecycleResponseSchema,
+    successStatus: 200,
+  },
+  end: {
+    method: 'POST',
+    path: '/v1/threads/:threadId/end',
+    request: LifecycleRouteRequestSchema,
+    response: LifecycleResponseSchema,
+    successStatus: 200,
+  },
+  deleteThread: {
+    method: 'DELETE',
+    path: '/v1/threads/:threadId',
+    request: LifecycleRouteRequestSchema,
+    response: EmptyResponseSchema,
+    successStatus: 204,
+  },
+} as const;
+
+export const RequestMetaSchema = v.strictObject({
+  schemaVersion: SchemaVersionSchema,
+  requestId: RequestIdSchema,
+  receivedAt: IsoTimestampSchema,
+});

@@ -1,18 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import * as v from 'valibot';
 import {
+  CalendarDateSchema,
   HttpsUrlSchema,
   IsoTimestampSchema,
   OpaqueIdSchema,
   RevisionSchema,
   SchemaVersionSchema,
-} from './common.js';
+} from './common';
 import {
   AttributionSchema,
   DisplayFieldSchema,
   PublicEvidenceTextSchema,
   RetentionMetadataSchema,
-} from './public.js';
+} from './public';
 
 const timestamp = '2026-09-09T12:00:00Z';
 
@@ -67,6 +68,8 @@ describe('public contract primitives', () => {
     expect(v.safeParse(IsoTimestampSchema, '2023-02-29T12:00:00Z').success).toBe(false);
     expect(v.safeParse(IsoTimestampSchema, '2026-02-31T12:00:00Z').success).toBe(false);
     expect(v.safeParse(IsoTimestampSchema, '2026-09-09T12:00:00+15:00').success).toBe(false);
+    expect(v.safeParse(CalendarDateSchema, '0096-02-29').success).toBe(true);
+    expect(v.safeParse(CalendarDateSchema, '2023-02-29').success).toBe(false);
   });
 
   it('keeps schema version, IDs, and revisions bounded', () => {
@@ -119,6 +122,9 @@ describe('public contract primitives', () => {
     ).toBe(false);
     expect(
       v.safeParse(RetentionMetadataSchema, allowedRetention({ retentionMode: 'none' })).success,
+    ).toBe(false);
+    expect(
+      v.safeParse(RetentionMetadataSchema, allowedRetention({ deletionScheduledAt: null })).success,
     ).toBe(false);
 
     expect(
@@ -255,6 +261,15 @@ describe('public contract primitives', () => {
         evidenceIds: ['obs-1'],
         evidence: [evidence],
         basis: 'grounded',
+      }).success,
+    ).toBe(false);
+    expect(
+      v.safeParse(textSchema, {
+        text: '未参照の根拠メタデータ',
+        evidenceIds: ['obs-1'],
+        evidence: [evidence, { ...evidence, evidenceId: 'obs-2' }],
+        basis: 'grounded',
+        retention: allowedRetention(),
       }).success,
     ).toBe(false);
   });
