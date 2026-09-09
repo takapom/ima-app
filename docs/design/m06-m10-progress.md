@@ -1,14 +1,31 @@
 # M06〜M10 実装チェックポイント
 
-2026-09-10 03:11 JST。対象はM06〜M10（#7〜#11）。本書は完了報告ではない。
+2026-09-10。対象はM06〜M10（#7〜#11）。本書は完了報告ではない。
 
 ## 現在の状態
 
-- ユーザーによるBun依存導入は完了。完全なlockfileをコミット済み。
+- M04用のBun依存導入とlockfileコミットは完了。M05〜M10用の実行時依存への移動とOpenAI Provider 3.0.69追加はmanifest更新済み、lockfile同期待ち。
 - M03の公開契約・Core契約は実装・ローカル検証済み。#4はGitHub反映・完了処理が残る。
 - M04の共通Think構成は24テストを通過し、[ADR0014](../adr/0014-think-runtime-adoption.md)で採用を決定した。
-- 全162テスト、workspace型検査、lint、format、依存境界31ケース、Worker dry-run、Expo iOS exportが成功。
-- M05とM06〜M10の本体は未実装。検証用Fixtureを本体実装と混同しない。
+- M04完了時点の全162テスト、workspace型検査、lint、format、依存境界31ケース、Worker dry-run、Expo iOS exportが成功。
+- M05のHTTP入力・認証・公開エラー境界を`d4ee8a0`（#6、677行）にコミット。親レビュー、関連5テスト、Worker型検査、対象lint/format、依存境界検査を通過。
+- M05の公開14経路・所有権確認への委譲・入力出力検証・エラー変換を`4564996`（#6、1,379行）にコミット。親がHTTPの12テスト、Worker型検査、対象lint/formatを確認。DOの所有権Adapter・bootstrap・SELF接続は次単位。
+- M06の候補・不変観測・鮮度照合を`05e0717`（#7、1,288行）にコミット。親レビュー、Core/evalの25テスト、両package型検査、対象lint/format、依存境界31ケースを通過。保存参照・表示順・非known項目の保持は後続単位。
+- M09の純粋検証・観測由来カード組立を`984cd3d`（#10、1,992行）にコミット。親が関連16テスト、Core型検査、対象lint/format、依存境界31ケースを確認。CommitPort・競合/再送試験は実装中。
+- M05のThink継承ThreadDO・bootstrapを`955a630`（#6、1,310行）にコミット。親が実Worker 9テスト、Worker型検査、対象lint/formatを確認。更新後のdry-runは拒否され未検証。詳細は[HTTP境界記録](m05-http-boundary.md)。
+- M06の保存/過去候補・表示順・非known項目と再利用失効を`f974049`（#7、1,742行）にコミット。親が関連24テスト、Core/eval型検査、対象lint/format、依存境界31ケースを確認。
+- M09のCommitPort・Application確定・既存submit Port接続・eval CASを`dc89215`（#10、1,507行）にコミット。親が関連31テスト、Core/eval型検査、対象lint/format、依存境界31ケースを確認。指定観測IDの失効確認と遅着時のephemeral response破棄も含む。
+- M10の予算予約・重複実行防止・混在バッチ検証を`c200fcf`（#11、918行）にコミット。親が既存runtime-gateを含む53テスト（新規16）、Worker型検査、対象lint/format、依存境界31ケースを確認。timeout/retry executorとThink接続は後続単位。
+- 追加の親回帰確認でAIChat比較用mobile-replayシナリオが一度HTTP 422になった。再実行では既存SDKゲート51テスト（AIChat 22、Think公開5、Think実行24）すべて成功。原因特定・コード修正済みとは扱わず、native接続後に最終検査する。
+- M08のCore文脈・共通鮮度・原文引用に基づく条件更新を`877eef1`（#9、1,258行）にコミット。親がCore関連15テスト、型検査、対象lint/format、依存境界31ケースを確認。M07未完のため、既存Core契約とFixtureで独立した文脈投影の範囲として先行。SDK Provider接続の完了とは区別する。
+- M08のWorker SDK形式変換・system指針・キー設定を`77d6535`（#9、359行）にコミット。親がmodel9テスト、Worker本体型検査、対象lint/formatを確認。検査時のtests全体型検査はM07編集中テストに1件エラーが残り、統合時に再検査する。Provider導入・実通信は未完。
+- M09の冗長なスキーマpipeを`0e3d90c`（#10、26行）で除去。親がsubmit Port 6テスト、Core型検査、対象lint/formatを確認。
+- M10のread executor・残時間timeout・Retry-After・取消/旧turn遅着拒否を`b32eb62`（#11、731行）にコミット。親が関連27テスト、Worker全体tests型検査、対象lint/format、依存境界31ケースを確認。先に記録したM07編集中の型エラーはこの時点で解消。実Think factoryとの接続は次単位。
+- M07の登録観測に基づくモデル安全投影を`cca3d7c`（#8、1,068行）、3ツールのschema/envelope・認可・Port接続を`1120b63`（#8、1,673行）にコミット。親が全tools27テスト、Worker全体tests型検査、対象lint/format、依存境界31ケースを確認。
+- M10のモデル予算・全stepの副作用前検証・期限Abortを`b75233f`（#11、902行）にコミット。親が関連29テスト、Worker全体tests型検査、対象lint/format、依存境界31ケースを確認。
+- M10の保存前本文制御・現turnの期限付きTool根拠復元を`6f9316e`（#11、1,926行）にコミット。親が関連12テスト、Worker全体tests型検査、対象lint/formatを確認。SDK user本文は現turnも再利用せず、Core投影後の文脈を別途注入する。
+- M10のターンfactory・安定call ID・条件snapshot・Abort/disposeを`fefb1cf`（#11、782行）にコミット。親が関連6テスト、Worker全体tests型検査、対象lint/formatを確認。read Portの実予算接続とThink/DOへの組込は別単位で実装中。
+- M08の実Provider接続、M10の保存前制御・Think/DO接続は実装中。途中時点のNode全287テストは通過したが、変更完了後の最終検査ではない。
 - 作業はmain上。各コミットは実在sub-issueに紐づけ、追加＋削除2,000行以内。
   実装はLuna/max、主担当が差分・契約・テストをレビューする。
 
@@ -42,3 +59,8 @@ M06→M09→M07→M08→M10。M10はM05も必要。
 実モデル・有料店舗API・本番alarm遅延・実機描画は未実測。
 GitHubへのpush、各Issueへの完了記録・Closeは、ローカルコミットとは区別する。
 未pushをGitHub反映済みとは報告しない。
+
+依存同期の`bun install --ignore-scripts --no-progress`は自動承認レビューに拒否された。
+ユーザーへ手元での実行を依頼済み。M08 Provider導入・更新後のfrozen-lock整合は未検証。
+未pushコミット一覧・範囲行数・remoteの確認コマンドと、M05更新後のWorker dry-runも
+自動承認レビューに拒否された。これらの操作は再試行・別手段で迂回せず未確認として残す。
