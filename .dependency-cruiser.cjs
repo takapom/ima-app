@@ -10,8 +10,8 @@ module.exports = {
       name: 'not-to-unresolvable',
       severity: 'error',
       from: {},
-      // cloudflare:test is supplied by the Worker test pool, not a package on disk.
-      to: { couldNotResolve: true, pathNot: '^cloudflare:test$' },
+      // These virtual modules are supplied by workerd and its test pool.
+      to: { couldNotResolve: true, pathNot: '^cloudflare:(?:test|workers)$' },
     },
     {
       name: 'no-non-package-json',
@@ -24,6 +24,7 @@ module.exports = {
       },
       to: {
         dependencyTypes: ['unknown', 'npm-no-pkg', 'npm-unknown'],
+        pathNot: '^cloudflare:workers$',
       },
     },
     {
@@ -34,8 +35,14 @@ module.exports = {
       },
       to: {
         dependencyTypes: ['unknown', 'npm-no-pkg', 'npm-unknown'],
-        pathNot: '(^|/)vitest(/|$)|^cloudflare:test$',
+        pathNot: '(^|/)vitest(/|$)|^cloudflare:(?:test|workers)$',
       },
+    },
+    {
+      name: 'cloudflare-workers-only-worker',
+      severity: 'error',
+      from: { pathNot: '^workers/api/' },
+      to: { path: '^cloudflare:workers$' },
     },
     {
       name: 'cloudflare-test-only-worker-tests',

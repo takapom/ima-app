@@ -66,6 +66,17 @@ const baseFiles = {
 const cases = [
   { name: 'allowed-public-entries-and-core-direction', expected: null },
   {
+    name: 'worker-may-import-workerd-virtual-module',
+    source: "import { DurableObject } from 'cloudflare:workers';\nexport { DurableObject };\n",
+    target: 'workers/api/src/index.ts',
+  },
+  {
+    name: 'core-cannot-import-workerd-virtual-module',
+    source: "import 'cloudflare:workers';\n",
+    target: 'packages/core/src/index.ts',
+    rule: 'cloudflare-workers-only-worker',
+  },
+  {
     name: 'worker-tests-may-import-pool-virtual-module',
     source: "import { env } from 'cloudflare:test';\nexport { env };\n",
     target: 'workers/api/tests/runtime.test.ts',
