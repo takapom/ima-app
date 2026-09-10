@@ -10,6 +10,9 @@ IMA_PROVIDER_ROUTES=false
 IMA_PROVIDER_LAST_TRAIN=false
 IMA_PROVIDER_HOTPEPPER=false
 IMA_KILL_SWITCH=false
+# Local enforcement is disabled; external targets require `required` and production Apple env.
+APP_ATTEST_MODE=disabled
+APP_ATTEST_ENVIRONMENT=development
 APP_TOKEN=replace-me
 # Provider secrets remain empty in fixture mode. Never put real values in this file in git.
 GOOGLE_PLACES_API_KEY=

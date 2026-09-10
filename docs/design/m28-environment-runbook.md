@@ -2,7 +2,7 @@
 
 ## 結論
 
-このリポジトリは、ローカル開発をfixture、staging/productionの初期値をdisabledとして構成する。外部ID、APIキー、Apple署名資格、EAS project IDはリポジトリへ入れない。`scripts/environment-preflight.ts`は値を表示せず、対象環境・provider mode・endpoint・秘密名の有無・iOS build情報・deploy確認を検査する。
+このリポジトリは、ローカル開発をfixtureとし、staging/productionはApp Attestとruntime接続の検証が終わるまで配布不可として扱う。外部ID、APIキー、Apple署名資格、EAS project IDはリポジトリへ入れない。`scripts/environment-preflight.ts`は値を表示せず、対象環境・provider mode・endpoint・秘密名の有無・iOS build情報・deploy確認を検査する。現在の設定値だけでは外部providerの停止や有料呼出しの不使用を証明できないため、未接続中のstaging/productionへdeployしない。
 
 productionは、App Attest（#28）とruntime flags（#27）の接続が未検証の間はdeploy可能と判定しない。dev fixtureは設定が`ready`でも`runtimeVerified=false`かつ`runnable=false`であり、Worker起動の証跡を表さない。preflightが`ready`でも実API、実課金、実機、Cloudflare accountの存在を証明しない。
 
@@ -19,26 +19,27 @@ flowchart LR
 ## 配置と初期値
 
 - `workers/api/wrangler.jsonc` は既存の `ThreadDO`、`RateLimitDO`、`JourneyDatasetDO`、`TelemetryDO` とv1〜v3 migrationを保持する。`env.staging` と `env.production` は別Worker名と4つのDO bindingを明示するが、Cloudflare account、route、binding resource IDは未設定である。
-- Wrangler varsはdev=`fixture`、staging/production=`disabled`である。これは安全な初期値であり、現runtimeが全flagsを強制接続済みという意味ではない。
+- Wrangler varsのstaging/production初期値は`disabled`だが、これは設定テンプレートであり、現runtimeの全flagsが接続済みまたは停止を保証するものではない。App Attest/native verifierとruntime gateの検証が済むまで外部配布を許可しない。
 - `apps/mobile/eas.json` はdevelopment/internal/externalのprofileとAPI environmentを定義する。実際のiOS bundle ID、EAS project ID、Apple team・証明書・provisioning profileは環境管理者が設定する。
 - `apps/mobile/app.json` の位置情報許可文言はアプリの用途を明示する。`apps/mobile/app.config.ts` がstaging/productionのbuild時だけ、環境変数のbundle IDとEAS project IDを検証して設定する。値がない外部buildは拒否し、bundle IDや署名情報をソースへ固定しない。
 - `.env.example` と `.dev.vars.example` は名前と安全な既定値だけを持つ。コピーした`.env.local`/`.dev.vars`は追跡しない。
 
 ## 環境値
 
-| 用途          | 値                                         | 保存先                        | 未設定時              |
-| ------------- | ------------------------------------------ | ----------------------------- | --------------------- |
-| 対象環境      | `IMA_ENV`                                  | Wrangler vars / shell         | preflight blocked     |
-| runtime動作   | `IMA_RUNTIME_MODE=fixture\|live\|disabled` | Wrangler vars                 | preflight blocked     |
-| Worker認証    | `APP_TOKEN`                                | Wrangler secret / `.dev.vars` | preflight blocked     |
-| OpenAI        | `OPENAI_API_KEY`                           | Wrangler secret               | live時 blocked        |
-| Places        | `GOOGLE_PLACES_API_KEY`                    | Wrangler secret               | live時 blocked        |
-| Routes        | `GOOGLE_ROUTES_API_KEY`                    | Wrangler secret               | live時 blocked        |
-| Cursor        | `PLACES_CURSOR_SECRET`                     | Wrangler secret               | live時 blocked        |
-| Photo token   | `PHOTO_TOKEN_SECRET`                       | Wrangler secret               | live時 blocked        |
-| mobile API    | `EXPO_PUBLIC_API_BASE_URL`                 | EAS env / `.env.local`        | endpoint検査 blocked  |
-| runtime flags | `IMA_RUNTIME_FLAGS_CONNECTED`              | Wrangler vars                 | productionは未検証    |
-| App Attest    | `APP_ATTEST_MODE`                          | EAS env /運用設定             | productionは#28未完了 |
+| 用途                   | 値                                               | 保存先                        | 未設定時                               |
+| ---------------------- | ------------------------------------------------ | ----------------------------- | -------------------------------------- |
+| 対象環境               | `IMA_ENV`                                        | Wrangler vars / shell         | preflight blocked                      |
+| runtime動作            | `IMA_RUNTIME_MODE=fixture\|live\|disabled`       | Wrangler vars                 | preflight blocked                      |
+| Worker認証             | `APP_TOKEN`                                      | Wrangler secret / `.dev.vars` | preflight blocked                      |
+| OpenAI                 | `OPENAI_API_KEY`                                 | Wrangler secret               | live時 blocked                         |
+| Places                 | `GOOGLE_PLACES_API_KEY`                          | Wrangler secret               | live時 blocked                         |
+| Routes                 | `GOOGLE_ROUTES_API_KEY`                          | Wrangler secret               | live時 blocked                         |
+| Cursor                 | `PLACES_CURSOR_SECRET`                           | Wrangler secret               | live時 blocked                         |
+| Photo token            | `PHOTO_TOKEN_SECRET`                             | Wrangler secret               | live時 blocked                         |
+| mobile API             | `EXPO_PUBLIC_API_BASE_URL`                       | EAS env / `.env.local`        | endpoint検査 blocked                   |
+| runtime flags          | `IMA_RUNTIME_FLAGS_CONNECTED`                    | Wrangler vars                 | productionは未検証                     |
+| App Attest enforcement | `APP_ATTEST_MODE=disabled\|internal\|required`   | EAS env /運用設定             | staging/productionは`required`が必要   |
+| Apple App Attest環境   | `APP_ATTEST_ENVIRONMENT=development\|production` | EAS env /運用設定             | staging/productionは`production`が必要 |
 
 `IMA_PROVIDER_LIVE_CONFIRM`、`IMA_PROVIDER_BILLING_CONFIRM`、`IMA_PROVIDER_PERMISSION_CONFIRM`は有料live smokeの明示確認である。キーが存在しても`YES`が揃わなければlive呼出しを開始しない。終電datasetはM33/M35の実データ検収までdisabledであり、空の参照値を成功扱いしない。
 
@@ -70,7 +71,8 @@ IMA_PREFLIGHT_DEPLOY=1 IMA_ENV=staging bun run env:preflight -- --target staging
 - `APP_TOKEN`が空または`replace-me`等のplaceholder。
 - dev以外のendpointがlocalhost/HTTP、またはcredentialsを含む。
 - live modeで3つのconfirmation、5つのprovider secretが揃わない。
-- productionでApp Attestがproductionでない、またはruntime flags接続が未検証。
+- staging/productionで`APP_ATTEST_MODE=required`かつ`APP_ATTEST_ENVIRONMENT=production`でない。
+- App AttestのApple verifier/native接続が未検証（現状は外部要求を通さず停止する）。
 - `IMA_PREFLIGHT_BUILD=1`で`EAS_PROJECT_ID`または実bundle IDがない。
 - `IMA_PREFLIGHT_DEPLOY=1`でCloudflare account ID、API token、route、明示deploy確認がない。
 

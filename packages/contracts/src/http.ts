@@ -35,6 +35,9 @@ export const DEVICE_ID_HEADER = 'X-Device-Id' as const;
 export const OWNER_CREDENTIAL_HEADER = 'X-Ima-Owner-Credential' as const;
 export const REQUEST_ID_HEADER = 'X-Ima-Request-Id' as const;
 export const APP_VERSION_HEADER = 'X-App-Version' as const;
+export const APP_ATTEST_KEY_ID_HEADER = 'X-App-Attest-KeyId' as const;
+export const APP_ATTEST_ASSERTION_HEADER = 'X-App-Attest-Assert' as const;
+export const APP_ATTEST_NONCE_HEADER = 'X-App-Attest-Nonce' as const;
 export const OWNER_CREDENTIAL_BYTES = 32 as const;
 export const OWNER_CREDENTIAL_BASE64URL_LENGTH = 43 as const;
 
@@ -53,6 +56,36 @@ export const RequestHeadersSchema = v.strictObject({
   appVersion: Text(64),
 });
 export type RequestHeaders = v.InferOutput<typeof RequestHeadersSchema>;
+
+const AppAttestValue = (maxLength: number) =>
+  v.pipe(v.string(), v.minLength(1), v.maxLength(maxLength));
+
+/** Public nonce response; the nonce is single-use and must not be treated as an auth token. */
+export const AppAttestNonceResponseSchema = v.strictObject({
+  schemaVersion: SchemaVersionSchema,
+  requestId: RequestIdSchema,
+  nonce: AppAttestValue(256),
+  expiresAt: IsoTimestampSchema,
+});
+export type AppAttestNonceResponse = v.InferOutput<typeof AppAttestNonceResponseSchema>;
+
+/** Public enrollment input; the Worker verifier owns the opaque Apple attestation bytes. */
+export const AppAttestEnrollRequestSchema = v.strictObject({
+  schemaVersion: SchemaVersionSchema,
+  requestId: RequestIdSchema,
+  keyId: AppAttestValue(256),
+  nonce: AppAttestValue(256),
+  attestation: AppAttestValue(65_536),
+});
+export type AppAttestEnrollRequest = v.InferOutput<typeof AppAttestEnrollRequestSchema>;
+
+/** Assertion fields are kept separate from the request body so requestHash stays server-derived. */
+export const AppAttestAssertionSchema = v.strictObject({
+  keyId: AppAttestValue(256),
+  nonce: AppAttestValue(256),
+  assertion: AppAttestValue(65_536),
+});
+export type AppAttestAssertion = v.InferOutput<typeof AppAttestAssertionSchema>;
 
 export const LifecycleCommandSchema = v.strictObject({
   schemaVersion: SchemaVersionSchema,

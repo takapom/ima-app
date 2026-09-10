@@ -6,6 +6,10 @@ export type JsonBodyResult<T> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly failure: BoundaryFailure };
 
+export type JsonBodyWithRawResult<T> =
+  | { readonly ok: true; readonly value: T; readonly rawBody: Uint8Array }
+  | { readonly ok: false; readonly failure: BoundaryFailure };
+
 const invalidArgument = (): BoundaryFailure => ({ status: 400, code: 'INVALID_ARGUMENT' });
 const payloadTooLarge = (): BoundaryFailure => ({ status: 413, code: 'PAYLOAD_TOO_LARGE' });
 const unsupportedMediaType = (): BoundaryFailure => ({
@@ -36,7 +40,7 @@ const readBody = async (
   request: Request,
   maxBytes: number,
 ): Promise<
-  | { readonly ok: true; readonly text: string }
+  | { readonly ok: true; readonly text: string; readonly bytes: Uint8Array }
   | { readonly ok: false; readonly failure: BoundaryFailure }
 > => {
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) {
@@ -50,7 +54,7 @@ const readBody = async (
   }
 
   const stream = request.body;
-  if (stream === null) return { ok: true, text: '' };
+  if (stream === null) return { ok: true, text: '', bytes: new Uint8Array() };
 
   const chunks: Uint8Array[] = [];
   let totalBytes = 0;
@@ -83,18 +87,22 @@ const readBody = async (
   }
 
   try {
-    return { ok: true, text: new TextDecoder('utf-8', { fatal: true }).decode(bytes) };
+    return {
+      ok: true,
+      text: new TextDecoder('utf-8', { fatal: true }).decode(bytes),
+      bytes,
+    };
   } catch {
     return { ok: false, failure: invalidArgument() };
   }
 };
 
-/** Parse and validate a bounded JSON request before any application side effect. */
-export const parseJsonBody = async <Schema extends v.GenericSchema>(
+/** Parse and validate a bounded JSON request while retaining the exact body bytes. */
+export const parseJsonBodyWithRaw = async <Schema extends v.GenericSchema>(
   request: Request,
   schema: Schema,
   maxBytes: number,
-): Promise<JsonBodyResult<v.InferOutput<Schema>>> => {
+): Promise<JsonBodyWithRawResult<v.InferOutput<Schema>>> => {
   if (requestMediaType(request) !== 'application/json') {
     return { ok: false, failure: unsupportedMediaType() };
   }
@@ -111,8 +119,18 @@ export const parseJsonBody = async <Schema extends v.GenericSchema>(
 
   const parsed = v.safeParse(schema, value);
   return parsed.success
-    ? { ok: true, value: parsed.output }
+    ? { ok: true, value: parsed.output, rawBody: body.bytes }
     : { ok: false, failure: invalidArgument() };
+};
+
+/** Parse and validate a bounded JSON request before any application side effect. */
+export const parseJsonBody = async <Schema extends v.GenericSchema>(
+  request: Request,
+  schema: Schema,
+  maxBytes: number,
+): Promise<JsonBodyResult<v.InferOutput<Schema>>> => {
+  const result = await parseJsonBodyWithRaw(request, schema, maxBytes);
+  return result.ok ? { ok: true, value: result.value } : result;
 };
 
 export const isValidRequestId = (requestId: string | null): requestId is string =>

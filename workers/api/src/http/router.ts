@@ -18,7 +18,7 @@ import {
 } from '@ima/contracts';
 import { HttpBoundaryError, toErrorResponse, toPublicError } from './errors';
 import { authenticateRequest, type AuthConfig, type AuthenticatedContext } from './auth';
-import { isValidRequestId, parseJsonBody } from './input';
+import { isValidRequestId, parseJsonBodyWithRaw } from './input';
 import type {
   ApplicationOperation,
   ApplicationResult,
@@ -29,6 +29,8 @@ import type {
 import type { BoundaryFailure } from './errors';
 import type { CancellationToken } from '@ima/core';
 import { matchRoute, type MatchedRoute } from './router-match';
+import type { AppIntegrityGate } from '../security/app-integrity';
+import { authorizeAppIntegrity } from '../security/app-integrity-http';
 
 export const DEFAULT_JSON_BODY_LIMIT_BYTES = 32 * 1024;
 
@@ -53,6 +55,8 @@ export type HttpRouterConfig = {
   readonly auth: AuthConfig;
   readonly handlers: HandlerDependencies;
   readonly ownership: ResourceScopeAuthorizer;
+  /** Optional external-distribution gate; missing verifier state must fail closed in required mode. */
+  readonly appIntegrity?: AppIntegrityGate;
   readonly now: () => string;
   readonly maxBodyBytes?: number;
 };
@@ -75,8 +79,6 @@ const safeRequestId = (request: Request, config: HttpRouterConfig): string => {
     return 'request-generated';
   }
 };
-
-const routeKey = (route: MatchedRoute): string => route.kind;
 
 const makeContext = (
   request: Request,
@@ -160,7 +162,6 @@ const ensurePhotoResponse = async (
   path: PhotoPath,
   requestId: string,
   context: HandlerContext,
-  serverNow: string,
   config: HttpRouterConfig,
 ): Promise<Response> => {
   const result = await config.handlers.photo.read(path, context);
@@ -222,14 +223,14 @@ const bodyFailure = <Schema extends v.GenericSchema>(
   maxBodyBytes: number,
   requestId: string,
 ): Promise<
-  | { readonly ok: true; readonly value: v.InferOutput<Schema> }
+  | { readonly ok: true; readonly value: v.InferOutput<Schema>; readonly rawBody: Uint8Array }
   | { readonly ok: false; readonly response: Response }
 > =>
-  parseJsonBody(request, schema, maxBodyBytes).then((result) => {
+  parseJsonBodyWithRaw(request, schema, maxBodyBytes).then((result) => {
     if (!result.ok) return { ok: false, response: toErrorResponse(requestId, result.failure) };
     const failure = bodyRequestIdFailure(result.value, requestId);
     return failure === null
-      ? { ok: true, value: result.value }
+      ? { ok: true, value: result.value, rawBody: result.rawBody }
       : { ok: false, response: toErrorResponse(requestId, failure) };
   });
 
@@ -240,7 +241,7 @@ const authorizedRate = async (
   config: HttpRouterConfig,
 ): Promise<Response | null> => {
   const result = await config.handlers.rateLimiter.check({
-    route: routeKey(route),
+    route: route.kind,
     deviceId: auth.deviceId,
     ownerScopeRef: auth.ownerScopeRef,
   });
@@ -262,6 +263,16 @@ const routeAuthorized = async (
   const afterRateCancelled = cancellationResponse(requestId, request);
   if (afterRateCancelled !== null) return afterRateCancelled;
   const maxBodyBytes = config.maxBodyBytes ?? DEFAULT_JSON_BODY_LIMIT_BYTES;
+  const checkIntegrity = (rawBody?: Uint8Array): Promise<Response | null> =>
+    authorizeAppIntegrity({
+      gate: config.appIntegrity,
+      request,
+      route,
+      auth,
+      serverNow: validatedServerNow(config),
+      maxBodyBytes,
+      rawBody,
+    });
 
   if (route.kind === 'photos') {
     const photoContext = makeContext(request, auth, serverNow);
@@ -277,7 +288,9 @@ const routeAuthorized = async (
     }
     const aborted = cancellationResponse(requestId, request);
     if (aborted !== null) return aborted;
-    return ensurePhotoResponse(route.path, requestId, photoContext, serverNow, config);
+    const integrityResponse = await checkIntegrity();
+    if (integrityResponse !== null) return integrityResponse;
+    return ensurePhotoResponse(route.path, requestId, photoContext, config);
   }
   if (route.kind === 'place') {
     const failure = await checkResource(
@@ -288,6 +301,8 @@ const routeAuthorized = async (
     if (failure !== null) return toErrorResponse(requestId, failure);
     const aborted = cancellationResponse(requestId, request);
     if (aborted !== null) return aborted;
+    const integrityResponse = await checkIntegrity();
+    if (integrityResponse !== null) return integrityResponse;
     return ensureApplicationResponse(
       { kind: 'place', path: route.path, query: route.query },
       'place',
@@ -307,6 +322,8 @@ const routeAuthorized = async (
     if (failure !== null) return toErrorResponse(requestId, failure);
     const aborted = cancellationResponse(requestId, request);
     if (aborted !== null) return aborted;
+    const integrityResponse = await checkIntegrity();
+    if (integrityResponse !== null) return integrityResponse;
     return ensureApplicationResponse(
       { kind: 'saved_reference_refresh', path: route.path },
       'saved_reference_refresh',
@@ -359,6 +376,8 @@ const routeAuthorized = async (
     if (bodyScopeFailure !== null) return toErrorResponse(requestId, bodyScopeFailure);
     const aborted = cancellationResponse(requestId, request);
     if (aborted !== null) return aborted;
+    const integrityResponse = await checkIntegrity(body.rawBody);
+    if (integrityResponse !== null) return integrityResponse;
     return ensureApplicationResponse(
       { kind: 'search', input: body.value },
       'search',
@@ -406,6 +425,8 @@ const routeAuthorized = async (
     if (!body.ok) return body.response;
     const turnAborted = cancellationResponse(requestId, request);
     if (turnAborted !== null) return turnAborted;
+    const integrityResponse = await checkIntegrity(body.rawBody);
+    if (integrityResponse !== null) return integrityResponse;
     return ensureApplicationResponse(
       { kind: 'turn', path: route.path, input: body.value },
       'turn',

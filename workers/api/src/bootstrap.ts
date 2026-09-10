@@ -43,6 +43,11 @@ import { createPhotoReferenceStoreResolver } from './providers/photo/rpc';
 import type { PhotoTokenCodec } from './providers/photo/types';
 import { createBestEffortEventsSink, createTelemetryEventsSink } from './telemetry/events';
 import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetry/telemetry-do';
+import {
+  createAppIntegrityGate,
+  resolveAppIntegrityPolicy,
+  type AppIntegrityGate,
+} from './security/app-integrity';
 import { resolveRuntimeOperationalGate } from './runtime/runtime-operational-gate';
 import { createThreadId } from './thread-id';
 
@@ -51,6 +56,11 @@ export type BootstrapEnv = {
   readonly GOOGLE_PLACES_API_KEY?: string;
   readonly PHOTO_TOKEN_SECRET?: string;
   readonly IMA_RUNTIME_MODE?: string;
+  readonly IMA_ENV?: string;
+  /** Enforcement mode: disabled/internal/required. */
+  readonly APP_ATTEST_MODE?: string;
+  /** Apple App Attest environment: development/production. */
+  readonly APP_ATTEST_ENVIRONMENT?: string;
   readonly IMA_PROVIDER_PLACES?: string;
   readonly IMA_PROVIDER_HOTPEPPER?: string;
   readonly IMA_PROVIDER_LAST_TRAIN?: string;
@@ -85,6 +95,8 @@ export type BootstrapOptions = {
   readonly rateLimit?: RateLimitConfig;
   readonly waitUntil?: (promise: Promise<void>) => void;
   readonly onCancellationError?: (classification: RuntimeCancellationClassification) => void;
+  /** External distribution may inject the verified App Attest store/verifier boundary. */
+  readonly appIntegrity?: AppIntegrityGate;
 };
 
 const unavailable = (): HttpBoundaryError =>
@@ -364,6 +376,18 @@ export const createHttpRouterConfig = (
     },
     handlers,
     ownership: options.ownership,
+    appIntegrity:
+      options.appIntegrity ??
+      (() => {
+        const policy = resolveAppIntegrityPolicy({
+          ...(env.IMA_ENV === undefined ? {} : { deploymentEnvironment: env.IMA_ENV }),
+          ...(env.APP_ATTEST_ENVIRONMENT === undefined
+            ? {}
+            : { environment: env.APP_ATTEST_ENVIRONMENT }),
+          ...(env.APP_ATTEST_MODE === undefined ? {} : { enforcement: env.APP_ATTEST_MODE }),
+        });
+        return createAppIntegrityGate(policy);
+      })(),
     now: options.clock ?? (() => new Date().toISOString()),
     maxBodyBytes: options.maxBodyBytes ?? DEFAULT_JSON_BODY_LIMIT_BYTES,
   };

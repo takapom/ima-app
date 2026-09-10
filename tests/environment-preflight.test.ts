@@ -104,6 +104,7 @@ describe('environment preflight', () => {
     expect(report.checks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'APP_ATTEST_MODE', status: 'missing' }),
+        expect.objectContaining({ name: 'APP_ATTEST_ENVIRONMENT', status: 'missing' }),
         expect.objectContaining({ name: 'IMA_RUNTIME_FLAGS_CONNECTED', status: 'unverified' }),
       ]),
     );
@@ -114,7 +115,8 @@ describe('environment preflight', () => {
       ...liveValues,
       IMA_ENV: 'production',
       EXPO_PUBLIC_API_BASE_URL: 'https://api.example.invalid',
-      APP_ATTEST_MODE: 'production',
+      APP_ATTEST_MODE: 'required',
+      APP_ATTEST_ENVIRONMENT: 'production',
       IMA_RUNTIME_FLAGS_CONNECTED: '1',
     });
 
@@ -123,6 +125,7 @@ describe('environment preflight', () => {
     expect(report.checks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'APP_ATTEST_MODE', status: 'unverified' }),
+        expect.objectContaining({ name: 'APP_ATTEST_ENVIRONMENT', status: 'unverified' }),
         expect.objectContaining({ name: 'IMA_RUNTIME_FLAGS_CONNECTED', status: 'unverified' }),
       ]),
     );
@@ -134,7 +137,8 @@ describe('environment preflight', () => {
         ...liveValues,
         IMA_ENV: 'production',
         EXPO_PUBLIC_API_BASE_URL: 'https://api.example.invalid',
-        APP_ATTEST_MODE: 'production',
+        APP_ATTEST_MODE: 'required',
+        APP_ATTEST_ENVIRONMENT: 'production',
         IMA_RUNTIME_FLAGS_CONNECTED: '1',
       },
       (line) => output.push(line),

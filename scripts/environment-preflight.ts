@@ -173,16 +173,31 @@ export const preflightEnvironment = (
   }
 
   const attestMode = valueFor(env, 'APP_ATTEST_MODE');
-  if (target === 'production') {
+  const attestEnvironment = valueFor(env, 'APP_ATTEST_ENVIRONMENT');
+  if (target !== 'dev') {
     addCheck(
       checks,
       'APP_ATTEST_MODE',
-      attestMode === undefined ? 'missing' : attestMode === 'production' ? 'unverified' : 'blocked',
+      attestMode === undefined ? 'missing' : attestMode === 'required' ? 'unverified' : 'blocked',
       attestMode === undefined
-        ? 'production requires the App Attest gate; #28 is not connected yet'
-        : attestMode === 'production'
+        ? 'external targets require APP_ATTEST_MODE=required; #28 is not connected yet'
+        : attestMode === 'required'
           ? 'configuration is present, but #28 App Attest integration is not verified'
-          : 'production requires APP_ATTEST_MODE=production; #28 is not connected yet',
+          : 'external targets reject disabled/internal App Attest enforcement',
+    );
+    addCheck(
+      checks,
+      'APP_ATTEST_ENVIRONMENT',
+      attestEnvironment === undefined
+        ? 'missing'
+        : attestEnvironment === 'production'
+          ? 'unverified'
+          : 'invalid',
+      attestEnvironment === undefined
+        ? 'external targets require APP_ATTEST_ENVIRONMENT=production'
+        : attestEnvironment === 'production'
+          ? 'Apple environment is present, but #28 App Attest integration is not verified'
+          : 'external targets require APP_ATTEST_ENVIRONMENT=production',
     );
     addCheck(
       checks,
