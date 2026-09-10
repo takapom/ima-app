@@ -174,6 +174,27 @@ describe('Google Places opening-hours normalization', () => {
     expect(value.listedOpenAtEvaluation).toBe(false);
   });
 
+  it('lets a dated special-day closure override regular weekly descriptions', () => {
+    const value = knownHours(
+      normalizeGoogleOpeningHours(
+        place({
+          regularOpeningHours: {
+            weekdayDescriptions: ['毎日 10:00–18:00'],
+          },
+          currentOpeningHours: {
+            periods: [],
+            specialDays: [{ date: { year: 2026, month: 9, day: 10 } }],
+            openNow: false,
+          },
+        }),
+        { evaluatedAt: EVALUATED_AT },
+      ),
+    );
+    expect(value.intervals).toEqual([]);
+    expect(value.listedOpenAtEvaluation).toBe(false);
+    expect(value.weeklyText).toEqual(['毎日 10:00–18:00']);
+  });
+
   it('distinguishes missing and invalid IANA time zones from valid data', () => {
     const missing = normalizeGoogleOpeningHours(
       parseGooglePlaceWire({ currentOpeningHours: { periods: [] } }),

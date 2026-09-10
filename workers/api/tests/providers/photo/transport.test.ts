@@ -158,6 +158,11 @@ describe('Google Photo media transport', () => {
         ),
       ).read(PHOTO_REF),
     ).rejects.toMatchObject({ code: 'RATE_LIMITED', retryAfterMs: 1_250 });
+    await expect(
+      makeTransport(() => Promise.resolve(new Response('upstream-secret', { status: 503 }))).read(
+        PHOTO_REF,
+      ),
+    ).rejects.toMatchObject({ code: 'UPSTREAM_UNAVAILABLE' });
   });
 
   it('cancels an oversized or unsupported image before returning a body', async () => {

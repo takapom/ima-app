@@ -2,7 +2,7 @@
 
 ## 目的
 
-M24はPlaces Text Search、Place Details、Routes、Photo、終電datasetの契約境界を、外部課金なしで再現できるテストと、明示実行だけを許すlive smoke runnerに分ける。Fixtureの成功は実provider・アカウント・課金・権限の成功を意味しない。HPの契約suiteはM32（#33）の担当であり、この単位へ混ぜない。
+M24はPlaces Text Search、Place Details、Routes、Photo、終電datasetの契約境界を、外部課金なしで再現できるテストと、明示実行だけを許すlive smoke runnerに分ける。合成fixtureの成功は実provider・アカウント・課金・権限の成功を意味しない。HPの契約suiteはM32（#33）の担当であり、この単位へ混ぜない。
 
 ```mermaid
 flowchart LR
@@ -27,7 +27,23 @@ flowchart LR
 | Photo    | metadata→許可hostの画像stream、body上限・timeout・cancel | keyをURLへ出さず、stream失敗は固定code                      |
 | Journey  | 合成recordのknown、active datasetなしのdisabled          | 未投入は成功にせずdisabled/skip                             |
 
+要求条件と回帰ケースの対応は次の通り。リンク先はすべて生成した合成fixtureまたはmock fetchであり、実APIの成功証跡ではない。
+
+| 要求条件                                 | 回帰ケース                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 営業時間の跨日・24時間・臨休             | [hours.test.ts](../../workers/api/tests/providers/places/hours.test.ts) の `converts dated local periods...`、`supports the official 24-hour point...`、`lets a dated special-day closure...`                                                                                                                                                                                                                          |
+| 価格不明・未知enum                       | [normalizers.test.ts](../../workers/api/tests/providers/places/normalizers.test.ts) の `maps provider levels...`、`keeps a complete same-currency range...`、`does not hide unknown enums...`                                                                                                                                                                                                                          |
+| 同名別店                                 | [places-search identity.test.ts](../../workers/api/tests/providers/places-search/identity.test.ts) の `keeps two same-named places distinct...`                                                                                                                                                                                                                                                                        |
+| 経路の方向差・要素失敗                   | [routes normalize.test.ts](../../workers/api/tests/providers/routes/normalize.test.ts) の `rebuilds directed pairs...`、`distinguishes unreachable...`、[routes adapter.test.ts](../../workers/api/tests/providers/routes/adapter.test.ts) の `keeps valid elements...`、`keeps a successful direction...`                                                                                                             |
+| field mask・呼出数・要素数・帰属・schema | [places-details transport.test.ts](../../workers/api/tests/providers/places-details/transport.test.ts) の `sends one GET...`、`uses only the requested...`、[places-search adapter.test.ts](../../workers/api/tests/providers/places-search/adapter.test.ts) の `uses the real transport...`、[routes normalize.test.ts](../../workers/api/tests/providers/routes/normalize.test.ts) の `fails closed on duplicate...` |
+| 429・5xx・timeout・cancel                | 下記の各provider transportの具体ケース                                                                                                                                                                                                                                                                                                                                                                                 |
+
 429、5xx、timeout、redirect、malformed response、field mask、取消は各transportの既存試験で検査する。集約試験は同じ実装を再実装せず、これらの入口が一つのmock fetchから組み合わさることを確認する。
+
+- [Places Search transport](../../workers/api/tests/providers/places-search/transport.test.ts): `keeps rate limits, upstream failures, and malformed responses distinct`、`distinguishes caller cancellation from a transport timeout`
+- [Place Details transport](../../workers/api/tests/providers/places-details/transport.test.ts): `keeps missing key, empty fields, 404, rate limit, and upstream failures typed`、`times out while reading the response body and aborts the upstream signal`
+- [Routes transport](../../workers/api/tests/providers/routes/transport.test.ts): `keeps missing keys, rate limits, upstream failures, and schema errors distinct`、`maps caller cancellation and body timeout through the Worker signal`
+- [Photo transport](../../workers/api/tests/providers/photo/transport.test.ts): `bounds metadata JSON and preserves typed upstream status failures`、`maps caller cancellation and deadline expiry during image streaming`
 
 ## live smoke
 
