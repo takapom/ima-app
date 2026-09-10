@@ -115,6 +115,15 @@ const GooglePlaceIdentityWireSchema = v.object(identityFields);
 const GooglePlacePriceWireSchema = v.object(priceFields);
 const GooglePlaceContactWireSchema = v.object(contactFields);
 const GooglePlacePhotoWireSchema = v.object(photoFields);
+const GooglePlaceOpeningHoursWireSchema = v.object({
+  currentOpeningHours: v.optional(GoogleOpeningHoursSchema),
+  regularOpeningHours: v.optional(GoogleOpeningHoursSchema),
+  timeZone: v.optional(GoogleTimeZoneSchema),
+});
+const GooglePlaceSourceWireSchema = v.object({
+  googleMapsUri: v.optional(UrlTextSchema),
+  attributions: v.optional(v.pipe(v.array(GoogleProviderAttributionSchema), v.maxLength(8))),
+});
 
 /**
  * Allowlisted subset of the Google Places REST Place resource.
@@ -139,7 +148,8 @@ export type GooglePhotoWire = v.InferOutput<typeof GooglePhotoSchema>;
 export type GoogleMoneyWire = v.InferOutput<typeof GoogleMoneySchema>;
 export type GooglePriceRangeWire = v.InferOutput<typeof GooglePriceRangeSchema>;
 
-export type GooglePlaceWireField = 'identity' | 'price' | 'contact' | 'photos';
+export type GooglePlaceWireField =
+  'identity' | 'price' | 'contact' | 'photos' | 'opening_hours' | 'source';
 
 export class GooglePlacesWireError extends Error {
   readonly code = 'SCHEMA_MISMATCH' as const;
@@ -182,6 +192,16 @@ export const parseGooglePlaceWireField = (
     }
     case 'photos': {
       const parsed = v.safeParse(GooglePlacePhotoWireSchema, value);
+      if (!parsed.success) throw new GooglePlacesWireError();
+      return parsed.output;
+    }
+    case 'opening_hours': {
+      const parsed = v.safeParse(GooglePlaceOpeningHoursWireSchema, value);
+      if (!parsed.success) throw new GooglePlacesWireError();
+      return parsed.output;
+    }
+    case 'source': {
+      const parsed = v.safeParse(GooglePlaceSourceWireSchema, value);
       if (!parsed.success) throw new GooglePlacesWireError();
       return parsed.output;
     }

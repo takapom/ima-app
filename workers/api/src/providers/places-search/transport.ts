@@ -13,7 +13,8 @@ const GoogleTextSearchResponseSchema = v.object({
 });
 
 const GoogleTextSearchRequestSchema = v.strictObject({
-  textQuery: v.pipe(v.string(), v.minLength(1), v.maxLength(200)),
+  // Core query (200) plus a named-area label (160) needs a 361-character bound.
+  textQuery: v.pipe(v.string(), v.minLength(1), v.maxLength(512)),
   openNow: v.boolean(),
   pageSize: v.pipe(v.number(), v.safeInteger(), v.minValue(1), v.maxValue(20)),
   pageToken: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(1_024))),
