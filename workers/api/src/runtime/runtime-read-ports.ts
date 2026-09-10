@@ -9,6 +9,7 @@ import type {
   Result,
   SearchPlacesInput,
   SearchPlacesOutput,
+  ToolExecutionContext,
 } from '@ima/core';
 import {
   RuntimeReadExecutor,
@@ -51,6 +52,31 @@ export type RuntimeReadPortOptions = {
   };
   readonly signal?: AbortSignal;
   readonly isStale?: () => boolean;
+  /** Bridges each executor attempt to provider adapters without changing the Core Port contract. */
+  readonly attemptSignalBridge?: RuntimeReadAttemptSignalBridge;
+};
+
+export type RuntimeReadAttemptSignalBridge = {
+  readonly bind: (execution: ToolExecutionContext, signal: AbortSignal) => () => void;
+  readonly signalFor: (execution: ToolExecutionContext) => AbortSignal | undefined;
+};
+
+/**
+ * The Core cancellation token intentionally has no platform signal. This Worker-owned bridge
+ * exposes the executor's per-attempt signal to an adapter while the adapter call is in flight.
+ * WeakMap scope prevents a retry or a later turn from reusing an old provider signal.
+ */
+export const createRuntimeReadAttemptSignalBridge = (): RuntimeReadAttemptSignalBridge => {
+  const signals = new WeakMap<object, AbortSignal>();
+  return {
+    bind: (execution, signal) => {
+      signals.set(execution, signal);
+      return () => {
+        if (signals.get(execution) === signal) signals.delete(execution);
+      };
+    },
+    signalFor: (execution) => signals.get(execution),
+  };
 };
 
 export type RuntimeReadPorts = {
@@ -235,6 +261,20 @@ const wrapPortResult = <T>(value: Result<T>): Result<T> => {
   throw new KnownPortFailure(kind, value.error);
 };
 
+const invokeWithAttemptSignal = async <T>(
+  bridge: RuntimeReadAttemptSignalBridge | undefined,
+  execution: ToolExecutionContext,
+  signal: AbortSignal,
+  invoke: () => Promise<T>,
+): Promise<T> => {
+  const release = bridge?.bind(execution, signal) ?? (() => undefined);
+  try {
+    return await invoke();
+  } finally {
+    release();
+  }
+};
+
 export const createRuntimeReadPorts = (options: RuntimeReadPortOptions): RuntimeReadPorts => {
   const executorOptions = {
     budget: options.budget,
@@ -257,9 +297,16 @@ export const createRuntimeReadPorts = (options: RuntimeReadPortOptions): Runtime
           invoke: (attemptSignal) => {
             const attemptCancellation = cancellationFor(cancellation, attemptSignal);
             if (attemptCancellation.isCancelled()) throw new RuntimeReadPortCancelled();
-            return options.ports.search
-              .search(input, context, execution, attemptCancellation)
-              .then(wrapPortResult);
+            const attemptExecution: ToolExecutionContext = { ...execution };
+            return invokeWithAttemptSignal(
+              options.attemptSignalBridge,
+              attemptExecution,
+              attemptSignal,
+              async () =>
+                options.ports.search
+                  .search(input, context, attemptExecution, attemptCancellation)
+                  .then(wrapPortResult),
+            );
           },
         },
         cancellation,
@@ -280,9 +327,16 @@ export const createRuntimeReadPorts = (options: RuntimeReadPortOptions): Runtime
           invoke: (attemptSignal) => {
             const attemptCancellation = cancellationFor(cancellation, attemptSignal);
             if (attemptCancellation.isCancelled()) throw new RuntimeReadPortCancelled();
-            return options.ports.details
-              .read(input, context, execution, attemptCancellation)
-              .then(wrapPortResult);
+            const attemptExecution: ToolExecutionContext = { ...execution };
+            return invokeWithAttemptSignal(
+              options.attemptSignalBridge,
+              attemptExecution,
+              attemptSignal,
+              async () =>
+                options.ports.details
+                  .read(input, context, attemptExecution, attemptCancellation)
+                  .then(wrapPortResult),
+            );
           },
         },
         cancellation,

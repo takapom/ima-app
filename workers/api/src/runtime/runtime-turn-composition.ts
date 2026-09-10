@@ -38,7 +38,11 @@ import {
   type RuntimeRetentionScopeIdentity,
 } from './runtime-retention';
 import { createRuntimeRetentionTransform } from './runtime-retention-transform';
-import { createRuntimeReadPorts, type RuntimeReadCostResolver } from './runtime-read-ports';
+import {
+  createRuntimeReadPorts,
+  type RuntimeReadAttemptSignalBridge,
+  type RuntimeReadCostResolver,
+} from './runtime-read-ports';
 import { parseRuntimeFinalMessage, type RuntimeFinalMessage } from './runtime-final-message';
 import {
   createRuntimeTurnFactory,
@@ -89,6 +93,8 @@ type RuntimeTurnCompositionBaseOptions = {
   readonly hashes: CommitHashPort;
   readonly registry: CandidateObservationRegistryPort;
   readonly ports: RuntimeTurnPortDependencies;
+  /** Optional bridge shared with provider adapters so timeout abort reaches the actual fetch. */
+  readonly attemptSignalBridge?: RuntimeReadAttemptSignalBridge;
   readonly commit: CommitPort;
   readonly resolveReadCost: RuntimeReadCostResolver;
   readonly validationContext: RuntimeCompositionValidationContext;
@@ -293,6 +299,9 @@ export function createRuntimeTurnComposition(
     ports: { search: options.ports.search, details: options.ports.details },
     ...(options.request.signal === undefined ? {} : { signal: options.request.signal }),
     ...(options.request.isStale === undefined ? {} : { isStale: options.request.isStale }),
+    ...(options.attemptSignalBridge === undefined
+      ? {}
+      : { attemptSignalBridge: options.attemptSignalBridge }),
   });
   const baseValidation = (at: { now: string; conditions: TurnConditionValues }) =>
     validationAt(options.validationContext, at.now, at.conditions);

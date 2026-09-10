@@ -23,3 +23,9 @@
 ## 未確認・後続境界
 
 この単位はlive providerを呼ばず、OpenAIの実鍵、provider retention、SDK全保存面のcanary、05:00 JST alarm、期限到達時の再生成・物理削除は含まない。production `RuntimeThinkHost`へ実provider/read ports/compositionを組み込む作業と、SDK history/tool/compaction/workspace/replay/KV/logのdeny-by-default監査は、同じM16内の後続単位で実装・実測する。
+
+## C2a: 取得試行の中断
+
+Workerの`RuntimeReadAttemptSignalBridge`で、Runtimeの各取得試行に固有の`AbortSignal`を実Provider transportへ渡す。CoreのPort契約には環境固有の型を追加しない。再試行は別のexecution参照を使い、遅れて終了した旧試行が新しいシグナルを解除できない。
+
+Runtimeのtimeoutから実Text Search transport・mock fetchまでの中断、再試行との競合、試行に対応したHTTP予算計上を検証した。本番factoryへのbridge注入と複合取得の予算接続は同じM16の次単位で行う。
