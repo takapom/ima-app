@@ -120,7 +120,10 @@ const readWith = async (
           'x-goog-api-key': apiKey,
           'x-goog-fieldmask': fieldMask,
         },
-        redirect: 'error',
+        // Cloudflare's edge fetch accepts follow/manual; manual keeps redirects
+        // visible so the status handling below rejects them instead of leaking
+        // provider credentials to a redirected endpoint.
+        redirect: 'manual',
         signal: requestSignal,
       });
       return {

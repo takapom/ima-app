@@ -202,4 +202,5 @@ export class ThreadDO extends ProductionThreadDO {
 }
 
 export { RateLimitDO };
+export { ProductionThreadDO } from './runtime-production-worker';
 export default production;

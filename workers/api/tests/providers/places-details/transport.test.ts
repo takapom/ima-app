@@ -63,7 +63,7 @@ describe('Google Place Details transport', () => {
     expect(requestUrl(call.url)).not.toContain('test-key-do-not-log');
     expect(call.init?.method).toBe('GET');
     expect(call.init?.body).toBeUndefined();
-    expect(call.init?.redirect).toBe('error');
+    expect(call.init?.redirect).toBe('manual');
     expect(call.init?.headers).toEqual({
       accept: 'application/json',
       'content-type': 'application/json',
@@ -152,6 +152,14 @@ describe('Google Place Details transport', () => {
 
     const notFound = makeTransport(() => Promise.resolve(response({ error: 'secret' }, 404)));
     await expect(notFound.read(request)).rejects.toMatchObject({ code: 'NOT_FOUND', status: 404 });
+
+    const redirected = makeTransport(() =>
+      Promise.resolve(response({}, 302, { location: 'https://redirect.invalid' })),
+    );
+    await expect(redirected.read(request)).rejects.toMatchObject({
+      code: 'INVALID_REQUEST',
+      status: 302,
+    });
 
     const limited = makeTransport(() =>
       Promise.resolve(response({ error: 'secret' }, 429, { 'retry-after': '1.25' })),

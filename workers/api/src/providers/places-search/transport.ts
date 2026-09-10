@@ -153,7 +153,10 @@ const searchWith = async (
           'x-goog-fieldmask': GOOGLE_TEXT_SEARCH_FIELD_MASK,
         },
         body: JSON.stringify(request),
-        redirect: 'error',
+        // Cloudflare's edge fetch accepts follow/manual; manual keeps redirects
+        // visible so the status handling below rejects them instead of leaking
+        // provider credentials to a redirected endpoint.
+        redirect: 'manual',
         signal: requestSignal,
       });
       return {

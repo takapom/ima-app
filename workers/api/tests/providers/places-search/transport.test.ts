@@ -69,6 +69,7 @@ describe('Google Text Search transport', () => {
     if (call === undefined) throw new Error('request was not sent');
     expect(requestUrl(call.url)).toBe(GOOGLE_TEXT_SEARCH_ENDPOINT);
     expect(call.init?.method).toBe('POST');
+    expect(call.init?.redirect).toBe('manual');
     expect(call.init?.headers).toEqual({
       accept: 'application/json',
       'content-type': 'application/json',
@@ -160,6 +161,14 @@ describe('Google Text Search transport', () => {
     await expect(unavailable.search(request)).rejects.toMatchObject({
       code: 'UPSTREAM_UNAVAILABLE',
       status: 503,
+    });
+
+    const redirected = makeTransport(() =>
+      Promise.resolve(response({}, 302, { location: 'https://redirect.invalid' })),
+    );
+    await expect(redirected.search(request)).rejects.toMatchObject({
+      code: 'INVALID_REQUEST',
+      status: 302,
     });
 
     const malformed = makeTransport(() => Promise.resolve(response({ places: 'invalid' })));

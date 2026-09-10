@@ -1,3 +1,4 @@
+import * as v from 'valibot';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type {
   CapabilitySnapshot,
@@ -5,10 +6,12 @@ import type {
   CommitHashPort,
   ExecutionBudget,
   HarnessContext,
+  RetentionMetadata,
   RegistryIdPort,
   RegistryScope,
   SubmitValidationContext,
 } from '@ima/core';
+import { RetentionMetadataSchema } from '@ima/core';
 import { DEFAULT_RUNTIME_BUDGET } from './runtime-budget';
 import type { RuntimeRetentionContext } from './runtime-retention';
 
@@ -37,6 +40,8 @@ export type ProductionCapabilityOptions = {
   readonly placesEnabled: boolean;
 };
 
+export type ProductionRetentionSource = RetentionMetadata | (() => RetentionMetadata);
+
 /** Returns the first 05:00 JST after the supplied server timestamp. */
 export const sessionExpiryAt = (serverNow: string): string => {
   const utcMs = Date.parse(serverNow);
@@ -63,6 +68,16 @@ export const denyByDefaultRetention = (serverNow: string) => ({
   policyStatus: 'disabled_m35' as const,
   displayPolicyStatus: 'disabled_m35' as const,
 });
+
+export const defaultProductionObservationPolicy =
+  (clock: () => string) => (_input: { readonly now: string; readonly observation: unknown }) => {
+    const retention = denyByDefaultRetention(clock());
+    return {
+      freshUntil: retention.sessionExpiresAt,
+      expiresAt: retention.sessionExpiresAt,
+      retention,
+    };
+  };
 
 export class ProductionIds implements RegistryIdPort {
   private readonly instanceId = crypto.randomUUID();
@@ -106,6 +121,35 @@ export const productionCapabilities = ({
   lastTrain: false,
   supportedScopes: placesEnabled ? ['runtime-production'] : [],
 });
+
+export const productionRetentionFor = (
+  source: ProductionRetentionSource | undefined,
+  serverNow: string,
+): RetentionMetadata => {
+  let candidate: RetentionMetadata;
+  try {
+    candidate =
+      source === undefined
+        ? denyByDefaultRetention(serverNow)
+        : typeof source === 'function'
+          ? source()
+          : source;
+  } catch {
+    return denyByDefaultRetention(serverNow);
+  }
+  const parsed = v.safeParse(RetentionMetadataSchema, candidate);
+  return parsed.success ? parsed.output : denyByDefaultRetention(serverNow);
+};
+
+/** Provider capability is a separate Host gate; retention controls each field's data use. */
+export const productionPlacesEnabled = (options: {
+  readonly prepareTurn?: unknown;
+  /** Separate capability gate; retention policy controls data use, not tool availability. */
+  readonly placesEnabled?: boolean;
+}): boolean => {
+  if (options.prepareTurn !== undefined) return true;
+  return options.placesEnabled === true;
+};
 
 export type ProductionContextOptions = {
   readonly locationRevision?: number;

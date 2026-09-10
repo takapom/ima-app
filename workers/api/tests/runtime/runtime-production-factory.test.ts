@@ -204,6 +204,8 @@ describe('production runtime factory', () => {
         fetcher,
         observationPolicy: policy,
         detailsObservationPolicy: policy,
+        placesEnabled: true,
+        retention: ALLOW_RETENTION,
         clock: () => NOW,
         monotonicNow: () => 0,
         epochNow: () => 1_000,

@@ -16,6 +16,9 @@ When a gate is missing, the factory returns `undefined`; the host reports the ex
 `RUNTIME_UNCONFIGURED` failure. No fixture model, provider key, or allow-all retention policy is
 used as a fallback. With provider keys configured, the default observation policy is explicit
 deny-by-default (`disabled_m35`/`reference_only`) until a bounded Host policy is supplied.
+The separate `placesEnabled` capability gate must also be enabled by the Host; retention
+`restoreMode` never enables provider tools. A retention snapshot is evaluated once per turn and
+is reused by the model projection and persistence boundaries.
 
 ## Runtime boundaries
 
@@ -26,12 +29,18 @@ deny-by-default (`disabled_m35`/`reference_only`) until a bounded Host policy is
 - Read cost is reserved before the Port call. Search costs one provider request; details count
   only fields that are not reusable and reserve one request per candidate requiring refresh.
 - Provider-specific payloads, cursor page tokens, and secrets remain inside Worker adapters.
+- Search and Details use `redirect: "manual"` at the Cloudflare edge and reject 3xx responses;
+  the provider key is never forwarded to a redirected endpoint.
 - Model calls receive the fixed provider options `{ reasoningEffort: "low", strictJsonSchema: false,
 store: false }` through the Think connection.
+- The default production plan marks every model call as an exploration/tool step. A host that
+  owns a final text step must opt into `isFinalResponse` only after read tools are disabled.
 
 The production composition keeps search-area provenance in a connection-scoped map keyed by the
 server candidate ID, so a later Details refresh can reuse the area applied by the original search.
 If that provenance is unavailable, it uses the neutral `検索結果の地域` label and never infers a
 current-location label from request preferences.
-The production acceptance test injects only a scripted model, mock fetch, and clock; it exercises
-the default registry, transport, adapter, projection, signal, and budget path.
+The production acceptance test injects only a scripted model, mock fetch, bounded retention policy,
+capability gate, and clock; it exercises the real Think Durable Object default factory through
+search, details, submit, CAS response, reference-only replay, and a second turn. It does not prove
+live provider credentials, production retention approval, or the final-text reserve path.

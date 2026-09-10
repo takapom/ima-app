@@ -7,8 +7,14 @@
   "durable_objects": {
     "bindings": [
       { "name": "THREADS", "class_name": "ThreadDO" },
+      { "name": "PRODUCTION_THREADS", "class_name": "ProductionThreadDO" },
       { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
     ],
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ThreadDO", "RateLimitDO"] }],
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["ThreadDO", "ProductionThreadDO", "RateLimitDO"],
+    },
+  ],
 }

@@ -48,7 +48,7 @@ import {
 } from './runtime-turn-composition';
 import { RuntimeBudget } from './runtime-budget';
 import {
-  denyByDefaultRetention,
+  defaultProductionObservationPolicy,
   googlePlacesApiKey,
   harnessContextFor,
   placesCursorSecret,
@@ -57,8 +57,11 @@ import {
   productionClockPort,
   productionHash,
   productionMonotonicNow,
+  productionPlacesEnabled,
+  productionRetentionFor,
   productionSecret,
   ProductionIds,
+  type ProductionRetentionSource,
   productionScopeFor,
   validationContextFor,
 } from './runtime-production-support';
@@ -70,7 +73,7 @@ import type {
   RuntimeThinkConnectionOptions,
   RuntimeThinkTurnBuildRequest,
 } from './runtime-think-connection';
-import type { RuntimeModelGuardModel } from './runtime-model-guard';
+import type { RuntimeModelGuardCallOptions, RuntimeModelGuardModel } from './runtime-model-guard';
 
 type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;
@@ -91,6 +94,8 @@ export type RuntimeProductionTurnPlan = {
   readonly ids: Pick<IdPort, 'nextCallId' | 'nextResponseId'>;
   readonly hashes: CommitHashPort;
   readonly publicResponse?: RuntimePublicResponseDependencies;
+  /** Set true only for a host-owned final response step with read tools disabled. */
+  readonly isFinalResponse?: (params: RuntimeModelGuardCallOptions) => boolean;
 };
 
 export type RuntimeProductionOverrides = {
@@ -102,6 +107,10 @@ export type RuntimeProductionOverrides = {
   readonly fetcher?: typeof fetch;
   readonly observationPolicy?: PlacesSearchObservationPolicy;
   readonly detailsObservationPolicy?: PlacesDetailsObservationPolicy;
+  /** Explicit provider capability gate; retention policy is evaluated separately. */
+  readonly placesEnabled?: boolean;
+  /** Explicitly permits current-turn model projection; omission stays deny-by-default. */
+  readonly retention?: ProductionRetentionSource;
   readonly clock?: () => string;
   readonly monotonicNow?: () => number;
   readonly epochNow?: () => number;
@@ -115,17 +124,6 @@ export type RuntimeProductionConnectionOptions = {
 
 const isConfiguredSecret = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
-
-const defaultObservationPolicy =
-  (clock: () => string): PlacesSearchObservationPolicy =>
-  () => {
-    const retention = denyByDefaultRetention(clock());
-    return {
-      freshUntil: retention.sessionExpiresAt,
-      expiresAt: retention.sessionExpiresAt,
-      retention,
-    };
-  };
 
 const unavailableSubmit = (): SubmitCardsPort => ({
   submit: (
@@ -268,6 +266,7 @@ const defaultPlan = (
   registry: CandidateObservationRegistry,
   continuation: ReturnType<typeof createPlacesSearchContinuation>,
   areaByCandidate: Map<string, string>,
+  turnRetention: ReturnType<typeof productionRetentionFor>,
 ): RuntimeProductionTurnPlan => {
   const apiKey = overrides.googlePlacesApiKey;
   const cursorSecret = overrides.placesCursorSecret;
@@ -275,7 +274,7 @@ const defaultPlan = (
     throw new Error('RUNTIME_PRODUCTION_PLACES_UNCONFIGURED');
   }
   const observationPolicy = overrides.observationPolicy;
-  const policy = observationPolicy ?? defaultObservationPolicy(clock);
+  const policy = observationPolicy ?? defaultProductionObservationPolicy(clock);
   const detailsPolicy = overrides.detailsObservationPolicy ?? policy;
   const registration = createPlacesSearchRegistration({
     registry,
@@ -322,7 +321,7 @@ const defaultPlan = (
     ownerScopeRef: input.context.ownerScopeRef,
     threadId: input.context.threadId,
     turnId: input.context.turnId,
-    retention: denyByDefaultRetention(input.request.serverNow),
+    retention: turnRetention,
   };
   const cardSetId = ids.nextCardSetId();
   return {
@@ -337,7 +336,7 @@ const defaultPlan = (
     ids,
     hashes: productionHash,
     publicResponse: {
-      textRetention: retention.retention,
+      textRetention: turnRetention,
       cardSetId,
       resolveCardEvidence: cardEvidenceResolver(registry, input.context),
     },
@@ -350,7 +349,6 @@ const makeOptions = (
   ids: ProductionIds,
   registry: CandidateObservationRegistry,
   continuation: ReturnType<typeof createPlacesSearchContinuation> | undefined,
-  placesEnabled: boolean,
   clock: () => string,
   monotonicNow: () => number,
 ) => {
@@ -358,6 +356,11 @@ const makeOptions = (
   const buildTurn = (request: RuntimeThinkTurnBuildRequest) => {
     const runtimeInput = request.runtimeInput;
     if (runtimeInput === undefined) throw new Error('RUNTIME_INPUT_MISSING');
+    const turnRetention = productionRetentionFor(overrides.retention, request.serverNow);
+    const placesEnabled = productionPlacesEnabled({
+      prepareTurn: overrides.prepareTurn,
+      ...(overrides.placesEnabled === undefined ? {} : { placesEnabled: overrides.placesEnabled }),
+    });
     const context = harnessContextFor(request, runtimeInput, request.serverNow, {
       capabilities: productionCapabilities({
         placesEnabled,
@@ -386,6 +389,7 @@ const makeOptions = (
             registry,
             continuation,
             areaByCandidate,
+            turnRetention,
           ));
     const budget = new RuntimeBudget({
       startedAtMs: monotonicNow(),
@@ -418,7 +422,7 @@ const makeOptions = (
       validationContext: plan.validationContext,
       constraintContext: { threadId: request.threadId, originalTurns: [] },
       persistMessages: () => Promise.resolve({ requestId: request.turnId, status: 'completed' }),
-      isFinalResponse: () => true,
+      isFinalResponse: plan.isFinalResponse ?? (() => false),
       stopWhen: () => budget.snapshot().completed,
       idempotencyKey: runtimeInput.idempotencyKey,
     };
@@ -479,19 +483,8 @@ export const createRuntimeProductionConnectionOptions = (
     ...(isConfiguredSecret(apiKey) ? { googlePlacesApiKey: apiKey } : {}),
     ...(isConfiguredSecret(cursorSecret) ? { placesCursorSecret: cursorSecret } : {}),
     ...(overrides.observationPolicy === undefined
-      ? { observationPolicy: defaultObservationPolicy(clock) }
+      ? { observationPolicy: defaultProductionObservationPolicy(clock) }
       : {}),
   };
-  return makeOptions(
-    input,
-    resolvedOverrides,
-    ids,
-    registry,
-    continuation,
-    overrides.prepareTurn !== undefined ||
-      overrides.observationPolicy !== undefined ||
-      overrides.detailsObservationPolicy !== undefined,
-    clock,
-    monotonicNow,
-  );
+  return makeOptions(input, resolvedOverrides, ids, registry, continuation, clock, monotonicNow);
 };
