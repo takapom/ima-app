@@ -7,6 +7,7 @@ import type {
   ToolExecutionContext,
 } from '@ima/core';
 import type { GooglePlaceDetailsTransport } from './types';
+import type { SavedReferenceDetailsHandoff } from './handoff';
 
 export type PlacesDetailsObservationInput = Omit<
   ObservationRegistration,
@@ -36,4 +37,6 @@ export type PlacesDetailsAdapterOptions = {
   readonly signalFor?: (execution: ToolExecutionContext) => AbortSignal | undefined;
   /** Current-origin route evidence shares its structured context with detail evidence. */
   readonly originRefFor?: (context: HarnessContext) => string | undefined;
+  /** A saved-reference provider response may be consumed once without another HTTP request. */
+  readonly savedReferenceHandoff?: SavedReferenceDetailsHandoff;
 };

@@ -61,6 +61,14 @@ type PendingDetails = {
   readonly areaLabel: string | undefined;
 };
 
+const clearHandoff = (options: PlacesDetailsAdapterOptions): void => {
+  try {
+    options.savedReferenceHandoff?.clear();
+  } catch {
+    // Handoff cleanup is best effort and must not replace the original result.
+  }
+};
+
 const readCandidate = (
   options: PlacesDetailsAdapterOptions,
   context: HarnessContext,
@@ -134,7 +142,10 @@ const processResponse = (
   signal: AbortSignal | undefined,
   options: PlacesDetailsAdapterOptions,
 ): Result<DetailsItem> | DetailsItem => {
-  if (cancellation.isCancelled() || isSignalAborted(signal)) return cancelled();
+  if (cancellation.isCancelled() || isSignalAborted(signal)) {
+    clearHandoff(options);
+    return cancelled();
+  }
   if (!responseMatches(response, work.candidate.recordRef, work.fetchFields)) {
     addProviderFailure(work.fields, responseFailureFields(work.fetchFields));
     return { candidateId: work.request.candidateId, fields: work.fields };
@@ -147,7 +158,10 @@ const processResponse = (
     options.originRefFor?.(context) ?? null,
   );
   for (const field of work.fetchFields) {
-    if (cancellation.isCancelled() || isSignalAborted(signal)) return cancelled();
+    if (cancellation.isCancelled() || isSignalAborted(signal)) {
+      clearHandoff(options);
+      return cancelled();
+    }
     if (sourceConflict) {
       work.fields[field] = {
         status: 'error',
@@ -198,17 +212,96 @@ const runPending = async (
   signal: AbortSignal | undefined,
   options: PlacesDetailsAdapterOptions,
 ): Promise<Result<DetailsItem> | DetailsItem> => {
-  if (cancellation.isCancelled() || isSignalAborted(signal)) return cancelled();
+  const discardHandoff = (): void => {
+    try {
+      options.savedReferenceHandoff?.discardForCandidate({
+        candidateId: work.candidate.candidateId,
+        scope: { ownerScopeRef: context.ownerScopeRef, threadId: context.threadId },
+        turnId: context.turnId,
+        revision: context.revision,
+      });
+    } catch {
+      // A failed cleanup must not turn a cancellation into a provider error.
+    }
+  };
+  if (cancellation.isCancelled() || isSignalAborted(signal)) {
+    discardHandoff();
+    return cancelled();
+  }
   const invalidationError = invalidateBeforeFetch(
     options,
     context,
     work.candidate,
     work.fetchFields,
   );
-  if (invalidationError !== undefined) return { status: 'error', error: invalidationError };
-  if (cancellation.isCancelled() || isSignalAborted(signal)) return cancelled();
+  if (invalidationError !== undefined) {
+    discardHandoff();
+    return { status: 'error', error: invalidationError };
+  }
+  if (cancellation.isCancelled() || isSignalAborted(signal)) {
+    clearHandoff(options);
+    return cancelled();
+  }
   const beforeFetch = clockNow(options);
-  if (typeof beforeFetch !== 'string') return { status: 'error', error: beforeFetch };
+  if (typeof beforeFetch !== 'string') {
+    discardHandoff();
+    return { status: 'error', error: beforeFetch };
+  }
+  let handoff:
+    | ReturnType<
+        NonNullable<PlacesDetailsAdapterOptions['savedReferenceHandoff']>['takeForCandidate']
+      >
+    | undefined;
+  try {
+    handoff = options.savedReferenceHandoff?.takeForCandidate({
+      candidateId: work.candidate.candidateId,
+      scope: { ownerScopeRef: context.ownerScopeRef, threadId: context.threadId },
+      turnId: context.turnId,
+      revision: context.revision,
+      fields: work.fetchFields,
+      now: beforeFetch,
+    });
+  } catch {
+    discardHandoff();
+    return {
+      status: 'error',
+      error: issue('MISSING_CONTEXT', 'handoff', 'saved reference handoff is unavailable'),
+    };
+  }
+  if (handoff?.status === 'expired') {
+    addProviderFailure(
+      work.fields,
+      work.fetchFields.map(
+        (field) =>
+          [field, issue('STALE_TURN', field, 'saved reference details have expired')] as const,
+      ),
+    );
+    return { candidateId: work.request.candidateId, fields: work.fields };
+  }
+  if (handoff?.status === 'invalid') {
+    addProviderFailure(
+      work.fields,
+      work.fetchFields.map(
+        (field) =>
+          [
+            field,
+            issue('SCHEMA_MISMATCH', field, 'saved reference details handoff is invalid'),
+          ] as const,
+      ),
+    );
+    return { candidateId: work.request.candidateId, fields: work.fields };
+  }
+  if (handoff?.status === 'ready') {
+    return processResponse(
+      work,
+      handoff.response,
+      handoff.observedAt,
+      context,
+      cancellation,
+      signal,
+      options,
+    );
+  }
   let response: GooglePlaceDetailsResponse;
   try {
     response = await options.transport.read(
@@ -233,7 +326,10 @@ export const createPlacesDetailsAdapter = (
   options: PlacesDetailsAdapterOptions,
 ): PlaceDetailsPort => ({
   async read(input, context, execution, cancellation): Promise<Result<GetPlaceDetailsOutput>> {
-    if (cancellation.isCancelled()) return cancelled();
+    if (cancellation.isCancelled()) {
+      clearHandoff(options);
+      return cancelled();
+    }
     if (!contextIsValid(context)) {
       return {
         status: 'error',
@@ -262,7 +358,10 @@ export const createPlacesDetailsAdapter = (
         error: issue('MISSING_CONTEXT', null, 'details cancellation bridge is unavailable'),
       };
     }
-    if (isSignalAborted(signal)) return cancelled();
+    if (isSignalAborted(signal)) {
+      clearHandoff(options);
+      return cancelled();
+    }
 
     const items: Array<DetailsItem | undefined> = [];
     const pending: PendingDetails[] = [];
@@ -334,7 +433,10 @@ export const createPlacesDetailsAdapter = (
     for (const work of pending) {
       const result = await runPending(work, context, cancellation, signal, options);
       if ('status' in result) {
-        if (result.status === 'error') return { status: 'error', error: result.error };
+        if (result.status === 'error') {
+          clearHandoff(options);
+          return { status: 'error', error: result.error };
+        }
         return {
           status: 'error',
           error: issue('SCHEMA_MISMATCH', 'result', 'pending result is invalid'),
@@ -342,7 +444,10 @@ export const createPlacesDetailsAdapter = (
       }
       items[work.index] = result;
     }
-    if (cancellation.isCancelled() || isSignalAborted(signal)) return cancelled();
+    if (cancellation.isCancelled() || isSignalAborted(signal)) {
+      clearHandoff(options);
+      return cancelled();
+    }
     const finalItems = items.filter((item): item is DetailsItem => item !== undefined);
     if (finalItems.length !== parsedInput.output.requests.length) {
       return {

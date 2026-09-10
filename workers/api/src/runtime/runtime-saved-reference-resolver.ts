@@ -9,19 +9,26 @@ import {
   SavedPlaceReferenceSchema,
   SavedPlaceRefSchema,
   ToolExecutionContextSchema,
-  type CandidateObservationRegistryPort,
   type CandidateRecord,
   type CandidateRegistration,
   type CancellationToken,
-  type DetailField,
   type HarnessContext,
   type Issue,
   type RegistryScope,
   type SavedPlaceReference,
   type SavedPlaceRef,
-  type ToolExecutionContext,
 } from '@ima/core';
 import type { SavedPlaceReferenceResolver } from '../tools/types';
+import type {
+  SavedReferenceCandidateRegistry,
+  SavedReferenceHandoffBinding,
+  SavedReferenceProviderRefresher,
+} from '../providers/places-details/handoff';
+
+export type {
+  SavedReferenceProviderRefreshRequest,
+  SavedReferenceProviderRefresher,
+} from '../providers/places-details/handoff';
 
 const OwnerReadResultSchema = v.union([
   v.strictObject({
@@ -58,21 +65,6 @@ export type SavedReferenceOwnerReader = {
   readonly read: (savedPlaceRef: unknown) => Promise<unknown>;
 };
 
-export type SavedReferenceProviderRefreshRequest = {
-  readonly savedPlaceRef: SavedPlaceRef;
-  readonly reference: SavedPlaceReference;
-  readonly scope: RegistryScope;
-  readonly fields: readonly DetailField[];
-  readonly context: HarnessContext;
-  readonly execution: ToolExecutionContext;
-  readonly cancellation: CancellationToken;
-};
-
-export type SavedReferenceProviderRefresher = {
-  /** Provider payload stays inside this Worker-owned boundary. */
-  readonly refresh: (input: SavedReferenceProviderRefreshRequest) => Promise<unknown>;
-};
-
 export type SavedReferenceRefreshBudget = {
   /** Reserves exactly one provider request before the provider boundary is entered. */
   readonly reserveProviderRequest: () => boolean;
@@ -81,7 +73,7 @@ export type SavedReferenceRefreshBudget = {
 export type SavedReferenceResolverDependencies = {
   readonly owner: SavedReferenceOwnerReader;
   readonly provider: SavedReferenceProviderRefresher;
-  readonly registry: Pick<CandidateObservationRegistryPort, 'listCandidates' | 'registerCandidate'>;
+  readonly registry: SavedReferenceCandidateRegistry;
   /** Explicit allowlist supplied by the provider composition. */
   readonly supportedProviders: readonly string[];
   readonly budget: SavedReferenceRefreshBudget;
@@ -440,7 +432,13 @@ export const createSavedPlaceReferenceResolver =
     }
     let registered: Readonly<CandidateRecord>;
     try {
-      registered = dependencies.registry.registerCandidate(resolved.candidate);
+      const binding: SavedReferenceHandoffBinding = {
+        savedPlaceRef: savedRef.output,
+        scope,
+        turnId: request.execution.turnId,
+        revision: request.execution.revision,
+      };
+      registered = dependencies.registry.registerCandidate(resolved.candidate, binding);
     } catch {
       return {
         status: 'error',
