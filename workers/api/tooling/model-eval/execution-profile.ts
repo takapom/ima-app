@@ -4,7 +4,11 @@ export type EvaluationExecutionProfile =
   | {
       readonly status: 'fixture_ready';
       readonly kind:
-        'card_context' | 'same_do_continuity' | 'condition_context' | 'failure_response';
+        | 'card_context'
+        | 'same_do_continuity'
+        | 'condition_context'
+        | 'failure_response'
+        | 'saved_reference';
       readonly requiresApiKey: false;
     }
   | {
@@ -81,8 +85,8 @@ const profiles: Record<ScenarioId, EvaluationExecutionProfile> = {
     requiresApiKey: false,
   },
   'saved-place-reference': {
-    status: 'unavailable',
-    reason: 'SAVED_REFERENCE_RESOLVER_NOT_WIRED',
+    status: 'fixture_ready',
+    kind: 'saved_reference',
     requiresApiKey: false,
   },
 };

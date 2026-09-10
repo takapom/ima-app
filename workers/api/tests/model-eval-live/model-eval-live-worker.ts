@@ -15,6 +15,7 @@ export {
   MODEL_EVAL_NOW,
 } from './model-eval-place-fixture';
 export { ModelEvalFixtureThreadDO } from './model-eval-context-worker';
+export { SavedReferenceDO } from '../../src/saved-references/saved-reference-do';
 
 type ModelEvalEnv = Cloudflare.Env & {
   readonly OPENAI_API_KEY?: string;

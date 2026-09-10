@@ -1,4 +1,4 @@
-import type { GetPlaceDetailsInput, SearchPlacesInput, SubmitCardsInput } from '@ima/core';
+import type { ModelGetPlaceDetailsInput, SearchPlacesInput, SubmitCardsInput } from '@ima/core';
 import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,
@@ -39,7 +39,7 @@ export const streamOf = (
 export const toolParts = (
   call: number,
   toolName: string,
-  input: SearchPlacesInput | GetPlaceDetailsInput | SubmitCardsInput,
+  input: SearchPlacesInput | ModelGetPlaceDetailsInput | SubmitCardsInput,
 ): RuntimeGateModelStreamPart[] => {
   const id = `model-eval-fixture-${toolName}-${call}`;
   const encoded = JSON.stringify({ input, metadata: {} });

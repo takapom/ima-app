@@ -8,12 +8,13 @@
     "bindings": [
       { "name": "MODEL_EVAL_THREADS", "class_name": "ModelEvalThreadDO" },
       { "name": "MODEL_EVAL_CONTEXT_THREADS", "class_name": "ModelEvalFixtureThreadDO" },
+      { "name": "SAVED_REFERENCES", "class_name": "SavedReferenceDO" },
     ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["ModelEvalThreadDO", "ModelEvalFixtureThreadDO"],
+      "new_sqlite_classes": ["ModelEvalThreadDO", "ModelEvalFixtureThreadDO", "SavedReferenceDO"],
     },
   ],
 }

@@ -9,6 +9,7 @@ export type ModelContextEnvelope = {
     readonly preferences?: unknown;
     readonly cardSet?: unknown;
     readonly evidence?: unknown;
+    readonly savedReferences?: unknown;
   };
 };
 
