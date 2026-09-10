@@ -55,6 +55,25 @@ export const createJourneyActionState = (): JourneyActionState => ({
   recoverIntent: null,
 });
 
+/** Keep tonight exclusions/saves while a new response reconciles its selection. */
+export const reconcileJourneyActionContext = (
+  state: JourneyActionState,
+  candidateIds: readonly string[],
+): JourneyActionState => ({
+  ...state,
+  promotedCandidateId:
+    state.promotedCandidateId !== null && candidateIds.includes(state.promotedCandidateId)
+      ? state.promotedCandidateId
+      : null,
+  decidedCandidateId:
+    state.decidedCandidateId !== null && candidateIds.includes(state.decidedCandidateId)
+      ? state.decidedCandidateId
+      : null,
+  recoverIntent: null,
+});
+
+export const resetJourneyActionContext = (): JourneyActionState => createJourneyActionState();
+
 const accepted = (state: JourneyActionState, effect: JourneyActionEffect): JourneyActionResult => ({
   accepted: true,
   state,
@@ -84,7 +103,7 @@ export const journeyActionReducer = (
   if (!hasCandidate(context, action.candidateId)) {
     return rejected(state, 'candidate_not_found');
   }
-  if (state.tonightExcludedCandidateIds.includes(action.candidateId)) {
+  if (action.type !== 'save' && state.tonightExcludedCandidateIds.includes(action.candidateId)) {
     return rejected(state, 'already_excluded');
   }
 

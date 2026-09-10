@@ -8,6 +8,7 @@ import {
   type JourneyShareService,
 } from './journey-share';
 import { saveJourneyCandidate, type JourneyStorageService } from './journey-storage';
+import { journeyShareInputFor } from './journey-share-input';
 
 const retention = {
   retentionDecision: 'deny' as const,
@@ -56,13 +57,19 @@ const saveCard: PublicCard = {
 
 describe('journey action services', () => {
   it('keeps map destination construction separate from sharing', () => {
-    const map = buildAppleWalkingMapUrl({ latitude: 35.6467, longitude: 139.71 });
+    const map = buildAppleWalkingMapUrl({
+      latitude: 35.6467,
+      longitude: 139.71,
+      mapsPolicy: 'allow',
+      provenance: 'user_provided',
+    });
     expect(map.status).toBe('ready');
     if (map.status !== 'ready') return;
     const prepared = prepareJourneyShare({
       name: '夜カフェ',
       walkingDurationSeconds: 12 * 60,
       mapUrl: map.url,
+      attributions: [],
     });
 
     expect(prepared).toEqual({
@@ -79,6 +86,7 @@ describe('journey action services', () => {
       name: '夜カフェ',
       walkingDurationSeconds: null,
       mapUrl: null,
+      attributions: [],
     });
 
     expect(result).toEqual({ status: 'unavailable', reason: 'map_link_missing' });
@@ -90,16 +98,23 @@ describe('journey action services', () => {
         name: '夜カフェ',
         walkingDurationSeconds: 0,
         mapUrl: 'http://example.com/map',
+        attributions: [],
       }),
     ).toEqual({ status: 'unavailable', reason: 'map_link_missing' });
     expect(
-      prepareJourneyShare({ name: '夜カフェ', walkingDurationSeconds: 0, mapUrl: 'https://' }),
+      prepareJourneyShare({
+        name: '夜カフェ',
+        walkingDurationSeconds: 0,
+        mapUrl: 'https://',
+        attributions: [],
+      }),
     ).toEqual({ status: 'unavailable', reason: 'map_link_missing' });
     expect(
       prepareJourneyShare({
         name: '夜カフェ',
         walkingDurationSeconds: 0,
         mapUrl: 'https://example.com/map',
+        attributions: [],
       }),
     ).toEqual({
       status: 'ready',
@@ -122,6 +137,7 @@ describe('journey action services', () => {
       name: '夜カフェ',
       walkingDurationSeconds: null,
       mapUrl: 'https://example.com/map',
+      attributions: [],
     };
 
     await expect(shareJourneyCandidate(opened, candidate)).resolves.toEqual({ status: 'opened' });
@@ -140,8 +156,51 @@ describe('journey action services', () => {
         name: '夜カフェ',
         walkingDurationSeconds: 60,
         mapUrl: 'https://example.com/map',
+        attributions: [],
       }),
     ).resolves.toEqual({ status: 'failed', reason: 'share_unavailable' });
+  });
+
+  it('keeps public attribution metadata in the share body', () => {
+    expect(
+      prepareJourneyShare({
+        name: '夜カフェ',
+        walkingDurationSeconds: null,
+        mapUrl: 'https://example.com/map',
+        attributions: [
+          { label: 'Maps', sourceLink: 'https://example.com/source' },
+          { label: 'Maps', sourceLink: 'https://example.com/source' },
+        ],
+      }),
+    ).toEqual({
+      status: 'ready',
+      message: '夜カフェ\nhttps://example.com/map\n出典: Maps https://example.com/source',
+    });
+  });
+
+  it('projects only currently displayable attribution into the share boundary', () => {
+    const identity = saveCard.facts.identity;
+    if (identity.status !== 'known') throw new Error('identity fact is required');
+    const evidence = identity.evidence[0];
+    if (evidence === undefined) throw new Error('identity evidence is required');
+    const availableAttribution = {
+      ...identity,
+      evidence: [
+        {
+          ...evidence,
+          attribution: { label: '公式サイト', sourceLink: 'https://example.com/source' },
+        },
+      ],
+    };
+    const input = journeyShareInputFor({
+      ...saveCard,
+      facts: { ...saveCard.facts, identity: availableAttribution },
+    });
+
+    expect(input.name).toBe('夜カフェ');
+    expect(input.attributions).toEqual([
+      { label: '公式サイト', sourceLink: 'https://example.com/source' },
+    ]);
   });
 
   it('keeps save and haptics behind injectable services', async () => {

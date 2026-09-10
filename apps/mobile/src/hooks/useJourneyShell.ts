@@ -11,6 +11,7 @@ import type { ConditionScope, JourneyConditions } from '../state/journey-input';
 export type JourneyShellController = JourneyShellState & {
   readonly beginRequest: (query: string) => void;
   readonly applyResponse: (responseState: JourneyShellState['responseState']) => void;
+  readonly settleResponse: (revision: number) => void;
   readonly failRequest: (message: string) => void;
   readonly cancelRequest: () => void;
   readonly decide: (candidateId: string, responseState?: AssistantResponseState) => void;
@@ -38,6 +39,10 @@ export const useJourneyShell = (
   const applyResponse = useCallback(
     (responseState: JourneyShellState['responseState']) =>
       dispatch({ type: 'responseApplied', responseState }),
+    [],
+  );
+  const settleResponse = useCallback(
+    (revision: number) => dispatch({ type: 'responseSettled', revision }),
     [],
   );
   const failRequest = useCallback(
@@ -75,6 +80,7 @@ export const useJourneyShell = (
     ...state,
     beginRequest,
     applyResponse,
+    settleResponse,
     failRequest,
     cancelRequest,
     decide,

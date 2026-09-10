@@ -3,7 +3,12 @@ import { buildAppleWalkingMapUrl } from './journey-map';
 
 describe('Apple walking map service boundary', () => {
   it('builds the walking URL from supplied coordinates', () => {
-    const result = buildAppleWalkingMapUrl({ latitude: 35.6467, longitude: 139.71 });
+    const result = buildAppleWalkingMapUrl({
+      latitude: 35.6467,
+      longitude: 139.71,
+      mapsPolicy: 'allow',
+      provenance: 'user_provided',
+    });
 
     expect(result).toEqual({
       status: 'ready',
@@ -19,13 +24,51 @@ describe('Apple walking map service boundary', () => {
   });
 
   it('rejects invalid coordinates before constructing a URL', () => {
-    expect(buildAppleWalkingMapUrl({ latitude: 91, longitude: 139 })).toEqual({
-      status: 'unavailable',
-      reason: 'destination_invalid',
-    });
-    expect(buildAppleWalkingMapUrl({ latitude: Number.NaN, longitude: 139 })).toEqual({
-      status: 'unavailable',
-      reason: 'destination_invalid',
-    });
+    expect(
+      buildAppleWalkingMapUrl({
+        latitude: 91,
+        longitude: 139,
+        mapsPolicy: 'allow',
+        provenance: 'user_provided',
+      }),
+    ).toEqual({ status: 'unavailable', reason: 'destination_invalid' });
+    expect(
+      buildAppleWalkingMapUrl({
+        latitude: Number.NaN,
+        longitude: 139,
+        mapsPolicy: 'allow',
+        provenance: 'user_provided',
+      }),
+    ).toEqual({ status: 'unavailable', reason: 'destination_invalid' });
+  });
+
+  it('rejects Google Maps coordinates from an Apple Maps handoff', () => {
+    expect(
+      buildAppleWalkingMapUrl({
+        latitude: 35.6467,
+        longitude: 139.71,
+        mapsPolicy: 'allow',
+        provenance: 'google_places',
+      }),
+    ).toEqual({ status: 'unavailable', reason: 'policy_denied' });
+    expect(
+      buildAppleWalkingMapUrl({
+        latitude: 35.6467,
+        longitude: 139.71,
+        mapsPolicy: 'unknown',
+        provenance: 'unknown',
+      }),
+    ).toEqual({ status: 'unavailable', reason: 'policy_denied' });
+  });
+
+  it('allows coordinates with an explicit independent-source policy decision', () => {
+    expect(
+      buildAppleWalkingMapUrl({
+        latitude: 35.6467,
+        longitude: 139.71,
+        mapsPolicy: 'allow',
+        provenance: 'independent',
+      }).status,
+    ).toBe('ready');
   });
 });

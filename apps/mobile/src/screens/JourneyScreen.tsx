@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import type { PublicCard, PublicMessage } from '@ima/contracts';
+import type { PublicCard } from '@ima/contracts';
 import { AppBar } from '../components/AppBar';
 import { Canvas } from '../components/Canvas';
 import { Composer } from '../components/Composer';
@@ -12,8 +12,10 @@ import { ErrorState } from '../components/ErrorState';
 import { ResultsState } from '../components/ResultsState';
 import { WorkingState } from '../components/WorkingState';
 import { useAssistantResponseProjection } from '../hooks/useAssistantResponseProjection';
+import { useJourneyActions, type JourneyActionServices } from '../hooks/useJourneyActions';
 import { useJourneyShell } from '../hooks/useJourneyShell';
 import type { AssistantResponseClock } from '../services/assistant-response-clock';
+import type { WalkingMapDestinationResolver } from '../services/journey-map';
 import {
   selectAssistantMessageRecords,
   selectAssistantMessages,
@@ -27,12 +29,17 @@ import {
 } from '../state/journey-input';
 import type { AssistantResponseProjectionNow } from '../state/assistant-response-projection';
 import type { SavedPlaceItem, SearchHistoryItem } from '../state/journey-shell';
+import type { RecoverIntent } from '../state/journey-actions';
+import { resolveJourneyPhase, type JourneyRequestStatus } from '../state/journey-phase';
 
-export type JourneyRequestStatus = 'idle' | 'pending' | 'error' | 'cancelled';
+export type { JourneyRequestStatus } from '../state/journey-phase';
 
 export type JourneySubmitContext = {
   readonly conditions: JourneyConditions;
   readonly removedChipLabels: readonly string[];
+  readonly promotedCandidateId: string | null;
+  readonly selectedCandidateId: string | null;
+  readonly candidateOrder: readonly string[];
 };
 
 export type JourneyScreenProps = {
@@ -51,6 +58,9 @@ export type JourneyScreenProps = {
   readonly onRetry?: (query: string, context: JourneySubmitContext) => void;
   readonly onNewSearch?: () => void;
   readonly onPromote?: (candidateId: string) => void;
+  readonly onRecover?: (intent: RecoverIntent) => void;
+  readonly actionServices?: JourneyActionServices;
+  readonly mapDestinationResolver?: WalkingMapDestinationResolver;
   readonly onSourcePress?: (sourceLink: string) => void;
   readonly onHistorySelect?: (item: SearchHistoryItem) => void;
   readonly onSavedPlaceSelect?: (item: SavedPlaceItem) => void;
@@ -93,6 +103,9 @@ function JourneyScreenStateOwner({
   onRetry,
   onNewSearch,
   onPromote,
+  onRecover,
+  actionServices,
+  mapDestinationResolver,
   onSourcePress,
   onHistorySelect,
   onSavedPlaceSelect,
@@ -105,7 +118,46 @@ function JourneyScreenStateOwner({
     now,
     responseClock,
   );
+  const [requestStartRevision, setRequestStartRevision] = useState<number | null>(null);
+  const lastObservedResponseRevision = useRef(renderedResponse.revision);
+  useEffect(() => {
+    if (renderedResponse.revision <= lastObservedResponseRevision.current) return;
+    lastObservedResponseRevision.current = renderedResponse.revision;
+    if (
+      requestStatus === 'error' ||
+      requestStatus === 'cancelled' ||
+      requestStartRevision === null ||
+      renderedResponse.revision <= requestStartRevision
+    ) {
+      if (requestStatus === 'error' || requestStatus === 'cancelled') {
+        setRequestStartRevision(null);
+      }
+      return;
+    }
+    journey.settleResponse(renderedResponse.revision);
+    setRequestStartRevision((current) =>
+      current !== null && renderedResponse.revision > current ? null : current,
+    );
+  }, [journey.settleResponse, renderedResponse, requestStartRevision, requestStatus]);
+  useEffect(() => {
+    if (requestStatus === 'error' || requestStatus === 'cancelled') {
+      setRequestStartRevision(null);
+    }
+  }, [requestStatus]);
+  useEffect(() => {
+    if (requestStatus === 'error') journey.failRequest(errorMessage);
+    if (requestStatus === 'cancelled') journey.cancelRequest();
+  }, [errorMessage, journey.cancelRequest, journey.failRequest, requestStatus]);
   const renderedMessages = selectAssistantMessages(renderedResponse);
+  const actions = useJourneyActions({
+    threadId,
+    responseState: renderedResponse,
+    query: journey.query,
+    ...(actionServices === undefined ? {} : { actionServices }),
+    ...(mapDestinationResolver === undefined ? {} : { mapDestinationResolver }),
+    ...(onPromote === undefined ? {} : { onPromote }),
+    ...(onRecover === undefined ? {} : { onRecover }),
+  });
   const renderedMessageRecords = selectAssistantMessageRecords(renderedResponse);
 
   const submit = useCallback(
@@ -115,11 +167,24 @@ function JourneyScreenStateOwner({
       const context: JourneySubmitContext = {
         conditions: journey.conditions,
         removedChipLabels: journey.removedChipLabels,
+        promotedCandidateId: actions.state.promotedCandidateId,
+        selectedCandidateId: actions.state.decidedCandidateId,
+        candidateOrder: actions.candidateOrder,
       };
+      setRequestStartRevision(renderedResponse.revision);
       journey.beginRequest(value);
       onSubmit(value, context);
     },
-    [journey.beginRequest, journey.conditions, journey.removedChipLabels, onSubmit],
+    [
+      actions.candidateOrder,
+      actions.state.decidedCandidateId,
+      actions.state.promotedCandidateId,
+      journey.beginRequest,
+      journey.conditions,
+      journey.removedChipLabels,
+      renderedResponse.revision,
+      onSubmit,
+    ],
   );
   const retry = useCallback((): void => {
     const query = journey.query.trim();
@@ -128,7 +193,11 @@ function JourneyScreenStateOwner({
     const context: JourneySubmitContext = {
       conditions: journey.conditions,
       removedChipLabels: journey.removedChipLabels,
+      promotedCandidateId: actions.state.promotedCandidateId,
+      selectedCandidateId: actions.state.decidedCandidateId,
+      candidateOrder: actions.candidateOrder,
     };
+    setRequestStartRevision(renderedResponse.revision);
     journey.beginRequest(journey.query);
     retryHandler(journey.query, context);
   }, [
@@ -136,21 +205,45 @@ function JourneyScreenStateOwner({
     journey.conditions,
     journey.query,
     journey.removedChipLabels,
+    renderedResponse.revision,
     onRetry,
     onSubmit,
+    actions.candidateOrder,
+    actions.state.decidedCandidateId,
+    actions.state.promotedCandidateId,
   ]);
   const cancel = useCallback((): void => {
+    setRequestStartRevision(null);
     journey.cancelRequest();
     onCancel?.();
   }, [journey.cancelRequest, onCancel]);
   const reset = useCallback((): void => {
+    setRequestStartRevision(null);
+    actions.reset();
     journey.reset();
     onNewSearch?.();
-  }, [journey.reset, onNewSearch]);
+  }, [actions.reset, journey.reset, onNewSearch]);
   const decide = useCallback(
-    (candidateId: string): void => journey.decide(candidateId, renderedResponse),
-    [journey.decide, renderedResponse],
+    (candidateId: string): void => {
+      if (!actions.decide(candidateId)) return;
+      journey.decide(candidateId, renderedResponse);
+    },
+    [actions.decide, journey.decide, renderedResponse],
   );
+  const recover = useCallback((): void => {
+    if (actions.state.decidedCandidateId !== null) {
+      const intent = actions.recover(actions.state.decidedCandidateId);
+      if (intent !== null) {
+        setRequestStartRevision(renderedResponse.revision);
+        journey.beginRequest(intent.query);
+      }
+    }
+  }, [
+    actions.recover,
+    actions.state.decidedCandidateId,
+    journey.beginRequest,
+    renderedResponse.revision,
+  ]);
   const removeChip = useCallback(
     (label: string): void => {
       journey.removeChip(label);
@@ -165,8 +258,14 @@ function JourneyScreenStateOwner({
     },
     [journey.updateConditions, onConditionsChange],
   );
-  const phase = resolvePhase(requestStatus, journey.phase, renderedResponse, renderedMessages);
-  const decided = selectedCard(renderedResponse, journey.selectedCandidateId);
+  const decided = selectedCard(renderedResponse, actions.state.decidedCandidateId);
+  const phase = resolveJourneyPhase(
+    requestStatus,
+    journey.phase,
+    renderedResponse.cards !== null || renderedMessages.length > 0,
+    decided !== null,
+    requestStartRevision !== null && renderedResponse.revision > requestStartRevision,
+  );
 
   return (
     <Canvas>
@@ -188,12 +287,39 @@ function JourneyScreenStateOwner({
               cardSetId={renderedResponse.cardSetId}
               cardSetDisplay={renderedResponse.cardSetDisplay}
               messageRecords={renderedMessageRecords}
+              candidateOrder={actions.candidateOrder}
+              notice={actions.notice?.text ?? null}
               onDecide={decide}
+              onSave={(card) => {
+                void actions.save(card).catch(actions.reportFailure);
+              }}
+              onSkip={actions.skipTonight}
               {...(onSourcePress === undefined ? {} : { onSourcePress })}
-              {...(onPromote === undefined ? {} : { onChoose: onPromote })}
+              onChoose={actions.promote}
             />
           ) : null}
-          {phase === 'decided' ? <DecidedState card={decided} /> : null}
+          {phase === 'decided' ? (
+            <DecidedState
+              card={decided}
+              notice={actions.notice?.text ?? null}
+              {...(decided === null
+                ? {}
+                : {
+                    onOpenMap: () => {
+                      void actions.openMap(decided).catch(actions.reportFailure);
+                    },
+                    onSave: (card) => {
+                      void actions.save(card).catch(actions.reportFailure);
+                    },
+                    onShare: () => {
+                      void actions.share(decided).catch(actions.reportFailure);
+                    },
+                  })}
+              {...(actions.state.decidedCandidateId === null || onRecover === undefined
+                ? {}
+                : { onRecover: recover })}
+            />
+          ) : null}
           {phase === 'error' ? (
             <ErrorState
               message={errorMessage}
@@ -242,23 +368,6 @@ function JourneyScreenStateOwner({
     </Canvas>
   );
 }
-
-const resolvePhase = (
-  requestStatus: JourneyRequestStatus,
-  localPhase: ReturnType<typeof useJourneyShell>['phase'],
-  responseState: AssistantResponseState,
-  messages: readonly PublicMessage[],
-): ReturnType<typeof useJourneyShell>['phase'] => {
-  if (requestStatus === 'pending') return 'working';
-  if (requestStatus === 'error') return 'error';
-  if (requestStatus === 'cancelled') return 'cancelled';
-  if (localPhase === 'cancelled') return 'cancelled';
-  if (localPhase === 'error') return 'error';
-  if (localPhase === 'decided') return 'decided';
-  if (responseState.cards !== null || messages.length > 0) return 'results';
-  if (localPhase === 'working') return 'working';
-  return 'empty';
-};
 
 const styles = StyleSheet.create({
   content: {

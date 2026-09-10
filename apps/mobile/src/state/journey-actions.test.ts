@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createJourneyActionState,
   journeyActionReducer,
+  reconcileJourneyActionContext,
   selectJourneyCandidateOrder,
   type JourneyActionContext,
 } from './journey-actions';
@@ -136,6 +137,26 @@ describe('journey candidate actions', () => {
     });
   });
 
+  it('keeps an explicit save intent after a tonight-only skip', () => {
+    const skipped = journeyActionReducer(
+      createJourneyActionState(),
+      { type: 'skipTonight', candidateId: 'hero' },
+      context,
+    );
+    if (!skipped.accepted) throw new Error('skip should be accepted');
+
+    const saved = journeyActionReducer(
+      skipped.state,
+      { type: 'save', candidateId: 'hero' },
+      context,
+    );
+
+    expect(saved.accepted).toBe(true);
+    if (!saved.accepted) return;
+    expect(saved.state.tonightExcludedCandidateIds).toEqual(['hero']);
+    expect(saved.state.savedCandidateIds).toEqual(['hero']);
+  });
+
   it('creates recover with the raw query and the selected exclusion', () => {
     const decided = journeyActionReducer(
       createJourneyActionState(),
@@ -190,5 +211,48 @@ describe('journey candidate actions', () => {
     expect(selectJourneyCandidateOrder(context.candidateIds, 'missing')).toEqual(
       context.candidateIds,
     );
+  });
+
+  it('keeps a selected candidate for a retained card set and drops missing candidates on replace', () => {
+    const promoted = journeyActionReducer(
+      createJourneyActionState(),
+      { type: 'promote', candidateId: 'alt-1' },
+      context,
+    );
+    if (!promoted.accepted) throw new Error('promote should be accepted');
+    const decided = journeyActionReducer(
+      promoted.state,
+      { type: 'decide', candidateId: 'alt-1' },
+      context,
+    );
+    if (!decided.accepted) throw new Error('decide should be accepted');
+
+    expect(reconcileJourneyActionContext(decided.state, context.candidateIds)).toEqual(
+      decided.state,
+    );
+    expect(reconcileJourneyActionContext(decided.state, ['hero', 'alt-2'])).toMatchObject({
+      promotedCandidateId: null,
+      decidedCandidateId: null,
+    });
+  });
+
+  it('applies a late save result to the latest selection without replacing it', () => {
+    const promoted = journeyActionReducer(
+      createJourneyActionState(),
+      { type: 'promote', candidateId: 'alt-1' },
+      context,
+    );
+    if (!promoted.accepted) throw new Error('promote should be accepted');
+
+    const saved = journeyActionReducer(
+      promoted.state,
+      { type: 'save', candidateId: 'hero' },
+      context,
+    );
+
+    expect(saved.accepted).toBe(true);
+    if (!saved.accepted) return;
+    expect(saved.state.promotedCandidateId).toBe('alt-1');
+    expect(saved.state.savedCandidateIds).toEqual(['hero']);
   });
 });

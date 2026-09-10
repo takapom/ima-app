@@ -177,4 +177,27 @@ describe('journey shell state', () => {
 
     expect(next).toBe(initial);
   });
+
+  it('settles an external response without copying its payload into shell state', () => {
+    const working = journeyShellReducer(createJourneyShellState('thread-1'), {
+      type: 'beginRequest',
+      query: '近くで探して',
+    });
+    const settled = journeyShellReducer(working, { type: 'responseSettled', revision: 1 });
+
+    expect(settled.phase).toBe('results');
+    expect(settled.requestState).toBe('idle');
+    expect(settled.responseState).toBe(working.responseState);
+  });
+
+  it('does not settle a response that arrives after cancellation', () => {
+    const working = journeyShellReducer(createJourneyShellState('thread-1'), {
+      type: 'beginRequest',
+      query: '近くで探して',
+    });
+    const cancelled = journeyShellReducer(working, { type: 'cancelRequest' });
+    const late = journeyShellReducer(cancelled, { type: 'responseSettled', revision: 1 });
+
+    expect(late).toBe(cancelled);
+  });
 });

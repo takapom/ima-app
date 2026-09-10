@@ -4,6 +4,12 @@ export type JourneyShareCandidate = {
   readonly walkingDurationSeconds: number | null;
   /** A trusted HTTPS map link; this module does not geocode or invent one. */
   readonly mapUrl: string | null;
+  readonly attributions: readonly JourneyShareAttribution[];
+};
+
+export type JourneyShareAttribution = {
+  readonly label: string;
+  readonly sourceLink: string | null;
 };
 
 export type SharePreparation =
@@ -44,6 +50,17 @@ export const prepareJourneyShare = (candidate: JourneyShareCandidate): SharePrep
   const walking = formatWalking(candidate.walkingDurationSeconds);
   if (walking !== null) lines.push(walking);
   lines.push(candidate.mapUrl);
+  const seenAttributions = new Set<string>();
+  for (const attribution of candidate.attributions) {
+    const key = `${attribution.label}|${attribution.sourceLink ?? ''}`;
+    if (seenAttributions.has(key)) continue;
+    seenAttributions.add(key);
+    lines.push(
+      attribution.sourceLink === null
+        ? `出典: ${attribution.label}`
+        : `出典: ${attribution.label} ${attribution.sourceLink}`,
+    );
+  }
   return { status: 'ready', message: lines.join('\n') };
 };
 

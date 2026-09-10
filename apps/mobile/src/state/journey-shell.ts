@@ -38,7 +38,6 @@ export type JourneyShellState = {
   readonly conditionScope: ConditionScope;
   readonly drawerOpen: boolean;
   readonly drawerView: DrawerView;
-  readonly selectedCandidateId: string | null;
   readonly errorMessage: string | null;
   readonly responseState: AssistantResponseState;
 };
@@ -47,6 +46,7 @@ export type JourneyShellAction =
   | { readonly type: 'draftChanged'; readonly value: string }
   | { readonly type: 'beginRequest'; readonly query: string }
   | { readonly type: 'responseApplied'; readonly responseState: AssistantResponseState }
+  | { readonly type: 'responseSettled'; readonly revision: number }
   | { readonly type: 'requestFailed'; readonly message: string }
   | { readonly type: 'cancelRequest' }
   | { readonly type: 'chipRemoved'; readonly label: string }
@@ -81,7 +81,6 @@ export const createJourneyShellState = (
   conditionScope: 'thread',
   drawerOpen: false,
   drawerView: 'home',
-  selectedCandidateId: null,
   errorMessage: null,
   responseState: createAssistantResponseState(threadId),
 });
@@ -118,7 +117,6 @@ export const journeyShellReducer = (
               action.query,
               state.removedChipLabels,
             ),
-            selectedCandidateId: null,
             errorMessage: null,
             drawerOpen: false,
           };
@@ -133,6 +131,10 @@ export const journeyShellReducer = (
         removedChipLabels: action.responseState.revision > 0 ? [] : state.removedChipLabels,
         errorMessage: null,
       };
+    case 'responseSettled':
+      return state.requestState === 'pending' && action.revision > state.responseState.revision
+        ? { ...state, requestState: 'idle', phase: 'results', errorMessage: null }
+        : state;
     case 'requestFailed':
       return { ...state, phase: 'error', requestState: 'error', errorMessage: action.message };
     case 'cancelRequest':
@@ -178,7 +180,7 @@ export const journeyShellReducer = (
     }
     case 'decided':
       return hasCandidate(state, action.candidateId, action.responseState)
-        ? { ...state, phase: 'decided', selectedCandidateId: action.candidateId }
+        ? { ...state, phase: 'decided' }
         : state;
     case 'toggleDrawer':
       return { ...state, drawerOpen: !state.drawerOpen };

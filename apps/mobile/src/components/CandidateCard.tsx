@@ -15,6 +15,8 @@ type CandidateCardProps = {
   readonly primary: boolean;
   readonly onChoose?: (candidateId: string) => void;
   readonly onDecide?: (candidateId: string) => void;
+  readonly onSave?: (card: PublicCard) => void;
+  readonly onSkip?: (candidateId: string) => void;
   readonly onSourcePress?: (sourceLink: string) => void;
 };
 
@@ -61,6 +63,8 @@ export function CandidateCard({
   primary,
   onChoose,
   onDecide,
+  onSave,
+  onSkip,
   onSourcePress,
 }: CandidateCardProps): React.JSX.Element {
   const { fontScale } = useWindowDimensions();
@@ -158,6 +162,26 @@ export function CandidateCard({
         >
           <Text style={styles.decideText}>ここにする</Text>
         </Pressable>
+        <View style={styles.actionRow}>
+          <Pressable
+            accessibilityLabel={`${name}を残す`}
+            accessibilityRole="button"
+            disabled={onSave === undefined}
+            onPress={() => onSave?.(card)}
+            style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]}
+          >
+            <Text style={styles.secondaryActionText}>残す</Text>
+          </Pressable>
+          <Pressable
+            accessibilityLabel={`${name}を今夜の候補から外す`}
+            accessibilityRole="button"
+            disabled={onSkip === undefined}
+            onPress={() => onSkip?.(card.candidateId)}
+            style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]}
+          >
+            <Text style={styles.secondaryActionText}>ちがう</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -280,6 +304,25 @@ const styles = StyleSheet.create({
   },
   decideText: {
     color: colors.ink,
+    fontSize: typography.button,
+    fontWeight: '700',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.compact,
+    marginTop: spacing.compact,
+  },
+  secondaryAction: {
+    alignItems: 'center',
+    borderColor: colors.border,
+    borderRadius: radii.button,
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: spacing.touch,
+  },
+  secondaryActionText: {
+    color: colors.text,
     fontSize: typography.button,
     fontWeight: '700',
   },

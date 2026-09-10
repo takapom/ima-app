@@ -16,6 +16,11 @@ export type JourneyStorageService = {
   readonly saveCandidate: (candidate: JourneySaveCandidate) => Promise<SaveCandidateResult>;
 };
 
+/** SQLite is a later unit; never report an unpersisted candidate as saved. */
+export const createUnavailableJourneyStorageService = (): JourneyStorageService => ({
+  saveCandidate: () => Promise.resolve({ status: 'failed', reason: 'storage_unavailable' }),
+});
+
 /**
  * Keep storage failures at the service boundary. SQLite is connected in M21;
  * M20 callers can inject the same shape with an in-memory Fake.

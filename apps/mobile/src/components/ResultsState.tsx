@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import type { CardsData } from '@ima/contracts';
+import type { CardsData, PublicCard } from '@ima/contracts';
 import { CandidateCard } from './CandidateCard';
 import {
   buildMessageHistory,
@@ -14,9 +14,25 @@ type ResultsStateProps = {
   readonly cardSetId: string | null;
   readonly cardSetDisplay: CardSetDisplayState;
   readonly messageRecords: readonly AssistantMessageRecord[];
+  readonly candidateOrder?: readonly string[];
+  readonly notice?: string | null;
   readonly onChoose?: (candidateId: string) => void;
   readonly onDecide: (candidateId: string) => void;
+  readonly onSave?: (card: PublicCard) => void;
+  readonly onSkip?: (candidateId: string) => void;
   readonly onSourcePress?: (sourceLink: string) => void;
+};
+
+const orderedCards = (
+  cards: CardsData,
+  candidateOrder: readonly string[] | undefined,
+): readonly PublicCard[] => {
+  const source = [cards.hero, ...cards.alts];
+  const order = candidateOrder ?? source.map((card) => card.candidateId);
+  return order.flatMap((candidateId) => {
+    const card = source.find((item) => item.candidateId === candidateId);
+    return card === undefined ? [] : [card];
+  });
 };
 
 export function ResultsState({
@@ -24,39 +40,51 @@ export function ResultsState({
   cardSetId,
   cardSetDisplay,
   messageRecords,
+  candidateOrder,
+  notice = null,
   onChoose,
   onDecide,
+  onSave,
+  onSkip,
   onSourcePress,
 }: ResultsStateProps): React.JSX.Element {
-  const messageHistory = buildMessageHistory(messageRecords, cardSetId, cards !== null);
+  const displayCards = cards === null ? [] : orderedCards(cards, candidateOrder);
+  const messageHistory = buildMessageHistory(messageRecords, cardSetId, displayCards.length > 0);
   const statusLabel = cardSetStatusLabel(cardSetDisplay);
-  if (cards === null) {
+  if (displayCards.length === 0) {
     return (
       <View style={styles.messageOnly}>
+        {notice ? <Text style={styles.notice}>{notice}</Text> : null}
         {statusLabel ? <Text style={styles.statusLabel}>{statusLabel}</Text> : null}
         <MessageHistory items={messageHistory} fallback="候補はまだ提示されていません。" />
       </View>
     );
   }
 
+  const [hero, ...alternatives] = displayCards;
+  if (hero === undefined) return <View />;
+
   return (
     <View style={styles.container}>
+      {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       {statusLabel ? <Text style={styles.statusLabel}>{statusLabel}</Text> : null}
       <MessageHistory items={messageHistory} />
       <Text style={styles.kicker}>主提案</Text>
       <CandidateCard
-        card={cards.hero}
+        card={hero}
         onDecide={onDecide}
+        {...(onSave === undefined ? {} : { onSave })}
+        {...(onSkip === undefined ? {} : { onSkip })}
         primary
         {...(onSourcePress === undefined ? {} : { onSourcePress })}
       />
-      {cards.alts.length > 0 ? (
+      {alternatives.length > 0 ? (
         <View style={styles.alternatives}>
           <View style={styles.altHeading}>
             <Text style={styles.kicker}>別案</Text>
             <Text style={styles.hint}>タップで入れ替え</Text>
           </View>
-          {cards.alts.map((card) => (
+          {alternatives.map((card) => (
             <CandidateCard
               card={card}
               key={card.candidateId}
@@ -145,6 +173,11 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     color: colors.lime,
+    fontSize: typography.label,
+    fontWeight: '700',
+  },
+  notice: {
+    color: colors.cream,
     fontSize: typography.label,
     fontWeight: '700',
   },
