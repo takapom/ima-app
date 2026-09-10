@@ -28,3 +28,9 @@ flowchart LR
 閉店時刻は`availableStayUntilClosingSeconds`および早い退出境界として別に保持し、既存の営業時間・minimum-stay validatorが閉店と終電の早い方を検証する。ラストオーダーは到着時の注文可否だけを判定し、退店時刻や終電退出時刻へ変換しない。
 
 Core C1の公開入口は`packages/core/src/domain/index.ts`と`packages/core/src/application/index.ts`から提供する。Workerの実provider、駅resolver、取込・保存・更新処理はこの契約へ接続する後続単位で実装する。
+
+## C2 Worker dataset boundary
+
+Worker C2は、取込・更新・rollback・expiryを`validateJourneyRecord`へ通し、active datasetを一つのDurable Object SQLite transactionでrevision CASする。revision履歴を先に挿入してからactive pointerを別操作で更新する構成は採用しない。transactionが途中で失敗した場合はactive pointerと履歴の双方を変更しない。
+
+KVは現在、既存datasetを読むためのread-only adapterとしてのみ用意する。KVへのpublish経路や本番の運用入口は未接続であり、実駅・時刻表データのseedもしない。C3で本番のdataset所有DO、管理入口、`LastTrainJourneyPort`/Routes取得との接続を定義する。
