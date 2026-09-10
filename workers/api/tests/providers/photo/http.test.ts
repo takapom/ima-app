@@ -5,6 +5,7 @@ import { createPhotoBodyHandler } from '../../../src/providers/photo/http';
 import { createMemoryPhotoReferenceStore } from '../../../src/providers/photo/reference-store';
 import { PhotoProviderError } from '../../../src/providers/photo/media';
 import { createPhotoTokenCodec } from '../../../src/providers/photo/token';
+import type { RuntimeProviderTransportObserver } from '../../../src/providers/telemetry/runtime-provider-trace-contract';
 
 const NOW = '2026-09-10T12:00:00.000Z';
 const OWNER = 'owner:photo-test';
@@ -23,30 +24,42 @@ const context = (overrides: Partial<HandlerContext> = {}): HandlerContext => ({
   ...overrides,
 });
 
-const makeHandler = (transport: {
-  read: (
-    photoRef: string,
-    signal?: AbortSignal,
-  ) =>
-    | Promise<never>
-    | Promise<{
-        body: ReadableStream<Uint8Array>;
-        contentType: 'image/jpeg';
-        contentLength: number;
-      }>;
-}) => {
+const makeHandler = (
+  transport: {
+    read: (
+      photoRef: string,
+      signal?: AbortSignal,
+      observer?: RuntimeProviderTransportObserver,
+    ) =>
+      | Promise<never>
+      | Promise<{
+          body: ReadableStream<Uint8Array>;
+          contentType: 'image/jpeg';
+          contentLength: number;
+        }>;
+  },
+  providerTraceObserverFor?: Parameters<
+    typeof createPhotoBodyHandler
+  >[0]['providerTraceObserverFor'],
+) => {
   const store = createMemoryPhotoReferenceStore();
   const codec = createPhotoTokenCodec({
     secret: 'photo-http-test-secret',
     referenceResolver: { resolve: () => Promise.resolve(store) },
   });
   return {
-    handler: createPhotoBodyHandler({ tokenCodec: codec, transport }),
+    handler: createPhotoBodyHandler({
+      tokenCodec: codec,
+      transport,
+      ...(providerTraceObserverFor === undefined ? {} : { providerTraceObserverFor }),
+    }),
     issue: () =>
       codec.issue(
         {
           ownerScopeRef: OWNER,
           threadId: THREAD,
+          turnId: 'turn-photo-test',
+          revision: 1,
           deviceId: DEVICE,
           photoRef: PHOTO_REF,
         },
@@ -107,6 +120,59 @@ describe('photo HTTP adapter', () => {
     await expect(instance.handler.read({ token }, context())).rejects.toMatchObject({
       failure: { status: 429, code: 'RATE_LIMITED' },
       retryAfterSeconds: 2,
+    });
+  });
+
+  it('passes verified source identity to the transport observer without changing the DTO', async () => {
+    let receivedObserver: RuntimeProviderTransportObserver | undefined;
+    const identity = {
+      ownerScopeRef: OWNER,
+      threadId: THREAD,
+      turnId: 'turn-photo-test',
+      revision: 1,
+    };
+    const observer = { begin: () => ({ complete: () => undefined }) };
+    const instance = makeHandler(
+      {
+        read: (_photoRef, _signal, suppliedObserver) => {
+          receivedObserver = suppliedObserver;
+          return Promise.resolve({
+            body: new ReadableStream<Uint8Array>({ start: (controller) => controller.close() }),
+            contentType: 'image/jpeg' as const,
+            contentLength: 0,
+          });
+        },
+      },
+      (received) => {
+        expect(received).toEqual(identity);
+        return observer;
+      },
+    );
+    const token = await instance.issue();
+    const result = await instance.handler.read({ token }, context());
+
+    expect(receivedObserver).toBe(observer);
+    expect(result.descriptor).not.toHaveProperty('turnId');
+    expect(result.descriptor).not.toHaveProperty('revision');
+  });
+
+  it('does not let observer construction failure block a photo response', async () => {
+    const instance = makeHandler(
+      {
+        read: () =>
+          Promise.resolve({
+            body: new ReadableStream<Uint8Array>({ start: (controller) => controller.close() }),
+            contentType: 'image/jpeg' as const,
+            contentLength: 0,
+          }),
+      },
+      () => {
+        throw new Error('diagnostic failure');
+      },
+    );
+    const token = await instance.issue();
+    await expect(instance.handler.read({ token }, context())).resolves.toMatchObject({
+      descriptor: { requestId: 'request-photo-test' },
     });
   });
 });

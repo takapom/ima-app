@@ -28,6 +28,10 @@ export type PhotoTokenObservation = {
 export type PhotoTokenPreissueContext = {
   readonly ownerScopeRef: string;
   readonly threadId: string;
+  /** The request turn that produced the response; photo GETs may occur in another UI turn. */
+  readonly sourceTurnId: string;
+  /** Input target revision; public response metadata is the post-commit revision. */
+  readonly sourceRevision: number;
   readonly deviceId: string;
   readonly now: string;
 };
@@ -60,6 +64,9 @@ export type PhotoDisplayPolicySnapshot = {
 export type PhotoTokenPreparerDependencies = Omit<PhotoTokenObservationSource, 'now'> & {
   readonly codec: PhotoTokenCodec;
   readonly deviceId: string;
+  /** Identity of the request turn that owns the committed response and its photo references. */
+  readonly sourceTurnId: string;
+  readonly sourceRevision: number;
 };
 
 const isPhotoDisplayWindowOpen = (source: ReadonlyStoredObservation, now: string): boolean => {
@@ -136,7 +143,10 @@ export const collectPhotoTokenObservations = (
 export const createPhotoTokenPreparer =
   (dependencies: PhotoTokenPreparerDependencies): RuntimePhotoTokenPreparer =>
   async ({ response, metadata, now }) => {
-    if (metadata.threadId !== dependencies.scope.threadId) {
+    if (
+      metadata.threadId !== dependencies.scope.threadId ||
+      metadata.turnId !== dependencies.sourceTurnId
+    ) {
       throw new PhotoTokenError('INVALID_INPUT');
     }
     const observations = collectPhotoTokenObservations(response, {
@@ -149,6 +159,8 @@ export const createPhotoTokenPreparer =
     const prepared = await preparePhotoTokens(dependencies.codec, observations, {
       ownerScopeRef: dependencies.scope.ownerScopeRef,
       threadId: dependencies.scope.threadId,
+      sourceTurnId: dependencies.sourceTurnId,
+      sourceRevision: dependencies.sourceRevision,
       deviceId: dependencies.deviceId,
       now,
     });
@@ -161,6 +173,8 @@ const keyFor = (candidateId: string, photoRef: string): string =>
 const PhotoTokenContextSchema = v.strictObject({
   ownerScopeRef: PhotoTokenInputSchema.entries.ownerScopeRef,
   threadId: PhotoTokenInputSchema.entries.threadId,
+  sourceTurnId: PhotoTokenInputSchema.entries.turnId,
+  sourceRevision: PhotoTokenInputSchema.entries.revision,
   deviceId: PhotoTokenInputSchema.entries.deviceId,
   now: IsoTimestampSchema,
 });
@@ -228,6 +242,8 @@ export const preparePhotoTokens = async (
   const parsedContext = v.safeParse(PhotoTokenContextSchema, {
     ownerScopeRef: context.ownerScopeRef,
     threadId: context.threadId,
+    sourceTurnId: context.sourceTurnId,
+    sourceRevision: context.sourceRevision,
     deviceId: context.deviceId,
     now: context.now,
   });
@@ -264,6 +280,8 @@ export const preparePhotoTokens = async (
         {
           ownerScopeRef: context.ownerScopeRef,
           threadId: context.threadId,
+          turnId: context.sourceTurnId,
+          revision: context.sourceRevision,
           deviceId: context.deviceId,
           photoRef: observation.photoRef,
           expiresAt: new Date(observation.expiresAtMilliseconds).toISOString(),

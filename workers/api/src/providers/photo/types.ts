@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { IsoTimestampSchema, OpaqueIdSchema } from '@ima/contracts';
+import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@ima/contracts';
 
 export const PHOTO_TOKEN_TTL_SECONDS = 30 * 60;
 
@@ -13,6 +13,9 @@ export const PhotoResourceNameSchema = v.pipe(
 export const PhotoTokenInputSchema = v.strictObject({
   ownerScopeRef: v.pipe(v.string(), v.minLength(1), v.maxLength(160)),
   threadId: OpaqueIdSchema,
+  /** The turn that produced this reference; kept in the scoped reference, not the public token. */
+  turnId: OpaqueIdSchema,
+  revision: RevisionSchema,
   deviceId: v.pipe(v.string(), v.minLength(1), v.maxLength(160)),
   photoRef: PhotoResourceNameSchema,
   expiresAt: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(40))),
@@ -23,9 +26,20 @@ export type PhotoHandleClaims = {
   readonly referenceHandle: string;
   readonly ownerScopeRef: string;
   readonly threadId: string;
+  /** Absent only for references created before photo trace identity was introduced. */
+  readonly turnId?: string | undefined;
+  readonly revision?: number | undefined;
   readonly deviceIdHash: string;
   readonly photoRef: string;
   readonly expiresAt: string;
+};
+
+/** Internal identity used to bind a photo fetch to the response-producing turn. */
+export type PhotoTransportTraceIdentity = {
+  readonly ownerScopeRef: string;
+  readonly threadId: string;
+  readonly turnId: string;
+  readonly revision: number;
 };
 
 export type PhotoTokenExpectedScope = {
@@ -44,6 +58,9 @@ export type PhotoReferenceRecord = {
   readonly handle: string;
   readonly ownerScopeRef: string;
   readonly threadId: string;
+  /** Legacy records may omit both fields; such reads are served without provider tracing. */
+  readonly turnId?: string | undefined;
+  readonly revision?: number | undefined;
   readonly deviceIdHash: string;
   readonly photoRef: string;
   readonly expiresAt: string;
@@ -81,6 +98,8 @@ export const PhotoReferenceRecordSchema = v.strictObject({
   handle: v.pipe(v.string(), v.length(22)),
   ownerScopeRef: v.pipe(v.string(), v.minLength(1), v.maxLength(160)),
   threadId: OpaqueIdSchema,
+  turnId: v.optional(OpaqueIdSchema),
+  revision: v.optional(RevisionSchema),
   deviceIdHash: v.pipe(v.string(), v.length(22)),
   photoRef: PhotoResourceNameSchema,
   expiresAt: IsoTimestampSchema,

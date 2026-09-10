@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import type { RuntimeProviderTransportObserver } from '../telemetry/runtime-provider-trace-contract';
 
 export const GOOGLE_PHOTO_MEDIA_ORIGIN = 'https://places.googleapis.com';
 export const GOOGLE_PHOTO_REDIRECT_HOSTS = ['lh3.googleusercontent.com'] as const;
@@ -22,7 +23,11 @@ export type PhotoMedia = {
 };
 
 export type PhotoMediaTransport = {
-  read(photoRef: string, signal?: AbortSignal): Promise<PhotoMedia>;
+  read(
+    photoRef: string,
+    signal?: AbortSignal,
+    observer?: RuntimeProviderTransportObserver,
+  ): Promise<PhotoMedia>;
 };
 
 export type PhotoProviderErrorCode =

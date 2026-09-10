@@ -25,6 +25,7 @@ export type RuntimePublicResponseMetadata = {
   readonly threadId: string;
   readonly turnId: string;
   readonly responseId: string;
+  /** Commit receipt revision; the request target revision is kept by photo preparation separately. */
   readonly revision: number;
 };
 

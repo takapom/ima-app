@@ -7,6 +7,7 @@ flowchart LR
   Search[Places Search transport] --> Trace[provider transport observer]
   Details[Place Details transport] --> Trace
   Routes[Routes transport] --> Trace
+  Photo[Photo metadata/image transport] --> Trace
   Trace --> Sink[existing best effort trace sink]
   Sink -->|fixture/live namespace| Telemetry[TelemetryDO]
 ```
@@ -19,4 +20,6 @@ trace ID は owner、thread、turn、revision、provider、呼出しごとの ca
 
 production wiring では、`RuntimeProductionThinkHost` が既存の runtime mode に対応する TelemetryDO と `waitUntil` を provider trace sink へ注入する。production factory は一つの turn に一つの observer を作り、server-side identity、clock、monotonic clock を Search / Details / Routes の実 transport へ渡す。fixture の成功は `telemetry-fixture` namespace に閉じ、live provider の稼働証明には使わない。
 
-`runtime-provider-trace.test.ts` は実 transport と fixture fetcher を通し、三種類の成功呼出し、Routes 2×3 要素、timeout、cancel、rate limit、未知例外、undefined rejection、retry の call ID 分離、事前拒否時の fetch/要素数0、observer フック失敗の隔離、best effort 保存、禁止 payload 不在を確認する。`runtime-production-trace.test.ts` は実 DO の Search / Details provider trace と TelemetryDO 件数、replay の無記録、turn ごとの trace ID 分離、fixture/live namespace 分離を確認する。実 API、料金 meter、SDK 内部ログ、Photo の実 fetch はこの単位の検証範囲外であり、別の接続単位で確認する。
+写真は、公開 response の発行元 `ownerScopeRef/threadId/turnId` と、公開 response の commit revision とは別に保持した request target revision を per-thread の参照レコードへ保存し、認証後の metadata fetch と image fetch をその turn identity で計測する。公開 response の `revision` は commit 後の値（通常は request target revision + 1）なので、写真traceには既存の model/provider/turn trace と同じ request target revision を渡す。後続の写真 GET が別の UI turn から来ても、trace は表示時点の turn ではなく参照を発行した turn に紐付く。source identity は公開 DTO と token payload には追加せず、導入前の legacy 参照（identity がないもの）は推測せず未計測として扱う。metadata と image はそれぞれ一回の provider call として記録し、image の stream 読了・サイズ超過・cancel・timeout は image call の完了結果に含める。
+
+`runtime-provider-trace.test.ts` は実 transport と fixture fetcher を通し、三種類の成功呼出し、Routes 2×3 要素、timeout、cancel、rate limit、未知例外、undefined rejection、retry の call ID 分離、事前拒否時の fetch/要素数0、observer フック失敗の隔離、best effort 保存、禁止 payload 不在を確認する。`photo-http-rpc.test.ts` は `createHttpRouterConfig` から実 HTTP ルート、ThreadDO 参照、写真 metadata/image transport、TelemetryDO までを通し、発行元 turn の二件の photo trace を確認する。`runtime-production-trace.test.ts` は実 DO の Search / Details provider trace と TelemetryDO 件数、replay の無記録、turn ごとの trace ID 分離、fixture/live namespace 分離を確認する。実 API、料金 meter、SDK 内部ログ、live 写真取得はこの単位の検証範囲外である。

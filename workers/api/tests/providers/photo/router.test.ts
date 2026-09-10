@@ -24,6 +24,8 @@ const makePhotoHandler = async (options: {
     {
       ownerScopeRef,
       threadId: 'thread-1',
+      turnId: 'turn-1',
+      revision: 1,
       deviceId: 'device-1',
       photoRef: PHOTO_REF,
       ...(options.expiresAt === undefined ? {} : { expiresAt: options.expiresAt }),

@@ -89,12 +89,16 @@ describe('production provider capability gates', () => {
       {
         ownerScopeRef: context.ownerScopeRef,
         threadId: context.threadId,
+        turnId: context.turnId,
+        revision: context.revision,
         deviceId: 'device-config-test',
         photoRef: 'places/place-a/photos/photo-1',
       },
       context.serverNow,
     );
     expect(receiverSeen).toBe(true);
+    expect(photoDependencies.sourceTurnId).toBe(context.turnId);
+    expect(photoDependencies.sourceRevision).toBe(context.revision);
   });
 
   it('disables LastTrain when a verified station resolver is absent', () => {

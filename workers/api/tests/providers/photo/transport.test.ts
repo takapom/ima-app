@@ -3,6 +3,7 @@ import {
   createGooglePhotoMediaTransport,
   type GooglePhotoMediaTransportOptions,
 } from '../../../src/providers/photo/transport';
+import type { RuntimeProviderTransportObserver } from '../../../src/providers/telemetry/runtime-provider-trace-contract';
 
 const PHOTO_REF = 'places/ChIJfixture/photos/A1B2C3';
 const API_KEY = 'photo-key-fixture';
@@ -38,6 +39,125 @@ const makeTransport = (
   });
 
 describe('Google Photo media transport', () => {
+  it('records metadata and image fetch completion while keeping stream completion on the image call', async () => {
+    const completions: { provider: string; status: string; error?: unknown }[] = [];
+    const observer: RuntimeProviderTransportObserver = {
+      begin: (input) => ({
+        complete: (completion) => {
+          completions.push({ provider: input.provider, ...completion });
+        },
+      }),
+    };
+    const transport = makeTransport((_url, init) =>
+      Promise.resolve(
+        init?.headers && JSON.stringify(init.headers).includes('application/json')
+          ? metadata(PHOTO_URI)
+          : image(),
+      ),
+    );
+
+    const result = await transport.read(PHOTO_REF, undefined, observer);
+    expect(completions).toEqual([{ provider: 'photo', status: 'ok' }]);
+    await new Response(result.body).arrayBuffer();
+    expect(completions).toHaveLength(2);
+    expect(completions.every((completion) => completion.status === 'ok')).toBe(true);
+  });
+
+  it('classifies metadata failure and image size failure on their respective fetch calls', async () => {
+    const metadataCompletions: { provider: string; status: string; error?: unknown }[] = [];
+    const metadataObserver: RuntimeProviderTransportObserver = {
+      begin: (input) => ({
+        complete: (completion) =>
+          metadataCompletions.push({ provider: input.provider, ...completion }),
+      }),
+    };
+    await expect(
+      makeTransport(() => Promise.resolve(metadata(PHOTO_URI, 404))).read(
+        PHOTO_REF,
+        undefined,
+        metadataObserver,
+      ),
+    ).rejects.toMatchObject({ code: 'EXPIRED' });
+    expect(metadataCompletions).toHaveLength(1);
+    expect(metadataCompletions[0]?.error).toMatchObject({ code: 'EXPIRED' });
+
+    const imageCompletions: { provider: string; status: string; error?: unknown }[] = [];
+    const imageObserver: RuntimeProviderTransportObserver = {
+      begin: (input) => ({
+        complete: (completion) =>
+          imageCompletions.push({ provider: input.provider, ...completion }),
+      }),
+    };
+    const oversized = makeTransport(
+      (_url, init) =>
+        Promise.resolve(
+          init?.headers && JSON.stringify(init.headers).includes('application/json')
+            ? metadata(PHOTO_URI)
+            : image(new Uint8Array([1, 2, 3]), 'image/jpeg', { 'content-length': '3' }),
+        ),
+      { maxBytes: 2 },
+    );
+    await expect(oversized.read(PHOTO_REF, undefined, imageObserver)).rejects.toMatchObject({
+      code: 'RESULT_TOO_LARGE',
+    });
+    expect(imageCompletions).toHaveLength(2);
+    expect(imageCompletions[0]?.status).toBe('ok');
+    expect(imageCompletions[1]?.error).toMatchObject({ code: 'RESULT_TOO_LARGE' });
+  });
+
+  it('records timeout and caller cancellation without creating a preflight call', async () => {
+    vi.useFakeTimers();
+    try {
+      const timeoutCompletions: { provider: string; status: string; error?: unknown }[] = [];
+      const timeoutObserver: RuntimeProviderTransportObserver = {
+        begin: (input) => ({
+          complete: (completion) =>
+            timeoutCompletions.push({ provider: input.provider, ...completion }),
+        }),
+      };
+      const pending = makeTransport(
+        () =>
+          Promise.resolve(
+            new Response(new ReadableStream<Uint8Array>(), {
+              headers: { 'content-type': 'application/json' },
+            }),
+          ),
+        { timeoutMs: 10 },
+      ).read(PHOTO_REF, undefined, timeoutObserver);
+      const timeoutExpectation = expect(pending).rejects.toMatchObject({ code: 'TIMEOUT' });
+      await vi.advanceTimersByTimeAsync(10);
+      await timeoutExpectation;
+      expect(timeoutCompletions[0]?.error).toMatchObject({ code: 'TIMEOUT' });
+
+      const cancellationCompletions: { provider: string; status: string; error?: unknown }[] = [];
+      const cancellationObserver: RuntimeProviderTransportObserver = {
+        begin: (input) => ({
+          complete: (completion) =>
+            cancellationCompletions.push({ provider: input.provider, ...completion }),
+        }),
+      };
+      const caller = new AbortController();
+      const result = await makeTransport((_url, init) => {
+        if (init?.headers && JSON.stringify(init.headers).includes('application/json')) {
+          return Promise.resolve(metadata(PHOTO_URI));
+        }
+        return Promise.resolve(
+          new Response(new ReadableStream<Uint8Array>(), {
+            headers: { 'content-type': 'image/jpeg' },
+          }),
+        );
+      }).read(PHOTO_REF, caller.signal, cancellationObserver);
+      const read = result.body.getReader().read();
+      const cancellationExpectation = expect(read).rejects.toMatchObject({ code: 'CANCELLED' });
+      caller.abort();
+      await cancellationExpectation;
+      expect(cancellationCompletions[0]?.status).toBe('ok');
+      expect(cancellationCompletions[1]?.error).toMatchObject({ code: 'CANCELLED' });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('keeps the API key in the metadata header and streams the fixed-host image without it', async () => {
     const calls: { readonly url: RequestInfo | URL; readonly init: RequestInit | undefined }[] = [];
     const transport = makeTransport((url, init) => {
@@ -109,13 +229,30 @@ describe('Google Photo media transport', () => {
 
   it('fails before fetch for missing keys or invalid provider names', async () => {
     const fetcher = vi.fn(() => Promise.resolve(metadata(PHOTO_URI)));
+    const observer: RuntimeProviderTransportObserver = {
+      begin: vi.fn(() => ({ complete: vi.fn() })),
+    };
     await expect(
-      createGooglePhotoMediaTransport({ apiKey: '', fetcher }).read(PHOTO_REF),
+      createGooglePhotoMediaTransport({ apiKey: '', fetcher }).read(PHOTO_REF, undefined, observer),
     ).rejects.toMatchObject({ code: 'MISSING_API_KEY' });
-    await expect(makeTransport(fetcher).read('https://provider/photo')).rejects.toMatchObject({
-      code: 'INVALID_REQUEST',
-    });
     expect(fetcher).not.toHaveBeenCalled();
+    expect(observer.begin).not.toHaveBeenCalled();
+
+    const invalidFetcher = vi.fn(() => Promise.resolve(metadata(PHOTO_URI)));
+    await expect(
+      makeTransport(invalidFetcher).read('https://provider/photo', undefined, observer),
+    ).rejects.toMatchObject({ code: 'INVALID_REQUEST' });
+    expect(invalidFetcher).not.toHaveBeenCalled();
+    expect(observer.begin).not.toHaveBeenCalled();
+
+    const caller = new AbortController();
+    caller.abort();
+    const abortedFetcher = vi.fn(() => Promise.resolve(metadata(PHOTO_URI)));
+    await expect(
+      makeTransport(abortedFetcher).read(PHOTO_REF, caller.signal, observer),
+    ).rejects.toMatchObject({ code: 'CANCELLED' });
+    expect(abortedFetcher).not.toHaveBeenCalled();
+    expect(observer.begin).not.toHaveBeenCalled();
   });
 
   it('bounds metadata JSON and preserves typed upstream status failures', async () => {
@@ -197,6 +334,12 @@ describe('Google Photo media transport', () => {
   });
 
   it('enforces the byte limit while consuming the returned stream', async () => {
+    const completions: { provider: string; status: string; error?: unknown }[] = [];
+    const observer: RuntimeProviderTransportObserver = {
+      begin: (input) => ({
+        complete: (completion) => completions.push({ provider: input.provider, ...completion }),
+      }),
+    };
     const transport = makeTransport(
       (_url, init) =>
         Promise.resolve(
@@ -215,10 +358,13 @@ describe('Google Photo media transport', () => {
         ),
       { maxBytes: 3 },
     );
-    const result = await transport.read(PHOTO_REF);
+    const result = await transport.read(PHOTO_REF, undefined, observer);
     const reader = result.body.getReader();
     await expect(reader.read()).resolves.toMatchObject({ value: new Uint8Array([1, 2]) });
     await expect(reader.read()).rejects.toMatchObject({ code: 'RESULT_TOO_LARGE' });
+    expect(completions).toHaveLength(2);
+    expect(completions[0]?.status).toBe('ok');
+    expect(completions[1]?.error).toMatchObject({ code: 'RESULT_TOO_LARGE' });
   });
 
   it('maps caller cancellation and deadline expiry during image streaming', async () => {

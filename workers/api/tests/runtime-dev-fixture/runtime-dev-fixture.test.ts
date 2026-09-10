@@ -33,7 +33,6 @@ const fixtureBindings = env as unknown as {
   readonly THREADS: DurableObjectNamespace<ThreadDO>;
   readonly RATE_LIMITS: DurableObjectNamespace<RateLimitDO>;
 };
-
 const headers = (
   requestId: string,
   options: { readonly ownerCredential?: string; readonly deviceId?: string } = {},
@@ -431,7 +430,6 @@ describe('keyless dev fixture graph', () => {
     );
     expect(killed.status).toBe(404);
   });
-
   it('returns EXPIRED for a short-lived keyless fixture token after its deadline', async () => {
     const threadId = await createFixtureThread('photo-expiry');
     const ownerScopeRef = await deriveOwnerScopeRef(OWNER_CREDENTIAL);
@@ -445,7 +443,14 @@ describe('keyless dev fixture graph', () => {
     });
     const issueNow = new Date(Math.floor(Date.now() / 1_000) * 1_000).toISOString();
     const token = await codec.issue(
-      { ownerScopeRef, threadId, deviceId: PHOTO_DEVICE_ID, photoRef: DEV_FIXTURE_PHOTO_REF },
+      {
+        ownerScopeRef,
+        threadId,
+        turnId: 'dev-fixture-photo-turn',
+        revision: 1,
+        deviceId: PHOTO_DEVICE_ID,
+        photoRef: DEV_FIXTURE_PHOTO_REF,
+      },
       issueNow,
     );
     await new Promise((resolve) => setTimeout(resolve, 2_100));
@@ -460,7 +465,6 @@ describe('keyless dev fixture graph', () => {
     if (!error.success) throw new Error('expired photo response was invalid');
     expect(error.output.code).toBe('EXPIRED');
   });
-
   it('does not drop a hard walking constraint when no current location is available', async () => {
     const createRequestId = `dev-fixture-constraint-create-${crypto.randomUUID()}`;
     const create = await call('/v1/threads', createRequestId, {

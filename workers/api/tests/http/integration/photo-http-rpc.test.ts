@@ -5,12 +5,14 @@ import { createHttpRouterConfig, createThreadScopeAuthorizer } from '../../../sr
 import { routeRequest } from '../../../src/http/router';
 import { createPhotoReferenceStoreResolver } from '../../../src/providers/photo/rpc';
 import { createPhotoTokenCodec } from '../../../src/providers/photo/token';
+import type { TelemetryDO } from '../../../src/telemetry/telemetry-do';
 import type { RateLimitDO, ThreadDO } from '../../../src/thread-do';
 
 type PhotoHttpEnv = Cloudflare.Env & {
   readonly APP_TOKEN: string;
   readonly THREADS: DurableObjectNamespace<ThreadDO>;
   readonly RATE_LIMITS: DurableObjectNamespace<RateLimitDO>;
+  readonly TELEMETRY: DurableObjectNamespace<TelemetryDO>;
 };
 
 const hasPhotoHttpBindings = (value: typeof env): value is PhotoHttpEnv =>
@@ -18,6 +20,7 @@ const hasPhotoHttpBindings = (value: typeof env): value is PhotoHttpEnv =>
   value !== null &&
   'THREADS' in value &&
   'RATE_LIMITS' in value &&
+  'TELEMETRY' in value &&
   'APP_TOKEN' in value;
 
 const testEnv = (value: typeof env): PhotoHttpEnv => {
@@ -49,12 +52,15 @@ describe('M15 production router with ThreadDO photo references', () => {
       {
         ownerScopeRef,
         threadId,
+        turnId: 'photo-http-turn',
+        revision: 1,
         deviceId: DEVICE_ID,
         photoRef: 'places/ChIJfixture/photos/A1B2C3',
       },
       serverNow,
     );
     const transportCalls: Array<{ readonly url: string; readonly headers: Headers }> = [];
+    const scheduled: Promise<void>[] = [];
     const photoFetcher: typeof fetch = (url, init) => {
       const parsed = new URL(
         typeof url === 'string' ? url : url instanceof URL ? url.href : url.url,
@@ -91,6 +97,7 @@ describe('M15 production router with ThreadDO photo references', () => {
         photoFetcher,
         clock: () => serverNow,
         requestIdFactory: () => requestId,
+        waitUntil: (promise) => scheduled.push(promise),
       },
     );
     const requestFor = (deviceId: string, id: string): Request =>
@@ -116,6 +123,24 @@ describe('M15 production router with ThreadDO photo references', () => {
     }
     expect(metadataCall.headers.get('x-goog-api-key')).toBe('photo-api-key-fixture');
     expect(imageCall.headers.has('x-goog-api-key')).toBe(false);
+    await Promise.all(scheduled);
+    const traceRead = await bindings.TELEMETRY.getByName('telemetry-fixture').readTraceSince(
+      new Date(0).toISOString(),
+    );
+    expect(traceRead.ok).toBe(true);
+    if (!traceRead.ok) throw new Error(`photo telemetry read failed: ${traceRead.code}`);
+    const photoTraces = traceRead.records.filter(
+      (record) =>
+        record.operation === 'provider' &&
+        record.threadId === threadId &&
+        record.turnId === 'photo-http-turn',
+    );
+    expect(photoTraces).toHaveLength(2);
+    expect(photoTraces.every((record) => record.provider === 'photo')).toBe(true);
+    expect(photoTraces.every((record) => record.revision === 1)).toBe(true);
+    expect(
+      photoTraces.every((record) => record.status === 'ok' && record.resultCode === 'OK'),
+    ).toBe(true);
 
     const beforeDisabled = transportCalls.length;
     const disabledConfig = createHttpRouterConfig(

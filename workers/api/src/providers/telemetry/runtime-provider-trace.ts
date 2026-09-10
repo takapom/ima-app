@@ -1,6 +1,7 @@
 import { GooglePlaceDetailsError } from '../places-details/types';
 import { GoogleTextSearchError } from '../places-search/types';
 import { GoogleRouteMatrixError } from '../routes/types';
+import { PhotoProviderError } from '../photo/media';
 import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '../../telemetry/schema';
 import { parseTraceRecord, type TelemetryTraceStore } from '../../telemetry/trace';
 import {
@@ -43,7 +44,8 @@ export type RuntimeProviderTraceOptions = {
   readonly sink: RuntimeProviderTraceSink;
 };
 
-type ProviderError = GoogleTextSearchError | GooglePlaceDetailsError | GoogleRouteMatrixError;
+type ProviderError =
+  GoogleTextSearchError | GooglePlaceDetailsError | GoogleRouteMatrixError | PhotoProviderError;
 
 type CallState = {
   readonly callId: string;
@@ -136,7 +138,8 @@ export const createBestEffortRuntimeProviderTraceSink = (
 const isProviderError = (error: unknown): error is ProviderError =>
   error instanceof GoogleTextSearchError ||
   error instanceof GooglePlaceDetailsError ||
-  error instanceof GoogleRouteMatrixError;
+  error instanceof GoogleRouteMatrixError ||
+  error instanceof PhotoProviderError;
 
 const outcomeForError = (
   error: unknown,
@@ -159,6 +162,12 @@ const outcomeForError = (
         return { status: 'error', resultCode: 'PROVIDER_UNAVAILABLE' };
       case 'SCHEMA_MISMATCH':
         return { status: 'error', resultCode: 'INTERNAL' };
+      case 'EXPIRED':
+        return { status: 'error', resultCode: 'EXPIRED' };
+      case 'UNSUPPORTED_MEDIA_TYPE':
+      case 'RESULT_TOO_LARGE':
+      case 'REDIRECT_REJECTED':
+        return { status: 'error', resultCode: 'PROVIDER_UNAVAILABLE' };
     }
   }
   return signal?.aborted === true

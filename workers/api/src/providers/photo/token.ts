@@ -105,7 +105,8 @@ const matchingRecord = (
     parsed.output.ownerScopeRef === expected.ownerScopeRef &&
     parsed.output.deviceIdHash === payload.d &&
     parsed.output.threadId === payload.i &&
-    parsed.output.expiresAt === expiresAt
+    parsed.output.expiresAt === expiresAt &&
+    (parsed.output.turnId === undefined) === (parsed.output.revision === undefined)
   )
     return parsed.output;
   return undefined;
@@ -167,6 +168,8 @@ export const createPhotoTokenCodec = (options: {
           handle,
           ownerScopeRef: parsed.output.ownerScopeRef,
           threadId: parsed.output.threadId,
+          turnId: parsed.output.turnId,
+          revision: parsed.output.revision,
           deviceIdHash: payload.d,
           photoRef: parsed.output.photoRef,
           expiresAt,
@@ -230,6 +233,9 @@ export const createPhotoTokenCodec = (options: {
         referenceHandle: parsed.output.h,
         ownerScopeRef: matching.ownerScopeRef,
         threadId: matching.threadId,
+        ...(matching.turnId === undefined
+          ? {}
+          : { turnId: matching.turnId, revision: matching.revision }),
         deviceIdHash: matching.deviceIdHash,
         photoRef: matching.photoRef,
         expiresAt: matching.expiresAt,

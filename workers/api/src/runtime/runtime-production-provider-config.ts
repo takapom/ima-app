@@ -230,6 +230,8 @@ export const photoDependenciesFor = (input: {
       scope: productionScopeFor(input.context),
       codec,
       deviceId: input.deviceId,
+      sourceTurnId: input.context.turnId,
+      sourceRevision: input.context.revision,
       photosEnabled: true,
       displayPolicyFor: input.configuration.photoDisplayPolicyFor,
     };

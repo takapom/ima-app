@@ -4,6 +4,7 @@ import type { GooglePlaceDetailsRequest } from '../../../src/providers/places-de
 import { createGoogleTextSearchTransport } from '../../../src/providers/places-search/transport';
 import type { GoogleTextSearchRequest } from '../../../src/providers/places-search/types';
 import { createGoogleRouteMatrixTransport } from '../../../src/providers/routes/transport';
+import { PhotoProviderError } from '../../../src/providers/photo/media';
 import {
   routeElementCount,
   type GoogleRouteMatrixRequest,
@@ -295,6 +296,27 @@ describe('runtime provider transport trace', () => {
     const records = await Promise.all(traces.map((trace) => traceRecordForRuntimeProvider(trace)));
     expect(records.every((record) => record?.operation === 'provider')).toBe(true);
     expect(new Set(records.map((record) => record?.traceId)).size).toBe(2);
+  });
+
+  it('classifies photo expiry and bounded media failures without exposing provider details', () => {
+    const traces: RuntimeProviderTrace[] = [];
+    const observer = createRuntimeProviderTransportObserver(
+      baseTraceOptions((trace) => {
+        traces.push(trace);
+      }),
+    );
+    const expired = observer.begin({ provider: 'photo' });
+    expired.complete({ status: 'error', error: new PhotoProviderError('EXPIRED') });
+    const oversized = observer.begin({ provider: 'photo' });
+    oversized.complete({
+      status: 'error',
+      error: new PhotoProviderError('RESULT_TOO_LARGE'),
+    });
+
+    expect(traces).toMatchObject([
+      { provider: 'photo', status: 'error', resultCode: 'EXPIRED' },
+      { provider: 'photo', status: 'error', resultCode: 'PROVIDER_UNAVAILABLE' },
+    ]);
   });
 
   it('keeps telemetry writes best effort and schedules the full validated record pipeline', async () => {

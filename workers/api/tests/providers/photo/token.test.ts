@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryPhotoReferenceStore } from '../../../src/providers/photo/reference-store';
 import { createPhotoTokenCodec } from '../../../src/providers/photo/token';
-import { PhotoTokenError, type PhotoTokenInput } from '../../../src/providers/photo/types';
+import {
+  PhotoTokenError,
+  type PhotoReferenceStoreWithClear,
+  type PhotoTokenInput,
+} from '../../../src/providers/photo/types';
 
 const NOW = '2026-09-10T12:00:00.000Z';
 const SECRET = 'photo-token-fixture-secret';
@@ -9,6 +13,8 @@ const MAX_THREAD_ID = 't'.repeat(128);
 const input: PhotoTokenInput = {
   ownerScopeRef: 'owner:fixture-a',
   threadId: 'thread-fixture-a',
+  turnId: 'turn-fixture-a',
+  revision: 1,
   deviceId: 'device:fixture-a',
   photoRef: 'places/ChIJfixture/photos/A1B2C3',
 };
@@ -43,7 +49,7 @@ const nonCanonicalLastCharacter = (segment: string): string => {
 };
 
 describe('photo token codec', () => {
-  it('issues an opaque token bound to owner, thread, and device', async () => {
+  it('issues an opaque token bound to owner, thread, device, and source turn', async () => {
     const instance = makeCodec();
     const token = await instance.issue(input, NOW);
 
@@ -68,7 +74,87 @@ describe('photo token codec', () => {
       threadId: input.threadId,
       photoRef: input.photoRef,
       expiresAt: '2026-09-10T12:30:00.000Z',
+      turnId: input.turnId,
+      revision: input.revision,
     });
+  });
+
+  it('does not expose source turn identity in the public token payload', async () => {
+    const instance = makeCodec();
+    const token = await instance.issue(input, NOW);
+    expect(token).not.toContain(input.turnId);
+    const payloadSegment = token.split('.')[1];
+    if (payloadSegment === undefined) throw new Error('token payload missing');
+    const payload = JSON.parse(
+      atob(
+        payloadSegment
+          .replaceAll('-', '+')
+          .replaceAll('_', '/')
+          .padEnd(Math.ceil(payloadSegment.length / 4) * 4, '='),
+      ),
+    ) as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('turnId');
+    expect(payload).not.toHaveProperty('revision');
+  });
+
+  it('keeps legacy references unmeasured and rejects partially migrated identity', async () => {
+    const base = createMemoryPhotoReferenceStore();
+    const legacyStore: PhotoReferenceStoreWithClear = {
+      put(record, requestedNow) {
+        return base.put(
+          {
+            handle: record.handle,
+            ownerScopeRef: record.ownerScopeRef,
+            threadId: record.threadId,
+            deviceIdHash: record.deviceIdHash,
+            photoRef: record.photoRef,
+            expiresAt: record.expiresAt,
+          },
+          requestedNow,
+        );
+      },
+      get: (handle, now, scope) => base.get(handle, now, scope),
+      clear: () => base.clear(),
+    };
+    const instance = createPhotoTokenCodec({
+      secret: SECRET,
+      referenceResolver: { resolve: () => Promise.resolve(legacyStore) },
+    });
+    const token = await instance.issue(input, NOW);
+    await expect(
+      instance.verify(token, { ownerScopeRef: input.ownerScopeRef, deviceId: input.deviceId }, NOW),
+    ).resolves.not.toHaveProperty('turnId');
+
+    const partialStore: PhotoReferenceStoreWithClear = {
+      put(record, requestedNow) {
+        return base.put(
+          {
+            handle: record.handle,
+            ownerScopeRef: record.ownerScopeRef,
+            threadId: record.threadId,
+            turnId: record.turnId,
+            deviceIdHash: record.deviceIdHash,
+            photoRef: record.photoRef,
+            expiresAt: record.expiresAt,
+          },
+          requestedNow,
+        );
+      },
+      get: (handle, now, scope) => base.get(handle, now, scope),
+      clear: () => base.clear(),
+    };
+    const partial = createPhotoTokenCodec({
+      secret: SECRET,
+      referenceResolver: { resolve: () => Promise.resolve(partialStore) },
+    });
+    const partialToken = await partial.issue(input, NOW);
+    await expect(
+      partial.verify(
+        partialToken,
+        { ownerScopeRef: input.ownerScopeRef, deviceId: input.deviceId },
+        NOW,
+      ),
+    ).rejects.toMatchObject({ code: 'REFERENCE_UNAVAILABLE' });
   });
 
   it('rejects tampering without exposing the provider reference', async () => {

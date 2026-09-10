@@ -12,6 +12,11 @@ import {
   type PhotoMedia,
   type PhotoMediaTransport,
 } from './media';
+import {
+  beginRuntimeProviderTransportCall,
+  completeRuntimeProviderTransportCall,
+  type RuntimeProviderTransportCompletion,
+} from '../telemetry/runtime-provider-trace-contract';
 import { PhotoResourceNameSchema } from './types';
 
 const isTimeout = (value: number): boolean =>
@@ -237,6 +242,7 @@ const streamWithLimit = (
   source: ReadableStream<Uint8Array>,
   maxBytes: number,
   managed: RequestDeadline,
+  onComplete: (completion: RuntimeProviderTransportCompletion) => void,
 ): ReadableStream<Uint8Array> => {
   const reader = source.getReader();
   let total = 0;
@@ -255,14 +261,16 @@ const streamWithLimit = (
       cancelError = error;
     });
     if (settled) return;
-    streamControllerRef.current?.error(managed.failure() ?? new PhotoProviderError('CANCELLED'));
-    finish();
+    const error = managed.failure() ?? new PhotoProviderError('CANCELLED');
+    streamControllerRef.current?.error(error);
+    finish({ status: 'error', error, signal: managed.controller.signal });
   };
-  const finish = (): void => {
+  const finish = (completion: RuntimeProviderTransportCompletion): void => {
     if (settled) return;
     settled = true;
     managed.controller.signal.removeEventListener('abort', abortStream);
     managed.clear();
+    onComplete(completion);
   };
   const stream = new ReadableStream<Uint8Array>({
     start(streamController) {
@@ -275,37 +283,39 @@ const streamWithLimit = (
       try {
         const result = await reader.read();
         if (result.done) {
-          finish();
+          finish({ status: 'ok' });
           streamController.close();
           return;
         }
         if (!(result.value instanceof Uint8Array)) {
           await cancelReader();
-          finish();
-          streamController.error(new PhotoProviderError('UPSTREAM_UNAVAILABLE'));
+          const error = new PhotoProviderError('UPSTREAM_UNAVAILABLE');
+          finish({ status: 'error', error });
+          streamController.error(error);
           return;
         }
         total += result.value.byteLength;
         if (total > maxBytes) {
           await cancelReader();
-          finish();
-          streamController.error(new PhotoProviderError('RESULT_TOO_LARGE'));
+          const error = new PhotoProviderError('RESULT_TOO_LARGE');
+          finish({ status: 'error', error });
+          streamController.error(error);
           return;
         }
         streamController.enqueue(result.value);
       } catch (error: unknown) {
         if (settled) return;
         const aborted = managed.failure();
-        finish();
-        streamController.error(
+        const failure =
           aborted ??
-            (cancelError !== undefined
-              ? new PhotoProviderError('UPSTREAM_UNAVAILABLE')
-              : undefined) ??
-            (error instanceof PhotoProviderError
-              ? error
-              : new PhotoProviderError('UPSTREAM_UNAVAILABLE')),
-        );
+          (cancelError !== undefined
+            ? new PhotoProviderError('UPSTREAM_UNAVAILABLE')
+            : undefined) ??
+          (error instanceof PhotoProviderError
+            ? error
+            : new PhotoProviderError('UPSTREAM_UNAVAILABLE'));
+        finish({ status: 'error', error: failure });
+        streamController.error(failure);
       }
     },
     async cancel(reason) {
@@ -314,7 +324,11 @@ const streamWithLimit = (
         if (cancelError !== undefined) throw new PhotoProviderError('UPSTREAM_UNAVAILABLE');
       } finally {
         managed.controller.abort();
-        finish();
+        finish({
+          status: 'error',
+          error: new PhotoProviderError('CANCELLED'),
+          signal: managed.controller.signal,
+        });
       }
     },
   });
@@ -355,7 +369,7 @@ export const createGooglePhotoMediaTransport = (
     throw new PhotoProviderError('INVALID_REQUEST');
   }
   return {
-    async read(photoRef, signal): Promise<PhotoMedia> {
+    async read(photoRef, signal, observer): Promise<PhotoMedia> {
       if (!v.safeParse(PhotoResourceNameSchema, photoRef).success) {
         throw new PhotoProviderError('INVALID_REQUEST');
       }
@@ -374,55 +388,104 @@ export const createGooglePhotoMediaTransport = (
         if (remaining <= 0) throw new PhotoProviderError('TIMEOUT');
         return Math.min(options.timeoutMs, remaining);
       };
-      const metadata = await fetchWithDeadline(
-        fetcher,
-        mediaUrl.toString(),
-        { accept: 'application/json', 'x-goog-api-key': apiKey },
-        signal,
-        remainingTimeout(),
-      );
+      const metadataTimeout = remainingTimeout();
+      const metadataCall = signal?.aborted
+        ? undefined
+        : beginRuntimeProviderTransportCall(observer, { provider: 'photo' });
+      let metadata: ManagedResponse | undefined;
+      let metadataCompleted = false;
+      let metadataReleased = false;
+      const completeMetadata = (completion: RuntimeProviderTransportCompletion): void => {
+        if (metadataCompleted) return;
+        metadataCompleted = true;
+        completeRuntimeProviderTransportCall(metadataCall, completion);
+      };
+      const releaseMetadata = async (): Promise<void> => {
+        if (metadata === undefined || metadataReleased) return;
+        metadataReleased = true;
+        try {
+          await cancelResponse(metadata);
+        } catch {
+          // Preserve the original provider failure when body cleanup fails.
+        }
+      };
       let photoUri: string;
       try {
+        metadata = await fetchWithDeadline(
+          fetcher,
+          mediaUrl.toString(),
+          { accept: 'application/json', 'x-goog-api-key': apiKey },
+          signal,
+          metadataTimeout,
+        );
         if (!metadata.response.ok) {
           const failure = providerErrorForStatus(metadata.response);
-          await cancelResponse(metadata);
+          await releaseMetadata();
           throw failure;
         }
         photoUri = await readPhotoUri(metadata, options.metadataMaxBytes);
-      } finally {
-        metadata.clear();
-      }
-      const image = await fetchWithDeadline(
-        fetcher,
-        photoUri,
-        { accept: 'image/*' },
-        signal,
-        remainingTimeout(),
-      );
-      if (!image.response.ok || image.response.body === null) {
-        const failure = image.response.ok
-          ? new PhotoProviderError('UPSTREAM_UNAVAILABLE')
-          : providerErrorForStatus(image.response);
-        await cancelResponse(image);
-        throw failure;
-      }
-      const contentLength = parseContentLength(image.response.headers.get('content-length'));
-      if (contentLength !== null && contentLength > options.maxBytes) {
-        await cancelResponse(image);
-        throw new PhotoProviderError('RESULT_TOO_LARGE');
-      }
-      let contentType: PhotoContentType;
-      try {
-        contentType = parseContentType(image.response.headers.get('content-type'));
+        completeMetadata({ status: 'ok' });
       } catch (error: unknown) {
-        await cancelResponse(image);
+        completeMetadata({ status: 'error', error, ...(signal === undefined ? {} : { signal }) });
+        throw error;
+      } finally {
+        metadata?.clear();
+      }
+      const imageTimeout = remainingTimeout();
+      const imageCall = signal?.aborted
+        ? undefined
+        : beginRuntimeProviderTransportCall(observer, { provider: 'photo' });
+      let image: ManagedResponse | undefined;
+      let imageCompleted = false;
+      let imageReleased = false;
+      let streamHandedOff = false;
+      const completeImage = (completion: RuntimeProviderTransportCompletion): void => {
+        if (imageCompleted) return;
+        imageCompleted = true;
+        completeRuntimeProviderTransportCall(imageCall, completion);
+      };
+      const releaseImage = async (): Promise<void> => {
+        if (image === undefined || imageReleased) return;
+        imageReleased = true;
+        try {
+          await cancelResponse(image);
+        } catch {
+          // Preserve the original provider failure when body cleanup fails.
+        }
+      };
+      try {
+        image = await fetchWithDeadline(
+          fetcher,
+          photoUri,
+          { accept: 'image/*' },
+          signal,
+          imageTimeout,
+        );
+        if (!image.response.ok || image.response.body === null) {
+          const failure = image.response.ok
+            ? new PhotoProviderError('UPSTREAM_UNAVAILABLE')
+            : providerErrorForStatus(image.response);
+          await releaseImage();
+          throw failure;
+        }
+        const contentLength = parseContentLength(image.response.headers.get('content-length'));
+        if (contentLength !== null && contentLength > options.maxBytes) {
+          await releaseImage();
+          throw new PhotoProviderError('RESULT_TOO_LARGE');
+        }
+        const contentType = parseContentType(image.response.headers.get('content-type'));
+        const body = streamWithLimit(image.response.body, options.maxBytes, image, completeImage);
+        streamHandedOff = true;
+        return {
+          body,
+          contentType,
+          contentLength,
+        };
+      } catch (error: unknown) {
+        if (!streamHandedOff) await releaseImage();
+        completeImage({ status: 'error', error, ...(signal === undefined ? {} : { signal }) });
         throw error;
       }
-      return {
-        body: streamWithLimit(image.response.body, options.maxBytes, image),
-        contentType,
-        contentLength,
-      };
     },
   };
 };

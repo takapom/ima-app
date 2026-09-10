@@ -35,25 +35,14 @@ import {
   createRuntimeApplicationHandler,
   type RuntimeCancellationClassification,
 } from './bootstrap-runtime';
-import { createPhotoBodyHandler } from './providers/photo/http';
-import { PhotoProviderError } from './providers/photo/media';
-import { createGooglePhotoMediaTransport } from './providers/photo/transport';
-import { createPhotoTokenCodec } from './providers/photo/token';
-import { createPhotoReferenceStoreResolver } from './providers/photo/rpc';
-import type { PhotoTokenCodec } from './providers/photo/types';
 import type { AppIntegrityNamespace } from './security/app-integrity-do';
 import { createBootstrapAppIntegrityGate } from './security/app-integrity-bootstrap';
 import type { AppIntegrityVerifier } from './security/app-integrity';
 import { createBestEffortEventsSink, createTelemetryEventsSink } from './telemetry/events';
 import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetry/telemetry-do';
 import type { AppIntegrityGate } from './security/app-integrity';
-import { resolveRuntimeOperationalGate } from './runtime/runtime-operational-gate';
-import {
-  createDevFixturePhotoBodyHandler,
-  devFixtureEnvironmentFor,
-  isKeylessDevFixtureEnvironment,
-} from './runtime/runtime-dev-fixture';
 import { createThreadId } from './thread-id';
+import { createConfiguredPhoto } from './bootstrap-photo';
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;
@@ -257,52 +246,6 @@ const createApplication = (env: BootstrapEnv, options: BootstrapOptions): Applic
   };
 };
 
-const createUnavailablePhoto = (tokenCodec?: PhotoTokenCodec): PhotoBodyHandler => {
-  if (tokenCodec === undefined) {
-    return {
-      read() {
-        return Promise.reject(unavailable());
-      },
-    };
-  }
-  return createPhotoBodyHandler({
-    tokenCodec,
-    transport: {
-      read: () => Promise.reject(new PhotoProviderError('UPSTREAM_UNAVAILABLE')),
-    },
-  });
-};
-
-const createConfiguredPhoto = (
-  env: BootstrapEnv,
-  photoFetcher?: typeof fetch,
-): PhotoBodyHandler => {
-  const keylessFixture = isKeylessDevFixtureEnvironment(env);
-  const operational = resolveRuntimeOperationalGate(
-    keylessFixture ? devFixtureEnvironmentFor(env) : env,
-  );
-  if (keylessFixture && operational.enabled('places')) {
-    return createDevFixturePhotoBodyHandler((threadId) => env.THREADS.getByName(threadId));
-  }
-  const tokenSecret = env.PHOTO_TOKEN_SECRET?.trim();
-  if (tokenSecret === undefined || tokenSecret.length === 0) return createUnavailablePhoto();
-  const tokenCodec = createPhotoTokenCodec({
-    secret: tokenSecret,
-    referenceResolver: createPhotoReferenceStoreResolver((threadId) =>
-      env.THREADS.getByName(threadId),
-    ),
-  });
-  if (!operational.enabled('places')) return createUnavailablePhoto(tokenCodec);
-  if (operational.mode === 'fixture' && photoFetcher === undefined) {
-    // Fixture mode must receive an injected fetcher; it never falls through to global fetch.
-    return createUnavailablePhoto(tokenCodec);
-  }
-  const apiKey = env.GOOGLE_PLACES_API_KEY?.trim();
-  if (apiKey === undefined || apiKey.length === 0) return createUnavailablePhoto(tokenCodec);
-  const transport = createGooglePhotoMediaTransport({ apiKey, fetcher: photoFetcher ?? fetch });
-  return createPhotoBodyHandler({ tokenCodec, transport });
-};
-
 const createUnavailableEvents = (): EventsSink => ({
   accept() {
     return Promise.reject(unavailable());
@@ -371,7 +314,7 @@ export const createHttpRouterConfig = (
 ): HttpRouterConfig => {
   const handlers: HandlerDependencies = {
     application: createApplication(env, options),
-    photo: options.photo ?? createConfiguredPhoto(env, options.photoFetcher),
+    photo: options.photo ?? createConfiguredPhoto(env, options),
     events: createBestEffortEventsSink(
       options.events ??
         (env.TELEMETRY === undefined

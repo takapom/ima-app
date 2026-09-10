@@ -12,6 +12,8 @@ import type { RuntimePolicyRecord } from '../../../src/runtime/runtime-field-pol
 const CONTEXT = {
   ownerScopeRef: 'owner-photo',
   threadId: 'thread-photo',
+  sourceTurnId: 'turn-photo',
+  sourceRevision: 1,
   deviceId: 'device-photo',
   now: '2026-09-10T12:00:00.000Z',
 };
@@ -243,6 +245,8 @@ describe('preparePhotoTokens', () => {
       registry: photoRegistry(photoObservation),
       scope: { ownerScopeRef: CONTEXT.ownerScopeRef, threadId: CONTEXT.threadId },
       deviceId: CONTEXT.deviceId,
+      sourceTurnId: CONTEXT.sourceTurnId,
+      sourceRevision: CONTEXT.sourceRevision,
       photosEnabled: true,
       displayPolicyFor: () => photoDisplayPolicy(),
     });
@@ -251,7 +255,7 @@ describe('preparePhotoTokens', () => {
       response: photoResponse,
       metadata: {
         threadId: CONTEXT.threadId,
-        turnId: 'turn-photo-preissue',
+        turnId: CONTEXT.sourceTurnId,
         responseId: 'response-photo-preissue',
         revision: 2,
       },
@@ -260,6 +264,8 @@ describe('preparePhotoTokens', () => {
 
     expect(issue).toHaveBeenCalledTimes(1);
     expect(issue.mock.calls[0]?.[0].deviceId).toBe(CONTEXT.deviceId);
+    expect(issue.mock.calls[0]?.[0].turnId).toBe(CONTEXT.sourceTurnId);
+    expect(issue.mock.calls[0]?.[0].revision).toBe(CONTEXT.sourceRevision);
     expect(resolver?.('candidate-a', 'places/A/photos/one')).toContain(CONTEXT.deviceId);
   });
 

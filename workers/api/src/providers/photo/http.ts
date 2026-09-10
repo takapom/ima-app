@@ -1,7 +1,13 @@
 import { HttpBoundaryError } from '../../http/errors';
 import type { HandlerContext, PhotoBodyHandler, PhotoPath } from '../../http/handler';
 import { PhotoProviderError, type PhotoMediaTransport } from './media';
-import { PhotoTokenError, type PhotoTokenCodec } from './types';
+import type { RuntimeProviderTransportObserver } from '../telemetry/runtime-provider-trace-contract';
+import {
+  PhotoTokenError,
+  type PhotoHandleClaims,
+  type PhotoTokenCodec,
+  type PhotoTransportTraceIdentity,
+} from './types';
 
 const tokenFailure = (error: PhotoTokenError): HttpBoundaryError => {
   switch (error.code) {
@@ -61,6 +67,16 @@ const tokenClaims = async (codec: PhotoTokenCodec, path: PhotoPath, context: Han
   }
 };
 
+const traceIdentityFor = (claims: PhotoHandleClaims): PhotoTransportTraceIdentity | undefined => {
+  if (claims.turnId === undefined || claims.revision === undefined) return undefined;
+  return {
+    ownerScopeRef: claims.ownerScopeRef,
+    threadId: claims.threadId,
+    turnId: claims.turnId,
+    revision: claims.revision,
+  };
+};
+
 /**
  * Worker-only adapter joining authenticated token scope to the bounded provider stream.
  * Provider references and API credentials remain inside this adapter.
@@ -68,6 +84,10 @@ const tokenClaims = async (codec: PhotoTokenCodec, path: PhotoPath, context: Han
 export const createPhotoBodyHandler = (options: {
   readonly tokenCodec: PhotoTokenCodec;
   readonly transport: PhotoMediaTransport;
+  /** Builds a trace observer only when the verified reference carries its source turn identity. */
+  readonly providerTraceObserverFor?: (
+    identity: PhotoTransportTraceIdentity,
+  ) => RuntimeProviderTransportObserver | undefined;
 }): PhotoBodyHandler => ({
   async authorize(path, context): Promise<void> {
     await tokenClaims(options.tokenCodec, path, context);
@@ -76,7 +96,18 @@ export const createPhotoBodyHandler = (options: {
   async read(path, context) {
     const claims = await tokenClaims(options.tokenCodec, path, context);
     try {
-      const media = await options.transport.read(claims.photoRef, context.signal);
+      const traceIdentity = traceIdentityFor(claims);
+      const observer =
+        traceIdentity === undefined
+          ? undefined
+          : (() => {
+              try {
+                return options.providerTraceObserverFor?.(traceIdentity);
+              } catch {
+                return undefined;
+              }
+            })();
+      const media = await options.transport.read(claims.photoRef, context.signal, observer);
       const descriptor = {
         schemaVersion: 'v1' as const,
         requestId: context.requestId,
