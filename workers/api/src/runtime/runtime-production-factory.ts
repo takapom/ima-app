@@ -88,7 +88,7 @@ import type {
   RuntimeThinkConnectionOptions,
   RuntimeThinkTurnBuildRequest,
 } from './runtime-think-connection';
-import type { RuntimeModelGuardCallOptions, RuntimeModelGuardModel } from './runtime-model-guard';
+import type { RuntimeModelGuardModel } from './runtime-model-guard';
 import { defaultRuntimeModelContextPolicy } from './runtime-field-policy';
 import { unavailableSubmit } from './runtime-production-submit';
 import { resolveRuntimeProductionReadCost } from './runtime-production-read-cost';
@@ -114,7 +114,6 @@ export type RuntimeProductionTurnPlan = {
   readonly publicResponse?: RuntimePublicResponseDependencies;
   readonly provider?: RuntimeProductionProviderComposition;
   readonly onCommitted?: (response: unknown) => void;
-  readonly isFinalResponse?: (params: RuntimeModelGuardCallOptions) => boolean;
 };
 export type RuntimeProductionOverrides = {
   readonly prepareTurn?: (input: ProductionBuildInput) => RuntimeProductionTurnPlan;
@@ -142,8 +141,6 @@ export type RuntimeProductionOverrides = {
   readonly lastTrainObservationPolicy?: LastTrainObservationPolicy;
   readonly fromStationRefFor?: RuntimeLastTrainCompositionOptions['fromStationRefFor'];
   readonly activeJourneyRevision?: number | null;
-  /** Host-owned final response admission; the default plan keeps this false. */
-  readonly isFinalResponse?: (params: RuntimeModelGuardCallOptions) => boolean;
   /** Host-evaluated retention snapshot; it does not grant model input access. */
   readonly retention?: ProductionRetentionSource;
   /** Host-evaluated llm_input snapshot; omission stays deny-by-default. */
@@ -290,9 +287,6 @@ const defaultPlan = (
   return {
     model: overrides.modelForTurn ?? createLiveOpenAIProvider(env).model,
     providerOptions: OPENAI_PROVIDER_REQUEST_OPTIONS,
-    ...(overrides.isFinalResponse === undefined
-      ? {}
-      : { isFinalResponse: overrides.isFinalResponse }),
     registry,
     search,
     details: provider.details,
@@ -436,7 +430,6 @@ const makeOptions = (
           ? plan.constraintContext
           : { threadId: request.threadId, originalTurns: [] },
       persistMessages: () => Promise.resolve({ requestId: request.turnId, status: 'completed' }),
-      isFinalResponse: plan.isFinalResponse ?? (() => false),
       stopWhen: () => budget.snapshot().completed,
       idempotencyKey: runtimeInput.idempotencyKey,
     };

@@ -21,9 +21,11 @@ import {
   type RuntimeModelGuardAcceptance,
   type RuntimeModelGuardModel,
   type RuntimeModelGuardCallOptions,
+  type RuntimeModelGuardErrorCode,
   type RuntimeModelGuardOptions,
 } from './runtime-model-guard';
 import type { RuntimeBeforeToolCallDelegate, RuntimeTurnHandle } from './runtime-turn-factory';
+import type { RuntimeBudget } from './runtime-budget';
 
 export type RuntimeThinkMessageInput =
   UIMessage[] | ((currentMessages: UIMessage[]) => UIMessage[] | Promise<UIMessage[]>);
@@ -85,6 +87,8 @@ export type RuntimeThinkComposition<Response = unknown> = {
   readonly dispose: () => void;
   /** Guard must distinguish read/tool steps from the final-response reserve. */
   readonly isFinalResponse: (params: RuntimeModelGuardCallOptions) => boolean;
+  /** Composition gate limits the final-response reserve to one model call. */
+  readonly reserveModelStep?: RuntimeBudget['reserveModelStep'];
   /** Accepted final text is handed to Core before the turn is disposed. */
   readonly onAccepted: (acceptance: RuntimeModelGuardAcceptance) => void;
 };
@@ -97,7 +101,6 @@ export type RuntimeThinkPersistMessages = (
   messages: RuntimeThinkMessageInput,
   options?: SaveMessagesOptions,
 ) => Promise<SaveMessagesResult>;
-
 export type RuntimeThinkConnectionOptions<Response = unknown> = {
   /** Must be monotonic with respect to the retention policy's server timestamp source. */
   readonly clock: () => string;
@@ -109,8 +112,9 @@ export type RuntimeThinkConnectionOptions<Response = unknown> = {
 
 export type RuntimeThinkTurnResult<Response = unknown> = SaveMessagesResult & {
   readonly response: Response | null;
+  /** Internal typed guard denial; Think's SaveMessagesResult only exposes a string. */
+  readonly runtimeGuardFailureCode?: RuntimeModelGuardErrorCode;
 };
-
 export type RuntimeThinkConnectionErrorCode =
   | 'TURN_ALREADY_ACTIVE'
   | 'TURN_NOT_ACTIVE'
@@ -118,7 +122,6 @@ export type RuntimeThinkConnectionErrorCode =
   | 'COMPOSITION_INVALID'
   | 'CANCELLED'
   | 'STALE_TURN';
-
 const connectionErrors = new WeakSet<object>();
 
 export class RuntimeThinkConnectionError extends Error {
@@ -375,6 +378,7 @@ export class RuntimeThinkConnection<Response = unknown> {
     let cleanup: RuntimeThinkCleanup | undefined;
     let unlinkCleanup: (() => void) | undefined;
     let result: RuntimeThinkTurnResult<Response> | undefined;
+    let runtimeGuardFailureCode: RuntimeModelGuardErrorCode | undefined;
     let primaryError: unknown;
     let hasPrimaryError = false;
     let cleanupError: unknown;
@@ -400,11 +404,19 @@ export class RuntimeThinkConnection<Response = unknown> {
         throw new RuntimeThinkConnectionError('COMPOSITION_INVALID');
       }
       const guardOptions: RuntimeModelGuardOptions = {
-        budget: composition.turn.budget,
+        budget: {
+          reserveModelStep:
+            composition.reserveModelStep ??
+            composition.turn.budget.reserveModelStep.bind(composition.turn.budget),
+          checkAdmission: composition.turn.budget.checkAdmission.bind(composition.turn.budget),
+        },
         remainingTimeMs: (finalResponse) =>
           composition?.turn.budget.remainingModelTimeMs(finalResponse) ?? 0,
         isFinalResponse: composition.isFinalResponse,
         onAccepted: composition.onAccepted,
+        onFailure: (error) => {
+          runtimeGuardFailureCode = error.code;
+        },
       };
       const model = wrapRuntimeModelGuard(composition.model, guardOptions);
       this.active = {
@@ -432,7 +444,13 @@ export class RuntimeThinkConnection<Response = unknown> {
           response = candidate ?? null;
         }
       }
-      result = { ...saved, response };
+      result = {
+        ...saved,
+        response,
+        ...(saved.status === 'error' && runtimeGuardFailureCode !== undefined
+          ? { runtimeGuardFailureCode }
+          : {}),
+      };
     } catch (error) {
       hasPrimaryError = true;
       primaryError = error;

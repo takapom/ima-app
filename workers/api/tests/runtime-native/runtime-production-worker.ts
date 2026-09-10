@@ -5,7 +5,6 @@ import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,
 } from '../runtime-gate/runtime-gate-provider';
-import type { RuntimeModelGuardCallOptions } from '../../src/runtime/runtime-model-guard';
 
 export const RUNTIME_PRODUCTION_NOW = '2026-09-10T12:00:00.000Z';
 
@@ -127,13 +126,25 @@ const candidateIdsIn = (prompt: string): string[] =>
 const observationIdsIn = (prompt: string): string[] =>
   [...prompt.matchAll(/"observationId":"([^"]+)"/gu)].map((match) => match[1] ?? '');
 
-type ProductionScenario = 'default' | 'multiturn' | 'follow-up' | 'condition-change';
+type ProductionScenario =
+  | 'default'
+  | 'multiturn'
+  | 'follow-up'
+  | 'condition-change'
+  | 'final-reserve'
+  | 'late-tool'
+  | 'late-submit'
+  | 'exhausted-budget';
 
 const productionScenarioFor = (value: unknown): ProductionScenario => {
   if (typeof value !== 'object' || value === null || !('input' in value)) return 'default';
   const input = value.input;
   if (typeof input !== 'object' || input === null || !('text' in input)) return 'default';
   if (typeof input.text !== 'string') return 'default';
+  if (input.text.includes('[m16-exhausted-budget]')) return 'exhausted-budget';
+  if (input.text.includes('[m16-late-submit]')) return 'late-submit';
+  if (input.text.includes('[m16-late-tool]')) return 'late-tool';
+  if (input.text.includes('[m16-final-reserve]')) return 'final-reserve';
   if (input.text.includes('[m16-follow-up]')) return 'follow-up';
   if (input.text.includes('[m16-condition-change]')) return 'condition-change';
   if (input.text.includes('[m16-multiturn]')) return 'multiturn';
@@ -247,7 +258,19 @@ const modelForProduction = (
       report.deniedFieldCanarySeen ||= prompt.includes(DENIED_FIELD_CANARY);
       report.modelHistorySeen ||= prompt.includes('history\\":[{');
       report.modelCardSetSeen ||= prompt.includes('cardSet\\":{');
-      if (prompt.includes('[m16-final-reserve]')) {
+      const finalOnly =
+        Object.keys(options.tools ?? {}).length === 0 || options.toolChoice?.type === 'none';
+      report.finalResponseFlags.push(finalOnly);
+      if (finalOnly && (scenario() === 'late-tool' || scenario() === 'late-submit')) {
+        const toolName = scenario() === 'late-submit' ? 'submit_cards' : 'search_places';
+        report.calls += 1;
+        report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
+        report.toolNames.push(toolName);
+        return Promise.resolve({
+          stream: streamOf(toolParts(report.calls, toolName, searchInput)),
+        });
+      }
+      if (finalOnly) {
         report.calls += 1;
         report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
         report.toolNames.push('final_message');
@@ -428,7 +451,7 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
       retention,
     });
     const budgetStart = performance.now();
-    let finalResponseMode = false;
+    let monotonicCalls = 0;
     return {
       modelForTurn: modelForProduction(report, this.llmOnlyModel, () => this.productionScenario),
       fetcher: fetcherForProduction(report),
@@ -442,14 +465,19 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
       placesEnabled: true,
       retention,
       clock: () => RUNTIME_PRODUCTION_NOW,
-      monotonicNow: () => (finalResponseMode ? budgetStart + 10_500 : performance.now()),
-      epochNow: () => 1_000,
-      isFinalResponse: (params: RuntimeModelGuardCallOptions) => {
-        const final = JSON.stringify(params.prompt).includes('[m16-final-reserve]');
-        finalResponseMode = final;
-        report.finalResponseFlags.push(final);
-        return final;
+      monotonicNow: () => {
+        if (monotonicCalls++ === 0) return budgetStart;
+        if (
+          this.productionScenario === 'final-reserve' ||
+          this.productionScenario === 'late-tool' ||
+          this.productionScenario === 'late-submit'
+        ) {
+          return budgetStart + 10_500;
+        }
+        if (this.productionScenario === 'exhausted-budget') return budgetStart + 12_100;
+        return performance.now();
       },
+      epochNow: () => 1_000,
     };
   }
 }

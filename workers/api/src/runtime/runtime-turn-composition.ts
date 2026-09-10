@@ -48,6 +48,7 @@ import {
   type RuntimeBeforeToolCallDelegate,
   type RuntimeTurnPortDependencies,
 } from './runtime-turn-factory';
+import { createRuntimeFinalResponseHooks } from './runtime-final-response';
 import type {
   RuntimeModelGuardAcceptance,
   RuntimeModelGuardCallOptions,
@@ -104,7 +105,7 @@ type RuntimeTurnCompositionBaseOptions = {
   readonly validationContext: RuntimeCompositionValidationContext;
   readonly constraintContext: ConstraintValidationContext;
   readonly persistMessages: RuntimeCompositionPersistMessages;
-  readonly isFinalResponse: (params: RuntimeModelGuardCallOptions) => boolean;
+  readonly isFinalResponse?: (params: RuntimeModelGuardCallOptions) => boolean;
   readonly applyMetadata?: (metadata: ModelActionMetadata, conditions: TurnConditionValues) => void;
   readonly stopWhen?: Exclude<TurnConfig['stopWhen'], undefined>;
   readonly beforeToolCall?: RuntimeBeforeToolCallDelegate;
@@ -333,9 +334,10 @@ export function createRuntimeTurnComposition(
     homeStationRef: options.context.preferences.homeStationRef,
     minimumStayMinutes: options.context.preferences.minimumStayMinutes,
   };
-  const initialSubmit = makeSubmitPort({
-    now: options.context.serverNow,
-    conditions: initialConditions,
+  const finalResponse = createRuntimeFinalResponseHooks({
+    budget: options.budget,
+    ...(options.isFinalResponse === undefined ? {} : { isFinalResponse: options.isFinalResponse }),
+    ...(options.beforeToolCall === undefined ? {} : { beforeToolCall: options.beforeToolCall }),
   });
   const turn = createRuntimeTurnFactory({
     context: options.context,
@@ -346,14 +348,15 @@ export function createRuntimeTurnComposition(
       clock: now,
       search: readPorts.search,
       details: readPorts.details,
-      submit: initialSubmit,
+      submit: makeSubmitPort({ now: options.context.serverNow, conditions: initialConditions }),
     },
     buildSubmitPort: makeSubmitPort,
     constraintContext: options.constraintContext,
     applyMetadata: options.applyMetadata ?? (() => undefined),
     ...(options.request.signal === undefined ? {} : { signal: options.request.signal }),
     ...(options.request.isStale === undefined ? {} : { isStale: options.request.isStale }),
-    ...(options.beforeToolCall === undefined ? {} : { beforeToolCall: options.beforeToolCall }),
+    beforeStep: finalResponse.beforeStep,
+    beforeToolCall: finalResponse.beforeToolCall,
     stopWhen: options.stopWhen ?? (() => options.budget.snapshot().completed),
     experimentalTransform: transform,
   });
@@ -408,6 +411,7 @@ export function createRuntimeTurnComposition(
     }
     acceptedFinal = parseRuntimeFinalMessage(acceptance.finalText, options.constraintContext);
     turn.applyMetadata(acceptedFinal.metadata);
+    finalResponse.accept(acceptance);
   };
 
   return {
@@ -486,7 +490,8 @@ export function createRuntimeTurnComposition(
         options.context.turnId,
       );
     },
-    isFinalResponse: options.isFinalResponse,
+    isFinalResponse: finalResponse.isFinalResponse,
+    reserveModelStep: finalResponse.reserveModelStep,
     onAccepted,
     configureSession: configureRuntimeCompaction,
   };

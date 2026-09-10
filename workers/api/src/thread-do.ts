@@ -1,5 +1,3 @@
-import * as v from 'valibot';
-import { AssistantResponseSchema } from '@ima/contracts';
 import { RuntimeProductionThinkHost } from './thread-runtime/runtime-production-host';
 import { ThreadRuntimeController, type RuntimeThreadBinding } from './thread-runtime/controller';
 import {
@@ -15,8 +13,8 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-  runtimeFailure,
 } from './thread-runtime/admission';
+import { threadRuntimeResultFromNative } from './thread-runtime/native-result';
 import {
   isThreadConflictError,
   isThreadStateError,
@@ -27,6 +25,7 @@ import {
   type ThreadSnapshot,
   type ThreadSnapshotResult,
 } from './thread-types';
+
 import { createThreadPhotoReferences } from './providers/photo/thread-references';
 import type { PhotoReferenceRecord } from './providers/photo/types';
 import type {
@@ -449,37 +448,7 @@ export class ThreadDO
       isStale,
     };
     const nativeResult = await this.requireRuntimeThinkConnection().run(request);
-    if (nativeResult.status === 'completed') {
-      const parsed = v.safeParse(AssistantResponseSchema, nativeResult.response);
-      if (!parsed.success) {
-        return runtimeFailure('RUNTIME_FAILED', nativeResult.requestId);
-      }
-      return {
-        status: 'completed',
-        requestId: nativeResult.requestId,
-        response: parsed.output,
-      };
-    }
-    if (nativeResult.status === 'aborted') {
-      return {
-        status: isStale() ? 'stale' : 'cancelled',
-        requestId: nativeResult.requestId,
-        response: null,
-        code: isStale() ? 'STALE_TURN' : 'CANCELLED',
-      };
-    }
-    if (nativeResult.status === 'skipped') {
-      return {
-        status: 'stale',
-        requestId: nativeResult.requestId,
-        response: null,
-        code: 'STALE_TURN',
-      };
-    }
-    if (nativeResult.status === 'error') {
-      throw new Error(nativeResult.error ?? 'runtime Think turn failed');
-    }
-    throw new Error('runtime Think turn returned an unknown status');
+    return threadRuntimeResultFromNative(nativeResult, isStale);
   }
 
   async runRuntimeTurn(value: unknown): Promise<ThreadRuntimeTurnResult> {

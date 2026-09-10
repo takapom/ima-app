@@ -251,7 +251,7 @@ describe('production factory through a real Think Durable Object', () => {
     expect(persistence.containsDeniedCanary).toBe(false);
   });
 
-  it('admits a host-marked final message inside the final response reserve', async () => {
+  it('enters final-only mode from the runtime budget reserve', async () => {
     const threadId = `m16-production-final-${crypto.randomUUID()}`;
     const target: ThreadRuntimeTarget = {
       ownerScopeRef: 'owner-m16-production-final',
@@ -281,6 +281,100 @@ describe('production factory through a real Think Durable Object', () => {
     expect(report).toMatchObject({
       calls: 1,
       finalResponseFlags: [true],
+      fetchUrls: [],
+    });
+  });
+
+  it('returns a typed failure when final-only output tries to call a tool', async () => {
+    const threadId = `m16-production-late-tool-${crypto.randomUUID()}`;
+    const target: ThreadRuntimeTarget = {
+      ownerScopeRef: 'owner-m16-production-late-tool',
+      threadId,
+      turnId: `turn-${crypto.randomUUID()}`,
+      revision: 1,
+    };
+    const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
+
+    await expect(stub.initialize(target.ownerScopeRef, target.threadId)).resolves.toMatchObject({
+      ok: true,
+    });
+    await expect(
+      stub.runRuntimeTurn(requestFor(target, '[m16-late-tool] final response with a tool')),
+    ).resolves.toMatchObject({
+      status: 'failed',
+      code: 'RUNTIME_FAILED',
+      response: null,
+    });
+
+    await expect(stub.getRuntimeProductionReport()).resolves.toMatchObject({
+      calls: 1,
+      finalResponseFlags: [true],
+      toolNames: ['search_places'],
+      fetchUrls: [],
+    });
+    await expect(stub.replayRuntimeTurn(target)).resolves.toEqual({
+      status: 'unavailable',
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('blocks a final-only submit before the CommitPort can run', async () => {
+    const threadId = `m16-production-late-submit-${crypto.randomUUID()}`;
+    const target: ThreadRuntimeTarget = {
+      ownerScopeRef: 'owner-m16-production-late-submit',
+      threadId,
+      turnId: `turn-${crypto.randomUUID()}`,
+      revision: 1,
+    };
+    const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
+
+    await expect(stub.initialize(target.ownerScopeRef, target.threadId)).resolves.toMatchObject({
+      ok: true,
+    });
+    await expect(
+      stub.runRuntimeTurn(requestFor(target, '[m16-late-submit] final response with cards')),
+    ).resolves.toMatchObject({
+      status: 'failed',
+      code: 'RUNTIME_FAILED',
+      response: null,
+    });
+
+    await expect(stub.getRuntimeProductionReport()).resolves.toMatchObject({
+      calls: 1,
+      finalResponseFlags: [true],
+      toolNames: ['submit_cards'],
+      fetchUrls: [],
+    });
+    await expect(stub.replayRuntimeTurn(target)).resolves.toEqual({
+      status: 'unavailable',
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('returns a typed failure without another model call after budget exhaustion', async () => {
+    const threadId = `m16-production-exhausted-${crypto.randomUUID()}`;
+    const target: ThreadRuntimeTarget = {
+      ownerScopeRef: 'owner-m16-production-exhausted',
+      threadId,
+      turnId: `turn-${crypto.randomUUID()}`,
+      revision: 1,
+    };
+    const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
+
+    await expect(stub.initialize(target.ownerScopeRef, target.threadId)).resolves.toMatchObject({
+      ok: true,
+    });
+    await expect(
+      stub.runRuntimeTurn(requestFor(target, '[m16-exhausted-budget] no extra model call')),
+    ).resolves.toMatchObject({
+      status: 'failed',
+      code: 'RUNTIME_FAILED',
+      response: null,
+    });
+
+    await expect(stub.getRuntimeProductionReport()).resolves.toMatchObject({
+      calls: 0,
+      toolNames: [],
       fetchUrls: [],
     });
   });

@@ -33,8 +33,10 @@ is reused by the model projection and persistence boundaries.
   the provider key is never forwarded to a redirected endpoint.
 - Model calls receive the fixed provider options `{ reasoningEffort: "low", strictJsonSchema: false,
 store: false }` through the Think connection.
-- The default production plan marks every model call as an exploration/tool step. A host that
-  owns a final text step must opt into `isFinalResponse` only after read tools are disabled.
+- The default production plan derives final-response mode from the per-turn budget: when the
+  normal read/model window reaches the final reserve, the next step disables every public tool
+  and forces `toolChoice: "none"`. A final reserve is admitted once; a buffered provider tool
+  batch is rejected before SDK tool execution.
 
 ## Field use policy
 
@@ -54,6 +56,6 @@ current-location label from request preferences.
 The production acceptance test injects only a scripted model, mock fetch, bounded retention policy,
 capability gate, and clock; it exercises the real Think Durable Object default factory through
 search, details, submit, CAS response, reference-only replay, and a second turn. It does not prove
-live provider credentials or production retention approval. The separate final-response test also
-exercises the host-marked final-text reserve path with the scripted model; it does not establish
+live provider credentials or production retention approval. The separate final-response test
+exercises the budget-derived final-only transition with the scripted model; it does not establish
 live-provider response quality.

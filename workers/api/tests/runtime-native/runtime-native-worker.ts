@@ -224,7 +224,6 @@ export class ThreadDO extends ProductionThreadDO {
           constraintContext: { threadId: request.threadId, originalTurns: [] },
           persistMessages: () =>
             Promise.resolve({ requestId: 'runtime-native-placeholder', status: 'completed' }),
-          isFinalResponse: () => true,
           stopWhen: () => execution.commitWrites > 0,
           publicResponse: {
             textRetention: fixture.retention.retention,

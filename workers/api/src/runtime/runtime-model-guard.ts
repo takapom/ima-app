@@ -66,6 +66,8 @@ export type RuntimeModelGuardOptions = {
   readonly maxBytes?: number;
   /** Runs only after complete output and batch policy have been accepted. */
   readonly onAccepted?: (acceptance: RuntimeModelGuardAcceptance) => void;
+  /** Keeps a known denial attached to the current wrapped model invocation. */
+  readonly onFailure?: (error: RuntimeModelGuardError) => void;
 };
 
 const DEFAULT_MAX_BUFFER_MS = 10_000;
@@ -124,7 +126,11 @@ const guardErrorForBatch = (batch: RuntimeBatchResult): RuntimeModelGuardError =
 
 const validateActions = (
   actions: readonly RuntimeBatchAction[],
+  finalResponse = false,
 ): Extract<RuntimeBatchResult, { readonly ok: true }> => {
+  if (finalResponse && actions.some((action) => action.kind === 'tool')) {
+    throw new RuntimeModelGuardError('FINAL_WITH_TOOL');
+  }
   const batch = validateRuntimeBatch(actions);
   if (!batch.ok) throw guardErrorForBatch(batch);
   return batch;
@@ -135,7 +141,10 @@ type ValidatedModelStep = {
   readonly finalText: string | null;
 };
 
-const actionsFromStream = (parts: readonly RuntimeModelGuardStreamPart[]): ValidatedModelStep => {
+const actionsFromStream = (
+  parts: readonly RuntimeModelGuardStreamPart[],
+  finalResponse: boolean,
+): ValidatedModelStep => {
   const finishes = parts.filter(
     (part): part is Extract<RuntimeModelGuardStreamPart, { type: 'finish' }> =>
       part.type === 'finish',
@@ -172,7 +181,7 @@ const actionsFromStream = (parts: readonly RuntimeModelGuardStreamPart[]): Valid
   if (hasText || finish.finishReason.unified !== 'tool-calls') {
     actions.push({ kind: 'final', text });
   }
-  const batch = validateActions(actions);
+  const batch = validateActions(actions, finalResponse);
   return { batch, finalText: batch.terminal === 'message' ? text : null };
 };
 
@@ -180,6 +189,7 @@ const actionsFromGenerate = (
   result: RuntimeModelGuardGenerateResult,
   maxParts: number,
   maxBytes: number,
+  finalResponse: boolean,
 ): ValidatedModelStep => {
   if (result.content.length > maxParts) {
     throw new RuntimeModelGuardError('MODEL_STREAM_LIMIT');
@@ -205,7 +215,7 @@ const actionsFromGenerate = (
   if (hasText || result.finishReason.unified !== 'tool-calls') {
     actions.push({ kind: 'final', text });
   }
-  const batch = validateActions(actions);
+  const batch = validateActions(actions, finalResponse);
   return { batch, finalText: batch.terminal === 'message' ? text : null };
 };
 
@@ -402,14 +412,19 @@ export const wrapRuntimeModelGuard = (
     middleware: {
       specificationVersion: 'v3',
       transformParams: ({ params }) => {
-        if (isAborted(params.abortSignal)) throw new RuntimeModelGuardError('CANCELLED');
-        const finalResponse = options.isFinalResponse?.(params) ?? false;
-        const managed = createManagedAbort(
-          params.abortSignal,
-          callTimeoutMs(options, maxBufferMs, finalResponse),
-          finalResponse,
-        );
-        return Promise.resolve({ ...params, abortSignal: managed.signal });
+        try {
+          if (isAborted(params.abortSignal)) throw new RuntimeModelGuardError('CANCELLED');
+          const finalResponse = options.isFinalResponse?.(params) ?? false;
+          const managed = createManagedAbort(
+            params.abortSignal,
+            callTimeoutMs(options, maxBufferMs, finalResponse),
+            finalResponse,
+          );
+          return Promise.resolve({ ...params, abortSignal: managed.signal });
+        } catch (error) {
+          if (isRuntimeModelGuardError(error)) options.onFailure?.(error);
+          throw error;
+        }
       },
       wrapGenerate: async ({ doGenerate, params }) => {
         const managed = managedFor(params.abortSignal);
@@ -426,9 +441,12 @@ export const wrapRuntimeModelGuard = (
           }
           checkAfterProvider(options.budget, finalResponse);
           const bytes = jsonBytes(result.content);
-          const step = actionsFromGenerate(result, maxParts, maxBytes);
+          const step = actionsFromGenerate(result, maxParts, maxBytes, finalResponse);
           options.onAccepted?.(accepted(step, result.content.length, bytes));
           return result;
+        } catch (error) {
+          if (isRuntimeModelGuardError(error)) options.onFailure?.(error);
+          throw error;
         } finally {
           managed?.cleanup();
         }
@@ -448,9 +466,12 @@ export const wrapRuntimeModelGuard = (
             throw abortError(managed, true);
           }
           checkAfterProvider(options.budget, finalResponse);
-          const step = actionsFromStream(buffered.parts);
+          const step = actionsFromStream(buffered.parts, finalResponse);
           options.onAccepted?.(accepted(step, buffered.parts.length, buffered.bytes));
           return { ...result, stream: streamFrom(buffered.parts) };
+        } catch (error) {
+          if (isRuntimeModelGuardError(error)) options.onFailure?.(error);
+          throw error;
         } finally {
           managed?.cleanup();
         }

@@ -164,9 +164,11 @@ describe('native Think runtime fixture', () => {
     await expect(stub.initialize(target.ownerScopeRef, target.threadId)).resolves.toMatchObject({
       ok: true,
     });
-    await expect(
-      Promise.resolve(stub.runRuntimeTurn(requestFor(target, 'mixed-batch'))),
-    ).rejects.toThrow('UPSTREAM_UNAVAILABLE');
+    await expect(stub.runRuntimeTurn(requestFor(target, 'mixed-batch'))).resolves.toMatchObject({
+      status: 'failed',
+      code: 'RUNTIME_FAILED',
+      response: null,
+    });
     const report = await stub.getRuntimeNativeReport();
     expect(report).not.toBeNull();
     if (report === null) return;
