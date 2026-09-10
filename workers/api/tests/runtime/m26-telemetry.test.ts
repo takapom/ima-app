@@ -115,6 +115,24 @@ describe('M26 telemetry and operational flags', () => {
     expect(operationalCapabilityMode(flags, 'places')).toBe('disabled');
   });
 
+  it('fails closed when the kill switch value is malformed', () => {
+    const flags = resolveOperationalFlags({
+      [OPERATIONAL_FLAG_ENV.mode]: 'live',
+      [OPERATIONAL_FLAG_ENV.places]: 'true',
+      [OPERATIONAL_FLAG_ENV.killSwitch]: 'tru',
+    });
+    expect(flags.killSwitch).toBe(true);
+    expect(operationalCapabilityMode(flags, 'places')).toBe('disabled');
+
+    const explicitlyRunning = resolveOperationalFlags({
+      [OPERATIONAL_FLAG_ENV.mode]: 'live',
+      [OPERATIONAL_FLAG_ENV.places]: 'true',
+      [OPERATIONAL_FLAG_ENV.killSwitch]: 'false',
+    });
+    expect(explicitlyRunning.killSwitch).toBe(false);
+    expect(operationalCapabilityMode(explicitlyRunning, 'places')).toBe('live');
+  });
+
   it('persists only the event allowlist and drops arbitrary error text', () => {
     const event = sanitizeTelemetryEvent(
       eventInput({ code: 'provider raw secret: photo-token-canary' }),

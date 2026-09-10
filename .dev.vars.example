@@ -3,6 +3,13 @@
 IMA_ENV=dev
 IMA_RUNTIME_MODE=fixture
 IMA_RUNTIME_FLAGS_CONNECTED=0
+# Provider capabilities are explicitly off until a verified fixture/live composition is selected.
+IMA_PROVIDER_OPENAI=false
+IMA_PROVIDER_PLACES=false
+IMA_PROVIDER_ROUTES=false
+IMA_PROVIDER_LAST_TRAIN=false
+IMA_PROVIDER_HOTPEPPER=false
+IMA_KILL_SWITCH=false
 APP_TOKEN=replace-me
 # Provider secrets remain empty in fixture mode. Never put real values in this file in git.
 GOOGLE_PLACES_API_KEY=

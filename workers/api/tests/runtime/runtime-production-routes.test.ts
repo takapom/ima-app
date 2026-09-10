@@ -7,6 +7,7 @@ import { modelFor, type RuntimeGateModelReport } from '../runtime-gate/runtime-g
 import {
   ALLOW_MODEL_CONTEXT_FIELDS,
   ALLOW_RETENTION,
+  FIXTURE_OPERATIONAL_ENV,
   NOW,
   buildRequest,
   requestInput,
@@ -99,6 +100,7 @@ describe('production runtime Routes wiring', () => {
     };
     const options = createRuntimeProductionConnectionOptions({
       env: {
+        ...FIXTURE_OPERATIONAL_ENV,
         OPENAI_API_KEY: 'openai-test-key',
         GOOGLE_PLACES_API_KEY: 'google-test-key',
         GOOGLE_ROUTES_API_KEY: 'routes-test-key',

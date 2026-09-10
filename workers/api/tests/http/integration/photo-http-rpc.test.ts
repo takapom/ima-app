@@ -78,6 +78,13 @@ describe('M15 production router with ThreadDO photo references', () => {
         ...bindings,
         GOOGLE_PLACES_API_KEY: 'photo-api-key-fixture',
         PHOTO_TOKEN_SECRET: PHOTO_SECRET,
+        IMA_RUNTIME_MODE: 'fixture',
+        IMA_PROVIDER_PLACES: 'true',
+        IMA_PROVIDER_OPENAI: 'false',
+        IMA_PROVIDER_ROUTES: 'false',
+        IMA_PROVIDER_LAST_TRAIN: 'false',
+        IMA_PROVIDER_HOTPEPPER: 'false',
+        IMA_KILL_SWITCH: 'false',
       },
       {
         ownership: createThreadScopeAuthorizer(bindings.THREADS),
@@ -109,6 +116,34 @@ describe('M15 production router with ThreadDO photo references', () => {
     }
     expect(metadataCall.headers.get('x-goog-api-key')).toBe('photo-api-key-fixture');
     expect(imageCall.headers.has('x-goog-api-key')).toBe(false);
+
+    const beforeDisabled = transportCalls.length;
+    const disabledConfig = createHttpRouterConfig(
+      {
+        ...bindings,
+        GOOGLE_PLACES_API_KEY: 'photo-api-key-fixture',
+        PHOTO_TOKEN_SECRET: PHOTO_SECRET,
+        IMA_RUNTIME_MODE: 'live',
+        IMA_PROVIDER_PLACES: 'true',
+        IMA_PROVIDER_OPENAI: 'false',
+        IMA_PROVIDER_ROUTES: 'false',
+        IMA_PROVIDER_LAST_TRAIN: 'false',
+        IMA_PROVIDER_HOTPEPPER: 'false',
+        IMA_KILL_SWITCH: 'true',
+      },
+      {
+        ownership: createThreadScopeAuthorizer(bindings.THREADS),
+        photoFetcher,
+        clock: () => serverNow,
+        requestIdFactory: () => `${requestId}-disabled`,
+      },
+    );
+    const disabledResponse = await routeRequest(
+      requestFor(DEVICE_ID, `${requestId}-disabled`),
+      disabledConfig,
+    );
+    expect(disabledResponse.status).toBe(502);
+    expect(transportCalls).toHaveLength(beforeDisabled);
 
     const wrongDevice = await routeRequest(
       requestFor('other-photo-device', `${requestId}-other`),

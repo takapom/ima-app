@@ -11,6 +11,13 @@ export default defineConfig({
         bindings: {
           MODEL_EVAL_LIVE: liveRequested ? '1' : '0',
           OPENAI_API_KEY: liveRequested ? (process.env.OPENAI_API_KEY ?? '') : '',
+          IMA_RUNTIME_MODE: liveRequested ? 'live' : 'disabled',
+          IMA_PROVIDER_OPENAI: liveRequested ? 'true' : 'false',
+          IMA_PROVIDER_PLACES: liveRequested ? 'true' : 'false',
+          IMA_PROVIDER_ROUTES: 'false',
+          IMA_PROVIDER_LAST_TRAIN: 'false',
+          IMA_PROVIDER_HOTPEPPER: 'false',
+          IMA_KILL_SWITCH: 'false',
         },
       },
     }),

@@ -1,55 +1,26 @@
-import type { TurnConfig } from '@cloudflare/think';
-import type { ThreadTurnRequest } from '@ima/contracts';
-import type {
-  CandidateObservationRegistryPort,
-  CommitHashPort,
-  CommitPort,
-  ConstraintValidationContext,
-  HarnessContext,
-  IdPort,
-  ModelContextFieldPolicy,
-  PlaceDetailsPort,
-  PlaceSearchPort,
-} from '@ima/core';
 import { CandidateObservationRegistry } from '@ima/core';
+import type { PlaceDetailsPort, PlaceSearchPort } from '@ima/core';
 import { normalizeGoogleOpeningHours } from '../providers/places/hours';
 import { createPlacesDetailsAdapter } from '../providers/places-details/adapter';
-import type { PlacesDetailsObservationPolicy } from '../providers/places-details/adapter-types';
 import { createGooglePlaceDetailsTransport } from '../providers/places-details/transport';
 import { createPlacesSearchAdapter } from '../providers/places-search/adapter';
-import type { PlacesSearchObservationPolicy } from '../providers/places-search/registration';
 import { createPlacesSearchRegistration } from '../providers/places-search/registration';
 import type { createPlacesSearchContinuation } from '../providers/places-search/continuation';
 import { createGoogleTextSearchTransport } from '../providers/places-search/transport';
-import type { JourneyServiceDateContextBuilder } from '../providers/last-train/port';
-import type { LastTrainObservationPolicy } from '../providers/last-train/registration';
-import type { PhotoTokenPreparerDependencies } from '../providers/photo/issuance';
-import type { PhotoReferenceStoreResolver } from '../providers/photo/types';
-import type { WalkingRouteObservationPolicy } from '../providers/routes/registration';
-import type { RouteWaypointResolver } from '../providers/routes/resolver';
 import { createLiveOpenAIProvider } from '../model/provider';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../model/provider-options';
-import {
-  createRuntimeReadAttemptSignalBridge,
-  type RuntimeReadAttemptSignalBridge,
-} from './runtime-read-ports';
+import { createRuntimeReadAttemptSignalBridge } from './runtime-read-ports';
 import {
   createRuntimeTurnComposition,
   type RuntimeTurnCompositionCoreOptions,
-  type RuntimeCompositionModelContext,
-  type RuntimeCompositionValidationContext,
-  type RuntimePublicResponseDependencies,
 } from './runtime-turn-composition';
 import { wrapRuntimeProductionCommit } from './runtime-production-context';
 import { createFactoryRuntimeContext } from './runtime-production-context-factory';
-import type { RuntimeProductionContextPersistence } from './runtime-production-context-reference';
 import { RuntimeBudget } from './runtime-budget';
 import {
   defaultProductionObservationPolicy,
   capProductionObservationPolicy,
-  googlePlacesApiKey,
   harnessContextFor,
-  placesCursorSecret,
   productionCapabilities,
   productionClock,
   productionClockPort,
@@ -57,17 +28,13 @@ import {
   productionMonotonicNow,
   productionPlacesEnabled,
   productionRetentionFor,
-  productionSecret,
   ProductionIds,
-  type ProductionRetentionSource,
   productionScopeFor,
   validationContextFor,
 } from './runtime-production-support';
 import {
   createRuntimeLastTrainRevisionState,
   readActiveJourneyRevision,
-  type RuntimeJourneyDataset,
-  type RuntimeLastTrainCompositionOptions,
 } from './runtime-provider-composition';
 import {
   areaLabelFor,
@@ -78,84 +45,31 @@ import {
   runtimeProductionProviderAvailabilityFor,
   type RuntimeProductionProviderAvailability,
 } from './runtime-production-provider-config';
-import { type RuntimeProductionProviderComposition } from './runtime-production-providers';
-import { type RuntimeRetentionContext } from './runtime-retention';
 import { configureRuntimeProductionSession } from './runtime-production-session';
 import type {
   RuntimeThinkConnectionOptions,
   RuntimeThinkTurnBuildRequest,
 } from './runtime-think-connection';
-import type { RuntimeModelGuardModel } from './runtime-model-guard';
 import { defaultRuntimeModelContextPolicy } from './runtime-field-policy';
 import { unavailableSubmit } from './runtime-production-submit';
 import { resolveRuntimeProductionReadCost } from './runtime-production-read-cost';
 import { createFactoryContinuation } from './runtime-production-continuation';
-type ProductionBuildInput = {
-  readonly request: RuntimeThinkTurnBuildRequest;
-  readonly runtimeInput: ThreadTurnRequest;
-  readonly context: HarnessContext;
-  readonly attemptSignalBridge: RuntimeReadAttemptSignalBridge;
-};
+import { disabledDetailsPort, disabledSearchPort } from './runtime-disabled-provider-ports';
+import { resolveRuntimeOperationalAdmission } from './runtime-operational-admission';
+import type { RuntimeRetentionContext } from './runtime-retention';
+import type {
+  ProductionBuildInput,
+  RuntimeProductionConnectionOptions,
+  RuntimeProductionOverrides,
+  RuntimeProductionTurnPlan,
+} from './runtime-production-types';
 
-export type RuntimeProductionTurnPlan = {
-  readonly model: RuntimeModelGuardModel;
-  readonly providerOptions?: TurnConfig['providerOptions'];
-  readonly registry: CandidateObservationRegistryPort;
-  readonly search: PlaceSearchPort;
-  readonly details: PlaceDetailsPort;
-  readonly retention: RuntimeRetentionContext;
-  readonly modelContext: RuntimeCompositionModelContext;
-  readonly constraintContext: ConstraintValidationContext;
-  readonly validationContext: RuntimeCompositionValidationContext;
-  readonly ids: Pick<IdPort, 'nextCallId' | 'nextResponseId'>;
-  readonly hashes: CommitHashPort;
-  readonly publicResponse?: RuntimePublicResponseDependencies;
-  readonly provider?: RuntimeProductionProviderComposition;
-  readonly onCommitted?: (response: unknown) => void;
-};
-export type RuntimeProductionOverrides = {
-  readonly prepareTurn?: (input: ProductionBuildInput) => RuntimeProductionTurnPlan;
-  readonly modelForTurn?: RuntimeModelGuardModel;
-  readonly googlePlacesApiKey?: string;
-  readonly placesCursorSecret?: string;
-  /** Dedicated Routes key; absence keeps route and last-train provider calls disabled. */
-  readonly googleRoutesApiKey?: string;
-  readonly fetcher?: typeof fetch;
-  readonly observationPolicy?: PlacesSearchObservationPolicy;
-  readonly routeObservationPolicy?: WalkingRouteObservationPolicy;
-  readonly detailsObservationPolicy?: PlacesDetailsObservationPolicy;
-  /** Explicit provider capability gate; retention policy is evaluated separately. */
-  readonly placesEnabled?: boolean;
-  /** Host-owned provider capability gate; no default allow is inferred from retention. */
-  readonly routesEnabled?: boolean;
-  readonly photosEnabled?: boolean;
-  readonly photoTokenSecret?: string;
-  readonly photoReferenceResolver?: PhotoReferenceStoreResolver;
-  readonly photoDisplayPolicyFor?: PhotoTokenPreparerDependencies['displayPolicyFor'];
-  readonly resolveStationWaypoint?: RouteWaypointResolver;
-  readonly currentOriginRefFor?: (context: HarnessContext) => string | undefined;
-  readonly journeyDataset?: RuntimeJourneyDataset;
-  readonly buildServiceDateContext?: JourneyServiceDateContextBuilder;
-  readonly lastTrainObservationPolicy?: LastTrainObservationPolicy;
-  readonly fromStationRefFor?: RuntimeLastTrainCompositionOptions['fromStationRefFor'];
-  readonly activeJourneyRevision?: number | null;
-  /** Host-evaluated retention snapshot; it does not grant model input access. */
-  readonly retention?: ProductionRetentionSource;
-  /** Host-evaluated llm_input snapshot; omission stays deny-by-default. */
-  readonly modelContextFieldPolicy?: ModelContextFieldPolicy;
-  /** Host-owned thread creation timestamp; its next 05:00 JST expiry is never extended. */
-  readonly threadCreatedAt?: string;
-  /** Durable reference-only context; it never receives raw user/provider content. */
-  readonly contextPersistence?: RuntimeProductionContextPersistence;
-  readonly clock?: () => string;
-  readonly monotonicNow?: () => number;
-  readonly epochNow?: () => number;
-};
-export type RuntimeProductionConnectionOptions = {
-  readonly env: unknown;
-  readonly commit: CommitPort;
-  readonly overrides?: RuntimeProductionOverrides;
-};
+export type {
+  ProductionBuildInput,
+  RuntimeProductionConnectionOptions,
+  RuntimeProductionOverrides,
+  RuntimeProductionTurnPlan,
+} from './runtime-production-types';
 const defaultPlan = (
   input: ProductionBuildInput,
   env: unknown,
@@ -163,7 +77,7 @@ const defaultPlan = (
   overrides: RuntimeProductionOverrides,
   ids: ProductionIds,
   registry: CandidateObservationRegistry,
-  continuation: ReturnType<typeof createPlacesSearchContinuation>,
+  continuation: ReturnType<typeof createPlacesSearchContinuation> | undefined,
   areaByCandidate: Map<string, string>,
   contextStore: ReturnType<typeof createFactoryRuntimeContext>['contextStore'],
   turnRetention: ReturnType<typeof productionRetentionFor>,
@@ -174,65 +88,72 @@ const defaultPlan = (
 ): RuntimeProductionTurnPlan => {
   const apiKey = overrides.googlePlacesApiKey;
   const cursorSecret = overrides.placesCursorSecret;
-  if (!isConfiguredSecret(apiKey) || !isConfiguredSecret(cursorSecret)) {
-    throw new Error('RUNTIME_PRODUCTION_PLACES_UNCONFIGURED');
-  }
-  const observationPolicy = overrides.observationPolicy;
-  const policy = capProductionObservationPolicy(
-    observationPolicy ?? defaultProductionObservationPolicy(clock, fixedSessionExpiresAt),
-    fixedSessionExpiresAt,
-  );
-  const detailsPolicy = capProductionObservationPolicy(
-    overrides.detailsObservationPolicy ?? policy,
-    fixedSessionExpiresAt,
-  );
-  const registration = createPlacesSearchRegistration({
-    registry,
-    clock: productionClockPort(clock),
-    observationPolicy: policy,
-  });
-  const searchAdapter = createPlacesSearchAdapter({
-    transport: createGoogleTextSearchTransport({
-      apiKey,
-      timeoutMs: 3_000,
-      ...(overrides.fetcher === undefined ? {} : { fetcher: overrides.fetcher }),
-    }),
-    continuation,
-    registration,
-    nextSearchId: () => ids.nextSearchId(),
-    clock,
-    normalizeOpeningHours: normalizeGoogleOpeningHours,
-    signalFor: input.attemptSignalBridge.signalFor,
-    ...(overrides.currentOriginRefFor === undefined
-      ? {}
-      : { originRefFor: overrides.currentOriginRefFor }),
-  });
-  const search: PlaceSearchPort = {
-    search: async (searchInput, context, execution, cancellation) => {
-      const result = await searchAdapter.search(searchInput, context, execution, cancellation);
-      if (result.status === 'ok' || result.status === 'partial') {
-        for (const candidate of result.data.candidates) {
-          areaByCandidate.set(candidate.candidateId, result.data.applied.areaDescription);
+  let search: PlaceSearchPort = disabledSearchPort;
+  let details: PlaceDetailsPort = disabledDetailsPort;
+  if (providerAvailability.placesEnabled) {
+    if (!isConfiguredSecret(apiKey) || !isConfiguredSecret(cursorSecret)) {
+      throw new Error('RUNTIME_PRODUCTION_PLACES_UNCONFIGURED');
+    }
+    if (continuation === undefined) {
+      throw new Error('RUNTIME_PRODUCTION_PLACES_UNCONFIGURED');
+    }
+    const observationPolicy = overrides.observationPolicy;
+    const policy = capProductionObservationPolicy(
+      observationPolicy ?? defaultProductionObservationPolicy(clock, fixedSessionExpiresAt),
+      fixedSessionExpiresAt,
+    );
+    const detailsPolicy = capProductionObservationPolicy(
+      overrides.detailsObservationPolicy ?? policy,
+      fixedSessionExpiresAt,
+    );
+    const registration = createPlacesSearchRegistration({
+      registry,
+      clock: productionClockPort(clock),
+      observationPolicy: policy,
+    });
+    const searchAdapter = createPlacesSearchAdapter({
+      transport: createGoogleTextSearchTransport({
+        apiKey,
+        timeoutMs: 3_000,
+        ...(overrides.fetcher === undefined ? {} : { fetcher: overrides.fetcher }),
+      }),
+      continuation,
+      registration,
+      nextSearchId: () => ids.nextSearchId(),
+      clock,
+      normalizeOpeningHours: normalizeGoogleOpeningHours,
+      signalFor: input.attemptSignalBridge.signalFor,
+      ...(overrides.currentOriginRefFor === undefined
+        ? {}
+        : { originRefFor: overrides.currentOriginRefFor }),
+    });
+    search = {
+      search: async (searchInput, context, execution, cancellation) => {
+        const result = await searchAdapter.search(searchInput, context, execution, cancellation);
+        if (result.status === 'ok' || result.status === 'partial') {
+          for (const candidate of result.data.candidates) {
+            areaByCandidate.set(candidate.candidateId, result.data.applied.areaDescription);
+          }
         }
-      }
-      return result;
-    },
-  };
-  const details = createPlacesDetailsAdapter({
-    transport: createGooglePlaceDetailsTransport({
-      apiKey,
-      timeoutMs: 4_000,
-      ...(overrides.fetcher === undefined ? {} : { fetcher: overrides.fetcher }),
-    }),
-    registry,
-    clock: productionClockPort(clock),
-    observationPolicy: detailsPolicy,
-    areaLabelFor: (candidate, context) => areaLabelFor(candidate, context, areaByCandidate),
-    signalFor: input.attemptSignalBridge.signalFor,
-    ...(overrides.currentOriginRefFor === undefined
-      ? {}
-      : { originRefFor: overrides.currentOriginRefFor }),
-  });
+        return result;
+      },
+    };
+    details = createPlacesDetailsAdapter({
+      transport: createGooglePlaceDetailsTransport({
+        apiKey,
+        timeoutMs: 4_000,
+        ...(overrides.fetcher === undefined ? {} : { fetcher: overrides.fetcher }),
+      }),
+      registry,
+      clock: productionClockPort(clock),
+      observationPolicy: detailsPolicy,
+      areaLabelFor: (candidate, context) => areaLabelFor(candidate, context, areaByCandidate),
+      signalFor: input.attemptSignalBridge.signalFor,
+      ...(overrides.currentOriginRefFor === undefined
+        ? {}
+        : { originRefFor: overrides.currentOriginRefFor }),
+    });
+  }
   const retention: RuntimeRetentionContext = {
     ownerScopeRef: input.context.ownerScopeRef,
     threadId: input.context.threadId,
@@ -346,7 +267,7 @@ const makeOptions = (
     const activeJourneyRevision =
       overrides.activeJourneyRevision !== undefined
         ? overrides.activeJourneyRevision
-        : overrides.journeyDataset === undefined
+        : overrides.lastTrainEnabled === false || overrides.journeyDataset === undefined
           ? undefined
           : await readActiveJourneyRevision(overrides.journeyDataset);
     const baseContext = harnessContextFor(request, runtimeInput, request.serverNow, {
@@ -383,7 +304,7 @@ const makeOptions = (
     });
     const plan =
       prepared ??
-      (continuation === undefined
+      (continuation === undefined && providerAvailability.placesEnabled
         ? (() => {
             throw new Error('RUNTIME_PRODUCTION_PLACES_UNCONFIGURED');
           })()
@@ -459,32 +380,52 @@ export const createRuntimeProductionConnectionOptions = (
   const overrides = input.overrides ?? {};
   const clock = overrides.clock ?? productionClock;
   const monotonicNow = overrides.monotonicNow ?? productionMonotonicNow;
-  const apiKey = overrides.googlePlacesApiKey ?? googlePlacesApiKey(input.env);
-  const cursorSecret = overrides.placesCursorSecret ?? placesCursorSecret(input.env);
-  const routesApiKey =
-    overrides.googleRoutesApiKey ?? productionSecret(input.env, 'GOOGLE_ROUTES_API_KEY');
-  const modelReady =
-    overrides.prepareTurn !== undefined ||
-    overrides.modelForTurn !== undefined ||
-    isConfiguredSecret(productionSecret(input.env, 'OPENAI_API_KEY'));
-  const portsReady =
-    overrides.prepareTurn !== undefined ||
-    (isConfiguredSecret(apiKey) && isConfiguredSecret(cursorSecret));
-  if (!modelReady || !portsReady) return undefined;
+  const admission = resolveRuntimeOperationalAdmission({
+    env: input.env,
+    hasPrepareTurn: overrides.prepareTurn !== undefined,
+    hasModelOverride: overrides.prepareTurn !== undefined || overrides.modelForTurn !== undefined,
+    hasFetcher: overrides.fetcher !== undefined,
+    placesRequested: productionPlacesEnabled({
+      prepareTurn: overrides.prepareTurn,
+      placesEnabled: overrides.placesEnabled ?? true,
+    }),
+    routesRequested: overrides.routesEnabled === true,
+    photosRequested: overrides.photosEnabled === true,
+    ...(overrides.googlePlacesApiKey === undefined
+      ? {}
+      : { googlePlacesApiKeyOverride: overrides.googlePlacesApiKey }),
+    ...(overrides.placesCursorSecret === undefined
+      ? {}
+      : { placesCursorSecretOverride: overrides.placesCursorSecret }),
+    ...(overrides.googleRoutesApiKey === undefined
+      ? {}
+      : { googleRoutesApiKeyOverride: overrides.googleRoutesApiKey }),
+  });
+  if (admission === undefined) return undefined;
   const ids = new ProductionIds();
   const registry = new CandidateObservationRegistry(productionClockPort(clock), ids);
   const continuation =
     overrides.prepareTurn === undefined
       ? createFactoryContinuation({
-          secret: cursorSecret,
+          secret: admission.placesCursorSecret,
           now: overrides.epochNow ?? Date.now,
         })
       : undefined;
   const resolvedOverrides: RuntimeProductionOverrides = {
     ...overrides,
-    ...(isConfiguredSecret(apiKey) ? { googlePlacesApiKey: apiKey } : {}),
-    ...(isConfiguredSecret(cursorSecret) ? { placesCursorSecret: cursorSecret } : {}),
-    ...(isConfiguredSecret(routesApiKey) ? { googleRoutesApiKey: routesApiKey } : {}),
+    placesEnabled: admission.placesEnabled,
+    routesEnabled: admission.routesEnabled,
+    lastTrainEnabled: admission.lastTrainEnabled,
+    photosEnabled: admission.photosEnabled,
+    ...(admission.googlePlacesApiKey === undefined
+      ? {}
+      : { googlePlacesApiKey: admission.googlePlacesApiKey }),
+    ...(admission.placesCursorSecret === undefined
+      ? {}
+      : { placesCursorSecret: admission.placesCursorSecret }),
+    ...(admission.googleRoutesApiKey === undefined
+      ? {}
+      : { googleRoutesApiKey: admission.googleRoutesApiKey }),
   };
   return makeOptions(input, resolvedOverrides, ids, registry, continuation, clock, monotonicNow);
 };

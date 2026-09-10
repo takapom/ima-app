@@ -53,6 +53,15 @@ const booleanValue = (env: unknown, key: string): boolean => {
   return value === '1' || value === 'true' || value === 'on' || value === 'enabled';
 };
 
+const killSwitchValue = (env: unknown): boolean => {
+  const value = textValue(env, OPERATIONAL_FLAG_ENV.killSwitch);
+  if (value === undefined) return false;
+  if (value === '1' || value === 'true' || value === 'on' || value === 'enabled') return true;
+  if (value === '0' || value === 'false' || value === 'off' || value === 'disabled') return false;
+  // A malformed stop switch must stop capabilities rather than silently disable the switch.
+  return true;
+};
+
 /**
  * Resolves flags from explicit Worker configuration. Missing or malformed values are disabled;
  * the resolver never turns a live request into a fixture request.
@@ -66,7 +75,7 @@ export const resolveOperationalFlags = (env: unknown): OperationalFlags => {
     routes: booleanValue(env, OPERATIONAL_FLAG_ENV.routes),
     openai: booleanValue(env, OPERATIONAL_FLAG_ENV.openai),
     shareLineScheme: booleanValue(env, OPERATIONAL_FLAG_ENV.shareLineScheme),
-    killSwitch: booleanValue(env, OPERATIONAL_FLAG_ENV.killSwitch),
+    killSwitch: killSwitchValue(env),
     qualityEnvelope: booleanValue(env, OPERATIONAL_FLAG_ENV.qualityEnvelope),
   };
   return v.parse(OperationalFlagsSchema, flags);

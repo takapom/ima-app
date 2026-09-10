@@ -31,7 +31,7 @@ trace の `tokenCount` と `apiElementCount` は provider が実測して返し�
 
 ## Operational flags
 
-`IMA_RUNTIME_MODE` は `live`、`fixture`、`disabled` のいずれかを明示する。未設定・不正値は `disabled` になり、live から fixture へ暗黙に切り替わらない。provider flag が無効、kill switch が有効、または mode が disabled の場合、その能力は disabled として composition へ渡す。flags は公開 schema、Core 制約、保存保持境界を無効化しない。
+`IMA_RUNTIME_MODE` は `live`、`fixture`、`disabled` のいずれかを明示する。未設定・不正値は `disabled` になり、live から fixture へ暗黙に切り替わらない。`IMA_KILL_SWITCH` は省略時だけ停止なし（既存設定との互換）とし、`false`/`0`/`off`/`disabled` を明示的な停止なしとして受け付ける。それ以外の不正値は停止側へ倒す。provider flag が無効、kill switch が有効、または mode が disabled の場合、その能力は disabled として composition へ渡す。flags は公開 schema、Core 制約、保存保持境界を無効化しない。
 
 | 環境変数                                          | 対象                 |
 | ------------------------------------------------- | -------------------- |
@@ -42,7 +42,11 @@ trace の `tokenCount` と `apiElementCount` は provider が実測して返し�
 | `IMA_KILL_SWITCH`                                 | 全 capability の停止 |
 | `IMA_QUALITY_ENVELOPE`                            | 実装済み任意品質動作 |
 
-実 API key がない環境では live 成功を生成しない。現在の flags resolver は型付き入力を composition に渡す境界までを担当し、各 provider/factory が最終的な paid call 前に再確認する。
+実 API key がない環境では live 成功を生成しない。本番factoryはモデル停止時にruntimeを構成せず、Places停止時は検索・詳細の外部Portを無効にする。Routes/終電はhost設定とflagの両方を要求し、終電停止時はdatasetも読み取らない。写真HTTPはtokenの認可を維持し、有効なtokenでも停止中は外部fetchを行わない。fixtureの既定factoryは注入されたモデル・fetcherを要求し、liveクライアントへ切り替わらない。
+
+Routes・写真の既定host設定、Hot Pepperの本番接続、runtimeからのtrace生成は別の残件である。flagを有効にしただけでは、それらの実装・設定・保持ポリシーが揃ったとは判定しない。
+
+Wrangler の dev/staging/production 初期値と `.dev.vars.example` は各 provider flag と `IMA_KILL_SWITCH` を明示する。値を省略した provider は停止し、停止 switch は上記の互換既定を除き不正値を停止側へ倒す。
 
 ## 運用手順
 

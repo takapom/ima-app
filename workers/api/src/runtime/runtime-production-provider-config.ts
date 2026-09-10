@@ -32,6 +32,7 @@ import type { RuntimeBudget } from './runtime-budget';
 
 export type RuntimeProductionProviderAvailability = {
   readonly activeJourneyRevision: number | null | undefined;
+  readonly placesEnabled: boolean;
   readonly lastTrainEnabled: boolean;
   readonly routesEnabled: boolean;
   readonly photosEnabled: boolean;
@@ -41,6 +42,8 @@ export const isConfiguredSecret = (value: string | undefined): value is string =
   value !== undefined && value.trim().length > 0;
 
 export type RuntimeProductionAvailabilityConfiguration = RuntimeProductionPhotoConfiguration & {
+  /** Host-owned flag; omitted only by direct unit fixtures, where the capability is explicit. */
+  readonly lastTrainEnabled?: boolean;
   readonly routesEnabled?: boolean;
   readonly googleRoutesApiKey?: string;
   readonly routeObservationPolicy?: WalkingRouteObservationPolicy;
@@ -71,6 +74,7 @@ export const runtimeProductionProviderAvailabilityFor = (
     input.configuration.currentOriginRefFor !== undefined;
   const currentOriginRef = input.configuration.currentOriginRefFor?.(input.context);
   const lastTrainEnabled =
+    input.configuration.lastTrainEnabled !== false &&
     routesEnabled &&
     input.activeJourneyRevision !== undefined &&
     input.activeJourneyRevision !== null &&
@@ -91,6 +95,7 @@ export const runtimeProductionProviderAvailabilityFor = (
     photoReferenceAvailable(input.env, input.configuration.photoReferenceResolver);
   return {
     activeJourneyRevision: input.activeJourneyRevision,
+    placesEnabled: input.placesEnabled,
     lastTrainEnabled,
     routesEnabled,
     photosEnabled,

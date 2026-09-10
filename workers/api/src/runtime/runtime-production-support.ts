@@ -235,8 +235,8 @@ export const productionPlacesEnabled = (options: {
   /** Separate capability gate; retention policy controls data use, not tool availability. */
   readonly placesEnabled?: boolean;
 }): boolean => {
-  if (options.prepareTurn !== undefined) return true;
-  return options.placesEnabled === true;
+  if (options.placesEnabled !== undefined) return options.placesEnabled;
+  return options.prepareTurn !== undefined;
 };
 
 export type ProductionContextOptions = {

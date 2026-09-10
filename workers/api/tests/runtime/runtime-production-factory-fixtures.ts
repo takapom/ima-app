@@ -3,6 +3,17 @@ import type { CommitPort, ModelContextFieldPolicy, RetentionMetadata } from '@im
 
 export const NOW = '2026-09-10T00:00:00.000Z';
 
+/** Explicitly injected provider gates for tests that use fixture model/fetch implementations. */
+export const FIXTURE_OPERATIONAL_ENV = {
+  IMA_RUNTIME_MODE: 'fixture',
+  IMA_PROVIDER_OPENAI: 'true',
+  IMA_PROVIDER_PLACES: 'true',
+  IMA_PROVIDER_ROUTES: 'true',
+  IMA_PROVIDER_LAST_TRAIN: 'true',
+  IMA_PROVIDER_HOTPEPPER: 'false',
+  IMA_KILL_SWITCH: 'false',
+} as const;
+
 export const ALLOW_RETENTION = {
   retentionDecision: 'allow',
   retentionMode: 'provider_limited',

@@ -36,16 +36,28 @@ import {
   type RuntimeCancellationClassification,
 } from './bootstrap-runtime';
 import { createPhotoBodyHandler } from './providers/photo/http';
+import { PhotoProviderError } from './providers/photo/media';
 import { createGooglePhotoMediaTransport } from './providers/photo/transport';
 import { createPhotoTokenCodec } from './providers/photo/token';
 import { createPhotoReferenceStoreResolver } from './providers/photo/rpc';
+import type { PhotoTokenCodec } from './providers/photo/types';
 import { createBestEffortEventsSink, createTelemetryEventsSink } from './telemetry/events';
 import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetry/telemetry-do';
+import { resolveRuntimeOperationalGate } from './runtime/runtime-operational-gate';
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;
   readonly GOOGLE_PLACES_API_KEY?: string;
   readonly PHOTO_TOKEN_SECRET?: string;
+  readonly IMA_RUNTIME_MODE?: string;
+  readonly IMA_PROVIDER_PLACES?: string;
+  readonly IMA_PROVIDER_HOTPEPPER?: string;
+  readonly IMA_PROVIDER_LAST_TRAIN?: string;
+  readonly IMA_PROVIDER_ROUTES?: string;
+  readonly IMA_PROVIDER_OPENAI?: string;
+  readonly IMA_SHARE_LINE_SCHEME?: string;
+  readonly IMA_KILL_SWITCH?: string;
+  readonly IMA_QUALITY_ENVELOPE?: string;
   readonly THREADS: DurableObjectNamespace<ThreadDO>;
   readonly RATE_LIMITS: DurableObjectNamespace<RateLimitDO>;
   readonly TELEMETRY?: TelemetryNamespace;
@@ -222,19 +234,28 @@ const createApplication = (env: BootstrapEnv, options: BootstrapOptions): Applic
   };
 };
 
-const createUnavailablePhoto = (): PhotoBodyHandler => ({
-  read() {
-    return Promise.reject(unavailable());
-  },
-});
+const createUnavailablePhoto = (tokenCodec?: PhotoTokenCodec): PhotoBodyHandler => {
+  if (tokenCodec === undefined) {
+    return {
+      read() {
+        return Promise.reject(unavailable());
+      },
+    };
+  }
+  return createPhotoBodyHandler({
+    tokenCodec,
+    transport: {
+      read: () => Promise.reject(new PhotoProviderError('UPSTREAM_UNAVAILABLE')),
+    },
+  });
+};
 
 const createConfiguredPhoto = (
   env: BootstrapEnv,
-  photoFetcher: typeof fetch = fetch,
+  photoFetcher?: typeof fetch,
 ): PhotoBodyHandler => {
-  const apiKey = env.GOOGLE_PLACES_API_KEY?.trim();
+  const operational = resolveRuntimeOperationalGate(env);
   const tokenSecret = env.PHOTO_TOKEN_SECRET?.trim();
-  if (apiKey === undefined || apiKey.length === 0) return createUnavailablePhoto();
   if (tokenSecret === undefined || tokenSecret.length === 0) return createUnavailablePhoto();
   const tokenCodec = createPhotoTokenCodec({
     secret: tokenSecret,
@@ -242,7 +263,14 @@ const createConfiguredPhoto = (
       env.THREADS.getByName(threadId),
     ),
   });
-  const transport = createGooglePhotoMediaTransport({ apiKey, fetcher: photoFetcher });
+  if (!operational.enabled('places')) return createUnavailablePhoto(tokenCodec);
+  if (operational.mode === 'fixture' && photoFetcher === undefined) {
+    // Fixture mode must receive an injected fetcher; it never falls through to global fetch.
+    return createUnavailablePhoto(tokenCodec);
+  }
+  const apiKey = env.GOOGLE_PLACES_API_KEY?.trim();
+  if (apiKey === undefined || apiKey.length === 0) return createUnavailablePhoto(tokenCodec);
+  const transport = createGooglePhotoMediaTransport({ apiKey, fetcher: photoFetcher ?? fetch });
   return createPhotoBodyHandler({ tokenCodec, transport });
 };
 

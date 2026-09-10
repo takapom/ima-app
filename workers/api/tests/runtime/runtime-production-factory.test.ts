@@ -7,6 +7,7 @@ import { modelFor, type RuntimeGateModelReport } from '../runtime-gate/runtime-g
 import {
   ALLOW_MODEL_CONTEXT_FIELDS,
   ALLOW_RETENTION,
+  FIXTURE_OPERATIONAL_ENV,
   NOW,
   buildRequest,
   readOnlyCommit as commit,
@@ -43,6 +44,7 @@ describe('production runtime factory', () => {
     };
     const options = createRuntimeProductionConnectionOptions({
       env: {
+        ...FIXTURE_OPERATIONAL_ENV,
         OPENAI_API_KEY: 'openai-test-key',
         GOOGLE_PLACES_API_KEY: 'google-test-key',
         PLACES_CURSOR_SECRET: 'cursor-test-secret-16',
@@ -61,9 +63,10 @@ describe('production runtime factory', () => {
     const composition = await options.buildTurn(buildRequest);
     expect(composition.providerOptions).toEqual(OPENAI_PROVIDER_REQUEST_OPTIONS);
     expect(composition.turn.context.capabilities).toMatchObject({
-      detailFields: [],
-      supportedScopes: [],
+      detailFields: ['identity', 'opening_hours', 'price'],
+      supportedScopes: ['runtime-production'],
     });
+    expect(composition.turn.context.capabilities.walkingRoute).toBe(false);
     const result = await invokePublicToolEnvelope(
       'search_places',
       {
@@ -140,6 +143,7 @@ describe('production runtime factory', () => {
     });
     const options = createRuntimeProductionConnectionOptions({
       env: {
+        ...FIXTURE_OPERATIONAL_ENV,
         OPENAI_API_KEY: 'openai-test-key',
         GOOGLE_PLACES_API_KEY: 'google-test-key',
         PLACES_CURSOR_SECRET: 'cursor-test-secret-16',
@@ -234,6 +238,7 @@ describe('production runtime factory', () => {
     } satisfies RetentionMetadata;
     const options = createRuntimeProductionConnectionOptions({
       env: {
+        ...FIXTURE_OPERATIONAL_ENV,
         OPENAI_API_KEY: 'openai-test-key',
         GOOGLE_PLACES_API_KEY: 'google-test-key',
         PLACES_CURSOR_SECRET: 'cursor-test-secret-16',
@@ -241,6 +246,7 @@ describe('production runtime factory', () => {
       commit,
       overrides: {
         modelForTurn: modelFor('search', report),
+        placesEnabled: false,
         googlePlacesApiKey: 'google-test-key',
         placesCursorSecret: 'cursor-test-secret-16',
         retention: lateRetention,
@@ -280,5 +286,122 @@ describe('production runtime factory', () => {
     expect(secondContext.retention.retentionUntil).toBe('2026-09-10T20:00:00.000Z');
     first.dispose();
     second.dispose();
+  });
+
+  it('does not create a runtime when the OpenAI capability is disabled', () => {
+    expect(
+      createRuntimeProductionConnectionOptions({
+        env: {
+          ...FIXTURE_OPERATIONAL_ENV,
+          IMA_PROVIDER_OPENAI: 'false',
+          OPENAI_API_KEY: 'openai-test-key',
+          GOOGLE_PLACES_API_KEY: 'google-test-key',
+          PLACES_CURSOR_SECRET: 'cursor-test-secret-16',
+        },
+        commit,
+        overrides: { modelForTurn: modelFor('search', { calls: 0, requests: [] }) },
+      }),
+    ).toBeUndefined();
+  });
+
+  it('returns a typed disabled result without invoking Places when its flag is off', async () => {
+    let fetchCalls = 0;
+    const options = createRuntimeProductionConnectionOptions({
+      env: {
+        ...FIXTURE_OPERATIONAL_ENV,
+        IMA_PROVIDER_PLACES: 'false',
+        OPENAI_API_KEY: 'openai-test-key',
+        GOOGLE_PLACES_API_KEY: 'google-test-key',
+        PLACES_CURSOR_SECRET: 'cursor-test-secret-16',
+      },
+      commit,
+      overrides: {
+        modelForTurn: modelFor('search', { calls: 0, requests: [] }),
+        fetcher: () => {
+          fetchCalls += 1;
+          return Promise.reject(new Error('disabled Places must not fetch'));
+        },
+        clock: () => NOW,
+        monotonicNow: () => 0,
+        epochNow: () => 1_000,
+      },
+    });
+    if (options === undefined) throw new Error('production factory should be configured');
+    const composition = await options.buildTurn(buildRequest);
+    expect(composition.turn.context.capabilities.detailFields).toEqual([]);
+    const result = await invokePublicToolEnvelope(
+      'search_places',
+      {
+        input: {
+          mode: 'search',
+          query: '静かなカフェ',
+          area: { kind: 'named_area', name: '渋谷' },
+          openNow: true,
+          limit: 1,
+          excludeCandidateIds: [],
+        },
+        metadata: {},
+      },
+      composition.turn.dependencies,
+      { toolCallId: 'sdk-disabled-search' },
+    );
+    expect(result.status).toBe('error');
+    expect(fetchCalls).toBe(0);
+    composition.dispose();
+  });
+
+  it('does not let fixture Routes fall through to global fetch', () => {
+    const options = createRuntimeProductionConnectionOptions({
+      env: {
+        ...FIXTURE_OPERATIONAL_ENV,
+        IMA_PROVIDER_PLACES: 'false',
+        IMA_PROVIDER_ROUTES: 'true',
+        OPENAI_API_KEY: 'openai-test-key',
+        GOOGLE_ROUTES_API_KEY: 'routes-test-key',
+      },
+      commit,
+      overrides: {
+        modelForTurn: modelFor('search', { calls: 0, requests: [] }),
+        routesEnabled: true,
+        routeObservationPolicy: () => ({
+          freshUntil: '2026-09-10T01:00:00.000Z',
+          expiresAt: '2026-09-10T03:00:00.000Z',
+          retention: ALLOW_RETENTION,
+        }),
+        currentOriginRefFor: () => 'current-location',
+      },
+    });
+    expect(options).toBeUndefined();
+  });
+
+  it('does not read the journey dataset when LastTrain is disabled', async () => {
+    let revisionReads = 0;
+    const options = createRuntimeProductionConnectionOptions({
+      env: {
+        ...FIXTURE_OPERATIONAL_ENV,
+        IMA_PROVIDER_PLACES: 'false',
+        IMA_PROVIDER_ROUTES: 'false',
+        IMA_PROVIDER_LAST_TRAIN: 'false',
+        OPENAI_API_KEY: 'openai-test-key',
+      },
+      commit,
+      overrides: {
+        modelForTurn: modelFor('search', { calls: 0, requests: [] }),
+        lastTrainEnabled: false,
+        journeyDataset: {
+          readRevision: () => {
+            revisionReads += 1;
+            return Promise.resolve(7);
+          },
+          read: () => Promise.reject(new Error('disabled LastTrain must not read journeys')),
+        },
+      },
+    });
+    if (options === undefined) throw new Error('production factory should be configured');
+
+    const composition = await options.buildTurn(buildRequest);
+    expect(revisionReads).toBe(0);
+    expect(composition.turn.context.capabilities.lastTrain).toBe(false);
+    composition.dispose();
   });
 });
