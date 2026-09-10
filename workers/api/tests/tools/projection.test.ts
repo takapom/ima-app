@@ -9,6 +9,7 @@ import type {
   RetentionMetadata,
   SearchPlacesOutput,
 } from '@ima/core';
+import type { ModelContextFieldPolicy } from '@ima/core';
 import { projectDetailsResult, projectSearchResult } from '../../src/tools/projection';
 import { createToolRegistry, toolScope } from './registry-fixture';
 
@@ -76,6 +77,22 @@ const deniedRetention = {
   policyStatus: 'policy_withheld',
   displayPolicyStatus: 'policy_withheld',
 } satisfies RetentionMetadata;
+
+const modelInputOnlyPolicy: ModelContextFieldPolicy = {
+  evidence: {
+    identity: 'allow',
+    opening_hours: 'deny',
+    price: 'deny',
+    photos: 'deny',
+    contact: 'deny',
+    facilities: 'deny',
+    walking_route: 'deny',
+    last_train: 'deny',
+  },
+  history: 'deny',
+  cardSet: 'deny',
+  displayName: 'deny',
+};
 
 const observationContext: ObservationContext = {
   ownerScopeRef: context.ownerScopeRef,
@@ -210,6 +227,7 @@ describe('model-facing tool projection', () => {
       context,
       registryFor(returned),
       context.serverNow,
+      modelInputOnlyPolicy,
     );
 
     expect(result.status).toBe('ok');
@@ -242,8 +260,8 @@ describe('model-facing tool projection', () => {
     expect(JSON.stringify(result)).not.toContain('secret-retention');
   });
 
-  it('withholds a value when the provider retention policy denies model input', () => {
-    const returned = detailsResult(deniedRetention);
+  it('fails closed when the model input field policy is omitted', () => {
+    const returned = detailsResult(allowedRetention);
     const result = projectDetailsResult(
       returned,
       context,
@@ -261,11 +279,39 @@ describe('model-facing tool projection', () => {
     expect(JSON.stringify(result)).not.toContain('Safe fixture');
   });
 
+  it('allows only an explicitly permitted llm_input field when display and persistence are denied', () => {
+    const returned = detailsResult(deniedRetention);
+    const result = projectDetailsResult(
+      returned,
+      context,
+      registryFor(returned),
+      context.serverNow,
+      modelInputOnlyPolicy,
+    );
+
+    expect(result).toMatchObject({
+      status: 'ok',
+      data: { items: [{ fields: { identity: { status: 'known' } } }] },
+    });
+    if (result.status === 'ok') {
+      expect(result.data.items[0]?.fields.identity).toMatchObject({
+        status: 'known',
+        observations: [{ value: identity }],
+      });
+    }
+  });
+
   it('uses the registry snapshot when a provider reuses an observation ID', () => {
     const stored = detailsResult(allowedRetention);
     const forgedIdentity = { ...identity, name: 'forged provider value' };
     const returned = detailsResult(allowedRetention, forgedIdentity);
-    const result = projectDetailsResult(returned, context, registryFor(stored), context.serverNow);
+    const result = projectDetailsResult(
+      returned,
+      context,
+      registryFor(stored),
+      context.serverNow,
+      modelInputOnlyPolicy,
+    );
 
     expect(result.status).toBe('ok');
     if (result.status === 'ok') {
@@ -401,7 +447,13 @@ describe('model-facing tool projection', () => {
     const returned = detailsResult(allowedRetention);
     const registry = registryFor(returned);
     const beforeRead = { ...context, serverNow: '2026-09-09T23:59:00Z' };
-    const known = projectDetailsResult(returned, beforeRead, registry, '2026-09-10T00:01:00Z');
+    const known = projectDetailsResult(
+      returned,
+      beforeRead,
+      registry,
+      '2026-09-10T00:01:00Z',
+      modelInputOnlyPolicy,
+    );
     expect(known).toMatchObject({
       status: 'ok',
       data: { items: [{ fields: { identity: { status: 'known' } } }] },

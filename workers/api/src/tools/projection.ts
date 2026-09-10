@@ -1,19 +1,16 @@
 import type {
-  CandidateObservationRegistryPort,
   DetailField,
   FieldResult,
   GetPlaceDetailsOutput,
   HarnessContext,
   Issue,
-  Observation,
-  ReadonlyStoredObservation,
   Result,
   SearchPlacesOutput,
 } from '@ima/core';
-import { projectModelEvidence } from '@ima/core';
+import type { ModelContextFieldPolicy } from '@ima/core';
 import type {
-  DetailsToolResult,
   DetailsFieldValue,
+  DetailsToolResult,
   ModelSafeFieldResult,
   ModelSafeObservation,
   SafeGetPlaceDetailsOutput,
@@ -21,22 +18,16 @@ import type {
   SafeSearchPlacesOutput,
   SearchToolResult,
 } from './types';
+import { safeObservation, type ProjectionRegistry } from './projection-evidence';
 
-type ProjectionRegistry = Pick<
-  CandidateObservationRegistryPort,
-  'readCandidate' | 'readObservation'
->;
-
-const safePortIssue = (error: Issue): Issue => {
-  return {
-    code: error.code,
-    path: error.path,
-    retryable: error.retryable,
-    retryAfterMs: error.retryAfterMs,
-    message: 'tool result is unavailable',
-    missingFields: [],
-  };
-};
+const safePortIssue = (error: Issue): Issue => ({
+  code: error.code,
+  path: error.path,
+  retryable: error.retryable,
+  retryAfterMs: error.retryAfterMs,
+  message: 'tool result is unavailable',
+  missingFields: [],
+});
 
 const projectionIssue = (code: Issue['code'], path: string | null, message: string): Issue => ({
   code,
@@ -62,176 +53,6 @@ const unavailableField = <T>(
           ? 'field does not apply'
           : 'evidence is unavailable for model input'),
 });
-
-const sameJsonValue = (left: unknown, right: unknown): boolean => {
-  if (left === right) return true;
-  if (typeof left !== typeof right || left === null || right === null) return false;
-  if (Array.isArray(left) || Array.isArray(right)) {
-    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
-      return false;
-    }
-    return left.every((item, index) => sameJsonValue(item, right[index]));
-  }
-  if (typeof left !== 'object' || typeof right !== 'object') return false;
-  const leftKeys = Object.keys(left);
-  const rightKeys = Object.keys(right);
-  if (leftKeys.length !== rightKeys.length) return false;
-  return leftKeys.every((key) => {
-    if (!Object.prototype.hasOwnProperty.call(right, key)) return false;
-    const leftDescriptor = Object.getOwnPropertyDescriptor(left, key);
-    const rightDescriptor = Object.getOwnPropertyDescriptor(right, key);
-    return (
-      leftDescriptor !== undefined &&
-      rightDescriptor !== undefined &&
-      'value' in leftDescriptor &&
-      'value' in rightDescriptor &&
-      sameJsonValue(leftDescriptor.value, rightDescriptor.value)
-    );
-  });
-};
-
-type SafeObservationDecision<T> =
-  | { readonly status: 'known'; readonly observation: ModelSafeObservation<T> }
-  | { readonly status: 'withheld' | 'stale'; readonly reason: string }
-  | { readonly status: 'error'; readonly error: Issue };
-
-const observationIssue = <T>(
-  code: Issue['code'],
-  path: string,
-  message: string,
-): SafeObservationDecision<T> => ({
-  status: 'error',
-  error: projectionIssue(code, path, message),
-});
-
-const safeObservation = <T>(
-  observation: Observation<T>,
-  expectedCandidateId: string,
-  expectedField: DetailField,
-  context: HarnessContext,
-  registry: ProjectionRegistry,
-  now: string,
-): SafeObservationDecision<T> => {
-  if (observation.candidateId !== expectedCandidateId || observation.field !== expectedField) {
-    return observationIssue(
-      'INVALID_EVIDENCE',
-      'observations',
-      'observation identity does not match its candidate field',
-    );
-  }
-  if (observation.context === undefined) {
-    return observationIssue(
-      'MISSING_CONTEXT',
-      'observations.context',
-      'observation context is missing',
-    );
-  }
-  if (
-    observation.context.ownerScopeRef !== context.ownerScopeRef ||
-    observation.context.threadId !== context.threadId
-  ) {
-    return observationIssue(
-      'INVALID_EVIDENCE',
-      'observations.context',
-      'observation context does not match this thread',
-    );
-  }
-  const scope = { ownerScopeRef: context.ownerScopeRef, threadId: context.threadId };
-  let stored: ReadonlyStoredObservation | undefined;
-  try {
-    stored = registry.readObservation(scope, observation.observationId);
-  } catch {
-    return observationIssue(
-      'MISSING_CONTEXT',
-      'observations',
-      'observation registry is unavailable',
-    );
-  }
-  if (stored === undefined) {
-    return observationIssue(
-      'MISSING_EVIDENCE',
-      'observations.observationId',
-      'observation is not registered',
-    );
-  }
-  if (
-    stored.candidateId !== expectedCandidateId ||
-    stored.field !== expectedField ||
-    stored.context.ownerScopeRef !== context.ownerScopeRef ||
-    stored.context.threadId !== context.threadId
-  ) {
-    return observationIssue(
-      'INVALID_EVIDENCE',
-      'observations',
-      'registered observation does not match its candidate field or thread',
-    );
-  }
-  let projected;
-  try {
-    // Core owns the shared freshness/retention decision through projectModelEvidence.
-    projected = projectModelEvidence(
-      {
-        ownerScopeRef: stored.context.ownerScopeRef,
-        threadId: stored.context.threadId,
-        observationId: stored.observationId,
-        candidateId: stored.candidateId,
-        field: stored.field,
-        value: stored.value,
-        fetchedAt: stored.fetchedAt,
-        freshUntil: stored.freshUntil,
-        expiresAt: stored.expiresAt,
-        sources: stored.sources,
-        retention: stored.retention,
-      },
-      now,
-    );
-  } catch {
-    return observationIssue(
-      'INVALID_EVIDENCE',
-      'observations',
-      'registered observation is invalid',
-    );
-  }
-  if (projected.status !== 'known') {
-    return { status: projected.status, reason: projected.reason };
-  }
-  let valueMatches = false;
-  try {
-    valueMatches = sameJsonValue(projected.value, observation.value);
-  } catch {
-    return observationIssue(
-      'INVALID_EVIDENCE',
-      'observations.value',
-      'observation value is invalid',
-    );
-  }
-  if (!valueMatches) {
-    return observationIssue(
-      'INVALID_EVIDENCE',
-      'observations.value',
-      'observation value does not match the registry snapshot',
-    );
-  }
-  return {
-    status: 'known',
-    observation: {
-      observationId: stored.observationId,
-      candidateId: stored.candidateId,
-      field: expectedField,
-      value: structuredClone(observation.value),
-      basis: stored.basis,
-      fetchedAt: stored.fetchedAt,
-      sourceUpdatedAt: stored.sourceUpdatedAt,
-      expiresAt: stored.expiresAt,
-      freshUntil: projected.freshUntil,
-      sources: stored.sources.map((source) => ({
-        provider: source.provider,
-        attribution: source.attribution,
-        publicUrl: source.publicUrl,
-      })),
-    },
-  };
-};
 
 const candidateOwnershipIssue = (
   registry: ProjectionRegistry,
@@ -266,14 +87,13 @@ const projectFieldResult = <T>(
   context: HarnessContext,
   registry: ProjectionRegistry,
   now: string,
+  fieldPolicy: ModelContextFieldPolicy | undefined,
 ): ModelSafeFieldResult<T> => {
-  if (result.status === 'error') {
-    return { status: 'error', error: safePortIssue(result.error) };
-  }
+  if (result.status === 'error') return { status: 'error', error: safePortIssue(result.error) };
   if (result.status !== 'known') return unavailableField(result.status);
 
   const decisions = result.observations.map((observation) =>
-    safeObservation(observation, candidateId, expectedField, context, registry, now),
+    safeObservation(observation, candidateId, expectedField, context, registry, now, fieldPolicy),
   );
   const observations = decisions
     .filter(
@@ -303,6 +123,7 @@ const projectSearchData = (
   context: HarnessContext,
   registry: ProjectionRegistry,
   now: string,
+  fieldPolicy: ModelContextFieldPolicy | undefined,
 ): SafeSearchPlacesOutput => ({
   searchId: data.searchId,
   candidates: data.candidates.map((candidate) => ({
@@ -314,6 +135,7 @@ const projectSearchData = (
       context,
       registry,
       now,
+      fieldPolicy,
     ),
     openingHours: projectFieldResult(
       candidate.openingHours,
@@ -322,6 +144,7 @@ const projectSearchData = (
       context,
       registry,
       now,
+      fieldPolicy,
     ),
     price: projectFieldResult(
       candidate.price,
@@ -330,6 +153,7 @@ const projectSearchData = (
       context,
       registry,
       now,
+      fieldPolicy,
     ),
   })),
   applied: data.applied,
@@ -343,6 +167,7 @@ const projectDetailsFields = (
   context: HarnessContext,
   registry: ProjectionRegistry,
   now: string,
+  fieldPolicy: ModelContextFieldPolicy | undefined,
 ): SafePlaceFields => {
   const projected: {
     identity?: ModelSafeFieldResult<DetailsFieldValue<'identity'>>;
@@ -354,85 +179,23 @@ const projectDetailsFields = (
     walking_route?: ModelSafeFieldResult<DetailsFieldValue<'walking_route'>>;
     last_train?: ModelSafeFieldResult<DetailsFieldValue<'last_train'>>;
   } = {};
-  if (fields.identity !== undefined) {
-    projected.identity = projectFieldResult(
-      fields.identity,
-      candidateId,
-      'identity',
-      context,
-      registry,
-      now,
-    );
-  }
+  const project = <T>(result: FieldResult<T>, field: DetailField): ModelSafeFieldResult<T> =>
+    projectFieldResult(result, candidateId, field, context, registry, now, fieldPolicy);
+  if (fields.identity !== undefined) projected.identity = project(fields.identity, 'identity');
   if (fields.opening_hours !== undefined) {
-    projected.opening_hours = projectFieldResult(
-      fields.opening_hours,
-      candidateId,
-      'opening_hours',
-      context,
-      registry,
-      now,
-    );
+    projected.opening_hours = project(fields.opening_hours, 'opening_hours');
   }
-  if (fields.price !== undefined) {
-    projected.price = projectFieldResult(
-      fields.price,
-      candidateId,
-      'price',
-      context,
-      registry,
-      now,
-    );
-  }
-  if (fields.photos !== undefined) {
-    projected.photos = projectFieldResult(
-      fields.photos,
-      candidateId,
-      'photos',
-      context,
-      registry,
-      now,
-    );
-  }
-  if (fields.contact !== undefined) {
-    projected.contact = projectFieldResult(
-      fields.contact,
-      candidateId,
-      'contact',
-      context,
-      registry,
-      now,
-    );
-  }
+  if (fields.price !== undefined) projected.price = project(fields.price, 'price');
+  if (fields.photos !== undefined) projected.photos = project(fields.photos, 'photos');
+  if (fields.contact !== undefined) projected.contact = project(fields.contact, 'contact');
   if (fields.facilities !== undefined) {
-    projected.facilities = projectFieldResult(
-      fields.facilities,
-      candidateId,
-      'facilities',
-      context,
-      registry,
-      now,
-    );
+    projected.facilities = project(fields.facilities, 'facilities');
   }
   if (fields.walking_route !== undefined) {
-    projected.walking_route = projectFieldResult(
-      fields.walking_route,
-      candidateId,
-      'walking_route',
-      context,
-      registry,
-      now,
-    );
+    projected.walking_route = project(fields.walking_route, 'walking_route');
   }
   if (fields.last_train !== undefined) {
-    projected.last_train = projectFieldResult(
-      fields.last_train,
-      candidateId,
-      'last_train',
-      context,
-      registry,
-      now,
-    );
+    projected.last_train = project(fields.last_train, 'last_train');
   }
   return projected;
 };
@@ -442,10 +205,18 @@ const projectDetailsData = (
   context: HarnessContext,
   registry: ProjectionRegistry,
   now: string,
+  fieldPolicy: ModelContextFieldPolicy | undefined,
 ): SafeGetPlaceDetailsOutput => ({
   items: data.items.map((item) => ({
     candidateId: item.candidateId,
-    fields: projectDetailsFields(item.fields, item.candidateId, context, registry, now),
+    fields: projectDetailsFields(
+      item.fields,
+      item.candidateId,
+      context,
+      registry,
+      now,
+      fieldPolicy,
+    ),
   })),
 });
 
@@ -454,6 +225,7 @@ export const projectSearchResult = (
   context: HarnessContext,
   registry: ProjectionRegistry,
   now: string,
+  fieldPolicy?: ModelContextFieldPolicy,
 ): SearchToolResult => {
   if (result.status === 'error') return { status: 'error', error: safePortIssue(result.error) };
   const ownershipIssue = candidateOwnershipIssue(
@@ -465,7 +237,7 @@ export const projectSearchResult = (
   if (ownershipIssue !== undefined) return { status: 'error', error: ownershipIssue };
   return {
     status: result.status,
-    data: projectSearchData(result.data, context, registry, now),
+    data: projectSearchData(result.data, context, registry, now, fieldPolicy),
     warnings: result.warnings.map(safePortIssue),
   };
 };
@@ -475,6 +247,7 @@ export const projectDetailsResult = (
   context: HarnessContext,
   registry: ProjectionRegistry,
   now: string,
+  fieldPolicy?: ModelContextFieldPolicy,
 ): DetailsToolResult => {
   if (result.status === 'error') return { status: 'error', error: safePortIssue(result.error) };
   const ownershipIssue = candidateOwnershipIssue(
@@ -486,7 +259,7 @@ export const projectDetailsResult = (
   if (ownershipIssue !== undefined) return { status: 'error', error: ownershipIssue };
   return {
     status: result.status,
-    data: projectDetailsData(result.data, context, registry, now),
+    data: projectDetailsData(result.data, context, registry, now, fieldPolicy),
     warnings: result.warnings.map(safePortIssue),
   };
 };

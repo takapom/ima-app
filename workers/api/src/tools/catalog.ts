@@ -114,6 +114,7 @@ const searchPlaces = async (
     checked.runtime.context,
     dependencies.registry,
     dependencies.clock(),
+    dependencies.modelContextFieldPolicy,
   );
 };
 
@@ -180,6 +181,7 @@ const getPlaceDetails = async (
       checked.runtime.context,
       dependencies.registry,
       dependencies.clock(),
+      dependencies.modelContextFieldPolicy,
     );
   }
   if (!matchesDetailsRequest(parsedInput.value, result.data)) {
@@ -190,6 +192,7 @@ const getPlaceDetails = async (
     checked.runtime.context,
     dependencies.registry,
     dependencies.clock(),
+    dependencies.modelContextFieldPolicy,
   );
 };
 

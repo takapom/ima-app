@@ -7,6 +7,7 @@ import type {
   GetPlaceDetailsOutput,
   HarnessContext,
   Issue,
+  ModelContextFieldPolicy,
   ModelActionMetadata,
   PlaceDetailsPort,
   PlaceSearchPort,
@@ -58,6 +59,8 @@ export type ToolBindingDependencies = {
   readonly search: PlaceSearchPort;
   readonly details: PlaceDetailsPort;
   readonly submit: SubmitCardsPort;
+  /** Host-evaluated policy for the SDK model-input surface. Omitted means deny by default. */
+  readonly modelContextFieldPolicy?: ModelContextFieldPolicy;
   readonly runtime: ToolRuntimeFactory;
 };
 
