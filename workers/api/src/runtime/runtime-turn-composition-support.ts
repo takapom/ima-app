@@ -33,7 +33,6 @@ const ephemeralWindow = (
 ): { readonly localFreshUntil: string; readonly localExpiresAt: string } => {
   const localExpiresAt = earliest([
     context.retention.sessionExpiresAt,
-    context.retention.retentionUntil,
     context.retention.deletionScheduledAt,
   ]);
   return {
@@ -86,7 +85,6 @@ export const observedWindow = (
   const freshUntil: (string | null)[] = [context.retention.freshUntil];
   const expiresAt: (string | null)[] = [
     context.retention.sessionExpiresAt,
-    context.retention.retentionUntil,
     context.retention.deletionScheduledAt,
   ];
   for (const expiry of expiries) {
@@ -106,8 +104,6 @@ export const observedWindow = (
       expiry.expiresAt,
       stored.expiresAt,
       stored.retention.sessionExpiresAt,
-      stored.retention.displayUntil,
-      stored.retention.retentionUntil,
       stored.retention.deletionScheduledAt,
     );
   }

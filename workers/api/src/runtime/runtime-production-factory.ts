@@ -9,12 +9,9 @@ import type {
   GetPlaceDetailsInput,
   HarnessContext,
   IdPort,
+  ModelContextFieldPolicy,
   PlaceDetailsPort,
   PlaceSearchPort,
-  SubmitCardsPort,
-  SubmitCardsPortResult,
-  ToolExecutionContext,
-  CancellationToken,
 } from '@ima/core';
 import { CandidateObservationRegistry } from '@ima/core';
 import { normalizeGoogleOpeningHours } from '../providers/places/hours';
@@ -49,6 +46,7 @@ import {
 import { RuntimeBudget } from './runtime-budget';
 import {
   defaultProductionObservationPolicy,
+  capProductionObservationPolicy,
   googlePlacesApiKey,
   harnessContextFor,
   placesCursorSecret,
@@ -61,6 +59,7 @@ import {
   productionRetentionFor,
   productionSecret,
   ProductionIds,
+  sessionExpiryAt,
   type ProductionRetentionSource,
   productionScopeFor,
   validationContextFor,
@@ -75,6 +74,7 @@ import type {
 } from './runtime-think-connection';
 import type { RuntimeModelGuardCallOptions, RuntimeModelGuardModel } from './runtime-model-guard';
 import { defaultRuntimeModelContextPolicy } from './runtime-field-policy';
+import { unavailableSubmit } from './runtime-production-submit';
 
 type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;
@@ -112,8 +112,12 @@ export type RuntimeProductionOverrides = {
   readonly placesEnabled?: boolean;
   /** Host-owned final response admission; the default plan keeps this false. */
   readonly isFinalResponse?: (params: RuntimeModelGuardCallOptions) => boolean;
-  /** Explicitly permits current-turn model projection; omission stays deny-by-default. */
+  /** Host-evaluated retention snapshot; it does not grant model input access. */
   readonly retention?: ProductionRetentionSource;
+  /** Host-evaluated llm_input snapshot; omission stays deny-by-default. */
+  readonly modelContextFieldPolicy?: ModelContextFieldPolicy;
+  /** Host-owned thread creation timestamp; its next 05:00 JST expiry is never extended. */
+  readonly threadCreatedAt?: string;
   readonly clock?: () => string;
   readonly monotonicNow?: () => number;
   readonly epochNow?: () => number;
@@ -127,29 +131,6 @@ export type RuntimeProductionConnectionOptions = {
 
 const isConfiguredSecret = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
-
-const unavailableSubmit = (): SubmitCardsPort => ({
-  submit: (
-    _input: Parameters<SubmitCardsPort['submit']>[0],
-    _execution: ToolExecutionContext,
-    _cancellation: CancellationToken,
-  ): Promise<SubmitCardsPortResult> => {
-    const result: SubmitCardsPortResult = {
-      status: 'invalid',
-      issues: [
-        {
-          code: 'MISSING_EVIDENCE',
-          path: 'submit',
-          message: 'submit adapter is not available before composition wiring',
-          missingFields: [],
-        },
-      ],
-      repairable: false,
-      remainingRepairs: 0,
-    };
-    return Promise.resolve(result);
-  },
-});
 
 const detailFieldFor = (field: string): DetailField | undefined => {
   switch (field) {
@@ -192,12 +173,15 @@ const areaLabelFor = (
   areaByCandidate: ReadonlyMap<string, string>,
 ): string => areaByCandidate.get(candidate.candidateId) ?? '検索結果の地域';
 
-const buildModelContext = (input: ThreadTurnRequest): RuntimeCompositionModelContext => ({
+const buildModelContext = (
+  input: ThreadTurnRequest,
+  fieldPolicy: ModelContextFieldPolicy = defaultRuntimeModelContextPolicy,
+): RuntimeCompositionModelContext => ({
   userText: input.text,
   history: [],
   cardSet: null,
   evidence: [],
-  fieldPolicy: defaultRuntimeModelContextPolicy,
+  fieldPolicy,
 });
 
 const buildComposition = (
@@ -271,6 +255,7 @@ const defaultPlan = (
   continuation: ReturnType<typeof createPlacesSearchContinuation>,
   areaByCandidate: Map<string, string>,
   turnRetention: ReturnType<typeof productionRetentionFor>,
+  fixedSessionExpiresAt: string,
 ): RuntimeProductionTurnPlan => {
   const apiKey = overrides.googlePlacesApiKey;
   const cursorSecret = overrides.placesCursorSecret;
@@ -278,8 +263,14 @@ const defaultPlan = (
     throw new Error('RUNTIME_PRODUCTION_PLACES_UNCONFIGURED');
   }
   const observationPolicy = overrides.observationPolicy;
-  const policy = observationPolicy ?? defaultProductionObservationPolicy(clock);
-  const detailsPolicy = overrides.detailsObservationPolicy ?? policy;
+  const policy = capProductionObservationPolicy(
+    observationPolicy ?? defaultProductionObservationPolicy(clock, fixedSessionExpiresAt),
+    fixedSessionExpiresAt,
+  );
+  const detailsPolicy = capProductionObservationPolicy(
+    overrides.detailsObservationPolicy ?? policy,
+    fixedSessionExpiresAt,
+  );
   const registration = createPlacesSearchRegistration({
     registry,
     clock: productionClockPort(clock),
@@ -338,7 +329,7 @@ const defaultPlan = (
     search,
     details,
     retention,
-    modelContext: buildModelContext(input.runtimeInput),
+    modelContext: buildModelContext(input.runtimeInput, overrides.modelContextFieldPolicy),
     validationContext: (at) => validationContextFor(input.context, at.now),
     ids,
     hashes: productionHash,
@@ -360,10 +351,19 @@ const makeOptions = (
   monotonicNow: () => number,
 ) => {
   const areaByCandidate = new Map<string, string>();
+  let fixedSessionExpiresAt =
+    overrides.threadCreatedAt === undefined
+      ? undefined
+      : sessionExpiryAt(overrides.threadCreatedAt);
   const buildTurn = (request: RuntimeThinkTurnBuildRequest) => {
     const runtimeInput = request.runtimeInput;
     if (runtimeInput === undefined) throw new Error('RUNTIME_INPUT_MISSING');
-    const turnRetention = productionRetentionFor(overrides.retention, request.serverNow);
+    fixedSessionExpiresAt ??= sessionExpiryAt(request.serverNow);
+    const turnRetention = productionRetentionFor(
+      overrides.retention,
+      request.serverNow,
+      fixedSessionExpiresAt,
+    );
     const placesEnabled = productionPlacesEnabled({
       prepareTurn: overrides.prepareTurn,
       ...(overrides.placesEnabled === undefined ? {} : { placesEnabled: overrides.placesEnabled }),
@@ -397,6 +397,7 @@ const makeOptions = (
             continuation,
             areaByCandidate,
             turnRetention,
+            fixedSessionExpiresAt,
           ));
     const budget = new RuntimeBudget({
       startedAtMs: monotonicNow(),
@@ -422,6 +423,9 @@ const makeOptions = (
         search: plan.search,
         details: plan.details,
         submit: unavailableSubmit(),
+        ...(plan.modelContext.fieldPolicy === undefined
+          ? {}
+          : { modelContextFieldPolicy: plan.modelContext.fieldPolicy }),
       },
       attemptSignalBridge: bridge,
       commit: input.commit,
@@ -489,9 +493,6 @@ export const createRuntimeProductionConnectionOptions = (
     ...overrides,
     ...(isConfiguredSecret(apiKey) ? { googlePlacesApiKey: apiKey } : {}),
     ...(isConfiguredSecret(cursorSecret) ? { placesCursorSecret: cursorSecret } : {}),
-    ...(overrides.observationPolicy === undefined
-      ? { observationPolicy: defaultProductionObservationPolicy(clock) }
-      : {}),
   };
   return makeOptions(input, resolvedOverrides, ids, registry, continuation, clock, monotonicNow);
 };

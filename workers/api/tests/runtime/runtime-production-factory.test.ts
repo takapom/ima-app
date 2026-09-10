@@ -1,5 +1,5 @@
 import type { ThreadTurnRequest } from '@ima/contracts';
-import type { CommitPort, RetentionMetadata } from '@ima/core';
+import type { CommitPort, ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
 import { describe, expect, it } from 'vitest';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../src/model/provider-options';
 import { createRuntimeProductionConnectionOptions } from '../../src/runtime/runtime-production-factory';
@@ -21,6 +21,22 @@ const ALLOW_RETENTION = {
   policyStatus: 'available',
   displayPolicyStatus: 'available',
 } satisfies RetentionMetadata;
+
+const ALLOW_MODEL_CONTEXT_FIELDS: ModelContextFieldPolicy = {
+  evidence: {
+    identity: 'allow',
+    opening_hours: 'allow',
+    price: 'allow',
+    photos: 'allow',
+    contact: 'allow',
+    facilities: 'allow',
+    walking_route: 'allow',
+    last_train: 'allow',
+  },
+  history: 'deny',
+  cardSet: 'deny',
+  displayName: 'deny',
+};
 
 const requestInput: ThreadTurnRequest = {
   schemaVersion: 'v1',
@@ -206,6 +222,7 @@ describe('production runtime factory', () => {
         detailsObservationPolicy: policy,
         placesEnabled: true,
         retention: ALLOW_RETENTION,
+        modelContextFieldPolicy: ALLOW_MODEL_CONTEXT_FIELDS,
         clock: () => NOW,
         monotonicNow: () => 0,
         epochNow: () => 1_000,
@@ -272,6 +289,66 @@ describe('production runtime factory', () => {
     if (identity?.status === 'known') {
       expect(identity.observations[0]?.value.area).toBe('渋谷');
     }
+    second.dispose();
+  });
+
+  it('keeps the thread-created 05:00 JST expiry across later turns', async () => {
+    const report: RuntimeGateModelReport = { calls: 0, requests: [] };
+    const lateRetention = {
+      ...ALLOW_RETENTION,
+      sessionExpiresAt: '2026-09-12T20:00:00.000Z',
+      freshUntil: '2026-09-11T20:00:00.000Z',
+      displayUntil: '2026-09-11T21:00:00.000Z',
+      retentionUntil: '2026-09-12T20:00:00.000Z',
+      deletionScheduledAt: '2026-09-12T20:00:00.000Z',
+    } satisfies RetentionMetadata;
+    const options = createRuntimeProductionConnectionOptions({
+      env: {
+        OPENAI_API_KEY: 'openai-test-key',
+        GOOGLE_PLACES_API_KEY: 'google-test-key',
+        PLACES_CURSOR_SECRET: 'cursor-test-secret-16',
+      },
+      commit,
+      overrides: {
+        modelForTurn: modelFor('search', report),
+        googlePlacesApiKey: 'google-test-key',
+        placesCursorSecret: 'cursor-test-secret-16',
+        retention: lateRetention,
+        threadCreatedAt: '2026-09-10T19:59:00.000Z',
+        clock: () => '2026-09-10T20:01:00.000Z',
+        monotonicNow: () => 0,
+        epochNow: () => 1_000,
+      },
+    });
+    if (options === undefined) throw new Error('production factory should be configured');
+
+    const first = await options.buildTurn({
+      ...buildRequest,
+      serverNow: '2026-09-10T19:59:00.000Z',
+    });
+    const second = await options.buildTurn({
+      ...buildRequest,
+      turnId: 'turn-production-factory-05jst-2',
+      revision: 2,
+      serverNow: '2026-09-10T20:01:00.000Z',
+      runtimeInput: {
+        ...requestInput,
+        turnId: 'turn-production-factory-05jst-2',
+        revision: 2,
+      },
+    });
+    const firstContext =
+      typeof first.retention.context === 'function'
+        ? first.retention.context()
+        : first.retention.context;
+    const secondContext =
+      typeof second.retention.context === 'function'
+        ? second.retention.context()
+        : second.retention.context;
+    expect(firstContext.retention.sessionExpiresAt).toBe('2026-09-10T20:00:00.000Z');
+    expect(secondContext.retention.sessionExpiresAt).toBe(firstContext.retention.sessionExpiresAt);
+    expect(secondContext.retention.retentionUntil).toBe('2026-09-10T20:00:00.000Z');
+    first.dispose();
     second.dispose();
   });
 });

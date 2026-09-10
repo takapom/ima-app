@@ -6,12 +6,13 @@ import type {
   CommitHashPort,
   ExecutionBudget,
   HarnessContext,
+  ObservationRegistration,
   RetentionMetadata,
   RegistryIdPort,
   RegistryScope,
   SubmitValidationContext,
 } from '@ima/core';
-import { RetentionMetadataSchema } from '@ima/core';
+import { IsoTimestampSchema, RetentionMetadataSchema } from '@ima/core';
 import { DEFAULT_RUNTIME_BUDGET } from './runtime-budget';
 import type { RuntimeRetentionContext } from './runtime-retention';
 
@@ -42,6 +43,16 @@ export type ProductionCapabilityOptions = {
 
 export type ProductionRetentionSource = RetentionMetadata | (() => RetentionMetadata);
 
+export type ProductionObservationPolicyInput = {
+  readonly now: string;
+  readonly observation: unknown;
+};
+
+export type ProductionObservationPolicyResult = Pick<
+  ObservationRegistration,
+  'freshUntil' | 'expiresAt' | 'retention'
+>;
+
 /** Returns the first 05:00 JST after the supplied server timestamp. */
 export const sessionExpiryAt = (serverNow: string): string => {
   const utcMs = Date.parse(serverNow);
@@ -69,13 +80,80 @@ export const denyByDefaultRetention = (serverNow: string) => ({
   displayPolicyStatus: 'disabled_m35' as const,
 });
 
+const denyRetentionAt = (sessionExpiresAt: string): RetentionMetadata => ({
+  ...denyByDefaultRetention(
+    v.safeParse(IsoTimestampSchema, sessionExpiresAt).success
+      ? sessionExpiresAt
+      : '1970-01-01T00:00:00.000Z',
+  ),
+  sessionExpiresAt: v.safeParse(IsoTimestampSchema, sessionExpiresAt).success
+    ? sessionExpiresAt
+    : '1970-01-01T00:00:00.000Z',
+});
+
+const boundedTime = (value: string, cap: string): string =>
+  Date.parse(value) <= Date.parse(cap) ? value : cap;
+
+const boundedNullableTime = (value: string | null, cap: string): string | null =>
+  value === null ? null : boundedTime(value, cap);
+
+export const boundProductionRetention = (
+  retention: RetentionMetadata,
+  sessionExpiresAt: string,
+): RetentionMetadata => {
+  const parsedSession = v.safeParse(IsoTimestampSchema, sessionExpiresAt);
+  if (!parsedSession.success) return denyRetentionAt(sessionExpiresAt);
+  const bounded = {
+    ...retention,
+    sessionExpiresAt: boundedTime(retention.sessionExpiresAt, parsedSession.output),
+    freshUntil: boundedNullableTime(retention.freshUntil, parsedSession.output),
+    displayUntil: boundedNullableTime(retention.displayUntil, parsedSession.output),
+    retentionUntil: boundedNullableTime(retention.retentionUntil, parsedSession.output),
+    deletionScheduledAt: boundedNullableTime(retention.deletionScheduledAt, parsedSession.output),
+  };
+  const parsed = v.safeParse(RetentionMetadataSchema, bounded);
+  return parsed.success ? parsed.output : denyRetentionAt(parsedSession.output);
+};
+
 export const defaultProductionObservationPolicy =
-  (clock: () => string) => (_input: { readonly now: string; readonly observation: unknown }) => {
-    const retention = denyByDefaultRetention(clock());
+  (clock: () => string, fixedSessionExpiresAt?: string) =>
+  (_input: ProductionObservationPolicyInput) => {
+    const retention =
+      fixedSessionExpiresAt === undefined
+        ? denyByDefaultRetention(clock())
+        : denyRetentionAt(fixedSessionExpiresAt);
     return {
       freshUntil: retention.sessionExpiresAt,
       expiresAt: retention.sessionExpiresAt,
       retention,
+    };
+  };
+
+export const capProductionObservationPolicy =
+  <Input extends ProductionObservationPolicyInput>(
+    policy: (input: Input) => ProductionObservationPolicyResult | undefined,
+    fixedSessionExpiresAt: string,
+  ): ((input: Input) => ProductionObservationPolicyResult | undefined) =>
+  (input) => {
+    let result: ProductionObservationPolicyResult | undefined;
+    try {
+      result = policy(input);
+    } catch {
+      return undefined;
+    }
+    if (result === undefined) return undefined;
+    const parsedFresh = v.safeParse(IsoTimestampSchema, result.freshUntil);
+    const parsedExpires = v.safeParse(IsoTimestampSchema, result.expiresAt);
+    const parsedRetention = v.safeParse(RetentionMetadataSchema, result.retention);
+    if (!parsedFresh.success || !parsedExpires.success || !parsedRetention.success)
+      return undefined;
+    const freshUntil = boundedTime(parsedFresh.output, fixedSessionExpiresAt);
+    const expiresAt = boundedTime(parsedExpires.output, fixedSessionExpiresAt);
+    if (Date.parse(freshUntil) > Date.parse(expiresAt)) return undefined;
+    return {
+      freshUntil,
+      expiresAt,
+      retention: boundProductionRetention(parsedRetention.output, fixedSessionExpiresAt),
     };
   };
 
@@ -125,6 +203,7 @@ export const productionCapabilities = ({
 export const productionRetentionFor = (
   source: ProductionRetentionSource | undefined,
   serverNow: string,
+  fixedSessionExpiresAt?: string,
 ): RetentionMetadata => {
   let candidate: RetentionMetadata;
   try {
@@ -135,10 +214,19 @@ export const productionRetentionFor = (
           ? source()
           : source;
   } catch {
-    return denyByDefaultRetention(serverNow);
+    return fixedSessionExpiresAt === undefined
+      ? denyByDefaultRetention(serverNow)
+      : denyRetentionAt(fixedSessionExpiresAt);
   }
   const parsed = v.safeParse(RetentionMetadataSchema, candidate);
-  return parsed.success ? parsed.output : denyByDefaultRetention(serverNow);
+  if (!parsed.success) {
+    return fixedSessionExpiresAt === undefined
+      ? denyByDefaultRetention(serverNow)
+      : denyRetentionAt(fixedSessionExpiresAt);
+  }
+  return fixedSessionExpiresAt === undefined
+    ? parsed.output
+    : boundProductionRetention(parsed.output, fixedSessionExpiresAt);
 };
 
 /** Provider capability is a separate Host gate; retention controls each field's data use. */

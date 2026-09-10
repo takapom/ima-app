@@ -20,6 +20,7 @@ import {
   type RuntimeRetentionEphemeralToolResult,
   type RuntimeRetentionScopeIdentity,
 } from './runtime-retention';
+import { runtimeEphemeralModelInputIsUsable } from './runtime-retention-model-window';
 
 export type RuntimeRetentionModelProjectionOptions = {
   readonly currentTurnStart: number;
@@ -28,6 +29,8 @@ export type RuntimeRetentionModelProjectionOptions = {
   readonly trustedSystemText?: string;
   readonly toolCalls: ReadonlyMap<string, RuntimeRetentionEphemeralToolCall>;
   readonly toolResults: ReadonlyMap<string, RuntimeRetentionEphemeralToolResult>;
+  /** Applies the independently evaluated `llm_input` policy to provider tool results. */
+  readonly projectToolOutput?: (output: JSONValue) => JSONValue;
 };
 
 type AssistantParts = Exclude<AssistantContent, string>;
@@ -71,14 +74,23 @@ function usableToolOutput(
 ): ToolResultPart['output'] {
   if (!currentTurn) return withheldToolOutput();
   const entry = options.toolResults.get(toolCallId);
+  const usable =
+    options.projectToolOutput === undefined
+      ? runtimeEphemeralIsUsable
+      : runtimeEphemeralModelInputIsUsable;
   if (
     entry === undefined ||
     entry.toolName !== toolName ||
-    !runtimeEphemeralIsUsable(entry, options.currentScope, options.now)
+    !usable(entry, options.currentScope, options.now)
   ) {
     return withheldToolOutput();
   }
-  return { type: 'json', value: cloneJson(entry.output) };
+  try {
+    const output = options.projectToolOutput?.(entry.output) ?? entry.output;
+    return { type: 'json', value: cloneJson(output) };
+  } catch {
+    return withheldToolOutput();
+  }
 }
 
 function normalizeToolCall(

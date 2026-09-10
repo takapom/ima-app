@@ -1,5 +1,5 @@
 import type { PrepareStepContext, Session, TurnConfig } from '@cloudflare/think';
-import type { ToolSet } from 'ai';
+import type { JSONValue, ToolSet } from 'ai';
 import type { AssistantResponse } from '@ima/contracts';
 import type {
   CandidateObservationRegistryPort,
@@ -31,7 +31,6 @@ import {
   captureRuntimeEphemeralToolCall,
   captureRuntimeEphemeralToolResult,
   cloneRuntimeJsonValue,
-  sanitizeRuntimeCompactionSummary,
   type RuntimeRetentionContext,
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
@@ -68,6 +67,8 @@ import {
   RuntimeTurnCompositionError,
 } from './runtime-turn-composition-support';
 import { clearRuntimeCardSetId, registerRuntimeCardSetId } from '../thread-runtime/commit-port';
+import { projectRuntimeToolResultForModel } from './runtime-field-policy';
+import { configureRuntimeCompaction } from './runtime-session-config';
 
 export type { RuntimePublicResponseDependencies } from './runtime-response';
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;
@@ -204,18 +205,6 @@ const validationAt = (
     },
   };
 };
-
-const configureCompaction = (session: Session): Session =>
-  session.onCompaction((messages) => {
-    const first = messages[0];
-    const last = messages[messages.length - 1];
-    if (first === undefined || last === undefined) return Promise.resolve(null);
-    return Promise.resolve({
-      fromMessageId: first.id,
-      toMessageId: last.id,
-      summary: sanitizeRuntimeCompactionSummary(undefined),
-    });
-  });
 
 /**
  * Assembles one Think turn without owning the model loop. Every SDK-facing dependency is wired
@@ -383,6 +372,11 @@ export function createRuntimeTurnComposition(
       projectionNow,
       conditions,
     ).expectedObservationContext;
+    const fieldPolicy = options.modelContext.fieldPolicy;
+    const projectToolOutput =
+      fieldPolicy === undefined
+        ? undefined
+        : (output: JSONValue) => projectRuntimeToolResultForModel(output, fieldPolicy);
     const retentionProjection: RuntimeRetentionModelProjectionOptions = {
       currentTurnStart,
       currentScope: scopeIdentity(currentRetention),
@@ -398,6 +392,7 @@ export function createRuntimeTurnComposition(
           ),
         ),
       ),
+      ...(projectToolOutput === undefined ? {} : { projectToolOutput }),
     };
     const safeHistory = projectRuntimeCurrentTurnMessages(step.messages, retentionProjection);
     return {
@@ -493,6 +488,6 @@ export function createRuntimeTurnComposition(
     },
     isFinalResponse: options.isFinalResponse,
     onAccepted,
-    configureSession: configureCompaction,
+    configureSession: configureRuntimeCompaction,
   };
 }

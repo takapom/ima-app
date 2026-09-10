@@ -3,14 +3,25 @@ import type { ToolExecutionContext } from '@ima/core';
 import { describe, expect, it } from 'vitest';
 import {
   NOW,
+  allowRetention,
   context,
   createComposition,
   retention,
   searchResult,
   RecordingCommit,
 } from './runtime-turn-composition-fixture';
+import { observedWindow } from '../../src/runtime/runtime-turn-composition-support';
 
 describe('createRuntimeTurnComposition', () => {
+  it('keeps model input expiry independent from display and persistence windows', () => {
+    const { composition, registry } = createComposition(new RecordingCommit(), 1, allowRetention);
+    expect(observedWindow({}, allowRetention, registry)).toEqual({
+      localFreshUntil: allowRetention.retention.freshUntil,
+      localExpiresAt: allowRetention.retention.deletionScheduledAt,
+    });
+    composition.dispose();
+  });
+
   it('wires the exact tool set through budgeted read ports and retention transform', async () => {
     const { composition, calls, model } = createComposition();
     expect(Object.keys(composition.turn.tools).sort()).toEqual([

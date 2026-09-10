@@ -1,8 +1,9 @@
 import * as v from 'valibot';
-import { env } from 'cloudflare:test';
+import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { AssistantResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../src/model/provider-options';
+import { sessionExpiryAt } from '../../src/runtime/runtime-production-support';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
@@ -17,6 +18,26 @@ const productionEnv = (): ProductionTestEnv => {
   if (!('PRODUCTION_THREADS' in env)) throw new Error('M16_PRODUCTION_THREAD_BINDING_MISSING');
   return env as ProductionTestEnv;
 };
+
+type RuntimeRetentionAnchorRow = { readonly thread_created_at: string };
+
+const readRetentionAnchor = (stub: DurableObjectStub<ProductionThreadDO>) =>
+  runInDurableObject(stub, (_instance, state) => {
+    const row = state.storage.sql
+      .exec<RuntimeRetentionAnchorRow>(
+        'SELECT thread_created_at FROM runtime_retention_anchor WHERE singleton = 1',
+      )
+      .toArray()[0];
+    return row?.thread_created_at ?? null;
+  });
+
+const corruptRetentionAnchor = (stub: DurableObjectStub<ProductionThreadDO>) =>
+  runInDurableObject(stub, (_instance, state) => {
+    state.storage.sql.exec(
+      'UPDATE runtime_retention_anchor SET thread_created_at = ? WHERE singleton = 1',
+      'not-an-iso-timestamp',
+    );
+  });
 
 const requestFor = (
   target: ThreadRuntimeTarget,
@@ -150,6 +171,86 @@ describe('production factory through a real Think Durable Object', () => {
       calls: 1,
       finalResponseFlags: [true],
       fetchUrls: [],
+    });
+  });
+
+  it('keeps llm_input usable when display and persistence are denied', async () => {
+    const threadId = `m16-production-llm-only-${crypto.randomUUID()}`;
+    const target: ThreadRuntimeTarget = {
+      ownerScopeRef: 'owner-m16-production-llm-only',
+      threadId,
+      turnId: `turn-${crypto.randomUUID()}`,
+      revision: 1,
+    };
+    const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
+
+    await expect(stub.initialize(target.ownerScopeRef, target.threadId)).resolves.toMatchObject({
+      ok: true,
+    });
+    const result = await stub.runRuntimeTurn(
+      requestFor(target, '[m16-llm-only] 検索結果を読んで短く返して'),
+    );
+    expect(result.status).toBe('completed');
+    const response = v.safeParse(AssistantResponseSchema, result.response);
+    expect(response.success).toBe(true);
+    if (!response.success) return;
+    expect(response.output.kind).toBe('message');
+    expect(response.output.message[0]?.retention).toMatchObject({
+      retentionDecision: 'deny',
+      displayPolicyStatus: 'policy_withheld',
+    });
+
+    const report: RuntimeProductionReport | null = await stub.getRuntimeProductionReport();
+    expect(report).toMatchObject({
+      calls: 3,
+      toolNames: ['search_places', 'get_place_details', 'final_message'],
+      llmInputCanarySeen: true,
+      deniedFieldCanarySeen: false,
+    });
+    expect(report?.observationIdsSeen.some((ids) => ids.length > 0)).toBe(true);
+  });
+
+  it('keeps the durable 05:00 JST anchor across eviction and rejects corruption', async () => {
+    expect(sessionExpiryAt('2026-09-10T19:59:00.000Z')).toBe('2026-09-10T20:00:00.000Z');
+    expect(sessionExpiryAt('2026-09-10T20:00:00.000Z')).toBe('2026-09-11T20:00:00.000Z');
+
+    const threadId = `m16-production-anchor-${crypto.randomUUID()}`;
+    const first: ThreadRuntimeTarget = {
+      ownerScopeRef: 'owner-m16-production-anchor',
+      threadId,
+      turnId: `turn-${crypto.randomUUID()}`,
+      revision: 1,
+    };
+    const namespace = productionEnv().PRODUCTION_THREADS;
+    const stub = namespace.getByName(threadId);
+
+    await expect(stub.initialize(first.ownerScopeRef, first.threadId)).resolves.toMatchObject({
+      ok: true,
+    });
+    const firstAnchor = await readRetentionAnchor(stub);
+    expect(firstAnchor).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u);
+    await expect(stub.runRuntimeTurn(requestFor(first))).resolves.toMatchObject({
+      status: 'completed',
+    });
+
+    await evictDurableObject(stub);
+    const reopened = namespace.getByName(threadId);
+    const second: ThreadRuntimeTarget = {
+      ...first,
+      turnId: `turn-${crypto.randomUUID()}`,
+      revision: 2,
+    };
+    await expect(reopened.runRuntimeTurn(requestFor(second))).resolves.toMatchObject({
+      status: 'completed',
+    });
+    await expect(readRetentionAnchor(reopened)).resolves.toBe(firstAnchor);
+
+    await corruptRetentionAnchor(reopened);
+    await evictDurableObject(reopened);
+    const corrupted = namespace.getByName(threadId);
+    await expect(corrupted.getRuntimeAnchorStatus()).resolves.toEqual({
+      status: 'invalid',
+      code: 'RUNTIME_RETENTION_ANCHOR_INVALID',
     });
   });
 });
