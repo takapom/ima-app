@@ -401,13 +401,23 @@ const fetcherForProduction =
 
 export class ProductionThreadDO extends ProductionThreadDOBase {
   override maxSteps = 6;
+  private productionNow = RUNTIME_PRODUCTION_NOW;
   private productionReport: MutableRuntimeProductionReport | null = null;
   private llmOnlyModel = false;
   private multiTurnModel = false;
   private productionScenario: ProductionScenario = 'default';
 
   protected override runtimeProductionNow(): string {
-    return RUNTIME_PRODUCTION_NOW;
+    return this.productionNow;
+  }
+
+  setRuntimeProductionNow(value: string): void {
+    this.productionNow = value;
+  }
+
+  configureRuntimeScenario(scenario: 'llm-only' | 'multi-turn'): void {
+    this.llmOnlyModel = scenario === 'llm-only';
+    this.multiTurnModel = scenario === 'multi-turn';
   }
 
   override async runRuntimeTurn(value: unknown) {

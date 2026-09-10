@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import type { Session } from '@cloudflare/think';
 import type { CommitPort } from '@ima/core';
 import { IsoTimestampSchema } from '@ima/core';
 import {
@@ -7,6 +8,7 @@ import {
 } from '../runtime/runtime-production-factory';
 import { sessionExpiryAt } from '../runtime/runtime-production-support';
 import { createDurableRuntimeContextPersistence } from './runtime-context-persistence';
+import { createRuntimeRetentionAlarmCapability } from './runtime-retention-alarm';
 import type { RuntimeThinkConnectionOptions } from '../runtime/runtime-think-connection';
 import { RuntimeThinkHost } from './runtime-host';
 
@@ -64,6 +66,21 @@ export abstract class RuntimeProductionThinkHost<
       this.productionAnchorError =
         error instanceof Error ? error : new Error('RUNTIME_RETENTION_ANCHOR_INVALID');
     }
+    this.lifecycle.use(
+      createRuntimeRetentionAlarmCapability({
+        storage: ctx.storage,
+        now: () => this.runtimeProductionNow(),
+        expiryAt: () => {
+          try {
+            return this.runtimeProductionSessionExpiresAt();
+          } catch {
+            return undefined;
+          }
+        },
+        onDue: (markComplete) => this.runtimeProductionRetentionAlarmDue(markComplete),
+        rearm: () => this.lifecycle.rearmAlarm(),
+      }),
+    );
   }
 
   protected createRuntimeProductionOverrides(): RuntimeProductionOverrides {
@@ -96,6 +113,22 @@ export abstract class RuntimeProductionThinkHost<
       throw new Error('RUNTIME_RETENTION_CLOCK_INVALID');
     }
     return now >= expiresAt;
+  }
+
+  override configureSession(session: Session): Session | Promise<Session> {
+    if (this.productionAnchorError !== undefined || this.productionThreadCreatedAt === undefined) {
+      return session;
+    }
+    return super.configureSession(session);
+  }
+
+  protected runtimeProductionRetentionAlarmDue(_markComplete: () => void): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
+  protected async startRuntimeLifecycle(): Promise<void> {
+    if (this.productionAnchorError === undefined) this.ensureRuntimeThinkConnection();
+    await this.lifecycle.start();
   }
 
   protected clearRuntimeProductionContext(scope: {

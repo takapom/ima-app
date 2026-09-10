@@ -137,6 +137,7 @@ describe('M16 durable runtime context boundary', () => {
     };
     const stub = namespace.getByName(threadId);
 
+    await stub.configureRuntimeScenario('multi-turn');
     await expect(stub.initialize(ownerScopeRef, threadId)).resolves.toMatchObject({ ok: true });
     const firstResult = await stub.runRuntimeTurn(
       requestFor(first, '[m16-multiturn] 静かなカフェを探して'),

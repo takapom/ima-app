@@ -1,7 +1,6 @@
 import { RuntimeProductionThinkHost } from './thread-runtime/runtime-production-host';
 import { ThreadRuntimeController, type RuntimeThreadBinding } from './thread-runtime/controller';
 import {
-  advanceThreadRevision,
   createDurableCommitPort,
   initializeDurableCommitTable,
   type DurableCommitPort,
@@ -89,10 +88,6 @@ export class ThreadDO
     binding: () => this.rowSync(),
   });
 
-  protected runtimeCommitFallbackEnabled(): boolean {
-    return false;
-  }
-
   protected photoReferenceNow(): string {
     return new Date().toISOString();
   }
@@ -163,11 +158,16 @@ export class ThreadDO
       },
       getConnection: () => this.ensureRuntimeThinkConnection(),
       execute: (input, target, isStale) => this.executeRuntimeTurn(input, target, isStale),
-      commitResponse: (target, responseRevision) =>
-        this.runtimeCommitFallbackEnabled() &&
-        advanceThreadRevision(ctx.storage, target, responseRevision),
+      commitResponse: () => false,
       clearMessages: () => this.clearRuntimeMessages(),
     });
+  }
+
+  protected override async runtimeProductionRetentionAlarmDue(
+    markComplete: () => void,
+  ): Promise<boolean> {
+    await this.ready;
+    return this.sessionExpired(markComplete);
   }
 
   /** Runtime composition uses this adapter; the Core port never sees DO or SDK types. */
@@ -248,9 +248,9 @@ export class ThreadDO
     };
   }
 
-  /** Creates the owner binding once; a later different owner can never rebind the thread. */
   async initialize(ownerScopeRef: string, threadId: string): Promise<ThreadSnapshotResult> {
     await this.ready;
+    await this.startRuntimeLifecycle();
     try {
       const snapshot = this.ctx.storage.transactionSync(() => {
         const existing = this.rowSync();

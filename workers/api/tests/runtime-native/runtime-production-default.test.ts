@@ -175,6 +175,7 @@ describe('production factory through a real Think Durable Object', () => {
     };
     const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
 
+    await stub.configureRuntimeScenario('multi-turn');
     await expect(stub.initialize(first.ownerScopeRef, first.threadId)).resolves.toMatchObject({
       ok: true,
     });
@@ -389,6 +390,7 @@ describe('production factory through a real Think Durable Object', () => {
     };
     const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
 
+    await stub.configureRuntimeScenario('llm-only');
     await expect(stub.initialize(target.ownerScopeRef, target.threadId)).resolves.toMatchObject({
       ok: true,
     });
