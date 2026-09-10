@@ -4,7 +4,17 @@ import {
   type BootstrapEnv,
 } from './bootstrap';
 import { routeRequest } from './http/router';
+import {
+  handleJourneyDatasetManagement,
+  type JourneyDatasetNamespace,
+} from './providers/last-train/management';
+import { JourneyDatasetDO } from './providers/last-train/dataset-do';
 import { RateLimitDO, ThreadDO } from './thread-do';
+
+type IndexEnv = BootstrapEnv & {
+  readonly JOURNEY_DATASETS?: JourneyDatasetNamespace;
+  readonly JOURNEY_DATASET_ADMIN_TOKEN?: string;
+};
 
 type HealthResponse = {
   readonly status: 'ok';
@@ -13,7 +23,7 @@ type HealthResponse = {
 export default {
   async fetch(
     request: Request,
-    env: BootstrapEnv,
+    env: IndexEnv,
     executionContext: ExecutionContext,
   ): Promise<Response> {
     const { pathname } = new URL(request.url);
@@ -21,6 +31,13 @@ export default {
       const body: HealthResponse = { status: 'ok' };
       return Response.json(body);
     }
+    const managementResponse = await handleJourneyDatasetManagement(request, {
+      ...(env.JOURNEY_DATASETS === undefined ? {} : { namespace: env.JOURNEY_DATASETS }),
+      ...(env.JOURNEY_DATASET_ADMIN_TOKEN === undefined
+        ? {}
+        : { adminToken: env.JOURNEY_DATASET_ADMIN_TOKEN }),
+    });
+    if (managementResponse !== null) return managementResponse;
     const ownership = createThreadScopeAuthorizer(env.THREADS);
     return routeRequest(
       request,
@@ -30,6 +47,6 @@ export default {
       }),
     );
   },
-} satisfies ExportedHandler<BootstrapEnv>;
+} satisfies ExportedHandler<IndexEnv>;
 
-export { RateLimitDO, ThreadDO };
+export { JourneyDatasetDO, RateLimitDO, ThreadDO };

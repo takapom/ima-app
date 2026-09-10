@@ -9,9 +9,13 @@
     "bindings": [
       { "name": "THREADS", "class_name": "ThreadDO" },
       { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
+      { "name": "JOURNEY_DATASETS", "class_name": "JourneyDatasetDO" },
     ],
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ThreadDO", "RateLimitDO"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["ThreadDO", "RateLimitDO"] },
+    { "tag": "v2", "new_sqlite_classes": ["JourneyDatasetDO"] },
+  ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,

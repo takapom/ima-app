@@ -34,3 +34,11 @@ Core C1の公開入口は`packages/core/src/domain/index.ts`と`packages/core/sr
 Worker C2は、取込・更新・rollback・expiryを`validateJourneyRecord`へ通し、active datasetを一つのDurable Object SQLite transactionでrevision CASする。revision履歴を先に挿入してからactive pointerを別操作で更新する構成は採用しない。transactionが途中で失敗した場合はactive pointerと履歴の双方を変更しない。
 
 KVは現在、既存datasetを読むためのread-only adapterとしてのみ用意する。KVへのpublish経路や本番の運用入口は未接続であり、実駅・時刻表データのseedもしない。C3で本番のdataset所有DO、管理入口、`LastTrainJourneyPort`/Routes取得との接続を定義する。
+
+## C3a 共有datasetの所有と管理入口
+
+時刻表はthreadごとの状態ではなく、固定名 `m14-last-train-v1` のSQLite-backed `JourneyDatasetDO` が一つのactive revisionと履歴を所有する。Workerの管理入口は `/internal/m14/last-train` に限定し、通常の `/v1/*` routerへ渡さない。入口はAPP_TOKENやowner credentialと別の管理credentialを検証し、入力の `import`、`update`、`rollback`、`expire` はstrict schemaで受け、時刻はrequest bodyから読まずWorkerのserver clockを一度だけ採取してDO RPCへ渡す。
+
+管理入口はdataset payloadを公開HTTPへ返さず、revision・件数・構造化issueだけを返す。通常のturnはこのDOへ書き込まず、後続C3bの`LastTrainJourneyPort`が固定名DOのread RPCを注入して、現在のservice-date contextとCoreの共通検証器へ接続する。M33の実時刻表投入まではactive datasetが空または期限切れならdisabledを返し、fixtureを本番seedにしない。
+
+import/update/rollbackが成功したときは、active recordの`verifiedAt + 7日`へDO alarmを予約し、期限を過ぎた検証時刻は即時alarmとして拾う。`validFrom`/`validThrough`はCoreのservice-date適用判定へ委譲し、別のalarm期限にはしない。したがって`validThrough`を含むserviceDateの跨日journeyは、到着が翌日でもCoreの契約どおり扱う。alarmはWorkerの実時計でexpire commandを実行し、read時の鮮度判定とは独立させる。rollbackで再予約し、空datasetまたは将来期限がない場合はalarmを解除する。alarm同期に失敗した管理操作は成功を返さず、適用済みrevisionを含むHTTP 500の`alarm_failed`を返す。alarm実行中の同期失敗は`alarm()`がthrowしてCloudflareのalarm再試行対象にし、管理callerは返されたrevisionを踏まえてexpire等を再実行して再同期する。Fixtureでは本番clockを置き換えず、protected clock seamだけをalarm呼出し時に上書きして境界を検証する。
