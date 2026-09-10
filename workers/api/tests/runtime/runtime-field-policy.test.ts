@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { JSONValue } from 'ai';
 import type { DetailField } from '@ima/core';
 import {
   defaultRuntimeModelProjectionPolicy,
+  projectRuntimeToolResultForModel,
   runtimePolicyAllows,
   toModelContextFieldPolicy,
   type RuntimeFieldUsePolicy,
@@ -83,5 +85,111 @@ describe('runtime field policy', () => {
     expect(
       runtimePolicyAllows(defaultRuntimeModelProjectionPolicy.evidence.identity, 'display', 'live'),
     ).toBe(false);
+  });
+
+  it('projects search and details results by field and drops unrecognized payloads', () => {
+    const observation = (id: string, field: DetailField, value: JSONValue) => ({
+      observationId: id,
+      candidateId: 'candidate-policy',
+      field,
+      value,
+      basis: 'provider_reported' as const,
+      fetchedAt: '2026-09-10T00:00:00.000Z',
+      sourceUpdatedAt: null,
+      expiresAt: '2026-09-10T02:00:00.000Z',
+      freshUntil: '2026-09-10T01:00:00.000Z',
+      sources: [{ provider: 'google_places', attribution: null, publicUrl: null }],
+    });
+    const identityValue = {
+      name: 'Cafe',
+      area: '渋谷',
+      address: null,
+      category: 'cafe',
+      businessStatus: 'operational' as const,
+      sourceUrl: null,
+    };
+    const priceValue = { level: 2, range: null, rawLabel: 'secret-price' };
+    const input: RuntimeModelProjectionPolicyInput = {
+      evidence: {
+        ...allFields(uses()),
+        price: uses({ llm_input: record({ decision: 'deny' }) }),
+      },
+      history: uses(),
+      cardSet: uses(),
+      displayName: uses(),
+    };
+    const policy = toModelContextFieldPolicy(input, 'fixture');
+    const projected = projectRuntimeToolResultForModel(
+      {
+        status: 'ok',
+        data: {
+          searchId: 'search-policy',
+          candidates: [
+            {
+              candidateId: 'candidate-policy',
+              displayName: 'provider display canary',
+              identity: {
+                status: 'known',
+                observations: [observation('observation-identity', 'identity', identityValue)],
+              },
+              openingHours: { status: 'unknown', reason: 'provider canary' },
+              price: {
+                status: 'known',
+                observations: [observation('observation-price', 'price', priceValue)],
+              },
+            },
+          ],
+          applied: { areaDescription: '検索結果の地域', openNow: true, excludedCount: 0 },
+          nextCursor: null,
+          coverage: 'provider_results',
+        },
+        warnings: [{ code: 'UPSTREAM_UNAVAILABLE', message: 'warning canary' }],
+      },
+      policy,
+    );
+
+    expect(JSON.stringify(projected)).toContain('Cafe');
+    expect(JSON.stringify(projected)).not.toContain('secret-price');
+    expect(JSON.stringify(projected)).not.toContain('provider display canary');
+    expect(JSON.stringify(projected)).not.toContain('provider canary');
+    expect(JSON.stringify(projected)).not.toContain('warning canary');
+    expect(projected).toMatchObject({
+      data: {
+        candidates: [
+          {
+            identity: { status: 'known' },
+            price: { status: 'withheld' },
+          },
+        ],
+      },
+    });
+
+    const mixed = {
+      status: 'ok',
+      data: {
+        items: [
+          {
+            candidateId: 'candidate-policy',
+            fields: {
+              identity: {
+                status: 'known',
+                observations: [
+                  observation('observation-mixed-1', 'identity', identityValue),
+                  observation('observation-mixed-2', 'price', {
+                    level: 2,
+                    range: null,
+                    rawLabel: 'mixed-secret',
+                  }),
+                ],
+              },
+            },
+          },
+        ],
+      },
+      warnings: [],
+    };
+    expect(JSON.stringify(projectRuntimeToolResultForModel(mixed, policy))).not.toContain(
+      'mixed-secret',
+    );
   });
 });

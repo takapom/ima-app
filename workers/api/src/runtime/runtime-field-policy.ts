@@ -1,4 +1,20 @@
-import type { DetailField, ModelContextFieldDecision, ModelContextFieldPolicy } from '@ima/core';
+import type { JSONValue } from 'ai';
+import * as v from 'valibot';
+import {
+  ContactInfoSchema,
+  FacilitiesInfoSchema,
+  LastTrainInfoSchema,
+  modelContextFieldAllowed,
+  modelEvidenceFieldDecision,
+  OpeningHoursSchema,
+  PhotoInfoSchema,
+  PlaceIdentitySchema,
+  PriceInfoSchema,
+  type DetailField,
+  type ModelContextFieldDecision,
+  type ModelContextFieldPolicy,
+  WalkingRouteSchema,
+} from '@ima/core';
 
 export type RuntimePolicyMode = 'fixture' | 'live';
 export type RuntimeFieldUse = 'llm_input' | 'display' | 'persistence';
@@ -108,3 +124,311 @@ export const defaultRuntimeModelContextPolicy = toModelContextFieldPolicy(
   defaultRuntimeModelProjectionPolicy,
   'live',
 );
+
+type JsonRecord = { readonly [key: string]: JSONValue };
+
+const isRecord = (value: unknown): value is JsonRecord =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isDetailField = (value: string): value is DetailField =>
+  value === 'identity' ||
+  value === 'opening_hours' ||
+  value === 'price' ||
+  value === 'photos' ||
+  value === 'contact' ||
+  value === 'facilities' ||
+  value === 'walking_route' ||
+  value === 'last_train';
+
+const schemaForField = (field: DetailField): v.GenericSchema => {
+  switch (field) {
+    case 'identity':
+      return PlaceIdentitySchema;
+    case 'opening_hours':
+      return OpeningHoursSchema;
+    case 'price':
+      return PriceInfoSchema;
+    case 'photos':
+      return PhotoInfoSchema;
+    case 'contact':
+      return ContactInfoSchema;
+    case 'facilities':
+      return FacilitiesInfoSchema;
+    case 'walking_route':
+      return WalkingRouteSchema;
+    case 'last_train':
+      return LastTrainInfoSchema;
+  }
+};
+
+const knownResultField = (value: JSONValue): DetailField | undefined => {
+  if (!isRecord(value) || value.status !== 'known' || !Array.isArray(value.observations)) {
+    return undefined;
+  }
+  const fields = value.observations.map((observation) => {
+    if (!isRecord(observation) || typeof observation.field !== 'string') return undefined;
+    return isDetailField(observation.field) ? observation.field : undefined;
+  });
+  const first = fields[0];
+  return first !== undefined && fields.every((field) => field === first) ? first : undefined;
+};
+
+const MODEL_INPUT_WITHHELD = {
+  status: 'withheld',
+  reason: 'model input policy denies this evidence field',
+} as const;
+
+const ISSUE_CODES = [
+  'INVALID_ARGUMENT',
+  'UNKNOWN_CANDIDATE',
+  'INVALID_EVIDENCE',
+  'MISSING_EVIDENCE',
+  'STALE_EVIDENCE',
+  'STALE_TURN',
+  'CONSTRAINT_VIOLATION',
+  'CANCELLED',
+  'BUDGET_EXCEEDED',
+  'SCHEMA_MISMATCH',
+  'UNSUPPORTED_FIELD',
+  'MISSING_CONTEXT',
+  'UPSTREAM_UNAVAILABLE',
+] as const;
+
+const isIssueCode = (value: string): boolean => ISSUE_CODES.some((code) => code === value);
+
+const safeIssue = (value: JSONValue): JSONValue => {
+  if (!isRecord(value))
+    return { code: 'UPSTREAM_UNAVAILABLE', message: 'tool result is unavailable' };
+  const code =
+    typeof value.code === 'string' && isIssueCode(value.code) ? value.code : 'UPSTREAM_UNAVAILABLE';
+  return {
+    code,
+    path: null,
+    retryable: value.retryable === true,
+    retryAfterMs:
+      typeof value.retryAfterMs === 'number' && Number.isFinite(value.retryAfterMs)
+        ? value.retryAfterMs
+        : null,
+    message: 'tool result is unavailable',
+    missingFields: [],
+  };
+};
+
+const safeSource = (value: JSONValue): JSONValue | undefined => {
+  if (!isRecord(value)) return undefined;
+  if (
+    typeof value.provider !== 'string' ||
+    (value.attribution !== null && typeof value.attribution !== 'string') ||
+    (value.publicUrl !== null && typeof value.publicUrl !== 'string')
+  ) {
+    return undefined;
+  }
+  return {
+    provider: value.provider,
+    attribution: value.attribution,
+    publicUrl: value.publicUrl,
+  };
+};
+
+const safeObservation = (value: JSONValue, field: DetailField): JSONValue | undefined => {
+  if (!isRecord(value) || value.field !== field) return undefined;
+  const sourceValues = Array.isArray(value.sources) ? value.sources.map(safeSource) : undefined;
+  const sources =
+    sourceValues?.filter((source): source is JSONValue => source !== undefined) ?? undefined;
+  if (
+    typeof value.observationId !== 'string' ||
+    typeof value.candidateId !== 'string' ||
+    typeof value.fetchedAt !== 'string' ||
+    typeof value.expiresAt !== 'string' ||
+    (value.sourceUpdatedAt !== null && typeof value.sourceUpdatedAt !== 'string') ||
+    (value.freshUntil !== null && typeof value.freshUntil !== 'string') ||
+    sources === undefined ||
+    sourceValues === undefined ||
+    sources.length !== sourceValues.length ||
+    value.value === undefined
+  ) {
+    return undefined;
+  }
+  if (!v.safeParse(schemaForField(field), value.value).success) return undefined;
+  return {
+    observationId: value.observationId,
+    candidateId: value.candidateId,
+    field,
+    value: value.value,
+    basis: value.basis === 'computed' ? 'computed' : 'provider_reported',
+    fetchedAt: value.fetchedAt,
+    sourceUpdatedAt: value.sourceUpdatedAt,
+    expiresAt: value.expiresAt,
+    freshUntil: value.freshUntil,
+    sources,
+  };
+};
+
+const unavailableField = (value: JsonRecord): JSONValue | undefined => {
+  if (
+    value.status !== 'unknown' &&
+    value.status !== 'unsupported' &&
+    value.status !== 'not_applicable' &&
+    value.status !== 'withheld' &&
+    value.status !== 'stale'
+  ) {
+    return undefined;
+  }
+  return { status: value.status, reason: 'field value is unavailable' };
+};
+
+const projectFieldResult = (
+  value: JSONValue,
+  field: DetailField,
+  policy: ModelContextFieldPolicy,
+): JSONValue => {
+  if (!isRecord(value)) return MODEL_INPUT_WITHHELD;
+  if (value.status === 'known') {
+    if (!modelContextFieldAllowed(modelEvidenceFieldDecision(policy, field))) {
+      return MODEL_INPUT_WITHHELD;
+    }
+    if (!Array.isArray(value.observations) || knownResultField(value) !== field) {
+      return MODEL_INPUT_WITHHELD;
+    }
+    const observations = value.observations.map((observation) =>
+      safeObservation(observation, field),
+    );
+    return observations.every((observation): observation is JSONValue => observation !== undefined)
+      ? { status: 'known', observations }
+      : MODEL_INPUT_WITHHELD;
+  }
+  if (value.status === 'error') {
+    return { status: 'error', error: safeIssue(value.error ?? null) };
+  }
+  return unavailableField(value) ?? MODEL_INPUT_WITHHELD;
+};
+
+const projectSearchData = (value: JsonRecord, policy: ModelContextFieldPolicy): JSONValue => {
+  const applied = value.applied;
+  if (
+    typeof value.searchId !== 'string' ||
+    !Array.isArray(value.candidates) ||
+    !isRecord(applied) ||
+    typeof applied.areaDescription !== 'string' ||
+    typeof applied.openNow !== 'boolean' ||
+    typeof applied.excludedCount !== 'number' ||
+    (value.nextCursor !== null && typeof value.nextCursor !== 'string') ||
+    value.coverage !== 'provider_results'
+  ) {
+    return MODEL_INPUT_WITHHELD;
+  }
+  const candidates = value.candidates.map((candidate) => {
+    if (!isRecord(candidate) || typeof candidate.candidateId !== 'string') return undefined;
+    return {
+      candidateId: candidate.candidateId,
+      identity: projectFieldResult(candidate.identity ?? null, 'identity', policy),
+      openingHours: projectFieldResult(candidate.openingHours ?? null, 'opening_hours', policy),
+      price: projectFieldResult(candidate.price ?? null, 'price', policy),
+    };
+  });
+  if (candidates.some((candidate): candidate is undefined => candidate === undefined)) {
+    return MODEL_INPUT_WITHHELD;
+  }
+  const safeCandidates = candidates.filter(
+    (candidate): candidate is Exclude<(typeof candidates)[number], undefined> =>
+      candidate !== undefined,
+  );
+  return {
+    searchId: value.searchId,
+    candidates: safeCandidates,
+    applied: {
+      areaDescription: applied.areaDescription,
+      openNow: applied.openNow,
+      excludedCount: applied.excludedCount,
+    },
+    nextCursor: value.nextCursor,
+    coverage: 'provider_results',
+  };
+};
+
+const DETAIL_FIELDS: readonly DetailField[] = [
+  'identity',
+  'opening_hours',
+  'price',
+  'photos',
+  'contact',
+  'facilities',
+  'walking_route',
+  'last_train',
+];
+
+const projectDetailsData = (value: JsonRecord, policy: ModelContextFieldPolicy): JSONValue => {
+  if (!Array.isArray(value.items)) return MODEL_INPUT_WITHHELD;
+  const items = value.items.map((item) => {
+    const fieldsValue = isRecord(item) ? item.fields : undefined;
+    if (!isRecord(item) || typeof item.candidateId !== 'string' || !isRecord(fieldsValue)) {
+      return undefined;
+    }
+    const fields: { [key: string]: JSONValue } = {};
+    for (const field of DETAIL_FIELDS) {
+      const fieldValue = fieldsValue[field];
+      if (fieldValue !== undefined) fields[field] = projectFieldResult(fieldValue, field, policy);
+    }
+    return { candidateId: item.candidateId, fields };
+  });
+  return items.some((item): item is undefined => item === undefined)
+    ? MODEL_INPUT_WITHHELD
+    : {
+        items: items.filter(
+          (item): item is Exclude<(typeof items)[number], undefined> => item !== undefined,
+        ),
+      };
+};
+
+const projectIssueResult = (value: JsonRecord): JSONValue => ({
+  status: 'error',
+  error: safeIssue(value.error ?? null),
+});
+
+/** Strictly projects validated search/details/submit result shapes at the SDK model boundary. */
+export const projectRuntimeToolResultForModel = (
+  value: JSONValue,
+  policy: ModelContextFieldPolicy,
+): JSONValue => {
+  if (!isRecord(value)) return MODEL_INPUT_WITHHELD;
+  if (value.status === 'error') return projectIssueResult(value);
+  if (value.status === 'ok' || value.status === 'partial') {
+    const dataValue = value.data;
+    if (!isRecord(dataValue)) return MODEL_INPUT_WITHHELD;
+    const data = dataValue;
+    const projected =
+      Array.isArray(data.candidates) && 'searchId' in data
+        ? projectSearchData(data, policy)
+        : Array.isArray(data.items)
+          ? projectDetailsData(data, policy)
+          : MODEL_INPUT_WITHHELD;
+    if (projected === MODEL_INPUT_WITHHELD) return projected;
+    return {
+      status: value.status,
+      data: projected,
+      warnings: Array.isArray(value.warnings)
+        ? value.warnings.map((warning) => safeIssue(warning))
+        : [],
+    };
+  }
+  if (value.status === 'committed') {
+    return {
+      status: 'committed',
+      responseId: typeof value.responseId === 'string' ? value.responseId : 'WITHHELD',
+      revision: typeof value.revision === 'number' ? value.revision : 0,
+      presentation: 'replace',
+    };
+  }
+  if (value.status === 'invalid') {
+    return {
+      status: 'invalid',
+      issues: Array.isArray(value.issues) ? value.issues.map((issue) => safeIssue(issue)) : [],
+      repairable: value.repairable === true,
+      remainingRepairs:
+        typeof value.remainingRepairs === 'number' && Number.isSafeInteger(value.remainingRepairs)
+          ? value.remainingRepairs
+          : 0,
+    };
+  }
+  return MODEL_INPUT_WITHHELD;
+};
