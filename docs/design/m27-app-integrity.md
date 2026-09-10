@@ -42,4 +42,14 @@ Apple App Attestの実検証は、Appleのchallenge、App ID、証明書chain、
 - Apple: [Validating apps that connect to your server](https://developer.apple.com/documentation/devicecheck/validating-apps-that-connect-to-your-server)
 - Expo: [App Integrity](https://docs.expo.dev/versions/latest/sdk/app-integrity/)
 
+## Worker runtime compatibility canary
+
+- [workers/api/tests/http/integration/app-integrity-runtime-compatibility.test.ts](../../workers/api/tests/http/integration/app-integrity-runtime-compatibility.test.ts) は、実`workerd`上でWeb CryptoのECDSA P-256署名・検証とSHA-256 digestを実行する。`node:crypto`の`X509Certificate`についても、合成した自己署名証明書の構築、公開鍵取得、署名検証、DER再読込を実行する。
+- 証明書はテスト専用の合成値であり、Apple App Attestのroot CA、attestation chain、App ID、nonce、CBOR、証明書拡張の検証には使わない。このcanaryが通ってもAppleの信頼性やnative実機互換性を示さない。
+- `workers/api/wrangler.jsonc` は`nodejs_compat`を有効にし、互換日付は`2026-08-22`である。Web CryptoはWorker標準APIとして使い、X509 APIはWorker runtimeで公開された`node:crypto`実装を実行時に確認する。新しい依存、証明書配布、実API呼出しは追加していない。
+- 実行環境の根拠はCloudflareの[Web Crypto runtime API](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/) と [`node:crypto` compatibility API](https://developers.cloudflare.com/workers/runtime-apis/nodejs/crypto/) である。現行workspaceにはCBOR/ASN.1/PKI検証ライブラリの直接依存がないため、このcanaryは暗号APIの存在確認に限定する。
+- 確認コマンドは`bun vitest run --config vitest.worker.config.ts workers/api/tests/http/integration/app-integrity-runtime-compatibility.test.ts`。X509 APIが実`workerd`で利用できない場合はこのテストをskipや代替実装で成功化せず失敗させ、監査済みPKI/X509実装を外部依存として導入するか、Worker外の検証サービスへ分離する必要がある。
+
+Apple verifierには、Apple App Attest root CA、正確なApple App ID（Team ID/App ID prefixとbundle identifier）、production/developmentのnative entitlement、CBOR/ASN.1/X.509 chain検証を満たす実機入力がまだない。Appleの検証手順は[Validating apps that connect to your server](https://developer.apple.com/documentation/devicecheck/validating-apps-that-connect-to-your-server)、root CAの公開情報は[Apple PKI](https://www.apple.com/certificateauthority/private/)を参照する。したがって本番bootstrapのverifier注入必須・fail-closed境界は維持し、このcanaryをApple検証完了の証拠として扱わない。
+
 Focused tests cover 5-minute/single-use owner binding, key conflict/revocation/counter replay, bounded body handling, required HTTP denial, SELF bootstrap composition, valid search assertion, and body tampering rejection. Production still needs a real Apple verifier, native client evidence, and device-compatible App Attest validation.
