@@ -8,7 +8,9 @@
 
 ## 実行プロファイル
 
-`new-search` の3反復だけが実モデルのlive profileである。新規検索はHTTP入力だけで再現でき、実モデルの候補登録が取得できれば厳密なidentity対応を通して評価する。複数turn用の評価側 planner は、最初の入力だけをseedし、次の同じThreadDO requestには直前のschema検証済み公開responseの `threadId`・`turnId`・`revision` を引き継ぐ。prompt文字列から前turnを疑似復元しない。
+実モデルのlive runnerは`new-search`、`reason`、`continuity`の3 profileだけを明示的に実行対象とし、それぞれ3反復のartifactへ分ける。新規検索はHTTP入力だけで再現でき、実モデルの候補登録が取得できれば厳密なidentity対応を通して評価する。`reason`は同じThreadDOで候補カードを準備するsynthetic prelude、`continuity`はdatasetの初回turnをpreludeとして実行し、いずれも公開responseからcardSetと候補順を検証して対象turnへ渡す。reasonは要求候補を含むcard set、continuityは少なくとも2候補と要求された第二候補を実際に含むcard setが必要で、固定時計で候補が不足する場合は`PRELUDE_CARD_SET_UNAVAILABLE`として失敗にする。fixtureの時計や候補をlive経路へ差し替えない。preludeは反復数・対象turnのmetrics・採点へ含めず、対象turnのtraceはpreludeとの差分として記録する。複数turn用の評価側 planner は、最初の入力だけをseedし、次の同じThreadDO requestには直前のschema検証済み公開responseの `threadId`・`turnId`・`revision` を引き継ぐ。prompt文字列から前turnを疑似復元しない。
+
+preludeがcards以外を返す、対象responseがschema不正になる、またはmessageから候補identityを安全に得られない場合は、応答を補正せず固定分類のruntime failure／`unverified_mapping`としてartifactへ残す。その他のdataset profileは未接続の`unavailable`であり、live runnerの対象へ暗黙追加しない。キーなしの専用fixtureは、同じformal context経路を外部課金なしで検証する契約として引き続き別bindingで実行する。
 
 キーなしで検証できる `reason` と `continuity` は、専用binding `MODEL_EVAL_CONTEXT_THREADS` の `ModelEvalFixtureThreadDO` で実SDK/DO経路を通す fixture profile とする。最初のprelude turnで実際にcardsを確定し、公開 `AssistantResponseSchema` から `cardSetId` と候補ID順を抽出して、次の `ThreadTurnRequest` の `cardSetId`・`candidateOrder`・選択状態へ構造化して渡す。候補名やprompt本文からIDを補正せず、preludeは評価反復数に含めない。正式入力の実装は [`scenario-input.ts`](../../workers/api/tooling/model-eval/scenario-input.ts)、profile宣言は [`execution-profile.ts`](../../workers/api/tooling/model-eval/execution-profile.ts)、同一DO検証は [`context-seed.test.ts`](../../workers/api/tests/model-eval-live/context-seed.test.ts) にある。
 
@@ -30,3 +32,5 @@ MODEL_EVAL_LIVE=1 OPENAI_API_KEY=... \
 `MODEL_EVAL_LIVE` または `OPENAI_API_KEY` が欠ける場合は `LIVE_FLAG_REQUIRED` / `MODEL_PROVIDER_KEY_MISSING` としてskipする。実モデルを実行していない状態を成功と扱わず、costは常に未計測 `null` とする。人手レビュー入力がない場合もレビュー未完了のまま出力する。
 
 probeは`m25.live.v1`のJSON artifactとして、profile、全attemptのtrace/profile/検証済み公開response、評価済みruns、固定エラー付きfailures、profile限定のcoverage/reportを一つのレコードにまとめる。候補ID対応表不足は`unverified_mapping`、不正な公開responseを含む実行失敗は`runtime_failed`として区別し、実行失敗でもartifactを先に出力する。model callの提案tool数と実行tool数は分離し、実行数を測れない場合は`null`とする。streamがfinishなしで閉じた場合や途中errorになった場合はtraceを未完了にする。
+
+累計traceのnullable指標は、開始前にmodel callがない場合だけ対象turnの値として扱い、既知の過去callがあるのに差分を求められない場合は`null`にする。カウンタや配列の逆行、前置きと対象turnを区別できない位置情報は評価失敗として記録する。1ケースのruntime failureで後続profileのartifact生成を止めず、各artifactに失敗と未評価状態を残す。

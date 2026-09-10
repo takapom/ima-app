@@ -407,7 +407,7 @@ export const buildEvaluationRunFromResponse = (
 
 export type ModelEvalLiveCliCode = 0 | 1 | 2;
 
-export type LiveProbeProfile = 'new-search';
+export type LiveProbeProfile = 'new-search' | 'reason' | 'continuity';
 
 export type LiveProbeAttemptStatus = 'evaluated' | 'unverified_mapping' | 'runtime_failed';
 
