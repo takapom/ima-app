@@ -4,6 +4,12 @@ import type {
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
 } from './runtime-model-guard';
+import { createPhotoBodyHandler } from '../providers/photo/http';
+import { PhotoProviderError, type PhotoMediaTransport } from '../providers/photo/media';
+import { createPhotoReferenceStoreResolver, type PhotoReferenceRpc } from '../providers/photo/rpc';
+import { createPhotoTokenCodec } from '../providers/photo/token';
+import type { PhotoBodyHandler } from '../http/handler';
+import type { RuntimeFieldUsePolicy } from './runtime-field-policy';
 import {
   sessionExpiryAt,
   type ProductionObservationPolicyInput,
@@ -14,6 +20,12 @@ import type { RuntimeProductionOverrides } from './runtime-production-types';
 export const DEV_FIXTURE_PLACES_KEY = 'dev-fixture-places-key';
 export const DEV_FIXTURE_CURSOR_SECRET = 'dev-fixture-cursor-secret';
 export const DEV_FIXTURE_PLACE_ID = 'dev-fixture-place';
+export const DEV_FIXTURE_PHOTO_REF = 'places/dev-fixture-place/photos/dev-fixture-photo';
+/** Used only by the exact keyless development fixture graph; never read from live env. */
+export const DEV_FIXTURE_PHOTO_TOKEN_SECRET = 'dev-fixture-photo-token-secret-v1';
+
+const DEV_FIXTURE_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
 const configured = (value: unknown): boolean =>
   typeof value === 'string' && value.trim().length > 0;
@@ -90,7 +102,7 @@ const modelContextFieldPolicy: ModelContextFieldPolicy = {
     identity: 'allow',
     opening_hours: 'allow',
     price: 'allow',
-    photos: 'deny',
+    photos: 'allow',
     contact: 'deny',
     facilities: 'deny',
     walking_route: 'deny',
@@ -100,6 +112,25 @@ const modelContextFieldPolicy: ModelContextFieldPolicy = {
   cardSet: 'deny',
   displayName: 'deny',
 };
+
+const fixturePhotoPolicyRecord: RuntimeFieldUsePolicy['display'] = {
+  decision: 'allow',
+  activation: 'fixture_only',
+  fieldStatus: 'known',
+  policyStatus: 'available',
+};
+
+const fixturePhotoDisplayPolicy = (): {
+  readonly policy: RuntimeFieldUsePolicy;
+  readonly mode: 'fixture';
+} => ({
+  policy: {
+    llm_input: fixturePhotoPolicyRecord,
+    display: fixturePhotoPolicyRecord,
+    persistence: fixturePhotoPolicyRecord,
+  },
+  mode: 'fixture',
+});
 
 const usage = {
   inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
@@ -164,6 +195,54 @@ const idsInPrompt = (prompt: unknown, key: 'candidateId' | 'observationId'): str
   return [...ids];
 };
 
+const containsStructuredField = (value: unknown, field: string, depth = 0): boolean => {
+  if (depth > 12) return false;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return false;
+    try {
+      return containsStructuredField(JSON.parse(trimmed) as unknown, field, depth + 1);
+    } catch {
+      return false;
+    }
+  }
+  if (Array.isArray(value))
+    return value.some((item) => containsStructuredField(item, field, depth + 1));
+  if (!isRecord(value)) return false;
+  if (value.field === field) return true;
+  return Object.values(value).some((item) => containsStructuredField(item, field, depth + 1));
+};
+
+const toolHasStructuredField = (value: unknown, field: string): boolean => {
+  if (Array.isArray(value)) return value.some((item) => toolHasStructuredField(item, field));
+  if (!isRecord(value)) return false;
+  if (value.role === 'user' || value.role === 'system') return false;
+  if (value.role === 'tool') {
+    return containsStructuredField(value.content, field);
+  }
+  if (value.type === 'tool-result') return containsStructuredField(value.output, field);
+  if (value.type === 'tool-call' || value.type === 'text') return false;
+  if (value.role === 'assistant') return toolHasStructuredField(value.content, field);
+  return Object.values(value).some((item) => toolHasStructuredField(item, field));
+};
+
+const toolHasName = (value: unknown, name: string): boolean => {
+  if (Array.isArray(value)) return value.some((item) => toolHasName(item, name));
+  if (!isRecord(value)) return false;
+  if (value.role === 'user' || value.role === 'system') return false;
+  if (
+    (value.role === 'tool' || value.type === 'tool-call' || value.type === 'tool-result') &&
+    value.toolName === name
+  ) {
+    return true;
+  }
+  if (value.type === 'text') return false;
+  if (value.role === 'assistant' || value.role === 'tool') {
+    return toolHasName(value.content, name);
+  }
+  return Object.values(value).some((item) => toolHasName(item, name));
+};
+
 const envelope = (input: unknown): string => JSON.stringify({ input, metadata: {} });
 
 const toolParts = (
@@ -204,11 +283,16 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
     };
   }
   const candidateId = candidates.at(-1) ?? 'missing-candidate';
-  if (observations.length === 0) {
+  const hasPhotoObservation = toolHasStructuredField(prompt, 'photos');
+  const detailsRequested = toolHasName(prompt, 'get_place_details');
+  if (
+    !detailsRequested &&
+    (observations.length === 0 || (toolHasName(prompt, 'search_places') && !hasPhotoObservation))
+  ) {
     return {
       name: 'get_place_details',
       input: {
-        requests: [{ candidateId, fields: ['identity', 'opening_hours'] }],
+        requests: [{ candidateId, fields: ['identity', 'opening_hours', 'photos'] }],
         freshness: 'refresh',
       },
     };
@@ -260,6 +344,15 @@ const fixturePlace = (clock: () => string): Record<string, unknown> => {
     businessStatus: 'OPERATIONAL',
     googleMapsUri: 'https://maps.google.com/?cid=dev-fixture',
     priceLevel: 'PRICE_LEVEL_MODERATE',
+    photos: [
+      {
+        name: DEV_FIXTURE_PHOTO_REF,
+        widthPx: 1,
+        heightPx: 1,
+        googleMapsUri: 'https://maps.google.com/?cid=dev-fixture&photo=1',
+        authorAttributions: [{ displayName: 'Ima dev fixture' }],
+      },
+    ],
     currentOpeningHours: {
       periods: [{ open: { day: 0, hour: 0, minute: 0 } }],
       weekdayDescriptions: ['開発用Fixtureは終日営業'],
@@ -269,6 +362,48 @@ const fixturePlace = (clock: () => string): Record<string, unknown> => {
     attributions: [{ provider: 'Google Maps', providerUri: 'https://maps.google.com' }],
   };
 };
+
+const fixturePng = (): Uint8Array => {
+  const binary = atob(DEV_FIXTURE_PNG_BASE64);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+};
+
+const fixturePhotoTransport: PhotoMediaTransport = {
+  read(photoRef, signal) {
+    if (signal?.aborted === true) {
+      return Promise.reject(new PhotoProviderError('CANCELLED'));
+    }
+    if (photoRef !== DEV_FIXTURE_PHOTO_REF) {
+      return Promise.reject(new PhotoProviderError('UPSTREAM_UNAVAILABLE'));
+    }
+    const body = fixturePng();
+    return Promise.resolve({
+      body: new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(body);
+          controller.close();
+        },
+      }),
+      contentType: 'image/png' as const,
+      contentLength: body.byteLength,
+    });
+  },
+};
+
+/**
+ * Synthetic photo serving is available only when bootstrap has already proven the exact
+ * keyless dev fixture environment. It still uses the production token/reference boundary.
+ */
+export const createDevFixturePhotoBodyHandler = (
+  resolveThread: (id: string) => PhotoReferenceRpc,
+): PhotoBodyHandler =>
+  createPhotoBodyHandler({
+    tokenCodec: createPhotoTokenCodec({
+      secret: DEV_FIXTURE_PHOTO_TOKEN_SECRET,
+      referenceResolver: createPhotoReferenceStoreResolver(resolveThread),
+    }),
+    transport: fixturePhotoTransport,
+  });
 
 export const createDevFixtureFetcher =
   (clock: () => string = () => new Date().toISOString()): typeof fetch =>
@@ -310,7 +445,9 @@ export const devFixtureOverridesFor = (
     placesEnabled: overrides.placesEnabled ?? true,
     routesEnabled: overrides.routesEnabled ?? false,
     lastTrainEnabled: overrides.lastTrainEnabled ?? false,
-    photosEnabled: overrides.photosEnabled ?? false,
+    photosEnabled: overrides.photosEnabled ?? true,
+    photoTokenSecret: overrides.photoTokenSecret ?? DEV_FIXTURE_PHOTO_TOKEN_SECRET,
+    photoDisplayPolicyFor: overrides.photoDisplayPolicyFor ?? fixturePhotoDisplayPolicy,
     observationPolicy: overrides.observationPolicy ?? observationPolicy,
     detailsObservationPolicy: overrides.detailsObservationPolicy ?? observationPolicy,
     retention:

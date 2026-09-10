@@ -48,6 +48,11 @@ import { createBestEffortEventsSink, createTelemetryEventsSink } from './telemet
 import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetry/telemetry-do';
 import type { AppIntegrityGate } from './security/app-integrity';
 import { resolveRuntimeOperationalGate } from './runtime/runtime-operational-gate';
+import {
+  createDevFixturePhotoBodyHandler,
+  devFixtureEnvironmentFor,
+  isKeylessDevFixtureEnvironment,
+} from './runtime/runtime-dev-fixture';
 import { createThreadId } from './thread-id';
 
 export type BootstrapEnv = {
@@ -272,7 +277,13 @@ const createConfiguredPhoto = (
   env: BootstrapEnv,
   photoFetcher?: typeof fetch,
 ): PhotoBodyHandler => {
-  const operational = resolveRuntimeOperationalGate(env);
+  const keylessFixture = isKeylessDevFixtureEnvironment(env);
+  const operational = resolveRuntimeOperationalGate(
+    keylessFixture ? devFixtureEnvironmentFor(env) : env,
+  );
+  if (keylessFixture && operational.enabled('places')) {
+    return createDevFixturePhotoBodyHandler((threadId) => env.THREADS.getByName(threadId));
+  }
   const tokenSecret = env.PHOTO_TOKEN_SECRET?.trim();
   if (tokenSecret === undefined || tokenSecret.length === 0) return createUnavailablePhoto();
   const tokenCodec = createPhotoTokenCodec({
