@@ -164,6 +164,14 @@ const ensurePhotoResponse = async (
   config: HttpRouterConfig,
 ): Promise<Response> => {
   const result = await config.handlers.photo.read(path, context);
+  const releaseBody = async (): Promise<void> => {
+    if (!(result.body instanceof ReadableStream)) return;
+    try {
+      await result.body.cancel();
+    } catch {
+      // The public response is already invalid; cleanup cannot make it usable.
+    }
+  };
   const descriptor = {
     bodyKind: 'binary' as const,
     descriptor: result.descriptor,
@@ -171,21 +179,32 @@ const ensurePhotoResponse = async (
   const parsed = v.safeParse(PhotoBinaryRouteResponseSchema, descriptor);
   if (
     !parsed.success ||
-    !(result.body instanceof Uint8Array) ||
+    (!(result.body instanceof Uint8Array) && !(result.body instanceof ReadableStream)) ||
     parsed.output.descriptor.requestId !== requestId ||
     parsed.output.descriptor.token !== path.token
   ) {
+    await releaseBody();
     return toErrorResponse(requestId, internal());
   }
   const currentServerNow = validatedServerNow(config);
   const now = Date.parse(currentServerNow);
   const expiresAt = Date.parse(parsed.output.descriptor.expiresAt);
   if (!Number.isFinite(now) || !Number.isFinite(expiresAt)) {
+    await releaseBody();
     return toErrorResponse(requestId, internal());
   }
-  if (expiresAt <= now) return toErrorResponse(requestId, expired());
-  const body = new ArrayBuffer(result.body.byteLength);
-  new Uint8Array(body).set(result.body);
+  if (expiresAt <= now) {
+    await releaseBody();
+    return toErrorResponse(requestId, expired());
+  }
+  const body =
+    result.body instanceof Uint8Array
+      ? (() => {
+          const copy = new Uint8Array(result.body.byteLength);
+          copy.set(result.body);
+          return copy;
+        })()
+      : result.body;
   return new Response(body, {
     status: 200,
     headers: {
@@ -245,21 +264,20 @@ const routeAuthorized = async (
   const maxBodyBytes = config.maxBodyBytes ?? DEFAULT_JSON_BODY_LIMIT_BYTES;
 
   if (route.kind === 'photos') {
-    const failure = await checkResource(
-      auth.ownerScopeRef,
-      { kind: 'photo', id: route.path.token },
-      config,
-    );
-    if (failure !== null) return toErrorResponse(requestId, failure);
+    const photoContext = makeContext(request, auth, serverNow);
+    if (config.handlers.photo.authorize !== undefined) {
+      await config.handlers.photo.authorize(route.path, photoContext);
+    } else {
+      const failure = await checkResource(
+        auth.ownerScopeRef,
+        { kind: 'photo', id: route.path.token },
+        config,
+      );
+      if (failure !== null) return toErrorResponse(requestId, failure);
+    }
     const aborted = cancellationResponse(requestId, request);
     if (aborted !== null) return aborted;
-    return ensurePhotoResponse(
-      route.path,
-      requestId,
-      makeContext(request, auth, serverNow),
-      serverNow,
-      config,
-    );
+    return ensurePhotoResponse(route.path, requestId, photoContext, serverNow, config);
   }
   if (route.kind === 'place') {
     const failure = await checkResource(
@@ -449,7 +467,9 @@ export const routeRequest = async (
     return await routeAuthorized(request, matched.route, authenticated.context, config);
   } catch (error: unknown) {
     if (isHttpBoundaryError(error)) {
-      return toErrorResponse(responseRequestId, error.failure);
+      return toErrorResponse(responseRequestId, error.failure, {
+        retryAfterSeconds: error.retryAfterSeconds,
+      });
     }
     return toErrorResponse(responseRequestId, internal());
   }

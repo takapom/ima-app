@@ -17,11 +17,18 @@ export type BoundaryFailure = {
 /** Typed adapter failures cross the Worker boundary without exposing internal error text. */
 export class HttpBoundaryError extends Error {
   readonly failure: BoundaryFailure;
+  readonly retryAfterSeconds: number | null;
 
-  constructor(failure: BoundaryFailure) {
+  constructor(failure: BoundaryFailure, options: { readonly retryAfterSeconds?: number } = {}) {
     super('HTTP boundary failure');
     this.name = 'HttpBoundaryError';
     this.failure = failure;
+    this.retryAfterSeconds =
+      options.retryAfterSeconds !== undefined &&
+      Number.isSafeInteger(options.retryAfterSeconds) &&
+      options.retryAfterSeconds >= 1
+        ? options.retryAfterSeconds
+        : null;
   }
 }
 
@@ -87,13 +94,26 @@ export const toPublicError = (requestId: string, failure: BoundaryFailure): Publ
   };
 };
 
-export const toErrorResponse = (requestId: string, failure: BoundaryFailure): Response => {
+export const toErrorResponse = (
+  requestId: string,
+  failure: BoundaryFailure,
+  options: { readonly retryAfterSeconds?: number | null } = {},
+): Response => {
   const body = toPublicError(requestId, failure);
+  const retryAfter =
+    body.status === 429 &&
+    options.retryAfterSeconds !== null &&
+    options.retryAfterSeconds !== undefined &&
+    Number.isSafeInteger(options.retryAfterSeconds) &&
+    options.retryAfterSeconds >= 1
+      ? String(options.retryAfterSeconds)
+      : undefined;
   return Response.json(body, {
     status: body.status,
     headers: {
       'cache-control': 'no-store',
       'content-type': 'application/json; charset=utf-8',
+      ...(retryAfter === undefined ? {} : { 'retry-after': retryAfter }),
     },
   });
 };

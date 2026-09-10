@@ -76,7 +76,7 @@ export const PhotoResponseDescriptorSchema = v.strictObject({
   schemaVersion: SchemaVersionSchema,
   requestId: OpaqueIdSchema,
   token: Text(512),
-  contentType: v.picklist(['image/jpeg', 'image/png', 'image/webp']),
+  contentType: v.picklist(['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
   expiresAt: IsoTimestampSchema,
 });
 export const PhotoResponseSchema = PhotoResponseDescriptorSchema;

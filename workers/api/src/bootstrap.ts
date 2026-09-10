@@ -51,6 +51,8 @@ export const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = Object.freeze({
 
 export type BootstrapOptions = {
   readonly ownership: ResourceScopeAuthorizer;
+  /** Production composition injects the authenticated, token-bound photo adapter. */
+  readonly photo?: PhotoBodyHandler;
   readonly clock?: () => string;
   readonly requestIdFactory?: () => string;
   readonly maxBodyBytes?: number;
@@ -281,7 +283,7 @@ export const createHttpRouterConfig = (
 ): HttpRouterConfig => {
   const handlers: HandlerDependencies = {
     application: createApplication(env, options),
-    photo: createUnavailablePhoto(),
+    photo: options.photo ?? createUnavailablePhoto(),
     events: createUnavailableEvents(),
     rateLimiter: new DurableRateLimiter(
       env.RATE_LIMITS,

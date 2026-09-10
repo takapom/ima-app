@@ -41,6 +41,11 @@ export type HandlerContext = {
   readonly signal: AbortSignal;
 };
 
+/** A Worker adapter may leave the bounded provider body as a stream until Response consumes it. */
+export type WorkerPhotoBinaryResponse = Omit<PhotoBinaryResponse, 'body'> & {
+  readonly body: Uint8Array | ReadableStream<Uint8Array>;
+};
+
 export type ApplicationOperation =
   | { readonly kind: 'create_thread'; readonly input: CreateThreadRequest }
   | { readonly kind: 'search'; readonly input: SearchRequest }
@@ -82,7 +87,9 @@ export interface ApplicationHandler {
 }
 
 export interface PhotoBodyHandler {
-  read(path: PhotoPath, context: HandlerContext): Promise<PhotoBinaryResponse>;
+  /** Optional token/scope check used when the handler owns the photo resource boundary. */
+  authorize?(path: PhotoPath, context: HandlerContext): Promise<void>;
+  read(path: PhotoPath, context: HandlerContext): Promise<WorkerPhotoBinaryResponse>;
 }
 
 export interface EventsSink {
