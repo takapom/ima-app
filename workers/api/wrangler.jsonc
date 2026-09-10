@@ -5,6 +5,11 @@
   "compatibility_date": "2026-08-22",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "vars": {
+    "IMA_ENV": "dev",
+    "IMA_RUNTIME_MODE": "fixture",
+    "IMA_RUNTIME_FLAGS_CONNECTED": "0",
+  },
   "durable_objects": {
     "bindings": [
       { "name": "THREADS", "class_name": "ThreadDO" },
@@ -21,5 +26,39 @@
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,
+  },
+  "env": {
+    "staging": {
+      "name": "ima-api-staging",
+      "vars": {
+        "IMA_ENV": "staging",
+        "IMA_RUNTIME_MODE": "disabled",
+        "IMA_RUNTIME_FLAGS_CONNECTED": "0",
+      },
+      "durable_objects": {
+        "bindings": [
+          { "name": "THREADS", "class_name": "ThreadDO" },
+          { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
+          { "name": "JOURNEY_DATASETS", "class_name": "JourneyDatasetDO" },
+          { "name": "TELEMETRY", "class_name": "TelemetryDO" },
+        ],
+      },
+    },
+    "production": {
+      "name": "ima-api-production",
+      "vars": {
+        "IMA_ENV": "production",
+        "IMA_RUNTIME_MODE": "disabled",
+        "IMA_RUNTIME_FLAGS_CONNECTED": "0",
+      },
+      "durable_objects": {
+        "bindings": [
+          { "name": "THREADS", "class_name": "ThreadDO" },
+          { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
+          { "name": "JOURNEY_DATASETS", "class_name": "JourneyDatasetDO" },
+          { "name": "TELEMETRY", "class_name": "TelemetryDO" },
+        ],
+      },
+    },
   },
 }

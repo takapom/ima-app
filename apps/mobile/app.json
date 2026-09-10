@@ -7,7 +7,10 @@
     "scheme": "ima",
     "plugins": ["expo-dev-client"],
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "いま行ける店を提案するため、現在地を使います。"
+      }
     }
   }
 }

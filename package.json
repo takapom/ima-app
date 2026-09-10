@@ -16,6 +16,7 @@
     "install:ci": "bun install --frozen-lockfile",
     "dev:mobile": "bun run --cwd apps/mobile start",
     "dev:worker": "bun run --cwd workers/api dev",
+    "env:preflight": "bun scripts/environment-preflight.ts",
     "format": "prettier --check .",
     "lint": "eslint . && node scripts/check-file-lines.mjs && node scripts/check-lint-disables.mjs && node scripts/check-eslint-fixtures.mjs",
     "architecture": "dependency-cruiser --validate .dependency-cruiser.cjs apps packages workers && node scripts/check-manifest-boundaries.mjs && node scripts/check-architecture-fixtures.mjs",

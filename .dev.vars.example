@@ -1,5 +1,17 @@
 # Copy to workers/api/.dev.vars for local Worker secrets.
 # Never commit the copied file or real values.
+IMA_ENV=dev
+IMA_RUNTIME_MODE=fixture
+IMA_RUNTIME_FLAGS_CONNECTED=0
 APP_TOKEN=replace-me
+# Provider secrets remain empty in fixture mode. Never put real values in this file in git.
+GOOGLE_PLACES_API_KEY=
+GOOGLE_ROUTES_API_KEY=
+PLACES_CURSOR_SECRET=
+PHOTO_TOKEN_SECRET=
 # Required only for the live OpenAI model profile; leave empty until configured locally.
 OPENAI_API_KEY=
+# Live smoke requires all three confirmations to be set to YES explicitly.
+IMA_PROVIDER_LIVE_CONFIRM=NO
+IMA_PROVIDER_BILLING_CONFIRM=NO
+IMA_PROVIDER_PERMISSION_CONFIRM=NO

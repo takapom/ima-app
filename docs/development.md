@@ -16,6 +16,7 @@
 - `bun run typecheck`: 5 workspace と root のテスト・Vitest/Worker 設定を `tsc` で検査する。
 - `bun run test`: Vitest の unit suite と Cloudflare Workers runtime suite を別 pool で実行する。
 - `bun run build`: 各 workspace の build script を実行する。
+- `bun run env:preflight -- --target dev`: secret値を出力せず、環境変数とendpointの形式を検査する。設定がreadyでもWorker runtimeの接続証跡は別であり、詳細は[M28 runbook](design/m28-environment-runbook.md)を参照する。
 
 ローカル補助 hook を有効にする場合は `git config core.hooksPath .githooks` を一度実行する。hook は補助的な再確認であり、この環境では有効化しておらず、品質ゲートは手動コマンドで検証している。
 

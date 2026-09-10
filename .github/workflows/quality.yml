@@ -22,6 +22,14 @@ jobs:
         with:
           bun-version: 1.3.8
       - run: bun install --frozen-lockfile
+      - name: Check local fixture environment contract
+        env:
+          IMA_ENV: dev
+          IMA_RUNTIME_MODE: fixture
+          IMA_RUNTIME_FLAGS_CONNECTED: '0'
+          APP_TOKEN: ci-fixture-token
+          EXPO_PUBLIC_API_BASE_URL: http://localhost:8787
+        run: bun run env:preflight -- --target dev
       - run: bun run format
       - run: bun run lint
       - run: bun run architecture
