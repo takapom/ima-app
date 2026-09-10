@@ -52,7 +52,7 @@ describe('Google Route Matrix transport', () => {
     if (call === undefined) throw new Error('route request was not sent');
     expect(call.url).toBe(GOOGLE_ROUTE_MATRIX_ENDPOINT);
     expect(call.init?.method).toBe('POST');
-    expect(call.init?.redirect).toBe('error');
+    expect(call.init?.redirect).toBe('manual');
     expect(call.init?.headers).toEqual({
       accept: 'application/json',
       'content-type': 'application/json',
@@ -142,6 +142,15 @@ describe('Google Route Matrix transport', () => {
     await expect(unavailable.compute(request)).rejects.toMatchObject({
       code: 'UPSTREAM_UNAVAILABLE',
       status: 503,
+    });
+
+    const redirected = createGoogleRouteMatrixTransport({
+      apiKey: 'test-key',
+      fetcher: () => Promise.resolve(response({}, 302, { location: 'https://redirect.invalid' })),
+    });
+    await expect(redirected.compute(request)).rejects.toMatchObject({
+      code: 'INVALID_REQUEST',
+      status: 302,
     });
 
     const malformed = createGoogleRouteMatrixTransport({

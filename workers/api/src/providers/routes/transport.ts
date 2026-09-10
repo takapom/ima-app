@@ -217,7 +217,9 @@ const computeWith = async (
         },
         body: JSON.stringify(requestBody(request)),
         signal: requestSignal,
-        redirect: 'error',
+        // Cloudflare's edge fetch does not implement the error redirect mode. Manual keeps
+        // redirects visible so the status handling below rejects them before key leakage.
+        redirect: 'manual',
       });
       return {
         response,

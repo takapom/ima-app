@@ -4,6 +4,11 @@ import { RateLimitDO, ThreadDO as ProductionThreadDO } from '../../src/thread-do
 import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../src/runtime/runtime-budget';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../src/model/provider-options';
 import { sanitizeRuntimeCompactionSummary } from '../../src/runtime/runtime-retention';
+import {
+  GoogleRouteMatrixError,
+  type GoogleRouteMatrixRequest,
+} from '../../src/providers/routes/types';
+import { createGoogleRouteMatrixTransport } from '../../src/providers/routes/transport';
 import type { DurableCommitPort } from '../../src/thread-runtime/commit-port';
 import {
   createRuntimeTurnComposition,
@@ -63,6 +68,39 @@ const cardEvidenceResolver =
       retention: observation.retention,
     };
   };
+
+const ROUTE_REDIRECT_PROBE_REQUEST = {
+  origins: [{ ref: 'origin', coordinates: { lat: 35.6595, lng: 139.7005 } }],
+  destinations: [{ ref: 'destination', coordinates: { lat: 35.658, lng: 139.7016 } }],
+} satisfies GoogleRouteMatrixRequest;
+
+const routeRedirectProbe = async (): Promise<Response> => {
+  let observedRedirect: RequestRedirect | null = null;
+  const transport = createGoogleRouteMatrixTransport({
+    apiKey: 'runtime-native-route-probe-key',
+    fetcher: (input, init) => {
+      observedRedirect = new Request(input, init).redirect;
+      return Promise.resolve(
+        new Response(null, {
+          status: 302,
+          headers: { location: 'https://redirect.invalid' },
+        }),
+      );
+    },
+  });
+  try {
+    await transport.compute(ROUTE_REDIRECT_PROBE_REQUEST);
+    return Response.json({ code: 'UNEXPECTED_SUCCESS', redirect: observedRedirect, status: null });
+  } catch (error: unknown) {
+    if (!(error instanceof GoogleRouteMatrixError)) {
+      return Response.json(
+        { code: 'UNEXPECTED_ERROR', redirect: observedRedirect, status: null },
+        { status: 500 },
+      );
+    }
+    return Response.json({ code: error.code, redirect: observedRedirect, status: error.status });
+  }
+};
 
 export class ThreadDO extends ProductionThreadDO {
   override maxSteps = DEFAULT_RUNTIME_BUDGET.maxModelSteps;
@@ -203,4 +241,22 @@ export class ThreadDO extends ProductionThreadDO {
 
 export { RateLimitDO };
 export { ProductionThreadDO } from './runtime-production-worker';
-export default production;
+
+type RuntimeNativeEnv = Parameters<typeof production.fetch>[1];
+type RuntimeNativeExecutionContext = Parameters<typeof production.fetch>[2];
+
+const runtimeNativeHandler = {
+  async fetch(
+    request: Request,
+    env: RuntimeNativeEnv,
+    executionContext: RuntimeNativeExecutionContext,
+  ): Promise<Response> {
+    const { pathname } = new URL(request.url);
+    if (request.method === 'GET' && pathname === '/__runtime-native/routes-redirect-probe') {
+      return routeRedirectProbe();
+    }
+    return production.fetch(request, env, executionContext);
+  },
+} satisfies typeof production;
+
+export default runtimeNativeHandler;

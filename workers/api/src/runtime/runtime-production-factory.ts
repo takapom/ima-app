@@ -109,6 +109,8 @@ export type RuntimeProductionOverrides = {
   readonly detailsObservationPolicy?: PlacesDetailsObservationPolicy;
   /** Explicit provider capability gate; retention policy is evaluated separately. */
   readonly placesEnabled?: boolean;
+  /** Host-owned final response admission; the default plan keeps this false. */
+  readonly isFinalResponse?: (params: RuntimeModelGuardCallOptions) => boolean;
   /** Explicitly permits current-turn model projection; omission stays deny-by-default. */
   readonly retention?: ProductionRetentionSource;
   readonly clock?: () => string;
@@ -327,6 +329,9 @@ const defaultPlan = (
   return {
     model: overrides.modelForTurn ?? createLiveOpenAIProvider(env).model,
     providerOptions: OPENAI_PROVIDER_REQUEST_OPTIONS,
+    ...(overrides.isFinalResponse === undefined
+      ? {}
+      : { isFinalResponse: overrides.isFinalResponse }),
     registry,
     search,
     details,

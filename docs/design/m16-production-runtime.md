@@ -43,4 +43,6 @@ current-location label from request preferences.
 The production acceptance test injects only a scripted model, mock fetch, bounded retention policy,
 capability gate, and clock; it exercises the real Think Durable Object default factory through
 search, details, submit, CAS response, reference-only replay, and a second turn. It does not prove
-live provider credentials, production retention approval, or the final-text reserve path.
+live provider credentials or production retention approval. The separate final-response test also
+exercises the host-marked final-text reserve path with the scripted model; it does not establish
+live-provider response quality.

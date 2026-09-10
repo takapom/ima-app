@@ -18,7 +18,10 @@ const productionEnv = (): ProductionTestEnv => {
   return env as ProductionTestEnv;
 };
 
-const requestFor = (target: ThreadRuntimeTarget): ThreadRuntimeTurnInput => ({
+const requestFor = (
+  target: ThreadRuntimeTarget,
+  text = '渋谷で静かなカフェを探して',
+): ThreadRuntimeTurnInput => ({
   ...target,
   idempotencyKey: `m16-production-${target.turnId}`,
   input: {
@@ -26,7 +29,7 @@ const requestFor = (target: ThreadRuntimeTarget): ThreadRuntimeTurnInput => ({
     requestId: `request-${target.turnId}`,
     turnId: target.turnId,
     revision: target.revision,
-    text: '渋谷で静かなカフェを探して',
+    text,
     clientNow: '2026-09-10T12:00:00.000Z',
     location: {
       status: 'unavailable',
@@ -114,5 +117,39 @@ describe('production factory through a real Think Durable Object', () => {
     expect(secondResult.response.responseId).not.toBe(firstResponse.output.responseId);
     const secondReport: RuntimeProductionReport | null = await stub.getRuntimeProductionReport();
     expect(secondReport?.calls).toBe(6);
+  });
+
+  it('admits a host-marked final message inside the final response reserve', async () => {
+    const threadId = `m16-production-final-${crypto.randomUUID()}`;
+    const target: ThreadRuntimeTarget = {
+      ownerScopeRef: 'owner-m16-production-final',
+      threadId,
+      turnId: `turn-${crypto.randomUUID()}`,
+      revision: 1,
+    };
+    const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
+
+    await expect(stub.initialize(target.ownerScopeRef, target.threadId)).resolves.toMatchObject({
+      ok: true,
+    });
+    const result = await stub.runRuntimeTurn(
+      requestFor(target, '[m16-final-reserve] 条件を確認して'),
+    );
+    expect(result.status).toBe('completed');
+    const response = v.safeParse(AssistantResponseSchema, result.response);
+    expect(response.success).toBe(true);
+    if (!response.success) return;
+    expect(response.output).toMatchObject({
+      kind: 'message',
+      revision: 2,
+      cardSetId: null,
+    });
+
+    const report: RuntimeProductionReport | null = await stub.getRuntimeProductionReport();
+    expect(report).toMatchObject({
+      calls: 1,
+      finalResponseFlags: [true],
+      fetchUrls: [],
+    });
   });
 });

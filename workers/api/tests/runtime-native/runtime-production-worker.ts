@@ -5,6 +5,7 @@ import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,
 } from '../runtime-gate/runtime-gate-provider';
+import type { RuntimeModelGuardCallOptions } from '../../src/runtime/runtime-model-guard';
 
 export const RUNTIME_PRODUCTION_NOW = '2026-09-10T12:00:00.000Z';
 
@@ -26,6 +27,7 @@ export type RuntimeProductionReport = {
   readonly calls: number;
   readonly providerOptionsSeen: readonly RuntimeProductionProviderOptions[];
   readonly toolNames: readonly string[];
+  readonly finalResponseFlags: readonly boolean[];
   readonly fetchUrls: readonly string[];
 };
 
@@ -41,6 +43,7 @@ type MutableRuntimeProductionReport = {
   calls: number;
   providerOptionsSeen: RuntimeProductionProviderOptions[];
   toolNames: string[];
+  finalResponseFlags: boolean[];
   fetchUrls: string[];
 };
 
@@ -50,6 +53,7 @@ const usage = {
 } as const;
 
 const toolFinish = { unified: 'tool-calls', raw: 'tool-calls' } as const;
+const stopFinish = { unified: 'stop', raw: 'stop' } as const;
 
 const searchInput = {
   mode: 'search' as const,
@@ -115,6 +119,20 @@ const streamOf = (
     },
   });
 
+const finalMessageParts = (): RuntimeGateModelStreamPart[] => {
+  const envelope = JSON.stringify({
+    kind: 'final_message',
+    message: { text: '条件を確認しました。', evidenceIds: [], basis: 'conversational' },
+  });
+  return [
+    { type: 'stream-start', warnings: [] },
+    { type: 'text-start', id: 'production-final' },
+    { type: 'text-delta', id: 'production-final', delta: envelope },
+    { type: 'text-end', id: 'production-final' },
+    { type: 'finish', usage, finishReason: stopFinish },
+  ];
+};
+
 const modelForProduction = (report: MutableRuntimeProductionReport): RuntimeGateModel => ({
   specificationVersion: 'v3',
   provider: 'm16-production-scripted-provider',
@@ -123,6 +141,12 @@ const modelForProduction = (report: MutableRuntimeProductionReport): RuntimeGate
   doGenerate: () => Promise.reject(new Error('M16_PRODUCTION_STREAM_ONLY')),
   doStream: (options: RuntimeGateModelCallOptions) => {
     const prompt = JSON.stringify(options.prompt);
+    if (prompt.includes('[m16-final-reserve]')) {
+      report.calls += 1;
+      report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
+      report.toolNames.push('final_message');
+      return Promise.resolve({ stream: streamOf(finalMessageParts()) });
+    }
     const candidateIds = candidateIdsIn(prompt);
     const observationIds = observationIdsIn(prompt);
     const candidateId = candidateIds.at(-1) ?? 'missing-candidate';
@@ -242,6 +266,7 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
       calls: 0,
       providerOptionsSeen: [],
       toolNames: [],
+      finalResponseFlags: [],
       fetchUrls: [],
     };
     this.productionReport = report;
@@ -250,6 +275,8 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
       expiresAt: ALLOW_RETENTION.retentionUntil,
       retention: ALLOW_RETENTION,
     });
+    const budgetStart = performance.now();
+    let finalResponseMode = false;
     return {
       modelForTurn: modelForProduction(report),
       fetcher: fetcherForProduction(report),
@@ -258,8 +285,14 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
       placesEnabled: true,
       retention: ALLOW_RETENTION,
       clock: () => RUNTIME_PRODUCTION_NOW,
-      monotonicNow: () => performance.now(),
+      monotonicNow: () => (finalResponseMode ? budgetStart + 10_500 : performance.now()),
       epochNow: () => 1_000,
+      isFinalResponse: (params: RuntimeModelGuardCallOptions) => {
+        const final = JSON.stringify(params.prompt).includes('[m16-final-reserve]');
+        finalResponseMode = final;
+        report.finalResponseFlags.push(final);
+        return final;
+      },
     };
   }
 }
