@@ -4,6 +4,7 @@ import {
   collectAttributions,
   presentCardFacts,
   presentEvidenceText,
+  presentFact,
   type AttributionPresentation,
   type FactPresentation,
 } from './candidate-card-model';
@@ -17,12 +18,21 @@ type CandidateCardProps = {
   readonly onSourcePress?: (sourceLink: string) => void;
 };
 
-const cardIdentity = (card: PublicCard) =>
-  card.facts.identity.status === 'known' ? card.facts.identity.value : null;
+const cardIdentity = (card: PublicCard) => {
+  const field = card.facts.identity;
+  return field.status === 'known' && presentFact(field, (value) => value.name).status === 'known'
+    ? field.value
+    : null;
+};
 
 const walkingMinutes = (card: PublicCard): string => {
   const fact = card.facts.walking_route;
-  if (fact?.status !== 'known') return '徒歩情報なし';
+  if (
+    fact?.status !== 'known' ||
+    presentFact(fact, (value) => String(value.durationSeconds)).status !== 'known'
+  ) {
+    return '徒歩情報なし';
+  }
   return `徒歩${Math.max(1, Math.round(fact.value.durationSeconds / 60))}分`;
 };
 
@@ -31,6 +41,9 @@ const photoLabel = (card: PublicCard): string => {
   if (fact === undefined) return '写真情報なし';
   if (fact.status === 'error') return '写真を表示できません';
   if (fact.status !== 'known') return '写真は未確認';
+  const presentation = presentFact(fact, (value) => String(value.photos.length));
+  if (presentation.status === 'expired') return '写真は表示期限を過ぎています';
+  if (presentation.status !== 'known') return '写真は未確認';
   const count = fact.value.photos.length;
   return count > 0 ? `写真 ${count}枚` : '写真なし';
 };
@@ -56,10 +69,10 @@ export function CandidateCard({
   const facts = presentCardFacts(card);
   const why = presentEvidenceText(card.why);
   const diff = card.diff === undefined ? null : presentEvidenceText(card.diff);
-  const identityEvidence =
-    card.facts.identity.status === 'known' ? card.facts.identity.evidence : [];
-  const walkingEvidence =
-    card.facts.walking_route?.status === 'known' ? card.facts.walking_route.evidence : [];
+  const identityEvidence = presentFact(card.facts.identity, (value) => value.name).evidence;
+  const walkingEvidence = presentFact(card.facts.walking_route, (value) =>
+    String(value.durationSeconds),
+  ).evidence;
   const attributions = collectAttributions([
     identityEvidence,
     walkingEvidence,

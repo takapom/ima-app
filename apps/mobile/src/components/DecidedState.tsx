@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
+import { presentDecidedIdentity } from './decided-state-model';
 import { colors, radii, spacing, typography } from '../theme/tokens';
 
 type DecidedStateProps = {
@@ -7,7 +8,7 @@ type DecidedStateProps = {
 };
 
 export function DecidedState({ card }: DecidedStateProps): React.JSX.Element {
-  const identity = card?.facts.identity.status === 'known' ? card.facts.identity.value : null;
+  const identity = presentDecidedIdentity(card);
   return (
     <View style={styles.container}>
       <Text style={styles.kicker}>ここにする</Text>

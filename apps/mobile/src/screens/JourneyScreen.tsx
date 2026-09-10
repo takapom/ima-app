@@ -11,7 +11,9 @@ import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { ResultsState } from '../components/ResultsState';
 import { WorkingState } from '../components/WorkingState';
+import { useAssistantResponseProjection } from '../hooks/useAssistantResponseProjection';
 import { useJourneyShell } from '../hooks/useJourneyShell';
+import type { AssistantResponseClock } from '../services/assistant-response-clock';
 import {
   selectAssistantMessageRecords,
   selectAssistantMessages,
@@ -23,6 +25,7 @@ import {
   type JourneyConditions,
   suggestionsFor,
 } from '../state/journey-input';
+import type { AssistantResponseProjectionNow } from '../state/assistant-response-projection';
 import type { SavedPlaceItem, SearchHistoryItem } from '../state/journey-shell';
 
 export type JourneyRequestStatus = 'idle' | 'pending' | 'error' | 'cancelled';
@@ -35,6 +38,9 @@ export type JourneySubmitContext = {
 export type JourneyScreenProps = {
   readonly threadId?: string;
   readonly responseState?: AssistantResponseState;
+  /** Injected render time for deterministic expiry boundaries. */
+  readonly now?: AssistantResponseProjectionNow;
+  readonly responseClock?: AssistantResponseClock;
   readonly requestStatus?: JourneyRequestStatus;
   readonly errorMessage?: string;
   readonly history?: readonly SearchHistoryItem[];
@@ -75,6 +81,8 @@ const selectedCard = (
 function JourneyScreenStateOwner({
   threadId = 'mobile-thread',
   responseState,
+  now,
+  responseClock,
   requestStatus = 'idle',
   errorMessage = '時間をおいてもう一度試してください。',
   history = [],
@@ -92,7 +100,11 @@ function JourneyScreenStateOwner({
   onConditionsChange,
 }: JourneyScreenProps): React.JSX.Element {
   const journey = useJourneyShell(threadId, initialSavedConditions);
-  const renderedResponse = responseState ?? journey.responseState;
+  const renderedResponse = useAssistantResponseProjection(
+    responseState ?? journey.responseState,
+    now,
+    responseClock,
+  );
   const renderedMessages = selectAssistantMessages(renderedResponse);
   const renderedMessageRecords = selectAssistantMessageRecords(renderedResponse);
 
