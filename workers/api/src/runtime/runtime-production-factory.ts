@@ -10,6 +10,7 @@ import { createGoogleTextSearchTransport } from '../providers/places-search/tran
 import { createLiveOpenAIProvider } from '../model/provider';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../model/provider-options';
 import { createRuntimeReadAttemptSignalBridge } from './runtime-read-ports';
+import { wrapRuntimeModelTrace } from './runtime-model-trace';
 import {
   createRuntimeTurnComposition,
   type RuntimeTurnCompositionCoreOptions,
@@ -210,8 +211,10 @@ const defaultPlan = (
     env,
     ...(input.request.deviceId === undefined ? {} : { deviceId: input.request.deviceId }),
   });
+  const modelFromConfiguredProvider = overrides.modelForTurn === undefined;
   return {
     model: overrides.modelForTurn ?? createLiveOpenAIProvider(env).model,
+    ...(modelFromConfiguredProvider ? { modelTraceProvider: 'openai' as const } : {}),
     providerOptions: OPENAI_PROVIDER_REQUEST_OPTIONS,
     registry,
     search,
@@ -329,10 +332,23 @@ const makeOptions = (
             providerAvailability,
             lastTrainRevisionState,
           ));
+    const model =
+      overrides.modelTraceSink === undefined
+        ? plan.model
+        : wrapRuntimeModelTrace(plan.model, {
+            ownerScopeRef: request.ownerScopeRef,
+            threadId: request.threadId,
+            turnId: request.turnId,
+            revision: request.revision,
+            ...(plan.modelTraceProvider === undefined ? {} : { provider: plan.modelTraceProvider }),
+            clock,
+            monotonicNow,
+            sink: overrides.modelTraceSink,
+          });
     const base: RuntimeTurnCompositionCoreOptions = {
       request,
       context,
-      model: plan.model,
+      model,
       ...(plan.providerOptions === undefined ? {} : { providerOptions: plan.providerOptions }),
       modelContext: plan.modelContext,
       retention: plan.retention,

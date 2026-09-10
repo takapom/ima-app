@@ -34,6 +34,7 @@ import type {
 import type { RuntimeProductionProviderComposition } from './runtime-production-providers';
 import type { RuntimeRetentionContext } from './runtime-retention';
 import type { RuntimeModelGuardModel } from './runtime-model-guard';
+import type { RuntimeModelTraceSink } from './runtime-model-trace';
 import type { RuntimeThinkTurnBuildRequest } from './runtime-think-connection';
 
 export type ProductionBuildInput = {
@@ -45,6 +46,8 @@ export type ProductionBuildInput = {
 
 export type RuntimeProductionTurnPlan = {
   readonly model: RuntimeModelGuardModel;
+  /** Set only when this plan constructed the configured OpenAI provider itself. */
+  readonly modelTraceProvider?: 'openai';
   readonly providerOptions?: TurnConfig['providerOptions'];
   readonly registry: CandidateObservationRegistryPort;
   readonly search: PlaceSearchPort;
@@ -63,6 +66,8 @@ export type RuntimeProductionTurnPlan = {
 export type RuntimeProductionOverrides = {
   readonly prepareTurn?: (input: ProductionBuildInput) => RuntimeProductionTurnPlan;
   readonly modelForTurn?: RuntimeModelGuardModel;
+  /** Optional Worker-owned sink for one trace record per actual SDK model call. */
+  readonly modelTraceSink?: RuntimeModelTraceSink;
   readonly googlePlacesApiKey?: string;
   readonly placesCursorSecret?: string;
   /** Dedicated Routes key; absence keeps route and last-train provider calls disabled. */

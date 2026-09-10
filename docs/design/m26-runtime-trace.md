@@ -18,4 +18,4 @@ flowchart LR
 
 書込みは `TELEMETRY` binding がある production host だけで構成され、binding がない場合は no-op になる。`IMA_RUNTIME_MODE` は `fixture`、`live`、その他を `unknown` に正規化し、`telemetry-fixture`、`telemetry-live`、`telemetry-unknown` の別 Durable Object 名へ分離する。fixture の probe が live 集計へ混ざることはない。同期 throw、非同期 reject、`waitUntil` の失敗は固定分類 `write_failed` へ分類できる sink 境界で吸収し、turn の応答・取消・commit を変更しない。この単位では production 側の失敗通知 callback は接続せず、失敗件数を記録したとは主張しない。保存失敗時の生 error はログや trace payload に含めない。
 
-`runtime-production-trace.test.ts` は production DO、実 SDK composition、fixture model/fetcher、実 `TelemetryDO` を通し、最終結果の一件性、replay の重複排除、fixture/live namespace の分離、禁止 payload の不在を確認する。fixture provider の成功は live provider の稼働証明ではない。provider/model ごとの token・API 要素計測は後続単位で実装する。
+`runtime-production-trace.test.ts` は production DO、実 SDK composition、fixture model/fetcher、実 `TelemetryDO` を通し、最終結果の一件性、replay の重複排除、fixture/live namespace の分離、禁止 payload の不在を確認する。fixture provider の成功は live provider の稼働証明ではない。provider/model ごとの token 計測は [model call trace の単位](./m26-runtime-model-trace.md)で別 operation として実装する。API 要素数・料金は引き続き未計測である。

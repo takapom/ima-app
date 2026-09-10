@@ -1,5 +1,9 @@
 import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '../telemetry/schema';
 import { parseTraceRecord, type TelemetryTraceStore } from '../telemetry/trace';
+import {
+  createBestEffortRuntimeTraceSink,
+  type RuntimeTraceSinkFailure,
+} from './runtime-trace-sink';
 
 export type RuntimeTurnTrace = {
   readonly ownerScopeRef: string;
@@ -14,7 +18,7 @@ export type RuntimeTurnTrace = {
 
 export type RuntimeTurnTraceSink = (trace: RuntimeTurnTrace) => void | Promise<void>;
 
-export type RuntimeTurnTraceFailure = 'write_failed';
+export type RuntimeTurnTraceFailure = RuntimeTraceSinkFailure;
 
 export type RuntimeTraceMode = 'fixture' | 'live' | 'unknown';
 
@@ -71,54 +75,7 @@ export const createBestEffortRuntimeTurnTraceSink = (
   schedule?: (promise: Promise<void>) => void,
   onFailure?: (failure: RuntimeTurnTraceFailure) => void,
 ): RuntimeTurnTraceSink => {
-  return (trace) => {
-    let failureReported = false;
-    const notifyFailure = (): void => {
-      if (failureReported) return;
-      failureReported = true;
-      try {
-        onFailure?.('write_failed');
-      } catch {
-        // Failure reporting is deliberately isolated from the runtime turn.
-      }
-    };
-    const pipeline = (async (): Promise<void> => {
-      let record: TraceRecord | undefined;
-      try {
-        record = await traceRecordForRuntimeTurn(trace);
-      } catch {
-        notifyFailure();
-        return;
-      }
-      if (record === undefined) {
-        notifyFailure();
-        return;
-      }
-      let write: Promise<void>;
-      try {
-        write = Promise.resolve(store.write(record, trace.ownerScopeRef));
-      } catch {
-        notifyFailure();
-        return;
-      }
-      try {
-        await write;
-      } catch {
-        notifyFailure();
-      }
-    })();
-    if (schedule === undefined) {
-      pipeline.catch(() => undefined);
-      return pipeline;
-    }
-    try {
-      schedule(pipeline);
-    } catch {
-      notifyFailure();
-      pipeline.catch(() => undefined);
-    }
-    return pipeline;
-  };
+  return createBestEffortRuntimeTraceSink(store, traceRecordForRuntimeTurn, schedule, onFailure);
 };
 
 export const runtimeTurnTraceOutcome = (input: {

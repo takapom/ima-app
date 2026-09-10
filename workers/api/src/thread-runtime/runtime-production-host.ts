@@ -18,6 +18,10 @@ import {
   telemetryObjectNameForRuntimeTraceMode,
   type RuntimeTurnTraceSink,
 } from '../runtime/runtime-turn-trace';
+import {
+  createBestEffortRuntimeModelTraceSink,
+  type RuntimeModelTraceSink,
+} from '../runtime/runtime-model-trace';
 import { createDurableTelemetryStore, type TelemetryNamespace } from '../telemetry/telemetry-do';
 import { RuntimeThinkHost } from './runtime-host';
 import type { ThreadRuntimeTarget, ThreadRuntimeTurnResult } from './admission';
@@ -67,23 +71,30 @@ export abstract class RuntimeProductionThinkHost<
   private readonly productionThreadCreatedAt: string | undefined;
   private readonly productionAnchorError: Error | undefined;
   private readonly productionTraceSink: RuntimeTurnTraceSink | undefined;
+  private readonly productionModelTraceSink: RuntimeModelTraceSink | undefined;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.productionEnv = env;
     const runtimeEnv = env as RuntimeTelemetryEnv;
     const telemetry = runtimeEnv.TELEMETRY;
-    this.productionTraceSink =
+    const runtimeMode = runtimeTraceModeFor(runtimeEnv.IMA_RUNTIME_MODE);
+    const telemetryStore =
       telemetry === undefined
         ? undefined
-        : createBestEffortRuntimeTurnTraceSink(
-            createDurableTelemetryStore(
-              telemetry,
-              telemetryObjectNameForRuntimeTraceMode(
-                runtimeTraceModeFor(runtimeEnv.IMA_RUNTIME_MODE),
-              ),
-            ),
-            (promise) => ctx.waitUntil(promise),
+        : createDurableTelemetryStore(
+            telemetry,
+            telemetryObjectNameForRuntimeTraceMode(runtimeMode),
+          );
+    this.productionTraceSink =
+      telemetryStore === undefined
+        ? undefined
+        : createBestEffortRuntimeTurnTraceSink(telemetryStore, (promise) => ctx.waitUntil(promise));
+    this.productionModelTraceSink =
+      telemetryStore === undefined
+        ? undefined
+        : createBestEffortRuntimeModelTraceSink(telemetryStore, (promise) =>
+            ctx.waitUntil(promise),
           );
     this.productionContextPersistence = createDurableRuntimeContextPersistence(ctx.storage);
     try {
@@ -120,6 +131,9 @@ export abstract class RuntimeProductionThinkHost<
     return {
       threadCreatedAt,
       contextPersistence: this.productionContextPersistence,
+      ...(this.productionModelTraceSink === undefined
+        ? {}
+        : { modelTraceSink: this.productionModelTraceSink }),
     };
   }
 

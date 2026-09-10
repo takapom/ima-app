@@ -77,28 +77,43 @@ describe('production turn telemetry', () => {
       status: 'completed',
     });
 
+    const report = await thread.getRuntimeProductionReport();
+    if (report === null) throw new Error('M26_TRACE_REPORT_MISSING');
     const first = await tracesFor(threadId);
-    expect(first).toHaveLength(1);
-    expect(first[0]).toMatchObject({
+    const turns = first.filter((record) => record.operation === 'turn');
+    const calls = first.filter((record) => record.operation === 'call');
+    expect(turns).toHaveLength(1);
+    expect(calls).toHaveLength(report.calls);
+    expect(calls.length).toBeGreaterThan(0);
+    expect(turns[0]).toMatchObject({
       threadId,
       turnId: target.turnId,
       operation: 'turn',
       status: 'ok',
       resultCode: 'OK',
     });
-    expect(first[0]?.durationMs).toEqual(expect.any(Number));
-    expect(first[0]).not.toHaveProperty('provider');
-    expect(first[0]).not.toHaveProperty('tokenCount');
-    expect(first[0]).not.toHaveProperty('apiElementCount');
-    expect(first[0]).not.toHaveProperty('meteredCostUsd');
-    expect(JSON.stringify(first[0])).not.toMatch(
+    expect(turns[0]?.durationMs).toEqual(expect.any(Number));
+    expect(turns[0]).not.toHaveProperty('provider');
+    expect(turns[0]).not.toHaveProperty('tokenCount');
+    expect(turns[0]).not.toHaveProperty('apiElementCount');
+    expect(turns[0]).not.toHaveProperty('meteredCostUsd');
+    expect(calls.every((record) => record.status === 'ok' && record.resultCode === 'OK')).toBe(
+      true,
+    );
+    expect(calls.every((record) => record.provider === undefined)).toBe(true);
+    expect(calls.every((record) => record.tokenCount === 2)).toBe(true);
+    expect(calls.every((record) => typeof record.durationMs === 'number')).toBe(true);
+    expect(JSON.stringify(turns[0])).not.toMatch(
       /trace unit fixture|places\.googleapis|lat|lng|secret|token/iu,
+    );
+    expect(JSON.stringify(calls)).not.toMatch(
+      /trace unit fixture|places\.googleapis|lat|lng|secret/iu,
     );
 
     await expect(thread.replayRuntimeTurn(target)).resolves.toMatchObject({
       status: 'reference_only',
     });
-    await expect(tracesFor(threadId)).resolves.toHaveLength(1);
+    await expect(tracesFor(threadId)).resolves.toHaveLength(first.length);
 
     const live = await productionEnv()
       .TELEMETRY.getByName('telemetry-live')
