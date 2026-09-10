@@ -37,6 +37,7 @@ import type { RuntimeRetentionContext } from './runtime-retention';
 import type { RuntimeModelGuardModel } from './runtime-model-guard';
 import type { RuntimeModelTraceSink } from './runtime-model-trace';
 import type { RuntimeThinkTurnBuildRequest } from './runtime-think-connection';
+import type { RuntimeProviderTraceSink } from '../providers/telemetry/runtime-provider-trace';
 
 export type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;
@@ -69,6 +70,8 @@ export type RuntimeProductionOverrides = {
   readonly modelForTurn?: RuntimeModelGuardModel;
   /** Optional Worker-owned sink for one trace record per actual SDK model call. */
   readonly modelTraceSink?: RuntimeModelTraceSink;
+  /** Optional Worker-owned sink for one trace record per actual provider HTTP call. */
+  readonly providerTraceSink?: RuntimeProviderTraceSink;
   /** Optional host-owned observer for exact provider candidate identity mapping. */
   readonly candidateIdentityObserver?: (
     record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,

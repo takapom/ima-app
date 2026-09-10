@@ -22,6 +22,10 @@ import {
   createBestEffortRuntimeModelTraceSink,
   type RuntimeModelTraceSink,
 } from '../runtime/runtime-model-trace';
+import {
+  createBestEffortRuntimeProviderTraceSink,
+  type RuntimeProviderTraceSink,
+} from '../providers/telemetry/runtime-provider-trace';
 import { createDurableTelemetryStore, type TelemetryNamespace } from '../telemetry/telemetry-do';
 import { RuntimeThinkHost } from './runtime-host';
 import type { ThreadRuntimeTarget, ThreadRuntimeTurnResult } from './admission';
@@ -72,6 +76,7 @@ export abstract class RuntimeProductionThinkHost<
   private readonly productionAnchorError: Error | undefined;
   private readonly productionTraceSink: RuntimeTurnTraceSink | undefined;
   private readonly productionModelTraceSink: RuntimeModelTraceSink | undefined;
+  private readonly productionProviderTraceSink: RuntimeProviderTraceSink | undefined;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -94,6 +99,12 @@ export abstract class RuntimeProductionThinkHost<
       telemetryStore === undefined
         ? undefined
         : createBestEffortRuntimeModelTraceSink(telemetryStore, (promise) =>
+            ctx.waitUntil(promise),
+          );
+    this.productionProviderTraceSink =
+      telemetryStore === undefined
+        ? undefined
+        : createBestEffortRuntimeProviderTraceSink(telemetryStore, (promise) =>
             ctx.waitUntil(promise),
           );
     this.productionContextPersistence = createDurableRuntimeContextPersistence(ctx.storage);
@@ -134,6 +145,9 @@ export abstract class RuntimeProductionThinkHost<
       ...(this.productionModelTraceSink === undefined
         ? {}
         : { modelTraceSink: this.productionModelTraceSink }),
+      ...(this.productionProviderTraceSink === undefined
+        ? {}
+        : { providerTraceSink: this.productionProviderTraceSink }),
     };
   }
 

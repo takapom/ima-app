@@ -61,7 +61,7 @@ const tracesFor = async (threadId: string) => {
 };
 
 describe('production turn telemetry', () => {
-  it('records the final DO result once and does not trace reference replay', async () => {
+  it('records provider calls per turn and does not trace reference replay', async () => {
     const threadId = `m26-trace-${crypto.randomUUID()}`;
     const target: ThreadRuntimeTarget = {
       ownerScopeRef: 'owner-m26-trace',
@@ -82,9 +82,17 @@ describe('production turn telemetry', () => {
     const first = await tracesFor(threadId);
     const turns = first.filter((record) => record.operation === 'turn');
     const calls = first.filter((record) => record.operation === 'call');
+    const providers = first.filter((record) => record.operation === 'provider');
     expect(turns).toHaveLength(1);
     expect(calls).toHaveLength(report.calls);
     expect(calls.length).toBeGreaterThan(0);
+    expect(providers).toHaveLength(report.fetchUrls.length);
+    expect(providers).toHaveLength(2);
+    expect(providers.map((record) => record.provider)).toEqual(['places', 'places']);
+    expect(providers.every((record) => record.status === 'ok' && record.resultCode === 'OK')).toBe(
+      true,
+    );
+    expect(providers.every((record) => record.apiElementCount === undefined)).toBe(true);
     expect(turns[0]).toMatchObject({
       threadId,
       turnId: target.turnId,
@@ -109,11 +117,41 @@ describe('production turn telemetry', () => {
     expect(JSON.stringify(calls)).not.toMatch(
       /trace unit fixture|places\.googleapis|lat|lng|secret/iu,
     );
+    expect(JSON.stringify(providers)).not.toMatch(
+      /trace unit fixture|places\.googleapis|lat|lng|secret|token/iu,
+    );
 
     await expect(thread.replayRuntimeTurn(target)).resolves.toMatchObject({
       status: 'reference_only',
     });
-    await expect(tracesFor(threadId)).resolves.toHaveLength(first.length);
+    const afterReplay = await tracesFor(threadId);
+    expect(afterReplay).toHaveLength(first.length);
+
+    const secondTarget: ThreadRuntimeTarget = {
+      ...target,
+      turnId: `turn-${crypto.randomUUID()}`,
+      revision: 2,
+    };
+    await expect(thread.runRuntimeTurn(requestFor(secondTarget))).resolves.toMatchObject({
+      status: 'completed',
+    });
+    const afterSecond = await tracesFor(threadId);
+    const firstTurnProviders = afterSecond.filter(
+      (record) => record.operation === 'provider' && record.turnId === target.turnId,
+    );
+    const secondTurnProviders = afterSecond.filter(
+      (record) => record.operation === 'provider' && record.turnId === secondTarget.turnId,
+    );
+    expect(firstTurnProviders).toHaveLength(2);
+    expect(secondTurnProviders).toHaveLength(2);
+    expect(
+      new Set(
+        afterSecond
+          .filter((record) => record.operation === 'provider')
+          .map((record) => record.traceId),
+      ).size,
+    ).toBe(4);
+    expect(afterSecond.filter((record) => record.operation === 'turn')).toHaveLength(2);
 
     const live = await productionEnv()
       .TELEMETRY.getByName('telemetry-live')

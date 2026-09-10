@@ -11,6 +11,7 @@ import { createLiveOpenAIProvider } from '../model/provider';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../model/provider-options';
 import { createRuntimeReadAttemptSignalBridge } from './runtime-read-ports';
 import { wrapRuntimeModelTrace } from './runtime-model-trace';
+import { createRuntimeProviderTransportObserver } from '../providers/telemetry/runtime-provider-trace';
 import {
   createRuntimeTurnComposition,
   type RuntimeTurnCompositionCoreOptions,
@@ -80,6 +81,7 @@ const defaultPlan = (
   input: ProductionBuildInput,
   env: unknown,
   clock: () => string,
+  monotonicNow: () => number,
   overrides: RuntimeProductionOverrides,
   ids: ProductionIds,
   registry: CandidateObservationRegistry,
@@ -92,6 +94,18 @@ const defaultPlan = (
   providerAvailability: RuntimeProductionProviderAvailability,
   lastTrainRevisionState: ReturnType<typeof createRuntimeLastTrainRevisionState>,
 ): RuntimeProductionTurnPlan => {
+  const providerTraceObserver =
+    overrides.providerTraceSink === undefined
+      ? undefined
+      : createRuntimeProviderTransportObserver({
+          ownerScopeRef: input.request.ownerScopeRef,
+          threadId: input.request.threadId,
+          turnId: input.request.turnId,
+          revision: input.request.revision,
+          clock,
+          monotonicNow,
+          sink: overrides.providerTraceSink,
+        });
   const apiKey = overrides.googlePlacesApiKey;
   const cursorSecret = overrides.placesCursorSecret;
   let search: PlaceSearchPort = disabledSearchPort;
@@ -125,6 +139,7 @@ const defaultPlan = (
         apiKey,
         timeoutMs: 3_000,
         ...(overrides.fetcher === undefined ? {} : { fetcher: overrides.fetcher }),
+        ...(providerTraceObserver === undefined ? {} : { observer: providerTraceObserver }),
       }),
       continuation,
       registration,
@@ -152,6 +167,7 @@ const defaultPlan = (
         apiKey,
         timeoutMs: 4_000,
         ...(overrides.fetcher === undefined ? {} : { fetcher: overrides.fetcher }),
+        ...(providerTraceObserver === undefined ? {} : { observer: providerTraceObserver }),
       }),
       registry,
       clock: productionClockPort(clock),
@@ -185,6 +201,7 @@ const defaultPlan = (
     clock,
     budget,
     signalFor: input.attemptSignalBridge.signalFor,
+    ...(providerTraceObserver === undefined ? {} : { providerTraceObserver }),
     ...(input.request.signal === undefined ? {} : { requestSignal: input.request.signal }),
     ...(overrides.fetcher === undefined ? {} : { fetcher: overrides.fetcher }),
     ...(overrides.googleRoutesApiKey === undefined
@@ -323,6 +340,7 @@ const makeOptions = (
             buildInput,
             input.env,
             clock,
+            monotonicNow,
             overrides,
             ids,
             registry,

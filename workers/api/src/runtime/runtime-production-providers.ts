@@ -27,6 +27,7 @@ import {
   type RouteWaypointResolver,
 } from '../providers/routes/resolver';
 import { createGoogleRouteMatrixTransport } from '../providers/routes/transport';
+import type { RuntimeProviderTransportObserver } from '../providers/telemetry/runtime-provider-trace-contract';
 import {
   createRuntimeProviderComposition,
   type RuntimeLastTrainCompositionOptions,
@@ -47,6 +48,7 @@ export type RuntimeProductionRouteOptions = {
   readonly signal?: AbortSignal;
   readonly signalFor?: (execution: ToolExecutionContext) => AbortSignal | undefined;
   readonly routeExecutionFor?: (execution: ToolExecutionContext) => ToolExecutionContext;
+  readonly providerTraceObserver?: RuntimeProviderTransportObserver;
 };
 
 export type RuntimeProductionProviderOptions = {
@@ -96,6 +98,9 @@ const routePortsFor = (
       apiKey: route.apiKey,
       timeoutMs: 4_000,
       ...(route.fetcher === undefined ? {} : { fetcher: route.fetcher }),
+      ...(route.providerTraceObserver === undefined
+        ? {}
+        : { observer: route.providerTraceObserver }),
     }),
     budget: route.budget,
     clock: route.clock,

@@ -17,6 +17,6 @@ Routes の `apiElementCount` は `GoogleRouteMatrixRequestSchema` を通過し�
 
 trace ID は owner、thread、turn、revision、provider、呼出しごとの call ID を SHA-256 で識別する。同じ request を retry すれば実呼出し数だけ別 trace が増え、reference replay のように transport を呼ばなければ増えない。fixture と live の分離は既存 host の `telemetry-fixture` / `telemetry-live` sink に委ね、provider wrapper は namespace を推測しない。
 
-今回の production wiring は、Core の candidate identity 接続と同時編集しないため wrapper、専用テスト、変換 sink の範囲で検証する。親の直列配線では production factory から同じ sink と server-side identity、clock を Search / Details / Routes の三つの wrapper へ渡す。factory が未接続の状態で fixture の成功を live provider の稼働証明として扱わない。
+production wiring では、`RuntimeProductionThinkHost` が既存の runtime mode に対応する TelemetryDO と `waitUntil` を provider trace sink へ注入する。production factory は一つの turn に一つの observer を作り、server-side identity、clock、monotonic clock を Search / Details / Routes の実 transport へ渡す。fixture の成功は `telemetry-fixture` namespace に閉じ、live provider の稼働証明には使わない。
 
-`runtime-provider-trace.test.ts` は実 transport と fixture fetcher を通し、三種類の成功呼出し、Routes 2×3 要素、timeout、cancel、rate limit、未知例外、undefined rejection、retry の call ID 分離、事前拒否時の fetch/要素数0、observer フック失敗の隔離、best effort 保存、禁止 payload 不在を確認する。実 API、料金 meter、SDK 内部ログ、Photo の実 fetch はこの単位の検証範囲外であり、別の接続単位で確認する。
+`runtime-provider-trace.test.ts` は実 transport と fixture fetcher を通し、三種類の成功呼出し、Routes 2×3 要素、timeout、cancel、rate limit、未知例外、undefined rejection、retry の call ID 分離、事前拒否時の fetch/要素数0、observer フック失敗の隔離、best effort 保存、禁止 payload 不在を確認する。`runtime-production-trace.test.ts` は実 DO の Search / Details provider trace と TelemetryDO 件数、replay の無記録、turn ごとの trace ID 分離、fixture/live namespace 分離を確認する。実 API、料金 meter、SDK 内部ログ、Photo の実 fetch はこの単位の検証範囲外であり、別の接続単位で確認する。

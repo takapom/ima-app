@@ -17,6 +17,7 @@ import { productionScopeFor, productionSecret } from './runtime-production-suppo
 import { createRuntimeRouteBudgetBoundary } from '../providers/routes/budget';
 import type { WalkingRouteObservationPolicy } from '../providers/routes/registration';
 import type { RouteWaypointResolver } from '../providers/routes/resolver';
+import type { RuntimeProviderTransportObserver } from '../providers/telemetry/runtime-provider-trace-contract';
 import type { JourneyServiceDateContextBuilder } from '../providers/last-train/port';
 import type { LastTrainObservationPolicy } from '../providers/last-train/registration';
 import type {
@@ -247,6 +248,7 @@ export type RuntimeProductionProviderAssemblyOptions = {
   readonly budget: RuntimeBudget;
   readonly requestSignal?: AbortSignal;
   readonly signalFor: (execution: ToolExecutionContext) => AbortSignal | undefined;
+  readonly providerTraceObserver?: RuntimeProviderTransportObserver;
   readonly fetcher?: typeof fetch;
   readonly googleRoutesApiKey?: string;
   readonly routeObservationPolicy?: WalkingRouteObservationPolicy;
@@ -289,6 +291,9 @@ export const createRuntimeProductionProviders = (
           ...(input.requestSignal === undefined ? {} : { signal: input.requestSignal }),
           signalFor: input.signalFor,
           routeExecutionFor,
+          ...(input.providerTraceObserver === undefined
+            ? {}
+            : { providerTraceObserver: input.providerTraceObserver }),
         }
       : undefined;
   const currentOriginRef = input.currentOriginRefFor?.(input.context);
