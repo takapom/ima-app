@@ -104,9 +104,11 @@ describe('native Think runtime fixture', () => {
       OPENAI_PROVIDER_REQUEST_OPTIONS,
       OPENAI_PROVIDER_REQUEST_OPTIONS,
     ]);
-    expect(
-      report.model.requests.every((request) => request.toolNames.includes('submit_cards')),
-    ).toBe(true);
+    expect(report.model.requests.map((request) => request.toolNames)).toEqual([
+      ['get_place_details', 'search_places', 'submit_cards'],
+      ['get_place_details', 'search_places', 'submit_cards'],
+      ['get_place_details', 'search_places', 'submit_cards'],
+    ]);
     expect(report.operations).toEqual(['get_place_details']);
     expect(report.commitWrites).toBe(1);
 
