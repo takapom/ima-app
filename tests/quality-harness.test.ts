@@ -45,6 +45,8 @@ describe('file line quality gate', () => {
     ['fixture.json', 501, 1],
     ['README.md', 501, 0],
     ['bun.lock', 501, 0],
+    ['repomix-output.xml', 501, 0],
+    ['handwritten.xml', 501, 1],
     ['index.html', 501, 0],
     ['docs/adr/0001-ui.html', 501, 0],
   ])('%s with %i lines returns status %i', (file, count, status) => {

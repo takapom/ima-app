@@ -25,6 +25,7 @@ const ignoredFiles = new Set([
   'docs/planning/backlog.json',
   'docs/planning/issues.json',
   'workers/api/worker-configuration.d.ts',
+  'repomix-output.xml',
 ]);
 
 export function countFileLines(source) {

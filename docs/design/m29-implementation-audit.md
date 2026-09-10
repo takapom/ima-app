@@ -7,6 +7,7 @@
 - UIは `apps/mobile` の components、操作・状態は hooks/state、HTTP・端末I/Oは services が所有する。
 - WorkerはSDK・Provider・永続化を組み立て、Coreは業務判断とPortを所有する。mobileからCore・Worker・evalをimportしない。
 - コミットはmain上で各sub-issueへ紐付け、追加＋削除2,000行以内。手書きのコード・テスト・設定は1ファイル500行以内。
+- ルートの`repomix-output.xml`はRepomixが生成したコードパックであり、この集約ファイルを手書きコードとして検査しない。対象パスだけを`.gitignore`と`check-file-lines.mjs`へ明示する。任意のXMLや別の生成物をこの例外へ含めず、手書きXMLは通常どおり500行制限の対象とする。
 - 単体試験、実SDK/DOのFixture試験、実モデル、実店舗API、Web表示、iPhone実機は別の証跡とする。
 - GitHubへ未反映のコミットや、実測していないゲートを合格扱いにしない。
 
