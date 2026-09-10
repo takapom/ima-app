@@ -4,7 +4,7 @@
 
 ## 現在の状態
 
-- M04用のBun依存導入とlockfileコミットは完了。M05〜M10用の実行時依存への移動とOpenAI Provider 3.0.69追加はmanifest更新済み、lockfile同期待ち。
+- M05〜M10用の実行時依存への移動とOpenAI Provider 3.0.69追加は、ユーザーの依存導入後にmanifest・lockfile・実SDKの整合を確認し、`9925d76`（#9、234行）へコミットした。
 - M03の公開契約・Core契約は実装・ローカル検証済み。#4はGitHub反映・完了処理が残る。
 - M04の共通Think構成は24テストを通過し、[ADR0014](../adr/0014-think-runtime-adoption.md)で採用を決定した。
 - M04完了時点の全162テスト、workspace型検査、lint、format、依存境界31ケース、Worker dry-run、Expo iOS exportが成功。
@@ -41,7 +41,9 @@
 - Provider optionsの実呼出しへの配線を`27022e6`（#9、65行）にコミット。親がnative全8テストと対象lint/formatを確認し、実Thinkの3回すべてに`store: false`・`reasoningEffort: low`・`strictJsonSchema: false`が届くことを検証した。
 - 実Thinkの取消・旧turn差替えを`9e7ef4c`（#11、261行）にコミット。取消後はモデル追加呼出し・Port副作用・commitがなく、旧turnが新revisionの応答を上書きしないことを検証した。
 - 最終の`bun run test`は73ファイル415テストを通過（Node 339、Worker 15、既存SDK 51、native統合10）。全体format・ファイル行数・lint抑制検査も通過した。
-- M08の実Provider依存はlockfile未同期で、全品質ゲート合格・M06〜M10完了とは扱わない。全体lint・依存境界・Worker型検査の残件はいずれも未導入OpenAI参照である。Provider factoryとmanifestの追加差分は未コミットで、依存同期後の型・transport検証が必要。
+- 依存同期後の全体型検査・lint・依存境界検査は通過。実OpenAI SDKとモックHTTPでProviderの3テストも通過した。
+- 同期後の既存AIChat比較HTTP試験で再発した422は、SDKのnanoidが`-`/`_`から始まると公開OpaqueId契約に違反することが原因だった。Fixtureの公開境界でprefixを付け、両先頭文字の回帰を追加した。DO識別子の衝突という初期仮説は撤回した。
+- 修正後の`bun run test`は74ファイル419テストを通過（Node 343、Worker 15、既存SDK 51、native統合10）。型・lint・依存境界も依存同期後に通過。ローカルのM06〜M10実装検証と、未実測の外部ゲート・GitHub完了処理は区別する。
 - 作業はmain上。各コミットは実在sub-issueに紐づけ、追加＋削除2,000行以内。
   実装はLuna/max、主担当が差分・契約・テストをレビューする。
 
@@ -77,6 +79,7 @@ GitHubへのpush、各Issueへの完了記録・Closeは、ローカルコミッ
 未pushをGitHub反映済みとは報告しない。
 
 依存同期の`bun install --ignore-scripts --no-progress`は自動承認レビューに拒否された。
-ユーザーへ手元での実行を依頼済み。M08 Provider導入・更新後のfrozen-lock整合は未検証。
+ユーザーの実行完了報告後、M08 Provider導入・manifest/lockfile同期と型検査を確認した。frozen-lock install自体は再実行していない。
 未pushコミット一覧・範囲行数・remoteの確認コマンドと、M05更新後のWorker dry-runも
-自動承認レビューに拒否された。これらの操作は再試行・別手段で迂回せず未確認として残す。
+自動承認レビューに拒否された。これらの操作は再試行・別手段で迂回していない。
+Worker buildはユーザーへ実行を依頼し完了報告を受けたが、出力未提示のため主担当による検証済みとは区別する。

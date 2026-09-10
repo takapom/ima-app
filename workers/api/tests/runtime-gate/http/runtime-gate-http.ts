@@ -65,6 +65,15 @@ const fail = (code: string): never => {
   throw new RuntimeGateHttpError(code);
 };
 
+/** AI SDK request IDs may start with '-' or '_' while the public contract requires an alphanumeric start. */
+function publicRequestId(value: string): string {
+  if (value.length > 0 && value.length <= 128 && /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(value)) {
+    return value;
+  }
+  if (value.length <= 120 && /^[A-Za-z0-9_-]+$/.test(value)) return `request-${value}`;
+  return fail('FIXTURE_REQUEST_ID_INVALID');
+}
+
 function replayCommit(value: unknown): ReplayCommit | null {
   if (value === null) return null;
   if (!isRecord(value)) return fail('FIXTURE_REPORT_INVALID_REPLAY_COMMIT');
@@ -255,7 +264,7 @@ function responseFromReport(report: HttpReport, context: RuntimeGateHttpContext)
       alts: execution.input.alts.map((entry) => publicCard(entry, identity.retention)),
     };
     const dto: unknown = {
-      requestId: report.result.requestId,
+      requestId: publicRequestId(report.result.requestId),
       response: {
         schemaVersion: 'v1',
         threadId: context.threadId,
@@ -278,7 +287,7 @@ function responseFromReport(report: HttpReport, context: RuntimeGateHttpContext)
   const final = report.acceptedFinals[0];
   if (final === undefined) return fail('FIXTURE_NO_PUBLIC_RESULT');
   const dto: unknown = {
-    requestId: report.result.requestId,
+    requestId: publicRequestId(report.result.requestId),
     response: {
       schemaVersion: 'v1',
       threadId: context.threadId,

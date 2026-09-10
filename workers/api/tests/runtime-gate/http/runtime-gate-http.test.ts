@@ -84,6 +84,15 @@ it('does not promote a completed report that still carries an error', () => {
   ).toThrow('FIXTURE_POLICY_FAILED');
 });
 
+it('normalizes provider request IDs before public response validation', () => {
+  for (const requestId of ['-sdk-request-id', '_sdk-request-id']) {
+    const report = thinkCardReport(validSubmitInput);
+    report.result.requestId = requestId;
+    const response = normalizeThinkRuntimeReport(report, context);
+    expect(response.requestId).toBe(`request-${requestId}`);
+  }
+});
+
 it('converts Think registry evidence into one, two, and three public cards', () => {
   for (const input of [validSubmitInput, validSubmitInputTwo, validSubmitInputThree]) {
     const response = normalizeThinkRuntimeReport(thinkCardReport(input), context);
