@@ -1,0 +1,26 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "ima-api-runtime-dev-fixture-test",
+  "main": "tests/runtime-dev-fixture/runtime-dev-fixture-worker.ts",
+  "compatibility_date": "2026-08-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "APP_TOKEN": "dev-fixture-app-token",
+    "IMA_ENV": "dev",
+    "IMA_RUNTIME_MODE": "fixture",
+    "IMA_KILL_SWITCH": "false",
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "THREADS", "class_name": "ThreadDO" },
+      { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
+      { "name": "TELEMETRY", "class_name": "TelemetryDO" },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["ThreadDO", "RateLimitDO", "TelemetryDO"],
+    },
+  ],
+}

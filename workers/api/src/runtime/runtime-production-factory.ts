@@ -56,6 +56,11 @@ import { resolveRuntimeProductionReadCost } from './runtime-production-read-cost
 import { createFactoryContinuation } from './runtime-production-continuation';
 import { disabledDetailsPort, disabledSearchPort } from './runtime-disabled-provider-ports';
 import { resolveRuntimeOperationalAdmission } from './runtime-operational-admission';
+import {
+  devFixtureEnvironmentFor,
+  devFixtureOverridesFor,
+  isKeylessDevFixtureEnvironment,
+} from './runtime-dev-fixture';
 import type { RuntimeRetentionContext } from './runtime-retention';
 import type {
   ProductionBuildInput,
@@ -377,11 +382,14 @@ const makeOptions = (
 export const createRuntimeProductionConnectionOptions = (
   input: RuntimeProductionConnectionOptions,
 ): RuntimeThinkConnectionOptions<unknown> | undefined => {
-  const overrides = input.overrides ?? {};
+  const devFixture = isKeylessDevFixtureEnvironment(input.env);
+  const effectiveEnv = devFixture ? devFixtureEnvironmentFor(input.env) : input.env;
+  const configuredOverrides = input.overrides ?? {};
+  const overrides = devFixture ? devFixtureOverridesFor(configuredOverrides) : configuredOverrides;
   const clock = overrides.clock ?? productionClock;
   const monotonicNow = overrides.monotonicNow ?? productionMonotonicNow;
   const admission = resolveRuntimeOperationalAdmission({
-    env: input.env,
+    env: effectiveEnv,
     hasPrepareTurn: overrides.prepareTurn !== undefined,
     hasModelOverride: overrides.prepareTurn !== undefined || overrides.modelForTurn !== undefined,
     hasFetcher: overrides.fetcher !== undefined,
@@ -427,5 +435,13 @@ export const createRuntimeProductionConnectionOptions = (
       ? {}
       : { googleRoutesApiKey: admission.googleRoutesApiKey }),
   };
-  return makeOptions(input, resolvedOverrides, ids, registry, continuation, clock, monotonicNow);
+  return makeOptions(
+    devFixture ? { ...input, env: effectiveEnv } : input,
+    resolvedOverrides,
+    ids,
+    registry,
+    continuation,
+    clock,
+    monotonicNow,
+  );
 };
