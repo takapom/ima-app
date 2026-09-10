@@ -1,0 +1,69 @@
+name: config-dry-run
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  config-dry-run:
+    name: ${{ matrix.target }} config dry-run
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: dev
+            wrangler_env: ''
+          - target: staging
+            wrangler_env: staging
+          - target: production
+            wrangler_env: production
+    env:
+      CI: 'true'
+      TARGET: ${{ matrix.target }}
+      WRANGLER_ENV: ${{ matrix.wrangler_env }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.8
+
+      - run: bun install --frozen-lockfile
+
+      - name: Generate types and bundle Worker without deploying
+        working-directory: workers/api
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$TARGET:$WRANGLER_ENV" in
+            dev:)
+              wrangler_args=()
+              ;;
+            staging:staging|production:production)
+              wrangler_args=(--env "$WRANGLER_ENV")
+              ;;
+            *)
+              echo "unsupported fixed config target: $TARGET:$WRANGLER_ENV" >&2
+              exit 1
+              ;;
+          esac
+          type_dir="$(mktemp -d "$RUNNER_TEMP/ima-worker-types.XXXXXX")"
+          trap 'rm -rf "$type_dir"' EXIT
+          bunx wrangler types "$type_dir/worker-configuration.d.ts" \
+            --config wrangler.jsonc \
+            "${wrangler_args[@]}" \
+            --include-runtime=false
+          bunx wrangler deploy --dry-run \
+            --config wrangler.jsonc \
+            "${wrangler_args[@]}"

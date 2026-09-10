@@ -9,16 +9,19 @@ productionは、App Attest（#28）とruntime flags（#27）の接続が未検�
 ```mermaid
 flowchart LR
   Env[環境変数・Wrangler vars] --> Preflight[environment-preflight]
-  Preflight -->|ready| DryRun[設定・型・dry-run]
+  Preflight -->|ready| DryRun[設定・型生成・dry-run]
   Preflight -->|blocked/partial| Fix[不足・未検証を修正]
-  DryRun --> Deploy[Wrangler deploy / EAS build]
+  DryRun --> DeployGate[runtimeVerified / 手動deploy gate]
+  DeployGate --> Deploy[Wrangler deploy / EAS build]
   Deploy --> Smoke[Provider live smoke / 実機検証]
   Smoke --> Rollback[version rollback / EAS再配布]
+  Push[main push / 手動dispatch] --> Matrix[config-dry-run matrix]
+  Matrix --> DryRun
 ```
 
 ## 配置と初期値
 
-- `workers/api/wrangler.jsonc` は既存の `ThreadDO`、`RateLimitDO`、`JourneyDatasetDO`、`TelemetryDO` とv1〜v3 migrationを保持する。`env.staging` と `env.production` は別Worker名と4つのDO bindingを明示するが、Cloudflare account、route、binding resource IDは未設定である。
+- `workers/api/wrangler.jsonc` は既存の `ThreadDO`、`RateLimitDO`、`JourneyDatasetDO`、`TelemetryDO`、`AppIntegrityDO` とv1〜v4 migrationを保持する。`env.staging` と `env.production` は別Worker名と5つのDO bindingを明示するが、Cloudflare account、route、binding resource IDは未設定である。
 - Wrangler varsのstaging/production初期値は`disabled`だが、これは設定テンプレートであり、現runtimeの全flagsが接続済みまたは停止を保証するものではない。App Attest/native verifierとruntime gateの検証が済むまで外部配布を許可しない。
 - `apps/mobile/eas.json` はdevelopment/internal/externalのprofileとAPI environmentを定義する。実際のiOS bundle ID、EAS project ID、Apple team・証明書・provisioning profileは環境管理者が設定する。
 - `apps/mobile/app.json` の位置情報許可文言はアプリの用途を明示する。`apps/mobile/app.config.ts` がstaging/productionのbuild時だけ、環境変数のbundle IDとEAS project IDを検証して設定する。値がない外部buildは拒否し、bundle IDや署名情報をソースへ固定しない。
@@ -96,6 +99,16 @@ bun run dev:worker
 ```sh
 (cd workers/api && bunx wrangler types /tmp/ima-worker-configuration.d.ts --config wrangler.jsonc --env staging)
 ```
+
+## CI config dry-run
+
+`.github/workflows/config-dry-run.yml`は`main`へのpushと、入力値を持たない`workflow_dispatch`で起動する。対象はworkflow内に固定した`dev`、`staging`、`production`の3件であり、dispatchから任意の環境名やshell値を注入できない。
+
+各matrix jobは`bun install --frozen-lockfile`後、`workers/api/wrangler.jsonc`を対象に`wrangler types`と`wrangler deploy --dry-run`を実行する。`dev`は既定設定を使うため`--env dev`を渡さず、`staging`と`production`だけ対応する`--env`を渡す。型定義ファイルはrunnerの一時ディレクトリへ生成し、repositoryへ生成物を残さない。どちらかのコマンドが失敗したjobは成功へ変換せず、matrix全体を失敗させる。
+
+このworkflowはWorkerのbundle、設定、migrationの整合を確認し、Wranglerの型定義を生成するconfig gateであり、生成型自体を`tsc`で検査する工程ではない。secretを渡さず、deployやCloudflare accountへの変更を行わない。`wrangler deploy --dry-run`の成功は実deploy、DO resource、route、provider接続を証明しない。既存の`.github/workflows/quality.yml`が担当するformat、lint、architecture、typecheck、test、commit-size検査は変更せず、dev fixtureのpreflightもそこで継続する。
+
+staging/productionのpreflightはApp Attest・runtime flags・provider接続が未検証のためpartial/unverifiedとなり得る。config dry-runの成功を`runtimeVerified`や手動deploy許可へ読み替えず、実deployは別の証跡受領gateで扱う。現段階では手動deploy workflowを提供しない。
 
 ## staging / production deploy
 
