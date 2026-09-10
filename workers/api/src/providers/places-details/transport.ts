@@ -1,5 +1,10 @@
 import * as v from 'valibot';
 import {
+  beginRuntimeProviderTransportCall,
+  completeRuntimeProviderTransportCall,
+} from '../telemetry/runtime-provider-trace-contract';
+import type { RuntimeProviderTransportCall } from '../telemetry/runtime-provider-trace-contract';
+import {
   GOOGLE_PLACE_DETAILS_ENDPOINT,
   GooglePlaceDetailsError,
   GooglePlaceDetailsRequestSchema,
@@ -110,53 +115,70 @@ const readWith = async (
   if (fieldMask.length === 0) throw new GooglePlaceDetailsError('INVALID_REQUEST');
   const fetcher = options.fetcher ?? globalThis.fetch;
   const encodedPlaceId = encodeURIComponent(validRequest.placeId);
-  const upstream = await fetchWithDeadline(
-    async (requestSignal) => {
-      const response = await fetcher(`${GOOGLE_PLACE_DETAILS_ENDPOINT}/${encodedPlaceId}`, {
-        method: 'GET',
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          'x-goog-api-key': apiKey,
-          'x-goog-fieldmask': fieldMask,
-        },
-        // Cloudflare's edge fetch accepts follow/manual; manual keeps redirects
-        // visible so the status handling below rejects them instead of leaking
-        // provider credentials to a redirected endpoint.
-        redirect: 'manual',
-        signal: requestSignal,
-      });
-      return {
-        response,
-        body: response.ok ? await readJsonObject(response) : null,
-      };
-    },
-    signal,
-    options.timeoutMs,
-  );
+  let observation: RuntimeProviderTransportCall | undefined;
+  try {
+    const upstream = await fetchWithDeadline(
+      async (requestSignal) => {
+        observation = beginRuntimeProviderTransportCall(options.observer, { provider: 'places' });
+        const response = await fetcher(`${GOOGLE_PLACE_DETAILS_ENDPOINT}/${encodedPlaceId}`, {
+          method: 'GET',
+          headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            'x-goog-api-key': apiKey,
+            'x-goog-fieldmask': fieldMask,
+          },
+          // Cloudflare's edge fetch accepts follow/manual; manual keeps redirects
+          // visible so the status handling below rejects them instead of leaking
+          // provider credentials to a redirected endpoint.
+          redirect: 'manual',
+          signal: requestSignal,
+        });
+        return {
+          response,
+          body: response.ok ? await readJsonObject(response) : null,
+        };
+      },
+      signal,
+      options.timeoutMs,
+    );
 
-  if (!upstream.response.ok) {
-    if (upstream.response.status === 404) {
-      throw new GooglePlaceDetailsError('NOT_FOUND', { status: 404 });
-    }
-    if (upstream.response.status === 429) {
-      throw new GooglePlaceDetailsError('RATE_LIMITED', {
-        status: 429,
-        retryAfterMs: parseRetryAfter(upstream.response.headers.get('retry-after')),
-      });
-    }
-    if (upstream.response.status >= 500) {
-      throw new GooglePlaceDetailsError('UPSTREAM_UNAVAILABLE', {
+    if (!upstream.response.ok) {
+      if (upstream.response.status === 404) {
+        throw new GooglePlaceDetailsError('NOT_FOUND', { status: 404 });
+      }
+      if (upstream.response.status === 429) {
+        throw new GooglePlaceDetailsError('RATE_LIMITED', {
+          status: 429,
+          retryAfterMs: parseRetryAfter(upstream.response.headers.get('retry-after')),
+        });
+      }
+      if (upstream.response.status >= 500) {
+        throw new GooglePlaceDetailsError('UPSTREAM_UNAVAILABLE', {
+          status: upstream.response.status,
+        });
+      }
+      throw new GooglePlaceDetailsError('INVALID_REQUEST', {
         status: upstream.response.status,
       });
     }
-    throw new GooglePlaceDetailsError('INVALID_REQUEST', {
-      status: upstream.response.status,
-    });
-  }
 
-  if (upstream.body === null) throw new GooglePlaceDetailsError('SCHEMA_MISMATCH');
-  return { placeId: validRequest.placeId, fields: validRequest.fields, body: upstream.body };
+    if (upstream.body === null) throw new GooglePlaceDetailsError('SCHEMA_MISMATCH');
+    const result = {
+      placeId: validRequest.placeId,
+      fields: validRequest.fields,
+      body: upstream.body,
+    };
+    completeRuntimeProviderTransportCall(observation, { status: 'ok' });
+    return result;
+  } catch (error: unknown) {
+    completeRuntimeProviderTransportCall(observation, {
+      status: 'error',
+      error,
+      ...(signal === undefined ? {} : { signal }),
+    });
+    throw error;
+  }
 };
 
 export const createGooglePlaceDetailsTransport = (

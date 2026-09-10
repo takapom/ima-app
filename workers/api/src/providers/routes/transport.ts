@@ -1,10 +1,16 @@
 import * as v from 'valibot';
 import {
+  beginRuntimeProviderTransportCall,
+  completeRuntimeProviderTransportCall,
+} from '../telemetry/runtime-provider-trace-contract';
+import type { RuntimeProviderTransportCall } from '../telemetry/runtime-provider-trace-contract';
+import {
   GOOGLE_ROUTE_MATRIX_ENDPOINT,
   GOOGLE_ROUTE_MATRIX_FIELD_MASK,
   GOOGLE_ROUTE_MATRIX_MAX_ELEMENTS,
   GoogleRouteMatrixError,
   GoogleRouteMatrixRequestSchema,
+  routeElementCount,
   type GoogleRouteMatrixElement,
   type GoogleRouteMatrixRequest,
   type GoogleRouteMatrixResponse,
@@ -205,46 +211,62 @@ const computeWith = async (
 
   const fetcher = options.fetcher ?? globalThis.fetch;
   const apiKey = options.apiKey;
-  const result = await fetchWithDeadline(
-    async (requestSignal) => {
-      const response = await fetcher(GOOGLE_ROUTE_MATRIX_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          'x-goog-api-key': apiKey,
-          'x-goog-fieldmask': GOOGLE_ROUTE_MATRIX_FIELD_MASK,
-        },
-        body: JSON.stringify(requestBody(request)),
-        signal: requestSignal,
-        // Cloudflare's edge fetch does not implement the error redirect mode. Manual keeps
-        // redirects visible so the status handling below rejects them before key leakage.
-        redirect: 'manual',
-      });
-      return {
-        response,
-        body: response.ok ? await readJson(response) : null,
-      };
-    },
-    signal,
-    options.timeoutMs,
-  );
+  let observation: RuntimeProviderTransportCall | undefined;
+  try {
+    const result = await fetchWithDeadline(
+      async (requestSignal) => {
+        observation = beginRuntimeProviderTransportCall(options.observer, {
+          provider: 'routes',
+          apiElementCount: routeElementCount(request),
+        });
+        const response = await fetcher(GOOGLE_ROUTE_MATRIX_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            'x-goog-api-key': apiKey,
+            'x-goog-fieldmask': GOOGLE_ROUTE_MATRIX_FIELD_MASK,
+          },
+          body: JSON.stringify(requestBody(request)),
+          signal: requestSignal,
+          // Cloudflare's edge fetch does not implement the error redirect mode. Manual keeps
+          // redirects visible so the status handling below rejects them before key leakage.
+          redirect: 'manual',
+        });
+        return {
+          response,
+          body: response.ok ? await readJson(response) : null,
+        };
+      },
+      signal,
+      options.timeoutMs,
+    );
 
-  const response = result.response;
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new GoogleRouteMatrixError('RATE_LIMITED', {
-        status: response.status,
-        retryAfterMs: parseRetryAfter(response.headers.get('retry-after')),
-      });
+    const response = result.response;
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new GoogleRouteMatrixError('RATE_LIMITED', {
+          status: response.status,
+          retryAfterMs: parseRetryAfter(response.headers.get('retry-after')),
+        });
+      }
+      if (response.status >= 500) {
+        throw new GoogleRouteMatrixError('UPSTREAM_UNAVAILABLE', { status: response.status });
+      }
+      throw new GoogleRouteMatrixError('INVALID_REQUEST', { status: response.status });
     }
-    if (response.status >= 500) {
-      throw new GoogleRouteMatrixError('UPSTREAM_UNAVAILABLE', { status: response.status });
-    }
-    throw new GoogleRouteMatrixError('INVALID_REQUEST', { status: response.status });
+
+    const parsed = parseGoogleRouteMatrixResponse(result.body);
+    completeRuntimeProviderTransportCall(observation, { status: 'ok' });
+    return parsed;
+  } catch (error: unknown) {
+    completeRuntimeProviderTransportCall(observation, {
+      status: 'error',
+      error,
+      ...(signal === undefined ? {} : { signal }),
+    });
+    throw error;
   }
-
-  return parseGoogleRouteMatrixResponse(result.body);
 };
 
 export const createGoogleRouteMatrixTransport = (

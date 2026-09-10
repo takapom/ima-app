@@ -1,5 +1,13 @@
 import * as v from 'valibot';
 import {
+  beginRuntimeProviderTransportCall,
+  completeRuntimeProviderTransportCall,
+} from '../telemetry/runtime-provider-trace-contract';
+import type {
+  RuntimeProviderTransportCall,
+  RuntimeProviderTransportObserver,
+} from '../telemetry/runtime-provider-trace-contract';
+import {
   GOOGLE_TEXT_SEARCH_ENDPOINT,
   GOOGLE_TEXT_SEARCH_FIELD_MASK,
   GoogleTextSearchError,
@@ -36,6 +44,8 @@ export type GoogleTextSearchTransportOptions = {
   readonly apiKey?: string;
   readonly timeoutMs?: number;
   readonly fetcher?: typeof fetch;
+  /** Optional Worker-owned observer; called only immediately before a real fetch starts. */
+  readonly observer?: RuntimeProviderTransportObserver;
 };
 
 export interface GoogleTextSearchTransport {
@@ -142,48 +152,61 @@ const searchWith = async (
   }
 
   const fetcher = options.fetcher ?? globalThis.fetch;
-  const upstream = await fetchWithDeadline(
-    async (requestSignal) => {
-      const response = await fetcher(GOOGLE_TEXT_SEARCH_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          'x-goog-api-key': apiKey,
-          'x-goog-fieldmask': GOOGLE_TEXT_SEARCH_FIELD_MASK,
-        },
-        body: JSON.stringify(request),
-        // Cloudflare's edge fetch accepts follow/manual; manual keeps redirects
-        // visible so the status handling below rejects them instead of leaking
-        // provider credentials to a redirected endpoint.
-        redirect: 'manual',
-        signal: requestSignal,
-      });
-      return {
-        response,
-        body: response.ok ? await readJson(response) : null,
-      };
-    },
-    signal,
-    options.timeoutMs,
-  );
-  const response = upstream.response;
+  let observation: RuntimeProviderTransportCall | undefined;
+  try {
+    const upstream = await fetchWithDeadline(
+      async (requestSignal) => {
+        observation = beginRuntimeProviderTransportCall(options.observer, { provider: 'places' });
+        const response = await fetcher(GOOGLE_TEXT_SEARCH_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            'x-goog-api-key': apiKey,
+            'x-goog-fieldmask': GOOGLE_TEXT_SEARCH_FIELD_MASK,
+          },
+          body: JSON.stringify(request),
+          // Cloudflare's edge fetch accepts follow/manual; manual keeps redirects
+          // visible so the status handling below rejects them instead of leaking
+          // provider credentials to a redirected endpoint.
+          redirect: 'manual',
+          signal: requestSignal,
+        });
+        return {
+          response,
+          body: response.ok ? await readJson(response) : null,
+        };
+      },
+      signal,
+      options.timeoutMs,
+    );
+    const response = upstream.response;
 
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new GoogleTextSearchError('RATE_LIMITED', {
-        status: response.status,
-        retryAfterMs: parseRetryAfter(response.headers.get('retry-after')),
-      });
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new GoogleTextSearchError('RATE_LIMITED', {
+          status: response.status,
+          retryAfterMs: parseRetryAfter(response.headers.get('retry-after')),
+        });
+      }
+      if (response.status >= 500) {
+        throw new GoogleTextSearchError('UPSTREAM_UNAVAILABLE', { status: response.status });
+      }
+      throw new GoogleTextSearchError('INVALID_REQUEST', { status: response.status });
     }
-    if (response.status >= 500) {
-      throw new GoogleTextSearchError('UPSTREAM_UNAVAILABLE', { status: response.status });
-    }
-    throw new GoogleTextSearchError('INVALID_REQUEST', { status: response.status });
+
+    if (upstream.body === null) throw new GoogleTextSearchError('SCHEMA_MISMATCH');
+    const page = responsePage(upstream.body);
+    completeRuntimeProviderTransportCall(observation, { status: 'ok' });
+    return page;
+  } catch (error: unknown) {
+    completeRuntimeProviderTransportCall(observation, {
+      status: 'error',
+      error,
+      ...(signal === undefined ? {} : { signal }),
+    });
+    throw error;
   }
-
-  if (upstream.body === null) throw new GoogleTextSearchError('SCHEMA_MISMATCH');
-  return responsePage(upstream.body);
 };
 
 export const createGoogleTextSearchTransport = (

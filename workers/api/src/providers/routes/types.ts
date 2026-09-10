@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import type { RuntimeProviderTransportObserver } from '../telemetry/runtime-provider-trace-contract';
 
 export const GOOGLE_ROUTE_MATRIX_ENDPOINT =
   'https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix';
@@ -125,6 +126,8 @@ export type GoogleRouteMatrixTransportOptions = {
   readonly apiKey?: string;
   readonly timeoutMs?: number;
   readonly fetcher?: typeof fetch;
+  /** Optional Worker-owned observer; called only immediately before a real fetch starts. */
+  readonly observer?: RuntimeProviderTransportObserver;
 };
 
 export interface GoogleRouteMatrixTransport {
