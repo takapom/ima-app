@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-native",
-    "types": ["expo/types", "react"]
+    "types": ["expo/types", "react", "node"]
   },
   "include": ["**/*.ts", "**/*.tsx"]
 }

@@ -98,6 +98,12 @@ export const RetentionMetadataSchema = v.pipe(
 );
 export type RetentionMetadata = v.InferOutput<typeof RetentionMetadataSchema>;
 
+/** Runtime boundary helper for clients that persist public retention metadata. */
+export const parseRetentionMetadata = (input: unknown): RetentionMetadata | null => {
+  const parsed = v.safeParse(RetentionMetadataSchema, input);
+  return parsed.success ? parsed.output : null;
+};
+
 /** Minimal evidence metadata safe for mobile rendering; provider records stay internal. */
 export const EvidenceRefSchema = v.strictObject({
   evidenceId: OpaqueIdSchema,

@@ -9,6 +9,7 @@ import {
 } from './journey-share';
 import { saveJourneyCandidate, type JourneyStorageService } from './journey-storage';
 import { journeyShareInputFor } from './journey-share-input';
+import type { LocalSavedEntryId } from './saved-place-types';
 
 const retention = {
   retentionDecision: 'deny' as const,
@@ -210,7 +211,11 @@ describe('journey action services', () => {
       saveCandidate: (card) => {
         received.push(card);
         saved.push(card.candidateId);
-        return Promise.resolve({ status: 'saved', savedPlaceRef: 'saved-1' });
+        return Promise.resolve({
+          status: 'saved',
+          localSavedEntryId: 'local-1' as LocalSavedEntryId,
+          serverSavedPlaceRef: null,
+        });
       },
     };
     const hapticCalls: string[] = [];
@@ -222,7 +227,8 @@ describe('journey action services', () => {
 
     await expect(saveJourneyCandidate(storage, saveCard)).resolves.toEqual({
       status: 'saved',
-      savedPlaceRef: 'saved-1',
+      localSavedEntryId: 'local-1',
+      serverSavedPlaceRef: null,
     });
     await expect(triggerDecisionHaptics(haptics)).resolves.toEqual({ status: 'performed' });
     expect(saved).toEqual(['candidate-1']);

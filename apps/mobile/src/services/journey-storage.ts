@@ -1,4 +1,7 @@
 import type { PublicCard } from '@ima/contracts';
+import type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
+
+export type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
 
 /**
  * Keep public metadata at the storage boundary so the SQLite adapter can
@@ -8,9 +11,17 @@ import type { PublicCard } from '@ima/contracts';
 export type JourneySaveCandidate = PublicCard;
 
 export type SaveCandidateResult =
-  | { readonly status: 'saved'; readonly savedPlaceRef: string }
-  | { readonly status: 'already_saved'; readonly savedPlaceRef: string }
-  | { readonly status: 'failed'; readonly reason: 'storage_unavailable' };
+  | {
+      readonly status: 'saved';
+      readonly localSavedEntryId: LocalSavedEntryId;
+      readonly serverSavedPlaceRef: ServerSavedPlaceRef | null;
+    }
+  | {
+      readonly status: 'already_saved';
+      readonly localSavedEntryId: LocalSavedEntryId;
+      readonly serverSavedPlaceRef: ServerSavedPlaceRef | null;
+    }
+  | { readonly status: 'failed'; readonly reason: 'storage_unavailable' | 'retention_denied' };
 
 export type JourneyStorageService = {
   readonly saveCandidate: (candidate: JourneySaveCandidate) => Promise<SaveCandidateResult>;
