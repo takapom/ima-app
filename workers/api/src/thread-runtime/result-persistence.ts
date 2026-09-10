@@ -12,6 +12,11 @@ type RuntimeTurnStorageStatus =
 
 type RuntimeTurnStatusRow = {
   readonly status: RuntimeTurnStorageStatus;
+  readonly response_id: string | null;
+  readonly response_revision: number | null;
+  readonly response_kind: 'message' | 'cards' | null;
+  readonly response_presentation: 'keep' | 'replace' | null;
+  readonly response_card_set_id: string | null;
 };
 
 type PersistenceOutcome = {
@@ -24,7 +29,7 @@ export type RuntimeResultPersistenceOptions = {
   readonly storage: DurableObjectStorage;
   readonly target: ThreadRuntimeTarget;
   readonly result: ThreadRuntimeTurnResult;
-  /** Advances the owning ThreadDO snapshot in the same SQLite transaction. */
+  /** Test-only compatibility hook for a non-durable CommitPort fixture. */
   readonly commitResponse?: (target: ThreadRuntimeTarget, revision: number) => boolean;
 };
 
@@ -44,7 +49,7 @@ export const persistRuntimeResult = (
   const outcome = options.storage.transactionSync((): PersistenceOutcome => {
     const row = options.storage.sql
       .exec<RuntimeTurnStatusRow>(
-        'SELECT status FROM runtime_turn WHERE thread_id = ? AND turn_id = ? AND revision = ?',
+        'SELECT status, response_id, response_revision, response_kind, response_presentation, response_card_set_id FROM runtime_turn WHERE thread_id = ? AND turn_id = ? AND revision = ?',
         target.threadId,
         target.turnId,
         target.revision,
@@ -54,8 +59,33 @@ export const persistRuntimeResult = (
     const cancellationWon = rowStatus === 'cancel_requested' || rowStatus === 'cancelled';
     const staleWon = rowStatus === 'stale';
 
+    if (
+      validCompletion &&
+      rowStatus === 'completed' &&
+      metadata !== null &&
+      row?.response_id === metadata.responseId &&
+      row.response_revision === metadata.revision &&
+      row.response_kind === metadata.kind &&
+      row.response_presentation === metadata.presentation &&
+      (metadata.kind !== 'cards' ||
+        row.response_card_set_id === null ||
+        row.response_card_set_id === metadata.cardSetId)
+    ) {
+      options.storage.sql.exec(
+        "UPDATE runtime_turn SET request_id = ?, response_card_set_id = ? WHERE thread_id = ? AND turn_id = ? AND revision = ? AND status = 'completed' AND response_id = ? AND response_revision = ?",
+        result.requestId,
+        metadata.cardSetId,
+        target.threadId,
+        target.turnId,
+        target.revision,
+        metadata.responseId,
+        metadata.revision,
+      );
+      return { status: 'completed', committed: true, failureCode: null };
+    }
+
     if (validCompletion && rowStatus === 'running' && metadata !== null) {
-      const committed = options.commitResponse?.(target, metadata.revision) ?? true;
+      const committed = options.commitResponse?.(target, metadata.revision) ?? false;
       const status: ThreadRuntimeRunStatus = committed ? 'completed' : 'stale';
       options.storage.sql.exec(
         "UPDATE runtime_turn SET status = ?, request_id = ?, response_id = ?, response_revision = ?, response_kind = ?, response_presentation = ?, response_card_set_id = ? WHERE thread_id = ? AND turn_id = ? AND revision = ? AND status = 'running'",

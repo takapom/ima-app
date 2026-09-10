@@ -115,6 +115,7 @@ describe('native Think runtime fixture', () => {
       response: {
         turnId: target.turnId,
         revision: 2,
+        cardSetId: 'runtime-native-card-set',
         restoreMode: 'reference_only',
       },
     });

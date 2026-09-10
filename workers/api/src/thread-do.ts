@@ -3,6 +3,12 @@ import { AssistantResponseSchema } from '@ima/contracts';
 import { RuntimeThinkHost } from './thread-runtime/runtime-host';
 import { ThreadRuntimeController, type RuntimeThreadBinding } from './thread-runtime/controller';
 import {
+  advanceThreadRevision,
+  createDurableCommitPort,
+  initializeDurableCommitTable,
+  type DurableCommitPort,
+} from './thread-runtime/commit-port';
+import {
   type ThreadRuntimeCancelResult,
   type ThreadRuntimeReplayResult,
   type ThreadRuntimeResponseMetadata,
@@ -87,9 +93,16 @@ export class ThreadDO extends RuntimeThinkHost<Cloudflare.Env> {
   override fetchTools = false as const;
   private readonly ready: Promise<void>;
   private readonly runtimeController: ThreadRuntimeController;
+  private readonly runtimeCommit: DurableCommitPort;
+
+  /** Native fixtures may opt into their in-memory CommitPort explicitly. */
+  protected runtimeCommitFallbackEnabled(): boolean {
+    return false;
+  }
 
   constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
     super(ctx, env);
+    this.runtimeCommit = createDurableCommitPort(ctx.storage);
     this.ready = ctx.blockConcurrencyWhile(() =>
       Promise.resolve().then(() => {
         ctx.storage.sql.exec(`
@@ -134,6 +147,7 @@ export class ThreadDO extends RuntimeThinkHost<Cloudflare.Env> {
             UNIQUE (idempotency_key)
           )
         `);
+        initializeDurableCommitTable(ctx.storage);
       }),
     );
     this.runtimeController = new ThreadRuntimeController({
@@ -153,15 +167,15 @@ export class ThreadDO extends RuntimeThinkHost<Cloudflare.Env> {
       getConnection: () => this.ensureRuntimeThinkConnection(),
       execute: (input, target, isStale) => this.executeRuntimeTurn(input, target, isStale),
       commitResponse: (target, responseRevision) =>
-        ctx.storage.sql.exec(
-          'UPDATE thread_state SET revision = ? WHERE singleton = 1 AND thread_id = ? AND owner_scope_ref = ? AND revision = ? AND active = 1 AND deleted = 0',
-          responseRevision,
-          target.threadId,
-          target.ownerScopeRef,
-          target.revision,
-        ).rowsWritten === 1,
+        this.runtimeCommitFallbackEnabled() &&
+        advanceThreadRevision(ctx.storage, target, responseRevision),
       clearMessages: () => this.clearRuntimeMessages(),
     });
+  }
+
+  /** Runtime composition uses this adapter; the Core port never sees DO or SDK types. */
+  protected createRuntimeCommitPort(): DurableCommitPort {
+    return this.runtimeCommit;
   }
 
   private async row(): Promise<ThreadRow | undefined> {

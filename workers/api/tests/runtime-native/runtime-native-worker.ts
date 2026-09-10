@@ -4,6 +4,7 @@ import { RateLimitDO, ThreadDO as ProductionThreadDO } from '../../src/thread-do
 import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../src/runtime/runtime-budget';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../src/model/provider-options';
 import { sanitizeRuntimeCompactionSummary } from '../../src/runtime/runtime-retention';
+import type { DurableCommitPort } from '../../src/thread-runtime/commit-port';
 import {
   createRuntimeTurnComposition,
   type RuntimePublicResponseDependencies,
@@ -69,6 +70,7 @@ export class ThreadDO extends ProductionThreadDO {
     readonly scenario: RuntimeNativeScenario;
     readonly model: RuntimeNativeModelReport;
     readonly fixture: RuntimeNativePortFixture;
+    commitWrites: number;
   } | null = null;
 
   getRuntimeNativeReport(): RuntimeNativeExecutionReport | null {
@@ -78,7 +80,7 @@ export class ThreadDO extends ProductionThreadDO {
       scenario: current.scenario,
       model: current.model,
       operations: current.fixture.operations,
-      commitWrites: current.fixture.commit.requests.length,
+      commitWrites: current.commitWrites,
     });
   }
 
@@ -116,6 +118,27 @@ export class ThreadDO extends ProductionThreadDO {
           waitingStarted: false,
           abortObserved: false,
         };
+        const execution = {
+          scenario,
+          model: modelReport,
+          fixture,
+          commitWrites: 0,
+        };
+        this.latestExecution = execution;
+        const durableCommit = this.createRuntimeCommitPort();
+        const commit: DurableCommitPort = {
+          setCardSetId: (scope, idempotencyKey, cardSetId) =>
+            durableCommit.setCardSetId(scope, idempotencyKey, cardSetId),
+          clearCardSetId: (scope, idempotencyKey) =>
+            durableCommit.clearCardSetId(scope, idempotencyKey),
+          commit: async (value) => {
+            const result = await durableCommit.commit(value);
+            if (result.status === 'committed' && !result.receipt.replayed) {
+              execution.commitWrites += 1;
+            }
+            return result;
+          },
+        };
         const startedAtMs = performance.now();
         const budget = new RuntimeBudget({
           config: DEFAULT_RUNTIME_BUDGET,
@@ -149,7 +172,7 @@ export class ThreadDO extends ProductionThreadDO {
             ...fixture.ports,
             clock: () => fixture.context.serverNow,
           },
-          commit: fixture.commit,
+          commit,
           resolveReadCost: () => ({
             costUnits: 1,
             providerHttpRequests: 1,
@@ -164,7 +187,7 @@ export class ThreadDO extends ProductionThreadDO {
           persistMessages: () =>
             Promise.resolve({ requestId: 'runtime-native-placeholder', status: 'completed' }),
           isFinalResponse: () => true,
-          stopWhen: () => fixture.commit.requests.length > 0,
+          stopWhen: () => execution.commitWrites > 0,
           publicResponse: {
             textRetention: fixture.retention.retention,
             cardSetId: 'runtime-native-card-set',
@@ -172,11 +195,6 @@ export class ThreadDO extends ProductionThreadDO {
           },
         });
         configureSession = composition.configureSession;
-        this.latestExecution = {
-          scenario,
-          model: modelReport,
-          fixture,
-        };
         return composition;
       },
     };

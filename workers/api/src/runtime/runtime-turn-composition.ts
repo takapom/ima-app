@@ -61,6 +61,7 @@ import {
   observedWindow,
   RuntimeTurnCompositionError,
 } from './runtime-turn-composition-support';
+import { clearRuntimeCardSetId, registerRuntimeCardSetId } from '../thread-runtime/commit-port';
 
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;
 
@@ -234,6 +235,7 @@ export function createRuntimeTurnComposition(
   }
 
   const now = clockFunction(options.clock);
+  const submitIdempotencyKey = options.idempotencyKey ?? `${options.context.turnId}-submit`;
   let disposed = false;
   const guardedCommit: CommitPort = {
     commit: (request) => {
@@ -308,8 +310,17 @@ export function createRuntimeTurnComposition(
       idempotencyKey: options.idempotencyKey ?? `${options.context.turnId}-submit`,
       getRemainingRepairs: () => narrowRepairs(options.budget),
     });
+    const cardSetId = options.publicResponse?.cardSetId;
     return {
       submit: async (input, execution, cancellation) => {
+        if (cardSetId !== undefined) {
+          registerRuntimeCardSetId(
+            options.commit,
+            { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
+            submitIdempotencyKey,
+            cardSetId,
+          );
+        }
         const result = await port.submit(input, execution, cancellation);
         if (result.status === 'committed') {
           responseId = result.responseId;
@@ -453,6 +464,11 @@ export function createRuntimeTurnComposition(
       if (disposed) return;
       disposed = true;
       readPorts.dispose();
+      clearRuntimeCardSetId(
+        options.commit,
+        { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
+        submitIdempotencyKey,
+      );
       calls.clear();
       results.clear();
       acceptedFinal = undefined;

@@ -19,6 +19,7 @@ import {
 } from './admission';
 import { persistRuntimeResult } from './result-persistence';
 import { cancelRuntimeForLifecycle as cancelRuntimeForLifecycleRows } from './lifecycle-cancel';
+import { isRuntimeTargetStale } from './stale-check';
 type RuntimeTurnRow = {
   readonly turn_id: string;
   readonly owner_scope_ref: string;
@@ -457,16 +458,7 @@ export class ThreadRuntimeController {
   }
 
   isStale(target: ThreadRuntimeTarget): boolean {
-    const binding = this.bindingFor(target);
-    if (binding === undefined || binding.revision !== target.revision || !binding.active)
-      return true;
-    const row = this.rowSync(target);
-    return (
-      row === undefined ||
-      row.status === 'stale' ||
-      row.status === 'cancel_requested' ||
-      row.status === 'cancelled'
-    );
+    return isRuntimeTargetStale(target, this.bindingFor(target), this.rowSync(target));
   }
 
   async cleanupForDelete(): Promise<void> {
@@ -491,6 +483,14 @@ export class ThreadRuntimeController {
       await this.options.clearMessages();
     } catch (error: unknown) {
       cleanupError ??= error;
+    }
+    if (cleanupError === undefined) {
+      try {
+        // Preserve the ledger until a failed cleanup can be retried.
+        this.options.storage.sql.exec('DELETE FROM runtime_commit');
+      } catch (error: unknown) {
+        cleanupError = error;
+      }
     }
     this.activeTarget = undefined;
     this.activeRun = undefined;
