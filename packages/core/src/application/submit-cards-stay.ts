@@ -15,7 +15,7 @@ export const openIntervalAt = (
   return hours.intervals.find(
     (interval) =>
       Date.parse(interval.startAt) <= instantMilliseconds &&
-      instantMilliseconds < Date.parse(interval.endAt),
+      (interval.endAt === null || instantMilliseconds < Date.parse(interval.endAt)),
   );
 };
 
@@ -53,13 +53,17 @@ export const minimumStayIssue = (
     );
   }
   const arrivalMilliseconds = Date.parse(arrivalAt);
-  const closingMilliseconds = Date.parse(interval.endAt);
+  const closingMilliseconds =
+    interval.endAt === null ? Number.POSITIVE_INFINITY : Date.parse(interval.endAt);
   const deadlineMilliseconds =
     deadlineAt === undefined
       ? closingMilliseconds
       : Math.min(closingMilliseconds, Date.parse(deadlineAt));
   const availableStaySeconds = (deadlineMilliseconds - arrivalMilliseconds) / 1000;
-  if (!Number.isInteger(availableStaySeconds) || availableStaySeconds < minimumStayMinutes * 60) {
+  if (
+    availableStaySeconds !== Number.POSITIVE_INFINITY &&
+    (!Number.isInteger(availableStaySeconds) || availableStaySeconds < minimumStayMinutes * 60)
+  ) {
     return issue(
       'CONSTRAINT_VIOLATION',
       `${selectionPath}.minimumStayMinutes`,

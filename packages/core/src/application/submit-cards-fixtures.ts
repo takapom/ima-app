@@ -89,7 +89,7 @@ type FixtureOptions = {
   lastTrainVariant?: 'valid' | 'bad-arithmetic';
   walkingDurationSeconds?: number;
   openingStartAt?: IsoTimestamp;
-  openingEndAt?: IsoTimestamp;
+  openingEndAt?: IsoTimestamp | null;
 };
 
 export type SubmitCardsFixture = {
@@ -215,7 +215,7 @@ export const makeFixture = (
       intervals: [
         {
           startAt: options.openingStartAt ?? '2026-09-10T11:00:00Z',
-          endAt: options.openingEndAt ?? '2026-09-10T15:00:00Z',
+          endAt: options.openingEndAt === undefined ? '2026-09-10T15:00:00Z' : options.openingEndAt,
         },
       ],
       weeklyText: ['11:00-15:00'],

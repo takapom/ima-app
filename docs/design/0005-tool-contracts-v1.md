@@ -459,7 +459,7 @@ v1実装着手時の成果物:
 | value型 | フィールドと意味 |
 |---|---|
 | PlaceIdentity | name、area、address、categories[]、businessStatus（operational/temporarily_closed/permanently_closed/unknown）、movedToCandidateId?、sourceUrl? |
-| OpeningHours | timeZone、intervals[{startAt,endAt}]（絶対時刻）、weeklyText[]、evaluatedAt、listedOpenAtEvaluation（true/false/null）、nextBoundaryAt?、lastOrderAt?、lastOrderRaw?。不明なLOはnull、推定で埋めない |
+| OpeningHours | timeZone、intervals[{startAt,endAt}]（絶対時刻）、weeklyText[]、evaluatedAt、listedOpenAtEvaluation（true/false/null）、nextBoundaryAt?、lastOrderAt?、lastOrderRaw?。`endAt: null`はproviderが常時営業を明示し閉店点を返さないintervalに限り使用し、翌日などの仮の閉店時刻を生成しない。不明なLOはnull、推定で埋めない |
 | PriceInfo | level?、range?{currency,min,max,unit}、rawLabel?。unitはper_person/per_item/unknown。金額かlevelか原文の少なくとも1つ。出典競合は複数観測 |
 | PhotoInfo | photos[{photoHandle,attributions[],sourceUrl?}]。モデル向けには件数・帰属有無だけ返し、画像内容を観測済みにしない |
 | ContactInfo | websiteUrl?、phone?、mapUrl?。protocolと供給元を検証し、任意URLへのサーバ取得はしない |

@@ -27,10 +27,12 @@ export const PlaceIdentitySchema = v.strictObject({
 });
 export type PlaceIdentity = v.InferOutput<typeof PlaceIdentitySchema>;
 
+/** `endAt: null` means the provider supplied an open-ended interval (for example 24/7). */
 export const OpeningIntervalSchema = v.pipe(
-  v.strictObject({ startAt: IsoTimestampSchema, endAt: IsoTimestampSchema }),
+  v.strictObject({ startAt: IsoTimestampSchema, endAt: v.nullable(IsoTimestampSchema) }),
   v.check(
-    (interval) => Date.parse(interval.startAt) <= Date.parse(interval.endAt),
+    (interval) =>
+      interval.endAt === null || Date.parse(interval.startAt) <= Date.parse(interval.endAt),
     'opening interval must end at or after it starts',
   ),
 );

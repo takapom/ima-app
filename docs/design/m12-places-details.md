@@ -1,4 +1,4 @@
-# M12 Places Details Adapter：C1境界
+# M12 Places Details Adapter：C1/C2境界
 
 ## 状態
 
@@ -7,7 +7,7 @@
 ```mermaid
 flowchart LR
   A[Google Place JSON fixture] --> B[wire allowlist]
-  B --> C[identity / price / contact / photo normalizer]
+  B --> C[identity / hours / price / contact / photo normalizer]
   C --> D[Worker normalized values]
   D --> E[後続HTTP client / Core Port adapter]
   F[facilities / walking / last_train] --> G[unsupported]
@@ -27,7 +27,17 @@ normalizerは`known`、`unknown`、明示的なschema/source-conflict errorを�
 
 Coreのdetails契約は候補1〜5件と要求field集合の完全一致を要求する（`GetPlaceDetailsInputSchema`、`matchesDetailsRequest`）。後続adapterは正規化値をCore `FieldResult` observationへ変換し、候補単位のpartial resultを保持する。`facilities`、`walking_route`、`last_train`はGoogle adapterでは明示的なunsupported結果にする。
 
-M11はGoogle root attributionの別型を持たず、共有wire shapeを使う。特にGoogleの`attributions`は`{provider, providerUri}` object配列であり、`timeZone`はPlace root fieldである。営業時間の正規化は次のM12単位へ保留する。
+M11はGoogle root attributionの別型を持たず、共有wire shapeを使う。特にGoogleの`attributions`は`{provider, providerUri}` object配列であり、`timeZone`はPlace root fieldである。営業時間の検索transportはraw itemを保持せず、M12の共有wireから正規化する。
+
+## C2 営業時間の正規化
+
+`workers/api/src/providers/places/hours.ts` は `currentOpeningHours.periods` を主入力とする。M11 adapterからはserver clockのRFC3339文字列を受け取り、単体検証では同じ値を`{ evaluatedAt }`として渡せる。各periodの日時をPlace rootのIANA `timeZone`で解決し、Coreの `OpeningHours.intervals` へ絶対RFC3339の半開区間として出力する。close省略の24時間periodは`endAt: null`で表し、翌0時を実閉店として生成しない。入力のperiod順や `weekdayDescriptions` のロケール順を曜日順と解釈しない。通常週の表示文がある場合は`regularOpeningHours`を優先し、`currentOpeningHours.specialDays`や特殊日periodで通常週を上書きしない。
+
+Googleのprotobuf scalar省略値（`day`、`hour`、`minute`）は0として扱う。`close`なしの`day=0/hour=0/minute=0`だけを公式の常時営業マーカーとして`endAt: null`へ変換し、日付が省略されている場合は評価時刻のPlace現地日を開始日にする。日付のない非24時間period、無効な日付、IANA timezone不在は`unknown`とする。DSTの不存在時刻と重複時刻は一意に解決できないため`unknown`とする。
+
+`truncated`なopen端点はGoogleが返した有効な窓の開始境界として扱えるが、`truncated`なclose端点を実閉店時刻として保存しない。そのperiodを`unknown`にして、切詰めによる閉店時刻の捏造を防ぐ。`nextOpenTime`/`nextCloseTime`はRFC3339として検証し、`openNow`と反対側の境界、過去の境界、現在periodの境界、空periodとの不整合は`SOURCE_CONFLICT`とする。
+
+`hours.test.ts` は東京の通常週・特殊日・跨日・24時間、protobuf省略値、切詰め、空period、欠落/不正timezone、DSTの不存在/重複時刻、境界不整合を2026年固定fixtureで検証する。実API・API key・Secretsは使用しない。
 
 ## 参照
 
