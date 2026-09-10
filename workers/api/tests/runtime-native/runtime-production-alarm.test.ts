@@ -8,6 +8,7 @@ import {
   createRuntimeRetentionAlarmCapability,
   RUNTIME_RETENTION_ALARM_TABLE,
 } from '../../src/thread-runtime/runtime-retention-alarm';
+import { sessionExpiryAt } from '../../src/runtime/runtime-production-support';
 import type { ProductionThreadDO } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {
@@ -16,9 +17,38 @@ type ProductionTestEnv = Cloudflare.Env & {
 
 const productionEnv = (): ProductionTestEnv => env as ProductionTestEnv;
 
+const JST_OFFSET_MS = 9 * 60 * 60 * 1_000;
+const ANCHOR_BEFORE_EXPIRY_MS = 60 * 60 * 1_000;
+const MIN_PLATFORM_LEAD_MS = 10 * 60 * 1_000;
+
+/**
+ * Keep the native Lifecycle reservation in the future of workerd's wall clock. The exact fixed
+ * 05:00/05:05 JST contract is covered by the capability test below; this timeline only prevents
+ * a real scheduler from clamping or consuming a stale fixture timestamp.
+ */
+const retentionAlarmTimeline = () => {
+  const wallClockNow = Date.now();
+  const jstDate = new Date(wallClockNow + JST_OFFSET_MS);
+  let expiryMs =
+    Date.UTC(jstDate.getUTCFullYear(), jstDate.getUTCMonth(), jstDate.getUTCDate(), 5) -
+    JST_OFFSET_MS;
+  if (expiryMs <= wallClockNow + MIN_PLATFORM_LEAD_MS) {
+    expiryMs =
+      Date.UTC(jstDate.getUTCFullYear(), jstDate.getUTCMonth(), jstDate.getUTCDate() + 1, 5) -
+      JST_OFFSET_MS;
+  }
+  return {
+    anchor: new Date(expiryMs - ANCHOR_BEFORE_EXPIRY_MS).toISOString(),
+    now: new Date(expiryMs - 30 * 60 * 1_000).toISOString(),
+    expiry: new Date(expiryMs).toISOString(),
+    after: new Date(expiryMs + 5 * 60 * 1_000).toISOString(),
+  };
+};
+
 const requestFor = (
   target: ThreadRuntimeTarget,
   text = 'M16_ALARM_STORAGE_CANARY を含む静かなカフェを探して',
+  clientNow = '2026-09-10T12:00:00.000Z',
 ): ThreadRuntimeTurnInput => ({
   ...target,
   idempotencyKey: `m16-alarm-${target.turnId}`,
@@ -28,7 +58,7 @@ const requestFor = (
     turnId: target.turnId,
     revision: target.revision,
     text,
-    clientNow: '2026-09-10T12:00:00.000Z',
+    clientNow,
     location: {
       status: 'unavailable',
       lat: null,
@@ -58,6 +88,18 @@ const setAnchor = (stub: DurableObjectStub<ProductionThreadDO>, value: string) =
       value,
     );
   });
+
+const stubWithAnchor = async (
+  threadId: string,
+  value: string,
+): Promise<DurableObjectStub<ProductionThreadDO>> => {
+  const initial = productionEnv().PRODUCTION_THREADS.getByName(threadId);
+  await setAnchor(initial, value);
+  // RuntimeProductionThinkHost caches the durable anchor during construction. Reopen after the
+  // fixture writes it so the alarm and expiry closures observe the same anchor.
+  await evictDurableObject(initial);
+  return productionEnv().PRODUCTION_THREADS.getByName(threadId);
+};
 
 const containsCanary = (value: unknown, seen = new Set<object>()): boolean => {
   if (typeof value === 'string') return value.includes('M16_ALARM_STORAGE_CANARY');
@@ -111,40 +153,88 @@ const expectObservedSurfacesClean = async (stub: DurableObjectStub<ProductionThr
 };
 
 describe('M16 retention alarm capability', () => {
+  it('keeps the fixed 05:00 JST expiry and 05:05 cleanup boundary', async () => {
+    const threadId = `m16-alarm-capability-${crypto.randomUUID()}`;
+    const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
+    const boundary = await runInDurableObject(stub, async (_instance, state) => {
+      let now = '2026-09-10T19:59:00.000Z';
+      const capability = createRuntimeRetentionAlarmCapability({
+        storage: state.storage,
+        now: () => now,
+        expiryAt: () => '2026-09-10T20:00:00.000Z',
+        onDue: (markComplete) => {
+          markComplete();
+          return Promise.resolve(false);
+        },
+      });
+      const armed = capability.getNextAlarm?.();
+      now = '2026-09-10T20:05:00.000Z';
+      await capability.onAlarm?.();
+      const row = state.storage.sql
+        .exec<{
+          readonly deadline_at: string | null;
+          readonly completed_at: string | null;
+          readonly delay_ms: number | null;
+        }>(
+          `SELECT deadline_at, completed_at, delay_ms FROM ${RUNTIME_RETENTION_ALARM_TABLE} WHERE singleton = 1`,
+        )
+        .toArray()[0];
+      return { armed, row };
+    });
+    expect(boundary.armed).toBe(Date.parse('2026-09-10T20:00:00.000Z'));
+    expect(boundary.row).toEqual({
+      deadline_at: '2026-09-10T20:00:00.000Z',
+      completed_at: '2026-09-10T20:05:00.000Z',
+      delay_ms: 5 * 60 * 1_000,
+    });
+  });
+
   it('arms from initialize through public Lifecycle without replacing Think alarms', async () => {
     const threadId = `m16-alarm-arm-${crypto.randomUUID()}`;
     const ownerScopeRef = `m16-alarm-owner-${crypto.randomUUID()}`;
-    const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
-    await setAnchor(stub, '2026-09-10T19:59:00.000Z');
-    await expect(stub.initialize(ownerScopeRef, threadId)).resolves.toMatchObject({ ok: true });
-    await expect(
-      runInDurableObject(stub, async (_instance, state) => state.storage.getAlarm()),
-    ).resolves.toBe(Date.parse('2026-09-10T20:00:00.000Z'));
+    const timeline = retentionAlarmTimeline();
+    expect(sessionExpiryAt(timeline.anchor)).toBe(timeline.expiry);
+    expect(Date.parse(timeline.anchor)).toBeLessThan(Date.parse(timeline.now));
+    expect(Date.parse(timeline.now)).toBeLessThan(Date.parse(timeline.expiry));
+    const stub = await stubWithAnchor(threadId, timeline.anchor);
+    const alarm = await runInDurableObject(stub, async (instance, state) => {
+      instance.setRuntimeProductionNow(timeline.now);
+      await expect(instance.initialize(ownerScopeRef, threadId)).resolves.toMatchObject({
+        ok: true,
+      });
+      return state.storage.getAlarm();
+    });
+    expect(alarm).toBe(Date.parse(timeline.expiry));
   });
 
-  it('cleans runtime state at the fixed expiry and records bounded alarm delay', async () => {
+  it('cleans runtime state at the derived 05:00 JST expiry and records bounded alarm delay', async () => {
     const threadId = `m16-alarm-clean-${crypto.randomUUID()}`;
     const ownerScopeRef = `m16-alarm-owner-${crypto.randomUUID()}`;
-    const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
-    await setAnchor(stub, '2026-09-10T19:59:00.000Z');
-    await expect(stub.initialize(ownerScopeRef, threadId)).resolves.toMatchObject({ ok: true });
+    const timeline = retentionAlarmTimeline();
+    const stub = await stubWithAnchor(threadId, timeline.anchor);
+    await expect(
+      runInDurableObject(stub, async (instance) => {
+        instance.setRuntimeProductionNow(timeline.now);
+        return instance.initialize(ownerScopeRef, threadId);
+      }),
+    ).resolves.toMatchObject({ ok: true });
     const target: ThreadRuntimeTarget = {
       ownerScopeRef,
       threadId,
       turnId: `turn-${crypto.randomUUID()}`,
       revision: 1,
     };
-    const result = await stub.runRuntimeTurn(requestFor(target));
+    const result = await stub.runRuntimeTurn(requestFor(target, undefined, timeline.now));
     if (result.status !== 'completed') throw new Error(JSON.stringify(result));
     // The production fixture intentionally uses an allow/full retention policy. The user text
-    // therefore exists before the fixed expiry in assistant_messages.content (and the SDK FTS
+    // therefore exists before the derived expiry in assistant_messages.content (and the SDK FTS
     // projection); the expiry assertion below is the deletion boundary.
     const beforeAlarm = await storageCanaryState(stub);
     expect(beforeAlarm.sqlCanary).toBe(true);
     expect(beforeAlarm.storageCanary).toBe(false);
 
     const afterAlarm = await runInDurableObject(stub, async (instance, state) => {
-      instance.setRuntimeProductionNow('2026-09-10T20:05:00.000Z');
+      instance.setRuntimeProductionNow(timeline.after);
       await instance.alarm();
       return {
         alarm: await state.storage.getAlarm(),
@@ -172,7 +262,7 @@ describe('M16 retention alarm capability', () => {
       };
     });
     expect(afterAlarm.alarm).toEqual(expect.any(Number));
-    expect(afterAlarm.retention?.completed_at).toEqual('2026-09-10T20:05:00.000Z');
+    expect(afterAlarm.retention?.completed_at).toEqual(timeline.after);
     expect(afterAlarm.retention?.delay_ms).toBe(5 * 60 * 1_000);
     expect(afterAlarm.runtimeRows).toEqual({ context: 0, commits: 0, messages: 0 });
     await expectObservedSurfacesClean(stub);
