@@ -98,6 +98,8 @@ export const PhotoSchema = v.strictObject({
 
 export const PhotoInfoSchema = v.strictObject({
   photos: v.pipe(v.array(PhotoSchema), v.maxLength(3)),
+  /** Present when the provider supplied photos but one or more server handles were withheld. */
+  partialReason: v.optional(Text(300)),
 });
 export type PhotoInfo = v.InferOutput<typeof PhotoInfoSchema>;
 

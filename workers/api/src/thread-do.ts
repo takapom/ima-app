@@ -432,12 +432,12 @@ export class ThreadDO
     target: ThreadRuntimeTarget,
     isStale: () => boolean,
   ): Promise<ThreadRuntimeTurnResult> {
-    const runtime = this.requireRuntimeThinkConnection();
     const request = {
       ownerScopeRef: target.ownerScopeRef,
       threadId: target.threadId,
       turnId: target.turnId,
       revision: target.revision,
+      ...(input.deviceId === undefined ? {} : { deviceId: input.deviceId }),
       messages: [
         {
           id: input.input.requestId,
@@ -448,7 +448,7 @@ export class ThreadDO
       runtimeInput: input.input,
       isStale,
     };
-    const nativeResult = await runtime.run(request);
+    const nativeResult = await this.requireRuntimeThinkConnection().run(request);
     if (nativeResult.status === 'completed') {
       const parsed = v.safeParse(AssistantResponseSchema, nativeResult.response);
       if (!parsed.success) {

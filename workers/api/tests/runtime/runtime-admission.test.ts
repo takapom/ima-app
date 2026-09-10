@@ -121,6 +121,22 @@ describe('thread runtime admission boundaries', () => {
         input: { ...request, turnId: 'another-turn' },
       }),
     ).toBe(false);
+    expect(
+      isThreadRuntimeTurnInput({
+        ...target,
+        deviceId: '',
+        idempotencyKey: request.idempotencyKey,
+        input: request,
+      }),
+    ).toBe(false);
+    expect(
+      isThreadRuntimeTurnInput({
+        ...target,
+        deviceId: 'd'.repeat(129),
+        idempotencyKey: request.idempotencyKey,
+        input: request,
+      }),
+    ).toBe(false);
   });
 
   it('retains only the public response metadata for reference replay', () => {

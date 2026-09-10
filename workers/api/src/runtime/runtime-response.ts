@@ -3,6 +3,7 @@ import {
   AssistantResponseSchema,
   type AssistantResponse,
   type EvidenceRef,
+  type PhotoInfo,
   type RetentionMetadata as PublicRetentionMetadata,
 } from '@ima/contracts';
 import {
@@ -37,6 +38,26 @@ export type RuntimePhotoTokenResolver = (
   internalPhotoRef: string,
 ) => string | undefined;
 
+export type RuntimePhotoTokenPreparationInput = {
+  readonly response: CommittedResponse;
+  readonly metadata: RuntimePublicResponseMetadata;
+  readonly now: string;
+};
+
+/** Issues short-lived photo handles before the synchronous public mapper runs. */
+export type RuntimePhotoTokenPreparer = (
+  input: RuntimePhotoTokenPreparationInput,
+) => Promise<RuntimePhotoTokenResolver | undefined>;
+
+/** Metadata-only failure classification; provider and codec errors never cross this boundary. */
+export type RuntimePhotoPreparationFailure = {
+  readonly code: 'PHOTO_PREPARATION_FAILED';
+};
+
+export type RuntimePhotoPreparationErrorObserver = (
+  failure: RuntimePhotoPreparationFailure,
+) => void;
+
 export type RuntimePublicResponseOptions = RuntimePublicResponseMetadata & {
   /** The generated text policy; the final contracts schema checks it against every source. */
   readonly textRetention: RetentionMetadata;
@@ -46,6 +67,36 @@ export type RuntimePublicResponseOptions = RuntimePublicResponseMetadata & {
   readonly resolvePhotoToken?: RuntimePhotoTokenResolver;
   /** A server-issued card-set ID; message responses always use a null card-set ID. */
   readonly cardSetId?: string;
+};
+
+export type RuntimePublicResponseDependencies = Omit<
+  RuntimePublicResponseOptions,
+  'threadId' | 'turnId' | 'responseId' | 'revision'
+> & {
+  /** Runs once after Core commit and before mapping; the mapper remains synchronous. */
+  readonly preparePhotoTokens?: RuntimePhotoTokenPreparer;
+  /** Optional internal audit hook; a failure withholds only the photo field. */
+  readonly onPhotoPreparationError?: RuntimePhotoPreparationErrorObserver;
+};
+
+export const prepareRuntimePhotoResolver = async (
+  dependencies: RuntimePublicResponseDependencies,
+  response: CommittedResponse,
+  metadata: RuntimePublicResponseMetadata,
+  now: string,
+): Promise<RuntimePhotoTokenResolver | undefined> => {
+  if (dependencies.preparePhotoTokens === undefined) return dependencies.resolvePhotoToken;
+  try {
+    const prepared = await dependencies.preparePhotoTokens({ response, metadata, now });
+    return prepared ?? dependencies.resolvePhotoToken;
+  } catch {
+    try {
+      dependencies.onPhotoPreparationError?.({ code: 'PHOTO_PREPARATION_FAILED' });
+    } catch {
+      // Telemetry must not turn a photo-only failure into a response failure.
+    }
+    return undefined;
+  }
 };
 
 export type RuntimePublicResponseErrorCode =
@@ -177,19 +228,43 @@ const publicPhotos = (
   value: CorePhotoInfo,
   candidateId: string,
   options: RuntimePublicResponseOptions,
-) => {
+):
+  | {
+      readonly status: 'known';
+      readonly value: PhotoInfo;
+    }
+  | { readonly status: 'unknown'; readonly reason: string } => {
   const resolvePhotoToken = options.resolvePhotoToken;
-  if (resolvePhotoToken === undefined) return invalid('PHOTO_TOKEN_RESOLVER_REQUIRED');
-  return {
-    photos: value.photos.map((photo) => ({
-      photoToken:
-        resolvePhotoToken(candidateId, photo.photoRef) ?? invalid('PHOTO_TOKEN_UNAVAILABLE'),
+  if (value.photos.length === 0) {
+    return { status: 'known', value: { photos: [] } };
+  }
+  if (resolvePhotoToken === undefined) {
+    return { status: 'unknown', reason: '写真を表示できません' };
+  }
+  const photos = [];
+  for (const photo of value.photos) {
+    const photoToken = resolvePhotoToken(candidateId, photo.photoRef);
+    if (photoToken === undefined) continue;
+    photos.push({
+      photoToken,
       attributions: photo.attributions.map((attribution) => ({
         displayName: attribution.displayName,
         uri: attribution.uri,
       })),
       sourceUrl: photo.sourceUrl,
-    })),
+    });
+  }
+  if (value.photos.length > 0 && photos.length === 0) {
+    return { status: 'unknown', reason: '写真を表示できません' };
+  }
+  return {
+    status: 'known',
+    value: {
+      photos,
+      ...(photos.length < value.photos.length
+        ? { partialReason: '一部の写真は表示できません' }
+        : {}),
+    },
   };
 };
 
@@ -260,7 +335,28 @@ const known = <Value>(value: Value, evidence: EvidenceRef[]) => ({
   evidence,
 });
 
+const publicPhotoFact = (
+  card: ValidatedCard,
+  options: RuntimePublicResponseOptions,
+):
+  | ReturnType<typeof known<PhotoInfo>>
+  | { readonly status: 'unknown'; readonly reason: string }
+  | undefined => {
+  if (card.photos === null) return undefined;
+  const projection = publicPhotos(card.photos, card.candidateId, options);
+  if (projection.status === 'unknown') return projection;
+  try {
+    return known(projection.value, cardEvidence(card, 'photos', options));
+  } catch (error: unknown) {
+    if (isRuntimePublicResponseError(error) && error.code === 'CARD_EVIDENCE_MISSING') {
+      return { status: 'unknown', reason: '写真を表示できません' };
+    }
+    throw error;
+  }
+};
+
 const publicCard = (card: ValidatedCard, options: RuntimePublicResponseOptions) => {
+  const photoFact = publicPhotoFact(card, options);
   const facts = {
     identity: known(publicIdentity(card.identity), cardEvidence(card, 'identity', options)),
     opening_hours: known(
@@ -270,14 +366,7 @@ const publicCard = (card: ValidatedCard, options: RuntimePublicResponseOptions) 
     ...(card.price === null
       ? {}
       : { price: known(publicPrice(card.price), cardEvidence(card, 'price', options)) }),
-    ...(card.photos === null
-      ? {}
-      : {
-          photos: known(
-            publicPhotos(card.photos, card.candidateId, options),
-            cardEvidence(card, 'photos', options),
-          ),
-        }),
+    ...(photoFact === undefined ? {} : { photos: photoFact }),
     ...(card.walkingRoute === null
       ? {}
       : {

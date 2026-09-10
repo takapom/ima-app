@@ -38,7 +38,7 @@ Base64URLはdecode後の再encode一致を検証し、非canonical表現を受�
 
 `providers/photo/thread-references.ts` がscope・expiry・DO時計・await後のdeleted再確認を担当し、`ThreadDO` はowner bindingとdelete cleanupをRPCへ接続する。`providers/photo/rpc.ts` はtoken codecからThreadDOを解決し、provider bytesをDOへ保存しない。bootstrapは設定済み時だけcodec/transport/handlerを構成し、設定未完了時は既存resource判定を通して未知tokenを404にする。実DO RPCと実routerのfixtureは、異owner/device、削除後、DO eviction後の410/拒否を検証する。
 
-Coreの写真観測からの非同期token事前発行と公開DTO mapper接続は、次の実装単位で行う。
+Coreの写真観測から公開DTOへ渡すtokenは、providerの`photoRef`をDTOへ直接写さず、server contextを束縛した非同期事前発行結果を同期mapper lookupへ渡す。`issuance.ts` は観測ごとの `display` 用policy snapshotを解決し、`llm_input`/`persistence` のdenyを表示判定へ継承しない。`displayPolicyStatus` と source・session・display・providerの期限は別々に検証する。表示許可と `sessionExpiresAt`、`displayUntil`、provider期限の最短値でtoken期限を制限し、期限切れ・表示不可の観測を発行しない。provider期限が明示されない場合は、30分・session・displayの有限境界で制限する。重複観測は短い期限を採用し、表示不可が一つでもあれば発行しない。公開DTOは、観測自体が空なら `known/photos:[]`、全token失敗なら `unknown` と理由、一部失敗なら発行済み写真と `partialReason` を返して候補を維持する。runtime compositionには事前発行フックを接続済みで、production factoryのcodec・registry・DO RPC結線はM16担当との接続単位で残る。参照失効・DO eviction・削除後は410として再取得へ戻る。
 
 ## 参照
 

@@ -34,6 +34,8 @@ export type RuntimeThinkTurnRequest = {
   readonly turnId: string;
   readonly revision: number;
   readonly messages: readonly UIMessage[];
+  /** Authenticated device identity; it is never encoded as an SDK message. */
+  readonly deviceId?: string;
   /** Validated Worker input for the turn builder; this is never sent as an SDK message. */
   readonly runtimeInput?: ThreadTurnRequest;
   readonly signal?: AbortSignal;

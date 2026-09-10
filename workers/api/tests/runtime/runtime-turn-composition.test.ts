@@ -132,4 +132,45 @@ describe('createRuntimeTurnComposition', () => {
     });
     composition.dispose();
   });
+
+  it('does not restore a photo resolver after disposal during asynchronous preparation', async () => {
+    let entered!: () => void;
+    let release!: () => void;
+    const preparationEntered = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const preparation = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const { composition } = createComposition(
+      new RecordingCommit(),
+      1,
+      retention,
+      () => NOW,
+      { digest: () => 'composition-digest' },
+      {
+        textRetention: retention.retention,
+        preparePhotoTokens: async () => {
+          entered();
+          await preparation;
+          return () => 'late-photo-token';
+        },
+      },
+    );
+    composition.onAccepted({
+      terminal: 'message',
+      finalText: JSON.stringify({
+        kind: 'final_message',
+        message: { text: '遅延写真', evidenceIds: [], basis: 'conversational' },
+      }),
+      emptyFinal: false,
+      partCount: 2,
+      bytes: 64,
+    });
+    const pending = composition.getCommittedResponse();
+    await preparationEntered;
+    composition.dispose();
+    release();
+    await expect(pending).resolves.toBeUndefined();
+  });
 });

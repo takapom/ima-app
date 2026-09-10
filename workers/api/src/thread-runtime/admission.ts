@@ -15,6 +15,8 @@ export type ThreadRuntimeTarget = {
 
 export type ThreadRuntimeTurnInput = ThreadRuntimeTarget & {
   readonly idempotencyKey: string;
+  /** Authenticated device identity used only by device-bound photo handles. */
+  readonly deviceId?: string;
   /** Validated Worker request; the DO creates the SDK user message from `text`. */
   readonly input: ThreadTurnRequest;
 };
@@ -83,6 +85,9 @@ export type ThreadRuntimeAdmission =
 const isNonEmptyText = (value: unknown): value is string =>
   typeof value === 'string' && value.length > 0 && value.length <= 512;
 
+const isOpaqueText = (value: unknown): value is string =>
+  typeof value === 'string' && value.length > 0 && value.length <= 128;
+
 const isPositiveRevision = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
 
@@ -102,6 +107,7 @@ export const isThreadRuntimeTurnInput = (value: unknown): value is ThreadRuntime
   if (!isThreadRuntimeTarget(value)) return false;
   if (!('idempotencyKey' in value) || !('input' in value)) return false;
   if (!isNonEmptyText(value.idempotencyKey)) return false;
+  if ('deviceId' in value && !isOpaqueText(value.deviceId)) return false;
   const parsed = v.safeParse(ThreadTurnRequestSchema, value.input);
   if (!parsed.success) return false;
   const request = parsed.output;

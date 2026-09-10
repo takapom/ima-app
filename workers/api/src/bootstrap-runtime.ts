@@ -154,6 +154,7 @@ const runRuntime = async (
   const stub = options.threads.getByName(built.target.threadId);
   const runtimeInput: ThreadRuntimeTurnInput = {
     ...built.target,
+    deviceId: context.deviceId,
     idempotencyKey: built.input.idempotencyKey,
     input: built.input,
   };

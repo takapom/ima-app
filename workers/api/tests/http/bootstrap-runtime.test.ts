@@ -17,6 +17,7 @@ import {
   runtimeFailure,
   type ThreadRuntimeResponseMetadata,
   type ThreadRuntimeTarget,
+  type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
 } from '../../src/thread-runtime/admission';
 import { searchInput, searchResponse } from './router-fixtures';
@@ -93,7 +94,7 @@ const tick = async (): Promise<void> => {
 
 describe('HTTP runtime bootstrap adapter', () => {
   it('splits search threadId, derives a stable null turn ID, and validates the initial response', async () => {
-    let received: ThreadRuntimeTarget | undefined;
+    let received: ThreadRuntimeTurnInput | undefined;
     let receivedHasThreadId: boolean | undefined;
     const stub = makeStub({
       runRuntimeTurn: vi.fn((value: unknown) => {
@@ -115,6 +116,7 @@ describe('HTTP runtime bootstrap adapter', () => {
       await serverTurnId(ownerScopeRef, threadId, searchInput.idempotencyKey),
     );
     expect(received?.revision).toBe(searchInput.revision);
+    expect(received?.deviceId).toBe('device-bootstrap-runtime');
     expect(receivedHasThreadId).toBe(false);
     expect(result.response.response.threadId).toBe(threadId);
     expect(result.response.response.turnId).toBe(received?.turnId);

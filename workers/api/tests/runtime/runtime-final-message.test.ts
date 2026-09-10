@@ -400,12 +400,93 @@ describe('Core committed response to public DTO mapping', () => {
         cardSetId: 'card-set-final',
       }),
     ).toThrowError(new RuntimePublicResponseError('CARD_EVIDENCE_RESOLVER_REQUIRED'));
-    expect(() =>
-      mapCommittedResponseToPublic(response, {
+    const publicResponse = mapCommittedResponseToPublic(response, {
+      ...responseMetadata,
+      cardSetId: 'card-set-final',
+      resolveCardEvidence: (_candidateId, evidenceId) => cardEvidenceLinks.get(evidenceId),
+    });
+    if (publicResponse.kind !== 'cards') throw new Error('expected cards response');
+    expect(publicResponse.cards.hero.facts.photos).toMatchObject({
+      status: 'unknown',
+      reason: '写真を表示できません',
+    });
+  });
+
+  it('withholds missing photo evidence while keeping the card usable', () => {
+    const response = {
+      presentation: 'replace' as const,
+      message: [card.why],
+      hero: { ...card, evidenceIds: ['obs-identity', 'obs-opening'] },
+      alts: [],
+    };
+    const publicResponse = mapCommittedResponseToPublic(response, {
+      ...responseMetadata,
+      cardSetId: 'card-set-photo-withheld',
+      resolveCardEvidence: (_candidateId, evidenceId) => cardEvidenceLinks.get(evidenceId),
+      resolvePhotoToken: () => undefined,
+    });
+    expect(v.safeParse(AssistantResponseSchema, publicResponse).success).toBe(true);
+    if (publicResponse.kind !== 'cards') throw new Error('expected cards response');
+    expect(publicResponse.cards.hero.facts.photos).toMatchObject({
+      status: 'unknown',
+      reason: '写真を表示できません',
+    });
+    expect(JSON.stringify(publicResponse)).not.toContain('photo-internal-token');
+  });
+
+  it('distinguishes an actual empty photo set from a partially withheld set', () => {
+    if (card.photos === null) throw new Error('photo fixture is incomplete');
+    const originalPhotos = card.photos;
+    const response = {
+      presentation: 'replace' as const,
+      message: [card.why],
+      hero: { ...card, photos: { photos: [] } },
+      alts: [],
+    };
+    const emptyResponse = mapCommittedResponseToPublic(response, {
+      ...responseMetadata,
+      cardSetId: 'card-set-photo-empty',
+      resolveCardEvidence: (_candidateId, evidenceId) => cardEvidenceLinks.get(evidenceId),
+      resolvePhotoToken: () => undefined,
+    });
+    if (emptyResponse.kind !== 'cards') throw new Error('expected cards response');
+    expect(emptyResponse.cards.hero.facts.photos).toMatchObject({
+      status: 'known',
+      value: { photos: [] },
+    });
+
+    const partialResponse = mapCommittedResponseToPublic(
+      {
+        ...response,
+        hero: {
+          ...card,
+          photos: {
+            photos: [
+              ...originalPhotos.photos,
+              {
+                photoRef: 'photo-internal-token-2',
+                attributions: [],
+                sourceUrl: null,
+              },
+            ],
+          },
+        },
+      },
+      {
         ...responseMetadata,
-        cardSetId: 'card-set-final',
+        cardSetId: 'card-set-photo-partial',
         resolveCardEvidence: (_candidateId, evidenceId) => cardEvidenceLinks.get(evidenceId),
-      }),
-    ).toThrowError(new RuntimePublicResponseError('PHOTO_TOKEN_RESOLVER_REQUIRED'));
+        resolvePhotoToken: (_candidateId, photoRef) =>
+          photoRef === 'photo-internal-token' ? 'photo-token-public' : undefined,
+      },
+    );
+    if (partialResponse.kind !== 'cards') throw new Error('expected cards response');
+    expect(partialResponse.cards.hero.facts.photos).toMatchObject({
+      status: 'known',
+      value: {
+        photos: [{ photoToken: 'photo-token-public' }],
+        partialReason: '一部の写真は表示できません',
+      },
+    });
   });
 });
