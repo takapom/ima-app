@@ -45,6 +45,7 @@ export type JourneyScreenProps = {
   readonly onRetry?: (query: string, context: JourneySubmitContext) => void;
   readonly onNewSearch?: () => void;
   readonly onPromote?: (candidateId: string) => void;
+  readonly onSourcePress?: (sourceLink: string) => void;
   readonly onHistorySelect?: (item: SearchHistoryItem) => void;
   readonly onSavedPlaceSelect?: (item: SavedPlaceItem) => void;
   readonly onConditionRemoved?: (label: string) => void;
@@ -84,6 +85,7 @@ function JourneyScreenStateOwner({
   onRetry,
   onNewSearch,
   onPromote,
+  onSourcePress,
   onHistorySelect,
   onSavedPlaceSelect,
   onConditionRemoved,
@@ -175,6 +177,7 @@ function JourneyScreenStateOwner({
               cardSetDisplay={renderedResponse.cardSetDisplay}
               messageRecords={renderedMessageRecords}
               onDecide={decide}
+              {...(onSourcePress === undefined ? {} : { onSourcePress })}
               {...(onPromote === undefined ? {} : { onChoose: onPromote })}
             />
           ) : null}

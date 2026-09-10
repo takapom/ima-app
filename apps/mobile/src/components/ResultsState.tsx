@@ -16,6 +16,7 @@ type ResultsStateProps = {
   readonly messageRecords: readonly AssistantMessageRecord[];
   readonly onChoose?: (candidateId: string) => void;
   readonly onDecide: (candidateId: string) => void;
+  readonly onSourcePress?: (sourceLink: string) => void;
 };
 
 export function ResultsState({
@@ -25,6 +26,7 @@ export function ResultsState({
   messageRecords,
   onChoose,
   onDecide,
+  onSourcePress,
 }: ResultsStateProps): React.JSX.Element {
   const messageHistory = buildMessageHistory(messageRecords, cardSetId, cards !== null);
   const statusLabel = cardSetStatusLabel(cardSetDisplay);
@@ -42,7 +44,12 @@ export function ResultsState({
       {statusLabel ? <Text style={styles.statusLabel}>{statusLabel}</Text> : null}
       <MessageHistory items={messageHistory} />
       <Text style={styles.kicker}>主提案</Text>
-      <CandidateCard card={cards.hero} onDecide={onDecide} primary />
+      <CandidateCard
+        card={cards.hero}
+        onDecide={onDecide}
+        primary
+        {...(onSourcePress === undefined ? {} : { onSourcePress })}
+      />
       {cards.alts.length > 0 ? (
         <View style={styles.alternatives}>
           <View style={styles.altHeading}>
@@ -55,6 +62,7 @@ export function ResultsState({
               key={card.candidateId}
               primary={false}
               {...(onChoose === undefined ? {} : { onChoose })}
+              {...(onSourcePress === undefined ? {} : { onSourcePress })}
             />
           ))}
         </View>

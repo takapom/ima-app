@@ -1,5 +1,12 @@
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
+import {
+  collectAttributions,
+  presentCardFacts,
+  presentEvidenceText,
+  type AttributionPresentation,
+  type FactPresentation,
+} from './candidate-card-model';
 import { colors, radii, scaleForDynamicType, spacing, typography } from '../theme/tokens';
 
 type CandidateCardProps = {
@@ -7,6 +14,7 @@ type CandidateCardProps = {
   readonly primary: boolean;
   readonly onChoose?: (candidateId: string) => void;
   readonly onDecide?: (candidateId: string) => void;
+  readonly onSourcePress?: (sourceLink: string) => void;
 };
 
 const cardIdentity = (card: PublicCard) =>
@@ -40,10 +48,27 @@ export function CandidateCard({
   primary,
   onChoose,
   onDecide,
+  onSourcePress,
 }: CandidateCardProps): React.JSX.Element {
   const { fontScale } = useWindowDimensions();
   const identity = cardIdentity(card);
   const name = identity?.name ?? '候補';
+  const facts = presentCardFacts(card);
+  const why = presentEvidenceText(card.why);
+  const diff = card.diff === undefined ? null : presentEvidenceText(card.diff);
+  const identityEvidence =
+    card.facts.identity.status === 'known' ? card.facts.identity.evidence : [];
+  const walkingEvidence =
+    card.facts.walking_route?.status === 'known' ? card.facts.walking_route.evidence : [];
+  const attributions = collectAttributions([
+    identityEvidence,
+    walkingEvidence,
+    facts.openingHours.evidence,
+    facts.price.evidence,
+    facts.lastTrain.evidence,
+    why.evidence,
+    ...(diff === null ? [] : [diff.evidence]),
+  ]);
   const choose = (): void => onChoose?.(card.candidateId);
   const decide = (): void => onDecide?.(card.candidateId);
 
@@ -71,7 +96,14 @@ export function CandidateCard({
           <Text numberOfLines={1} style={styles.name}>
             {name}
           </Text>
-          {card.diff ? <Text style={styles.diff}>{card.diff.text}</Text> : null}
+          {diff ? <Text style={styles.diff}>{diff.text}</Text> : null}
+          <Text numberOfLines={2} style={styles.factSummary}>
+            {[facts.openingHours.label, facts.price.label, facts.lastTrain.label].join(' · ')}
+          </Text>
+          <AttributionList
+            attributions={attributions}
+            {...(onSourcePress === undefined ? {} : { onSourcePress })}
+          />
         </View>
         <Text style={styles.walk}>{walkingMinutes(card)}</Text>
       </Pressable>
@@ -91,9 +123,19 @@ export function CandidateCard({
       </View>
       <View style={styles.heroBody}>
         <Text numberOfLines={3} style={styles.why}>
-          {card.why.text}
+          {why.text}
         </Text>
+        {diff ? <Text style={styles.diff}>{diff.text}</Text> : null}
         <Text style={styles.meta}>{metaLabel(card)}</Text>
+        <View style={styles.factList}>
+          <FactRow label="営業" fact={facts.openingHours} />
+          <FactRow label="価格" fact={facts.price} />
+          <FactRow label="終電" fact={facts.lastTrain} />
+        </View>
+        <AttributionList
+          attributions={attributions}
+          {...(onSourcePress === undefined ? {} : { onSourcePress })}
+        />
         <Pressable
           accessibilityLabel={`${name}に決める`}
           accessibilityRole="button"
@@ -104,6 +146,62 @@ export function CandidateCard({
           <Text style={styles.decideText}>ここにする</Text>
         </Pressable>
       </View>
+    </View>
+  );
+}
+
+type FactRowProps = {
+  readonly label: string;
+  readonly fact: FactPresentation;
+};
+
+function FactRow({ label, fact }: FactRowProps): React.JSX.Element {
+  return (
+    <View style={styles.factRow}>
+      <Text style={styles.factLabel}>{label}</Text>
+      <Text style={[styles.factValue, fact.status === 'known' ? null : styles.factUnavailable]}>
+        {fact.label}
+      </Text>
+    </View>
+  );
+}
+
+type AttributionListProps = {
+  readonly attributions: readonly AttributionPresentation[];
+  readonly onSourcePress?: (sourceLink: string) => void;
+};
+
+function AttributionList({
+  attributions,
+  onSourcePress,
+}: AttributionListProps): React.JSX.Element | null {
+  if (attributions.length === 0) return null;
+  return (
+    <View style={styles.attribution}>
+      <Text style={styles.attributionLabel}>出典</Text>
+      {attributions.map((attribution) => {
+        if (attribution.sourceLink !== null && onSourcePress !== undefined) {
+          const sourceLink = attribution.sourceLink;
+          return (
+            <Pressable
+              accessibilityLabel={`${attribution.label}を開く`}
+              accessibilityRole="link"
+              key={`${attribution.label}:${sourceLink}`}
+              onPress={() => onSourcePress(sourceLink)}
+            >
+              <Text style={styles.attributionLink}>{attribution.label}</Text>
+            </Pressable>
+          );
+        }
+        return (
+          <Text
+            key={`${attribution.label}:${attribution.sourceLink ?? ''}`}
+            style={styles.attributionText}
+          >
+            {attribution.label}
+          </Text>
+        );
+      })}
     </View>
   );
 }
@@ -211,6 +309,53 @@ const styles = StyleSheet.create({
   diff: {
     color: colors.lime,
     fontSize: typography.label,
+  },
+  factSummary: {
+    color: colors.muted,
+    fontSize: typography.label,
+    lineHeight: 17,
+    marginTop: 3,
+  },
+  factList: {
+    gap: 4,
+    marginTop: spacing.section,
+  },
+  factRow: {
+    flexDirection: 'row',
+    gap: spacing.compact,
+  },
+  factLabel: {
+    color: colors.faint,
+    fontSize: typography.label,
+    fontWeight: '700',
+    minWidth: 36,
+  },
+  factValue: {
+    color: colors.text,
+    flex: 1,
+    fontSize: typography.label,
+    lineHeight: 18,
+  },
+  factUnavailable: {
+    color: colors.muted,
+  },
+  attribution: {
+    gap: 3,
+    marginTop: spacing.section,
+  },
+  attributionLabel: {
+    color: colors.faint,
+    fontSize: typography.label,
+    fontWeight: '700',
+  },
+  attributionText: {
+    color: colors.muted,
+    fontSize: typography.label,
+  },
+  attributionLink: {
+    color: colors.lime,
+    fontSize: typography.label,
+    textDecorationLine: 'underline',
   },
   walk: {
     color: colors.cream,
