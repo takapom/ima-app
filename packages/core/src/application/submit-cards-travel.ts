@@ -13,7 +13,7 @@ import {
   type SubmitValidationContext,
   type SubmitValidationIssue,
 } from './submit-cards-evidence';
-import { minimumStayIssue, openIntervalAt } from './submit-cards-stay';
+import { elapsedSecondsFloor, minimumStayIssue, openIntervalAt } from './submit-cards-stay';
 
 const MAX_DATE_MILLISECONDS = 8_640_000_000_000_000;
 
@@ -415,9 +415,9 @@ export const validateLastTrain = (
   const arrivePlaceMilliseconds = Date.parse(info.arrivePlaceAt);
   const arrivalMilliseconds = Date.parse(arrival.arrivalAt);
   const expectedLeaveBy = lastDepartureMilliseconds - info.placeToStationSeconds * 1000 - 180_000;
-  const staySeconds = (leaveByMilliseconds - arrivePlaceMilliseconds) / 1000;
+  const staySeconds = elapsedSecondsFloor(leaveByMilliseconds, arrivePlaceMilliseconds);
   const arithmeticIsValid =
-    Number.isInteger(staySeconds) &&
+    Number.isFinite(staySeconds) &&
     arrivePlaceMilliseconds <= leaveByMilliseconds &&
     leaveByMilliseconds <= lastDepartureMilliseconds &&
     Date.parse(info.arrivesHomeAt) >= lastDepartureMilliseconds &&

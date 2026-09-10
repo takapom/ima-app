@@ -7,6 +7,10 @@ import {
   type SubmitValidationIssue,
 } from './submit-cards-evidence';
 
+/** Round elapsed milliseconds down so sub-second input never overstates available stay. */
+export const elapsedSecondsFloor = (endMilliseconds: number, startMilliseconds: number): number =>
+  Math.floor((endMilliseconds - startMilliseconds) / 1000);
+
 export const openIntervalAt = (
   hours: OpeningHours,
   instant: string,
@@ -59,10 +63,10 @@ export const minimumStayIssue = (
     deadlineAt === undefined
       ? closingMilliseconds
       : Math.min(closingMilliseconds, Date.parse(deadlineAt));
-  const availableStaySeconds = (deadlineMilliseconds - arrivalMilliseconds) / 1000;
+  const availableStaySeconds = elapsedSecondsFloor(deadlineMilliseconds, arrivalMilliseconds);
   if (
     availableStaySeconds !== Number.POSITIVE_INFINITY &&
-    (!Number.isInteger(availableStaySeconds) || availableStaySeconds < minimumStayMinutes * 60)
+    (!Number.isFinite(availableStaySeconds) || availableStaySeconds < minimumStayMinutes * 60)
   ) {
     return issue(
       'CONSTRAINT_VIOLATION',

@@ -66,4 +66,44 @@ describe('open-ended opening intervals', () => {
     expect(expired.resolved).toBeUndefined();
     expect(expired.issue?.code).toBe('STALE_EVIDENCE');
   });
+
+  it('floors fractional arrival time against a finite deadline without overestimating stay', () => {
+    const fixture = makeFixture(['candidate-1'], {
+      maxWalkMinutes: null,
+      requireLastOrderAtArrival: false,
+      openingEndAt: null,
+    });
+    const ids = fixture.ids.get('candidate-1');
+    if (ids === undefined) throw new Error('fractional fixture is missing');
+    const resolved = resolveObservation(
+      ids.opening,
+      'candidate-1',
+      'hero.evidenceIds[0]',
+      fixture.context,
+      fixture.registry,
+    );
+    if (resolved.resolved === undefined) throw new Error('fractional observation was not resolved');
+    const observations = new Map([['opening_hours', resolved.resolved]] as const);
+
+    expect(
+      minimumStayIssue(
+        'candidate-1',
+        'hero',
+        observations,
+        '2026-09-10T12:00:00.123Z',
+        20,
+        '2026-09-10T12:30:00Z',
+      ),
+    ).toBeUndefined();
+    expect(
+      minimumStayIssue(
+        'candidate-1',
+        'hero',
+        observations,
+        '2026-09-10T12:00:00.123Z',
+        20,
+        '2026-09-10T12:20:00.122Z',
+      )?.code,
+    ).toBe('CONSTRAINT_VIOLATION');
+  });
 });

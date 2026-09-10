@@ -236,9 +236,11 @@ homeStationRefは文脈の対応駅一覧から選ぶ。未指定は保存条件
 ```text
 arrivePlaceAt = evaluatedAt + userToPlaceSeconds
 leaveBy = lastDepartureAt - placeToStationSeconds - 180秒
-availableStaySeconds = leaveBy - arrivePlaceAt
+availableStaySeconds = floor((leaveBy - arrivePlaceAt) / 1秒)
 usable = availableStaySeconds >= minimumStayMinutes * 60
 ```
+
+ミリ秒を含む時刻差は秒単位で切り捨て、滞在可能時間を過大評価しない。
 
 閉店・ラストオーダーは終電の退出期限とは別の事実。LOを退店時刻として扱わない。営業と滞在条件を合わせる場合はclosedAtとleaveByの早い方を使い、LOは到着前注文可否として別判定する。単一の「入れる」boolに潰さない。
 

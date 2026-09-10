@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { validateSubmitCards } from './submit-cards';
-import { makeFixture, makeInput, makeSelection } from './submit-cards-fixtures';
+import { addObservation, makeFixture, makeInput, makeSelection } from './submit-cards-fixtures';
 
 describe('submit-cards arrival and last-train validation', () => {
   it('checks last order independently from opening hours and validates last-train arithmetic', () => {
@@ -44,6 +44,55 @@ describe('submit-cards arrival and last-train validation', () => {
       badArithmetic.registry,
     );
     expect(badResult.status).toBe('invalid');
+  });
+
+  it('floors sub-second last-train availability and still honors a finite train deadline', () => {
+    const fixture = makeFixture(['candidate-1'], {
+      homeStationRef: 'home-1',
+      minimumStayMinutes: 20,
+      openingEndAt: null,
+    });
+    const ids = fixture.ids.get('candidate-1');
+    if (ids === undefined || ids.lastTrain === undefined)
+      throw new Error('fractional train missing');
+    fixture.registry.invalidateObservationReuse(fixture.context.scope, 'candidate-1', 'last_train');
+    const fractionalTrain = addObservation(
+      fixture.registry,
+      fixture.context,
+      'candidate-1',
+      'last_train',
+      {
+        serviceDate: '2026-09-10',
+        fromStationRef: 'station-from',
+        homeStationRef: 'home-1',
+        journeyRef: 'journey-fractional',
+        lastDepartureAt: '2026-09-10T23:00:00Z',
+        arrivesHomeAt: '2026-09-10T23:30:00Z',
+        transfers: [],
+        placeToStationSeconds: 600,
+        arrivePlaceAt: '2026-09-10T12:10:00.123Z',
+        leaveBy: '2026-09-10T22:47:00Z',
+        availableStaySeconds: 38_219,
+        minimumStayMinutes: 20,
+        usable: true,
+      },
+    );
+    expect(
+      fixture.registry.restoreObservationReuse(fixture.context.scope, 'candidate-1', 'last_train', [
+        fractionalTrain,
+      ]),
+    ).toBe(true);
+    const selection = makeSelection('candidate-1', ids);
+    selection.evidenceIds = selection.evidenceIds.map((id) =>
+      id === ids.lastTrain ? fractionalTrain : id,
+    );
+    const context = {
+      ...fixture.context,
+      serverNow: '2026-09-10T12:00:00.123Z',
+      departureAt: '2026-09-10T12:00:00.123Z',
+    };
+    const result = validateSubmitCards(makeInput([selection]), context, fixture.registry);
+    expect(result.status).toBe('valid');
   });
 
   it('treats an opening interval end as exclusive', () => {
