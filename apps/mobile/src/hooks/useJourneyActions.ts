@@ -41,6 +41,7 @@ import {
   canCommitJourneyOperation,
   type JourneyOperationToken,
 } from '../state/journey-operation-gate';
+import { createJourneySaveOperationRegistry } from './journey-save-operation';
 export type JourneyActionServices = {
   readonly map: JourneyMapService;
   readonly share: JourneyShareService;
@@ -74,6 +75,7 @@ export type JourneyActionsController = {
   readonly recover: (candidateId: string) => RecoverIntent | null;
   readonly openMap: (card: PublicCard) => Promise<void>;
   readonly share: (card: PublicCard) => Promise<void>;
+  readonly cancelPending: () => void;
   readonly reportFailure: () => void;
   readonly clearNotice: () => void;
   readonly reset: () => void;
@@ -81,7 +83,7 @@ export type JourneyActionsController = {
 const contextKeyFor = (threadId: string, state: AssistantResponseState): string => {
   const display = state.cardSetDisplay;
   const source = display.kind === 'kept' ? display.sourceResponseId : display.responseId;
-  return [threadId, state.cardSetId ?? '', source ?? ''].join(':');
+  return [threadId, state.revision, state.cardSetId ?? '', source ?? ''].join(':');
 };
 const rejectionText = (reason: string): string => {
   if (reason === 'candidate_not_found') return 'この候補は現在の検索結果にありません。';
@@ -120,6 +122,7 @@ export const useJourneyActions = ({
   const operationGeneration = useRef(0);
   const noticeToken = useRef(0);
   const actionStateRef = useRef(actionState);
+  const saveOperations = useMemo(() => createJourneySaveOperationRegistry(), []);
   const initialized = useRef(false);
   const mounted = useRef(false);
   const fallbackServices = useMemo(
@@ -176,9 +179,11 @@ export const useJourneyActions = ({
       mounted.current = false;
       operationGeneration.current += 1;
       noticeToken.current += 1;
+      saveOperations.abortAll();
+      saveOperations.clearKeys();
       activeOperations.clear();
     };
-  }, []);
+  }, [saveOperations]);
   useEffect(() => {
     if (!initialized.current) {
       initialized.current = true;
@@ -193,8 +198,10 @@ export const useJourneyActions = ({
       return next;
     });
     setNotice(null);
+    saveOperations.abortAll();
     inFlight.current.clear();
-  }, [candidateIds, contextKey]);
+    saveOperations.clearKeys();
+  }, [candidateIds, contextKey, saveOperations]);
   const reject = useCallback((reason: string): void => {
     setNotice({ tone: 'error', text: rejectionText(reason) });
   }, []);
@@ -268,15 +275,10 @@ export const useJourneyActions = ({
     },
     [applyPure, onRecover],
   );
-
   const save = useCallback(
     async (card: PublicCard): Promise<void> => {
       const operationKey = `save:${contextKey}:${card.candidateId}`;
-      if (
-        !mounted.current ||
-        contextRef.current !== contextKey ||
-        inFlight.current.has(operationKey)
-      ) {
+      if (!mounted.current || contextRef.current !== contextKey) {
         return;
       }
       if (actionStateRef.current.savedCandidateIds.includes(card.candidateId)) {
@@ -284,13 +286,21 @@ export const useJourneyActions = ({
         setNotice({ tone: 'info', text: 'この候補は保存済みです。' });
         return;
       }
-      inFlight.current.add(operationKey);
+      const controller = saveOperations.begin(operationKey);
+      if (controller === null) return;
       const generation = operationGeneration.current;
       noticeToken.current += 1;
       const token = currentOperationToken();
       setNotice({ tone: 'info', text: '保存しています…' });
-      const result = await saveJourneyCandidate(services.storage, card);
-      inFlight.current.delete(operationKey);
+      let result: Awaited<ReturnType<typeof saveJourneyCandidate>>;
+      try {
+        result = await saveJourneyCandidate(services.storage, card, {
+          idempotencyKey: saveOperations.keyFor(operationKey),
+          signal: controller.signal,
+        });
+      } finally {
+        saveOperations.finish(operationKey, controller);
+      }
       if (!isCurrentOperation(generation)) return;
       if (result.status === 'saved' || result.status === 'already_saved') {
         setActionState((current) => {
@@ -311,12 +321,27 @@ export const useJourneyActions = ({
         }
       } else {
         if (canCommitJourneyNotice(currentOperationToken(), token)) {
-          setNotice({ tone: 'error', text: '保存できませんでした。保存内容は変更していません。' });
+          setNotice({
+            tone: 'error',
+            text: '保存結果を確認できませんでした。保存一覧を確認してください。',
+          });
         }
       }
     },
-    [actionContext, contextKey, currentOperationToken, isCurrentOperation, services.storage],
+    [
+      actionContext,
+      contextKey,
+      currentOperationToken,
+      isCurrentOperation,
+      saveOperations,
+      services.storage,
+    ],
   );
+  const cancelPending = useCallback((): void => {
+    operationGeneration.current += 1;
+    noticeToken.current += 1;
+    saveOperations.abortAll();
+  }, [saveOperations]);
 
   const openMap = useCallback(
     async (card: PublicCard): Promise<void> => {
@@ -426,15 +451,15 @@ export const useJourneyActions = ({
     setNotice({ tone: 'error', text: '操作を完了できませんでした。もう一度試してください。' });
   }, [contextKey]);
   const reset = useCallback(() => {
-    operationGeneration.current += 1;
-    noticeToken.current += 1;
+    cancelPending();
     setStateContextKey(contextKey);
     const next = resetJourneyActionContext();
     actionStateRef.current = next;
     setActionState(next);
     setNotice(null);
     inFlight.current.clear();
-  }, [contextKey]);
+    saveOperations.clearKeys();
+  }, [cancelPending, contextKey, saveOperations]);
 
   return {
     state: effectiveState,
@@ -448,6 +473,7 @@ export const useJourneyActions = ({
     recover,
     openMap,
     share,
+    cancelPending,
     reportFailure,
     clearNotice,
     reset,

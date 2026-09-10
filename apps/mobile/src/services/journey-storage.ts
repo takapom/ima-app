@@ -1,5 +1,10 @@
-import type { PublicCard } from '@ima/contracts';
+import type { PublicCard, RetentionMetadata } from '@ima/contracts';
 import type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
+import type {
+  SavedReferenceScope,
+  SavedReferenceSaveResult,
+  SavedReferenceService,
+} from './saved-reference-service';
 
 export type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
 
@@ -9,6 +14,16 @@ export type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types
  * state still stores only candidate IDs and never copies this card.
  */
 export type JourneySaveCandidate = PublicCard;
+
+export type JourneyStorageSaveOptions = {
+  /** Stable for one logical save retry; the API uses it for idempotency. */
+  readonly idempotencyKey?: string;
+  /** Cancel only the in-flight request; a completed server save is not undone. */
+  readonly signal?: AbortSignal;
+};
+
+export type JourneyStorageFailureReason =
+  'aborted' | 'api' | 'invalid_input' | 'retention_denied' | 'stale' | 'storage_unavailable';
 
 export type SaveCandidateResult =
   | {
@@ -21,28 +36,103 @@ export type SaveCandidateResult =
       readonly localSavedEntryId: LocalSavedEntryId;
       readonly serverSavedPlaceRef: ServerSavedPlaceRef | null;
     }
-  | { readonly status: 'failed'; readonly reason: 'storage_unavailable' | 'retention_denied' };
+  | {
+      readonly status: 'failed';
+      readonly reason: JourneyStorageFailureReason;
+    };
 
 export type JourneyStorageService = {
-  readonly saveCandidate: (candidate: JourneySaveCandidate) => Promise<SaveCandidateResult>;
+  readonly saveCandidate: (
+    candidate: JourneySaveCandidate,
+    options?: JourneyStorageSaveOptions,
+  ) => Promise<SaveCandidateResult>;
 };
 
-/** SQLite is a later unit; never report an unpersisted candidate as saved. */
+/** No storage injection means the UI cannot claim that a candidate was saved. */
 export const createUnavailableJourneyStorageService = (): JourneyStorageService => ({
   saveCandidate: () => Promise.resolve({ status: 'failed', reason: 'storage_unavailable' }),
 });
 
+export type SavedReferenceJourneyStorageOptions = {
+  readonly service: SavedReferenceService;
+  /** The host owns the active thread/revision and returns null after expiry. */
+  readonly currentScope: () => SavedReferenceScope | null;
+  /** Dedicated owner-scoped reference policy; never derive this from card evidence. */
+  readonly referenceRetentionFor: (candidate: JourneySaveCandidate) => RetentionMetadata | null;
+};
+
+const failed = (reason: JourneyStorageFailureReason): SaveCandidateResult => ({
+  status: 'failed',
+  reason,
+});
+
+const mapSavedReferenceResult = (result: SavedReferenceSaveResult): SaveCandidateResult => {
+  if (result.status === 'failed') {
+    return failed(result.reason);
+  }
+  return {
+    status: result.status,
+    localSavedEntryId: result.localSavedEntryId,
+    serverSavedPlaceRef: result.serverSavedPlaceRef,
+  };
+};
+
 /**
- * Keep storage failures at the service boundary. SQLite is connected in M21;
- * M20 callers can inject the same shape with an in-memory Fake.
+ * Adapt the owner-scoped API/SQLite service to the card action boundary. The
+ * reference policy and active scope are injected by the host, so a public
+ * card's provider/display evidence can never silently authorize persistence.
  */
+export const createSavedReferenceJourneyStorage = (
+  options: SavedReferenceJourneyStorageOptions,
+): JourneyStorageService => ({
+  saveCandidate: async (candidate, saveOptions = {}) => {
+    const idempotencyKey = saveOptions.idempotencyKey;
+    if (idempotencyKey === undefined || idempotencyKey.length === 0) {
+      return failed('invalid_input');
+    }
+
+    let referenceRetention: RetentionMetadata | null;
+    try {
+      referenceRetention = options.referenceRetentionFor(candidate);
+    } catch {
+      return failed('retention_denied');
+    }
+    if (referenceRetention === null) return failed('retention_denied');
+
+    let scope: SavedReferenceScope | null;
+    try {
+      scope = options.currentScope();
+    } catch {
+      return failed('stale');
+    }
+    if (scope === null) return failed('stale');
+
+    try {
+      const result = await options.service.save({
+        scope,
+        candidateId: candidate.candidateId,
+        idempotencyKey,
+        referenceRetention,
+        ...(saveOptions.signal === undefined ? {} : { signal: saveOptions.signal }),
+      });
+      return mapSavedReferenceResult(result);
+    } catch {
+      return failed('storage_unavailable');
+    }
+  },
+});
+
+/** Keep storage failures at the service boundary; only a formal host adapter may report success. */
 export const saveJourneyCandidate = async (
   service: JourneyStorageService,
   candidate: JourneySaveCandidate,
+  saveOptions?: JourneyStorageSaveOptions,
 ): Promise<SaveCandidateResult> => {
   try {
-    return await service.saveCandidate(candidate);
+    return saveOptions === undefined
+      ? await service.saveCandidate(candidate)
+      : await service.saveCandidate(candidate, saveOptions);
   } catch {
-    return { status: 'failed', reason: 'storage_unavailable' };
+    return failed('storage_unavailable');
   }
 };

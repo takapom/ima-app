@@ -279,9 +279,10 @@ function JourneyScreenStateOwner({
   ]);
   const cancel = useCallback((): void => {
     setRequestStartRevision(null);
+    actions.cancelPending();
     journey.cancelRequest();
     onCancel?.();
-  }, [journey.cancelRequest, onCancel]);
+  }, [actions.cancelPending, journey.cancelRequest, onCancel]);
   const reset = useCallback((): void => {
     setRequestStartRevision(null);
     actions.reset();

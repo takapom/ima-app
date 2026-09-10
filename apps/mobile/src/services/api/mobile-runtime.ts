@@ -15,6 +15,7 @@ import type {
 } from './journey-api-binding';
 import { createJourneyApiComposition } from './composition';
 import { createJourneyPhotoClient } from './photo-client';
+import { createRuntimeId } from '../runtime-id';
 import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from './types';
 
 export type MobileRuntimeEnvironment = Readonly<Record<string, string | undefined>>;
@@ -83,15 +84,6 @@ const credentialsFor = (
   return appToken === undefined || deviceId === undefined || ownerCredential === undefined
     ? null
     : { appToken, deviceId, ownerCredential };
-};
-
-let fallbackIdSequence = 0;
-
-const randomId = (prefix: string): string => {
-  const uuid = globalThis.crypto?.randomUUID?.();
-  return uuid === undefined
-    ? `${prefix}-${Date.now().toString(36)}-${++fallbackIdSequence}`
-    : `${prefix}-${uuid}`;
 };
 
 const unavailableLocation: LocationSnapshot = {
@@ -197,7 +189,7 @@ export const createMobileJourneyRuntime = (
       selected.mode === 'live' ? 'live_credentials_unavailable' : 'fixture_credentials_missing',
     );
   }
-  const idFactory = options.idFactory ?? randomId;
+  const idFactory = options.idFactory ?? createRuntimeId;
   const now = options.now ?? (() => new Date().toISOString());
   const requestIdFactory = options.requestIdFactory ?? (() => idFactory('request'));
   const clientOptions = {

@@ -255,4 +255,20 @@ describe('journey candidate actions', () => {
     expect(saved.state.promotedCandidateId).toBe('alt-1');
     expect(saved.state.savedCandidateIds).toEqual(['hero']);
   });
+
+  it('keeps completed saves while a response is retained or replaced', () => {
+    const saved = journeyActionReducer(
+      createJourneyActionState(),
+      { type: 'save', candidateId: 'hero' },
+      context,
+    );
+    if (!saved.accepted) throw new Error('save should be accepted');
+
+    expect(
+      reconcileJourneyActionContext(saved.state, context.candidateIds).savedCandidateIds,
+    ).toEqual(['hero']);
+    expect(reconcileJourneyActionContext(saved.state, ['new-hero']).savedCandidateIds).toEqual([
+      'hero',
+    ]);
+  });
 });
