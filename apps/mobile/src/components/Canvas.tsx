@@ -1,12 +1,15 @@
 import { KeyboardAvoidingView, Platform, type ViewProps } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { keyboardOffsetForSafeArea } from '../theme/safe-area';
 import { colors } from '../theme/tokens';
 
 export function Canvas({ children, ...props }: ViewProps): React.JSX.Element {
+  const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView
       {...props}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
+      keyboardVerticalOffset={keyboardOffsetForSafeArea(insets.bottom)}
       style={[styles.canvas, props.style]}
     >
       {children}

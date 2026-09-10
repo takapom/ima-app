@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JourneyScreen } from './src/screens/JourneyScreen';
 import {
   createMobileJourneyRuntime,
@@ -13,6 +14,14 @@ export type AppProps = {
 };
 
 export default function App({ journeyApi }: AppProps): React.JSX.Element {
+  return (
+    <SafeAreaProvider>
+      <AppContent {...(journeyApi === undefined ? {} : { journeyApi })} />
+    </SafeAreaProvider>
+  );
+}
+
+function AppContent({ journeyApi }: AppProps): React.JSX.Element {
   const runtime = useMemo(() => createMobileJourneyRuntime(), []);
   const binding = journeyApi ?? runtime.binding;
   if (binding !== null && binding !== undefined) return <JourneyScreen api={binding} />;

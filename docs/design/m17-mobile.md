@@ -33,7 +33,7 @@ Appからrequest callbackを渡さない初期状態では、入力を編集で�
 
 `Canvas`は標準React Nativeの`KeyboardAvoidingView`でiOS/Androidのキーボード表示時にレイアウトを追従させる。`scaleForDynamicType`は端末の`fontScale`に応じて入力欄と写真枠の最小寸法を広げ、2倍を超える文字サイズでも枠だけを上限で止めない。本文や写真状態ラベルはfont scalingを維持し、装飾アイコンだけを固定する。Drawerの閉じる・戻る操作はVoiceOverのbuttonラベルと48pt領域を持ち、一覧はScrollViewで大きい文字でも到達できる。
 
-フォントのライセンス同梱と読み込み、splash、safe-area SDKの接続、VoiceOver/Dynamic Type/キーボードの実機確認、390ptスクリーンショット比較はC2後半に残す。`expo-font`、`expo-splash-screen`、`react-native-safe-area-context`のExpo 57互換版の導入は後半で行う。install完了確認前のimportは行わず、lockfileも手書きしない。Dela Gothic One/Noto Sans JPのバイナリは正式配布元から取得してライセンス・SHA-256・サイズを対応付けるまで同梱しない。Expo起動・iPhone実機・実APIのpending/response接続は未実測である。
+フォントのライセンス同梱と読み込み、splash、VoiceOver/Dynamic Type/キーボードの実機確認、390ptスクリーンショット比較はC2後半に残す。`react-native-safe-area-context`のExpo 57互換版は導入済みで、`App.tsx`の`SafeAreaProvider`を起点にCanvasのkeyboard offset、AppBarのtop inset、Drawerの上下inset、Composerのbottom insetへ接続した。Composerのbottom insetは`KeyboardAvoidingView`のoffsetで一度だけ相殺し、home indicator分の二重余白を避ける。実機でのnotch・home indicator・keyboard境界は未実測である。`expo-font`、`expo-splash-screen`の接続、install完了確認前の追加import、lockfileの手編集は行わない。Dela Gothic One/Noto Sans JPのバイナリは正式配布元から取得してライセンス・SHA-256・サイズを対応付けるまで同梱しない。Expo起動・iPhone実機・実APIのpending/response接続は未実測である。
 
 フォントの取得元候補は[Google FontsのDela Gothic One](https://fonts.google.com/specimen/Dela%2BGothic%2BOne)と[Noto Sans Japanese](https://fonts.google.com/noto/specimen/Noto%2BSans%2BJP)で、同梱時は[Google FontsのOFLガイド](https://googlefonts.github.io/gf-guide/license-file.html)に従って`OFL.txt`と著作権表示を対応させる。現時点ではバイナリを取得していないため、SHA-256とサイズは未確定である。
 

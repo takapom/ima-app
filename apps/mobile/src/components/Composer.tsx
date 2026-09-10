@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MAX_CHIPS, MAX_QUERY_LENGTH, appendSuggestion, uniqueTerms } from '../state/journey-input';
+import { paddingWithSafeArea } from '../theme/safe-area';
 import { colors, radii, scaleForDynamicType, spacing, typography } from '../theme/tokens';
 
 type ComposerProps = {
@@ -26,6 +28,7 @@ export function Composer({
   maxLength = MAX_QUERY_LENGTH,
 }: ComposerProps): React.JSX.Element {
   const { fontScale } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const visibleSuggestions = uniqueTerms(suggestions, MAX_CHIPS);
   const canSubmit =
     !disabled &&
@@ -36,7 +39,12 @@ export function Composer({
   const canCancel = pending && onCancel !== undefined;
   const actionEnabled = pending ? canCancel : canSubmit;
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { paddingBottom: paddingWithSafeArea(spacing.section, insets.bottom) },
+      ]}
+    >
       {visibleSuggestions.length > 0 ? (
         <View style={styles.suggestions}>
           {visibleSuggestions.map((suggestion) => (

@@ -1,5 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ConditionEditor } from './ConditionEditor';
+import { paddingWithSafeArea } from '../theme/safe-area';
 import { colors, radii, spacing, typography } from '../theme/tokens';
 import type { ConditionScope, JourneyConditions } from '../state/journey-input';
 import type { DrawerView, SavedPlaceItem, SearchHistoryItem } from '../state/journey-shell';
@@ -45,6 +47,7 @@ export function Drawer({
   onSavedPlaceSelect,
 }: DrawerProps): React.JSX.Element | null {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   if (!open) return null;
 
   const drawerWidth = Math.min(width * 0.86, 320);
@@ -60,7 +63,17 @@ export function Drawer({
   return (
     <>
       <Pressable accessibilityLabel="メニューを閉じる" onPress={onClose} style={styles.scrim} />
-      <View accessibilityViewIsModal style={[styles.drawer, { width: drawerWidth }]}>
+      <View
+        accessibilityViewIsModal
+        style={[
+          styles.drawer,
+          {
+            paddingBottom: paddingWithSafeArea(spacing.section, insets.bottom),
+            paddingTop: paddingWithSafeArea(spacing.section, insets.top),
+            width: drawerWidth,
+          },
+        ]}
+      >
         <View style={styles.header}>
           {view === 'home' ? (
             <Text style={styles.logo}>

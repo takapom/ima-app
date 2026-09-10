@@ -1,4 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { paddingWithSafeArea } from '../theme/safe-area';
 import { colors, radii, spacing, typography } from '../theme/tokens';
 
 type AppBarProps = {
@@ -7,8 +9,11 @@ type AppBarProps = {
 };
 
 export function AppBar({ onMenu, onNewSearch }: AppBarProps): React.JSX.Element {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { paddingTop: paddingWithSafeArea(spacing.compact, insets.top) }]}
+    >
       <Pressable
         accessibilityLabel="メニュー"
         accessibilityRole="button"
@@ -44,7 +49,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.page,
-    paddingVertical: spacing.compact,
+    paddingBottom: spacing.compact,
   },
   iconButton: {
     alignItems: 'center',
