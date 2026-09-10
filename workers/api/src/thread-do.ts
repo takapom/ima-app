@@ -7,6 +7,7 @@ import {
   type DurableCommitPort,
 } from './thread-runtime/commit-port';
 import {
+  runtimeFailure,
   type ThreadRuntimeCancelResult,
   type ThreadRuntimeReplayResult,
   type ThreadRuntimeResponseMetadata,
@@ -15,6 +16,8 @@ import {
   type ThreadRuntimeTurnResult,
 } from './thread-runtime/admission';
 import { threadRuntimeResultFromNative } from './thread-runtime/native-result';
+import { createRuntimeSessionExpiryGate } from './thread-runtime/session-expiry';
+import { cleanupRuntimeResources } from './thread-runtime/thread-cleanup';
 import {
   isThreadConflictError,
   isThreadStateError,
@@ -69,6 +72,18 @@ export class ThreadDO
   private readonly ready: Promise<void>;
   private readonly runtimeController: ThreadRuntimeController;
   private readonly runtimeCommit: DurableCommitPort;
+  private readonly sessionExpired = createRuntimeSessionExpiryGate({
+    isExpired: () => this.runtimeProductionSessionExpired(),
+    readScope: () => {
+      const row = this.rowSync();
+      return row === undefined
+        ? undefined
+        : { ownerScopeRef: row.owner_scope_ref, threadId: row.thread_id };
+    },
+    cleanupRuntime: () => this.runtimeController.cleanupForDelete(),
+    clearContext: (scope) => this.clearRuntimeProductionContext(scope),
+    clearPhotos: () => this.photoReferences.clear(),
+  });
   private readonly photoReferences = createThreadPhotoReferences({
     clock: () => this.photoReferenceNow(),
     binding: () => this.rowSync(),
@@ -411,11 +426,19 @@ export class ThreadDO
         );
       });
       if (cleanupRequired) {
-        try {
-          await this.runtimeController.cleanupForDelete();
-        } finally {
-          await this.photoReferences.clear();
-        }
+        await cleanupRuntimeResources({
+          cleanupRuntime: () => this.runtimeController.cleanupForDelete(),
+          clearContext: () => {
+            const row = this.rowSync();
+            if (row !== undefined) {
+              this.clearRuntimeProductionContext({
+                ownerScopeRef,
+                threadId: row.thread_id,
+              });
+            }
+          },
+          clearPhotos: () => this.photoReferences.clear(),
+        });
       }
       return { ok: true };
     } catch (error: unknown) {
@@ -452,6 +475,8 @@ export class ThreadDO
   }
 
   async runRuntimeTurn(value: unknown): Promise<ThreadRuntimeTurnResult> {
+    await this.ready;
+    if (await this.sessionExpired()) return runtimeFailure('RUNTIME_FAILED');
     return this.runtimeController.runRuntimeTurn(value);
   }
 
@@ -460,10 +485,14 @@ export class ThreadDO
   }
 
   async replayRuntimeTurn(value: unknown): Promise<ThreadRuntimeReplayResult> {
+    await this.ready;
+    if (await this.sessionExpired()) return { status: 'unavailable', code: 'NOT_FOUND' };
     return this.runtimeController.replayRuntimeTurn(value);
   }
 
   async listRuntimeResponses(ownerScopeRef: string): Promise<ThreadRuntimeResponseMetadata[]> {
+    await this.ready;
+    if (await this.sessionExpired()) return [];
     return this.runtimeController.listRuntimeResponses(ownerScopeRef);
   }
 }

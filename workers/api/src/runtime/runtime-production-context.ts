@@ -19,6 +19,12 @@ import {
   OriginalTurnSchema,
 } from '@ima/core';
 import type { RuntimeThinkComposition } from './runtime-think-connection';
+import {
+  referenceSnapshotFor,
+  stateFromReference,
+  type RuntimeProductionContextPersistence,
+  type RuntimeProductionContextStateForReference,
+} from './runtime-production-context-reference';
 
 type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 
@@ -31,6 +37,7 @@ type ProductionContextState = {
   readonly history: readonly ModelHistoryEntry[];
   readonly originalTurns: readonly OriginalTurn[];
   readonly cardSet: CardSetSource | null;
+  readonly cardSetReferenceOnly: boolean;
   readonly evidence: readonly ModelEvidenceSource[];
   readonly savedPlaceRefs: readonly string[];
 };
@@ -103,6 +110,7 @@ const copyState = (state: ProductionContextState): ProductionContextState => ({
   history: structuredClone(state.history),
   originalTurns: structuredClone(state.originalTurns),
   cardSet: copyCardSet(state.cardSet),
+  cardSetReferenceOnly: state.cardSetReferenceOnly,
   evidence: structuredClone(state.evidence),
   savedPlaceRefs: [...state.savedPlaceRefs],
 });
@@ -222,6 +230,7 @@ const stagedCardSetFor = (
   scope: RegistryScope,
   previous: CardSetSource | null,
   excludedCandidateIds: readonly string[],
+  referenceOnly = false,
 ): CardSetSource | null => {
   if (previous === null) return null;
   const entryIds = new Set(previous.record.entries.map((entry) => entry.candidateId));
@@ -239,7 +248,16 @@ const stagedCardSetFor = (
     selectedCandidateId,
     excludedCandidateIds: excluded,
   });
-  return parsed.success ? cardSetFor(registry, scope, parsed.output) : null;
+  if (!parsed.success) return null;
+  const resolved = cardSetFor(registry, scope, parsed.output);
+  if (resolved !== null || !referenceOnly) return resolved;
+  return {
+    record: parsed.output,
+    candidates: previous.candidates.map((candidate) => ({
+      ...candidate,
+      excluded: excluded.includes(candidate.candidateId) || candidate.excluded,
+    })),
+  };
 };
 
 const cardSetFromResponse = (
@@ -302,17 +320,52 @@ const replaceByTurn = (
 
 export const createRuntimeProductionContextStore = (input: {
   readonly registry: CandidateObservationRegistryPort;
+  readonly persistence?: RuntimeProductionContextPersistence;
+  readonly sessionExpiresAt?: () => string | undefined;
+  readonly now?: () => string;
 }): RuntimeProductionContextStore => {
   const scopeFor = (scope: RegistryScope): RegistryScope => ({ ...scope });
   let state: ProductionContextState = {
     history: [],
     originalTurns: [],
     cardSet: null,
+    cardSetReferenceOnly: false,
     evidence: [],
     savedPlaceRefs: [],
   };
   let pending: PendingTurn | undefined;
   let boundScope: RegistryScope | undefined;
+  let restored = false;
+
+  const restoreForScope = (scope: RegistryScope): void => {
+    if (restored) return;
+    restored = true;
+    const snapshot = input.persistence?.load(scope);
+    if (snapshot === undefined) return;
+    const now = Date.parse(input.now?.() ?? new Date().toISOString());
+    if (
+      snapshot.ownerScopeRef !== scope.ownerScopeRef ||
+      snapshot.threadId !== scope.threadId ||
+      !Number.isFinite(now) ||
+      now >= Date.parse(snapshot.sessionExpiresAt)
+    ) {
+      return;
+    }
+    state = stateFromReference(snapshot);
+  };
+
+  const persistState = (scope: RegistryScope): void => {
+    const sessionExpiresAt = input.sessionExpiresAt?.();
+    if (input.persistence === undefined || sessionExpiresAt === undefined) return;
+    const referenceState: RuntimeProductionContextStateForReference = state;
+    input.persistence.save(
+      referenceSnapshotFor({
+        scope,
+        sessionExpiresAt,
+        state: referenceState,
+      }),
+    );
+  };
 
   const beginTurn = (
     request: ThreadTurnRequest,
@@ -328,12 +381,16 @@ export const createRuntimeProductionContextStore = (input: {
       throw new Error('RUNTIME_CONTEXT_SCOPE_MISMATCH');
     }
     boundScope ??= safeScope;
-    const cardSet = stagedCardSetFor(
+    restoreForScope(safeScope);
+    const stagedCardSet = stagedCardSetFor(
       input.registry,
       safeScope,
       copyCardSet(state.cardSet),
       request.excludeCandidateIds,
+      state.cardSetReferenceOnly,
     );
+    const cardSet =
+      stagedCardSet ?? (state.cardSetReferenceOnly ? copyCardSet(state.cardSet) : null);
     pending = {
       key: turnKey(safeScope, request),
       input: structuredClone(request),
@@ -380,6 +437,7 @@ export const createRuntimeProductionContextStore = (input: {
             active.scope,
             responseCardSet,
             active.input.excludeCandidateIds,
+            active.base.cardSetReferenceOnly && responseCardSet === active.cardSet,
           )
         : responseCardSet;
     if (parsed.output.kind === 'cards' && nextCardSet === null) return;
@@ -394,9 +452,14 @@ export const createRuntimeProductionContextStore = (input: {
       active.base.evidence.map((source) => [source.observationId, source]),
     );
     for (const source of evidence) byEvidenceId.set(source.observationId, source);
+    const referenceCandidateIds = new Set(
+      active.base.cardSetReferenceOnly
+        ? (active.cardSet?.record.entries.map((entry) => entry.candidateId) ?? [])
+        : [],
+    );
     for (const candidateId of active.input.excludeCandidateIds) {
       const candidate = input.registry.readCandidate(active.scope, candidateId);
-      if (candidate === undefined) return;
+      if (candidate === undefined && !referenceCandidateIds.has(candidateId)) return;
     }
     try {
       for (const candidateId of active.input.excludeCandidateIds) {
@@ -412,10 +475,13 @@ export const createRuntimeProductionContextStore = (input: {
       history: appendBounded(active.base.history, [userHistory, ...assistantHistory], 32),
       originalTurns: replaceByTurn(active.base.originalTurns, originalTurn),
       cardSet: nextCardSet,
+      cardSetReferenceOnly:
+        parsed.output.kind === 'cards' ? false : active.base.cardSetReferenceOnly,
       evidence: [...byEvidenceId.values()].slice(-64),
       savedPlaceRefs: [...active.input.savedPlaceRefs],
     };
     pending = undefined;
+    persistState(active.scope);
   };
 
   return {

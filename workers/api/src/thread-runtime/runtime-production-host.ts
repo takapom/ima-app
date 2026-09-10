@@ -5,6 +5,8 @@ import {
   createRuntimeProductionConnectionOptions,
   type RuntimeProductionOverrides,
 } from '../runtime/runtime-production-factory';
+import { sessionExpiryAt } from '../runtime/runtime-production-support';
+import { createDurableRuntimeContextPersistence } from './runtime-context-persistence';
 import type { RuntimeThinkConnectionOptions } from '../runtime/runtime-think-connection';
 import { RuntimeThinkHost } from './runtime-host';
 
@@ -43,12 +45,16 @@ export abstract class RuntimeProductionThinkHost<
   Env extends Cloudflare.Env = Cloudflare.Env,
 > extends RuntimeThinkHost<Env> {
   private readonly productionEnv: Env;
+  private readonly productionContextPersistence: ReturnType<
+    typeof createDurableRuntimeContextPersistence
+  >;
   private readonly productionThreadCreatedAt: string | undefined;
   private readonly productionAnchorError: Error | undefined;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.productionEnv = env;
+    this.productionContextPersistence = createDurableRuntimeContextPersistence(ctx.storage);
     try {
       this.productionThreadCreatedAt = durableThreadCreatedAt(ctx);
       this.productionAnchorError = undefined;
@@ -65,7 +71,38 @@ export abstract class RuntimeProductionThinkHost<
     if (this.productionAnchorError !== undefined || threadCreatedAt === undefined) {
       throw this.productionAnchorError ?? new Error('RUNTIME_RETENTION_ANCHOR_INVALID');
     }
-    return { threadCreatedAt };
+    return {
+      threadCreatedAt,
+      contextPersistence: this.productionContextPersistence,
+    };
+  }
+
+  protected runtimeProductionNow(): string {
+    return new Date().toISOString();
+  }
+
+  protected runtimeProductionSessionExpiresAt(): string {
+    const threadCreatedAt = this.productionThreadCreatedAt;
+    if (this.productionAnchorError !== undefined || threadCreatedAt === undefined) {
+      throw this.productionAnchorError ?? new Error('RUNTIME_RETENTION_ANCHOR_INVALID');
+    }
+    return sessionExpiryAt(threadCreatedAt);
+  }
+
+  protected runtimeProductionSessionExpired(): boolean {
+    const now = Date.parse(this.runtimeProductionNow());
+    const expiresAt = Date.parse(this.runtimeProductionSessionExpiresAt());
+    if (!Number.isFinite(now) || !Number.isFinite(expiresAt)) {
+      throw new Error('RUNTIME_RETENTION_CLOCK_INVALID');
+    }
+    return now >= expiresAt;
+  }
+
+  protected clearRuntimeProductionContext(scope: {
+    readonly ownerScopeRef: string;
+    readonly threadId: string;
+  }): void {
+    this.productionContextPersistence.clear(scope);
   }
 
   protected abstract createRuntimeCommitPort(): CommitPort;

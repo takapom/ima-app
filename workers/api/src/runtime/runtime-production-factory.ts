@@ -19,8 +19,7 @@ import { createGooglePlaceDetailsTransport } from '../providers/places-details/t
 import { createPlacesSearchAdapter } from '../providers/places-search/adapter';
 import type { PlacesSearchObservationPolicy } from '../providers/places-search/registration';
 import { createPlacesSearchRegistration } from '../providers/places-search/registration';
-import { createPlacesSearchContinuation } from '../providers/places-search/continuation';
-import { createPlacesSearchCursorStore } from '../providers/places-search/cursor';
+import type { createPlacesSearchContinuation } from '../providers/places-search/continuation';
 import { createGoogleTextSearchTransport } from '../providers/places-search/transport';
 import type { JourneyServiceDateContextBuilder } from '../providers/last-train/port';
 import type { LastTrainObservationPolicy } from '../providers/last-train/registration';
@@ -41,10 +40,9 @@ import {
   type RuntimeCompositionValidationContext,
   type RuntimePublicResponseDependencies,
 } from './runtime-turn-composition';
-import {
-  createRuntimeProductionContextStore,
-  wrapRuntimeProductionCommit,
-} from './runtime-production-context';
+import { wrapRuntimeProductionCommit } from './runtime-production-context';
+import { createFactoryRuntimeContext } from './runtime-production-context-factory';
+import type { RuntimeProductionContextPersistence } from './runtime-production-context-reference';
 import { RuntimeBudget } from './runtime-budget';
 import {
   defaultProductionObservationPolicy,
@@ -61,7 +59,6 @@ import {
   productionRetentionFor,
   productionSecret,
   ProductionIds,
-  sessionExpiryAt,
   type ProductionRetentionSource,
   productionScopeFor,
   validationContextFor,
@@ -92,6 +89,7 @@ import type { RuntimeModelGuardModel } from './runtime-model-guard';
 import { defaultRuntimeModelContextPolicy } from './runtime-field-policy';
 import { unavailableSubmit } from './runtime-production-submit';
 import { resolveRuntimeProductionReadCost } from './runtime-production-read-cost';
+import { createFactoryContinuation } from './runtime-production-continuation';
 type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;
   readonly runtimeInput: ThreadTurnRequest;
@@ -147,6 +145,8 @@ export type RuntimeProductionOverrides = {
   readonly modelContextFieldPolicy?: ModelContextFieldPolicy;
   /** Host-owned thread creation timestamp; its next 05:00 JST expiry is never extended. */
   readonly threadCreatedAt?: string;
+  /** Durable reference-only context; it never receives raw user/provider content. */
+  readonly contextPersistence?: RuntimeProductionContextPersistence;
   readonly clock?: () => string;
   readonly monotonicNow?: () => number;
   readonly epochNow?: () => number;
@@ -165,7 +165,7 @@ const defaultPlan = (
   registry: CandidateObservationRegistry,
   continuation: ReturnType<typeof createPlacesSearchContinuation>,
   areaByCandidate: Map<string, string>,
-  contextStore: ReturnType<typeof createRuntimeProductionContextStore>,
+  contextStore: ReturnType<typeof createFactoryRuntimeContext>['contextStore'],
   turnRetention: ReturnType<typeof productionRetentionFor>,
   fixedSessionExpiresAt: string,
   budget: RuntimeBudget,
@@ -319,16 +319,21 @@ const makeOptions = (
   monotonicNow: () => number,
 ) => {
   const areaByCandidate = new Map<string, string>();
-  const contextStore = createRuntimeProductionContextStore({ registry });
   const lastTrainRevisionState = createRuntimeLastTrainRevisionState();
-  let fixedSessionExpiresAt =
-    overrides.threadCreatedAt === undefined
-      ? undefined
-      : sessionExpiryAt(overrides.threadCreatedAt);
+  const contextSetup = createFactoryRuntimeContext({
+    registry,
+    ...(overrides.threadCreatedAt === undefined
+      ? {}
+      : { threadCreatedAt: overrides.threadCreatedAt }),
+    ...(overrides.contextPersistence === undefined
+      ? {}
+      : { persistence: overrides.contextPersistence }),
+    clock,
+  });
   const buildTurn = async (request: RuntimeThinkTurnBuildRequest) => {
     const runtimeInput = request.runtimeInput;
     if (runtimeInput === undefined) throw new Error('RUNTIME_INPUT_MISSING');
-    fixedSessionExpiresAt ??= sessionExpiryAt(request.serverNow);
+    const fixedSessionExpiresAt = contextSetup.ensureSessionExpiry(request.serverNow);
     const turnRetention = productionRetentionFor(
       overrides.retention,
       request.serverNow,
@@ -391,7 +396,7 @@ const makeOptions = (
             registry,
             continuation,
             areaByCandidate,
-            contextStore,
+            contextSetup.contextStore,
             turnRetention,
             fixedSessionExpiresAt,
             budget,
@@ -468,21 +473,13 @@ export const createRuntimeProductionConnectionOptions = (
   if (!modelReady || !portsReady) return undefined;
   const ids = new ProductionIds();
   const registry = new CandidateObservationRegistry(productionClockPort(clock), ids);
-  if (
-    overrides.prepareTurn === undefined &&
-    (!isConfiguredSecret(apiKey) || !isConfiguredSecret(cursorSecret))
-  ) {
-    return undefined;
-  }
-  let continuation: ReturnType<typeof createPlacesSearchContinuation> | undefined;
-  if (overrides.prepareTurn === undefined) {
-    if (!isConfiguredSecret(cursorSecret)) return undefined;
-    const epochNow = overrides.epochNow ?? Date.now;
-    continuation = createPlacesSearchContinuation({
-      store: createPlacesSearchCursorStore({ secret: cursorSecret, now: epochNow }),
-      now: epochNow,
-    });
-  }
+  const continuation =
+    overrides.prepareTurn === undefined
+      ? createFactoryContinuation({
+          secret: cursorSecret,
+          now: overrides.epochNow ?? Date.now,
+        })
+      : undefined;
   const resolvedOverrides: RuntimeProductionOverrides = {
     ...overrides,
     ...(isConfiguredSecret(apiKey) ? { googlePlacesApiKey: apiKey } : {}),

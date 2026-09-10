@@ -406,6 +406,10 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
   private multiTurnModel = false;
   private productionScenario: ProductionScenario = 'default';
 
+  protected override runtimeProductionNow(): string {
+    return RUNTIME_PRODUCTION_NOW;
+  }
+
   override async runRuntimeTurn(value: unknown) {
     this.llmOnlyModel = runtimeTurnUsesLlmOnlyPolicy(value);
     this.multiTurnModel = runtimeTurnUsesMultiTurnPolicy(value);
@@ -431,6 +435,7 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
   }
 
   protected override createRuntimeProductionOverrides() {
+    const base = super.createRuntimeProductionOverrides();
     const report: MutableRuntimeProductionReport = {
       calls: 0,
       providerOptionsSeen: [],
@@ -453,6 +458,7 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
     const budgetStart = performance.now();
     let monotonicCalls = 0;
     return {
+      ...base,
       modelForTurn: modelForProduction(report, this.llmOnlyModel, () => this.productionScenario),
       fetcher: fetcherForProduction(report),
       observationPolicy: policy,
