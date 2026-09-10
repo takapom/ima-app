@@ -79,7 +79,7 @@ export type AppIntegrityChallengeStore = {
 };
 
 export type AppIntegrityKeyStore = {
-  readonly get: (keyId: string) => Promise<AppIntegrityKey | null>;
+  readonly get: (keyId: string, owner: AppIntegrityOwner) => Promise<AppIntegrityKey | null>;
   /** Implementations must make keyId ownership immutable after the first registration. */
   readonly register: (key: AppIntegrityKey) => Promise<'registered' | 'conflict'>;
   /** Must atomically require counter > lastCounter and preserve owner/device binding. */
@@ -426,7 +426,10 @@ export const createAppIntegrityGate = (input: {
     if (consumed === null) return failure('CHALLENGE_INVALID');
     let key: AppIntegrityKey | null;
     try {
-      key = await input.keys.get(parsed.output.keyId);
+      key = await input.keys.get(parsed.output.keyId, {
+        ownerScopeRef: request.ownerScopeRef,
+        deviceId: request.deviceId,
+      });
     } catch {
       return invalidStore();
     }

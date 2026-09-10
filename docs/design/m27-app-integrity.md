@@ -22,6 +22,12 @@ flowchart LR
 - [workers/api/src/http/input.ts](../../workers/api/src/http/input.ts) はbounded JSON parserから検証済みDTOと同じraw body bytesを返す。request hashは再シリアライズせず、そのbytesを使うため、bodyの1文字変更はassertion検証失敗になる。
 - [workers/api/src/bootstrap.ts](../../workers/api/src/bootstrap.ts) は`IMA_ENV`、`APP_ATTEST_MODE`（enforcement）、`APP_ATTEST_ENVIRONMENT`（Apple環境）を分離する。staging/productionではrequired以外をrequiredへ固定し、Apple環境不明はrequired gateで拒否する。
 
+## C2 Durable Object store
+
+- [workers/api/src/security/app-integrity-do.ts](../../workers/api/src/security/app-integrity-do.ts) はSQLite-backed `AppIntegrityDO` と既存gate port adapterを提供する。nonceはowner単位、keyはkeyId単位で名前付きDOへ分散し、keyIdのowner間重複登録を同じSQLite primary keyで拒否する。
+- nonceはissued/expiryをサーバー時計で検証し、期限・owner/device/environmentを確認した単回consumeとalarm cleanupを行う。keyはopaqueな`keyRef`だけを保存し、attestation/assertionや公開鍵材料は保存しない。
+- counter更新・revoke・登録はDO内のSQLite transactionSyncでowner/device/environmentを再確認する。DO eviction後もSQLiteから再読できるが、実Apple verifierとHTTPのnonce/enroll/revoke route接続はC3以降である。
+
 ## 未完了と検証
 
 Apple App Attestの実検証は、Appleのchallenge、App ID、証明書chain、nonce、counter、request hash検証を満たすWorker verifier接続時に実施する。ExpoのApp Attest APIはsimulator非対応であるため、native実機検証なしに成功扱いにしない。

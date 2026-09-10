@@ -41,6 +41,7 @@ import { createGooglePhotoMediaTransport } from './providers/photo/transport';
 import { createPhotoTokenCodec } from './providers/photo/token';
 import { createPhotoReferenceStoreResolver } from './providers/photo/rpc';
 import type { PhotoTokenCodec } from './providers/photo/types';
+import type { AppIntegrityNamespace } from './security/app-integrity-do';
 import { createBestEffortEventsSink, createTelemetryEventsSink } from './telemetry/events';
 import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetry/telemetry-do';
 import {
@@ -71,6 +72,8 @@ export type BootstrapEnv = {
   readonly IMA_QUALITY_ENVELOPE?: string;
   readonly THREADS: DurableObjectNamespace<ThreadDO>;
   readonly RATE_LIMITS: DurableObjectNamespace<RateLimitDO>;
+  /** Optional C2 durable challenge/key store; C3 wires it into the HTTP gate. */
+  readonly APP_INTEGRITY?: AppIntegrityNamespace;
   readonly TELEMETRY?: TelemetryNamespace;
 };
 

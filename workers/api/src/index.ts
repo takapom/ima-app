@@ -11,6 +11,7 @@ import {
 import { JourneyDatasetDO } from './providers/last-train/dataset-do';
 import { RateLimitDO, ThreadDO } from './thread-do';
 import { TelemetryDO } from './telemetry/telemetry-do';
+import { AppIntegrityDO } from './security/app-integrity-do';
 
 type IndexEnv = BootstrapEnv & {
   readonly JOURNEY_DATASETS?: JourneyDatasetNamespace;
@@ -50,4 +51,4 @@ export default {
   },
 } satisfies ExportedHandler<IndexEnv>;
 
-export { JourneyDatasetDO, RateLimitDO, TelemetryDO, ThreadDO };
+export { AppIntegrityDO, JourneyDatasetDO, RateLimitDO, TelemetryDO, ThreadDO };
