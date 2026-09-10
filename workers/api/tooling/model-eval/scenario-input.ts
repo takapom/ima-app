@@ -80,7 +80,10 @@ const cardContextIsValid = (context: EvaluationCardContext): boolean => {
   );
 };
 
-const locationFor = (context: ScenarioContext): ThreadTurnRequest['location'] => {
+const locationFor = (
+  context: ScenarioContext,
+  now = context.now,
+): ThreadTurnRequest['location'] => {
   const policyAllowsLocation = context.locationPolicy === 'available-to-tool';
   const available = policyAllowsLocation && context.locationStatus === 'available';
   const status = available
@@ -94,7 +97,7 @@ const locationFor = (context: ScenarioContext): ThreadTurnRequest['location'] =>
     lng: available ? 139.7005 : null,
     accuracyMeters: available ? 40 : null,
     precise: false,
-    capturedAt: available ? context.now : null,
+    capturedAt: available ? now : null,
   };
 };
 
@@ -150,8 +153,8 @@ export const buildEvaluationTurnRequest = (input: {
     turnId: seed.target.turnId,
     revision: seed.target.revision,
     text: seed.text,
-    clientNow: evaluationCase.context.now,
-    location: locationFor(evaluationCase.context),
+    clientNow: seed.clientNow ?? evaluationCase.context.now,
+    location: locationFor(evaluationCase.context, seed.clientNow ?? evaluationCase.context.now),
     prefs: {
       homeStationRef: null,
       maxWalkMinutes: null,

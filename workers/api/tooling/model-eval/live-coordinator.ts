@@ -20,6 +20,7 @@ import {
   type EvaluationTurnTarget,
 } from './turn-plan';
 import { cardContextFromResponse, type EvaluationCardContext } from './scenario-input';
+import { validateLiveCardContext } from './card-context';
 import { createLiveEvaluationTurnPlan, type LiveEvaluationTurnPlan } from './live-plan';
 import { expandEvaluationDataset } from './dataset';
 import type { EvaluationCase, EvaluationRun, EvaluationScenario } from './types';
@@ -207,33 +208,8 @@ export const validateLivePreludeContext = (input: {
   readonly cardContext: EvaluationCardContext;
   readonly mapping: CandidateIdentityMapping | undefined;
 }): PreludeValidationResult => {
-  if (input.mapping === undefined) {
-    return { ok: false, code: 'CANDIDATE_ID_MAPPING_UNAVAILABLE' };
-  }
-  const { cardContext, evaluationCase, mapping, profile } = input;
-  const minimumCandidates = profile === 'continuity' ? 2 : 1;
-  if (cardContext.candidateOrder.length < minimumCandidates) {
-    return { ok: false, code: 'PRELUDE_CARD_SET_UNAVAILABLE' };
-  }
-  const mapped = (runtimeCandidateId: string | undefined): string | undefined =>
-    runtimeCandidateId === undefined
-      ? undefined
-      : mapping.byRuntimeCandidateId.get(runtimeCandidateId);
-  if (
-    evaluationCase.expected.requiredCandidateIds.some(
-      (candidateId) =>
-        !cardContext.candidateOrder.some((runtimeId) => mapped(runtimeId) === candidateId),
-    )
-  ) {
-    return { ok: false, code: 'PRELUDE_CARD_SET_UNAVAILABLE' };
-  }
-  if (
-    profile === 'continuity' &&
-    mapped(cardContext.candidateOrder[1]) !== evaluationCase.expected.requiredCandidateIds[0]
-  ) {
-    return { ok: false, code: 'PRELUDE_CARD_SET_UNAVAILABLE' };
-  }
-  return { ok: true };
+  const result = validateLiveCardContext(input);
+  return result.ok ? { ok: true } : result;
 };
 
 const executionFailure = (input: {
@@ -318,6 +294,9 @@ export const executeLiveEvaluationCase = async (input: {
         caseId: input.evaluationCase.caseId,
         userTurns: input.plan.targetTexts,
         target: input.target,
+        ...(input.plan.targetClientNow === undefined
+          ? {}
+          : { clientNow: input.plan.targetClientNow }),
       });
       if (!seed.ok) throw new Error(seed.code);
       targetSeed = seed.seed;
@@ -326,6 +305,9 @@ export const executeLiveEvaluationCase = async (input: {
         caseId: input.evaluationCase.caseId,
         userTurns: [input.plan.prelude.text],
         target: input.target,
+        ...(input.plan.prelude.clientNow === undefined
+          ? {}
+          : { clientNow: input.plan.prelude.clientNow }),
       });
       if (!preludeSeed.ok) throw new Error(preludeSeed.code);
       const preludeResponse = responseFrom(await input.ports.runTurn(preludeSeed.seed));
@@ -337,16 +319,21 @@ export const executeLiveEvaluationCase = async (input: {
         preludeTrace.candidateIdentities,
         input.expectedIdentities,
       );
-      const contextValidation = validateLivePreludeContext({
+      const contextValidation = validateLiveCardContext({
         profile: input.plan.profile,
         evaluationCase: input.evaluationCase,
         cardContext: contextResult.context,
         mapping: mapping.ok ? mapping : undefined,
       });
       if (!contextValidation.ok) throw new Error(contextValidation.code);
-      cardContext = contextResult.context;
+      cardContext = contextValidation.context;
       const targetText = input.plan.targetTexts[0];
-      const next = advanceEvaluationTurn(preludeSeed.seed, preludeResponse, targetText);
+      const next = advanceEvaluationTurn(
+        preludeSeed.seed,
+        preludeResponse,
+        targetText,
+        input.plan.targetClientNow,
+      );
       if (!next.ok) throw new Error(next.code);
       targetSeed = next.seed;
     }

@@ -163,6 +163,9 @@ describe('opt-in live model evaluation runner', () => {
     expect(artifacts.map((artifact) => artifact.profile)).toEqual([
       'new-search',
       'reason',
+      'compare',
+      'decide-action',
+      'clarify-ambiguity',
       'continuity',
     ]);
     if (hasRuntimeFailure) throw new Error('M25_LIVE_RUNTIME_FAILED');

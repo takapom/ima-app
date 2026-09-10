@@ -19,10 +19,13 @@ import {
   evidenceFor,
   modelUserTextIn,
   observationFieldsFor,
+  selectedCandidateIdIn,
   type ProjectedObservation,
 } from './model-eval-context-values';
 
 export type ModelEvalFixturePhase = 'cards' | 'message';
+export type ModelEvalFixtureProfile =
+  'reason' | 'continuity' | 'compare' | 'decide-action' | 'clarify-ambiguity';
 export type ModelEvalFixtureStep =
   'search_places' | 'get_place_details' | 'submit_cards' | 'final_message';
 
@@ -83,10 +86,14 @@ const toolParts = (
   ];
 };
 
-const finalParts = (text: string, evidenceIds: readonly string[]): RuntimeGateModelStreamPart[] => {
+const finalParts = (
+  text: string,
+  evidenceIds: readonly string[],
+  basis: 'grounded' | 'conversational' = 'grounded',
+): RuntimeGateModelStreamPart[] => {
   const encoded = JSON.stringify({
     kind: 'final_message',
-    message: { text, evidenceIds, basis: 'grounded' },
+    message: { text, evidenceIds, basis },
   });
   return [
     { type: 'stream-start', warnings: [] },
@@ -97,8 +104,11 @@ const finalParts = (text: string, evidenceIds: readonly string[]): RuntimeGateMo
   ];
 };
 
-const submitInputFor = (prompt: RuntimeGateModelCallOptions['prompt']): SubmitCardsInput => {
-  const selections = candidateIdsIn(prompt)
+const submitInputFor = (
+  prompt: RuntimeGateModelCallOptions['prompt'],
+  candidateOrder = candidateIdsIn(prompt),
+): SubmitCardsInput => {
+  const selections = candidateOrder
     .map((candidateId) => ({ candidateId, evidenceIds: evidenceFor(prompt, candidateId) }))
     .filter((candidate) => candidate.evidenceIds.length > 0)
     .slice(0, 3);
@@ -136,6 +146,7 @@ const submitInputFor = (prompt: RuntimeGateModelCallOptions['prompt']): SubmitCa
 
 const fixtureModel = (
   phase: () => ModelEvalFixturePhase,
+  profile: () => ModelEvalFixtureProfile,
   trace: LiveTraceRecorder,
   step: (name: ModelEvalFixtureStep) => void,
   detailsRequest: (candidateIds: readonly string[]) => void,
@@ -163,16 +174,37 @@ const fixtureModel = (
       const finalResponse =
         Object.keys(options.tools ?? {}).length === 0 || options.toolChoice?.type === 'none';
       const shouldRefreshMessage = currentPhase === 'message' && currentCall === 0;
+      if (currentPhase === 'message' && profile() === 'clarify-ambiguity') {
+        step('final_message');
+        return Promise.resolve({
+          stream: streamOf(finalParts('どの候補を指していますか？', [], 'conversational')),
+        });
+      }
       if (!shouldRefreshMessage && (currentPhase === 'message' || finalResponse)) {
         step('final_message');
         const candidates =
           currentPhase === 'message' ? candidateOrderIn(prompt) : candidateIdsIn(prompt);
+        const selectedCandidateId = selectedCandidateIdIn(prompt);
+        if (
+          currentPhase === 'message' &&
+          profile() === 'decide-action' &&
+          (selectedCandidateId === undefined ||
+            selectedCandidateId === null ||
+            !candidates.includes(selectedCandidateId))
+        ) {
+          throw new Error('M25_FIXTURE_SELECTION_CONTEXT_MISSING');
+        }
         const candidate = candidates
           .map((candidateId) => ({ candidateId, evidenceIds: evidenceFor(prompt, candidateId) }))
           .find((item) => item.evidenceIds.length > 0);
-        const userText = modelUserTextIn(prompt);
-        const requestedIndex = userText.includes('2つ目') ? 1 : 0;
-        const requestedCandidateId = candidates[requestedIndex] ?? candidates[0];
+        const requestedCandidateId =
+          currentPhase === 'message' && profile() === 'decide-action'
+            ? selectedCandidateId
+            : (() => {
+                const userText = modelUserTextIn(prompt);
+                const requestedIndex = userText.includes('2つ目') ? 1 : 0;
+                return candidates[requestedIndex] ?? candidates[0];
+              })();
         const requestedCandidate = candidates
           .map((candidateId) => ({
             candidateId,
@@ -182,11 +214,32 @@ const fixtureModel = (
         const selectedCandidate =
           currentPhase === 'message' ? requestedCandidate : (requestedCandidate ?? candidate);
         if (selectedCandidate === undefined) throw new Error('M25_FIXTURE_CONTEXT_MISSING');
+        if (currentPhase === 'message' && profile() === 'compare') {
+          const compared = candidates
+            .slice(0, 2)
+            .map((candidateId) => ({
+              candidateId,
+              evidenceIds: evidenceFor(prompt, candidateId),
+            }))
+            .filter((item) => item.evidenceIds.length > 0);
+          if (compared.length < 2) throw new Error('M25_FIXTURE_COMPARE_CONTEXT_MISSING');
+          compared.forEach((item) =>
+            finalEvidence({
+              candidateId: item.candidateId,
+              evidenceIds: [...item.evidenceIds],
+              observations: observationFieldsFor(prompt, item.candidateId),
+            }),
+          );
+          const evidenceIds = compared.flatMap((item) => item.evidenceIds);
+          return Promise.resolve({
+            stream: streamOf(finalParts('青葉カフェと川辺食堂を比較しました。', evidenceIds)),
+          });
+        }
         const candidateId = selectedCandidate.candidateId;
         finalEvidence({
           candidateId,
           evidenceIds: [...selectedCandidate.evidenceIds],
-          observations: candidates.flatMap((id) => observationFieldsFor(prompt, id)),
+          observations: observationFieldsFor(prompt, candidateId),
         });
         return Promise.resolve({
           stream: streamOf(
@@ -196,21 +249,39 @@ const fixtureModel = (
       }
       if (shouldRefreshMessage) {
         step('get_place_details');
-        const userText = modelUserTextIn(prompt);
         const candidates = candidateOrderIn(prompt);
-        const requestedIndex = userText.includes('2つ目') ? 1 : 0;
-        const candidateId = candidates[requestedIndex] ?? candidates[0];
-        if (candidateId === undefined) throw new Error('M25_FIXTURE_CONTEXT_MISSING');
-        detailsRequest([candidateId]);
+        const selectedCandidateId = selectedCandidateIdIn(prompt);
+        if (
+          profile() === 'decide-action' &&
+          (selectedCandidateId === undefined ||
+            selectedCandidateId === null ||
+            !candidates.includes(selectedCandidateId))
+        ) {
+          throw new Error('M25_FIXTURE_SELECTION_CONTEXT_MISSING');
+        }
+        const requestedCandidateId =
+          profile() === 'decide-action'
+            ? selectedCandidateId
+            : (() => {
+                const userText = modelUserTextIn(prompt);
+                const requestedIndex = userText.includes('2つ目') ? 1 : 0;
+                return candidates[requestedIndex] ?? candidates[0];
+              })();
+        const requestedCandidates =
+          profile() === 'compare'
+            ? candidates.slice(0, 2)
+            : [requestedCandidateId].filter(
+                (candidateId): candidateId is string => typeof candidateId === 'string',
+              );
+        if (requestedCandidates.length === 0) throw new Error('M25_FIXTURE_CONTEXT_MISSING');
+        detailsRequest(requestedCandidates);
         return Promise.resolve({
           stream: streamOf(
             toolParts(currentCall, 'get_place_details', {
-              requests: [
-                {
-                  candidateId,
-                  fields: ['identity', 'opening_hours', 'price'],
-                },
-              ],
+              requests: requestedCandidates.map((candidateId) => ({
+                candidateId,
+                fields: ['identity', 'opening_hours', 'price'],
+              })),
               freshness: 'refresh',
             }),
           ),
@@ -255,11 +326,24 @@ const fixtureModel = (
         finalEvidence({
           candidateId,
           evidenceIds: [...evidenceIds],
-          observations: candidates.flatMap((id) => observationFieldsFor(prompt, id)),
+          observations: observationFieldsFor(prompt, candidateId),
         });
       }
       return Promise.resolve({
-        stream: streamOf(toolParts(currentCall, 'submit_cards', submitInputFor(prompt))),
+        stream: streamOf(
+          toolParts(
+            currentCall,
+            'submit_cards',
+            submitInputFor(
+              prompt,
+              profile() === 'decide-action'
+                ? [candidates[1], candidates[0], ...candidates.slice(2)].filter(
+                    (candidateId): candidateId is string => candidateId !== undefined,
+                  )
+                : candidates,
+            ),
+          ),
+        ),
       });
     },
   };
@@ -267,15 +351,21 @@ const fixtureModel = (
 
 export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
   private fixturePhase: ModelEvalFixturePhase = 'cards';
+  private fixtureProfile: ModelEvalFixtureProfile = 'reason';
   private fixtureNow = MODEL_EVAL_NOW;
   private readonly fixtureTrace = new LiveTraceRecorder();
   private readonly fixtureSteps: ModelEvalFixtureStep[] = [];
   private readonly fixtureDetailsRequests: string[][] = [];
   private readonly fixtureEvidenceSnapshots: ModelEvalFixtureEvidenceSnapshot[] = [];
 
-  configureModelEvalFixture(phase: ModelEvalFixturePhase, now = MODEL_EVAL_NOW): void {
+  configureModelEvalFixture(
+    phase: ModelEvalFixturePhase,
+    now = MODEL_EVAL_NOW,
+    profile: ModelEvalFixtureProfile = 'reason',
+  ): void {
     this.fixturePhase = phase;
     this.fixtureNow = now;
+    this.fixtureProfile = profile;
   }
 
   protected override runtimeProductionNow(): string {
@@ -312,6 +402,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
       ...base,
       modelForTurn: fixtureModel(
         () => this.fixturePhase,
+        () => this.fixtureProfile,
         this.fixtureTrace,
         (step) => this.fixtureSteps.push(step),
         (candidateIds) => this.fixtureDetailsRequests.push([...candidateIds]),

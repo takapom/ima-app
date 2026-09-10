@@ -34,8 +34,8 @@ const profiles: Record<ScenarioId, EvaluationExecutionProfile> = {
   },
   reason: { status: 'fixture_ready', kind: 'card_context', requiresApiKey: false },
   compare: {
-    status: 'unavailable',
-    reason: 'CARD_SET_STATE_NOT_SEEDED',
+    status: 'fixture_ready',
+    kind: 'card_context',
     requiresApiKey: false,
   },
   'specific-place': {
@@ -44,13 +44,13 @@ const profiles: Record<ScenarioId, EvaluationExecutionProfile> = {
     requiresApiKey: false,
   },
   'decide-action': {
-    status: 'unavailable',
-    reason: 'CARD_SET_STATE_NOT_SEEDED',
+    status: 'fixture_ready',
+    kind: 'card_context',
     requiresApiKey: false,
   },
   'clarify-ambiguity': {
-    status: 'unavailable',
-    reason: 'CARD_SET_STATE_NOT_SEEDED',
+    status: 'fixture_ready',
+    kind: 'card_context',
     requiresApiKey: false,
   },
   'candidate-failure': {

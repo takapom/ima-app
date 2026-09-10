@@ -12,11 +12,46 @@ const scenarioFor = (id: string) => {
 };
 
 describe('model-eval live turn plans', () => {
-  it('exposes only the three executable live profiles', () => {
+  it('exposes the fixed-clock card-context profiles alongside existing profiles', () => {
     expect(liveEvaluationProfileFor(scenarioFor('new-search'))).toBe('new-search');
     expect(liveEvaluationProfileFor(scenarioFor('reason'))).toBe('reason');
     expect(liveEvaluationProfileFor(scenarioFor('continuity'))).toBe('continuity');
-    expect(liveEvaluationProfileFor(scenarioFor('compare'))).toBeNull();
+    expect(liveEvaluationProfileFor(scenarioFor('compare'))).toBe('compare');
+    expect(liveEvaluationProfileFor(scenarioFor('decide-action'))).toBe('decide-action');
+    expect(liveEvaluationProfileFor(scenarioFor('clarify-ambiguity'))).toBe('clarify-ambiguity');
+  });
+
+  it('uses one synthetic card prelude for each formal card-context profile', () => {
+    for (const id of ['compare', 'decide-action', 'clarify-ambiguity'] as const) {
+      expect(createLiveEvaluationTurnPlan(scenarioFor(id))).toMatchObject({
+        ok: true,
+        plan: {
+          profile: id,
+          prelude: { source: 'synthetic' },
+          targetTexts: [expect.any(String)],
+        },
+      });
+    }
+  });
+
+  it('can explicitly advance the fixture clock without changing scenario defaults', () => {
+    const result = createLiveEvaluationTurnPlan(scenarioFor('decide-action'), {
+      preludeClientNow: '2026-09-10T10:00:00.000Z',
+      targetClientNow: '2026-09-10T12:00:00.000Z',
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      plan: {
+        prelude: { clientNow: '2026-09-10T10:00:00.000Z' },
+        targetClientNow: '2026-09-10T12:00:00.000Z',
+      },
+    });
+    const defaults = createLiveEvaluationTurnPlan(scenarioFor('decide-action'));
+    expect(defaults.ok).toBe(true);
+    if (defaults.ok) {
+      expect(defaults.plan.prelude).not.toHaveProperty('clientNow');
+      expect(defaults.plan).not.toHaveProperty('targetClientNow');
+    }
   });
 
   it('uses a synthetic card prelude for reason and the first scenario turn for continuity', () => {

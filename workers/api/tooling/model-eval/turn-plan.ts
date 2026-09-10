@@ -13,6 +13,8 @@ export type EvaluationTurnSeed = {
   readonly index: number;
   readonly text: string;
   readonly target: EvaluationTurnTarget;
+  /** Fixture-only clock override; production live cases use the scenario clock. */
+  readonly clientNow?: string;
 };
 
 export type EvaluationTurnPlanFailure = {
@@ -43,6 +45,7 @@ export const createEvaluationTurnSeed = (input: {
   readonly caseId: string;
   readonly userTurns: readonly string[];
   readonly target: EvaluationTurnTarget;
+  readonly clientNow?: string;
 }): EvaluationTurnPlanResult => {
   const text = input.userTurns[0];
   if (
@@ -56,7 +59,13 @@ export const createEvaluationTurnSeed = (input: {
   }
   return {
     ok: true,
-    seed: { caseId: input.caseId, index: 0, text, target: input.target },
+    seed: {
+      caseId: input.caseId,
+      index: 0,
+      text,
+      target: input.target,
+      ...(input.clientNow === undefined ? {} : { clientNow: input.clientNow }),
+    },
   };
 };
 
@@ -68,6 +77,7 @@ export const advanceEvaluationTurn = (
   current: EvaluationTurnSeed,
   response: unknown,
   nextText: string,
+  nextClientNow?: string,
 ): EvaluationTurnPlanResult => {
   if (nextText.length === 0 || !validTarget(current.target)) {
     return { ok: false, code: 'MULTI_TURN_SEED_UNAVAILABLE' };
@@ -90,8 +100,15 @@ export const advanceEvaluationTurn = (
     revision: previous.revision,
   };
   if (!validTarget(target)) return { ok: false, code: 'MULTI_TURN_SEED_UNAVAILABLE' };
+  const clientNow = nextClientNow ?? current.clientNow;
   return {
     ok: true,
-    seed: { caseId: current.caseId, index, text: nextText, target },
+    seed: {
+      caseId: current.caseId,
+      index,
+      text: nextText,
+      target,
+      ...(clientNow === undefined ? {} : { clientNow }),
+    },
   };
 };

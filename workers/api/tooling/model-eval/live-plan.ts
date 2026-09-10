@@ -1,16 +1,24 @@
 import type { EvaluationCase, ScenarioId } from './types';
 
-export type LiveEvaluationProfile = 'new-search' | 'reason' | 'continuity';
+export type LiveEvaluationProfile =
+  'new-search' | 'reason' | 'continuity' | 'compare' | 'decide-action' | 'clarify-ambiguity';
+
+export type LiveEvaluationTiming = {
+  readonly preludeClientNow?: string;
+  readonly targetClientNow?: string;
+};
 
 export type LiveEvaluationPrelude = {
   readonly text: string;
   readonly source: 'scenario' | 'synthetic';
+  readonly clientNow?: string;
 };
 
 export type LiveEvaluationTurnPlan = {
   readonly profile: LiveEvaluationProfile;
   readonly prelude: LiveEvaluationPrelude | null;
   readonly targetTexts: readonly [string];
+  readonly targetClientNow?: string;
 };
 
 export type LiveEvaluationTurnPlanResult =
@@ -24,6 +32,9 @@ const profileFor: Partial<Record<ScenarioId, LiveEvaluationProfile>> = {
   'new-search': 'new-search',
   reason: 'reason',
   continuity: 'continuity',
+  compare: 'compare',
+  'decide-action': 'decide-action',
+  'clarify-ambiguity': 'clarify-ambiguity',
 };
 
 /** Returns the only scenarios that have an executable live turn shape. */
@@ -37,6 +48,7 @@ export const liveEvaluationProfileFor = (
  */
 export const createLiveEvaluationTurnPlan = (
   evaluationCase: EvaluationCase,
+  timing: LiveEvaluationTiming = {},
 ): LiveEvaluationTurnPlanResult => {
   const profile = liveEvaluationProfileFor(evaluationCase);
   if (profile === null) return { ok: false, code: 'LIVE_PROFILE_UNAVAILABLE' };
@@ -46,22 +58,53 @@ export const createLiveEvaluationTurnPlan = (
   }
   if (profile === 'new-search') {
     if (second !== undefined) return { ok: false, code: 'LIVE_TURN_SHAPE_UNSUPPORTED' };
-    return { ok: true, plan: { profile, prelude: null, targetTexts: [first] } };
+    return {
+      ok: true,
+      plan: {
+        profile,
+        prelude: null,
+        targetTexts: [first],
+        ...(timing.targetClientNow === undefined
+          ? {}
+          : { targetClientNow: timing.targetClientNow }),
+      },
+    };
   }
-  if (profile === 'reason') {
+  if (
+    profile === 'reason' ||
+    profile === 'compare' ||
+    profile === 'decide-action' ||
+    profile === 'clarify-ambiguity'
+  ) {
     if (second !== undefined) return { ok: false, code: 'LIVE_TURN_SHAPE_UNSUPPORTED' };
     return {
       ok: true,
       plan: {
         profile,
-        prelude: { text: '候補を準備して。', source: 'synthetic' },
+        prelude: {
+          text: '候補を準備して。',
+          source: 'synthetic',
+          ...(timing.preludeClientNow === undefined ? {} : { clientNow: timing.preludeClientNow }),
+        },
         targetTexts: [first],
+        ...(timing.targetClientNow === undefined
+          ? {}
+          : { targetClientNow: timing.targetClientNow }),
       },
     };
   }
   if (second === undefined) return { ok: false, code: 'LIVE_TURN_SHAPE_UNSUPPORTED' };
   return {
     ok: true,
-    plan: { profile, prelude: { text: first, source: 'scenario' }, targetTexts: [second] },
+    plan: {
+      profile,
+      prelude: {
+        text: first,
+        source: 'scenario',
+        ...(timing.preludeClientNow === undefined ? {} : { clientNow: timing.preludeClientNow }),
+      },
+      targetTexts: [second],
+      ...(timing.targetClientNow === undefined ? {} : { targetClientNow: timing.targetClientNow }),
+    },
   };
 };

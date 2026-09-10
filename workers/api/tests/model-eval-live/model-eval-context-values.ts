@@ -170,6 +170,16 @@ export const candidateOrderIn = (
   prompt: RuntimeGateModelCallOptions['prompt'],
 ): readonly string[] => cardSetCandidateOrder(modelContextIn(prompt));
 
+/** Reads selection only from the projected card set, never from user text. */
+export const selectedCandidateIdIn = (
+  prompt: RuntimeGateModelCallOptions['prompt'],
+): string | null | undefined => {
+  const cardSet = modelContextIn(prompt)?.cardSet;
+  if (!record(cardSet) || !('selectedCandidateId' in cardSet)) return undefined;
+  const selected = cardSet.selectedCandidateId;
+  return selected === null || typeof selected === 'string' ? selected : undefined;
+};
+
 /** Returns only field/observation IDs projected for one candidate. */
 export const observationFieldsFor = (
   prompt: RuntimeGateModelCallOptions['prompt'],
