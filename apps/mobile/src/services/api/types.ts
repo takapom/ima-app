@@ -4,6 +4,9 @@ import type {
   LifecycleCommand,
   SearchRequest,
   SearchResponse,
+  SavedReferenceCreateRequest,
+  SavedReferenceCreateResponse,
+  SavedReferenceDeleteRequest,
   ThreadReadResponse,
   ThreadTurnRequest,
   PublicError,
@@ -109,6 +112,16 @@ export type JourneyApiClient = {
   readonly deleteThread: (
     threadId: string,
     input: LifecycleCommand,
+    options?: ApiRequestOptions,
+  ) => Promise<ApiResult<null>>;
+  readonly createSavedReference: (
+    threadId: string,
+    input: SavedReferenceCreateRequest,
+    options?: ApiRequestOptions,
+  ) => Promise<ApiResult<SavedReferenceCreateResponse>>;
+  readonly deleteSavedReference: (
+    savedPlaceRef: string,
+    input: SavedReferenceDeleteRequest,
     options?: ApiRequestOptions,
   ) => Promise<ApiResult<null>>;
 };

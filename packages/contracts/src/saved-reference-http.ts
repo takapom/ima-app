@@ -1,5 +1,6 @@
 import * as v from 'valibot';
 import { OpaqueIdSchema, RequestIdSchema, RevisionSchema, SchemaVersionSchema } from './common';
+import type { ParseResult } from './response';
 
 export const SavedReferencePathSchema = v.strictObject({
   savedPlaceRef: OpaqueIdSchema,
@@ -30,3 +31,33 @@ export const SavedReferenceDeleteRequestSchema = v.strictObject({
   idempotencyKey: OpaqueIdSchema,
 });
 export type SavedReferenceDeleteRequest = v.InferOutput<typeof SavedReferenceDeleteRequestSchema>;
+
+const parseSchema = <Schema extends v.GenericSchema>(
+  schema: Schema,
+  input: unknown,
+): ParseResult<v.InferOutput<Schema>> => {
+  const parsed = v.safeParse(schema, input);
+  return parsed.success
+    ? { success: true, data: parsed.output }
+    : { success: false, issues: parsed.issues.map((issue) => issue.message) };
+};
+
+export const parseSavedReferencePath = (
+  input: unknown,
+): ParseResult<v.InferOutput<typeof SavedReferencePathSchema>> =>
+  parseSchema(SavedReferencePathSchema, input);
+
+export const parseSavedReferenceCreateRequest = (
+  input: unknown,
+): ParseResult<SavedReferenceCreateRequest> =>
+  parseSchema(SavedReferenceCreateRequestSchema, input);
+
+export const parseSavedReferenceCreateResponse = (
+  input: unknown,
+): ParseResult<SavedReferenceCreateResponse> =>
+  parseSchema(SavedReferenceCreateResponseSchema, input);
+
+export const parseSavedReferenceDeleteRequest = (
+  input: unknown,
+): ParseResult<SavedReferenceDeleteRequest> =>
+  parseSchema(SavedReferenceDeleteRequestSchema, input);

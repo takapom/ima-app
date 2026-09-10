@@ -6,6 +6,10 @@ import {
   parsePublicError,
   parseSearchResponse,
   parseSearchRequest,
+  parseSavedReferenceCreateRequest,
+  parseSavedReferenceCreateResponse,
+  parseSavedReferenceDeleteRequest,
+  parseSavedReferencePath,
   parseThreadTurnRequest,
   parseThreadPath,
   parseThreadSnapshot,
@@ -331,6 +335,66 @@ export const createJourneyApiClient = (options: ApiClientOptions): JourneyApiCli
           value === null
             ? { success: true, data: null }
             : { success: false, issues: ['expected empty response'] },
+        requestOptions,
+      );
+    },
+    createSavedReference: (threadId, input, requestOptions) => {
+      const path = checkedThreadPath(threadId);
+      if (!path.ok) return Promise.resolve(path);
+      const parsed = parseSavedReferenceCreateRequest(input);
+      if (!parsed.success) {
+        return Promise.resolve(
+          issueResult(CLIENT_REQUEST_ID, 'savedReferenceCreate', parsed.issues, null),
+        );
+      }
+      return request(
+        {
+          route: 'savedReferenceCreate',
+          method: 'POST',
+          path: `/v1/threads/${encodeURIComponent(path.data.threadId)}/saved`,
+          body: parsed.data,
+          expectedStatus: 201,
+          parseResponse: (value) => {
+            const response = parseSavedReferenceCreateResponse(value);
+            if (!response.success || response.data.candidateId === parsed.data.candidateId) {
+              return response;
+            }
+            return {
+              success: false,
+              issues: ['response candidateId does not match the request'],
+            };
+          },
+          requestId: parsed.data.requestId,
+        },
+        requestOptions,
+      );
+    },
+    deleteSavedReference: (savedPlaceRef, input, requestOptions) => {
+      const path = parseSavedReferencePath({ savedPlaceRef });
+      if (!path.success) {
+        return Promise.resolve(
+          issueResult(CLIENT_REQUEST_ID, 'savedReferenceDelete', path.issues, null),
+        );
+      }
+      const parsed = parseSavedReferenceDeleteRequest(input);
+      if (!parsed.success) {
+        return Promise.resolve(
+          issueResult(CLIENT_REQUEST_ID, 'savedReferenceDelete', parsed.issues, null),
+        );
+      }
+      return request(
+        {
+          route: 'savedReferenceDelete',
+          method: 'DELETE',
+          path: `/v1/saved/${encodeURIComponent(path.data.savedPlaceRef)}`,
+          body: parsed.data,
+          expectedStatus: 204,
+          parseResponse: (value) =>
+            value === null
+              ? { success: true, data: null }
+              : { success: false, issues: ['expected empty response'] },
+          requestId: parsed.data.requestId,
+        },
         requestOptions,
       );
     },

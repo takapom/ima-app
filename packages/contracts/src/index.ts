@@ -5,3 +5,9 @@ export * from './preferences';
 export * from './public';
 export * from './response';
 export * from './values';
+export {
+  parseSavedReferenceCreateRequest,
+  parseSavedReferenceCreateResponse,
+  parseSavedReferenceDeleteRequest,
+  parseSavedReferencePath,
+} from './saved-reference-http';
