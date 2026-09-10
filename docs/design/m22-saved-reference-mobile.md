@@ -17,4 +17,4 @@ serviceは保存前に owner-scoped reference retention を確認し、処理前
 
 `remove` は `DELETE /v1/saved/:savedPlaceRef` の冪等操作である。local IDを受け取る場合も、SQLite行のserver refが一致することを確認してから削除する。scope変更後にserver削除が先に成功する可能性はあるため、遅着抑止はmobileのlocal/UI反映を止める責務として扱い、server側の副作用を取り消すとは解釈しない。同じkeyのretryでserver状態を再同期する。
 
-端末側の保存対象は期限付きmetadataとopaque server refだけで、provider名、provider record ref、候補表示名、座標、観測値は保存しない。SQLite接続は正式な `SqliteStore` portで注入し、Expo SQLiteやSecureStoreをこの単位で追加しない。UI hookへの保存操作、一覧refresh、実端末のSQLite adapter接続は後続単位である。
+端末側の保存対象は期限付きmetadataとopaque server refだけで、provider名、provider record ref、候補表示名、座標、観測値は保存しない。SQLite接続は正式な `SqliteStore` portで注入し、Expo SQLiteやSecureStoreをこの単位で追加しない。`createMobileJourneyRuntime` に `savedReference` を渡すと、同じAPI client/controllerの現在scopeを使うstorageが `binding.storage` として構成され、`JourneyScreen` のhookへ伝播する。SQLite adapterまたはreference policyが未注入の場合は保存不可のままで、一覧refreshと実端末adapterの組み立ては後続単位である。

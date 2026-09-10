@@ -4,25 +4,34 @@ import { JourneyScreen } from './src/screens/JourneyScreen';
 import {
   createMobileJourneyRuntime,
   mobileJourneyRuntimeMessage,
+  type MobileJourneyRuntimeOptions,
 } from './src/services/api/mobile-runtime';
 import type { JourneyApiControllerBinding } from './src/services/api/journey-api-binding';
 
 export type AppProps = {
   /** The host supplies fixture/live credentials and request fields at this boundary. */
   readonly journeyApi?: JourneyApiControllerBinding;
+  /** Optional formal SQLite/reference policy injection for the same runtime API client. */
+  readonly mobileRuntimeOptions?: MobileJourneyRuntimeOptions;
   readonly [key: string]: unknown;
 };
 
-export default function App({ journeyApi }: AppProps): React.JSX.Element {
+export default function App({ journeyApi, mobileRuntimeOptions }: AppProps): React.JSX.Element {
   return (
     <SafeAreaProvider>
-      <AppContent {...(journeyApi === undefined ? {} : { journeyApi })} />
+      <AppContent
+        {...(journeyApi === undefined ? {} : { journeyApi })}
+        {...(mobileRuntimeOptions === undefined ? {} : { mobileRuntimeOptions })}
+      />
     </SafeAreaProvider>
   );
 }
 
-function AppContent({ journeyApi }: AppProps): React.JSX.Element {
-  const runtime = useMemo(() => createMobileJourneyRuntime(), []);
+function AppContent({ journeyApi, mobileRuntimeOptions }: AppProps): React.JSX.Element {
+  const runtime = useMemo(
+    () => createMobileJourneyRuntime(mobileRuntimeOptions),
+    [mobileRuntimeOptions],
+  );
   const binding = journeyApi ?? runtime.binding;
   if (binding !== null && binding !== undefined) return <JourneyScreen api={binding} />;
   return (

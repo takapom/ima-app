@@ -59,6 +59,8 @@ export type UseJourneyActionsOptions = {
   readonly responseState: AssistantResponseState;
   readonly query: string;
   readonly actionServices?: JourneyActionServices;
+  /** Host-composed formal storage; other native action services remain defaulted. */
+  readonly storage?: JourneyStorageService;
   readonly mapDestinationResolver?: Parameters<typeof createNativeJourneyMapService>[0];
   readonly onPromote?: (candidateId: string) => void;
   readonly onRecover?: (intent: RecoverIntent) => void;
@@ -109,6 +111,7 @@ export const useJourneyActions = ({
   responseState,
   query,
   actionServices,
+  storage,
   mapDestinationResolver,
   onPromote,
   onRecover,
@@ -129,7 +132,12 @@ export const useJourneyActions = ({
     () => createDefaultJourneyActionServices(mapDestinationResolver),
     [mapDestinationResolver],
   );
-  const services = actionServices ?? fallbackServices;
+  const services = useMemo<JourneyActionServices>(
+    () =>
+      actionServices ??
+      (storage === undefined ? fallbackServices : { ...fallbackServices, storage }),
+    [actionServices, fallbackServices, storage],
+  );
   const sourceLinkService = services.sourceLink ?? fallbackServices.sourceLink;
   const responseCards = responseState.cards;
   const candidateIdKey =

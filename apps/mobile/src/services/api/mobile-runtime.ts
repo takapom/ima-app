@@ -2,7 +2,9 @@ import type {
   CreateThreadRequest,
   LocationSnapshot,
   LifecycleCommand,
+  PublicCard,
   Preferences,
+  RetentionMetadata,
   SearchRequest,
   ThreadTurnRequest,
 } from '@ima/contracts';
@@ -13,10 +15,16 @@ import type {
   JourneyApiSearchFactoryInput,
   JourneyApiTurnFactoryInput,
 } from './journey-api-binding';
+import type { JourneyApiControllerState } from './journey-controller-types';
 import { createJourneyApiComposition } from './composition';
+import { createJourneyApiClient } from './client';
 import { createJourneyPhotoClient } from './photo-client';
 import { createRuntimeId } from '../runtime-id';
+import { createSavedReferenceJourneyStorage, type JourneyStorageService } from '../journey-storage';
+import { createSavedReferenceService, type SavedReferenceScope } from '../saved-reference-service';
+import type { SqliteStore } from '../sqlite/types';
 import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from './types';
+import { projectAssistantResponseState } from '../../state/assistant-response-projection';
 
 export type MobileRuntimeEnvironment = Readonly<Record<string, string | undefined>>;
 export type MobileJourneyRuntimeMode = 'fixture' | 'live' | 'unconfigured';
@@ -36,6 +44,13 @@ export type MobileJourneyRuntime = {
   readonly reason: MobileJourneyRuntimeReason | null;
 };
 
+export type MobileJourneySavedReferenceOptions = {
+  /** A host-owned SQLite adapter; no native SDK is selected by this module. */
+  readonly sqlite: SqliteStore;
+  /** Owner-scoped reference policy, independent from provider card payload policy. */
+  readonly referenceRetentionFor: (candidate: PublicCard) => RetentionMetadata | null;
+};
+
 export type MobileJourneyRuntimeOptions = {
   readonly env?: MobileRuntimeEnvironment;
   /** Native credential storage will provide this in a later integration unit. */
@@ -44,6 +59,8 @@ export type MobileJourneyRuntimeOptions = {
   readonly now?: () => string;
   readonly requestIdFactory?: () => string;
   readonly idFactory?: (prefix: string) => string;
+  /** Both fields are required to connect saving; partial injection fails closed. */
+  readonly savedReference?: MobileJourneySavedReferenceOptions;
 };
 
 type RequestFactoryOptions = {
@@ -163,6 +180,146 @@ export const createJourneyApiRequestFactory = (
   };
 };
 
+const isFutureTimestamp = (value: string, now: () => string): boolean => {
+  try {
+    const nowMilliseconds = Date.parse(now());
+    const expiryMilliseconds = Date.parse(value);
+    return Boolean(
+      Number.isFinite(nowMilliseconds) &&
+      Number.isFinite(expiryMilliseconds) &&
+      nowMilliseconds < expiryMilliseconds,
+    );
+  } catch {
+    return false;
+  }
+};
+
+const earliestExpiry = (...values: readonly (string | null | undefined)[]): string | null => {
+  let earliest: { readonly value: string; readonly milliseconds: number } | null = null;
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    const milliseconds = Date.parse(value);
+    if (!Number.isFinite(milliseconds)) return null;
+    if (earliest === null || milliseconds < earliest.milliseconds) {
+      earliest = { value, milliseconds };
+    }
+  }
+  return earliest?.value ?? null;
+};
+
+const responseSessionExpiryFor = (
+  responseState: JourneyApiControllerState['responseState'],
+): string | null => {
+  if (responseState === null) return null;
+  const values: string[] = [];
+  const cards = responseState.cards;
+  if (cards !== null) {
+    for (const card of [cards.hero, ...cards.alts]) {
+      values.push(card.why.retention.sessionExpiresAt);
+      values.push(...card.why.evidence.map((item) => item.retention.sessionExpiresAt));
+      if (card.diff !== undefined) {
+        values.push(card.diff.retention.sessionExpiresAt);
+        values.push(...card.diff.evidence.map((item) => item.retention.sessionExpiresAt));
+      }
+      for (const field of Object.values(card.facts)) {
+        if (field?.status === 'known') {
+          values.push(...field.evidence.map((item) => item.retention.sessionExpiresAt));
+        }
+      }
+    }
+  }
+  for (const record of responseState.responseRecords) {
+    for (const message of record.messages) {
+      values.push(message.retention.sessionExpiresAt);
+      values.push(...message.evidence.map((item) => item.retention.sessionExpiresAt));
+    }
+  }
+  return earliestExpiry(...values);
+};
+
+const visibleCandidateFor = (
+  controller: JourneyApiControllerBinding['controller'],
+  candidateId: string,
+  now: () => string,
+): boolean => {
+  const responseState = controller.getState().responseState;
+  if (responseState === null) return false;
+  try {
+    const projected = projectAssistantResponseState(responseState, now());
+    const cards = projected.cards;
+    const card =
+      cards === null
+        ? undefined
+        : [cards.hero, ...cards.alts].find((item) => item.candidateId === candidateId);
+    if (card === undefined || card.why.retention.displayPolicyStatus !== 'available') {
+      return false;
+    }
+    const identity = card.facts.identity;
+    return (
+      identity.status === 'known' &&
+      identity.evidence.every((item) => item.retention.displayPolicyStatus === 'available')
+    );
+  } catch {
+    return false;
+  }
+};
+
+const savedReferenceStorageFor = (
+  controller: JourneyApiControllerBinding['controller'],
+  api: Parameters<typeof createSavedReferenceService>[0]['api'],
+  options: MobileJourneySavedReferenceOptions | undefined,
+  now: () => string,
+  requestIdFactory: () => string,
+): JourneyStorageService | undefined => {
+  if (options === undefined) return undefined;
+
+  const currentScope = (): SavedReferenceScope | null => {
+    const state = controller.getState();
+    if (state.status !== 'idle' || state.threadId === null || state.responseState === null) {
+      return null;
+    }
+    const sessionExpiresAt = earliestExpiry(
+      state.localSnapshot?.sessionExpiresAt,
+      responseSessionExpiryFor(state.responseState),
+    );
+    if (sessionExpiresAt === null || !isFutureTimestamp(sessionExpiresAt, now)) {
+      return null;
+    }
+    const revision = state.responseState.revision;
+    if (!Number.isSafeInteger(revision) || revision < 1) return null;
+    return { threadId: state.threadId, revision };
+  };
+  const referenceRetentionFor = (candidate: PublicCard): RetentionMetadata | null => {
+    try {
+      const retention = options.referenceRetentionFor(candidate);
+      return retention !== null && isFutureTimestamp(retention.sessionExpiresAt, now)
+        ? retention
+        : null;
+    } catch {
+      return null;
+    }
+  };
+  const service = createSavedReferenceService({
+    api,
+    sqlite: options.sqlite,
+    currentScope,
+    requestIdFactory,
+  });
+  const storage = createSavedReferenceJourneyStorage({
+    service,
+    currentScope,
+    referenceRetentionFor,
+  });
+  return {
+    saveCandidate: (candidate, saveOptions) => {
+      if (!visibleCandidateFor(controller, candidate.candidateId, now)) {
+        return Promise.resolve({ status: 'failed', reason: 'stale' as const });
+      }
+      return storage.saveCandidate(candidate, saveOptions);
+    },
+  };
+};
+
 export const createMobileJourneyRuntime = (
   options: MobileJourneyRuntimeOptions = {},
 ): MobileJourneyRuntime => {
@@ -200,8 +357,16 @@ export const createMobileJourneyRuntime = (
     requestIdFactory,
     ...(options.fetchImpl === undefined ? {} : { fetchImpl: options.fetchImpl }),
   } as const;
-  const controller = createJourneyApiComposition(clientOptions);
+  const api = createJourneyApiClient(clientOptions);
+  const controller = createJourneyApiComposition({ ...clientOptions, api, clock: now });
   const photoClient = createJourneyPhotoClient({ ...clientOptions, now });
+  const storage = savedReferenceStorageFor(
+    controller,
+    api,
+    options.savedReference,
+    now,
+    requestIdFactory,
+  );
   return {
     mode: selected.mode,
     reason: null,
@@ -209,6 +374,7 @@ export const createMobileJourneyRuntime = (
       controller,
       photoClient,
       requests: createJourneyApiRequestFactory({ now, idFactory }),
+      ...(storage === undefined ? {} : { storage }),
     },
   };
 };

@@ -7,6 +7,7 @@ import type {
 import type { JourneyConditions } from '../../state/journey-input';
 import type { JourneyApiController } from './journey-controller-types';
 import type { JourneyPhotoClient } from './photo-client';
+import type { JourneyStorageService } from '../journey-storage';
 
 export type JourneyApiSubmitContext = {
   readonly conditions: JourneyConditions;
@@ -48,4 +49,6 @@ export type JourneyApiControllerBinding = {
   readonly requests: JourneyApiRequestFactory;
   /** Authenticated binary photo access; absent when the host has no API composition. */
   readonly photoClient?: JourneyPhotoClient;
+  /** Formal owner-scoped save adapter; absent when SQLite was not injected by the host. */
+  readonly storage?: JourneyStorageService;
 };

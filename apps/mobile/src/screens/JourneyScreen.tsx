@@ -23,6 +23,7 @@ import {
 import type { AssistantResponseClock } from '../services/assistant-response-clock';
 import type { JourneyPhotoClient } from '../services/api/photo-client';
 import type { WalkingMapDestinationResolver } from '../services/journey-map';
+import type { JourneyStorageService } from '../services/journey-storage';
 import {
   selectJourneyNoticeText,
   type JourneySourceLinkService,
@@ -69,6 +70,8 @@ export type JourneyScreenProps = {
   readonly onPromote?: (candidateId: string) => void;
   readonly onRecover?: (intent: RecoverIntent) => void;
   readonly actionServices?: JourneyActionServices;
+  /** Runtime-composed owner-scoped storage; absent hosts remain unavailable. */
+  readonly storage?: JourneyStorageService;
   readonly sourceLinkService?: JourneySourceLinkService;
   readonly mapDestinationResolver?: WalkingMapDestinationResolver;
   readonly onSourcePress?: (sourceLink: string) => void;
@@ -84,6 +87,7 @@ export type JourneyScreenProps = {
 export function JourneyScreen(props: JourneyScreenProps): React.JSX.Element {
   const api = useJourneyApiController(props.api);
   const connectedPhotoClient = props.photoClient ?? props.api?.photoClient;
+  const connectedStorage = props.storage ?? props.api?.storage;
   const stateKey = api.connected
     ? `api-${api.state.threadId ?? props.threadId ?? 'auto'}-${api.viewKey}`
     : (props.threadId ?? 'mobile-thread');
@@ -98,6 +102,7 @@ export function JourneyScreen(props: JourneyScreenProps): React.JSX.Element {
       threadId={api.state.threadId ?? props.threadId ?? 'mobile-thread'}
       responseState={api.responseState}
       {...(connectedPhotoClient === undefined ? {} : { photoClient: connectedPhotoClient })}
+      {...(connectedStorage === undefined ? {} : { storage: connectedStorage })}
       requestStatus={api.requestStatus}
       errorMessage={api.errorMessage ?? '時間をおいてもう一度試してください。'}
       onSubmit={(query, context) => {
@@ -147,6 +152,7 @@ function JourneyScreenStateOwner({
   onPromote,
   onRecover,
   actionServices,
+  storage,
   mapDestinationResolver,
   onSourcePress,
   onHistorySelect,
@@ -198,6 +204,7 @@ function JourneyScreenStateOwner({
     responseState: renderedResponse,
     query: journey.query,
     ...(actionServices === undefined ? {} : { actionServices }),
+    ...(storage === undefined ? {} : { storage }),
     ...(mapDestinationResolver === undefined ? {} : { mapDestinationResolver }),
     ...(onPromote === undefined ? {} : { onPromote }),
     ...(onRecover === undefined ? {} : { onRecover }),
