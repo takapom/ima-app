@@ -6,6 +6,7 @@ import {
 import { routeRequest } from '../../src/http/router';
 import { RateLimitDO } from '../../src/thread-do';
 import { TelemetryDO } from '../../src/telemetry/telemetry-do';
+import { SavedReferenceDO } from '../../src/saved-references/saved-reference-do';
 import { ProductionThreadDO } from './runtime-production-worker';
 
 export class ProductionHttpThreadDO extends ProductionThreadDO {
@@ -31,5 +32,5 @@ const handler = {
   },
 } satisfies ExportedHandler<BootstrapEnv>;
 
-export { ProductionHttpThreadDO as ThreadDO, RateLimitDO, TelemetryDO };
+export { ProductionHttpThreadDO as ThreadDO, RateLimitDO, SavedReferenceDO, TelemetryDO };
 export default handler;

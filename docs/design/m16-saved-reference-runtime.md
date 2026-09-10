@@ -4,8 +4,8 @@
 
 この実装は、ユーザーが明示的に保存した場所の **owner-scoped な provider identity** を
 Durable Object の SQLite に保持する。C1のstorage adapterと、C2aのThread期限から独立した
-`SavedReferenceDO` / trusted Worker RPCまでを含む。公開 HTTP と Core の同期
-`SavedPlaceReferencePort` はまだ接続しない。
+`SavedReferenceDO` / trusted Worker RPCと、owner認証済みWorker HTTPの保存・削除操作までを
+含む。Coreの同期 `SavedPlaceReferencePort` や保存参照の再取得表示は別単位で扱う。
 
 ```mermaid
 flowchart LR
@@ -32,6 +32,11 @@ provider の名称、住所、座標、写真、経路、観測、生成文、ra
 同一 owner・provider・recordRef は既存行を返して重複登録しない。削除後の opaque ref は
 `m16_saved_place_reference_used` に ref だけを tombstone として残し、別 owner を含めて
 再発行しない。この tombstone は旧 ref の再利用防止以外の情報を持たない。
+
+冪等操作の `m16_saved_reference_operation` は owner、key、operation、server fingerprint、
+saved ref、deleted を記録する。登録時だけ provider/recordRef を照合に使い、削除が成功
+した時点で全operation行の provider/recordRef をNULLへscrubする。fingerprintは
+`threadId/candidateId/revision` からWorkerが作り、provider payloadや候補表示情報を含めない。
 
 入力は Core の `SavedPlaceRegistrationSchema` / `SavedPlaceRefSchema` で SQL より前に検証
 する。保存行の読み出し時も `SavedPlaceReferenceSchema` を再検証し、壊れた行を成功や
@@ -66,9 +71,25 @@ Durable Object の SQLite を実際に使い、次を検証する。
 ThreadDO削除後の参照存続、RPC境界のpayload拒否を確認する。ThreadDOをstorage hostに
 借用したC1テストを、本番構成の証拠に読み替えない。
 
+## HTTP保存操作
+
+`POST /v1/threads/:threadId/saved` は `candidateId` と `revision` だけを受け取り、
+ThreadDOの現在scopeから provider と `recordRef` を解決してowner shardへ渡す。clientが
+provider identityや候補payloadを指定する入力はstrict schemaで拒否する。Workerは
+`threadId/candidateId/revision` のserver fingerprintをidempotency keyに束ねるため、同じ
+keyの別thread・別候補再送は既存refを返さず `409 CONFLICT` とする。候補解決時は、
+ThreadDOに保持された current card set の provider identity と session expiry を照合し、
+DO eviction後も期限内のsnapshotだけを使う。SavedReferenceDOへcard setやsnapshotを
+複製せず、旧snapshotが欠落・期限切れなら保存を拒否する。
+
+`DELETE /v1/saved/:savedPlaceRef` は認証ownerのshardだけを操作し、未所有・未存在でも
+参照の有無を外部へ漏らさず冪等な `204` を返す。削除後はoperation ledgerからprovider
+identityをscrubし、旧keyの再送を成功や旧refの再登録へ変換しない。owner shardのDO
+eviction後もledgerとactive identityは復元される。
+
 ## 後続接続
 
-次単位で owner 認証済みの DO/RPC 境界を決め、親で検討中の POST/DELETE 操作へ接続する。
-別 thread で使う場合も旧 candidate・観測を復元せず、保存 identity から現行 provider policy
+Coreの同期 `SavedPlaceReferencePort`、保存済み参照のrefresh/model入力、端末の保存UI接続は
+後続単位で扱う。別 thread で使う場合も旧 candidate・観測を復元せず、保存 identity から現行 provider policy
 で新しい candidate と観測を再取得する。再取得できない場合は `reference_only` として扱い、
 provider payload の offline 復元を約束しない。

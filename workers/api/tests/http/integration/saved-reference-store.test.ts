@@ -11,6 +11,7 @@ const OWNER_A = `m16-owner-a-${'a'.repeat(20)}`;
 const OWNER_B = `m16-owner-b-${'b'.repeat(20)}`;
 const TABLE_NAME = 'm16_saved_place_reference';
 const USED_REF_TABLE_NAME = 'm16_saved_place_reference_used';
+const OPERATION_TABLE_NAME = 'm16_saved_reference_operation';
 
 type TestEnv = Cloudflare.Env & { readonly THREADS: DurableObjectNamespace<ThreadDO> };
 
@@ -133,6 +134,71 @@ describe('M16 durable saved reference store', () => {
     if (!result.b.ok) throw new Error('M16_REFERENCE_CREATE_FAILED');
     expect(result.ownerBReadsB).toEqual({ ok: true, reference: result.b.reference });
     expect(result.ownerARemovesB).toEqual({ ok: true, deleted: false });
+  });
+
+  it('binds retries to the request fingerprint and scrubs identity after removal', async () => {
+    const { stub } = newThread('operation-ledger');
+    const fingerprint = 'thread-a-candidate-a-revision-1';
+    const result = await withStore(stub, idsFor('saved-ledger'), (store, state) => {
+      const first = store.register(registration(OWNER_A, 'ChIJledger-a'), {
+        idempotencyKey: 'saved-ledger-key',
+        idempotencyFingerprint: fingerprint,
+      });
+      const retry = store.register(registration(OWNER_A, 'ChIJledger-a'), {
+        idempotencyKey: 'saved-ledger-key',
+        idempotencyFingerprint: fingerprint,
+      });
+      const conflict = store.register(registration(OWNER_A, 'ChIJledger-b'), {
+        idempotencyKey: 'saved-ledger-key',
+        idempotencyFingerprint: 'thread-b-candidate-b-revision-1',
+      });
+      if (!first.ok) throw new Error('M16_OPERATION_LEDGER_SETUP_FAILED');
+      const removed = store.remove(OWNER_A, first.reference.savedPlaceRef, {
+        idempotencyKey: 'remove-ledger-key',
+      });
+      const removeRetry = store.remove(OWNER_A, first.reference.savedPlaceRef, {
+        idempotencyKey: 'remove-ledger-key',
+      });
+      const oldReplay = store.replay(OWNER_A, 'saved-ledger-key', fingerprint);
+      const oldRegister = store.register(registration(OWNER_A, 'ChIJledger-a'), {
+        idempotencyKey: 'saved-ledger-key',
+        idempotencyFingerprint: fingerprint,
+      });
+      const operationRows = state.storage.sql
+        .exec<{
+          readonly operation: string;
+          readonly provider: string | null;
+          readonly record_ref: string | null;
+        }>(`SELECT operation, provider, record_ref FROM ${OPERATION_TABLE_NAME} ORDER BY operation`)
+        .toArray();
+      const activeRows = state.storage.sql
+        .exec<{ readonly count: number }>(`SELECT COUNT(*) AS count FROM ${TABLE_NAME}`)
+        .toArray()[0]?.count;
+      return {
+        first,
+        retry,
+        conflict,
+        removed,
+        removeRetry,
+        oldReplay,
+        oldRegister,
+        operationRows,
+        activeRows,
+      };
+    });
+
+    expect(result.first).toMatchObject({ ok: true, created: true });
+    expect(result.retry).toEqual({ ...result.first, created: false });
+    expect(result.conflict).toEqual({ ok: false, code: 'IDEMPOTENCY_CONFLICT' });
+    expect(result.removed).toEqual({ ok: true, deleted: true });
+    expect(result.removeRetry).toEqual({ ok: true, deleted: true });
+    expect(result.oldReplay).toEqual({ ok: false, code: 'REFERENCE_CONFLICT' });
+    expect(result.oldRegister).toEqual({ ok: false, code: 'IDEMPOTENCY_CONFLICT' });
+    expect(result.activeRows).toBe(0);
+    expect(result.operationRows).toEqual([
+      { operation: 'register', provider: null, record_ref: null },
+      { operation: 'remove', provider: null, record_ref: null },
+    ]);
   });
 
   it('revokes an old reference and issues a new one for re-registration', async () => {

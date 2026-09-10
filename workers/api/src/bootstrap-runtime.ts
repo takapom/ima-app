@@ -291,6 +291,8 @@ export const createRuntimeApplicationHandler = (
       case 'delete_thread':
       case 'place':
       case 'saved_reference_refresh':
+      case 'saved_reference_create':
+      case 'saved_reference_delete':
         return Promise.reject(internal());
     }
   },

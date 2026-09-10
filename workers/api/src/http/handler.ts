@@ -14,6 +14,9 @@ import type {
   PlaceQuerySchema,
   PlaceResponseSchema,
   PhotoPathSchema,
+  SavedReferenceCreateRequest,
+  SavedReferenceCreateResponse,
+  SavedReferenceDeleteRequest,
   SavedReferencePathSchema,
   SavedReferenceResponseSchema,
   ThreadPathSchema,
@@ -26,6 +29,9 @@ export type PlacePath = v.InferOutput<typeof PlacePathSchema>;
 export type PlaceQuery = v.InferOutput<typeof PlaceQuerySchema>;
 export type PlaceResponse = v.InferOutput<typeof PlaceResponseSchema>;
 export type PhotoPath = v.InferOutput<typeof PhotoPathSchema>;
+export type SavedReferenceCreateInput = SavedReferenceCreateRequest;
+export type SavedReferenceDeleteInput = SavedReferenceDeleteRequest;
+export type SavedReferenceCreateOutput = SavedReferenceCreateResponse;
 export type SavedReferencePath = v.InferOutput<typeof SavedReferencePathSchema>;
 export type SavedReferenceResponse = v.InferOutput<typeof SavedReferenceResponseSchema>;
 export type ThreadPath = v.InferOutput<typeof ThreadPathSchema>;
@@ -68,7 +74,17 @@ export type ApplicationOperation =
       readonly path: PlacePath;
       readonly query: PlaceQuery;
     }
-  | { readonly kind: 'saved_reference_refresh'; readonly path: SavedReferencePath };
+  | { readonly kind: 'saved_reference_refresh'; readonly path: SavedReferencePath }
+  | {
+      readonly kind: 'saved_reference_create';
+      readonly path: ThreadPath;
+      readonly input: SavedReferenceCreateInput;
+    }
+  | {
+      readonly kind: 'saved_reference_delete';
+      readonly path: SavedReferencePath;
+      readonly input: SavedReferenceDeleteInput;
+    };
 
 export type ApplicationResult =
   | { readonly kind: 'create_thread'; readonly response: CreateThreadResponse }
@@ -79,7 +95,9 @@ export type ApplicationResult =
   | { readonly kind: 'lifecycle'; readonly response: LifecycleResponse }
   | { readonly kind: 'delete_thread'; readonly response: null }
   | { readonly kind: 'place'; readonly response: PlaceResponse }
-  | { readonly kind: 'saved_reference_refresh'; readonly response: SavedReferenceResponse };
+  | { readonly kind: 'saved_reference_refresh'; readonly response: SavedReferenceResponse }
+  | { readonly kind: 'saved_reference_create'; readonly response: SavedReferenceCreateOutput }
+  | { readonly kind: 'saved_reference_delete'; readonly response: null };
 
 /** Worker-owned adapter boundary; HTTP/SDK/Env objects never cross into the application. */
 export interface ApplicationHandler {

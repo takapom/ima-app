@@ -23,6 +23,8 @@ export type AppIntegrityRoute =
   | 'place'
   | 'photos'
   | 'saved_reference_refresh'
+  | 'saved_reference_create'
+  | 'saved_reference_delete'
   | 'turn'
   | 'create_thread'
   | 'read_thread'

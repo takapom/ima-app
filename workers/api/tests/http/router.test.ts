@@ -11,6 +11,7 @@ import {
   candidateId,
   requestId,
   searchInput,
+  savedPlaceRef,
   threadId,
   turnInput,
 } from './router-fixtures';
@@ -83,6 +84,32 @@ describe('HTTP router boundary', () => {
         expected: { kind: 'turn', path: { threadId }, input: { requestId } },
       },
       {
+        name: 'saved-create',
+        path: '/v1/threads/thread-1/saved',
+        method: 'POST',
+        json: {
+          schemaVersion: 'v1',
+          requestId,
+          candidateId,
+          revision: 1,
+          idempotencyKey: 'saved-create-1',
+        },
+        status: 201,
+        expected: { kind: 'saved_reference_create', path: { threadId }, input: { requestId } },
+      },
+      {
+        name: 'saved-delete',
+        path: `/v1/saved/${savedPlaceRef}`,
+        method: 'DELETE',
+        json: {
+          schemaVersion: 'v1',
+          requestId,
+          idempotencyKey: 'saved-delete-1',
+        },
+        status: 204,
+        expected: { kind: 'saved_reference_delete', path: { savedPlaceRef }, input: { requestId } },
+      },
+      {
         name: 'read',
         path: '/v1/threads/thread-1',
         method: 'GET',
@@ -114,7 +141,7 @@ describe('HTTP router boundary', () => {
       },
     ];
 
-    expect(cases).toHaveLength(14);
+    expect(cases).toHaveLength(16);
     for (const testCase of cases) {
       const harness = makeHarness();
       const response = await routeRequest(
@@ -170,6 +197,22 @@ describe('HTTP router boundary', () => {
       },
       { path: '/v1/threads/thread-1?debug=true' },
       { path: '/v1/threads/thread-1/turns?debug=true', method: 'POST', json: turnInput },
+      {
+        path: '/v1/threads/thread-1/saved?debug=true',
+        method: 'POST',
+        json: {
+          schemaVersion: 'v1',
+          requestId,
+          candidateId,
+          revision: 1,
+          idempotencyKey: 'saved-create-query',
+        },
+      },
+      {
+        path: '/v1/saved/saved-1?debug=true',
+        method: 'DELETE',
+        json: { schemaVersion: 'v1', requestId, idempotencyKey: 'saved-delete-query' },
+      },
     ];
     for (const unsupportedQuery of unsupportedQueries) {
       const harness = makeHarness();
@@ -247,6 +290,35 @@ describe('HTTP router boundary', () => {
     );
     expect(eventsResponse.status).toBe(403);
     expect(events.calls.events).toBe(0);
+
+    const savedCreate = makeHarness({ denyKind: 'thread' });
+    const savedCreateResponse = await routeRequest(
+      makeRequest('/v1/threads/thread-1/saved', {
+        method: 'POST',
+        json: {
+          schemaVersion: 'v1',
+          requestId,
+          candidateId,
+          revision: 1,
+          idempotencyKey: 'saved-create-denied',
+        },
+      }),
+      savedCreate.config,
+    );
+    expect(savedCreateResponse.status).toBe(403);
+    expect(savedCreate.calls.application).toBe(0);
+
+    const foreignSavedDelete = makeHarness({ denyKind: 'saved_reference' });
+    const foreignSavedDeleteResponse = await routeRequest(
+      makeRequest(`/v1/saved/${savedPlaceRef}`, {
+        method: 'DELETE',
+        json: { schemaVersion: 'v1', requestId, idempotencyKey: 'saved-delete-foreign' },
+      }),
+      foreignSavedDelete.config,
+    );
+    expect(foreignSavedDeleteResponse.status).toBe(204);
+    expect(foreignSavedDelete.calls.ownership).toEqual([]);
+    expect(foreignSavedDelete.calls.application).toBe(1);
   });
 
   it('maps rate and typed domain failures to fixed public envelopes', async () => {

@@ -6,6 +6,7 @@ import {
   LifecycleResponseSchema,
   PlaceResponseSchema,
   PhotoResponseDescriptorSchema,
+  SavedReferenceCreateResponseSchema,
   SavedReferenceResponseSchema,
   SearchRequestSchema,
   SearchResponseSchema,
@@ -215,6 +216,13 @@ export const savedReferenceResponse = parse(SavedReferenceResponseSchema, {
   data: { items: [{ candidateId, fields: { identity } }] },
 });
 
+export const savedReferenceCreateResponse = parse(SavedReferenceCreateResponseSchema, {
+  schemaVersion: 'v1',
+  requestId,
+  candidateId,
+  savedPlaceRef,
+});
+
 export const photoDescriptor = parse(PhotoResponseDescriptorSchema, {
   schemaVersion: 'v1',
   requestId,
@@ -266,6 +274,10 @@ const applicationResult = (operation: ApplicationOperation): ApplicationResult =
       return { kind: operation.kind, response: placeResponse };
     case 'saved_reference_refresh':
       return { kind: operation.kind, response: savedReferenceResponse };
+    case 'saved_reference_create':
+      return { kind: operation.kind, response: savedReferenceCreateResponse };
+    case 'saved_reference_delete':
+      return { kind: operation.kind, response: null };
   }
 };
 

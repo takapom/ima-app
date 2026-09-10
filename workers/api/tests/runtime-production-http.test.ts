@@ -3,6 +3,7 @@ import { env, evictDurableObject, runInDurableObject, SELF } from 'cloudflare:te
 import {
   CreateThreadResponseSchema,
   ErrorResponseSchema,
+  SavedReferenceCreateResponseSchema,
   SearchResponseSchema,
 } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
@@ -12,6 +13,7 @@ import type { RuntimeProductionCardSetSnapshot } from './runtime-native/runtime-
 
 const APP_TOKEN = 'test-app-token';
 const OWNER_CREDENTIAL = 'A'.repeat(42) + 'E';
+const OTHER_OWNER_CREDENTIAL = 'B'.repeat(42) + 'E';
 const SERVER_NOW = '2026-09-10T12:00:00Z';
 
 type ProductionHttpTestEnv = Cloudflare.Env & {
@@ -20,17 +22,25 @@ type ProductionHttpTestEnv = Cloudflare.Env & {
 
 const productionEnv = (): ProductionHttpTestEnv => env as ProductionHttpTestEnv;
 
-const requestHeaders = (requestId: string): Record<string, string> => ({
+const requestHeaders = (
+  requestId: string,
+  ownerCredential = OWNER_CREDENTIAL,
+): Record<string, string> => ({
   'content-type': 'application/json',
   'x-app-token': APP_TOKEN,
   'x-device-id': 'runtime-production-http-device',
-  'x-ima-owner-credential': OWNER_CREDENTIAL,
+  'x-ima-owner-credential': ownerCredential,
   'x-ima-request-id': requestId,
   'x-app-version': 'm22-runtime-production-http-test',
 });
 
-const call = async (path: string, requestId: string, init: RequestInit = {}): Promise<Response> => {
-  const headers = new Headers(requestHeaders(requestId));
+const call = async (
+  path: string,
+  requestId: string,
+  init: RequestInit = {},
+  ownerCredential = OWNER_CREDENTIAL,
+): Promise<Response> => {
+  const headers = new Headers(requestHeaders(requestId, ownerCredential));
   new Headers(init.headers).forEach((value, key) => headers.set(key, value));
   return SELF.fetch(`https://ima.test${path}`, { ...init, headers });
 };
@@ -261,5 +271,221 @@ describe('production runtime HTTP composition', () => {
     expect(parsedReference.success).toBe(true);
     if (!parsedReference.success) throw new Error('runtime context reference was invalid');
     expect(parsedReference.output.excludedCandidateIds).toContain(excludedCandidateId);
+  });
+
+  it('saves and replays a server-resolved candidate across HTTP and DO eviction', async () => {
+    const threadId = await createThread();
+    const searchRequestId = `runtime-production-http-save-search-${crypto.randomUUID()}`;
+    const searchResponse = await call(`/v1/threads/${threadId}/turns`, searchRequestId, {
+      method: 'POST',
+      body: JSON.stringify(
+        turnBody(searchRequestId, 1, '[m24-two-results] 保存候補を二つ取得して'),
+      ),
+    });
+    expect(searchResponse.status).toBe(200);
+    const searchParsed = v.safeParse(SearchResponseSchema, await searchResponse.json());
+    expect(searchParsed.success).toBe(true);
+    if (!searchParsed.success || searchParsed.output.response.kind !== 'cards') {
+      throw new Error('saved reference fixture did not create cards');
+    }
+    const cards = searchParsed.output.response;
+    const candidateId = cards.cards.hero.candidateId;
+    const alternateCandidateId = cards.cards.alts[0]?.candidateId;
+    if (cards.revision < 2 || alternateCandidateId === undefined) {
+      throw new Error('saved reference fixture did not create two candidates');
+    }
+    const idempotencyKey = `runtime-production-http-save-${crypto.randomUUID()}`;
+    const saveBody = (
+      requestId: string,
+      candidate: string,
+      key = idempotencyKey,
+      revision = cards.revision,
+    ) => ({
+      schemaVersion: 'v1',
+      requestId,
+      candidateId: candidate,
+      revision,
+      idempotencyKey: key,
+    });
+
+    const foreignSaveRequestId = `runtime-production-http-save-foreign-${crypto.randomUUID()}`;
+    const foreignSave = await call(
+      `/v1/threads/${threadId}/saved`,
+      foreignSaveRequestId,
+      {
+        method: 'POST',
+        body: JSON.stringify(saveBody(foreignSaveRequestId, candidateId)),
+      },
+      OTHER_OWNER_CREDENTIAL,
+    );
+    expect(foreignSave.status).toBe(403);
+    const foreignSaveParsed = v.safeParse(ErrorResponseSchema, await foreignSave.json());
+    expect(foreignSaveParsed.success).toBe(true);
+    if (!foreignSaveParsed.success) throw new Error('foreign saved request was invalid');
+    expect(foreignSaveParsed.output.code).toBe('FORBIDDEN');
+
+    const staleSaveRequestId = `runtime-production-http-save-stale-${crypto.randomUUID()}`;
+    const staleSave = await call(`/v1/threads/${threadId}/saved`, staleSaveRequestId, {
+      method: 'POST',
+      body: JSON.stringify(
+        saveBody(
+          staleSaveRequestId,
+          candidateId,
+          `runtime-production-http-save-stale-${crypto.randomUUID()}`,
+          1,
+        ),
+      ),
+    });
+    expect(staleSave.status).toBe(409);
+    const staleSaveParsed = v.safeParse(ErrorResponseSchema, await staleSave.json());
+    expect(staleSaveParsed.success).toBe(true);
+    if (!staleSaveParsed.success) throw new Error('stale saved request was invalid');
+    expect(staleSaveParsed.output.code).toBe('STALE_TURN');
+
+    const firstSaveRequestId = `runtime-production-http-save-first-${crypto.randomUUID()}`;
+    const firstSave = await call(`/v1/threads/${threadId}/saved`, firstSaveRequestId, {
+      method: 'POST',
+      body: JSON.stringify(saveBody(firstSaveRequestId, candidateId)),
+    });
+    expect(firstSave.status).toBe(201);
+    const firstSaveParsed = v.safeParse(SavedReferenceCreateResponseSchema, await firstSave.json());
+    expect(firstSaveParsed.success).toBe(true);
+    if (!firstSaveParsed.success) throw new Error('saved reference response was invalid');
+
+    const retryRequestId = `runtime-production-http-save-retry-${crypto.randomUUID()}`;
+    const retry = await call(`/v1/threads/${threadId}/saved`, retryRequestId, {
+      method: 'POST',
+      body: JSON.stringify(saveBody(retryRequestId, candidateId)),
+    });
+    expect(retry.status).toBe(201);
+    const retryParsed = v.safeParse(SavedReferenceCreateResponseSchema, await retry.json());
+    expect(retryParsed.success).toBe(true);
+    if (!retryParsed.success) throw new Error('saved reference retry response was invalid');
+    expect(retryParsed.output.savedPlaceRef).toBe(firstSaveParsed.output.savedPlaceRef);
+
+    const conflictRequestId = `runtime-production-http-save-conflict-${crypto.randomUUID()}`;
+    const conflict = await call(`/v1/threads/${threadId}/saved`, conflictRequestId, {
+      method: 'POST',
+      body: JSON.stringify(saveBody(conflictRequestId, alternateCandidateId)),
+    });
+    expect(conflict.status).toBe(409);
+    const conflictParsed = v.safeParse(ErrorResponseSchema, await conflict.json());
+    expect(conflictParsed.success).toBe(true);
+    if (!conflictParsed.success) throw new Error('saved reference conflict response was invalid');
+    expect(conflictParsed.output.code).toBe('CONFLICT');
+
+    const invalidRequestId = `runtime-production-http-save-invalid-${crypto.randomUUID()}`;
+    const invalid = await call(`/v1/threads/${threadId}/saved`, invalidRequestId, {
+      method: 'POST',
+      body: JSON.stringify({
+        ...saveBody(invalidRequestId, candidateId),
+        provider: 'google_places',
+      }),
+    });
+    expect(invalid.status).toBe(400);
+
+    await evictDurableObject(productionEnv().THREADS.getByName(threadId));
+    const afterEvictionRequestId = `runtime-production-http-save-eviction-${crypto.randomUUID()}`;
+    const afterEviction = await call(`/v1/threads/${threadId}/saved`, afterEvictionRequestId, {
+      method: 'POST',
+      body: JSON.stringify(saveBody(afterEvictionRequestId, candidateId)),
+    });
+    expect(afterEviction.status).toBe(201);
+    const afterEvictionParsed = v.safeParse(
+      SavedReferenceCreateResponseSchema,
+      await afterEviction.json(),
+    );
+    expect(afterEvictionParsed.success).toBe(true);
+    if (!afterEvictionParsed.success) throw new Error('evicted saved reference replay was invalid');
+    expect(afterEvictionParsed.output.savedPlaceRef).toBe(firstSaveParsed.output.savedPlaceRef);
+
+    const postEvictionKey = `runtime-production-http-save-post-eviction-${crypto.randomUUID()}`;
+    const postEvictionRequestId = `runtime-production-http-save-post-eviction-${crypto.randomUUID()}`;
+    const postEvictionSave = await call(`/v1/threads/${threadId}/saved`, postEvictionRequestId, {
+      method: 'POST',
+      body: JSON.stringify(saveBody(postEvictionRequestId, alternateCandidateId, postEvictionKey)),
+    });
+    expect(postEvictionSave.status).toBe(201);
+    const postEvictionParsed = v.safeParse(
+      SavedReferenceCreateResponseSchema,
+      await postEvictionSave.json(),
+    );
+    expect(postEvictionParsed.success).toBe(true);
+    if (!postEvictionParsed.success) throw new Error('post-eviction saved reference was invalid');
+    expect(postEvictionParsed.output.savedPlaceRef).not.toBe(firstSaveParsed.output.savedPlaceRef);
+
+    const otherThreadId = await createThread();
+    const crossThreadRequestId = `runtime-production-http-save-cross-thread-${crypto.randomUUID()}`;
+    const crossThread = await call(`/v1/threads/${otherThreadId}/saved`, crossThreadRequestId, {
+      method: 'POST',
+      body: JSON.stringify(saveBody(crossThreadRequestId, candidateId)),
+    });
+    // The owner-level idempotency ledger sees the same key with a different
+    // thread-bound fingerprint and must reject it without replaying the ref.
+    expect(crossThread.status).toBe(409);
+    const crossThreadParsed = v.safeParse(ErrorResponseSchema, await crossThread.json());
+    expect(crossThreadParsed.success).toBe(true);
+    if (!crossThreadParsed.success) throw new Error('cross-thread saved response was invalid');
+    expect(crossThreadParsed.output.code).toBe('CONFLICT');
+
+    const foreignDeleteRequestId = `runtime-production-http-save-foreign-delete-${crypto.randomUUID()}`;
+    const foreignDelete = await call(
+      `/v1/saved/${firstSaveParsed.output.savedPlaceRef}`,
+      foreignDeleteRequestId,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({
+          schemaVersion: 'v1',
+          requestId: foreignDeleteRequestId,
+          idempotencyKey: `runtime-production-http-save-foreign-delete-key-${crypto.randomUUID()}`,
+        }),
+      },
+      OTHER_OWNER_CREDENTIAL,
+    );
+    expect(foreignDelete.status).toBe(204);
+
+    const replayAfterForeignDeleteRequestId = `runtime-production-http-save-owner-replay-${crypto.randomUUID()}`;
+    const replayAfterForeignDelete = await call(
+      `/v1/threads/${threadId}/saved`,
+      replayAfterForeignDeleteRequestId,
+      {
+        method: 'POST',
+        body: JSON.stringify(saveBody(replayAfterForeignDeleteRequestId, candidateId)),
+      },
+    );
+    expect(replayAfterForeignDelete.status).toBe(201);
+    const replayAfterForeignDeleteParsed = v.safeParse(
+      SavedReferenceCreateResponseSchema,
+      await replayAfterForeignDelete.json(),
+    );
+    expect(replayAfterForeignDeleteParsed.success).toBe(true);
+    if (!replayAfterForeignDeleteParsed.success) {
+      throw new Error('owner replay after foreign delete was invalid');
+    }
+    expect(replayAfterForeignDeleteParsed.output.savedPlaceRef).toBe(
+      firstSaveParsed.output.savedPlaceRef,
+    );
+
+    const deleteRequestId = `runtime-production-http-save-delete-${crypto.randomUUID()}`;
+    const deleted = await call(
+      `/v1/saved/${firstSaveParsed.output.savedPlaceRef}`,
+      deleteRequestId,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({
+          schemaVersion: 'v1',
+          requestId: deleteRequestId,
+          idempotencyKey: `runtime-production-http-save-delete-key-${crypto.randomUUID()}`,
+        }),
+      },
+    );
+    expect(deleted.status).toBe(204);
+
+    const resurrectRequestId = `runtime-production-http-save-resurrect-${crypto.randomUUID()}`;
+    const resurrect = await call(`/v1/threads/${threadId}/saved`, resurrectRequestId, {
+      method: 'POST',
+      body: JSON.stringify(saveBody(resurrectRequestId, candidateId)),
+    });
+    expect(resurrect.status).toBe(409);
   });
 });

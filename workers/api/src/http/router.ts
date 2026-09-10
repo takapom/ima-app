@@ -7,6 +7,9 @@ import {
   LifecycleCommandSchema,
   LifecycleResponseSchema,
   PlaceResponseSchema,
+  SavedReferenceCreateRequestSchema,
+  SavedReferenceCreateResponseSchema,
+  SavedReferenceDeleteRequestSchema,
   SavedReferenceResponseSchema,
   SearchRequestSchema,
   SearchResponseSchema,
@@ -15,7 +18,7 @@ import {
   IsoTimestampSchema,
   REQUEST_ID_HEADER,
 } from '@ima/contracts';
-import { HttpBoundaryError, toErrorResponse, toPublicError } from './errors';
+import { HttpBoundaryError, toErrorResponse } from './errors';
 import { authenticateRequest, type AuthConfig, type AuthenticatedContext } from './auth';
 import { isValidRequestId, parseJsonBodyWithRaw } from './input';
 import type {
@@ -31,6 +34,7 @@ import type { AppIntegrityGate } from '../security/app-integrity';
 import { authorizeAppIntegrity } from '../security/app-integrity-http';
 import { handleAppIntegrityHttpRoute, isAppIntegrityHttpRoute } from './app-integrity-routes';
 import { ensurePhotoResponse } from './photo-route';
+import { rateLimitedResponse } from './rate-limit-response';
 
 export const DEFAULT_JSON_BODY_LIMIT_BYTES = 32 * 1024;
 
@@ -122,21 +126,6 @@ const jsonResponse = (body: unknown, status: number): Response =>
     status,
     headers: { 'cache-control': 'no-store', 'content-type': 'application/json; charset=utf-8' },
   });
-
-const retryAfter = (value: number | null): string =>
-  value !== null && Number.isSafeInteger(value) && value >= 1 ? String(value) : '60';
-
-const rateLimitedResponse = (requestId: string, seconds: number | null): Response => {
-  const body = toPublicError(requestId, { status: 429, code: 'RATE_LIMITED' });
-  return Response.json(body, {
-    status: 429,
-    headers: {
-      'cache-control': 'no-store',
-      'content-type': 'application/json; charset=utf-8',
-      'retry-after': retryAfter(seconds),
-    },
-  });
-};
 
 const ensureApplicationResponse = async <Schema extends v.GenericSchema>(
   operation: ApplicationOperation,
@@ -286,6 +275,28 @@ const routeAuthorized = async (
       config,
     );
   }
+  if (route.kind === 'saved_reference_delete') {
+    const body = await bodyFailure(
+      request,
+      SavedReferenceDeleteRequestSchema,
+      maxBodyBytes,
+      requestId,
+    );
+    if (!body.ok) return body.response;
+    const aborted = cancellationResponse(requestId, request);
+    if (aborted !== null) return aborted;
+    const integrityResponse = await checkIntegrity(body.rawBody);
+    if (integrityResponse !== null) return integrityResponse;
+    return ensureApplicationResponse(
+      { kind: 'saved_reference_delete', path: route.path, input: body.value },
+      'saved_reference_delete',
+      EmptyResponseSchema,
+      204,
+      requestId,
+      makeContext(request, auth, serverNow),
+      config,
+    );
+  }
   if (route.kind === 'events') {
     const body = await bodyFailure(request, EventsRequestSchema, maxBodyBytes, requestId);
     if (!body.ok) return body.response;
@@ -335,6 +346,35 @@ const routeAuthorized = async (
       'search',
       SearchResponseSchema,
       200,
+      requestId,
+      makeContext(request, auth, serverNow),
+      config,
+    );
+  }
+
+  if (route.kind === 'saved_reference_create') {
+    const threadScopeFailure = await checkResource(
+      auth.ownerScopeRef,
+      { kind: 'thread', id: route.path.threadId },
+      config,
+    );
+    if (threadScopeFailure !== null) return toErrorResponse(requestId, threadScopeFailure);
+    const body = await bodyFailure(
+      request,
+      SavedReferenceCreateRequestSchema,
+      maxBodyBytes,
+      requestId,
+    );
+    if (!body.ok) return body.response;
+    const aborted = cancellationResponse(requestId, request);
+    if (aborted !== null) return aborted;
+    const integrityResponse = await checkIntegrity(body.rawBody);
+    if (integrityResponse !== null) return integrityResponse;
+    return ensureApplicationResponse(
+      { kind: 'saved_reference_create', path: route.path, input: body.value },
+      'saved_reference_create',
+      SavedReferenceCreateResponseSchema,
+      201,
       requestId,
       makeContext(request, auth, serverNow),
       config,

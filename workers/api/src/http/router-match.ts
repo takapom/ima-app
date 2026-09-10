@@ -20,6 +20,8 @@ export type MatchedRoute =
   | { readonly kind: 'photos'; readonly path: PhotoPath }
   | { readonly kind: 'place'; readonly path: PlacePath; readonly query: PlaceQuery }
   | { readonly kind: 'saved_reference_refresh'; readonly path: SavedReferencePath }
+  | { readonly kind: 'saved_reference_create'; readonly path: ThreadPath }
+  | { readonly kind: 'saved_reference_delete'; readonly path: SavedReferencePath }
   | { readonly kind: 'events' }
   | { readonly kind: 'turn'; readonly path: ThreadPath }
   | { readonly kind: 'read_thread'; readonly path: ThreadPath }
@@ -95,7 +97,7 @@ const parsePlaceQuery = (url: URL): PlaceQuery | null => {
 const isLifecycleAction = (value: string | undefined): value is LifecycleAction =>
   value === 'cancel' || value === 'resume' || value === 'restart' || value === 'end';
 
-/** Match the exact 14 public RouteContracts entries; trailing or extra segments are rejected. */
+/** Match the exact public RouteContracts entries; trailing or extra segments are rejected. */
 export const matchRoute = (request: Request): MatchResult => {
   const url = new URL(request.url);
   const segments = url.pathname.split('/').slice(1);
@@ -161,6 +163,14 @@ export const matchRoute = (request: Request): MatchResult => {
         ? { ok: true, route: { kind: 'saved_reference_refresh', path } }
         : { ok: false, failure: invalidArgument() };
   }
+  if (request.method === 'DELETE' && first === 'saved' && segments.length === 3) {
+    const path = parseSaved(second ?? '');
+    return path === null
+      ? { ok: false, failure: invalidArgument() }
+      : url.search.length === 0
+        ? { ok: true, route: { kind: 'saved_reference_delete', path } }
+        : { ok: false, failure: invalidArgument() };
+  }
   if (first !== 'threads' || segments.length < 3) return { ok: false, failure: notFound() };
 
   const path = parseThread(second ?? '');
@@ -168,6 +178,11 @@ export const matchRoute = (request: Request): MatchResult => {
   if (request.method === 'POST' && third === 'turns' && segments.length === 4) {
     return url.search.length === 0
       ? { ok: true, route: { kind: 'turn', path } }
+      : { ok: false, failure: invalidArgument() };
+  }
+  if (request.method === 'POST' && third === 'saved' && segments.length === 4) {
+    return url.search.length === 0
+      ? { ok: true, route: { kind: 'saved_reference_create', path } }
       : { ok: false, failure: invalidArgument() };
   }
   if (request.method === 'GET' && segments.length === 3) {

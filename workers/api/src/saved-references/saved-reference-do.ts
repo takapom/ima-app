@@ -5,6 +5,8 @@ import {
   createDurableSavedReferenceStore,
   type DurableSavedReferenceStore,
   type SavedReferenceDeleteResult,
+  type SavedReferenceOperationOptions,
+  type SavedReferenceReplayResult,
   type SavedReferenceReadResult,
   type SavedReferenceRegistrationResult,
 } from './store';
@@ -117,13 +119,25 @@ export class SavedReferenceDO extends DurableObject {
   async register(
     ownerScopeRef: unknown,
     input: unknown,
+    options?: SavedReferenceOperationOptions,
   ): Promise<SavedReferenceRpcRegistrationResult> {
     const store = await this.ready;
     const owner = this.ownerForOperation(ownerScopeRef);
     if (typeof owner !== 'string') return owner;
     const parsed = v.safeParse(SavedReferenceIdentitySchema, input);
     if (!parsed.success) return { ok: false, code: 'INVALID_INPUT' };
-    return store.register({ ownerScopeRef: owner, ...parsed.output });
+    return store.register({ ownerScopeRef: owner, ...parsed.output }, options);
+  }
+
+  async replay(
+    ownerScopeRef: unknown,
+    idempotencyKey: unknown,
+    idempotencyFingerprint: unknown,
+  ): Promise<SavedReferenceReplayResult | OwnerOperationFailure> {
+    const store = await this.ready;
+    const owner = this.ownerForOperation(ownerScopeRef);
+    if (typeof owner !== 'string') return owner;
+    return store.replay(owner, idempotencyKey, idempotencyFingerprint);
   }
 
   async read(ownerScopeRef: unknown, savedPlaceRef: unknown): Promise<SavedReferenceRpcReadResult> {
@@ -136,19 +150,30 @@ export class SavedReferenceDO extends DurableObject {
   async remove(
     ownerScopeRef: unknown,
     savedPlaceRef: unknown,
+    options?: SavedReferenceOperationOptions,
   ): Promise<SavedReferenceRpcDeleteResult> {
     const store = await this.ready;
     const owner = this.ownerForOperation(ownerScopeRef);
     if (typeof owner !== 'string') return owner;
-    return store.remove(owner, savedPlaceRef);
+    return store.remove(owner, savedPlaceRef, options);
   }
 }
 
 export type OwnerSavedReferenceRpc = {
   readonly initialize: () => Promise<SavedReferenceOwnerInitResult>;
-  readonly register: (input: unknown) => Promise<SavedReferenceRpcRegistrationResult>;
+  readonly replay: (
+    idempotencyKey: unknown,
+    idempotencyFingerprint: unknown,
+  ) => Promise<SavedReferenceReplayResult | OwnerOperationFailure>;
+  readonly register: (
+    input: unknown,
+    options?: SavedReferenceOperationOptions,
+  ) => Promise<SavedReferenceRpcRegistrationResult>;
   readonly read: (savedPlaceRef: unknown) => Promise<SavedReferenceRpcReadResult>;
-  readonly remove: (savedPlaceRef: unknown) => Promise<SavedReferenceRpcDeleteResult>;
+  readonly remove: (
+    savedPlaceRef: unknown,
+    options?: SavedReferenceOperationOptions,
+  ) => Promise<SavedReferenceRpcDeleteResult>;
 };
 
 /** Binds all calls to the owner-derived DO name and owner argument. */
@@ -161,8 +186,10 @@ export const createOwnerSavedReferenceRpc = (
   const stub = namespace.getByName(savedReferenceOwnerName(owner));
   return {
     initialize: () => stub.initialize(owner),
-    register: (input) => stub.register(owner, input),
+    replay: (idempotencyKey, idempotencyFingerprint) =>
+      stub.replay(owner, idempotencyKey, idempotencyFingerprint),
+    register: (input, options) => stub.register(owner, input, options),
     read: (savedPlaceRef) => stub.read(owner, savedPlaceRef),
-    remove: (savedPlaceRef) => stub.remove(owner, savedPlaceRef),
+    remove: (savedPlaceRef, options) => stub.remove(owner, savedPlaceRef, options),
   };
 };

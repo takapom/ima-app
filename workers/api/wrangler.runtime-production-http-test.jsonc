@@ -9,12 +9,17 @@
       { "name": "THREADS", "class_name": "ThreadDO" },
       { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
       { "name": "TELEMETRY", "class_name": "TelemetryDO" },
+      { "name": "SAVED_REFERENCES", "class_name": "SavedReferenceDO" },
     ],
   },
   "migrations": [
     {
       "tag": "v1",
       "new_sqlite_classes": ["ThreadDO", "RateLimitDO", "TelemetryDO"],
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["SavedReferenceDO"],
     },
   ],
 }

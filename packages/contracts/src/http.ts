@@ -29,6 +29,23 @@ import type { AssistantCardsResponse, AssistantMessageResponse, ParseResult } fr
 import type { CreateThreadResponse } from './preferences';
 import type { CreateThreadRequest, SearchRequest, ThreadTurnRequest } from './preferences';
 import type { RetentionMetadata } from './public';
+import {
+  SavedReferenceCreateRequestSchema,
+  SavedReferenceCreateResponseSchema,
+  SavedReferenceDeleteRequestSchema,
+  SavedReferencePathSchema,
+} from './saved-reference-http';
+export {
+  SavedReferenceCreateRequestSchema,
+  SavedReferenceCreateResponseSchema,
+  SavedReferenceDeleteRequestSchema,
+  SavedReferencePathSchema,
+} from './saved-reference-http';
+export type {
+  SavedReferenceCreateRequest,
+  SavedReferenceCreateResponse,
+  SavedReferenceDeleteRequest,
+} from './saved-reference-http';
 
 export const APP_TOKEN_HEADER = 'X-App-Token' as const;
 export const DEVICE_ID_HEADER = 'X-Device-Id' as const;
@@ -133,10 +150,6 @@ export const PlaceQuerySchema = v.strictObject({
     v.maxLength(8),
     v.check((fields) => new Set(fields).size === fields.length, 'duplicate field'),
   ),
-});
-
-export const SavedReferencePathSchema = v.strictObject({
-  savedPlaceRef: OpaqueIdSchema,
 });
 
 export const ThreadPathSchema = v.strictObject({
@@ -370,6 +383,26 @@ export const RouteContracts = {
     request: SavedReferencePathSchema,
     response: SavedReferenceResponseSchema,
     successStatus: 200,
+  },
+  savedReferenceCreate: {
+    method: 'POST',
+    path: '/v1/threads/:threadId/saved',
+    request: v.strictObject({
+      path: ThreadPathSchema,
+      body: SavedReferenceCreateRequestSchema,
+    }),
+    response: SavedReferenceCreateResponseSchema,
+    successStatus: 201,
+  },
+  savedReferenceDelete: {
+    method: 'DELETE',
+    path: '/v1/saved/:savedPlaceRef',
+    request: v.strictObject({
+      path: SavedReferencePathSchema,
+      body: SavedReferenceDeleteRequestSchema,
+    }),
+    response: EmptyResponseSchema,
+    successStatus: 204,
   },
   events: {
     method: 'POST',
