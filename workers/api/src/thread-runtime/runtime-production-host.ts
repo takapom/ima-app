@@ -11,22 +11,16 @@ import { createDurableRuntimeContextPersistence } from './runtime-context-persis
 import { createRuntimeRetentionAlarmCapability } from './runtime-retention-alarm';
 import type { RuntimeThinkConnectionOptions } from '../runtime/runtime-think-connection';
 import {
-  createBestEffortRuntimeTurnTraceSink,
   emitRuntimeTurnTrace,
   runtimeTraceModeFor,
   runtimeTurnTraceOutcome,
   telemetryObjectNameForRuntimeTraceMode,
   type RuntimeTurnTraceSink,
 } from '../runtime/runtime-turn-trace';
-import {
-  createBestEffortRuntimeModelTraceSink,
-  type RuntimeModelTraceSink,
-} from '../runtime/runtime-model-trace';
-import {
-  createBestEffortRuntimeProviderTraceSink,
-  type RuntimeProviderTraceSink,
-} from '../providers/telemetry/runtime-provider-trace';
+import type { RuntimeModelTraceSink } from '../runtime/runtime-model-trace';
+import type { RuntimeProviderTraceSink } from '../providers/telemetry/runtime-provider-trace';
 import { createDurableTelemetryStore, type TelemetryNamespace } from '../telemetry/telemetry-do';
+import { createRuntimeProductionTelemetrySinks } from './runtime-production-telemetry';
 import { RuntimeThinkHost } from './runtime-host';
 import type { ThreadRuntimeTarget, ThreadRuntimeTurnResult } from './admission';
 
@@ -91,22 +85,13 @@ export abstract class RuntimeProductionThinkHost<
             telemetry,
             telemetryObjectNameForRuntimeTraceMode(runtimeMode),
           );
-    this.productionTraceSink =
-      telemetryStore === undefined
-        ? undefined
-        : createBestEffortRuntimeTurnTraceSink(telemetryStore, (promise) => ctx.waitUntil(promise));
-    this.productionModelTraceSink =
-      telemetryStore === undefined
-        ? undefined
-        : createBestEffortRuntimeModelTraceSink(telemetryStore, (promise) =>
-            ctx.waitUntil(promise),
-          );
-    this.productionProviderTraceSink =
-      telemetryStore === undefined
-        ? undefined
-        : createBestEffortRuntimeProviderTraceSink(telemetryStore, (promise) =>
-            ctx.waitUntil(promise),
-          );
+    const telemetrySinks = createRuntimeProductionTelemetrySinks({
+      store: telemetryStore,
+      schedule: (promise) => ctx.waitUntil(promise),
+    });
+    this.productionTraceSink = telemetrySinks.turn;
+    this.productionModelTraceSink = telemetrySinks.model;
+    this.productionProviderTraceSink = telemetrySinks.provider;
     this.productionContextPersistence = createDurableRuntimeContextPersistence(ctx.storage);
     try {
       this.productionThreadCreatedAt = durableThreadCreatedAt(ctx);
