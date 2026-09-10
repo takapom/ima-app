@@ -21,6 +21,7 @@ export type {
   JourneyApiSearchFactoryInput,
   JourneyApiSubmitContext,
   JourneyApiTurnFactoryInput,
+  JourneySavedPlacePreviewBinding,
 } from '../services/api/journey-api-binding';
 
 export {

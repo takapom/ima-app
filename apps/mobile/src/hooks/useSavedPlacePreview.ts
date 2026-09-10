@@ -46,6 +46,7 @@ export type SavedPlacePreviewController = {
 };
 
 export type UseSavedPlacePreviewResult = SavedPlacePreviewState & {
+  readonly getState: () => SavedPlacePreviewState;
   readonly reload: () => void;
   readonly recheck: () => void;
   readonly select: (savedPlaceRef: string, options?: { readonly signal?: AbortSignal }) => boolean;
@@ -433,5 +434,5 @@ export const useSavedPlacePreview = (
     [controller],
   );
   const close = useCallback(() => controller.close(), [controller]);
-  return { ...state, reload, recheck, select, close };
+  return { ...state, getState: controller.getState, reload, recheck, select, close };
 };

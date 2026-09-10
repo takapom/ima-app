@@ -5,6 +5,10 @@ import type {
   PriceInfo,
   PublicCard,
 } from '@ima/contracts';
+import type { AttributionPresentation } from '../presentation/attribution';
+
+export { collectAttributions } from '../presentation/attribution';
+export type { AttributionPresentation } from '../presentation/attribution';
 
 type KnownField<T> = {
   readonly status: 'known';
@@ -45,11 +49,6 @@ export type EvidenceTextPresentation = {
   readonly status: 'available' | 'expired' | 'unavailable';
   readonly text: string;
   readonly evidence: readonly EvidenceRef[];
-};
-
-export type AttributionPresentation = {
-  readonly label: string;
-  readonly sourceLink: string | null;
 };
 
 const fieldStatusLabel: Record<UnavailableField['status'], string> = {
@@ -191,23 +190,6 @@ export const presentCardFacts = (card: PublicCard) => ({
   price: presentFact(card.facts.price, formatPrice),
   lastTrain: presentFact(card.facts.last_train, formatLastTrain),
 });
-
-export const collectAttributions = (
-  evidenceGroups: readonly (readonly EvidenceRef[])[],
-): readonly AttributionPresentation[] => {
-  const seen = new Set<string>();
-  const attributions: AttributionPresentation[] = [];
-  for (const evidence of evidenceGroups) {
-    for (const item of evidence) {
-      if (item.attribution === null) continue;
-      const key = `${item.attribution.label}|${item.attribution.sourceLink ?? ''}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      attributions.push(item.attribution);
-    }
-  }
-  return attributions;
-};
 
 export const collectPhotoAttributions = (card: PublicCard): readonly AttributionPresentation[] => {
   const fact = card.facts.photos;

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import type { PublicCard } from '@ima/contracts';
 import { AppBar } from '../components/AppBar';
 import { Canvas } from '../components/Canvas';
 import { Composer } from '../components/Composer';
@@ -10,14 +9,18 @@ import { Drawer } from '../components/Drawer';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { ResultsState } from '../components/ResultsState';
+import { SavedPlacePreviewSurface } from '../components/SavedPlacePreviewSurface';
 import { WorkingState } from '../components/WorkingState';
 import { useAssistantResponseProjection } from '../hooks/useAssistantResponseProjection';
 import { useJourneyActions, type JourneyActionServices } from '../hooks/useJourneyActions';
 import { useJourneyShell } from '../hooks/useJourneyShell';
 import { useJourneySourceLink } from '../hooks/useJourneySourceLink';
+import { useJourneySavedPlacePreview } from '../hooks/useJourneySavedPlacePreview';
+import { selectedCardFor } from './journey-screen-model';
 import {
   useJourneyApiController,
   type JourneyApiControllerBinding,
+  type JourneySavedPlacePreviewBinding,
   type JourneyApiSubmitContext,
 } from '../hooks/useJourneyApiController';
 import type { AssistantResponseClock } from '../services/assistant-response-clock';
@@ -72,6 +75,8 @@ export type JourneyScreenProps = {
   readonly actionServices?: JourneyActionServices;
   /** Runtime-composed owner-scoped storage; absent hosts remain unavailable. */
   readonly storage?: JourneyStorageService;
+  /** Runtime-composed saved list/preview; absent hosts keep the saved drawer unavailable. */
+  readonly savedPlacePreview?: JourneySavedPlacePreviewBinding;
   readonly sourceLinkService?: JourneySourceLinkService;
   readonly mapDestinationResolver?: WalkingMapDestinationResolver;
   readonly onSourcePress?: (sourceLink: string) => void;
@@ -88,6 +93,7 @@ export function JourneyScreen(props: JourneyScreenProps): React.JSX.Element {
   const api = useJourneyApiController(props.api);
   const connectedPhotoClient = props.photoClient ?? props.api?.photoClient;
   const connectedStorage = props.storage ?? props.api?.storage;
+  const connectedSavedPlacePreview = props.savedPlacePreview ?? props.api?.savedPlacePreview;
   const stateKey = api.connected
     ? `api-${api.state.threadId ?? props.threadId ?? 'auto'}-${api.viewKey}`
     : (props.threadId ?? 'mobile-thread');
@@ -103,6 +109,9 @@ export function JourneyScreen(props: JourneyScreenProps): React.JSX.Element {
       responseState={api.responseState}
       {...(connectedPhotoClient === undefined ? {} : { photoClient: connectedPhotoClient })}
       {...(connectedStorage === undefined ? {} : { storage: connectedStorage })}
+      {...(connectedSavedPlacePreview === undefined
+        ? {}
+        : { savedPlacePreview: connectedSavedPlacePreview })}
       requestStatus={api.requestStatus}
       errorMessage={api.errorMessage ?? '時間をおいてもう一度試してください。'}
       onSubmit={(query, context) => {
@@ -123,18 +132,6 @@ export function JourneyScreen(props: JourneyScreenProps): React.JSX.Element {
   );
 }
 
-const selectedCard = (
-  responseState: AssistantResponseState,
-  candidateId: string | null,
-): PublicCard | null => {
-  if (responseState.cards === null || candidateId === null) return null;
-  return (
-    [responseState.cards.hero, ...responseState.cards.alts].find(
-      (card) => card.candidateId === candidateId,
-    ) ?? null
-  );
-};
-
 function JourneyScreenStateOwner({
   threadId = 'mobile-thread',
   responseState,
@@ -143,7 +140,7 @@ function JourneyScreenStateOwner({
   requestStatus = 'idle',
   errorMessage = '時間をおいてもう一度試してください。',
   history = [],
-  savedPlaces = [],
+  savedPlaces,
   onSubmit,
   initialSavedConditions,
   onCancel,
@@ -161,8 +158,14 @@ function JourneyScreenStateOwner({
   onConditionsChange,
   photoClient,
   sourceLinkService,
+  savedPlacePreview,
 }: JourneyScreenProps): React.JSX.Element {
   const journey = useJourneyShell(threadId, initialSavedConditions);
+  const savedPlaceUi = useJourneySavedPlacePreview(
+    savedPlacePreview,
+    onSavedPlaceSelect,
+    requestStatus === 'pending' || journey.phase === 'working',
+  );
   const renderedResponse = useAssistantResponseProjection(
     responseState ?? journey.responseState,
     now,
@@ -185,10 +188,17 @@ function JourneyScreenStateOwner({
       return;
     }
     journey.settleResponse(renderedResponse.revision);
+    savedPlaceUi.responseSettled();
     setRequestStartRevision((current) =>
       current !== null && renderedResponse.revision > current ? null : current,
     );
-  }, [journey.settleResponse, renderedResponse, requestStartRevision, requestStatus]);
+  }, [
+    journey.settleResponse,
+    renderedResponse,
+    requestStartRevision,
+    requestStatus,
+    savedPlaceUi.responseSettled,
+  ]);
   useEffect(() => {
     if (requestStatus === 'error' || requestStatus === 'cancelled') {
       setRequestStartRevision(null);
@@ -235,6 +245,7 @@ function JourneyScreenStateOwner({
         promotedCandidateId: actions.state.promotedCandidateId,
         selectedCandidateId: actions.state.decidedCandidateId,
         candidateOrder: actions.candidateOrder,
+        savedPlaceRefs: savedPlaceUi.pendingRefs,
         excludeCandidateIds: actions.state.tonightExcludedCandidateIds,
       };
       setRequestStartRevision(renderedResponse.revision);
@@ -246,6 +257,7 @@ function JourneyScreenStateOwner({
       actions.state.decidedCandidateId,
       actions.state.promotedCandidateId,
       actions.state.tonightExcludedCandidateIds,
+      savedPlaceUi.pendingRefs,
       journey.beginRequest,
       journey.conditions,
       journey.removedChipLabels,
@@ -265,6 +277,7 @@ function JourneyScreenStateOwner({
       promotedCandidateId: actions.state.promotedCandidateId,
       selectedCandidateId: actions.state.decidedCandidateId,
       candidateOrder: actions.candidateOrder,
+      savedPlaceRefs: savedPlaceUi.pendingRefs,
       excludeCandidateIds: actions.state.tonightExcludedCandidateIds,
     };
     setRequestStartRevision(renderedResponse.revision);
@@ -283,6 +296,7 @@ function JourneyScreenStateOwner({
     actions.state.decidedCandidateId,
     actions.state.promotedCandidateId,
     actions.state.tonightExcludedCandidateIds,
+    savedPlaceUi.pendingRefs,
   ]);
   const cancel = useCallback((): void => {
     setRequestStartRevision(null);
@@ -292,10 +306,11 @@ function JourneyScreenStateOwner({
   }, [actions.cancelPending, journey.cancelRequest, onCancel]);
   const reset = useCallback((): void => {
     setRequestStartRevision(null);
+    savedPlaceUi.reset();
     actions.reset();
     journey.reset();
     onNewSearch?.();
-  }, [actions.reset, journey.reset, onNewSearch]);
+  }, [actions.reset, journey.reset, onNewSearch, savedPlaceUi.reset]);
   const decide = useCallback(
     (candidateId: string): void => {
       if (!actions.decide(candidateId)) return;
@@ -342,7 +357,7 @@ function JourneyScreenStateOwner({
     },
     [actions.clearNotice, onSourcePress, sourceLink.open],
   );
-  const decided = selectedCard(renderedResponse, actions.state.decidedCandidateId);
+  const decided = selectedCardFor(renderedResponse, actions.state.decidedCandidateId);
   const phase = resolveJourneyPhase(
     requestStatus,
     journey.phase,
@@ -350,6 +365,10 @@ function JourneyScreenStateOwner({
     decided !== null,
     requestStartRevision !== null && renderedResponse.revision > requestStartRevision,
   );
+  const visibleSavedPlaces = savedPlaces ?? [];
+  const savedPlacesUnavailable = savedPlaceUi.connected
+    ? savedPlaceUi.unavailable
+    : savedPlaces === undefined;
 
   return (
     <Canvas>
@@ -378,7 +397,7 @@ function JourneyScreenStateOwner({
               )}
               onDecide={decide}
               onSave={(card) => {
-                void actions.save(card).catch(actions.reportFailure);
+                void actions.save(card).then(savedPlaceUi.reload).catch(actions.reportFailure);
               }}
               onSkip={actions.skipTonight}
               onSourcePress={openSourceLink}
@@ -397,7 +416,10 @@ function JourneyScreenStateOwner({
                       void actions.openMap(decided).catch(actions.reportFailure);
                     },
                     onSave: (card) => {
-                      void actions.save(card).catch(actions.reportFailure);
+                      void actions
+                        .save(card)
+                        .then(savedPlaceUi.reload)
+                        .catch(actions.reportFailure);
                     },
                     onShare: () => {
                       void actions.share(decided).catch(actions.reportFailure);
@@ -423,6 +445,7 @@ function JourneyScreenStateOwner({
           ) : null}
         </ScrollView>
       </View>
+      <SavedPlacePreviewSurface controller={savedPlaceUi} onSourcePress={openSourceLink} />
       <Composer
         disabled={phase === 'working'}
         onChange={journey.updateDraft}
@@ -448,10 +471,13 @@ function JourneyScreenStateOwner({
         onConditionScopeChange={journey.changeConditionScope}
         onConditionsChange={changeConditions}
         open={journey.drawerOpen}
-        savedPlaces={savedPlaces}
+        savedPlaces={savedPlaceUi.connected ? savedPlaceUi.items : visibleSavedPlaces}
+        savedPlacesUnavailable={savedPlacesUnavailable}
         view={journey.drawerView}
         {...(onHistorySelect === undefined ? {} : { onHistorySelect })}
-        {...(onSavedPlaceSelect === undefined ? {} : { onSavedPlaceSelect })}
+        {...(savedPlaceUi.connected || onSavedPlaceSelect !== undefined
+          ? { onSavedPlaceSelect: savedPlaceUi.selectDrawerItem }
+          : {})}
       />
     </Canvas>
   );

@@ -8,6 +8,17 @@ import type { JourneyConditions } from '../../state/journey-input';
 import type { JourneyApiController } from './journey-controller-types';
 import type { JourneyPhotoClient } from './photo-client';
 import type { JourneyStorageService } from '../journey-storage';
+import type { SavedPlaceListService } from '../saved-place-list';
+import type { SavedReferenceService } from '../saved-reference-service';
+
+export type JourneySavedPlacePreviewBinding = {
+  /** The same owner-scoped SQLite projection used by the runtime save adapter. */
+  readonly listService: SavedPlaceListService;
+  /** The same authenticated client-backed refresh service used by runtime storage. */
+  readonly refreshService: Pick<SavedReferenceService, 'refresh'>;
+  /** The host clock keeps list, preview, and session boundaries on one timeline. */
+  readonly now?: () => string;
+};
 
 export type JourneyApiSubmitContext = {
   readonly conditions: JourneyConditions;
@@ -53,4 +64,6 @@ export type JourneyApiControllerBinding = {
   readonly photoClient?: JourneyPhotoClient;
   /** Formal owner-scoped save adapter; absent when SQLite was not injected by the host. */
   readonly storage?: JourneyStorageService;
+  /** Formal saved-list/preview adapter; absent when SQLite was not injected by the host. */
+  readonly savedPlacePreview?: JourneySavedPlacePreviewBinding;
 };

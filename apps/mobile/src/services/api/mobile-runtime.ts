@@ -15,6 +15,7 @@ import type {
   JourneyApiRequestFactory,
   JourneyApiSearchFactoryInput,
   JourneyApiTurnFactoryInput,
+  JourneySavedPlacePreviewBinding,
 } from './journey-api-binding';
 import type { JourneyApiControllerState } from './journey-controller-types';
 import { createJourneyApiComposition } from './composition';
@@ -22,6 +23,7 @@ import { createJourneyApiClient } from './client';
 import { createJourneyPhotoClient } from './photo-client';
 import { createRuntimeId } from '../runtime-id';
 import { createSavedReferenceJourneyStorage, type JourneyStorageService } from '../journey-storage';
+import { createSavedPlaceListService } from '../saved-place-list';
 import { createSavedReferenceService, type SavedReferenceScope } from '../saved-reference-service';
 import type { SqliteStore } from '../sqlite/types';
 import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from './types';
@@ -294,13 +296,18 @@ const visibleCandidateFor = (
   }
 };
 
-const savedReferenceStorageFor = (
+type SavedReferenceRuntimeServices = {
+  readonly storage: JourneyStorageService;
+  readonly savedPlacePreview: JourneySavedPlacePreviewBinding;
+};
+
+const savedReferenceRuntimeServicesFor = (
   controller: JourneyApiControllerBinding['controller'],
   api: Parameters<typeof createSavedReferenceService>[0]['api'],
   options: MobileJourneySavedReferenceOptions | undefined,
   now: () => string,
   requestIdFactory: () => string,
-): JourneyStorageService | undefined => {
+): SavedReferenceRuntimeServices | undefined => {
   if (options === undefined) return undefined;
 
   const currentScope = (): SavedReferenceScope | null => {
@@ -341,11 +348,18 @@ const savedReferenceStorageFor = (
     referenceRetentionFor,
   });
   return {
-    saveCandidate: (candidate, saveOptions) => {
-      if (!visibleCandidateFor(controller, candidate.candidateId, now)) {
-        return Promise.resolve({ status: 'failed', reason: 'stale' as const });
-      }
-      return storage.saveCandidate(candidate, saveOptions);
+    storage: {
+      saveCandidate: (candidate, saveOptions) => {
+        if (!visibleCandidateFor(controller, candidate.candidateId, now)) {
+          return Promise.resolve({ status: 'failed', reason: 'stale' as const });
+        }
+        return storage.saveCandidate(candidate, saveOptions);
+      },
+    },
+    savedPlacePreview: {
+      listService: createSavedPlaceListService({ sqlite: options.sqlite, now }),
+      refreshService: service,
+      now,
     },
   };
 };
@@ -390,7 +404,7 @@ export const createMobileJourneyRuntime = (
   const api = createJourneyApiClient(clientOptions);
   const controller = createJourneyApiComposition({ ...clientOptions, api, clock: now });
   const photoClient = createJourneyPhotoClient({ ...clientOptions, now });
-  const storage = savedReferenceStorageFor(
+  const savedReferenceServices = savedReferenceRuntimeServicesFor(
     controller,
     api,
     options.savedReference,
@@ -404,7 +418,12 @@ export const createMobileJourneyRuntime = (
       controller,
       photoClient,
       requests: createJourneyApiRequestFactory({ now, idFactory }),
-      ...(storage === undefined ? {} : { storage }),
+      ...(savedReferenceServices === undefined
+        ? {}
+        : {
+            storage: savedReferenceServices.storage,
+            savedPlacePreview: savedReferenceServices.savedPlacePreview,
+          }),
     },
   };
 };

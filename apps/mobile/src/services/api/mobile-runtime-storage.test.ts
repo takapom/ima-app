@@ -63,9 +63,17 @@ describe('mobile runtime saved-reference composition', () => {
       referenceRetentionFor: () => referenceRetention,
     });
     const binding = runtime.binding;
-    if (binding === null || binding.storage === undefined) {
+    if (
+      binding === null ||
+      binding.storage === undefined ||
+      binding.savedPlacePreview === undefined
+    ) {
       throw new Error('formal storage should be connected');
     }
+    expect(binding.savedPlacePreview.listService.list()).toEqual({
+      status: 'available',
+      items: [],
+    });
 
     await expect(
       binding.controller.createThread(binding.requests.createThread()),
@@ -98,6 +106,10 @@ describe('mobile runtime saved-reference composition', () => {
         restoreMode: 'reference_only',
       },
     ]);
+    expect(binding.savedPlacePreview.listService.list()).toMatchObject({
+      status: 'available',
+      items: [{ serverSavedPlaceRef: 'saved-ref-runtime', name: null, area: null }],
+    });
   });
 
   it('does no API or SQLite I/O for a missing, cancelled, or expired current scope', async () => {

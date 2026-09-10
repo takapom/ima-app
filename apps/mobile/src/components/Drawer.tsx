@@ -11,6 +11,7 @@ type DrawerProps = {
   readonly view: DrawerView;
   readonly history: readonly SearchHistoryItem[];
   readonly savedPlaces: readonly SavedPlaceItem[];
+  readonly savedPlacesUnavailable?: boolean;
   readonly onClose: () => void;
   readonly onNewSearch: () => void;
   readonly onViewChange: (view: DrawerView) => void;
@@ -35,6 +36,7 @@ export function Drawer({
   view,
   history,
   savedPlaces,
+  savedPlacesUnavailable = false,
   onClose,
   onNewSearch,
   onViewChange,
@@ -141,7 +143,9 @@ export function Drawer({
             />
           ) : view === 'saved' ? (
             <ListView
-              emptyLabel="保存した店はまだありません"
+              emptyLabel={
+                savedPlacesUnavailable ? '保存した店を利用できません' : '保存した店はまだありません'
+              }
               items={savedPlaces}
               renderItem={(item) => (
                 <Pressable

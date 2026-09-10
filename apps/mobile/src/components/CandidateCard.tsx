@@ -1,13 +1,13 @@
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
 import type { JourneyPhotoClient } from '../services/api/photo-client';
+import { collectAttributions } from '../presentation/attribution';
+import type { AttributionPresentation } from '../presentation/attribution';
 import {
-  collectAttributions,
   collectPhotoAttributions,
   presentCardFacts,
   presentEvidenceText,
   presentFact,
-  type AttributionPresentation,
   type FactPresentation,
 } from './candidate-card-model';
 import { PhotoRegion } from './PhotoRegion';
@@ -203,12 +203,12 @@ function FactRow({ label, fact }: FactRowProps): React.JSX.Element {
   );
 }
 
-type AttributionListProps = {
+export type AttributionListProps = {
   readonly attributions: readonly AttributionPresentation[];
   readonly onSourcePress?: (sourceLink: string) => void;
 };
 
-function AttributionList({
+export function AttributionList({
   attributions,
   onSourcePress,
 }: AttributionListProps): React.JSX.Element | null {
