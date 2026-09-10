@@ -4,6 +4,8 @@ export * from './turn-constraints';
 export * from './registry';
 export * from './card-set';
 export * from './field-results';
+export * from './journey-calculation';
+export * from './journey-validation';
 export * from './saved-reference';
 export * from './walking-route-policy';
 export { validateMessage, validateSubmitCards } from './submit-cards';

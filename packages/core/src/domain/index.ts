@@ -3,6 +3,7 @@ export * from './continuity';
 export * from './evidence';
 export * from './freshness';
 export * from './issue';
+export * from './journey';
 export * from './place-values';
 export * from './primitives';
 export * from './registry';
