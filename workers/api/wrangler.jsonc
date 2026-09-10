@@ -23,6 +23,7 @@
       { "name": "JOURNEY_DATASETS", "class_name": "JourneyDatasetDO" },
       { "name": "TELEMETRY", "class_name": "TelemetryDO" },
       { "name": "APP_INTEGRITY", "class_name": "AppIntegrityDO" },
+      { "name": "SAVED_REFERENCES", "class_name": "SavedReferenceDO" },
     ],
   },
   "migrations": [
@@ -30,6 +31,7 @@
     { "tag": "v2", "new_sqlite_classes": ["JourneyDatasetDO"] },
     { "tag": "v3", "new_sqlite_classes": ["TelemetryDO"] },
     { "tag": "v4", "new_sqlite_classes": ["AppIntegrityDO"] },
+    { "tag": "v5", "new_sqlite_classes": ["SavedReferenceDO"] },
   ],
   "observability": {
     "enabled": true,
@@ -56,6 +58,7 @@
           { "name": "JOURNEY_DATASETS", "class_name": "JourneyDatasetDO" },
           { "name": "TELEMETRY", "class_name": "TelemetryDO" },
           { "name": "APP_INTEGRITY", "class_name": "AppIntegrityDO" },
+          { "name": "SAVED_REFERENCES", "class_name": "SavedReferenceDO" },
         ],
       },
     },
@@ -79,6 +82,7 @@
           { "name": "JOURNEY_DATASETS", "class_name": "JourneyDatasetDO" },
           { "name": "TELEMETRY", "class_name": "TelemetryDO" },
           { "name": "APP_INTEGRITY", "class_name": "AppIntegrityDO" },
+          { "name": "SAVED_REFERENCES", "class_name": "SavedReferenceDO" },
         ],
       },
     },

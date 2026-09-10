@@ -2,13 +2,15 @@
 
 ## 結論
 
-この単位は、ユーザーが明示的に保存した場所の **owner-scoped な provider identity** を
-Durable Object の SQLite に保持する Worker adapter だけを提供する。公開 HTTP、ThreadDO
-RPC、Core の同期 `SavedPlaceReferencePort` はまだ接続しない。
+この実装は、ユーザーが明示的に保存した場所の **owner-scoped な provider identity** を
+Durable Object の SQLite に保持する。C1のstorage adapterと、C2aのThread期限から独立した
+`SavedReferenceDO` / trusted Worker RPCまでを含む。公開 HTTP と Core の同期
+`SavedPlaceReferencePort` はまだ接続しない。
 
 ```mermaid
 flowchart LR
-  Host[Worker host / future RPC] --> Adapter[createDurableSavedReferenceStore]
+  Host[Worker host / trusted RPC] --> Shard[SavedReferenceDO owner shard]
+  Shard --> Adapter[createDurableSavedReferenceStore]
   Adapter --> Validate[Core schema validation]
   Adapter --> SQL[(DO SQLite)]
   SQL --> Active[owner + provider + recordRef + opaque ref]
@@ -39,8 +41,15 @@ provider の名称、住所、座標、写真、経路、観測、生成文、ra
 ## 実装と検証
 
 `workers/api/src/saved-references/store.ts` の `createDurableSavedReferenceStore` は
-`DurableObjectStorage` と ref factory を受け取る。DO shard の選択、認証、provider の再取得、
-候補・観測登録は host の責務であり、この adapter はそれらを推測しない。
+`DurableObjectStorage` と ref factory を受け取る。`saved-reference-do.ts` の
+`SavedReferenceDO` はこのadapterを一度だけDO初期化時に構成し、owner rowを同じSQLiteへ
+固定する。`savedReferenceOwnerName(ownerScopeRef)` が namespace key を作り、
+`createOwnerSavedReferenceRpc` が全RPCへ同じownerを束縛する。DO shard の選択、認証、
+provider の再取得、候補・観測登録は host の責務であり、このadapterはそれらを推測しない。
+
+本番の `SAVED_REFERENCES` binding は `workers/api/wrangler.jsonc` の dev/staging/production
+へ登録し、migration `v5` で `SavedReferenceDO` を作成する。owner shard は ThreadDO と
+別のライフサイクルを持つため、Threadの期限切れ・削除では保存参照を消去しない。
 
 `workers/api/tests/http/integration/saved-reference-store.test.ts` は既存 `THREADS`
 Durable Object の SQLite を実際に使い、次を検証する。
@@ -52,10 +61,10 @@ Durable Object の SQLite を実際に使い、次を検証する。
 - provider payload を含む strict-invalid input が write 前に拒否されること
 - 壊れた保存行を `CORRUPT_ROW` として扱うこと
 
-このテストは既存 ThreadDO を storage host として使うだけで、ThreadDO 本体の公開 API や
-wrangler binding を変更しない。本番接続時は thread の期限切れ・削除で一緒に消えない
-owner-sharded な Durable Object を配置し、このテスト用の ThreadDO 借用を本番構成の証拠に
-しない。
+このC1テストは既存 ThreadDO をstorage hostとして使う。C2aテストは本物の
+`SAVED_REFERENCES` bindingを使い、owner初期化の競合、異owner拒否、eviction後復元、
+ThreadDO削除後の参照存続、RPC境界のpayload拒否を確認する。ThreadDOをstorage hostに
+借用したC1テストを、本番構成の証拠に読み替えない。
 
 ## 後続接続
 

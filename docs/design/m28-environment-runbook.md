@@ -21,7 +21,7 @@ flowchart LR
 
 ## 配置と初期値
 
-- `workers/api/wrangler.jsonc` は既存の `ThreadDO`、`RateLimitDO`、`JourneyDatasetDO`、`TelemetryDO`、`AppIntegrityDO` とv1〜v4 migrationを保持する。`env.staging` と `env.production` は別Worker名と5つのDO bindingを明示するが、Cloudflare account、route、binding resource IDは未設定である。
+- `workers/api/wrangler.jsonc` は `ThreadDO`、`RateLimitDO`、`JourneyDatasetDO`、`TelemetryDO`、`AppIntegrityDO`、`SavedReferenceDO` とv1〜v5 migrationを保持する。`env.staging` と `env.production` は別Worker名と6つのDO bindingを明示するが、Cloudflare account、route、binding resource IDは未設定である。SavedReferenceDOはowner shardとしてThreadDOと別ライフサイクルで保存参照を保持する。
 - Wrangler varsのstaging/production初期値は`disabled`だが、これは設定テンプレートであり、現runtimeの全flagsが接続済みまたは停止を保証するものではない。App Attest/native verifierとruntime gateの検証が済むまで外部配布を許可しない。
 - `apps/mobile/eas.json` はdevelopment/internal/externalのprofileとAPI environmentを定義する。実際のiOS bundle ID、EAS project ID、Apple team・証明書・provisioning profileは環境管理者が設定する。
 - `apps/mobile/app.json` の位置情報許可文言はアプリの用途を明示する。`apps/mobile/app.config.ts` がstaging/productionのbuild時だけ、環境変数のbundle IDとEAS project IDを検証して設定する。値がない外部buildは拒否し、bundle IDや署名情報をソースへ固定しない。

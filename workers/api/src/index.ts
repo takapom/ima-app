@@ -52,3 +52,4 @@ export default {
 } satisfies ExportedHandler<IndexEnv>;
 
 export { AppIntegrityDO, JourneyDatasetDO, RateLimitDO, TelemetryDO, ThreadDO };
+export { SavedReferenceDO } from './saved-references/saved-reference-do';
