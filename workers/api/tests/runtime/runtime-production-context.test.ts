@@ -247,6 +247,7 @@ describe('runtime production context store', () => {
       promotedCandidateId: 'candidate-2',
       selectedCandidateId: 'candidate-2',
       candidateOrder: ['candidate-2', 'candidate-1'],
+      savedPlaceRefs: ['saved-1'],
       excludeCandidateIds: ['candidate-3'],
     };
     const projected = store.beginTurn(request, scope, denyModelContextFieldPolicy);
@@ -260,6 +261,7 @@ describe('runtime production context store', () => {
         { candidateId: 'candidate-3', displayOrder: 2, role: 'alt' },
       ],
     });
+    expect(projected.modelContext.savedReferences).toEqual([{ savedPlaceRef: 'saved-1' }]);
   });
 
   it('rejects stale, foreign, duplicated, and excluded display references', () => {

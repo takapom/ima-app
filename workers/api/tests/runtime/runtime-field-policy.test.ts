@@ -237,4 +237,110 @@ describe('runtime field policy', () => {
       'mixed-secret',
     );
   });
+
+  it('keeps direct and saved reference targets distinct while sanitizing saved failures', () => {
+    const policy = toModelContextFieldPolicy(
+      {
+        evidence: allFields(uses()),
+        history: uses(),
+        cardSet: uses(),
+        displayName: uses(),
+      },
+      'fixture',
+    );
+    const projected = projectRuntimeToolResultForModel(
+      {
+        status: 'partial',
+        data: {
+          items: [
+            {
+              candidateId: 'candidate-policy',
+              fields: { identity: { status: 'unknown', reason: 'direct unavailable' } },
+            },
+            {
+              candidateId: 'candidate-policy-saved',
+              savedPlaceRef: 'saved-policy',
+              fields: {
+                identity: {
+                  status: 'error',
+                  error: {
+                    code: 'UPSTREAM_UNAVAILABLE',
+                    path: 'provider.secret',
+                    retryable: false,
+                    retryAfterMs: null,
+                    message: 'RAW_PROVIDER_SENTINEL',
+                    missingFields: ['identity'],
+                  },
+                },
+              },
+            },
+            {
+              savedPlaceRef: 'saved-failure',
+              fields: {
+                identity: {
+                  status: 'error',
+                  error: {
+                    code: 'UPSTREAM_UNAVAILABLE',
+                    path: 'provider.secret',
+                    retryable: false,
+                    retryAfterMs: null,
+                    message: 'RAW_PROVIDER_SENTINEL',
+                    missingFields: ['identity'],
+                  },
+                },
+              },
+            },
+          ],
+        },
+        warnings: [],
+      },
+      policy,
+    );
+
+    expect(projected).toMatchObject({
+      status: 'partial',
+      data: {
+        items: [
+          { candidateId: 'candidate-policy' },
+          { candidateId: 'candidate-policy-saved', savedPlaceRef: 'saved-policy' },
+          { savedPlaceRef: 'saved-failure' },
+        ],
+      },
+    });
+    expect(JSON.stringify(projected)).not.toContain('RAW_PROVIDER_SENTINEL');
+    expect(JSON.stringify(projected)).not.toContain('provider.secret');
+  });
+
+  it('withholds details with missing or ambiguous opaque targets', () => {
+    const policy = toModelContextFieldPolicy(defaultRuntimeModelProjectionPolicy, 'fixture');
+    const malformed = [
+      {
+        status: 'ok',
+        data: {
+          items: [
+            {
+              candidateId: 'candidate-policy',
+              savedPlaceRef: 'provider/raw',
+              fields: { identity: { status: 'unknown', reason: 'ambiguous' } },
+            },
+          ],
+        },
+        warnings: [],
+      },
+      {
+        status: 'ok',
+        data: {
+          items: [{ fields: { identity: { status: 'unknown', reason: 'missing target' } } }],
+        },
+        warnings: [],
+      },
+    ];
+
+    for (const value of malformed) {
+      expect(projectRuntimeToolResultForModel(value, policy)).toEqual({
+        status: 'withheld',
+        reason: 'model input policy denies this evidence field',
+      });
+    }
+  });
 });

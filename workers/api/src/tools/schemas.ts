@@ -1,8 +1,8 @@
 import { jsonSchema, type FlexibleSchema } from 'ai';
 import * as v from 'valibot';
 import {
-  GetPlaceDetailsInputSchema,
   ModelActionMetadataSchema,
+  ModelGetPlaceDetailsInputSchema,
   SearchPlacesInputSchema,
   SubmitCardsInputSchema,
 } from '@ima/core';
@@ -127,18 +127,36 @@ const detailsJsonSchema: WireSchema = {
       minItems: 1,
       maxItems: 5,
       items: {
-        type: 'object',
-        properties: {
-          candidateId: opaqueId,
-          fields: {
-            type: 'array',
-            minItems: 1,
-            maxItems: 8,
-            items: { type: 'string', enum: detailFields },
+        oneOf: [
+          {
+            type: 'object',
+            properties: {
+              candidateId: opaqueId,
+              fields: {
+                type: 'array',
+                minItems: 1,
+                maxItems: 8,
+                items: { type: 'string', enum: detailFields },
+              },
+            },
+            required: ['candidateId', 'fields'],
+            additionalProperties: false,
           },
-        },
-        required: ['candidateId', 'fields'],
-        additionalProperties: false,
+          {
+            type: 'object',
+            properties: {
+              savedPlaceRef: opaqueId,
+              fields: {
+                type: 'array',
+                minItems: 1,
+                maxItems: 8,
+                items: { type: 'string', enum: detailFields },
+              },
+            },
+            required: ['savedPlaceRef', 'fields'],
+            additionalProperties: false,
+          },
+        ],
       },
     },
     freshness: { type: 'string', enum: ['reuse_valid', 'refresh'] },
@@ -219,7 +237,7 @@ const envelopeSchema = <T>(
 /** AI SDK tools use the same root action envelope as the M04 runtime gate. */
 export const searchPlacesToolSchema = envelopeSchema(SearchPlacesInputSchema, searchJsonSchema);
 export const getPlaceDetailsToolSchema = envelopeSchema(
-  GetPlaceDetailsInputSchema,
+  ModelGetPlaceDetailsInputSchema,
   detailsJsonSchema,
 );
 export const submitCardsToolSchema = envelopeSchema(SubmitCardsInputSchema, submitJsonSchema);

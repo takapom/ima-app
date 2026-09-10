@@ -46,6 +46,11 @@ import {
   submitCardsToolSchema,
 } from './schemas';
 import { projectDetailsResult, projectSearchResult } from './projection';
+import {
+  detailsResultForSavedFailures,
+  mergeSavedDetailsFailures,
+  resolveModelDetailsInput,
+} from './saved-reference-details';
 
 const invocationOf = (options: ToolExecutionOptions): PublicToolInvocation => ({
   toolCallId: options.toolCallId,
@@ -130,13 +135,6 @@ const getPlaceDetails = async (
   }
   const checked = runtimeFor(dependencies.runtime, 'get_place_details', invocation, metadata);
   if (!checked.ok) return resultError(checked.error);
-  const candidateIssue = ownedCandidateIssue(
-    dependencies.registry,
-    checked.runtime.context,
-    parsedInput.value.requests.map((request) => request.candidateId),
-    'requests.candidateId',
-  );
-  if (candidateIssue !== undefined) return resultError(candidateIssue);
   const unsupported = unsupportedDetailField(checked.runtime.context, parsedInput.value);
   if (unsupported !== undefined) {
     return resultError(
@@ -153,13 +151,38 @@ const getPlaceDetails = async (
       ),
     );
   }
+  const directCandidateIssue = ownedCandidateIssue(
+    dependencies.registry,
+    checked.runtime.context,
+    parsedInput.value.requests.flatMap((request) =>
+      'candidateId' in request ? [request.candidateId] : [],
+    ),
+    'requests.candidateId',
+  );
+  if (directCandidateIssue !== undefined) return resultError(directCandidateIssue);
+
+  const resolved = await resolveModelDetailsInput(
+    parsedInput.value,
+    checked.runtime.context,
+    checked.runtime.execution,
+    checked.runtime.cancellation,
+    {
+      registry: dependencies.registry,
+      resolver: dependencies.savedPlaceReferenceResolver,
+    },
+  );
   const cancelled = cancellationError<SafeGetPlaceDetailsOutput>(checked.runtime);
-  if (cancelled !== undefined) return cancelled;
+  if (cancelled !== undefined || resolved.cancelled) {
+    return cancelled ?? resultError(issue('CANCELLED', null, 'tool execution was cancelled'));
+  }
+  if (resolved.input === undefined) {
+    return detailsResultForSavedFailures(resolved.failures, resolved.warnings);
+  }
 
   let returned: unknown;
   try {
     returned = await dependencies.details.read(
-      parsedInput.value,
+      resolved.input,
       checked.runtime.context,
       checked.runtime.execution,
       checked.runtime.cancellation,
@@ -182,18 +205,21 @@ const getPlaceDetails = async (
       dependencies.registry,
       dependencies.clock(),
       dependencies.modelContextFieldPolicy,
+      resolved.targetForCandidate,
     );
   }
-  if (!matchesDetailsRequest(parsedInput.value, result.data)) {
+  if (!matchesDetailsRequest(resolved.input, result.data)) {
     return resultError(mismatchedDetails());
   }
-  return projectDetailsResult(
+  const projected = projectDetailsResult(
     result,
     checked.runtime.context,
     dependencies.registry,
     dependencies.clock(),
     dependencies.modelContextFieldPolicy,
+    resolved.targetForCandidate,
   );
+  return mergeSavedDetailsFailures(projected, resolved.failures, resolved.warnings);
 };
 
 const submitCards = async (

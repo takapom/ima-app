@@ -38,7 +38,7 @@ type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 
 export type RuntimeProductionModelContext = Pick<
   ModelContextSource,
-  'userText' | 'history' | 'cardSet' | 'evidence' | 'fieldPolicy'
+  'userText' | 'history' | 'cardSet' | 'evidence' | 'savedReferences' | 'fieldPolicy'
 >;
 
 type ProductionContextState = {
@@ -381,6 +381,7 @@ export const createRuntimeProductionContextStore = (input: {
         history: [...structuredClone(state.history)],
         cardSet,
         evidence: [...structuredClone(state.evidence)],
+        savedReferences: request.savedPlaceRefs.map((savedPlaceRef) => ({ savedPlaceRef })),
         fieldPolicy,
       },
       constraintContext: {

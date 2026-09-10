@@ -13,6 +13,7 @@ import type {
   DetailsToolResult,
   ModelSafeFieldResult,
   ModelSafeObservation,
+  SafeDetailsTarget,
   SafeGetPlaceDetailsOutput,
   SafePlaceFields,
   SafeSearchPlacesOutput,
@@ -206,9 +207,12 @@ const projectDetailsData = (
   registry: ProjectionRegistry,
   now: string,
   fieldPolicy: ModelContextFieldPolicy | undefined,
+  targetForCandidate: (candidateId: string) => SafeDetailsTarget = (candidateId) => ({
+    candidateId,
+  }),
 ): SafeGetPlaceDetailsOutput => ({
   items: data.items.map((item) => ({
-    candidateId: item.candidateId,
+    ...targetForCandidate(item.candidateId),
     fields: projectDetailsFields(
       item.fields,
       item.candidateId,
@@ -248,6 +252,7 @@ export const projectDetailsResult = (
   registry: ProjectionRegistry,
   now: string,
   fieldPolicy?: ModelContextFieldPolicy,
+  targetForCandidate?: (candidateId: string) => SafeDetailsTarget,
 ): DetailsToolResult => {
   if (result.status === 'error') return { status: 'error', error: safePortIssue(result.error) };
   const ownershipIssue = candidateOwnershipIssue(
@@ -259,7 +264,7 @@ export const projectDetailsResult = (
   if (ownershipIssue !== undefined) return { status: 'error', error: ownershipIssue };
   return {
     status: result.status,
-    data: projectDetailsData(result.data, context, registry, now, fieldPolicy),
+    data: projectDetailsData(result.data, context, registry, now, fieldPolicy, targetForCandidate),
     warnings: result.warnings.map(safePortIssue),
   };
 };

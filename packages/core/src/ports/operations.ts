@@ -7,6 +7,7 @@ import {
   NonNegativeSafeIntegerSchema,
   OpaqueIdSchema,
   RevisionSchema,
+  SavedPlaceRefSchema,
   SafeIntegerSchema,
   Text,
 } from '../domain';
@@ -103,15 +104,26 @@ export const SearchPlacesOutputSchema = v.pipe(
 );
 export type SearchPlacesOutput = v.InferOutput<typeof SearchPlacesOutputSchema>;
 
+const DetailFieldsSchema = v.pipe(
+  v.array(DetailFieldSchema),
+  v.minLength(1),
+  v.maxLength(8),
+  v.check((fields) => new Set(fields).size === fields.length, 'duplicate detail field'),
+);
+
+/** Core details Port input; only a current thread candidate may cross this boundary. */
 export const DetailsRequestSchema = v.strictObject({
   candidateId: CandidateIdSchema,
-  fields: v.pipe(
-    v.array(DetailFieldSchema),
-    v.minLength(1),
-    v.maxLength(8),
-    v.check((fields) => new Set(fields).size === fields.length, 'duplicate detail field'),
-  ),
+  fields: DetailFieldsSchema,
 });
+export type DetailsRequest = v.InferOutput<typeof DetailsRequestSchema>;
+
+/** Model-facing details target. Saved references are resolved by the Worker adapter. */
+export const ModelDetailsRequestSchema = v.union([
+  v.strictObject({ candidateId: CandidateIdSchema, fields: DetailFieldsSchema }),
+  v.strictObject({ savedPlaceRef: SavedPlaceRefSchema, fields: DetailFieldsSchema }),
+]);
+export type ModelDetailsRequest = v.InferOutput<typeof ModelDetailsRequestSchema>;
 
 export const TravelContextSchema = v.strictObject({
   departure: v.literal('now'),
@@ -134,6 +146,29 @@ export const GetPlaceDetailsInputSchema = v.strictObject({
   travelContext: v.optional(TravelContextSchema),
 });
 export type GetPlaceDetailsInput = v.InferOutput<typeof GetPlaceDetailsInputSchema>;
+
+/** Model input is deliberately separate from the candidate-only Core Port input. */
+export const ModelGetPlaceDetailsInputSchema = v.strictObject({
+  requests: v.pipe(
+    v.array(ModelDetailsRequestSchema),
+    v.minLength(1),
+    v.maxLength(5),
+    v.check(
+      (requests) =>
+        new Set(
+          requests.map((request) =>
+            'candidateId' in request
+              ? `candidate:${request.candidateId}`
+              : `saved:${request.savedPlaceRef}`,
+          ),
+        ).size === requests.length,
+      'details references must be unique',
+    ),
+  ),
+  freshness: v.picklist(['reuse_valid', 'refresh']),
+  travelContext: v.optional(TravelContextSchema),
+});
+export type ModelGetPlaceDetailsInput = v.InferOutput<typeof ModelGetPlaceDetailsInputSchema>;
 
 const DetailValuesSchema = v.strictObject({
   identity: v.optional(FieldResultSchema(PlaceIdentitySchema)),

@@ -1,8 +1,8 @@
 import * as v from 'valibot';
 import {
-  GetPlaceDetailsInputSchema,
   GetPlaceDetailsOutputSchema,
   HarnessContextSchema,
+  ModelGetPlaceDetailsInputSchema,
   type ModelActionMetadata,
   ResultSchema,
   SearchPlacesInputSchema,
@@ -14,9 +14,11 @@ import {
   type GetPlaceDetailsOutput,
   type CancellationToken,
   type CandidateObservationRegistryPort,
+  type DetailField,
   type HarnessContext,
   type Issue,
   type IssueCode,
+  type ModelGetPlaceDetailsInput,
   type Result,
   type SearchPlacesInput,
   type SearchPlacesOutput,
@@ -102,8 +104,8 @@ export const parseSearchInput = (
 
 export const parseDetailsInput = (
   value: unknown,
-): { readonly ok: true; readonly value: GetPlaceDetailsInput } | { readonly ok: false } => {
-  const parsed = v.safeParse(GetPlaceDetailsInputSchema, value);
+): { readonly ok: true; readonly value: ModelGetPlaceDetailsInput } | { readonly ok: false } => {
+  const parsed = v.safeParse(ModelGetPlaceDetailsInputSchema, value);
   return parsed.success ? { ok: true, value: parsed.output } : { ok: false };
 };
 
@@ -248,7 +250,7 @@ export const submitCancellationError = (runtime: ToolRuntime): SubmitCardsPortRe
 
 export const unsupportedDetailField = (
   context: HarnessContext,
-  input: GetPlaceDetailsInput,
+  input: { readonly requests: readonly { readonly fields: readonly DetailField[] }[] },
 ): string | undefined => {
   const fields = new Set(context.capabilities.detailFields);
   for (const request of input.requests) {
@@ -293,7 +295,7 @@ export const ownedCandidateIssue = (
  */
 export const mismatchedTravelContext = (
   context: HarnessContext,
-  input: GetPlaceDetailsInput,
+  input: { readonly travelContext?: GetPlaceDetailsInput['travelContext'] },
 ): string | undefined => {
   const requested = input.travelContext;
   if (requested === undefined) return undefined;

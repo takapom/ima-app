@@ -8,6 +8,12 @@ export {
 } from './catalog';
 export { projectDetailsResult, projectSearchResult } from './projection';
 export { PUBLIC_TOOL_NAMES } from './types';
+export {
+  detailsResultForSavedFailures,
+  mergeSavedDetailsFailures,
+  resolveModelDetailsInput,
+} from './saved-reference-details';
+export type { SavedDetailsFailure, ResolvedModelDetails } from './saved-reference-details';
 export type {
   DetailsToolResult,
   DetailsToolEnvelope,
@@ -22,6 +28,7 @@ export type {
   SearchToolResult,
   SearchToolEnvelope,
   SafeGetPlaceDetailsOutput,
+  SafeDetailsTarget,
   SafePlaceFields,
   SafeSearchPlacesOutput,
   SubmitToolResult,
@@ -29,4 +36,7 @@ export type {
   ToolBindingDependencies,
   ToolRuntime,
   ToolRuntimeFactory,
+  SavedPlaceReferenceResolution,
+  SavedPlaceReferenceResolutionRequest,
+  SavedPlaceReferenceResolver,
 } from './types';

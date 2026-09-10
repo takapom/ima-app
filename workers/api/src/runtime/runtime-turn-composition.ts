@@ -179,6 +179,7 @@ const modelSource = (
   cardSet: source.cardSet,
   conditions,
   evidence: source.evidence,
+  savedReferences: source.savedReferences ?? [],
   ...(source.stationDirectory === undefined ? {} : { stationDirectory: source.stationDirectory }),
   ...(source.fieldPolicy === undefined ? {} : { fieldPolicy: source.fieldPolicy }),
 });

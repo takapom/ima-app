@@ -1,12 +1,13 @@
 import type { Tool, ToolExecutionOptions } from 'ai';
 import type {
   CancellationToken,
+  CandidateId,
   CandidateObservationRegistryPort,
   DetailField,
-  GetPlaceDetailsInput,
   GetPlaceDetailsOutput,
   HarnessContext,
   Issue,
+  ModelGetPlaceDetailsInput,
   ModelContextFieldPolicy,
   ModelActionMetadata,
   PlaceDetailsPort,
@@ -19,12 +20,34 @@ import type {
   SubmitCardsPortResult,
   ToolExecutionContext,
 } from '@ima/core';
+import type { SavedPlaceRef } from '@ima/core';
 
 export const PUBLIC_TOOL_NAMES = ['search_places', 'get_place_details', 'submit_cards'] as const;
 
 export type PublicToolName = (typeof PUBLIC_TOOL_NAMES)[number];
 
 export type PublicToolInvocation = Pick<ToolExecutionOptions, 'toolCallId' | 'abortSignal'>;
+
+/** Worker-owned async boundary for resolving one model-selected saved reference. */
+export type SavedPlaceReferenceResolutionRequest = {
+  readonly savedPlaceRef: SavedPlaceRef;
+  readonly context: HarnessContext;
+  readonly execution: ToolExecutionContext;
+  readonly cancellation: CancellationToken;
+};
+
+export type SavedPlaceReferenceResolution =
+  | {
+      readonly status: 'ok';
+      readonly candidateId: CandidateId;
+      readonly warnings?: readonly Issue[];
+    }
+  | { readonly status: 'error'; readonly error: Issue };
+
+/** The Worker RPC result is untrusted until the tool boundary validates this shape. */
+export type SavedPlaceReferenceResolver = (
+  request: SavedPlaceReferenceResolutionRequest,
+) => Promise<unknown>;
 
 export type ToolRuntime = {
   readonly context: HarnessContext;
@@ -48,7 +71,7 @@ export type PublicToolEnvelope<Input> = {
 };
 
 export type SearchToolEnvelope = PublicToolEnvelope<SearchPlacesInput>;
-export type DetailsToolEnvelope = PublicToolEnvelope<GetPlaceDetailsInput>;
+export type DetailsToolEnvelope = PublicToolEnvelope<ModelGetPlaceDetailsInput>;
 export type SubmitToolEnvelope = PublicToolEnvelope<SubmitCardsInput>;
 
 export type ToolBindingDependencies = {
@@ -59,6 +82,8 @@ export type ToolBindingDependencies = {
   readonly search: PlaceSearchPort;
   readonly details: PlaceDetailsPort;
   readonly submit: SubmitCardsPort;
+  /** Optional Worker-owned boundary for one model-selected saved reference. */
+  readonly savedPlaceReferenceResolver?: SavedPlaceReferenceResolver;
   /** Host-evaluated policy for the SDK model-input surface. Omitted means deny by default. */
   readonly modelContextFieldPolicy?: ModelContextFieldPolicy;
   readonly runtime: ToolRuntimeFactory;
@@ -136,11 +161,22 @@ export type SafePlaceFields = {
   readonly last_train?: ModelSafeFieldResult<DetailsFieldValue<'last_train'>>;
 };
 
+export type SafeDetailsTarget =
+  | { readonly candidateId: string; readonly savedPlaceRef?: SavedPlaceRef }
+  | { readonly savedPlaceRef: SavedPlaceRef; readonly candidateId?: never };
+
 export type SafeGetPlaceDetailsOutput = {
-  readonly items: {
-    readonly candidateId: string;
-    readonly fields: SafePlaceFields;
-  }[];
+  readonly items: (
+    | {
+        readonly candidateId: string;
+        readonly savedPlaceRef?: SavedPlaceRef;
+        readonly fields: SafePlaceFields;
+      }
+    | {
+        readonly savedPlaceRef: SavedPlaceRef;
+        readonly fields: SafePlaceFields;
+      }
+  )[];
 };
 
 export type SearchToolResult = Result<SafeSearchPlacesOutput>;
@@ -154,4 +190,4 @@ export type PublicToolSet = {
   readonly submit_cards: Tool<SubmitToolEnvelope, SubmitToolResult>;
 };
 
-export type PublicToolInput = SearchPlacesInput | GetPlaceDetailsInput | SubmitCardsInput;
+export type PublicToolInput = SearchPlacesInput | ModelGetPlaceDetailsInput | SubmitCardsInput;

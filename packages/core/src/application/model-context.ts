@@ -9,6 +9,7 @@ import {
   CandidateIdSchema,
   ObservationIdSchema,
   OpaqueIdSchema,
+  SavedPlaceRefSchema,
   Text,
   TurnIdSchema,
 } from '../domain/primitives';
@@ -117,6 +118,22 @@ export const ModelStationDirectorySchema = v.union([
 ]);
 export type ModelStationDirectory = v.InferOutput<typeof ModelStationDirectorySchema>;
 
+/** Model may select an owner-scoped reference, but never receives provider identity or payload. */
+export const ModelSavedReferenceSchema = v.strictObject({
+  savedPlaceRef: SavedPlaceRefSchema,
+});
+export type ModelSavedReference = v.InferOutput<typeof ModelSavedReferenceSchema>;
+
+const ModelSavedReferencesSchema = v.pipe(
+  v.array(ModelSavedReferenceSchema),
+  v.maxLength(50),
+  v.check(
+    (references) =>
+      new Set(references.map((reference) => reference.savedPlaceRef)).size === references.length,
+    'saved references must be unique',
+  ),
+);
+
 export const ModelContextSourceSchema = v.strictObject({
   harness: HarnessContextSchema,
   userText: Text(500),
@@ -124,6 +141,8 @@ export const ModelContextSourceSchema = v.strictObject({
   cardSet: v.nullable(ModelCardSetSourceSchema),
   conditions: TurnConditionValuesSchema,
   evidence: v.pipe(v.array(ModelEvidenceSourceSchema), v.maxLength(64)),
+  /** Optional for older callers; production supplies the current opaque owner references. */
+  savedReferences: v.optional(ModelSavedReferencesSchema),
   stationDirectory: v.optional(ModelStationDirectorySchema),
   /** Optional for older Core callers; Worker production composition supplies an explicit policy. */
   fieldPolicy: v.optional(ModelContextFieldPolicySchema),
@@ -157,6 +176,7 @@ export type ProjectedModelContext = {
   };
   readonly preferences: HarnessContext['preferences'];
   readonly conditions: TurnConditionValues;
+  readonly savedReferences: readonly ModelSavedReference[];
   readonly stationDirectory: ModelStationDirectory;
   readonly history: readonly Omit<ModelHistoryEntry, 'threadId'>[];
   readonly cardSet: ModelCardSet | null;
@@ -270,6 +290,7 @@ export const projectModelContext = (source: unknown): ProjectedModelContext => {
     },
     preferences: harness.preferences,
     conditions: value.conditions,
+    savedReferences: value.savedReferences ?? [],
     stationDirectory: value.stationDirectory ?? {
       status: 'unknown',
       reason: 'station directory was not supplied',

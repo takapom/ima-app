@@ -16,6 +16,7 @@ export type ModelContextEnvelope = {
     readonly location: ProjectedModelContext['location'];
     readonly preferences: ProjectedModelContext['preferences'];
     readonly conditions: ProjectedModelContext['conditions'];
+    readonly savedReferences: ProjectedModelContext['savedReferences'];
     readonly stationDirectory: ProjectedModelContext['stationDirectory'];
     readonly history: ProjectedModelContext['history'];
     readonly cardSet: ProjectedModelContext['cardSet'];
@@ -61,6 +62,7 @@ const contextEnvelope = (context: ProjectedModelContext): ModelContextEnvelope =
     location: context.location,
     preferences: context.preferences,
     conditions: context.conditions,
+    savedReferences: context.savedReferences,
     stationDirectory: context.stationDirectory,
     history: context.history,
     cardSet: context.cardSet,

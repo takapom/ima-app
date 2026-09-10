@@ -5,7 +5,7 @@ import type { Result } from '../domain/result';
 import { CandidateIdSchema, ObservationIdSchema, Text } from '../domain/primitives';
 import { ModelContextSchema } from './context';
 import type { CancellationToken } from './context';
-import { GetPlaceDetailsInputSchema, SearchPlacesInputSchema } from './operations';
+import { ModelGetPlaceDetailsInputSchema, SearchPlacesInputSchema } from './operations';
 
 const EvidenceIdsSchema = v.pipe(
   v.array(ObservationIdSchema),
@@ -44,7 +44,7 @@ export type SubmitCardsInput = v.InferOutput<typeof SubmitCardsInputSchema>;
 
 export const ModelActionSchema = v.union([
   v.strictObject({ kind: v.literal('search_places'), input: SearchPlacesInputSchema }),
-  v.strictObject({ kind: v.literal('get_place_details'), input: GetPlaceDetailsInputSchema }),
+  v.strictObject({ kind: v.literal('get_place_details'), input: ModelGetPlaceDetailsInputSchema }),
   v.strictObject({ kind: v.literal('submit_cards'), input: SubmitCardsInputSchema }),
   v.strictObject({ kind: v.literal('final_message'), message: EvidenceTextSchema(300) }),
 ]);
