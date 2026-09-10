@@ -8,6 +8,7 @@ import type {
 import type { ApiError, ApiResult, LifecycleResponse } from '../services/api/types';
 import {
   awaitRetryIfCurrent,
+  retryCreatedThreadThenSearchIfCurrent,
   restoreThenReadIfCurrent,
   releaseJourneyApiController,
   submissionScopeMatches,
@@ -25,6 +26,7 @@ export type {
 export {
   awaitRetryIfCurrent,
   operationStillCurrent,
+  retryCreatedThreadThenSearchIfCurrent,
   releaseJourneyApiController,
   restoreThenReadIfCurrent,
   submissionScopeMatches,
@@ -153,9 +155,18 @@ export const useJourneyApiController = (
       context: JourneyApiSubmitContext,
     ): Promise<ApiResult<CreateThreadResponse> | ApiResult<SearchResponse>> => {
       if (!controller || !requests) return rejectedUnavailable();
+      const current = controller.getState();
+      if (
+        current.status === 'creating' ||
+        current.status === 'pending' ||
+        current.status === 'cancelling' ||
+        current.status === 'reading' ||
+        current.status === 'replaying'
+      ) {
+        return rejectedAborted<SearchResponse>();
+      }
       const generation = ++operationGeneration.current;
       setBoundaryError(null);
-      const current = controller.getState();
       setRequestState({ query, context, threadId: current.threadId });
       if (current.threadId === null) {
         const created = await controller.createThread(requests.createThread());
@@ -212,10 +223,38 @@ export const useJourneyApiController = (
     const generation = ++operationGeneration.current;
     setBoundaryError(null);
     const last = requestState;
-    if (last !== null && !submissionScopeMatches(last.threadId, controller.getState().threadId)) {
+    const before = controller.getState();
+    const retryingCreate = last !== null && last.threadId === null && before.threadId === null;
+    if (
+      !retryingCreate &&
+      last !== null &&
+      !submissionScopeMatches(last.threadId, before.threadId)
+    ) {
       return rejectedAborted<SearchResponse>();
     }
-    const startedThreadId = last?.threadId ?? controller.getState().threadId;
+    const startedThreadId = last?.threadId ?? before.threadId;
+    if (retryingCreate && last !== null) {
+      const retried = await retryCreatedThreadThenSearchIfCurrent(
+        generation,
+        () => ({
+          generation: operationGeneration.current,
+          threadId: controller.getState().threadId,
+        }),
+        () => controller.retry(),
+        (created) => {
+          setRequestState({ ...last, threadId: created.threadId });
+          return controller.search(
+            requests.search({
+              threadId: created.threadId,
+              revision: created.revision,
+              query: last.query,
+              context: last.context,
+            }),
+          );
+        },
+      );
+      return retried.current ? retried.result : rejectedAborted<SearchResponse>();
+    }
     const retried = await awaitRetryIfCurrent(
       generation,
       startedThreadId,

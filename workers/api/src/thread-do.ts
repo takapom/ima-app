@@ -37,6 +37,7 @@ import type {
 } from './providers/photo/rpc';
 import {
   stateOf,
+  snapshotFromOperation,
   type ThreadAction,
   type ThreadOperationRow,
   type ThreadRow,
@@ -238,19 +239,15 @@ export class ThreadDO
     return operation;
   }
 
-  private snapshotFromOperation(row: ThreadRow, operation: ThreadOperationRow): ThreadSnapshot {
-    return {
-      threadId: row.thread_id,
-      ownerScopeRef: row.owner_scope_ref,
-      revision: operation.result_revision,
-      active: operation.result_active === 1,
-      state: stateOf(operation.result_state),
-    };
-  }
-
-  async initialize(ownerScopeRef: string, threadId: string): Promise<ThreadSnapshotResult> {
+  async initialize(
+    ownerScopeRef: string,
+    threadId: string,
+    requireActiveSession = false,
+  ): Promise<ThreadSnapshotResult> {
     await this.ready;
     await this.startRuntimeLifecycle();
+    if (requireActiveSession && (await this.sessionExpired()))
+      return { ok: false, code: 'NOT_FOUND' };
     try {
       const snapshot = this.ctx.storage.transactionSync(() => {
         const existing = this.rowSync();
@@ -339,7 +336,7 @@ export class ThreadDO
           turnId,
           expectedRevision,
         );
-        if (prior !== undefined) return this.snapshotFromOperation(current, prior);
+        if (prior !== undefined) return snapshotFromOperation(current, prior);
         if (current.deleted === 1) throw new ThreadStateError('NOT_FOUND');
         if (expectedRevision !== current.revision) {
           throw new ThreadConflictError('REVISION_CONFLICT');

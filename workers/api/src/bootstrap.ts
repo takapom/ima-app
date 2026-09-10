@@ -44,6 +44,7 @@ import type { PhotoTokenCodec } from './providers/photo/types';
 import { createBestEffortEventsSink, createTelemetryEventsSink } from './telemetry/events';
 import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetry/telemetry-do';
 import { resolveRuntimeOperationalGate } from './runtime/runtime-operational-gate';
+import { createThreadId } from './thread-id';
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;
@@ -153,12 +154,14 @@ const handleApplication = async (
 ): Promise<ApplicationResult> => {
   switch (operation.kind) {
     case 'create_thread': {
-      const threadId = crypto.randomUUID();
+      const threadId = await createThreadId(context.ownerScopeRef, operation.input.idempotencyKey);
       const snapshot = requireSnapshot(
         await threadCall(
-          async () => await threadStub(env, threadId).initialize(context.ownerScopeRef, threadId),
+          async () =>
+            await threadStub(env, threadId).initialize(context.ownerScopeRef, threadId, true),
         ),
       );
+      if (!snapshot.active) throw new HttpBoundaryError({ status: 409, code: 'CONFLICT' });
       return {
         kind: 'create_thread',
         response: {

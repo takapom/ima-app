@@ -1,4 +1,4 @@
-import type { ThreadState } from './thread-types';
+import type { ThreadSnapshot, ThreadState } from './thread-types';
 
 export type ThreadRow = {
   readonly thread_id: string;
@@ -33,3 +33,14 @@ export const stateOf = (value: string): ThreadState => {
   if (isThreadState(value)) return value;
   throw new Error('THREAD_STATE_CORRUPT');
 };
+
+export const snapshotFromOperation = (
+  row: ThreadRow,
+  operation: ThreadOperationRow,
+): ThreadSnapshot => ({
+  threadId: row.thread_id,
+  ownerScopeRef: row.owner_scope_ref,
+  revision: operation.result_revision,
+  active: operation.result_active === 1,
+  state: stateOf(operation.result_state),
+});

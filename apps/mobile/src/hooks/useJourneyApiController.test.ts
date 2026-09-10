@@ -3,6 +3,7 @@ import { journeyApiErrorMessage, requestStatusFor } from './useJourneyApiControl
 import {
   awaitRetryIfCurrent,
   operationStillCurrent,
+  retryCreatedThreadThenSearchIfCurrent,
   releaseJourneyApiController,
   restoreThenReadIfCurrent,
   submissionScopeMatches,
@@ -79,6 +80,110 @@ describe('Journey API hook boundary', () => {
     expect(operationStillCurrent(1, 2, 'thread-a', 'thread-a')).toBe(false);
     expect(operationStillCurrent(1, 1, 'thread-a', 'thread-b')).toBe(false);
     expect(operationStillCurrent(1, 1, 'thread-a', 'thread-a')).toBe(true);
+  });
+
+  it('continues the original search only when a retried create stays current', async () => {
+    const generation = 1;
+    let threadId: string | null = null;
+    let searches = 0;
+    const retried = retryCreatedThreadThenSearchIfCurrent(
+      generation,
+      () => ({ generation, threadId }),
+      () => {
+        threadId = 'thread-created';
+        return Promise.resolve({
+          ok: true as const,
+          requestId: 'create-request',
+          data: {
+            schemaVersion: 'v1' as const,
+            requestId: 'create-request',
+            threadId: 'thread-created',
+            revision: 0,
+            state: 'active' as const,
+          },
+        });
+      },
+      () => {
+        searches += 1;
+        return Promise.resolve({
+          ok: true as const,
+          requestId: 'search-request',
+          data: {} as never,
+        });
+      },
+    );
+
+    await expect(retried).resolves.toMatchObject({ current: true, result: { ok: true } });
+    expect(searches).toBe(1);
+  });
+
+  it('drops a retried create before search when generation changes', async () => {
+    let generation = 1;
+    let threadId: string | null = null;
+    let searches = 0;
+    const retried = retryCreatedThreadThenSearchIfCurrent(
+      generation,
+      () => ({ generation, threadId }),
+      () => {
+        generation = 2;
+        threadId = 'thread-created';
+        return Promise.resolve({
+          ok: true as const,
+          requestId: 'create-request',
+          data: {
+            schemaVersion: 'v1' as const,
+            requestId: 'create-request',
+            threadId: 'thread-created',
+            revision: 0,
+            state: 'active' as const,
+          },
+        });
+      },
+      () => {
+        searches += 1;
+        return Promise.resolve({
+          ok: false as const,
+          requestId: 'search-request',
+          error: { kind: 'offline' as const },
+        });
+      },
+    );
+
+    await expect(retried).resolves.toEqual({ current: false });
+    expect(searches).toBe(0);
+  });
+
+  it('drops a late search result after the retried create changes scope', async () => {
+    let generation = 1;
+    let threadId: string | null = null;
+    const retried = retryCreatedThreadThenSearchIfCurrent(
+      generation,
+      () => ({ generation, threadId }),
+      () => {
+        threadId = 'thread-created';
+        return Promise.resolve({
+          ok: true as const,
+          requestId: 'create-request',
+          data: {
+            schemaVersion: 'v1' as const,
+            requestId: 'create-request',
+            threadId: 'thread-created',
+            revision: 0,
+            state: 'active' as const,
+          },
+        });
+      },
+      () => {
+        generation = 2;
+        return Promise.resolve({
+          ok: true as const,
+          requestId: 'search-request',
+          data: {} as never,
+        });
+      },
+    );
+
+    await expect(retried).resolves.toEqual({ current: false });
   });
 
   it('releases host-owned work without permanently disposing the controller', () => {

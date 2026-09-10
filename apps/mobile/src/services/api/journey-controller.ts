@@ -47,6 +47,7 @@ export const createJourneyApiController = (
   const listeners = new Set<() => void>();
   const active = new Map<string, ActiveResponseOperation>();
   let retryable: RetryableResponseOperation | null = null;
+  let retryableCreate: CreateThreadRequest | null = null;
   let createInFlight: {
     readonly key: string;
     readonly promise: Promise<ApiResult<CreateThreadResponse>>;
@@ -84,6 +85,8 @@ export const createJourneyApiController = (
     auxiliaryAbort?.abort();
     auxiliaryAbort = null;
     retryable = null;
+    retryableCreate = null;
+    createInFlight = null;
     return epoch;
   };
   const stateFailure = <T>(route: string, requestId: string, issue: string): ApiResult<T> => {
@@ -216,7 +219,12 @@ export const createJourneyApiController = (
     requestOptions: ApiRequestOptions = {},
   ): Promise<ApiResult<CreateThreadResponse>> => {
     const prior = createInFlight;
-    if (prior !== null && prior.key === input.idempotencyKey) return prior.promise;
+    if (prior !== null) {
+      if (prior.key === input.idempotencyKey) return prior.promise;
+      return Promise.resolve(
+        failure(input.requestId, 'createThread', 'a thread creation is already in flight'),
+      );
+    }
     if (requestOptions.signal?.aborted) {
       return Promise.resolve(aborted(input.requestId));
     }
@@ -236,9 +244,11 @@ export const createJourneyApiController = (
       if (!currentEpoch(operationEpoch))
         return failure(result.requestId, 'createThread', 'late response was ignored');
       if (!result.ok) {
+        retryableCreate = input;
         update({ ...state, status: 'error', error: result.error, lastRequestId: result.requestId });
         return result;
       }
+      retryableCreate = null;
       gate.selectThread(result.data.threadId, result.data.revision);
       update({
         ...state,
@@ -267,14 +277,25 @@ export const createJourneyApiController = (
   const turn = (threadId: string, input: ThreadTurnRequest, requestOptions?: ApiRequestOptions) =>
     beginResponse({ kind: 'turn', threadId, input }, requestOptions);
 
-  const retry = (): Promise<ApiResult<SearchResponse>> => {
+  const retry = (): Promise<ApiResult<CreateThreadResponse> | ApiResult<SearchResponse>> => {
+    if (createInFlight !== null) return createInFlight.promise;
+    if (retryableCreate !== null) {
+      const input = retryableCreate;
+      return createThread(input);
+    }
     if (retryable === null) {
-      return Promise.resolve(failure('controller', 'retry', 'there is no failed request to retry'));
+      return Promise.resolve(
+        failure<SearchResponse>('controller', 'retry', 'there is no failed request to retry'),
+      );
     }
     const nextToken = gate.retry(retryable.token);
     if (nextToken === null) {
       return Promise.resolve(
-        failure(requestIdOf(retryable.operation.input), 'retry', 'retry is no longer current'),
+        failure<SearchResponse>(
+          requestIdOf(retryable.operation.input),
+          'retry',
+          'retry is no longer current',
+        ),
       );
     }
     const operationEpoch = ++epoch;

@@ -1,7 +1,11 @@
+import type { CreateThreadResponse, SearchResponse } from '@ima/contracts';
 import type {
   JourneyApiController,
   JourneyApiControllerState,
 } from '../services/api/journey-controller';
+import type { ApiResult } from '../services/api/types';
+
+export type JourneyApiRetryResult = ApiResult<CreateThreadResponse> | ApiResult<SearchResponse>;
 
 export type JourneyHistoryController = {
   readonly restoreLocal: (threadId: string) => Promise<unknown>;
@@ -66,6 +70,30 @@ export const awaitRetryIfCurrent = async <T>(
   const result = await retry();
   const next = current();
   return operationStillCurrent(startedGeneration, next.generation, startedThreadId, next.threadId)
+    ? { current: true, result }
+    : { current: false };
+};
+
+/** Completes a failed create and starts its original search only in the same operation scope. */
+export const retryCreatedThreadThenSearchIfCurrent = async (
+  startedGeneration: number,
+  current: () => { readonly generation: number; readonly threadId: string | null },
+  retryCreate: () => Promise<JourneyApiRetryResult>,
+  search: (created: CreateThreadResponse) => Promise<ApiResult<SearchResponse>>,
+): Promise<
+  { readonly current: true; readonly result: JourneyApiRetryResult } | { readonly current: false }
+> => {
+  const created = await retryCreate();
+  const afterCreate = current();
+  if (afterCreate.generation !== startedGeneration) return { current: false };
+  if (!created.ok) return { current: true, result: created };
+  if (!('threadId' in created.data) || afterCreate.threadId !== created.data.threadId) {
+    return { current: false };
+  }
+  const result = await search(created.data);
+  const afterSearch = current();
+  return afterSearch.generation === startedGeneration &&
+    afterSearch.threadId === created.data.threadId
     ? { current: true, result }
     : { current: false };
 };

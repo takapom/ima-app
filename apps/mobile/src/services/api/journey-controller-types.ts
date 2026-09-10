@@ -72,7 +72,7 @@ export type JourneyApiController = {
     input: ThreadTurnRequest,
     options?: ApiRequestOptions,
   ) => Promise<ApiResult<SearchResponse>>;
-  readonly retry: () => Promise<ApiResult<SearchResponse>>;
+  readonly retry: () => Promise<ApiResult<CreateThreadResponse> | ApiResult<SearchResponse>>;
   readonly cancel: (
     threadId: string,
     input: LifecycleCommand,
