@@ -59,7 +59,7 @@ describe('Google Photo media transport', () => {
     expect(firstUrl.searchParams.get('maxWidthPx')).toBe('1600');
     expect(firstUrl.searchParams.get('skipHttpRedirect')).toBe('true');
     expect(firstUrl.searchParams.has('key')).toBe(false);
-    expect(first.init?.redirect).toBe('error');
+    expect(first.init?.redirect).toBe('manual');
     expect(first.init?.headers).toEqual({
       accept: 'application/json',
       'x-goog-api-key': API_KEY,
@@ -82,6 +82,29 @@ describe('Google Photo media transport', () => {
       await expect(transport.read(PHOTO_REF)).rejects.toMatchObject({ code: 'REDIRECT_REJECTED' });
       expect(fetcher).toHaveBeenCalledTimes(1);
     }
+  });
+
+  it('rejects an upstream HTTP redirect before following it', async () => {
+    let cancelCount = 0;
+    const redirectBody = new ReadableStream<Uint8Array>({
+      cancel() {
+        cancelCount += 1;
+      },
+    });
+    const fetcher = vi.fn(() =>
+      Promise.resolve(
+        new Response(redirectBody, {
+          status: 302,
+          headers: { location: PHOTO_URI },
+        }),
+      ),
+    );
+
+    await expect(makeTransport(fetcher).read(PHOTO_REF)).rejects.toMatchObject({
+      code: 'REDIRECT_REJECTED',
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(cancelCount).toBe(1);
   });
 
   it('fails before fetch for missing keys or invalid provider names', async () => {

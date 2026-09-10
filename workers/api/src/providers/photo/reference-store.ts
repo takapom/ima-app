@@ -4,7 +4,8 @@ import {
   PhotoReferenceRecordSchema,
   PhotoTokenError,
   type PhotoReferenceRecord,
-  type PhotoReferenceStore,
+  type PhotoReferenceLookupScope,
+  type PhotoReferenceStoreWithClear,
 } from './types';
 
 const DEFAULT_MAX_ENTRIES = 256;
@@ -25,7 +26,7 @@ export const createMemoryPhotoReferenceStore = (
   options: {
     readonly maxEntries?: number;
   } = {},
-): PhotoReferenceStore => {
+): PhotoReferenceStoreWithClear => {
   const maxEntries = options.maxEntries ?? DEFAULT_MAX_ENTRIES;
   if (!Number.isSafeInteger(maxEntries) || maxEntries < 1) {
     throw new PhotoTokenError('INVALID_INPUT');
@@ -39,10 +40,20 @@ export const createMemoryPhotoReferenceStore = (
   };
 
   return {
-    put(record: PhotoReferenceRecord): Promise<void> {
+    put(record: PhotoReferenceRecord, requestedNow?: string): Promise<void> {
       return Promise.resolve().then(() => {
         const parsed = v.safeParse(PhotoReferenceRecordSchema, record);
         if (!parsed.success) throw new PhotoTokenError('INVALID_INPUT');
+        if (requestedNow !== undefined) {
+          const nowMilliseconds = parseClock(requestedNow);
+          const expiryMilliseconds = Date.parse(parsed.output.expiresAt);
+          if (
+            expiryMilliseconds <= nowMilliseconds ||
+            expiryMilliseconds > nowMilliseconds + 30 * 60 * 1_000
+          ) {
+            throw new PhotoTokenError('INVALID_INPUT');
+          }
+        }
         if (entries.has(parsed.output.handle)) {
           throw new PhotoTokenError('REFERENCE_CONFLICT');
         }
@@ -55,12 +66,30 @@ export const createMemoryPhotoReferenceStore = (
       });
     },
 
-    get(handle: string, now: string): Promise<PhotoReferenceRecord | undefined> {
+    get(
+      handle: string,
+      now: string,
+      scope?: PhotoReferenceLookupScope,
+    ): Promise<PhotoReferenceRecord | undefined> {
       return Promise.resolve().then(() => {
         const nowMilliseconds = parseClock(now);
         purge(nowMilliseconds);
-        return entries.get(handle);
+        const record = entries.get(handle);
+        if (
+          record !== undefined &&
+          scope !== undefined &&
+          (record.ownerScopeRef !== scope.ownerScopeRef ||
+            record.deviceIdHash !== scope.deviceIdHash)
+        ) {
+          return undefined;
+        }
+        return record;
       });
+    },
+
+    clear(): Promise<void> {
+      entries.clear();
+      return Promise.resolve();
     },
   };
 };

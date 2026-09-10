@@ -96,10 +96,19 @@ const fetchWithDeadline = async (
   try {
     const response = await fetcher(url, {
       method: 'GET',
-      redirect: 'error',
+      redirect: 'manual',
       headers,
       signal: controller.signal,
     });
+    if (response.status >= 300 && response.status < 400) {
+      try {
+        await response.body?.cancel();
+      } catch {
+        // The redirect is rejected regardless of provider body cleanup.
+      }
+      clear();
+      throw new PhotoProviderError('REDIRECT_REJECTED');
+    }
     return { response, controller, failure, clear };
   } catch (error: unknown) {
     clear();

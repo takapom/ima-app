@@ -35,9 +35,15 @@ import {
   createRuntimeApplicationHandler,
   type RuntimeCancellationClassification,
 } from './bootstrap-runtime';
+import { createPhotoBodyHandler } from './providers/photo/http';
+import { createGooglePhotoMediaTransport } from './providers/photo/transport';
+import { createPhotoTokenCodec } from './providers/photo/token';
+import { createPhotoReferenceStoreResolver } from './providers/photo/rpc';
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;
+  readonly GOOGLE_PLACES_API_KEY?: string;
+  readonly PHOTO_TOKEN_SECRET?: string;
   readonly THREADS: DurableObjectNamespace<ThreadDO>;
   readonly RATE_LIMITS: DurableObjectNamespace<RateLimitDO>;
 };
@@ -53,6 +59,8 @@ export type BootstrapOptions = {
   readonly ownership: ResourceScopeAuthorizer;
   /** Production composition injects the authenticated, token-bound photo adapter. */
   readonly photo?: PhotoBodyHandler;
+  /** Test/runtime composition may provide the already-scoped upstream fetcher. */
+  readonly photoFetcher?: typeof fetch;
   readonly clock?: () => string;
   readonly requestIdFactory?: () => string;
   readonly maxBodyBytes?: number;
@@ -215,6 +223,24 @@ const createUnavailablePhoto = (): PhotoBodyHandler => ({
   },
 });
 
+const createConfiguredPhoto = (
+  env: BootstrapEnv,
+  photoFetcher: typeof fetch = fetch,
+): PhotoBodyHandler => {
+  const apiKey = env.GOOGLE_PLACES_API_KEY?.trim();
+  const tokenSecret = env.PHOTO_TOKEN_SECRET?.trim();
+  if (apiKey === undefined || apiKey.length === 0) return createUnavailablePhoto();
+  if (tokenSecret === undefined || tokenSecret.length === 0) return createUnavailablePhoto();
+  const tokenCodec = createPhotoTokenCodec({
+    secret: tokenSecret,
+    referenceResolver: createPhotoReferenceStoreResolver((threadId) =>
+      env.THREADS.getByName(threadId),
+    ),
+  });
+  const transport = createGooglePhotoMediaTransport({ apiKey, fetcher: photoFetcher });
+  return createPhotoBodyHandler({ tokenCodec, transport });
+};
+
 const createUnavailableEvents = (): EventsSink => ({
   accept() {
     return Promise.reject(unavailable());
@@ -283,7 +309,7 @@ export const createHttpRouterConfig = (
 ): HttpRouterConfig => {
   const handlers: HandlerDependencies = {
     application: createApplication(env, options),
-    photo: options.photo ?? createUnavailablePhoto(),
+    photo: options.photo ?? createConfiguredPhoto(env, options.photoFetcher),
     events: createUnavailableEvents(),
     rateLimiter: new DurableRateLimiter(
       env.RATE_LIMITS,

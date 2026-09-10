@@ -55,9 +55,22 @@ export type PhotoReferenceRecord = {
  * and must obtain a new provider observation before issuing another token.
  */
 export type PhotoReferenceStore = {
-  put(record: PhotoReferenceRecord): Promise<void>;
-  get(handle: string, now: string): Promise<PhotoReferenceRecord | undefined>;
+  put(record: PhotoReferenceRecord, requestedNow?: string): Promise<void>;
+  get(
+    handle: string,
+    now: string,
+    scope?: PhotoReferenceLookupScope,
+  ): Promise<PhotoReferenceRecord | undefined>;
 };
+
+export type PhotoReferenceStoreWithClear = PhotoReferenceStore & {
+  clear(): Promise<void>;
+};
+
+export type PhotoReferenceLookupScope = Pick<
+  PhotoReferenceRecord,
+  'ownerScopeRef' | 'deviceIdHash'
+>;
 
 /** Resolves the per-thread store after the authenticated token reveals its route. */
 export type PhotoReferenceStoreResolver = {

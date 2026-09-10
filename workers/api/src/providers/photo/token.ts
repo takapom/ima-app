@@ -162,14 +162,17 @@ export const createPhotoTokenCodec = (options: {
       if (token.length > MAX_TOKEN_LENGTH) throw new PhotoTokenError('TOKEN_TOO_LARGE');
       const references = await referenceResolver.resolve(parsed.output.threadId);
       if (references === undefined) throw new PhotoTokenError('REFERENCE_UNAVAILABLE');
-      await references.put({
-        handle,
-        ownerScopeRef: parsed.output.ownerScopeRef,
-        threadId: parsed.output.threadId,
-        deviceIdHash: payload.d,
-        photoRef: parsed.output.photoRef,
-        expiresAt,
-      });
+      await references.put(
+        {
+          handle,
+          ownerScopeRef: parsed.output.ownerScopeRef,
+          threadId: parsed.output.threadId,
+          deviceIdHash: payload.d,
+          photoRef: parsed.output.photoRef,
+          expiresAt,
+        },
+        now,
+      );
       return token;
     },
 
@@ -215,7 +218,10 @@ export const createPhotoTokenCodec = (options: {
       const expiresAt = new Date(parsed.output.e * 1_000).toISOString();
       const references = await referenceResolver.resolve(parsed.output.i);
       if (references === undefined) throw new PhotoTokenError('REFERENCE_UNAVAILABLE');
-      const record = await references.get(parsed.output.h, now);
+      const record = await references.get(parsed.output.h, now, {
+        ownerScopeRef: expected.ownerScopeRef,
+        deviceIdHash: parsed.output.d,
+      });
       const matching = matchingRecord(record, parsed.output, expected, expiresAt);
       if (matching === undefined) {
         throw new PhotoTokenError('REFERENCE_UNAVAILABLE');

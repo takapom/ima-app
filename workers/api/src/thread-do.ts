@@ -26,8 +26,20 @@ import {
   type ThreadDeleteResult,
   type ThreadSnapshot,
   type ThreadSnapshotResult,
-  type ThreadState,
 } from './thread-types';
+import { createThreadPhotoReferences } from './providers/photo/thread-references';
+import type { PhotoReferenceRecord } from './providers/photo/types';
+import type {
+  PhotoReferenceGetResult,
+  PhotoReferencePutResult,
+  PhotoReferenceRpc,
+} from './providers/photo/rpc';
+import {
+  stateOf,
+  type ThreadAction,
+  type ThreadOperationRow,
+  type ThreadRow,
+} from './thread-do-state';
 export { RateLimitDO } from './rate-limit-do';
 export type { RateLimitCheckInput, RateLimitCheckResult, RateLimitConfig } from './rate-limit-do';
 export {
@@ -47,57 +59,28 @@ export type {
   ThreadStateErrorCode,
 } from './thread-types';
 
-type ThreadRow = {
-  readonly thread_id: string;
-  readonly owner_scope_ref: string;
-  readonly revision: number;
-  readonly active: number;
-  readonly state: string;
-  readonly deleted: number;
-};
-
-type ThreadOperationRow = {
-  readonly idempotency_key: string;
-  readonly owner_scope_ref: string;
-  readonly action: string;
-  readonly turn_id: string | null;
-  readonly expected_revision: number;
-  readonly result_revision: number;
-  readonly result_active: number;
-  readonly result_state: string;
-};
-
-type ThreadAction = Exclude<ThreadState, 'active'>;
-
-const isThreadState = (value: string): value is ThreadState =>
-  value === 'active' ||
-  value === 'cancelled' ||
-  value === 'ended' ||
-  value === 'restarted' ||
-  value === 'resumed';
-
-const stateOf = (value: string): ThreadState => {
-  if (isThreadState(value)) return value;
-  throw new Error('THREAD_STATE_CORRUPT');
-};
-
-/**
- * The M05 boundary and the later Think runtime share one Durable Object class.
- * Think is deliberately configured with no model/tools here; M05 only exposes
- * the owner-bound state methods. M10 can add the native loop without creating
- * a second per-thread object or migrating the binding.
- */
-export class ThreadDO extends RuntimeProductionThinkHost<Cloudflare.Env> {
+/** One DO owns owner-bound lifecycle, photo references, and the configured Think runtime. */
+export class ThreadDO
+  extends RuntimeProductionThinkHost<Cloudflare.Env>
+  implements PhotoReferenceRpc
+{
   override includeMcpTools = false;
   override workspaceBash = false;
   override fetchTools = false as const;
   private readonly ready: Promise<void>;
   private readonly runtimeController: ThreadRuntimeController;
   private readonly runtimeCommit: DurableCommitPort;
+  private readonly photoReferences = createThreadPhotoReferences({
+    clock: () => this.photoReferenceNow(),
+    binding: () => this.rowSync(),
+  });
 
-  /** Native fixtures may opt into their in-memory CommitPort explicitly. */
   protected runtimeCommitFallbackEnabled(): boolean {
     return false;
+  }
+
+  protected photoReferenceNow(): string {
+    return new Date().toISOString();
   }
 
   constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
@@ -290,6 +273,25 @@ export class ThreadDO extends RuntimeProductionThinkHost<Cloudflare.Env> {
     }
   }
 
+  async putPhotoReference(
+    ownerScopeRef: string,
+    record: PhotoReferenceRecord,
+    now: string,
+  ): Promise<PhotoReferencePutResult> {
+    await this.ready;
+    return this.photoReferences.putPhotoReference(ownerScopeRef, record, now);
+  }
+
+  async getPhotoReference(
+    ownerScopeRef: string,
+    handle: string,
+    deviceIdHash: string,
+    now: string,
+  ): Promise<PhotoReferenceGetResult> {
+    await this.ready;
+    return this.photoReferences.getPhotoReference(ownerScopeRef, handle, deviceIdHash, now);
+  }
+
   async authorize(ownerScopeRef: string): Promise<ThreadAuthorization> {
     const row = await this.row();
     if (row === undefined) return { allowed: false, reason: 'NOT_FOUND' };
@@ -409,7 +411,13 @@ export class ThreadDO extends RuntimeProductionThinkHost<Cloudflare.Env> {
           'ended',
         );
       });
-      if (cleanupRequired) await this.runtimeController.cleanupForDelete();
+      if (cleanupRequired) {
+        try {
+          await this.runtimeController.cleanupForDelete();
+        } finally {
+          await this.photoReferences.clear();
+        }
+      }
       return { ok: true };
     } catch (error: unknown) {
       if (isThreadStateError(error) || isThreadConflictError(error)) {
