@@ -7,6 +7,7 @@ import {
   type MessageHistoryItem,
 } from './results-state-model';
 import type { AssistantMessageRecord, CardSetDisplayState } from '../state/assistant-response';
+import type { JourneyPhotoClient } from '../services/api/photo-client';
 import { colors, spacing, typography } from '../theme/tokens';
 
 type ResultsStateProps = {
@@ -21,6 +22,7 @@ type ResultsStateProps = {
   readonly onSave?: (card: PublicCard) => void;
   readonly onSkip?: (candidateId: string) => void;
   readonly onSourcePress?: (sourceLink: string) => void;
+  readonly photoClient?: JourneyPhotoClient;
 };
 
 const orderedCards = (
@@ -47,6 +49,7 @@ export function ResultsState({
   onSave,
   onSkip,
   onSourcePress,
+  photoClient,
 }: ResultsStateProps): React.JSX.Element {
   const displayCards = cards === null ? [] : orderedCards(cards, candidateOrder);
   const messageHistory = buildMessageHistory(messageRecords, cardSetId, displayCards.length > 0);
@@ -77,6 +80,7 @@ export function ResultsState({
         {...(onSkip === undefined ? {} : { onSkip })}
         primary
         {...(onSourcePress === undefined ? {} : { onSourcePress })}
+        {...(photoClient === undefined ? {} : { photoClient })}
       />
       {alternatives.length > 0 ? (
         <View style={styles.alternatives}>
@@ -91,6 +95,7 @@ export function ResultsState({
               primary={false}
               {...(onChoose === undefined ? {} : { onChoose })}
               {...(onSourcePress === undefined ? {} : { onSourcePress })}
+              {...(photoClient === undefined ? {} : { photoClient })}
             />
           ))}
         </View>

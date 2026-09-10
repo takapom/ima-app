@@ -1,13 +1,16 @@
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
+import type { JourneyPhotoClient } from '../services/api/photo-client';
 import {
   collectAttributions,
+  collectPhotoAttributions,
   presentCardFacts,
   presentEvidenceText,
   presentFact,
   type AttributionPresentation,
   type FactPresentation,
 } from './candidate-card-model';
+import { PhotoRegion } from './PhotoRegion';
 import { colors, radii, scaleForDynamicType, spacing, typography } from '../theme/tokens';
 
 type CandidateCardProps = {
@@ -18,6 +21,7 @@ type CandidateCardProps = {
   readonly onSave?: (card: PublicCard) => void;
   readonly onSkip?: (candidateId: string) => void;
   readonly onSourcePress?: (sourceLink: string) => void;
+  readonly photoClient?: JourneyPhotoClient;
 };
 
 const cardIdentity = (card: PublicCard) => {
@@ -38,18 +42,6 @@ const walkingMinutes = (card: PublicCard): string => {
   return `徒歩${Math.max(1, Math.round(fact.value.durationSeconds / 60))}分`;
 };
 
-const photoLabel = (card: PublicCard): string => {
-  const fact = card.facts.photos;
-  if (fact === undefined) return '写真情報なし';
-  if (fact.status === 'error') return '写真を表示できません';
-  if (fact.status !== 'known') return '写真は未確認';
-  const presentation = presentFact(fact, (value) => String(value.photos.length));
-  if (presentation.status === 'expired') return '写真は表示期限を過ぎています';
-  if (presentation.status !== 'known') return '写真は未確認';
-  const count = fact.value.photos.length;
-  return count > 0 ? `写真 ${count}枚` : '写真なし';
-};
-
 const metaLabel = (card: PublicCard): string => {
   const identity = cardIdentity(card);
   const values = [identity?.area ?? '', identity?.category ?? '', walkingMinutes(card)].filter(
@@ -66,6 +58,7 @@ export function CandidateCard({
   onSave,
   onSkip,
   onSourcePress,
+  photoClient,
 }: CandidateCardProps): React.JSX.Element {
   const { fontScale } = useWindowDimensions();
   const identity = cardIdentity(card);
@@ -77,15 +70,18 @@ export function CandidateCard({
   const walkingEvidence = presentFact(card.facts.walking_route, (value) =>
     String(value.durationSeconds),
   ).evidence;
-  const attributions = collectAttributions([
-    identityEvidence,
-    walkingEvidence,
-    facts.openingHours.evidence,
-    facts.price.evidence,
-    facts.lastTrain.evidence,
-    why.evidence,
-    ...(diff === null ? [] : [diff.evidence]),
-  ]);
+  const attributions = [
+    ...collectAttributions([
+      identityEvidence,
+      walkingEvidence,
+      facts.openingHours.evidence,
+      facts.price.evidence,
+      facts.lastTrain.evidence,
+      why.evidence,
+      ...(diff === null ? [] : [diff.evidence]),
+    ]),
+    ...collectPhotoAttributions(card),
+  ];
   const choose = (): void => onChoose?.(card.candidateId);
   const decide = (): void => onDecide?.(card.candidateId);
 
@@ -107,7 +103,11 @@ export function CandidateCard({
             },
           ]}
         >
-          <Text style={styles.thumbnailText}>{photoLabel(card)}</Text>
+          <PhotoRegion
+            card={card}
+            compact
+            {...(photoClient === undefined ? {} : { client: photoClient })}
+          />
         </View>
         <View style={styles.alternativeBody}>
           <Text numberOfLines={1} style={styles.name}>
@@ -130,7 +130,7 @@ export function CandidateCard({
   return (
     <View style={styles.hero}>
       <View style={[styles.heroVisual, { minHeight: scaleForDynamicType(168, fontScale) }]}>
-        <Text style={styles.heroPhoto}>{photoLabel(card)}</Text>
+        <PhotoRegion card={card} {...(photoClient === undefined ? {} : { client: photoClient })} />
         <View style={styles.heroOverlay}>
           <Text numberOfLines={1} style={styles.heroName}>
             {name}
@@ -255,13 +255,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#222224',
     justifyContent: 'flex-end',
     padding: spacing.section,
-  },
-  heroPhoto: {
-    color: colors.muted,
-    fontSize: typography.label,
-    position: 'absolute',
-    right: spacing.section,
-    top: spacing.section,
+    position: 'relative',
   },
   heroOverlay: {
     alignItems: 'flex-end',
@@ -346,11 +340,6 @@ const styles = StyleSheet.create({
     minHeight: 56,
     minWidth: 56,
     padding: 4,
-  },
-  thumbnailText: {
-    color: colors.faint,
-    fontSize: 9,
-    textAlign: 'center',
   },
   alternativeBody: {
     flex: 1,

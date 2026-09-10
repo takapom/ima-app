@@ -14,6 +14,7 @@ import type {
   JourneyApiTurnFactoryInput,
 } from './journey-api-binding';
 import { createJourneyApiComposition } from './composition';
+import { createJourneyPhotoClient } from './photo-client';
 import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from './types';
 
 export type MobileRuntimeEnvironment = Readonly<Record<string, string | undefined>>;
@@ -199,19 +200,22 @@ export const createMobileJourneyRuntime = (
   const idFactory = options.idFactory ?? randomId;
   const now = options.now ?? (() => new Date().toISOString());
   const requestIdFactory = options.requestIdFactory ?? (() => idFactory('request'));
-  const controller = createJourneyApiComposition({
+  const clientOptions = {
     baseUrl,
     mode: selected.mode,
     appVersion: valueFor(env, 'EXPO_PUBLIC_APP_VERSION') ?? '0.0.0',
     credentials,
     requestIdFactory,
     ...(options.fetchImpl === undefined ? {} : { fetchImpl: options.fetchImpl }),
-  });
+  } as const;
+  const controller = createJourneyApiComposition(clientOptions);
+  const photoClient = createJourneyPhotoClient({ ...clientOptions, now });
   return {
     mode: selected.mode,
     reason: null,
     binding: {
       controller,
+      photoClient,
       requests: createJourneyApiRequestFactory({ now, idFactory }),
     },
   };

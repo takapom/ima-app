@@ -208,3 +208,19 @@ export const collectAttributions = (
   }
   return attributions;
 };
+
+export const collectPhotoAttributions = (card: PublicCard): readonly AttributionPresentation[] => {
+  const fact = card.facts.photos;
+  const presentation = presentFact(fact, (value) => String(value.photos.length));
+  if (fact?.status !== 'known' || presentation.status !== 'known') return [];
+  const seen = new Set<string>();
+  return fact.value.photos.flatMap((photo) =>
+    photo.attributions.flatMap((attribution) => {
+      const result = { label: attribution.displayName, sourceLink: attribution.uri };
+      const key = `${result.label}|${result.sourceLink ?? ''}`;
+      if (seen.has(key)) return [];
+      seen.add(key);
+      return [result];
+    }),
+  );
+};

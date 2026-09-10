@@ -20,6 +20,7 @@ import {
   type JourneyApiSubmitContext,
 } from '../hooks/useJourneyApiController';
 import type { AssistantResponseClock } from '../services/assistant-response-clock';
+import type { JourneyPhotoClient } from '../services/api/photo-client';
 import type { WalkingMapDestinationResolver } from '../services/journey-map';
 import {
   selectAssistantMessageRecords,
@@ -45,6 +46,8 @@ export type JourneyScreenProps = {
   readonly threadId?: string;
   /** Optional HTTP composition; omitted hosts keep the fixture-free shell disconnected. */
   readonly api?: JourneyApiControllerBinding;
+  /** Host-composed authenticated photo loader; omitted hosts show the public fallback. */
+  readonly photoClient?: JourneyPhotoClient;
   readonly responseState?: AssistantResponseState | null;
   /** Injected render time for deterministic expiry boundaries. */
   readonly now?: AssistantResponseProjectionNow;
@@ -74,6 +77,7 @@ export type JourneyScreenProps = {
 
 export function JourneyScreen(props: JourneyScreenProps): React.JSX.Element {
   const api = useJourneyApiController(props.api);
+  const connectedPhotoClient = props.photoClient ?? props.api?.photoClient;
   const stateKey = api.connected
     ? `api-${api.state.threadId ?? props.threadId ?? 'auto'}-${api.viewKey}`
     : (props.threadId ?? 'mobile-thread');
@@ -87,6 +91,7 @@ export function JourneyScreen(props: JourneyScreenProps): React.JSX.Element {
       {...props}
       threadId={api.state.threadId ?? props.threadId ?? 'mobile-thread'}
       responseState={api.responseState}
+      {...(connectedPhotoClient === undefined ? {} : { photoClient: connectedPhotoClient })}
       requestStatus={api.requestStatus}
       errorMessage={api.errorMessage ?? '時間をおいてもう一度試してください。'}
       onSubmit={(query, context) => {
@@ -142,6 +147,7 @@ function JourneyScreenStateOwner({
   onSavedPlaceSelect,
   onConditionRemoved,
   onConditionsChange,
+  photoClient,
 }: JourneyScreenProps): React.JSX.Element {
   const journey = useJourneyShell(threadId, initialSavedConditions);
   const renderedResponse = useAssistantResponseProjection(
@@ -334,6 +340,7 @@ function JourneyScreenStateOwner({
               }}
               onSkip={actions.skipTonight}
               {...(onSourcePress === undefined ? {} : { onSourcePress })}
+              {...(photoClient === undefined ? {} : { photoClient })}
               onChoose={actions.promote}
             />
           ) : null}

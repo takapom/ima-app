@@ -1,4 +1,13 @@
 export { createJourneyApiClient } from './client';
+export { createJourneyPhotoClient } from './photo-client';
+export type {
+  JourneyPhotoClient,
+  PhotoApiError,
+  PhotoAsset,
+  PhotoClientOptions,
+  PhotoFetchOptions,
+  PhotoResult,
+} from './photo-client';
 export { createJourneyApiComposition } from './composition';
 export {
   createJourneyApiRequestFactory,

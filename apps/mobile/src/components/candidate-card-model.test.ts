@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { EvidenceRef, PublicCard } from '@ima/contracts';
 import {
   collectAttributions,
+  collectPhotoAttributions,
   formatOpeningHours,
   presentCardFacts,
   presentEvidenceText,
@@ -170,5 +171,27 @@ describe('candidate card model', () => {
 
     expect(result).toMatchObject({ status: 'expired', label: '表示期限切れ', evidence: [] });
     expect(hiddenText.status).toBe('expired');
+  });
+
+  it('keeps public photo author attribution beside the photo token', () => {
+    const photoCard = card({
+      photos: {
+        status: 'known',
+        value: {
+          photos: [
+            {
+              photoToken: 'server-photo-token',
+              attributions: [{ displayName: 'Photo author', uri: 'https://example.com/author' }],
+              sourceUrl: 'https://example.com/place',
+            },
+          ],
+        },
+        evidence: [evidence('photo-1', '写真情報')],
+      },
+    });
+
+    expect(collectPhotoAttributions(photoCard)).toEqual([
+      { label: 'Photo author', sourceLink: 'https://example.com/author' },
+    ]);
   });
 });

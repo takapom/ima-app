@@ -6,6 +6,7 @@ import type {
 } from '@ima/contracts';
 import type { JourneyConditions } from '../../state/journey-input';
 import type { JourneyApiController } from './journey-controller-types';
+import type { JourneyPhotoClient } from './photo-client';
 
 export type JourneyApiSubmitContext = {
   readonly conditions: JourneyConditions;
@@ -45,4 +46,6 @@ export type JourneyApiRequestFactory = {
 export type JourneyApiControllerBinding = {
   readonly controller: JourneyApiController;
   readonly requests: JourneyApiRequestFactory;
+  /** Authenticated binary photo access; absent when the host has no API composition. */
+  readonly photoClient?: JourneyPhotoClient;
 };

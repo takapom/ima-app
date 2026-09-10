@@ -311,6 +311,10 @@ export const parseThreadPath = (
   input: unknown,
 ): ParseResult<v.InferOutput<typeof ThreadPathSchema>> => parseSchema(ThreadPathSchema, input);
 
+export const parsePhotoPath = (
+  input: unknown,
+): ParseResult<v.InferOutput<typeof PhotoPathSchema>> => parseSchema(PhotoPathSchema, input);
+
 /** Adapter result for a photo route: metadata is validated, while the HTTP body is bytes. */
 export const PhotoBinaryRouteResponseSchema = v.strictObject({
   bodyKind: v.literal('binary'),
