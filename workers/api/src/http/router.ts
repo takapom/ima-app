@@ -7,7 +7,6 @@ import {
   LifecycleCommandSchema,
   LifecycleResponseSchema,
   PlaceResponseSchema,
-  PhotoBinaryRouteResponseSchema,
   SavedReferenceResponseSchema,
   SearchRequestSchema,
   SearchResponseSchema,
@@ -24,13 +23,14 @@ import type {
   ApplicationResult,
   HandlerContext,
   HandlerDependencies,
-  PhotoPath,
 } from './handler';
 import type { BoundaryFailure } from './errors';
 import type { CancellationToken } from '@ima/core';
 import { matchRoute, type MatchedRoute } from './router-match';
 import type { AppIntegrityGate } from '../security/app-integrity';
 import { authorizeAppIntegrity } from '../security/app-integrity-http';
+import { handleAppIntegrityHttpRoute, isAppIntegrityHttpRoute } from './app-integrity-routes';
+import { ensurePhotoResponse } from './photo-route';
 
 export const DEFAULT_JSON_BODY_LIMIT_BYTES = 32 * 1024;
 
@@ -65,7 +65,6 @@ const notFound = (): BoundaryFailure => ({ status: 404, code: 'NOT_FOUND' });
 const invalidArgument = (): BoundaryFailure => ({ status: 400, code: 'INVALID_ARGUMENT' });
 const internal = (): BoundaryFailure => ({ status: 500, code: 'INTERNAL' });
 const cancelled = (): BoundaryFailure => ({ status: 409, code: 'CANCELLED' });
-const expired = (): BoundaryFailure => ({ status: 410, code: 'EXPIRED' });
 
 const isHttpBoundaryError = (value: unknown): value is HttpBoundaryError =>
   value instanceof HttpBoundaryError;
@@ -158,65 +157,6 @@ const ensureApplicationResponse = async <Schema extends v.GenericSchema>(
   return status === 204 ? new Response(null, { status: 204 }) : jsonResponse(parsed.output, status);
 };
 
-const ensurePhotoResponse = async (
-  path: PhotoPath,
-  requestId: string,
-  context: HandlerContext,
-  config: HttpRouterConfig,
-): Promise<Response> => {
-  const result = await config.handlers.photo.read(path, context);
-  const releaseBody = async (): Promise<void> => {
-    if (!(result.body instanceof ReadableStream)) return;
-    try {
-      await result.body.cancel();
-    } catch {
-      // The public response is already invalid; cleanup cannot make it usable.
-    }
-  };
-  const descriptor = {
-    bodyKind: 'binary' as const,
-    descriptor: result.descriptor,
-  };
-  const parsed = v.safeParse(PhotoBinaryRouteResponseSchema, descriptor);
-  if (
-    !parsed.success ||
-    (!(result.body instanceof Uint8Array) && !(result.body instanceof ReadableStream)) ||
-    parsed.output.descriptor.requestId !== requestId ||
-    parsed.output.descriptor.token !== path.token
-  ) {
-    await releaseBody();
-    return toErrorResponse(requestId, internal());
-  }
-  const currentServerNow = validatedServerNow(config);
-  const now = Date.parse(currentServerNow);
-  const expiresAt = Date.parse(parsed.output.descriptor.expiresAt);
-  if (!Number.isFinite(now) || !Number.isFinite(expiresAt)) {
-    await releaseBody();
-    return toErrorResponse(requestId, internal());
-  }
-  if (expiresAt <= now) {
-    await releaseBody();
-    return toErrorResponse(requestId, expired());
-  }
-  const body =
-    result.body instanceof Uint8Array
-      ? (() => {
-          const copy = new Uint8Array(result.body.byteLength);
-          copy.set(result.body);
-          return copy;
-        })()
-      : result.body;
-  return new Response(body, {
-    status: 200,
-    headers: {
-      'cache-control': 'private, no-store',
-      'content-type': parsed.output.descriptor.contentType,
-      expires: new Date(expiresAt).toUTCString(),
-      'x-ima-request-id': requestId,
-    },
-  });
-};
-
 const bodyFailure = <Schema extends v.GenericSchema>(
   request: Request,
   schema: Schema,
@@ -263,6 +203,16 @@ const routeAuthorized = async (
   const afterRateCancelled = cancellationResponse(requestId, request);
   if (afterRateCancelled !== null) return afterRateCancelled;
   const maxBodyBytes = config.maxBodyBytes ?? DEFAULT_JSON_BODY_LIMIT_BYTES;
+  if (isAppIntegrityHttpRoute(route)) {
+    return handleAppIntegrityHttpRoute({
+      route,
+      request,
+      auth,
+      gate: config.appIntegrity,
+      serverNow: validatedServerNow(config),
+      maxBodyBytes,
+    });
+  }
   const checkIntegrity = (rawBody?: Uint8Array): Promise<Response | null> =>
     authorizeAppIntegrity({
       gate: config.appIntegrity,
@@ -290,7 +240,9 @@ const routeAuthorized = async (
     if (aborted !== null) return aborted;
     const integrityResponse = await checkIntegrity();
     if (integrityResponse !== null) return integrityResponse;
-    return ensurePhotoResponse(route.path, requestId, photoContext, config);
+    return ensurePhotoResponse(route.path, requestId, photoContext, config.handlers.photo, () =>
+      validatedServerNow(config),
+    );
   }
   if (route.kind === 'place') {
     const failure = await checkResource(

@@ -79,6 +79,28 @@ export const AppAttestEnrollRequestSchema = v.strictObject({
 });
 export type AppAttestEnrollRequest = v.InferOutput<typeof AppAttestEnrollRequestSchema>;
 
+export const AppAttestEnrollResponseSchema = v.strictObject({
+  schemaVersion: SchemaVersionSchema,
+  requestId: RequestIdSchema,
+  registered: v.literal(true),
+});
+export type AppAttestEnrollResponse = v.InferOutput<typeof AppAttestEnrollResponseSchema>;
+
+/** Revocation is owner/device authenticated; the key reference remains server-side. */
+export const AppAttestRevokeRequestSchema = v.strictObject({
+  schemaVersion: SchemaVersionSchema,
+  requestId: RequestIdSchema,
+  keyId: AppAttestValue(256),
+});
+export type AppAttestRevokeRequest = v.InferOutput<typeof AppAttestRevokeRequestSchema>;
+
+export const AppAttestRevokeResponseSchema = v.strictObject({
+  schemaVersion: SchemaVersionSchema,
+  requestId: RequestIdSchema,
+  revoked: v.literal(true),
+});
+export type AppAttestRevokeResponse = v.InferOutput<typeof AppAttestRevokeResponseSchema>;
+
 /** Assertion fields are kept separate from the request body so requestHash stays server-derived. */
 export const AppAttestAssertionSchema = v.strictObject({
   keyId: AppAttestValue(256),
@@ -296,6 +318,27 @@ export const PhotoBinaryRouteResponseSchema = v.strictObject({
 });
 
 export const RouteContracts = {
+  attestNonce: {
+    method: 'GET',
+    path: '/v1/attest/nonce',
+    request: v.strictObject({}),
+    response: AppAttestNonceResponseSchema,
+    successStatus: 200,
+  },
+  attestEnroll: {
+    method: 'POST',
+    path: '/v1/attest/enroll',
+    request: AppAttestEnrollRequestSchema,
+    response: AppAttestEnrollResponseSchema,
+    successStatus: 200,
+  },
+  attestRevoke: {
+    method: 'POST',
+    path: '/v1/attest/revoke',
+    request: AppAttestRevokeRequestSchema,
+    response: AppAttestRevokeResponseSchema,
+    successStatus: 200,
+  },
   search: {
     method: 'POST',
     path: '/v1/search',

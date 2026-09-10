@@ -12,6 +12,9 @@ import type { PlacePath, PlaceQuery, PhotoPath, SavedReferencePath, ThreadPath }
 export type LifecycleAction = 'cancel' | 'resume' | 'restart' | 'end';
 
 export type MatchedRoute =
+  | { readonly kind: 'attest_nonce' }
+  | { readonly kind: 'attest_enroll' }
+  | { readonly kind: 'attest_revoke' }
   | { readonly kind: 'create_thread' }
   | { readonly kind: 'search' }
   | { readonly kind: 'photos'; readonly path: PhotoPath }
@@ -98,6 +101,22 @@ export const matchRoute = (request: Request): MatchResult => {
   const segments = url.pathname.split('/').slice(1);
   const [version, first, second, third] = segments;
   if (version !== 'v1') return { ok: false, failure: notFound() };
+
+  if (first === 'attest' && second === 'nonce' && segments.length === 3) {
+    return request.method === 'GET' && url.search.length === 0
+      ? { ok: true, route: { kind: 'attest_nonce' } }
+      : { ok: false, failure: invalidArgument() };
+  }
+  if (first === 'attest' && second === 'enroll' && segments.length === 3) {
+    return request.method === 'POST' && url.search.length === 0
+      ? { ok: true, route: { kind: 'attest_enroll' } }
+      : { ok: false, failure: invalidArgument() };
+  }
+  if (first === 'attest' && second === 'revoke' && segments.length === 3) {
+    return request.method === 'POST' && url.search.length === 0
+      ? { ok: true, route: { kind: 'attest_revoke' } }
+      : { ok: false, failure: invalidArgument() };
+  }
 
   if (request.method === 'POST' && first === 'search' && segments.length === 2) {
     return url.search.length === 0

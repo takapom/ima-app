@@ -3,6 +3,11 @@ import type { AuthenticatedContext } from '../http/auth';
 import type { MatchedRoute } from '../http/router-match';
 import type { AppIntegrityGate } from './app-integrity';
 
+type AuthorizedRoute = Exclude<
+  MatchedRoute,
+  { readonly kind: 'attest_nonce' | 'attest_enroll' | 'attest_revoke' }
+>;
+
 const cancelled = (requestId: string): Response =>
   toErrorResponse(requestId, { status: 409, code: 'CANCELLED' });
 
@@ -14,7 +19,7 @@ const cancelled = (requestId: string): Response =>
 export const authorizeAppIntegrity = async (input: {
   readonly gate: AppIntegrityGate | undefined;
   readonly request: Request;
-  readonly route: MatchedRoute;
+  readonly route: AuthorizedRoute;
   readonly auth: AuthenticatedContext;
   readonly serverNow: string;
   readonly maxBodyBytes: number;

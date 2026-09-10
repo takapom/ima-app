@@ -42,13 +42,11 @@ import { createPhotoTokenCodec } from './providers/photo/token';
 import { createPhotoReferenceStoreResolver } from './providers/photo/rpc';
 import type { PhotoTokenCodec } from './providers/photo/types';
 import type { AppIntegrityNamespace } from './security/app-integrity-do';
+import { createBootstrapAppIntegrityGate } from './security/app-integrity-bootstrap';
+import type { AppIntegrityVerifier } from './security/app-integrity';
 import { createBestEffortEventsSink, createTelemetryEventsSink } from './telemetry/events';
 import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetry/telemetry-do';
-import {
-  createAppIntegrityGate,
-  resolveAppIntegrityPolicy,
-  type AppIntegrityGate,
-} from './security/app-integrity';
+import type { AppIntegrityGate } from './security/app-integrity';
 import { resolveRuntimeOperationalGate } from './runtime/runtime-operational-gate';
 import { createThreadId } from './thread-id';
 
@@ -100,6 +98,8 @@ export type BootstrapOptions = {
   readonly onCancellationError?: (classification: RuntimeCancellationClassification) => void;
   /** External distribution may inject the verified App Attest store/verifier boundary. */
   readonly appIntegrity?: AppIntegrityGate;
+  /** Native verifier injection; absent means the default gate remains fail-closed. */
+  readonly appIntegrityVerifier?: AppIntegrityVerifier;
 };
 
 const unavailable = (): HttpBoundaryError =>
@@ -380,17 +380,7 @@ export const createHttpRouterConfig = (
     handlers,
     ownership: options.ownership,
     appIntegrity:
-      options.appIntegrity ??
-      (() => {
-        const policy = resolveAppIntegrityPolicy({
-          ...(env.IMA_ENV === undefined ? {} : { deploymentEnvironment: env.IMA_ENV }),
-          ...(env.APP_ATTEST_ENVIRONMENT === undefined
-            ? {}
-            : { environment: env.APP_ATTEST_ENVIRONMENT }),
-          ...(env.APP_ATTEST_MODE === undefined ? {} : { enforcement: env.APP_ATTEST_MODE }),
-        });
-        return createAppIntegrityGate(policy);
-      })(),
+      options.appIntegrity ?? createBootstrapAppIntegrityGate(env, options.appIntegrityVerifier),
     now: options.clock ?? (() => new Date().toISOString()),
     maxBodyBytes: options.maxBodyBytes ?? DEFAULT_JSON_BODY_LIMIT_BYTES,
   };
