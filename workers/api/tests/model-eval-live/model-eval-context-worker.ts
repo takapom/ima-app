@@ -1,4 +1,4 @@
-import type { CandidateRecord, ModelContextFieldPolicy, SearchPlacesInput } from '@ima/core';
+import type { CandidateRecord, ModelContextFieldPolicy } from '@ima/core';
 import { ProductionThreadDO } from '../runtime-native/runtime-production-worker';
 import type {
   RuntimeGateModel,
@@ -9,6 +9,7 @@ import {
   MODEL_EVAL_NOW,
   MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL,
   type ModelEvalPlaceDisplayNameMode,
+  type ModelEvalPlacePayloadMode,
   type ModelEvalPlacesResponseMode,
 } from './model-eval-place-fixture';
 import { LiveTraceRecorder } from '../../tooling/model-eval/live';
@@ -29,7 +30,6 @@ import {
   modelLocationProjectionHasCoordinates,
   modelPreferenceBudgetIn,
   modelPromptContains,
-  modelSearchResultIn,
   modelToolErrorCodesIn,
   modelUserTextIn,
   selectedCandidateIdIn,
@@ -42,6 +42,11 @@ import {
   type ModelEvalConditionFixtureProfile,
 } from './condition-context-fixture';
 import { repairOverridesFor, repairPartsFor } from './model-eval-repair';
+import {
+  promptInjectionAuditFor,
+  type ModelEvalPromptInjectionAudit,
+} from './model-eval-prompt-injection';
+import { safeModelPartsFor } from './model-eval-safe-model';
 import { specificPlacePartsFor } from './model-eval-specific-place';
 
 export type ModelEvalFixturePhase = 'cards' | 'message';
@@ -53,6 +58,7 @@ export type ModelEvalFixtureProfile =
   | 'decide-action'
   | 'clarify-ambiguity'
   | 'candidate-failure'
+  | 'prompt-injection'
   | 'gps-refusal'
   | 'repair'
   | ModelEvalConditionFixtureProfile;
@@ -60,6 +66,7 @@ export type ModelEvalFixtureLocationProbe = 'clarify' | 'current-location';
 export type ModelEvalFixtureDisplayNamePolicy = 'visible' | 'withheld';
 export type ModelEvalFixtureOptions = {
   readonly placeDisplayNameMode?: ModelEvalPlaceDisplayNameMode;
+  readonly placePayloadMode?: ModelEvalPlacePayloadMode;
   readonly displayNamePolicy?: ModelEvalFixtureDisplayNamePolicy;
 };
 export type ModelEvalFixtureStep =
@@ -82,15 +89,6 @@ const FIXTURE_MODEL_CONTEXT_FIELD_POLICY: ModelContextFieldPolicy = {
   displayName: 'allow',
 };
 
-const currentLocationSearchInput: SearchPlacesInput = {
-  mode: 'search',
-  query: '近くの店',
-  area: { kind: 'current_location', radiusMeters: 1000 },
-  openNow: false,
-  limit: 3,
-  excludeCandidateIds: [],
-};
-
 const modelContextFieldPolicyFor = (
   displayName: ModelContextFieldPolicy['displayName'],
 ): ModelContextFieldPolicy => ({
@@ -110,6 +108,7 @@ const fixtureModel = (
   toolErrors: (codes: readonly string[]) => void,
   locationProbe: () => ModelEvalFixtureLocationProbe,
   privateUpstreamBodyExposed: () => void,
+  promptInjectionAudit: (audit: ModelEvalPromptInjectionAudit) => void,
 ): RuntimeGateModel => {
   let call = 0;
   let previousPhase: ModelEvalFixturePhase | undefined;
@@ -136,39 +135,24 @@ const fixtureModel = (
       if (modelPromptContains(prompt, MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL)) {
         privateUpstreamBodyExposed();
       }
+      if (profile() === 'prompt-injection') promptInjectionAudit(promptInjectionAuditFor(prompt));
       assertConditionProjection(profile(), modelPreferenceBudgetIn(prompt));
       const currentCall = call;
       call += 1;
-      if (currentPhase === 'cards' && profile() === 'candidate-failure' && currentCall > 0) {
-        step('final_message');
-        const searchResult = modelSearchResultIn(prompt);
-        const text =
-          searchResult.kind === 'error' && searchResult.code === 'UPSTREAM_UNAVAILABLE'
-            ? '候補を取得できませんでした。'
-            : searchResult.kind === 'success' && searchResult.candidateCount === 0
-              ? '条件に合う候補は見つかりませんでした。'
-              : '候補を確認できませんでした。';
-        return Promise.resolve({
-          stream: streamOf(finalParts(text, [], 'conversational')),
-        });
+      const safeParts = safeModelPartsFor({
+        phase: currentPhase,
+        profile: profile(),
+        currentCall,
+        prompt,
+        locationProbe: locationProbe(),
+        step,
+      });
+      if (safeParts !== undefined) {
+        return Promise.resolve({ stream: streamOf(safeParts) });
       }
       const finalResponse =
         Object.keys(options.tools ?? {}).length === 0 || options.toolChoice?.type === 'none';
       const shouldRefreshMessage = currentPhase === 'message' && currentCall === 0;
-      if (currentPhase === 'message' && profile() === 'gps-refusal') {
-        if (locationProbe() === 'current-location' && currentCall === 0) {
-          step('search_places');
-          return Promise.resolve({
-            stream: streamOf(toolParts(currentCall, 'search_places', currentLocationSearchInput)),
-          });
-        }
-        step('final_message');
-        return Promise.resolve({
-          stream: streamOf(
-            finalParts('位置情報を使わずに探すには地域を教えてください。', [], 'conversational'),
-          ),
-        });
-      }
       if (currentPhase === 'message' && profile() === 'clarify-ambiguity') {
         step('final_message');
         return Promise.resolve({
@@ -359,6 +343,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
   private fixtureLocationProbe: ModelEvalFixtureLocationProbe = 'clarify';
   private fixturePlacesResponseMode: ModelEvalPlacesResponseMode = 'normal';
   private fixturePlaceDisplayNameMode: ModelEvalPlaceDisplayNameMode = 'normal';
+  private fixturePlacePayloadMode: ModelEvalPlacePayloadMode = 'normal';
   private fixtureDisplayNamePolicy: ModelEvalFixtureDisplayNamePolicy = 'visible';
   private readonly fixtureToolErrorCodes: string[] = [];
   private fixtureModelLocationExposed = false;
@@ -369,6 +354,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
   private readonly fixtureDetailsRequests: string[][] = [];
   private readonly fixtureSearchQueries: string[] = [];
   private readonly fixtureEvidenceSnapshots: ModelEvalFixtureEvidenceSnapshot[] = [];
+  private readonly fixturePromptInjectionAudits: ModelEvalPromptInjectionAudit[] = [];
 
   configureModelEvalFixture(
     phase: ModelEvalFixturePhase,
@@ -384,11 +370,13 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     this.fixtureLocationProbe = locationProbe;
     this.fixturePlacesResponseMode = placesResponseMode;
     this.fixturePlaceDisplayNameMode = options.placeDisplayNameMode ?? 'normal';
+    this.fixturePlacePayloadMode = options.placePayloadMode ?? 'normal';
     this.fixtureDisplayNamePolicy = options.displayNamePolicy ?? 'visible';
     this.fixtureToolErrorCodes.length = 0;
     this.fixtureModelLocationExposed = false;
     this.fixturePrivateUpstreamBodyExposed = false;
     this.fixtureSearchQueries.length = 0;
+    this.fixturePromptInjectionAudits.length = 0;
   }
 
   protected override runtimeProductionNow(): string {
@@ -431,6 +419,10 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     return this.fixturePrivateUpstreamBodyExposed;
   }
 
+  getModelEvalFixturePromptInjectionAudits(): readonly ModelEvalPromptInjectionAudit[] {
+    return this.fixturePromptInjectionAudits.map((audit) => ({ ...audit }));
+  }
+
   getModelEvalFixtureEvidenceSnapshots(): readonly ModelEvalFixtureEvidenceSnapshot[] {
     return this.fixtureEvidenceSnapshots.map((snapshot) => ({
       candidateId: snapshot.candidateId,
@@ -464,6 +456,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
         () => {
           this.fixturePrivateUpstreamBodyExposed = true;
         },
+        (audit) => this.fixturePromptInjectionAudits.push(audit),
       ),
       modelContextFieldPolicy: modelContextFieldPolicyFor(
         this.fixtureDisplayNamePolicy === 'withheld' ? 'deny' : 'allow',
@@ -478,6 +471,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
           (query) => this.fixtureSearchQueries.push(query),
           this.fixturePlacesResponseMode,
           this.fixturePlaceDisplayNameMode,
+          this.fixturePlacePayloadMode,
         )(input, init),
       ...repairOverridesFor(this.fixtureProfile, () => this.fixturePhase),
       googlePlacesApiKey: 'model-eval-fixed-provider-key',

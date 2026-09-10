@@ -38,21 +38,18 @@ const record = (value: unknown): value is Record<string, unknown> =>
 const unknownArray = (value: unknown): readonly unknown[] | undefined =>
   Array.isArray(value) ? (value as readonly unknown[]) : undefined;
 
-const structuredPrompt = (prompt: RuntimeGateModelCallOptions['prompt']): unknown => {
-  try {
-    return JSON.parse(JSON.stringify(prompt));
-  } catch {
-    return null;
-  }
+const valueContainsText = (value: unknown, marker: string): boolean => {
+  if (typeof value === 'string') return value.includes(marker);
+  if (Array.isArray(value)) return value.some((item) => valueContainsText(item, marker));
+  if (!record(value)) return false;
+  return Object.values(value).some((item) => valueContainsText(item, marker));
 };
 
 /** Reads the structured turn envelope and ignores the original user text. */
 const modelEnvelopeIn = (
   prompt: RuntimeGateModelCallOptions['prompt'],
 ): ModelContextEnvelope | undefined => {
-  const messages = unknownArray(structuredPrompt(prompt));
-  if (messages === undefined) return undefined;
-  for (const message of messages) {
+  for (const message of prompt) {
     if (!record(message) || message.role !== 'user' || !('content' in message)) continue;
     const content = message.content;
     const contentParts = unknownArray(content);
@@ -131,10 +128,8 @@ export const modelLocationProjectionHasCoordinates = (
 export const modelToolErrorCodesIn = (
   prompt: RuntimeGateModelCallOptions['prompt'],
 ): readonly string[] => {
-  const messages = unknownArray(structuredPrompt(prompt));
-  if (messages === undefined) return [];
   const codes = new Set<string>();
-  messages.forEach((message) => {
+  prompt.forEach((message) => {
     if (!record(message) || message.role !== 'tool') return;
     const parts = unknownArray(message.content);
     if (parts === undefined) return;
@@ -166,9 +161,7 @@ export type ProjectedSearchResult =
 export const modelSearchResultIn = (
   prompt: RuntimeGateModelCallOptions['prompt'],
 ): ProjectedSearchResult => {
-  const messages = unknownArray(structuredPrompt(prompt));
-  if (messages === undefined) return { kind: 'unknown' };
-  for (const message of messages) {
+  for (const message of prompt) {
     if (!record(message) || message.role !== 'tool') continue;
     const parts = unknownArray(message.content);
     if (parts === undefined) continue;
@@ -205,13 +198,7 @@ export const modelSearchResultIn = (
 export const modelPromptContains = (
   prompt: RuntimeGateModelCallOptions['prompt'],
   marker: string,
-): boolean => {
-  try {
-    return JSON.stringify(structuredPrompt(prompt)).includes(marker);
-  } catch {
-    return false;
-  }
-};
+): boolean => prompt.some((message) => valueContainsText(message, marker));
 
 /** Collects IDs and evidence only from projected context and structured tool output. */
 export const collectProjectedPromptValues = (
@@ -274,13 +261,10 @@ export const collectProjectedPromptValues = (
   };
 
   visit(modelContextIn(prompt));
-  const messages = unknownArray(structuredPrompt(prompt));
-  if (messages !== undefined) {
-    for (const message of messages) {
-      if (!record(message) || !('role' in message)) continue;
-      if (message.role !== 'assistant' && message.role !== 'tool') continue;
-      if ('content' in message) visit(message.content, 'content');
-    }
+  for (const message of prompt) {
+    if (!record(message) || !('role' in message)) continue;
+    if (message.role !== 'assistant' && message.role !== 'tool') continue;
+    if ('content' in message) visit(message.content, 'content');
   }
   return values;
 };

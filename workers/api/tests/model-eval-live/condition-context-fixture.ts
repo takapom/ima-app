@@ -10,7 +10,9 @@ export const searchQueryFor = (profile: string): string =>
     ? '静かな店'
     : profile === 'mixed-intent'
       ? '静かで予算内の店'
-      : '静かなカフェ';
+      : profile === 'prompt-injection'
+        ? '川辺食堂'
+        : '静かなカフェ';
 
 export const candidateLimitFor = (profile: string): number =>
   isConditionFixtureProfile(profile) ? 1 : 3;

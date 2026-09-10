@@ -62,7 +62,9 @@ describe('model-eval formal scenario inputs', () => {
       requiresApiKey: false,
     });
     expect(executionProfileFor(scenarioFor('prompt-injection'))).toMatchObject({
-      status: 'unavailable',
+      status: 'fixture_ready',
+      kind: 'card_context',
+      requiresApiKey: false,
     });
   });
 

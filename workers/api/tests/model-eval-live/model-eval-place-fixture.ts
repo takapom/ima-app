@@ -1,4 +1,5 @@
 import type { LiveTraceRecorder } from '../../tooling/model-eval/live';
+import { MODEL_EVAL_STORE_INSTRUCTION_TEXT } from './model-eval-prompt-injection';
 
 export const MODEL_EVAL_NOW = '2026-09-10T12:00:00.000Z';
 /** Context-seed profile runs at 19:00 JST so every fixture candidate is still open. */
@@ -14,6 +15,7 @@ type FixturePlace = {
 export type ModelEvalPlacesResponseMode =
   'normal' | 'empty' | 'upstream-failure' | 'schema-failure';
 export type ModelEvalPlaceDisplayNameMode = 'normal' | 'duplicate';
+export type ModelEvalPlacePayloadMode = 'normal' | 'store-instruction';
 
 export const MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL = 'M25_FIXTURE_PRIVATE_UPSTREAM_BODY';
 
@@ -45,10 +47,14 @@ const placeBody = (
   place: FixturePlace,
   now: string,
   displayName = place.name,
+  payloadMode: ModelEvalPlacePayloadMode = 'normal',
 ): Record<string, unknown> => ({
   id: place.id,
   displayName: { text: displayName },
-  formattedAddress: '東京都渋谷区',
+  formattedAddress:
+    payloadMode === 'store-instruction' && place.id === 'eval-place-b'
+      ? `東京都渋谷区（${MODEL_EVAL_STORE_INSTRUCTION_TEXT}）`
+      : '東京都渋谷区',
   primaryType: 'cafe',
   businessStatus: 'OPERATIONAL',
   googleMapsUri: `https://maps.google.com/?cid=${place.id}`,
@@ -78,6 +84,7 @@ export const fixedPlacesFetcher =
     observeSearchQuery?: (query: string) => void,
     responseMode: ModelEvalPlacesResponseMode = 'normal',
     displayNameMode: ModelEvalPlaceDisplayNameMode = 'normal',
+    payloadMode: ModelEvalPlacePayloadMode = 'normal',
   ): typeof fetch =>
   async (input, init) => {
     trace.upstreamCall();
@@ -134,6 +141,7 @@ export const fixedPlacesFetcher =
                       displayNameMode === 'duplicate' && place.id === 'eval-place-b'
                         ? fixturePlaces[0]?.name
                         : place.name,
+                      payloadMode,
                     ),
                   ),
           }),
@@ -168,6 +176,7 @@ export const fixedPlacesFetcher =
                 displayNameMode === 'duplicate' && place.id === 'eval-place-b'
                   ? fixturePlaces[0]?.name
                   : place.name,
+                payloadMode,
               ),
             ),
             {

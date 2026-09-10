@@ -61,8 +61,8 @@ const profiles: Record<ScenarioId, EvaluationExecutionProfile> = {
     requiresApiKey: false,
   },
   'prompt-injection': {
-    status: 'unavailable',
-    reason: 'PROMPT_INJECTION_PROFILE_NOT_CONFIGURED',
+    status: 'fixture_ready',
+    kind: 'card_context',
     requiresApiKey: false,
   },
   continuity: {

@@ -22,7 +22,7 @@ compare・decide-action・clarify-ambiguityのfixtureはpreludeを19:00 JST（`2
 
 条件変更と混合意図は、実モデルlive profileへ昇格させず、専用のkeyless fixtureとして一つのcards turnを検証する。[`condition-context.test.ts`](../../workers/api/tests/model-eval-live/condition-context.test.ts) は既存のcanonical時刻・正式scenario contextをそのまま使い、`prefs.budget` と model projectionのbudgetが `normal` であること、静かさを含む実際のPlaces検索クエリ、provider responseから得たpriceのfresh evidenceを確認する。候補は表示名で補正せず、hostが捕捉した `eval-place-a` のrecordRefと公開cardのruntime candidate IDをmappingする。検索結果のquietnessは店舗事実へ昇格せず、condition/mixed fixtureが通ることも実モデルの意味理解や評価合格を示さない。Detailsのcandidate limitはこのcanonical時刻で利用できる候補を選ぶためのfixture制御であり、実モデルの結果をcorrectifyする経路ではない。
 
-期限切れ根拠、位置情報ポリシー、保存参照、prompt injection は必要な実状態または専用profileが未接続のため `unavailable` と明示する。未対応シナリオを本文注入だけで実行可能に見せず、dataset全体のゲートを通過したとは報告しない。
+期限切れ根拠、位置情報ポリシー、保存参照は必要な実状態または専用profileが未接続のため `unavailable` と明示する。prompt injection は keyless の fixture profile として、Places wire の店舗由来文字列を正規化・registry・model projectionへ通し、identity/tool dataとして観測できること、system/user textへ昇格しないこと、GPS露出と根拠なしの公開文を抑止する境界を同一DOで確認する。回帰は [`prompt-injection.test.ts`](../../workers/api/tests/model-eval-live/prompt-injection.test.ts) と [`model-eval-prompt-injection.ts`](../../workers/api/tests/model-eval-live/model-eval-prompt-injection.ts) にある。固定モデルの安全な応答は実モデルの耐性評価に読み替えず、live profileは未対応のままにする。未対応シナリオを本文注入だけで実行可能に見せず、dataset全体のゲートを通過したとは報告しない。
 
 `candidate-failure` は keyless の fixture profile として、実際の固定 Places transport が返す 503 を production adapter の typed `UPSTREAM_UNAVAILABLE` へ通し、モデルがその構造化エラーを受けて安全な候補未取得メッセージを返す境界だけを検証する。200 の空検索は別状態として扱い、候補・Details・raw provider bodyを生成または公開しない。この profile は `liveEvaluationProfileFor` の対象外であり、fixture の成功は実モデルの品質評価や live 実行可能性を意味しない。
 
