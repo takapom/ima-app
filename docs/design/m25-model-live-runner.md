@@ -18,7 +18,9 @@ compare・decide-action・clarify-ambiguityのfixtureはpreludeを19:00 JST（`2
 
 `compare`はA/B両候補を対象turnでDetails refreshし、両候補の新しい`opening_hours` evidenceを公開messageへ伝える。`decide-action`は正式contextの選択IDだけをAへ変換し、`clarify-ambiguity`は候補を選択せず追加Detailsを行わない。これらのfixtureは同一DO、正式request、provider record identityの接続を検証するもので、モデルの意味評価を成功へ補正しない。対象messageから安全なcandidate mappingを作れない場合は`unverified_mapping`を維持する。
 
-条件変更、詳細状態、期限切れ根拠、失敗応答、位置情報ポリシー、保存参照、prompt injection は必要な実状態または専用profileが未接続のため `unavailable` と明示する。未対応シナリオを本文注入だけで実行可能に見せず、dataset全体のゲートを通過したとは報告しない。
+条件変更と混合意図は、実モデルlive profileへ昇格させず、専用のkeyless fixtureとして一つのcards turnを検証する。[`condition-context.test.ts`](../../workers/api/tests/model-eval-live/condition-context.test.ts) は既存のcanonical時刻・正式scenario contextをそのまま使い、`prefs.budget` と model projectionのbudgetが `normal` であること、静かさを含む実際のPlaces検索クエリ、provider responseから得たpriceのfresh evidenceを確認する。候補は表示名で補正せず、hostが捕捉した `eval-place-a` のrecordRefと公開cardのruntime candidate IDをmappingする。検索結果のquietnessは店舗事実へ昇格せず、condition/mixed fixtureが通ることも実モデルの意味理解や評価合格を示さない。Detailsのcandidate limitはこのcanonical時刻で利用できる候補を選ぶためのfixture制御であり、実モデルの結果をcorrectifyする経路ではない。
+
+詳細状態、期限切れ根拠、失敗応答、位置情報ポリシー、保存参照、prompt injection は必要な実状態または専用profileが未接続のため `unavailable` と明示する。未対応シナリオを本文注入だけで実行可能に見せず、dataset全体のゲートを通過したとは報告しない。
 
 座標はWorker入力に固定fixtureとして入る場合があるが、Coreのmodel projectionを通ったpromptをhost traceで監査する。`lat`、`lng`、精度、取得時刻、owner scopeのキーを検出した場合は重大なGPS露出として記録する。
 

@@ -1,44 +1,52 @@
-import type {
-  CandidateRecord,
-  GetPlaceDetailsInput,
-  ModelContextFieldPolicy,
-  SearchPlacesInput,
-  SubmitCardsInput,
-} from '@ima/core';
+import type { CandidateRecord, ModelContextFieldPolicy, SearchPlacesInput } from '@ima/core';
 import { ProductionThreadDO } from '../runtime-native/runtime-production-worker';
 import type {
   RuntimeGateModel,
   RuntimeGateModelCallOptions,
-  RuntimeGateModelStreamPart,
 } from '../runtime-gate/runtime-gate-provider';
 import { fixedPlacesFetcher, MODEL_EVAL_NOW } from './model-eval-place-fixture';
 import { LiveTraceRecorder } from '../../tooling/model-eval/live';
+import {
+  evidenceSnapshotFor,
+  finalParts,
+  FIXTURE_USAGE,
+  streamOf,
+  submitInputFor,
+  toolParts,
+  type ModelEvalFixtureEvidenceSnapshot,
+} from './model-eval-context-output';
 import {
   candidateOrderIn,
   candidateIdsIn,
   evidenceFor,
   modelLocationIn,
   modelLocationProjectionHasCoordinates,
+  modelPreferenceBudgetIn,
   modelToolErrorCodesIn,
   modelUserTextIn,
-  observationFieldsFor,
   selectedCandidateIdIn,
   type ProjectedModelLocation,
-  type ProjectedObservation,
 } from './model-eval-context-values';
+import {
+  assertConditionProjection,
+  candidateLimitFor,
+  searchQueryFor,
+  type ModelEvalConditionFixtureProfile,
+} from './condition-context-fixture';
 
 export type ModelEvalFixturePhase = 'cards' | 'message';
 export type ModelEvalFixtureProfile =
-  'reason' | 'continuity' | 'compare' | 'decide-action' | 'clarify-ambiguity' | 'gps-refusal';
+  | 'reason'
+  | 'continuity'
+  | 'compare'
+  | 'decide-action'
+  | 'clarify-ambiguity'
+  | 'gps-refusal'
+  | ModelEvalConditionFixtureProfile;
 export type ModelEvalFixtureLocationProbe = 'clarify' | 'current-location';
 export type ModelEvalFixtureStep =
   'search_places' | 'get_place_details' | 'submit_cards' | 'final_message';
-
-export type ModelEvalFixtureEvidenceSnapshot = {
-  readonly candidateId: string;
-  readonly evidenceIds: readonly string[];
-  readonly observations: readonly ProjectedObservation[];
-};
+export type { ModelEvalFixtureEvidenceSnapshot } from './model-eval-context-output';
 
 const FIXTURE_MODEL_CONTEXT_FIELD_POLICY: ModelContextFieldPolicy = {
   evidence: {
@@ -54,99 +62,6 @@ const FIXTURE_MODEL_CONTEXT_FIELD_POLICY: ModelContextFieldPolicy = {
   history: 'allow',
   cardSet: 'allow',
   displayName: 'allow',
-};
-
-const usage = {
-  inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
-  outputTokens: { total: 1, text: 1, reasoning: 0 },
-} as const;
-
-const toolFinish = { unified: 'tool-calls', raw: 'tool-calls' } as const;
-const stopFinish = { unified: 'stop', raw: 'stop' } as const;
-
-const streamOf = (
-  parts: readonly RuntimeGateModelStreamPart[],
-): ReadableStream<RuntimeGateModelStreamPart> =>
-  new ReadableStream({
-    start(controller) {
-      parts.forEach((part) => controller.enqueue(part));
-      controller.close();
-    },
-  });
-
-const toolParts = (
-  call: number,
-  toolName: string,
-  input: SearchPlacesInput | GetPlaceDetailsInput | SubmitCardsInput,
-): RuntimeGateModelStreamPart[] => {
-  const id = `model-eval-fixture-${toolName}-${call}`;
-  const encoded = JSON.stringify({ input, metadata: {} });
-  return [
-    { type: 'stream-start', warnings: [] },
-    { type: 'tool-input-start', id, toolName },
-    { type: 'tool-input-delta', id, delta: encoded },
-    { type: 'tool-input-end', id },
-    { type: 'tool-call', toolCallId: id, toolName, input: encoded },
-    { type: 'finish', usage, finishReason: toolFinish },
-  ];
-};
-
-const finalParts = (
-  text: string,
-  evidenceIds: readonly string[],
-  basis: 'grounded' | 'conversational' = 'grounded',
-): RuntimeGateModelStreamPart[] => {
-  const encoded = JSON.stringify({
-    kind: 'final_message',
-    message: { text, evidenceIds, basis },
-  });
-  return [
-    { type: 'stream-start', warnings: [] },
-    { type: 'text-start', id: 'model-eval-fixture-final' },
-    { type: 'text-delta', id: 'model-eval-fixture-final', delta: encoded },
-    { type: 'text-end', id: 'model-eval-fixture-final' },
-    { type: 'finish', usage, finishReason: stopFinish },
-  ];
-};
-
-const submitInputFor = (
-  prompt: RuntimeGateModelCallOptions['prompt'],
-  candidateOrder = candidateIdsIn(prompt),
-): SubmitCardsInput => {
-  const selections = candidateOrder
-    .map((candidateId) => ({ candidateId, evidenceIds: evidenceFor(prompt, candidateId) }))
-    .filter((candidate) => candidate.evidenceIds.length > 0)
-    .slice(0, 3);
-  const fallback = selections[0];
-  if (fallback === undefined) throw new Error('M25_FIXTURE_CONTEXT_MISSING');
-  const selectionFor = (candidate: (typeof selections)[number]) => ({
-    candidateId: candidate.candidateId,
-    evidenceIds: [...candidate.evidenceIds],
-    why: {
-      text: '固定fixtureの公開根拠を確認しました。',
-      evidenceIds: [...candidate.evidenceIds],
-      basis: 'grounded' as const,
-    },
-  });
-  const alternatives = selections.slice(1).map((candidate) => ({
-    ...selectionFor(candidate),
-    diff: {
-      text: '別候補として比較できます。',
-      evidenceIds: [...candidate.evidenceIds],
-      basis: 'grounded' as const,
-    },
-  }));
-  return {
-    message: [
-      {
-        text: '固定fixtureの候補を提示します。',
-        evidenceIds: [...fallback.evidenceIds],
-        basis: 'grounded',
-      },
-    ],
-    hero: selectionFor(fallback),
-    alts: alternatives,
-  };
 };
 
 const currentLocationSearchInput: SearchPlacesInput = {
@@ -186,12 +101,13 @@ const fixtureModel = (
       }
       const prompt = options.prompt;
       trace.begin(prompt);
-      trace.finish(usage);
+      trace.finish(FIXTURE_USAGE);
       if (modelLocationProjectionHasCoordinates(prompt)) modelLocationExposed();
       const projectedLocation = modelLocationIn(prompt);
       if (projectedLocation !== undefined) modelLocation(projectedLocation);
       const toolErrorCodes = modelToolErrorCodesIn(prompt);
       if (toolErrorCodes.length > 0) toolErrors(toolErrorCodes);
+      assertConditionProjection(profile(), modelPreferenceBudgetIn(prompt));
       const currentCall = call;
       call += 1;
       const finalResponse =
@@ -260,24 +176,14 @@ const fixtureModel = (
             }))
             .filter((item) => item.evidenceIds.length > 0);
           if (compared.length < 2) throw new Error('M25_FIXTURE_COMPARE_CONTEXT_MISSING');
-          compared.forEach((item) =>
-            finalEvidence({
-              candidateId: item.candidateId,
-              evidenceIds: [...item.evidenceIds],
-              observations: observationFieldsFor(prompt, item.candidateId),
-            }),
-          );
+          compared.forEach((item) => finalEvidence(evidenceSnapshotFor(prompt, item.candidateId)));
           const evidenceIds = compared.flatMap((item) => item.evidenceIds);
           return Promise.resolve({
             stream: streamOf(finalParts('青葉カフェと川辺食堂を比較しました。', evidenceIds)),
           });
         }
         const candidateId = selectedCandidate.candidateId;
-        finalEvidence({
-          candidateId,
-          evidenceIds: [...selectedCandidate.evidenceIds],
-          observations: observationFieldsFor(prompt, candidateId),
-        });
+        finalEvidence(evidenceSnapshotFor(prompt, candidateId));
         return Promise.resolve({
           stream: streamOf(
             finalParts(`${candidateId}の公開根拠を確認しました。`, selectedCandidate.evidenceIds),
@@ -330,7 +236,7 @@ const fixtureModel = (
           stream: streamOf(
             toolParts(currentCall, 'search_places', {
               mode: 'search',
-              query: '静かなカフェ',
+              query: searchQueryFor(profile()),
               area: { kind: 'named_area', name: '渋谷' },
               openNow: false,
               limit: 3,
@@ -341,7 +247,7 @@ const fixtureModel = (
       }
       if (currentCall === 1) {
         step('get_place_details');
-        const candidates = candidateIdsIn(prompt).slice(0, 3);
+        const candidates = candidateIdsIn(prompt).slice(0, candidateLimitFor(profile()));
         detailsRequest(candidates);
         return Promise.resolve({
           stream: streamOf(
@@ -356,15 +262,11 @@ const fixtureModel = (
         });
       }
       step('submit_cards');
-      const candidates = candidateIdsIn(prompt).slice(0, 3);
+      const candidates = candidateIdsIn(prompt).slice(0, candidateLimitFor(profile()));
       for (const candidateId of candidates) {
         const evidenceIds = evidenceFor(prompt, candidateId);
         if (evidenceIds.length === 0) continue;
-        finalEvidence({
-          candidateId,
-          evidenceIds: [...evidenceIds],
-          observations: observationFieldsFor(prompt, candidateId),
-        });
+        finalEvidence(evidenceSnapshotFor(prompt, candidateId));
       }
       return Promise.resolve({
         stream: streamOf(
@@ -397,6 +299,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
   private readonly fixtureModelLocations: ProjectedModelLocation[] = [];
   private readonly fixtureSteps: ModelEvalFixtureStep[] = [];
   private readonly fixtureDetailsRequests: string[][] = [];
+  private readonly fixtureSearchQueries: string[] = [];
   private readonly fixtureEvidenceSnapshots: ModelEvalFixtureEvidenceSnapshot[] = [];
 
   configureModelEvalFixture(
@@ -411,6 +314,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     this.fixtureLocationProbe = locationProbe;
     this.fixtureToolErrorCodes.length = 0;
     this.fixtureModelLocationExposed = false;
+    this.fixtureSearchQueries.length = 0;
   }
 
   protected override runtimeProductionNow(): string {
@@ -433,6 +337,10 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     return this.fixtureDetailsRequests.map((candidateIds) => [...candidateIds]);
   }
 
+  getModelEvalFixtureSearchQueries(): readonly string[] {
+    return [...this.fixtureSearchQueries];
+  }
+
   getModelEvalFixtureModelLocations(): readonly ProjectedModelLocation[] {
     return this.fixtureModelLocations.map((location) => ({ ...location }));
   }
@@ -449,6 +357,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     return this.fixtureEvidenceSnapshots.map((snapshot) => ({
       candidateId: snapshot.candidateId,
       evidenceIds: [...snapshot.evidenceIds],
+      modelBudget: snapshot.modelBudget,
       observations: snapshot.observations.map((observation) => ({ ...observation })),
     }));
   }
@@ -478,7 +387,9 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
         record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,
       ) => this.fixtureTrace.observeCandidateIdentity(record),
       fetcher: (input: RequestInfo | URL, init?: RequestInit) =>
-        fixedPlacesFetcher(this.fixtureTrace, this.fixtureNow)(input, init),
+        fixedPlacesFetcher(this.fixtureTrace, this.fixtureNow, (query) =>
+          this.fixtureSearchQueries.push(query),
+        )(input, init),
       googlePlacesApiKey: 'model-eval-fixed-provider-key',
       placesCursorSecret: 'model-eval-fixed-cursor-secret',
       placesEnabled: true,

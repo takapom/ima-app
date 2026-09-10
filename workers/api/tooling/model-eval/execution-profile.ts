@@ -3,7 +3,7 @@ import type { EvaluationScenario, ScenarioId } from './types';
 export type EvaluationExecutionProfile =
   | {
       readonly status: 'fixture_ready';
-      readonly kind: 'card_context' | 'same_do_continuity';
+      readonly kind: 'card_context' | 'same_do_continuity' | 'condition_context';
       readonly requiresApiKey: false;
     }
   | {
@@ -28,8 +28,8 @@ export type EvaluationExecutionProfile =
 const profiles: Record<ScenarioId, EvaluationExecutionProfile> = {
   'new-search': { status: 'live_only', kind: 'new_search', requiresApiKey: true },
   'condition-change': {
-    status: 'unavailable',
-    reason: 'CONDITION_STATE_NOT_SEEDED',
+    status: 'fixture_ready',
+    kind: 'condition_context',
     requiresApiKey: false,
   },
   reason: { status: 'fixture_ready', kind: 'card_context', requiresApiKey: false },
@@ -59,8 +59,8 @@ const profiles: Record<ScenarioId, EvaluationExecutionProfile> = {
     requiresApiKey: false,
   },
   'mixed-intent': {
-    status: 'unavailable',
-    reason: 'CONDITION_STATE_NOT_SEEDED',
+    status: 'fixture_ready',
+    kind: 'condition_context',
     requiresApiKey: false,
   },
   'prompt-injection': {

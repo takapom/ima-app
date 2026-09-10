@@ -6,6 +6,7 @@ export type ModelContextEnvelope = {
   readonly context?: {
     readonly userText?: unknown;
     readonly location?: unknown;
+    readonly preferences?: unknown;
     readonly cardSet?: unknown;
     readonly evidence?: unknown;
   };
@@ -87,6 +88,16 @@ export const modelContextIn = (
 export const modelUserTextIn = (prompt: RuntimeGateModelCallOptions['prompt']): string => {
   const text = modelEnvelopeIn(prompt)?.originalUserText;
   return typeof text === 'string' ? text : '';
+};
+
+/** Reads budget only from the formal model projection, never from user text. */
+export const modelPreferenceBudgetIn = (
+  prompt: RuntimeGateModelCallOptions['prompt'],
+): string | null => {
+  const preferences = modelContextIn(prompt)?.preferences;
+  if (!record(preferences)) return null;
+  const budget = preferences.budget;
+  return budget === null || typeof budget === 'string' ? budget : null;
 };
 
 /** Reads only the model-visible location projection; raw coordinates are never returned. */

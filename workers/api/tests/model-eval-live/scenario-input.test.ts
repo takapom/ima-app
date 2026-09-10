@@ -51,6 +51,16 @@ describe('model-eval formal scenario inputs', () => {
       status: 'fixture_ready',
       kind: 'same_do_continuity',
     });
+    expect(executionProfileFor(scenarioFor('condition-change'))).toMatchObject({
+      status: 'fixture_ready',
+      kind: 'condition_context',
+      requiresApiKey: false,
+    });
+    expect(executionProfileFor(scenarioFor('mixed-intent'))).toMatchObject({
+      status: 'fixture_ready',
+      kind: 'condition_context',
+      requiresApiKey: false,
+    });
     expect(executionProfileFor(scenarioFor('prompt-injection'))).toMatchObject({
       status: 'unavailable',
     });

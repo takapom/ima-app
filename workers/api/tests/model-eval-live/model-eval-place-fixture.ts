@@ -62,11 +62,29 @@ const placeBody = (place: FixturePlace, now: string): Record<string, unknown> =>
 });
 
 export const fixedPlacesFetcher =
-  (trace: LiveTraceRecorder, now = MODEL_EVAL_NOW): typeof fetch =>
-  (input, init) => {
+  (
+    trace: LiveTraceRecorder,
+    now = MODEL_EVAL_NOW,
+    observeSearchQuery?: (query: string) => void,
+  ): typeof fetch =>
+  async (input, init) => {
     trace.upstreamCall();
     const request = new Request(input, init);
     if (request.url.endsWith('/v1/places:searchText')) {
+      if (observeSearchQuery !== undefined) {
+        const body: unknown = await request
+          .clone()
+          .json()
+          .catch(() => null);
+        if (
+          typeof body === 'object' &&
+          body !== null &&
+          'textQuery' in body &&
+          typeof body.textQuery === 'string'
+        ) {
+          observeSearchQuery(body.textQuery);
+        }
+      }
       return Promise.resolve(
         new Response(
           JSON.stringify({ places: fixturePlaces.map((place) => placeBody(place, now)) }),
