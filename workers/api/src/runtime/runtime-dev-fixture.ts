@@ -8,6 +8,7 @@ import { createPhotoBodyHandler } from '../providers/photo/http';
 import { PhotoProviderError, type PhotoMediaTransport } from '../providers/photo/media';
 import { createPhotoReferenceStoreResolver, type PhotoReferenceRpc } from '../providers/photo/rpc';
 import { createPhotoTokenCodec } from '../providers/photo/token';
+import { GOOGLE_ROUTE_MATRIX_ENDPOINT } from '../providers/routes/types';
 import type { PhotoBodyHandler } from '../http/handler';
 import type { RuntimeFieldUsePolicy } from './runtime-field-policy';
 import {
@@ -21,6 +22,10 @@ export const DEV_FIXTURE_PLACES_KEY = 'dev-fixture-places-key';
 export const DEV_FIXTURE_CURSOR_SECRET = 'dev-fixture-cursor-secret';
 export const DEV_FIXTURE_PLACE_ID = 'dev-fixture-place';
 export const DEV_FIXTURE_PHOTO_REF = 'places/dev-fixture-place/photos/dev-fixture-photo';
+export const DEV_FIXTURE_ROUTES_KEY = 'dev-fixture-routes-key';
+export const DEV_FIXTURE_ORIGIN_REF = 'dev-fixture-current-location';
+export const DEV_FIXTURE_ROUTE_DURATION_SECONDS = 480;
+export const DEV_FIXTURE_ROUTE_DISTANCE_METERS = 600;
 /** Used only by the exact keyless development fixture graph; never read from live env. */
 export const DEV_FIXTURE_PHOTO_TOKEN_SECRET = 'dev-fixture-photo-token-secret-v1';
 
@@ -65,7 +70,7 @@ export const devFixtureEnvironmentFor = (env: unknown): Record<string, unknown> 
     ...env,
     ...(env.IMA_PROVIDER_OPENAI === undefined ? { IMA_PROVIDER_OPENAI: 'true' } : {}),
     ...(env.IMA_PROVIDER_PLACES === undefined ? { IMA_PROVIDER_PLACES: 'true' } : {}),
-    ...(env.IMA_PROVIDER_ROUTES === undefined ? { IMA_PROVIDER_ROUTES: 'false' } : {}),
+    ...(env.IMA_PROVIDER_ROUTES === undefined ? { IMA_PROVIDER_ROUTES: 'true' } : {}),
     ...(env.IMA_PROVIDER_LAST_TRAIN === undefined ? { IMA_PROVIDER_LAST_TRAIN: 'false' } : {}),
     ...(env.IMA_PROVIDER_HOTPEPPER === undefined ? { IMA_PROVIDER_HOTPEPPER: 'false' } : {}),
   };
@@ -105,7 +110,7 @@ const modelContextFieldPolicy: ModelContextFieldPolicy = {
     photos: 'allow',
     contact: 'deny',
     facilities: 'deny',
-    walking_route: 'deny',
+    walking_route: 'allow',
     last_train: 'deny',
   },
   history: 'deny',
@@ -292,7 +297,9 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
     return {
       name: 'get_place_details',
       input: {
-        requests: [{ candidateId, fields: ['identity', 'opening_hours', 'photos'] }],
+        requests: [
+          { candidateId, fields: ['identity', 'opening_hours', 'photos', 'walking_route'] },
+        ],
         freshness: 'refresh',
       },
     };
@@ -427,6 +434,20 @@ export const createDevFixtureFetcher =
     ) {
       return Promise.resolve(Response.json(fixturePlace(clock)));
     }
+    if (request.method === 'POST' && request.url === GOOGLE_ROUTE_MATRIX_ENDPOINT) {
+      return Promise.resolve(
+        Response.json([
+          {
+            originIndex: 0,
+            destinationIndex: 0,
+            status: {},
+            condition: 'ROUTE_EXISTS',
+            distanceMeters: DEV_FIXTURE_ROUTE_DISTANCE_METERS,
+            duration: `${DEV_FIXTURE_ROUTE_DURATION_SECONDS}s`,
+          },
+        ]),
+      );
+    }
     return Promise.resolve(
       Response.json({ error: 'DEV_FIXTURE_ENDPOINT_NOT_FOUND' }, { status: 404 }),
     );
@@ -443,7 +464,10 @@ export const devFixtureOverridesFor = (
     googlePlacesApiKey: overrides.googlePlacesApiKey ?? DEV_FIXTURE_PLACES_KEY,
     placesCursorSecret: overrides.placesCursorSecret ?? DEV_FIXTURE_CURSOR_SECRET,
     placesEnabled: overrides.placesEnabled ?? true,
-    routesEnabled: overrides.routesEnabled ?? false,
+    googleRoutesApiKey: overrides.googleRoutesApiKey ?? DEV_FIXTURE_ROUTES_KEY,
+    routesEnabled: overrides.routesEnabled ?? true,
+    routeObservationPolicy: overrides.routeObservationPolicy ?? observationPolicy,
+    currentOriginRefFor: overrides.currentOriginRefFor ?? (() => DEV_FIXTURE_ORIGIN_REF),
     lastTrainEnabled: overrides.lastTrainEnabled ?? false,
     photosEnabled: overrides.photosEnabled ?? true,
     photoTokenSecret: overrides.photoTokenSecret ?? DEV_FIXTURE_PHOTO_TOKEN_SECRET,

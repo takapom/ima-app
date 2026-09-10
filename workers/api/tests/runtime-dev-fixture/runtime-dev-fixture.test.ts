@@ -343,7 +343,7 @@ describe('keyless dev fixture graph', () => {
       requests: [
         {
           candidateId: 'candidate-from-search',
-          fields: ['identity', 'opening_hours', 'photos'],
+          fields: ['identity', 'opening_hours', 'photos', 'walking_route'],
         },
       ],
     });
