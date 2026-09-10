@@ -8,19 +8,22 @@
       },
       "env": {
         "EXPO_PUBLIC_ENVIRONMENT": "dev",
+        "EXPO_PUBLIC_API_MODE": "disabled",
         "EXPO_PUBLIC_API_BASE_URL": "http://localhost:8787"
       }
     },
     "internal": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_ENVIRONMENT": "staging"
+        "EXPO_PUBLIC_ENVIRONMENT": "staging",
+        "EXPO_PUBLIC_API_MODE": "live"
       }
     },
     "external": {
       "distribution": "store",
       "env": {
-        "EXPO_PUBLIC_ENVIRONMENT": "production"
+        "EXPO_PUBLIC_ENVIRONMENT": "production",
+        "EXPO_PUBLIC_API_MODE": "live"
       }
     }
   }

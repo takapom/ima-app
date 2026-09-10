@@ -14,6 +14,11 @@ import { WorkingState } from '../components/WorkingState';
 import { useAssistantResponseProjection } from '../hooks/useAssistantResponseProjection';
 import { useJourneyActions, type JourneyActionServices } from '../hooks/useJourneyActions';
 import { useJourneyShell } from '../hooks/useJourneyShell';
+import {
+  useJourneyApiController,
+  type JourneyApiControllerBinding,
+  type JourneyApiSubmitContext,
+} from '../hooks/useJourneyApiController';
 import type { AssistantResponseClock } from '../services/assistant-response-clock';
 import type { WalkingMapDestinationResolver } from '../services/journey-map';
 import {
@@ -34,17 +39,13 @@ import { resolveJourneyPhase, type JourneyRequestStatus } from '../state/journey
 
 export type { JourneyRequestStatus } from '../state/journey-phase';
 
-export type JourneySubmitContext = {
-  readonly conditions: JourneyConditions;
-  readonly removedChipLabels: readonly string[];
-  readonly promotedCandidateId: string | null;
-  readonly selectedCandidateId: string | null;
-  readonly candidateOrder: readonly string[];
-};
+export type JourneySubmitContext = JourneyApiSubmitContext;
 
 export type JourneyScreenProps = {
   readonly threadId?: string;
-  readonly responseState?: AssistantResponseState;
+  /** Optional HTTP composition; omitted hosts keep the fixture-free shell disconnected. */
+  readonly api?: JourneyApiControllerBinding;
+  readonly responseState?: AssistantResponseState | null;
   /** Injected render time for deterministic expiry boundaries. */
   readonly now?: AssistantResponseProjectionNow;
   readonly responseClock?: AssistantResponseClock;
@@ -72,8 +73,38 @@ export type JourneyScreenProps = {
 };
 
 export function JourneyScreen(props: JourneyScreenProps): React.JSX.Element {
-  const stateKey = props.threadId ?? 'mobile-thread';
-  return <JourneyScreenStateOwner key={stateKey} {...props} />;
+  const api = useJourneyApiController(props.api);
+  const stateKey = api.connected
+    ? `api-${api.state.threadId ?? props.threadId ?? 'auto'}-${api.viewKey}`
+    : (props.threadId ?? 'mobile-thread');
+  if (!api.connected) return <JourneyScreenStateOwner key={stateKey} {...props} />;
+  const runApiTask = (task: Promise<unknown>): void => {
+    void task.catch(() => api.reportUnexpected());
+  };
+  return (
+    <JourneyScreenStateOwner
+      key={stateKey}
+      {...props}
+      threadId={api.state.threadId ?? props.threadId ?? 'mobile-thread'}
+      responseState={api.responseState}
+      requestStatus={api.requestStatus}
+      errorMessage={api.errorMessage ?? '時間をおいてもう一度試してください。'}
+      onSubmit={(query, context) => {
+        runApiTask(api.submit(query, context));
+      }}
+      onRetry={() => {
+        runApiTask(api.retry());
+      }}
+      onCancel={() => {
+        runApiTask(api.cancel());
+      }}
+      onNewSearch={api.reset}
+      onHistorySelect={(item) => {
+        runApiTask(api.selectHistory(item.id));
+        props.onHistorySelect?.(item);
+      }}
+    />
+  );
 }
 
 const selectedCard = (

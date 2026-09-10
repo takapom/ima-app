@@ -1,6 +1,26 @@
 export { createJourneyApiClient } from './client';
 export { createJourneyApiComposition } from './composition';
 export {
+  createJourneyApiRequestFactory,
+  createMobileJourneyRuntime,
+  mobileJourneyRuntimeMessage,
+} from './mobile-runtime';
+export type {
+  MobileJourneyRuntime,
+  MobileJourneyRuntimeMode,
+  MobileJourneyRuntimeOptions,
+  MobileJourneyRuntimeReason,
+  MobileRuntimeEnvironment,
+} from './mobile-runtime';
+export type {
+  JourneyApiCancelFactoryInput,
+  JourneyApiControllerBinding,
+  JourneyApiRequestFactory,
+  JourneyApiSearchFactoryInput,
+  JourneyApiSubmitContext,
+  JourneyApiTurnFactoryInput,
+} from './journey-api-binding';
+export {
   createJourneyApiController,
   type JourneyApiController,
   type JourneyApiControllerOptions,
