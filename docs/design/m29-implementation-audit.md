@@ -14,26 +14,26 @@
 
 ## 現在の実装と残件
 
-2026-09-10、`6f8e768` 時点。以下はIssueのClose判定ではなく、現在の実装状況である。
+2026-09-10、`ad9895a` 時点。以下はIssueのClose判定ではなく、現在の実装状況である。
 
-| 対象                 | 実装・証跡                                                                                             | 残件                                                                                           |
-| -------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| #15 終電             | `52c85de`。詳細取得、出典・確認期限・終電時刻による期限上限。`workers/api/tests/providers/last-train/` | 本番factory接続、dataset更新による再利用無効化、時刻更新後の再計算。実データ未設定時はdisabled |
-| #16 写真             | `711f707` ほか。認証付きHTTP、期限付きtoken、部分欠損、キャンセル後の発行抑止                          | 本番factoryとmobile画像表示への接続                                                            |
-| #17 保持・SDK        | `1635ed1`、`fd8acd3`。LLM利用許可を表示・保存許可から分離、Tool出力の既定拒否                          | SDKの実値到達試験、固定05:00期限と再生成、複数turn文脈、削除・復元、保存先canaryの統合検証     |
-| #18 画面基盤         | `f4835ea`、`45da9df`、`6f8e768`。画面・キーボード対応、native/Web依存                                  | safe-area、フォント・ライセンス・splash接続、実機・視覚比較                                    |
-| #19 入力・条件       | `8f99074`。候補語、条件編集、取消・再送、保存条件の区別                                                | 位置情報SDK・駅参照・APIへの接続                                                               |
-| #20 結果表示         | `58bf3df`、`1ec097b`、`6ea03ac`。履歴と候補対応、fact/推定/出典表示                                    | 表示中・復帰時の期限処理、写真表示と操作、出典リンクの端末service接続                          |
-| #21 決定・地図・共有 | 未実装                                                                                                 | 明示操作、保存/除外/復旧、端末services、Fake試験                                               |
-| #22 端末保存         | 未実装                                                                                                 | SQLite migration、保存前・読取前失効、05:00、破損・重複・削除、保持Fixture                     |
-| #23 API接続          | 応答JSON検証とstate適用の基礎あり                                                                      | HTTP/auth/Abort/timeout、操作接続、履歴切替・遅着、端末/サーバ復元の調停                       |
-| #24 SDK/HTTP/DO統合  | 既存のM04〜M16各suiteあり                                                                              | 最新本番bootstrapで要求対応表と4領域回帰を統合                                                 |
-| #25 Provider契約     | 各AdapterのHTTP Fixture試験あり                                                                        | suiteの要求対応、明示実行のlive smokeと未設定検出                                              |
-| #26 モデル評価       | 未実装                                                                                                 | 12シナリオ以上×3回、結果・禁止動作、人手採点、時間・コスト測定                                 |
-| #27 計測・flags      | 未実装                                                                                                 | 最小イベント、機密情報を含めないtrace、保持・削除、停止・復旧                                  |
-| #28 App Integrity    | 未実装                                                                                                 | native/Worker互換性検証、nonce/enroll/assertion、replay・迂回防止、実機検証                    |
-| #29 環境統合         | 基礎wrangler/CIあり                                                                                    | 環境・EAS・Secrets・preflight・runbookの統合、デプロイ/復旧の証跡                              |
-| #30 実機・MVP監査    | この対応表を作成中                                                                                     | 実アプリ→HTTP→実SDK→実APIの一連検証とスクリーンショット・ログ                                  |
+| 対象                 | 実装・証跡                                                                                                               | 残件                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| #15 終電             | `52c85de`、`9519bc0`。詳細取得、期限上限、候補ごとのdataset更新・評価時計による再利用無効化部品                          | 本番factory接続、時刻更新後の再計算。実データ未設定時はdisabled              |
+| #16 写真             | `711f707` ほか。認証付きHTTP、期限付きtoken、部分欠損、キャンセル後の発行抑止                                            | 本番factoryとmobile画像表示への接続                                          |
+| #17 保持・SDK        | `1635ed1`、`fd8acd3`、`c572582`。LLM利用と表示・保存を分離、既定拒否、実SDK入力canary、固定05:00期限とDO再生成・破損試験 | 複数turn文脈、削除・復元、保存先全体のcanary統合検証、最終回答予約の本番接続 |
+| #18 画面基盤         | `f4835ea`、`45da9df`、`6f8e768`。画面・キーボード対応、native/Web依存                                                    | safe-area、フォント・ライセンス・splash接続、実機・視覚比較                  |
+| #19 入力・条件       | `8f99074`。候補語、条件編集、取消・再送、保存条件の区別                                                                  | 位置情報SDK・駅参照・APIへの接続                                             |
+| #20 結果表示         | `58bf3df`、`1ec097b`、`6ea03ac`、`8a60978`、`ad9895a`。履歴・fact/推定/出典、表示中と復帰時の期限処理、時計巻戻し防止    | 写真表示と操作、出典リンクの端末service接続                                  |
+| #21 決定・地図・共有 | 未実装                                                                                                                   | 明示操作、保存/除外/復旧、端末services、Fake試験                             |
+| #22 端末保存         | 未実装                                                                                                                   | SQLite migration、保存前・読取前失効、05:00、破損・重複・削除、保持Fixture   |
+| #23 API接続          | 応答JSON検証とstate適用の基礎あり                                                                                        | HTTP/auth/Abort/timeout、操作接続、履歴切替・遅着、端末/サーバ復元の調停     |
+| #24 SDK/HTTP/DO統合  | 既存のM04〜M16各suiteあり                                                                                                | 最新本番bootstrapで要求対応表と4領域回帰を統合                               |
+| #25 Provider契約     | 各AdapterのHTTP Fixture試験あり                                                                                          | suiteの要求対応、明示実行のlive smokeと未設定検出                            |
+| #26 モデル評価       | 未実装                                                                                                                   | 12シナリオ以上×3回、結果・禁止動作、人手採点、時間・コスト測定               |
+| #27 計測・flags      | 未実装                                                                                                                   | 最小イベント、機密情報を含めないtrace、保持・削除、停止・復旧                |
+| #28 App Integrity    | 未実装                                                                                                                   | native/Worker互換性検証、nonce/enroll/assertion、replay・迂回防止、実機検証  |
+| #29 環境統合         | 基礎wrangler/CIあり                                                                                                      | 環境・EAS・Secrets・preflight・runbookの統合、デプロイ/復旧の証跡            |
+| #30 実機・MVP監査    | この対応表を作成中                                                                                                       | 実アプリ→HTTP→実SDK→実APIの一連検証とスクリーンショット・ログ                |
 
 ## 直近の検証記録
 
@@ -41,8 +41,10 @@
 - 同変更のtools/last-trainとCandidateCard対象ESLint・Prettier合格。
 - CandidateCardの `leaveBy` は「店を出る時刻」、`lastDepartureAt` は「終電発車」と表示。修正後の5テスト合格。
 - 2026-09-10: 依存検査370 modules / 1,513 dependencies、検査Fixture31件合格。
+- 2026-09-10 16:15 JST: mobile 9ファイル・53テスト、型検査、ESLint、Prettier合格。
+- 2026-09-10 16:17 JST: `test:runtime` 全4suite合格（HTTP/mobile 22、Think 5、Think runtime 24、native SDK/DO 15、計66テスト）。旧state.messages参照による失敗を公開selectorへ修正後に再検証した。native負例で `UPSTREAM_UNAVAILABLE` の未処理例外ログが出ており、#24で失敗処理を確認する。
 - この記録は全体テスト・ビルド・実機の最終合格を意味しない。以後の変更で再検証する。
-- Web起動試行: `expo start --web --localhost --port 8081` はMetroの `EMFILE: too many open files, watch` で失敗。Watchmanはインストール済みだが、Expo 57の既定設定がWatchmanを選択していない。修正後の再試験が必要。
+- Web起動試行: Expo 57の既定設定ではMetroの `EMFILE: too many open files, watch` で失敗。既存Watchmanを有効化した再試行は `watch-project` が130秒超応答せず停止した。Web exportも同じ待機で停止。画面表示・Webビルドは未確認であり、起動成功とは扱わない。
 
 ## 外部検証に必要な前提
 
