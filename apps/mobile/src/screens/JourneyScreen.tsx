@@ -12,7 +12,11 @@ import { ErrorState } from '../components/ErrorState';
 import { ResultsState } from '../components/ResultsState';
 import { WorkingState } from '../components/WorkingState';
 import { useJourneyShell } from '../hooks/useJourneyShell';
-import { selectAssistantMessages, type AssistantResponseState } from '../state/assistant-response';
+import {
+  selectAssistantMessageRecords,
+  selectAssistantMessages,
+  type AssistantResponseState,
+} from '../state/assistant-response';
 import {
   DEFAULT_SUGGESTIONS,
   type ConditionScope,
@@ -88,6 +92,7 @@ function JourneyScreenStateOwner({
   const journey = useJourneyShell(threadId, initialSavedConditions);
   const renderedResponse = responseState ?? journey.responseState;
   const renderedMessages = selectAssistantMessages(renderedResponse);
+  const renderedMessageRecords = selectAssistantMessageRecords(renderedResponse);
 
   const submit = useCallback(
     (value: string): void => {
@@ -166,7 +171,9 @@ function JourneyScreenStateOwner({
           {phase === 'results' ? (
             <ResultsState
               cards={renderedResponse.cards}
-              messages={renderedMessages}
+              cardSetId={renderedResponse.cardSetId}
+              cardSetDisplay={renderedResponse.cardSetDisplay}
+              messageRecords={renderedMessageRecords}
               onDecide={decide}
               {...(onPromote === undefined ? {} : { onChoose: onPromote })}
             />
