@@ -79,6 +79,56 @@ describe('RuntimeBudget', () => {
     expect(budget.snapshot().activeReads).toBe(0);
   });
 
+  it('admits resolver provider work only after a read slot and charges it once', () => {
+    const budget = new RuntimeBudget({
+      config: config({ maxReadCalls: 1, maxParallelReads: 1, maxCostUnits: 2 }),
+      startedAtMs: 0,
+      now: () => 1,
+    });
+    expect(budget.reserveProviderRequest()).toMatchObject({
+      ok: false,
+      denial: { code: 'BUDGET_EXCEEDED' },
+    });
+
+    expect(budget.reserveReadSlot('details-call')).toEqual({ ok: true, value: undefined });
+    expect(budget.reserveProviderRequest()).toEqual({ ok: true, value: undefined });
+    const reservation = budget.reserveRead({
+      callId: 'details-call',
+      operation: 'get_place_details',
+      costUnits: 0,
+      providerHttpRequests: 0,
+      routeElements: 0,
+    });
+    expect(reservation.ok).toBe(true);
+    expect(budget.snapshot()).toMatchObject({
+      readCalls: 1,
+      activeReads: 1,
+      providerHttpRequests: 1,
+      costUnits: 1,
+    });
+    if (!reservation.ok) throw new Error('read reservation setup failed');
+    reservation.value.release();
+    expect(budget.snapshot().activeReads).toBe(0);
+  });
+
+  it('bridges cancellation into the resolver read slot and cleans up its signal', () => {
+    const external = new AbortController();
+    const budget = new RuntimeBudget({ startedAtMs: 0, now: () => 1 });
+
+    expect(budget.reserveReadSlot('details-cancel', external.signal)).toEqual({
+      ok: true,
+      value: undefined,
+    });
+    const admissionSignal = budget.readSignalFor('details-cancel');
+    expect(admissionSignal?.aborted).toBe(false);
+
+    external.abort();
+    expect(admissionSignal?.aborted).toBe(true);
+    budget.releaseReadSlot('details-cancel');
+    expect(budget.readSignalFor('details-cancel')).toBeUndefined();
+    expect(budget.snapshot().activeReads).toBe(0);
+  });
+
   it('reserves retry attempts and rejects non-retryable failures', () => {
     let now = 1_000;
     const budget = new RuntimeBudget({

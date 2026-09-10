@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type {
   CandidateRegistration,
   GetPlaceDetailsInput,
@@ -75,6 +75,7 @@ const makeDependencies = (options: {
   readonly details: PlaceDetailsPort;
   readonly resolver?: ToolBindingDependencies['savedPlaceReferenceResolver'];
   readonly isCancelled?: () => boolean;
+  readonly readAdmission?: ToolBindingDependencies['readAdmission'];
 }): ToolBindingDependencies => {
   const search: PlaceSearchPort = {
     search: () => Promise.reject(new Error('search should not be called')),
@@ -95,6 +96,7 @@ const makeDependencies = (options: {
     details: options.details,
     submit,
     ...(options.resolver === undefined ? {} : { savedPlaceReferenceResolver: options.resolver }),
+    ...(options.readAdmission === undefined ? {} : { readAdmission: options.readAdmission }),
     runtime: () => ({
       ...runtime,
       cancellation: { isCancelled: options.isCancelled ?? (() => false) },
@@ -344,5 +346,49 @@ describe('model-selected saved reference details', () => {
 
     expect(result).toMatchObject({ status: 'error', error: { code: 'CANCELLED' } });
     expect(calls).toHaveLength(0);
+  });
+
+  it('settles the catalog when a resolver ignores abort and suppresses its late result', async () => {
+    const fixture = createToolRegistry();
+    const candidatesBefore = fixture.registry.listCandidates(toolScope);
+    const admissionController = new AbortController();
+    const released = vi.fn();
+    const readAdmission: ToolBindingDependencies['readAdmission'] = {
+      reserve: () => ({ ok: true }),
+      signalFor: () => admissionController.signal,
+      release: released,
+    };
+    let release: ((value: unknown) => void) | undefined;
+    let startedResolve: (() => void) | undefined;
+    const started = new Promise<void>((resolve) => {
+      startedResolve = resolve;
+    });
+    const resolver: ToolBindingDependencies['savedPlaceReferenceResolver'] = () => {
+      startedResolve?.();
+      return new Promise((resolve) => {
+        release = resolve;
+      });
+    };
+    const calls: GetPlaceDetailsInput[] = [];
+    const pending = invokePublicTool(
+      'get_place_details',
+      input([{ savedPlaceRef: 'saved-late', fields: ['identity'] }]),
+      makeDependencies({
+        registry: fixture.registry,
+        details: detailsPort(calls),
+        resolver,
+        readAdmission,
+      }),
+      { toolCallId: 'details-admission-cancel' },
+    );
+    await started;
+    admissionController.abort();
+
+    await expect(pending).resolves.toMatchObject({ status: 'error', error: { code: 'CANCELLED' } });
+    expect(calls).toHaveLength(0);
+    expect(released).toHaveBeenCalledWith('call-saved-details');
+    release?.({ status: 'ok', candidateId: fixture.currentCandidateId });
+    await Promise.resolve();
+    expect(fixture.registry.listCandidates(toolScope)).toEqual(candidatesBefore);
   });
 });

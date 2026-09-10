@@ -349,6 +349,7 @@ export function createRuntimeTurnComposition(
       clock: now,
       search: readPorts.search,
       details: readPorts.details,
+      readAdmission: readPorts.admission,
       submit: makeSubmitPort({ now: options.context.serverNow, conditions: initialConditions }),
     },
     buildSubmitPort: makeSubmitPort,

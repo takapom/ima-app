@@ -82,6 +82,15 @@ export const createRuntimeReadAttemptSignalBridge = (): RuntimeReadAttemptSignal
 export type RuntimeReadPorts = {
   readonly search: PlaceSearchPort;
   readonly details: PlaceDetailsPort;
+  readonly admission: {
+    readonly reserve: (input: {
+      readonly callId: string;
+      readonly operation: 'get_place_details';
+      readonly signal?: AbortSignal;
+    }) => { readonly ok: true } | { readonly ok: false; readonly error: Issue };
+    readonly signalFor: (callId: string) => AbortSignal | undefined;
+    readonly release: (callId: string) => void;
+  };
   readonly dispose: () => void;
 };
 
@@ -344,9 +353,19 @@ export const createRuntimeReadPorts = (options: RuntimeReadPortOptions): Runtime
     },
   };
 
+  const admission: RuntimeReadPorts['admission'] = {
+    reserve: ({ callId, signal }) => {
+      const result = options.budget.reserveReadSlot(callId, signal ?? options.signal);
+      return result.ok ? result : { ok: false, error: issueForDenial(result.denial) };
+    },
+    signalFor: (callId) => options.budget.readSignalFor(callId),
+    release: (callId) => options.budget.releaseReadSlot(callId),
+  };
+
   return {
     search,
     details,
+    admission,
     dispose: (): void => {
       searchExecutor.dispose();
       detailsExecutor.dispose();

@@ -128,6 +128,7 @@ export class RuntimeReadExecutor<T> {
     request: RuntimeReadExecutionRequest<T>,
   ): Promise<RuntimeReadExecutionResult<T>> {
     const reservation = this.budget.reserveRead({
+      callId: request.callId,
       operation: request.operation,
       costUnits: request.costUnits,
       providerHttpRequests: request.providerHttpRequests,
@@ -138,12 +139,12 @@ export class RuntimeReadExecutor<T> {
     let attempts = 0;
     try {
       while (true) {
-        const blocked = this.currentDenial();
+        const blocked = this.currentDenial(request.callId);
         if (blocked !== undefined) return { ok: false, denial: blocked, attempts };
         attempts += 1;
         try {
           const value = await this.runAttempt(request, this.timeoutFor(request.operation));
-          const afterAttempt = this.currentDenial();
+          const afterAttempt = this.currentDenial(request.callId);
           if (afterAttempt !== undefined) {
             return { ok: false, denial: afterAttempt, attempts };
           }
@@ -152,7 +153,14 @@ export class RuntimeReadExecutor<T> {
           if (error instanceof RuntimeReadExecutionDenied) {
             return { ok: false, denial: error.denial, attempts: attempts - 1 };
           }
-          const blockedAfterFailure = this.currentDenial();
+          if (error instanceof RuntimeReadCancelled) {
+            return {
+              ok: false,
+              denial: denial('CANCELLED', 'read was cancelled'),
+              attempts,
+            };
+          }
+          const blockedAfterFailure = this.currentDenial(request.callId);
           if (blockedAfterFailure !== undefined) {
             return { ok: false, denial: blockedAfterFailure, attempts };
           }
@@ -168,7 +176,7 @@ export class RuntimeReadExecutor<T> {
           const retry = reservation.value.retry(kind, failure.retryAfterMs ?? 0);
           if (!retry.ok) return { ok: false, failure, attempts, retryDenial: retry.denial };
           try {
-            await this.wait(retry.delayMs);
+            await this.wait(retry.delayMs, request.callId);
           } catch (error) {
             if (error instanceof RuntimeReadExecutionDenied) {
               return { ok: false, denial: error.denial, attempts };
@@ -190,10 +198,13 @@ export class RuntimeReadExecutor<T> {
     return Math.min(configured, this.budget.remainingReadTimeMs());
   }
 
-  private currentDenial(): RuntimeBudgetDenial | undefined {
+  private currentDenial(callId?: string): RuntimeBudgetDenial | undefined {
     if (this.disposed) return denial('CANCELLED', 'turn was cancelled');
     if (this.isStale?.() === true) return denial('STALE_TURN', 'turn revision is stale');
     if (this.signal?.aborted === true) return denial('CANCELLED', 'turn was cancelled');
+    if (callId !== undefined && this.budget.readSignalFor(callId)?.aborted === true) {
+      return denial('CANCELLED', 'read was cancelled');
+    }
     return this.budget.checkAdmission(false);
   }
 
@@ -203,7 +214,7 @@ export class RuntimeReadExecutor<T> {
     let externallyAborted = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let removeAbortListener = (): void => undefined;
-    const abortSignals = this.abortSignals();
+    const abortSignals = this.abortSignals(request.callId);
     const abortPromise = new Promise<never>((_resolve, reject) => {
       const onAbort = (): void => {
         externallyAborted = true;
@@ -224,7 +235,7 @@ export class RuntimeReadExecutor<T> {
       }, timeoutMs);
     });
     const invokePromise = Promise.resolve().then(() => {
-      const blocked = this.currentDenial();
+      const blocked = this.currentDenial(request.callId);
       if (blocked !== undefined) throw new RuntimeReadExecutionDenied(blocked);
       return request.invoke(controller.signal);
     });
@@ -241,15 +252,15 @@ export class RuntimeReadExecutor<T> {
     }
   }
 
-  private async wait(delayMs: number): Promise<void> {
+  private async wait(delayMs: number, callId?: string): Promise<void> {
     if (delayMs === 0) {
-      const blocked = this.currentDenial();
+      const blocked = this.currentDenial(callId);
       if (blocked !== undefined) throw new RuntimeReadExecutionDenied(blocked);
       return;
     }
     await new Promise<void>((resolve, reject) => {
       let settled = false;
-      const abortSignals = this.abortSignals();
+      const abortSignals = this.abortSignals(callId);
       let cleanup = (): void => undefined;
       const finish = (): void => {
         settled = true;
@@ -260,7 +271,7 @@ export class RuntimeReadExecutor<T> {
         if (settled) return;
         settled = true;
         cleanup();
-        const blocked = this.currentDenial() ?? denial('CANCELLED', 'turn was cancelled');
+        const blocked = this.currentDenial(callId) ?? denial('CANCELLED', 'turn was cancelled');
         reject(new RuntimeReadExecutionDenied(blocked));
       };
       if (abortSignals.some((signal) => signal.aborted)) {
@@ -274,13 +285,16 @@ export class RuntimeReadExecutor<T> {
       };
       abortSignals.forEach((signal) => signal.addEventListener('abort', onAbort, { once: true }));
     });
-    const blocked = this.currentDenial();
+    const blocked = this.currentDenial(callId);
     if (blocked !== undefined) throw new RuntimeReadExecutionDenied(blocked);
   }
 
-  private abortSignals(): AbortSignal[] {
-    return this.signal === undefined
-      ? [this.disposeController.signal]
-      : [this.disposeController.signal, this.signal];
+  private abortSignals(callId?: string): AbortSignal[] {
+    const signals =
+      this.signal === undefined
+        ? [this.disposeController.signal]
+        : [this.disposeController.signal, this.signal];
+    const readSignal = callId === undefined ? undefined : this.budget.readSignalFor(callId);
+    return readSignal === undefined ? signals : [...signals, readSignal];
   }
 }

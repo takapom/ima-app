@@ -3,6 +3,7 @@ import * as v from 'valibot';
 import {
   ModelActionMetadataSchema,
   matchesDetailsRequest,
+  type CancellationToken,
   type ModelActionMetadata,
 } from '@ima/core';
 import type {
@@ -161,21 +162,50 @@ const getPlaceDetails = async (
   );
   if (directCandidateIssue !== undefined) return resultError(directCandidateIssue);
 
-  const resolved = await resolveModelDetailsInput(
-    parsedInput.value,
-    checked.runtime.context,
-    checked.runtime.execution,
-    checked.runtime.cancellation,
-    {
-      registry: dependencies.registry,
-      resolver: dependencies.savedPlaceReferenceResolver,
-    },
-  );
+  const callId = checked.runtime.execution.callId;
+  const admission = dependencies.readAdmission;
+  let admissionSignal: AbortSignal | undefined;
+  if (admission !== undefined) {
+    const reserved = admission.reserve({
+      callId,
+      operation: 'get_place_details',
+      ...(invocation.abortSignal === undefined ? {} : { signal: invocation.abortSignal }),
+    });
+    if (!reserved.ok) return resultError(reserved.error);
+    admissionSignal = admission.signalFor(callId);
+  }
+  const readCancellation: CancellationToken =
+    admissionSignal === undefined
+      ? checked.runtime.cancellation
+      : {
+          isCancelled: () =>
+            checked.runtime.cancellation.isCancelled() || admissionSignal?.aborted === true,
+        };
+
+  let resolved;
+  try {
+    resolved = await resolveModelDetailsInput(
+      parsedInput.value,
+      checked.runtime.context,
+      checked.runtime.execution,
+      readCancellation,
+      {
+        registry: dependencies.registry,
+        resolver: dependencies.savedPlaceReferenceResolver,
+      },
+      admissionSignal,
+    );
+  } catch (error: unknown) {
+    admission?.release(callId);
+    throw error;
+  }
   const cancelled = cancellationError<SafeGetPlaceDetailsOutput>(checked.runtime);
-  if (cancelled !== undefined || resolved.cancelled) {
+  if (cancelled !== undefined || readCancellation.isCancelled() || resolved.cancelled) {
+    admission?.release(callId);
     return cancelled ?? resultError(issue('CANCELLED', null, 'tool execution was cancelled'));
   }
   if (resolved.input === undefined) {
+    admission?.release(callId);
     return detailsResultForSavedFailures(resolved.failures, resolved.warnings);
   }
 
@@ -185,15 +215,17 @@ const getPlaceDetails = async (
       resolved.input,
       checked.runtime.context,
       checked.runtime.execution,
-      checked.runtime.cancellation,
+      readCancellation,
     );
   } catch {
-    if (checked.runtime.cancellation.isCancelled()) {
+    if (readCancellation.isCancelled()) {
       return resultError(issue('CANCELLED', null, 'tool execution was cancelled'));
     }
     return resultError(upstreamError());
+  } finally {
+    admission?.release(callId);
   }
-  if (checked.runtime.cancellation.isCancelled()) {
+  if (readCancellation.isCancelled()) {
     return resultError(issue('CANCELLED', null, 'tool execution was cancelled'));
   }
   const result = parseDetailsResult(returned);

@@ -1,21 +1,36 @@
-export type RuntimeReadOperation = 'search_places' | 'get_place_details';
-export type RuntimeBudgetOperation = RuntimeReadOperation | 'walking_route';
-
-export type RuntimeBudgetConfig = {
-  readonly wholeTurnMs: number;
-  readonly finalReserveMs: number;
-  readonly maxModelSteps: number;
-  readonly maxReadCalls: number;
-  readonly maxParallelReads: number;
-  readonly maxProviderHttpRequests: number;
-  readonly maxCostUnits: number;
-  readonly maxRouteElements: number;
-  readonly maxReadRetries: number;
-  readonly maxRepairAttempts: number;
-  readonly searchTimeoutMs: number;
-  readonly detailsTimeoutMs: number;
-  readonly sdkRetryLimit: number;
-};
+import { consumeRuntimePendingRead, createRuntimeReadReservation } from './runtime-budget-read';
+import { createRuntimeRouteReservation } from './runtime-budget-route';
+import type {
+  RuntimeBudgetConfig,
+  RuntimeBudgetDenial,
+  RuntimeBudgetDenialCode,
+  RuntimeBudgetOptions,
+  RuntimeBudgetResult,
+  RuntimeBudgetSnapshot,
+  RuntimeReadReservation,
+  RuntimeReadReservationRequest,
+  RuntimeRouteReservation,
+  RuntimeRouteReservationRequest,
+  RuntimeSubmitReservation,
+} from './runtime-budget-types';
+export type {
+  RuntimeBudgetConfig,
+  RuntimeBudgetDenial,
+  RuntimeBudgetDenialCode,
+  RuntimeBudgetOperation,
+  RuntimeBudgetOptions,
+  RuntimeBudgetResult,
+  RuntimeBudgetSnapshot,
+  RuntimeReadReservation,
+  RuntimeReadReservationRequest,
+  RuntimeReadOperation,
+  RuntimeReservation,
+  RuntimeRetryFailure,
+  RuntimeRetryResult,
+  RuntimeRouteReservation,
+  RuntimeRouteReservationRequest,
+  RuntimeSubmitReservation,
+} from './runtime-budget-types';
 
 /** Initial M10 limits. Provider-specific prices are injected through the request costs. */
 export const DEFAULT_RUNTIME_BUDGET: RuntimeBudgetConfig = Object.freeze({
@@ -34,86 +49,8 @@ export const DEFAULT_RUNTIME_BUDGET: RuntimeBudgetConfig = Object.freeze({
   sdkRetryLimit: 0,
 });
 
-export type RuntimeBudgetSnapshot = {
-  readonly modelSteps: number;
-  readonly readCalls: number;
-  readonly activeReads: number;
-  readonly providerHttpRequests: number;
-  readonly costUnits: number;
-  readonly routeElements: number;
-  readonly readRetries: number;
-  readonly submitAttempts: number;
-  readonly remainingRepairs: number;
-  readonly deadlineAtMs: number;
-  readonly finalReserveAtMs: number;
-  readonly completed: boolean;
-};
-
-export type RuntimeBudgetDenialCode =
-  | 'CANCELLED'
-  | 'STALE_TURN'
-  | 'DEADLINE'
-  | 'FINAL_RESERVE'
-  | 'BUDGET_EXCEEDED'
-  | 'PARALLEL_LIMIT'
-  | 'COMMITTED'
-  | 'RETRY_NOT_ALLOWED';
-
-export type RuntimeBudgetDenial = {
-  readonly code: RuntimeBudgetDenialCode;
-  readonly message: string;
-};
-
-export type RuntimeBudgetResult<T> =
-  | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly denial: RuntimeBudgetDenial };
-
-export type RuntimeReadReservationRequest = {
-  readonly operation: RuntimeBudgetOperation;
-  readonly costUnits: number;
-  readonly providerHttpRequests: number;
-  readonly routeElements: number;
-};
-
-export type RuntimeRetryFailure =
-  'transport' | 'server' | 'rate_limited' | 'argument' | 'reference';
-
-export type RuntimeRetryResult =
-  | { readonly ok: true; readonly delayMs: number }
-  | { readonly ok: false; readonly denial: RuntimeBudgetDenial };
-
-export type RuntimeReservation = {
-  readonly release: () => void;
-};
-
-export type RuntimeReadReservation = RuntimeReservation & {
-  readonly operation: RuntimeBudgetOperation;
-  readonly retry: (failure: RuntimeRetryFailure, retryAfterMs?: number) => RuntimeRetryResult;
-};
-
-/** A route matrix admission uses one read slot and reserves every provider element up front. */
-export type RuntimeRouteReservationRequest = Omit<RuntimeReadReservationRequest, 'operation'>;
-
-export type RuntimeRouteReservation = RuntimeReadReservation & {
-  readonly operation: 'walking_route';
-  readonly costUnits: number;
-  readonly providerHttpRequests: number;
-  readonly routeElements: number;
-  /** Claims this reservation for one route computation. */
-  readonly consume: () => RuntimeBudgetResult<void>;
-};
-
-export type RuntimeSubmitReservation = {
-  /** First submit gets the full repair allowance; each later submit consumes one repair. */
-  readonly remainingRepairs: number;
-};
-
-export type RuntimeBudgetOptions = {
-  readonly config?: RuntimeBudgetConfig;
-  readonly startedAtMs?: number;
-  readonly now?: () => number;
-  readonly signal?: AbortSignal;
-  readonly isStale?: () => boolean;
+type PendingReadSignal = {
+  readonly controller: AbortController;
 };
 
 const validNonNegativeInteger = (value: number): boolean =>
@@ -121,6 +58,7 @@ const validNonNegativeInteger = (value: number): boolean =>
 
 const validRequest = (request: RuntimeReadReservationRequest): boolean =>
   request.operation.length > 0 &&
+  (request.callId === undefined || request.callId.length > 0) &&
   validNonNegativeInteger(request.costUnits) &&
   validNonNegativeInteger(request.providerHttpRequests) &&
   validNonNegativeInteger(request.routeElements);
@@ -187,6 +125,8 @@ export class RuntimeBudget {
   private submitAttempts = 0;
   private cancelledCode: 'CANCELLED' | 'STALE_TURN' | null = null;
   private completed = false;
+  private readonly pendingReadSlots = new Map<string, () => void>();
+  private readonly pendingReadSignals = new Map<string, PendingReadSignal>();
 
   constructor(options: RuntimeBudgetOptions = {}) {
     this.config = assertConfig(options.config ?? DEFAULT_RUNTIME_BUDGET);
@@ -204,9 +144,10 @@ export class RuntimeBudget {
   get limits(): RuntimeBudgetConfig {
     return this.config;
   }
-
   cancel(): void {
     this.cancelledCode = 'CANCELLED';
+    for (const signal of this.pendingReadSignals.values()) signal.controller.abort();
+    for (const callId of this.pendingReadSlots.keys()) this.releaseReadSlot(callId);
   }
 
   markCommitted(): void {
@@ -275,14 +216,35 @@ export class RuntimeBudget {
     return { ok: true, value: undefined };
   }
 
-  reserveRead(request: RuntimeReadReservationRequest): RuntimeBudgetResult<RuntimeReadReservation> {
-    if (!validRequest(request)) {
-      return { ok: false, denial: denial('BUDGET_EXCEEDED', 'read reservation is invalid') };
+  /** Reserves one provider fetch performed by an already-admitted model tool read. */
+  reserveProviderRequest(): RuntimeBudgetResult<void> {
+    const blocked = this.checkAdmission(false);
+    if (blocked !== undefined) return { ok: false, denial: blocked };
+    if (this.activeReads === 0) {
+      return {
+        ok: false,
+        denial: denial('BUDGET_EXCEEDED', 'provider request requires an admitted read'),
+      };
     }
-    const operation = request.operation;
-    const reservedCostUnits = request.costUnits;
-    const reservedProviderHttpRequests = request.providerHttpRequests;
-    const reservedRouteElements = request.routeElements;
+    if (!this.fits(1, 1, 0)) {
+      return {
+        ok: false,
+        denial: denial('BUDGET_EXCEEDED', 'provider HTTP request budget is exhausted'),
+      };
+    }
+    this.providerHttpRequests += 1;
+    this.costUnits += 1;
+    return { ok: true, value: undefined };
+  }
+
+  /** Reserves only the read slot before a resolver can perform work needed to derive read input. */
+  reserveReadSlot(callId: string, externalSignal?: AbortSignal): RuntimeBudgetResult<void> {
+    if (callId.length === 0 || this.pendingReadSlots.has(callId)) {
+      return { ok: false, denial: denial('BUDGET_EXCEEDED', 'read slot identity is invalid') };
+    }
+    if (externalSignal?.aborted === true) {
+      return { ok: false, denial: denial('CANCELLED', 'read was cancelled') };
+    }
     const blocked = this.checkAdmission(false);
     if (blocked !== undefined) return { ok: false, denial: blocked };
     if (this.activeReads >= this.config.maxParallelReads) {
@@ -291,109 +253,135 @@ export class RuntimeBudget {
     if (this.readCalls >= this.config.maxReadCalls) {
       return { ok: false, denial: denial('BUDGET_EXCEEDED', 'read call budget is exhausted') };
     }
-    if (!this.fits(reservedCostUnits, reservedProviderHttpRequests, reservedRouteElements)) {
+    this.readCalls += 1;
+    this.activeReads += 1;
+    const controller = new AbortController();
+    const timeoutMs = Math.max(
+      1,
+      Math.min(this.config.detailsTimeoutMs, this.remainingReadTimeMs()),
+    );
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const onExternalAbort = (): void => controller.abort();
+    let removeExternalAbort = (): void => undefined;
+    if (externalSignal !== undefined) {
+      externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+      removeExternalAbort = (): void =>
+        externalSignal.removeEventListener('abort', onExternalAbort);
+    }
+    let released = false;
+    const release = (): void => {
+      if (released) return;
+      released = true;
+      clearTimeout(timer);
+      removeExternalAbort();
+      this.pendingReadSignals.delete(callId);
+      this.activeReads -= 1;
+    };
+    this.pendingReadSlots.set(callId, release);
+    this.pendingReadSignals.set(callId, { controller });
+    return { ok: true, value: undefined };
+  }
+
+  readSignalFor(callId: string): AbortSignal | undefined {
+    return this.pendingReadSignals.get(callId)?.controller.signal;
+  }
+
+  releaseReadSlot(callId: string): void {
+    const release = this.pendingReadSlots.get(callId);
+    if (release === undefined) return;
+    this.pendingReadSlots.delete(callId);
+    release();
+  }
+
+  reserveRead(request: RuntimeReadReservationRequest): RuntimeBudgetResult<RuntimeReadReservation> {
+    if (!validRequest(request)) {
+      return { ok: false, denial: denial('BUDGET_EXCEEDED', 'read reservation is invalid') };
+    }
+    const pending =
+      request.callId === undefined ? undefined : this.pendingReadSlots.get(request.callId);
+    if (pending !== undefined && request.callId !== undefined) {
+      return this.consumePendingRead(request.callId, request, pending);
+    }
+    const blocked = this.checkAdmission(false);
+    if (blocked !== undefined) return { ok: false, denial: blocked };
+    if (this.activeReads >= this.config.maxParallelReads) {
+      return { ok: false, denial: denial('PARALLEL_LIMIT', 'read parallelism is exhausted') };
+    }
+    if (this.readCalls >= this.config.maxReadCalls) {
+      return { ok: false, denial: denial('BUDGET_EXCEEDED', 'read call budget is exhausted') };
+    }
+    if (!this.fits(request.costUnits, request.providerHttpRequests, request.routeElements)) {
       return { ok: false, denial: denial('BUDGET_EXCEEDED', 'read cost budget is exhausted') };
     }
 
     this.readCalls += 1;
     this.activeReads += 1;
-    this.costUnits += reservedCostUnits;
-    this.providerHttpRequests += reservedProviderHttpRequests;
-    this.routeElements += reservedRouteElements;
-    let released = false;
-    const release = (): void => {
-      if (released) return;
-      released = true;
-      this.activeReads -= 1;
-    };
-    const retry = (failure: RuntimeRetryFailure, retryAfterMs = 0): RuntimeRetryResult => {
-      if (released) {
-        return {
-          ok: false,
-          denial: denial('RETRY_NOT_ALLOWED', 'released reads cannot be retried'),
-        };
-      }
-      const blocked = this.checkAdmission(false);
-      if (blocked !== undefined) return { ok: false, denial: blocked };
-      if (failure === 'argument' || failure === 'reference') {
-        return {
-          ok: false,
-          denial: denial('RETRY_NOT_ALLOWED', 'argument and reference failures are not retried'),
-        };
-      }
-      if (!validNonNegativeInteger(retryAfterMs)) {
-        return {
-          ok: false,
-          denial: denial('RETRY_NOT_ALLOWED', 'retry-after must be a non-negative integer'),
-        };
-      }
-      if (this.readRetries >= this.config.maxReadRetries) {
-        return { ok: false, denial: denial('BUDGET_EXCEEDED', 'read retry budget is exhausted') };
-      }
-      if (!this.fits(reservedCostUnits, reservedProviderHttpRequests, reservedRouteElements)) {
-        return {
-          ok: false,
-          denial: denial('BUDGET_EXCEEDED', 'provider HTTP request budget is exhausted'),
-        };
-      }
-      const waitUntil = this.monotonicTime() + retryAfterMs;
-      if (waitUntil > this.finalReserveAtMs) {
-        return {
-          ok: false,
-          denial: denial('FINAL_RESERVE', 'retry-after would consume the final response reserve'),
-        };
-      }
-      this.readRetries += 1;
-      this.costUnits += reservedCostUnits;
-      this.providerHttpRequests += reservedProviderHttpRequests;
-      this.routeElements += reservedRouteElements;
-      return { ok: true, delayMs: retryAfterMs };
-    };
+    this.costUnits += request.costUnits;
+    this.providerHttpRequests += request.providerHttpRequests;
+    this.routeElements += request.routeElements;
     return {
       ok: true,
-      value: { operation, release, retry },
+      value: this.readReservation(request, () => {
+        this.activeReads -= 1;
+      }),
     };
   }
 
-  /**
-   * Route providers use the same admission counters as place reads. Keeping this boundary on the
-   * budget makes a route adapter's pre-reserved path explicit and prevents a second reservation
-   * when a caller has already admitted the matrix as part of a larger operation.
-   */
+  private consumePendingRead(
+    callId: string,
+    request: RuntimeReadReservationRequest,
+    releaseActive: () => void,
+  ): RuntimeBudgetResult<RuntimeReadReservation> {
+    return consumeRuntimePendingRead({
+      callId,
+      request,
+      releaseActive,
+      checkAdmission: () => this.checkAdmission(false),
+      fits: (costUnits, providerHttpRequests, routeElements) =>
+        this.fits(costUnits, providerHttpRequests, routeElements),
+      addCosts: (costs) => {
+        this.costUnits += costs.costUnits;
+        this.providerHttpRequests += costs.providerHttpRequests;
+        this.routeElements += costs.routeElements;
+      },
+      removePending: (pendingCallId) => this.pendingReadSlots.delete(pendingCallId),
+      readReservation: (pendingRequest, release) => this.readReservation(pendingRequest, release),
+    });
+  }
+
+  private readReservation(
+    request: RuntimeReadReservationRequest,
+    releaseActive: () => void,
+  ): RuntimeReadReservation {
+    return createRuntimeReadReservation({
+      request,
+      releaseActive,
+      checkAdmission: () => this.checkAdmission(false),
+      fits: (costUnits, providerHttpRequests, routeElements) =>
+        this.fits(costUnits, providerHttpRequests, routeElements),
+      finalReserveAtMs: this.finalReserveAtMs,
+      maxReadRetries: this.config.maxReadRetries,
+      readRetries: () => this.readRetries,
+      incrementReadRetries: () => {
+        this.readRetries += 1;
+      },
+      addCosts: (costs) => {
+        this.costUnits += costs.costUnits;
+        this.providerHttpRequests += costs.providerHttpRequests;
+        this.routeElements += costs.routeElements;
+      },
+      monotonicTime: () => this.monotonicTime(),
+    });
+  }
+
   reserveRoute(
     request: RuntimeRouteReservationRequest,
   ): RuntimeBudgetResult<RuntimeRouteReservation> {
-    const result = this.reserveRead({ operation: 'walking_route', ...request });
-    if (!result.ok) return result;
-    let released = false;
-    let consumed = false;
-    return {
-      ok: true,
-      value: {
-        ...result.value,
-        operation: 'walking_route',
-        costUnits: request.costUnits,
-        providerHttpRequests: request.providerHttpRequests,
-        routeElements: request.routeElements,
-        release: () => {
-          if (released) return;
-          released = true;
-          result.value.release();
-        },
-        consume: () => {
-          if (released || consumed) {
-            return {
-              ok: false,
-              denial: denial('BUDGET_EXCEEDED', 'route budget lease was already consumed'),
-            };
-          }
-          const blocked = this.checkAdmission(false);
-          if (blocked !== undefined) return { ok: false, denial: blocked };
-          consumed = true;
-          return { ok: true, value: undefined };
-        },
-      },
-    };
+    return createRuntimeRouteReservation(
+      request,
+      (readRequest) => this.reserveRead(readRequest),
+      () => this.checkAdmission(false),
+    );
   }
 
   reserveSubmit(): RuntimeBudgetResult<RuntimeSubmitReservation> {

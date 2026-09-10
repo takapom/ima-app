@@ -70,6 +70,38 @@ const unavailableResolver = (path: string): Issue =>
 const resolverFailure = (path: string): Issue =>
   issue('UPSTREAM_UNAVAILABLE', path, 'saved-place resolver failed', true);
 
+const RESOLVER_CANCELLED = Symbol('saved-reference-resolver-cancelled');
+
+const resolveWithSignal = async (
+  resolver: SavedPlaceReferenceResolver,
+  request: Parameters<SavedPlaceReferenceResolver>[0],
+  signal: AbortSignal | undefined,
+): Promise<unknown> => {
+  if (signal?.aborted === true) return RESOLVER_CANCELLED;
+  const operation = Promise.resolve()
+    .then(() => resolver(request))
+    .then(
+      (value) => ({ kind: 'value' as const, value }),
+      (error: unknown) => ({ kind: 'error' as const, error }),
+    );
+  if (signal === undefined) {
+    const settled = await operation;
+    if (settled.kind === 'error') throw settled.error;
+    return settled.value;
+  }
+  let removeAbort = (): void => undefined;
+  const cancelled = new Promise<{ readonly kind: 'cancelled' }>((resolve) => {
+    const onAbort = (): void => resolve({ kind: 'cancelled' });
+    signal.addEventListener('abort', onAbort, { once: true });
+    removeAbort = (): void => signal.removeEventListener('abort', onAbort);
+  });
+  const settled = await Promise.race([operation, cancelled]);
+  removeAbort();
+  if (settled.kind === 'cancelled') return RESOLVER_CANCELLED;
+  if (settled.kind === 'error') throw settled.error;
+  return settled.value;
+};
+
 const normalizedIssue = (value: unknown, path: string): Issue => {
   const parsed = v.safeParse(IssueSchema, value);
   if (!parsed.success) return resolverFailure(path);
@@ -118,7 +150,12 @@ export const resolveModelDetailsInput = async (
   execution: ToolExecutionContext,
   cancellation: CancellationToken,
   dependencies: ResolverDependencies,
+  signal?: AbortSignal,
 ): Promise<ResolvedModelDetails> => {
+  const effectiveCancellation: CancellationToken =
+    signal === undefined
+      ? cancellation
+      : { isCancelled: () => cancellation.isCancelled() || signal.aborted };
   const coreRequests: GetPlaceDetailsInput['requests'][number][] = [];
   const failures: SavedDetailsFailure[] = [];
   const warnings: Issue[] = [];
@@ -135,7 +172,7 @@ export const resolveModelDetailsInput = async (
 
   for (const [index, request] of input.requests.entries()) {
     if (!('savedPlaceRef' in request)) continue;
-    if (cancellation.isCancelled()) {
+    if (effectiveCancellation.isCancelled()) {
       return {
         input: undefined,
         targetForCandidate: (candidateId) => ({ candidateId }),
@@ -151,18 +188,41 @@ export const resolveModelDetailsInput = async (
     }
     let resolved: unknown;
     try {
-      resolved = await dependencies.resolver({
-        savedPlaceRef: request.savedPlaceRef,
-        fields: [...request.fields],
-        context,
-        execution,
-        cancellation,
-      });
+      resolved = await resolveWithSignal(
+        dependencies.resolver,
+        {
+          savedPlaceRef: request.savedPlaceRef,
+          fields: [...request.fields],
+          context,
+          execution,
+          cancellation: effectiveCancellation,
+          ...(signal === undefined ? {} : { signal }),
+        },
+        signal,
+      );
     } catch {
+      if (effectiveCancellation.isCancelled()) {
+        return {
+          input: undefined,
+          targetForCandidate: (candidateId) => ({ candidateId }),
+          failures,
+          warnings,
+          cancelled: true,
+        };
+      }
       failures.push(failure(request.savedPlaceRef, request.fields, resolverFailure(path)));
       continue;
     }
-    if (cancellation.isCancelled()) {
+    if (resolved === RESOLVER_CANCELLED) {
+      return {
+        input: undefined,
+        targetForCandidate: (candidateId) => ({ candidateId }),
+        failures,
+        warnings,
+        cancelled: true,
+      };
+    }
+    if (effectiveCancellation.isCancelled()) {
       return {
         input: undefined,
         targetForCandidate: (candidateId) => ({ candidateId }),
@@ -256,7 +316,7 @@ export const resolveModelDetailsInput = async (
     });
   }
 
-  if (cancellation.isCancelled()) {
+  if (effectiveCancellation.isCancelled()) {
     return {
       input: undefined,
       targetForCandidate: (candidateId) => ({ candidateId }),

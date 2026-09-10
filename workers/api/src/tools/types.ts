@@ -36,6 +36,7 @@ export type SavedPlaceReferenceResolutionRequest = {
   readonly context: HarnessContext;
   readonly execution: ToolExecutionContext;
   readonly cancellation: CancellationToken;
+  readonly signal?: AbortSignal;
 };
 
 export type SavedPlaceReferenceResolution =
@@ -50,6 +51,17 @@ export type SavedPlaceReferenceResolution =
 export type SavedPlaceReferenceResolver = (
   request: SavedPlaceReferenceResolutionRequest,
 ) => Promise<unknown>;
+
+/** Reserves a Details read slot before a saved-reference resolver can perform provider I/O. */
+export type ToolReadAdmission = {
+  readonly reserve: (input: {
+    readonly callId: string;
+    readonly operation: 'get_place_details';
+    readonly signal?: AbortSignal;
+  }) => { readonly ok: true } | { readonly ok: false; readonly error: Issue };
+  readonly signalFor: (callId: string) => AbortSignal | undefined;
+  readonly release: (callId: string) => void;
+};
 
 export type ToolRuntime = {
   readonly context: HarnessContext;
@@ -84,6 +96,7 @@ export type ToolBindingDependencies = {
   readonly search: PlaceSearchPort;
   readonly details: PlaceDetailsPort;
   readonly submit: SubmitCardsPort;
+  readonly readAdmission?: ToolReadAdmission;
   /** Optional Worker-owned boundary for one model-selected saved reference. */
   readonly savedPlaceReferenceResolver?: SavedPlaceReferenceResolver;
   /** Host-evaluated policy for the SDK model-input surface. Omitted means deny by default. */

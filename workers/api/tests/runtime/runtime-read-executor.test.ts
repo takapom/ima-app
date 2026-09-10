@@ -338,6 +338,56 @@ it('returns cancellation when disposal aborts an already running provider call',
   expect(calls).toBe(1);
 });
 
+it('propagates the pending read deadline to the running provider attempt', async () => {
+  vi.useFakeTimers();
+  try {
+    let now = 0;
+    const budget = new RuntimeBudget({
+      startedAtMs: 0,
+      now: () => now,
+    });
+    expect(budget.reserveReadSlot('call-pending')).toMatchObject({ ok: true });
+
+    await vi.advanceTimersByTimeAsync(3_000);
+    now = 3_000;
+    const executor = new RuntimeReadExecutor({ budget });
+    let providerStarted = false;
+    let providerAborted = false;
+    const pending = executor.execute(
+      request(
+        (signal) =>
+          new Promise<never>((_resolve, reject) => {
+            providerStarted = true;
+            signal.addEventListener(
+              'abort',
+              () => {
+                providerAborted = true;
+                reject(new Error('provider aborted'));
+              },
+              { once: true },
+            );
+          }),
+        { callId: 'call-pending', flightKey: 'pending' },
+      ),
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(providerStarted).toBe(true);
+    await vi.advanceTimersByTimeAsync(999);
+    expect(providerAborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+
+    await expect(pending).resolves.toMatchObject({
+      ok: false,
+      denial: { code: 'CANCELLED' },
+    });
+    expect(providerAborted).toBe(true);
+    expect(budget.snapshot().activeReads).toBe(0);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it('rejects a late result when the turn revision becomes stale', async () => {
   let stale = false;
   let resolveRead: ((value: string) => void) | undefined;
