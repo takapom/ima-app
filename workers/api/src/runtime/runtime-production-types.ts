@@ -38,6 +38,8 @@ import type { RuntimeModelGuardModel } from './runtime-model-guard';
 import type { RuntimeModelTraceSink } from './runtime-model-trace';
 import type { RuntimeThinkTurnBuildRequest } from './runtime-think-connection';
 import type { RuntimeProviderTraceSink } from '../providers/telemetry/runtime-provider-trace';
+import type { SavedReferenceDetailsHandoff } from '../providers/places-details/handoff';
+import type { SavedPlaceReferenceResolver } from '../tools/types';
 
 export type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;
@@ -62,6 +64,8 @@ export type RuntimeProductionTurnPlan = {
   readonly hashes: CommitHashPort;
   readonly publicResponse?: RuntimePublicResponseDependencies;
   readonly provider?: RuntimeProductionProviderComposition;
+  readonly savedPlaceReferenceResolver?: SavedPlaceReferenceResolver;
+  readonly savedReferenceHandoff?: SavedReferenceDetailsHandoff;
   readonly onCommitted?: (response: unknown) => void;
 };
 

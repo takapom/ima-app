@@ -54,6 +54,7 @@ export type SavedReferenceProviderRefreshRequest = {
   readonly context: HarnessContext;
   readonly execution: ToolExecutionContext;
   readonly cancellation: CancellationToken;
+  readonly signal?: AbortSignal;
 };
 
 export type SavedReferenceProviderRefresher = {
@@ -94,6 +95,7 @@ export type SavedReferenceDetailsHandoff = {
     readonly scope: RegistryScope;
     readonly turnId: string;
     readonly revision: number;
+    readonly fields: readonly GooglePlaceDetailsField[];
   }) => SavedReferenceHandoffCoverage | undefined;
   readonly discardForReference: (input: {
     readonly savedPlaceRef: SavedPlaceRef;

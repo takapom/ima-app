@@ -31,7 +31,10 @@ const RUNTIME_MAX_RETRIES = 0;
 
 type RuntimeStopWhen = Exclude<TurnConfig['stopWhen'], undefined>;
 
-export type RuntimeTurnPortDependencies = Omit<ToolBindingDependencies, 'runtime'>;
+export type RuntimeTurnPortDependencies = Omit<ToolBindingDependencies, 'runtime'> & {
+  /** Clears Worker-only per-turn handoffs when the composition is disposed. */
+  readonly onTurnDispose?: () => void;
+};
 
 export type RuntimeTurnFactoryOptions = {
   /** The server-owned context is cloned when the turn factory is created. */
@@ -392,6 +395,7 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
       serverCalls.clear();
       metadataByCall.clear();
       options.budget.cancel();
+      options.ports.onTurnDispose?.();
     },
   };
   return handle;

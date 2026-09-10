@@ -25,6 +25,9 @@ export default defineConfig({
   test: {
     name: 'runtime-production-http',
     setupFiles: ['./workers/api/tests/runtime-setup.ts'],
-    include: ['workers/api/tests/runtime-production-http.test.ts'],
+    include: [
+      'workers/api/tests/runtime-production-http.test.ts',
+      'workers/api/tests/runtime-production-saved-reference-http.test.ts',
+    ],
   },
 });

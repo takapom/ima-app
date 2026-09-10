@@ -4,38 +4,37 @@ import { OpaqueIdSchema, Text } from '@ima/core';
 import {
   createDurableSavedReferenceStore,
   type DurableSavedReferenceStore,
-  type SavedReferenceDeleteResult,
   type SavedReferenceOperationOptions,
-  type SavedReferenceReplayResult,
-  type SavedReferenceReadResult,
-  type SavedReferenceRegistrationResult,
 } from './store';
+import type {
+  SavedReferenceOwnerInitResult,
+  SavedReferenceOwnerOperationFailure,
+  SavedReferenceRpcDeleteResult,
+  SavedReferenceRpcReadResult,
+  SavedReferenceRpcRegistrationResult,
+  SavedReferenceRpcReplayResult,
+} from './saved-reference-rpc';
+export { createOwnerSavedReferenceRpc } from './saved-reference-rpc';
+export { savedReferenceOwnerName } from './saved-reference-rpc';
+export type {
+  OwnerSavedReferenceRpc,
+  SavedReferenceDOStub,
+  SavedReferenceNamespace,
+  SavedReferenceOwnerInitResult,
+  SavedReferenceRpcDeleteResult,
+  SavedReferenceRpcReadResult,
+  SavedReferenceRpcRegistrationResult,
+  SavedReferenceRpcReplayResult,
+} from './saved-reference-rpc';
 
 const OWNER_TABLE_NAME = 'm16_saved_reference_owner';
 const OWNER_ROW_ID = 1;
-const OWNER_NAME_PREFIX = 'saved-reference-owner:';
 
 export const SavedReferenceIdentitySchema = v.strictObject({
   provider: Text(80),
   recordRef: Text(512),
 });
 export type SavedReferenceIdentity = v.InferOutput<typeof SavedReferenceIdentitySchema>;
-
-export type SavedReferenceOwnerInitResult =
-  | { readonly ok: true; readonly created: boolean }
-  | { readonly ok: false; readonly code: 'INVALID_INPUT' | 'OWNER_CONFLICT' };
-
-type OwnerOperationFailure = {
-  readonly ok: false;
-  readonly code: 'INVALID_INPUT' | 'OWNER_NOT_INITIALIZED' | 'FORBIDDEN';
-};
-
-export type SavedReferenceRpcRegistrationResult =
-  SavedReferenceRegistrationResult | OwnerOperationFailure;
-export type SavedReferenceRpcReadResult = SavedReferenceReadResult | OwnerOperationFailure;
-export type SavedReferenceRpcDeleteResult = SavedReferenceDeleteResult | OwnerOperationFailure;
-
-export type SavedReferenceNamespace = DurableObjectNamespace<SavedReferenceDO>;
 
 type OwnerRow = {
   readonly owner_scope_ref: string;
@@ -44,13 +43,6 @@ type OwnerRow = {
 const parseOwner = (value: unknown): string | undefined => {
   const parsed = v.safeParse(OpaqueIdSchema, value);
   return parsed.success ? parsed.output : undefined;
-};
-
-/** Returns the only supported namespace key for an owner-sharded saved-reference DO. */
-export const savedReferenceOwnerName = (ownerScopeRef: string): string => {
-  const owner = parseOwner(ownerScopeRef);
-  if (owner === undefined) throw new Error('INVALID_OWNER_SCOPE');
-  return `${OWNER_NAME_PREFIX}${owner}`;
 };
 
 const createReferenceIds = () => ({
@@ -87,7 +79,7 @@ export class SavedReferenceDO extends DurableObject {
       .toArray()[0];
   }
 
-  private ownerForOperation(ownerScopeRef: unknown): string | OwnerOperationFailure {
+  private ownerForOperation(ownerScopeRef: unknown): string | SavedReferenceOwnerOperationFailure {
     const owner = parseOwner(ownerScopeRef);
     if (owner === undefined) return { ok: false, code: 'INVALID_INPUT' };
     const bound = this.ownerRow();
@@ -133,7 +125,7 @@ export class SavedReferenceDO extends DurableObject {
     ownerScopeRef: unknown,
     idempotencyKey: unknown,
     idempotencyFingerprint: unknown,
-  ): Promise<SavedReferenceReplayResult | OwnerOperationFailure> {
+  ): Promise<SavedReferenceRpcReplayResult> {
     const store = await this.ready;
     const owner = this.ownerForOperation(ownerScopeRef);
     if (typeof owner !== 'string') return owner;
@@ -158,38 +150,3 @@ export class SavedReferenceDO extends DurableObject {
     return store.remove(owner, savedPlaceRef, options);
   }
 }
-
-export type OwnerSavedReferenceRpc = {
-  readonly initialize: () => Promise<SavedReferenceOwnerInitResult>;
-  readonly replay: (
-    idempotencyKey: unknown,
-    idempotencyFingerprint: unknown,
-  ) => Promise<SavedReferenceReplayResult | OwnerOperationFailure>;
-  readonly register: (
-    input: unknown,
-    options?: SavedReferenceOperationOptions,
-  ) => Promise<SavedReferenceRpcRegistrationResult>;
-  readonly read: (savedPlaceRef: unknown) => Promise<SavedReferenceRpcReadResult>;
-  readonly remove: (
-    savedPlaceRef: unknown,
-    options?: SavedReferenceOperationOptions,
-  ) => Promise<SavedReferenceRpcDeleteResult>;
-};
-
-/** Binds all calls to the owner-derived DO name and owner argument. */
-export const createOwnerSavedReferenceRpc = (
-  namespace: SavedReferenceNamespace,
-  ownerScopeRef: string,
-): OwnerSavedReferenceRpc => {
-  const owner = parseOwner(ownerScopeRef);
-  if (owner === undefined) throw new Error('INVALID_OWNER_SCOPE');
-  const stub = namespace.getByName(savedReferenceOwnerName(owner));
-  return {
-    initialize: () => stub.initialize(owner),
-    replay: (idempotencyKey, idempotencyFingerprint) =>
-      stub.replay(owner, idempotencyKey, idempotencyFingerprint),
-    register: (input, options) => stub.register(owner, input, options),
-    read: (savedPlaceRef) => stub.read(owner, savedPlaceRef),
-    remove: (savedPlaceRef, options) => stub.remove(owner, savedPlaceRef, options),
-  };
-};

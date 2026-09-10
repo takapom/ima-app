@@ -198,6 +198,7 @@ export const createSavedReferenceDetailsHandoff = (
       if (expiryState(entry) !== undefined) {
         return 'expired' as const;
       }
+      if (!fieldsMatch(entry.fields, input.fields)) return undefined;
       return 'covered' as const;
     },
     discardForReference(input) {
@@ -275,13 +276,25 @@ export const createSavedReferenceGoogleProvider = (
     if (input.cancellation.isCancelled()) {
       return { status: 'error', error: issue('CANCELLED', 'saved reference read was cancelled') };
     }
+    let areaLabel: string | undefined;
+    try {
+      areaLabel = options.areaLabelFor(input.context);
+    } catch {
+      areaLabel = undefined;
+    }
+    if (areaLabel === undefined || areaLabel.length === 0) {
+      return {
+        status: 'error',
+        error: issue('MISSING_CONTEXT', 'saved place area is unavailable'),
+      };
+    }
     const fields = googleFieldsFor(input.fields);
     const fetchFields = fetchFieldsFor(fields);
     let response: GooglePlaceDetailsResponse;
     try {
       response = await options.transport.read(
         { placeId: input.reference.recordRef, fields: [...fetchFields] },
-        options.signalFor?.(input.execution) ?? options.requestSignal,
+        input.signal ?? options.signalFor?.(input.execution) ?? options.requestSignal,
       );
     } catch (error: unknown) {
       return { status: 'error', error: providerFailure(error) };
@@ -306,18 +319,6 @@ export const createSavedReferenceGoogleProvider = (
       return {
         status: 'error',
         error: issue('SCHEMA_MISMATCH', 'saved place identity is invalid'),
-      };
-    }
-    let areaLabel: string | undefined;
-    try {
-      areaLabel = options.areaLabelFor(input.context);
-    } catch {
-      areaLabel = undefined;
-    }
-    if (areaLabel === undefined || areaLabel.length === 0) {
-      return {
-        status: 'error',
-        error: issue('MISSING_CONTEXT', 'saved place area is unavailable'),
       };
     }
     const identity = normalizeGoogleIdentity(identityWire, areaLabel).value;

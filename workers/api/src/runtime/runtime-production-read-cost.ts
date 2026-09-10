@@ -7,6 +7,7 @@ import {
   isSupportedField,
   observationContextFor,
 } from '../providers/places-details/adapter-support';
+import type { SavedReferenceDetailsHandoff } from '../providers/places-details/handoff';
 import { productionScopeFor } from './runtime-production-support';
 import type { RuntimeReadCost, RuntimeReadCostRequest } from './runtime-read-ports';
 
@@ -15,6 +16,7 @@ const detailsProviderCost = (
   context: HarnessContext,
   registry: CandidateObservationRegistryPort,
   originRefFor?: (context: HarnessContext) => string | undefined,
+  savedReferenceHandoff?: Pick<SavedReferenceDetailsHandoff, 'coverageForCandidate'>,
 ): number => {
   let requests = 0;
   const scope = productionScopeFor(context);
@@ -26,6 +28,14 @@ const detailsProviderCost = (
       if (candidate === undefined || candidate.excluded || candidate.provider !== 'google_places') {
         continue;
       }
+      const savedCoverage = savedReferenceHandoff?.coverageForCandidate({
+        candidateId: request.candidateId,
+        scope,
+        turnId: context.turnId,
+        revision: context.revision,
+        fields: request.fields.filter(isSupportedField),
+      });
+      if (savedCoverage === 'covered') continue;
       for (const field of request.fields) {
         if (!isSupportedField(field)) continue;
         if (input.freshness === 'reuse_valid') {
@@ -53,11 +63,18 @@ export const resolveRuntimeProductionReadCost = (
   request: RuntimeReadCostRequest,
   registry: CandidateObservationRegistryPort,
   originRefFor?: (context: HarnessContext) => string | undefined,
+  savedReferenceHandoff?: Pick<SavedReferenceDetailsHandoff, 'coverageForCandidate'>,
 ): RuntimeReadCost => {
   const providerRequests =
     request.operation === 'search_places'
       ? 1
-      : detailsProviderCost(request.input, request.context, registry, originRefFor);
+      : detailsProviderCost(
+          request.input,
+          request.context,
+          registry,
+          originRefFor,
+          savedReferenceHandoff,
+        );
   return {
     costUnits: providerRequests,
     providerHttpRequests: providerRequests,

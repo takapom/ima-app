@@ -151,6 +151,7 @@ describe('saved-reference details handoff', () => {
         scope: SCOPE,
         turnId: context.turnId,
         revision: context.revision,
+        fields: ['identity'],
       }),
     ).toBeUndefined();
   });
@@ -187,6 +188,7 @@ describe('saved-reference details handoff', () => {
         scope: SCOPE,
         turnId: context.turnId,
         revision: context.revision,
+        fields: ['identity'],
       }),
     ).toBeUndefined();
   });
@@ -217,6 +219,7 @@ describe('saved-reference details handoff', () => {
         scope: SCOPE,
         turnId: context.turnId,
         revision: context.revision,
+        fields: ['identity'],
       }),
     ).toBeUndefined();
   });
@@ -250,6 +253,7 @@ describe('saved-reference details handoff', () => {
         scope: SCOPE,
         turnId: context.turnId,
         revision: context.revision,
+        fields: ['identity'],
       }),
     ).toBeUndefined();
   });
@@ -281,6 +285,7 @@ describe('saved-reference details handoff', () => {
         scope: SCOPE,
         turnId: context.turnId,
         revision: context.revision,
+        fields: ['identity'],
       }),
     ).toBeUndefined();
   });
@@ -375,6 +380,7 @@ describe('saved-reference Google provider handoff', () => {
         scope: SCOPE,
         turnId: context.turnId,
         revision: context.revision,
+        fields: ['identity'],
       }),
     ).toBeUndefined();
   });
@@ -421,6 +427,7 @@ describe('saved-reference Google provider handoff', () => {
 
     const result = await provider.refresh(providerRequest());
     expect(result).toMatchObject({ status: 'error', error: { code: 'MISSING_CONTEXT' } });
+    expect(readMock).not.toHaveBeenCalled();
   });
 
   it('rejects a scope or execution mismatch before provider I/O', async () => {

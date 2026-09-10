@@ -396,6 +396,7 @@ export const createSavedPlaceReferenceResolver =
         context: request.context,
         execution: request.execution,
         cancellation: request.cancellation,
+        ...(request.signal === undefined ? {} : { signal: request.signal }),
       });
     } catch {
       if (cancellationState(request.cancellation)) {
