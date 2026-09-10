@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import type { PublicCard } from '@ima/contracts';
+import type { PublicCard, PublicMessage } from '@ima/contracts';
 import { AppBar } from '../components/AppBar';
 import { Canvas } from '../components/Canvas';
 import { Composer } from '../components/Composer';
@@ -12,7 +12,7 @@ import { ErrorState } from '../components/ErrorState';
 import { ResultsState } from '../components/ResultsState';
 import { WorkingState } from '../components/WorkingState';
 import { useJourneyShell } from '../hooks/useJourneyShell';
-import type { AssistantResponseState } from '../state/assistant-response';
+import { selectAssistantMessages, type AssistantResponseState } from '../state/assistant-response';
 import {
   DEFAULT_SUGGESTIONS,
   type ConditionScope,
@@ -87,6 +87,7 @@ function JourneyScreenStateOwner({
 }: JourneyScreenProps): React.JSX.Element {
   const journey = useJourneyShell(threadId, initialSavedConditions);
   const renderedResponse = responseState ?? journey.responseState;
+  const renderedMessages = selectAssistantMessages(renderedResponse);
 
   const submit = useCallback(
     (value: string): void => {
@@ -145,7 +146,7 @@ function JourneyScreenStateOwner({
     },
     [journey.updateConditions, onConditionsChange],
   );
-  const phase = resolvePhase(requestStatus, journey.phase, renderedResponse);
+  const phase = resolvePhase(requestStatus, journey.phase, renderedResponse, renderedMessages);
   const decided = selectedCard(renderedResponse, journey.selectedCandidateId);
 
   return (
@@ -165,7 +166,7 @@ function JourneyScreenStateOwner({
           {phase === 'results' ? (
             <ResultsState
               cards={renderedResponse.cards}
-              messages={renderedResponse.messages}
+              messages={renderedMessages}
               onDecide={decide}
               {...(onPromote === undefined ? {} : { onChoose: onPromote })}
             />
@@ -224,6 +225,7 @@ const resolvePhase = (
   requestStatus: JourneyRequestStatus,
   localPhase: ReturnType<typeof useJourneyShell>['phase'],
   responseState: AssistantResponseState,
+  messages: readonly PublicMessage[],
 ): ReturnType<typeof useJourneyShell>['phase'] => {
   if (requestStatus === 'pending') return 'working';
   if (requestStatus === 'error') return 'error';
@@ -231,7 +233,7 @@ const resolvePhase = (
   if (localPhase === 'cancelled') return 'cancelled';
   if (localPhase === 'error') return 'error';
   if (localPhase === 'decided') return 'decided';
-  if (responseState.cards !== null || responseState.messages.length > 0) return 'results';
+  if (responseState.cards !== null || messages.length > 0) return 'results';
   if (localPhase === 'working') return 'working';
   return 'empty';
 };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applySearchResponseJson, applyThreadSnapshotJson } from './assistant-response';
-import { createAssistantResponseState } from '../state/assistant-response';
+import { createAssistantResponseState, selectAssistantMessages } from '../state/assistant-response';
 const initialState = createAssistantResponseState('thread-1');
 
 const retention = {
@@ -84,7 +84,7 @@ describe('M04 assistant response fixture (independent of M05 runtime)', () => {
 
     expect(result.accepted).toBe(true);
     expect(result.state.appliedResponseIds).toEqual(['response-1']);
-    expect(result.state.messages).toHaveLength(1);
+    expect(selectAssistantMessages(result.state)).toHaveLength(1);
   });
 
   it('rejects unknown JSON without mutating state', () => {
@@ -120,7 +120,7 @@ describe('M04 assistant response fixture (independent of M05 runtime)', () => {
     });
 
     expect(result.accepted).toBe(true);
-    expect(result.state.messages).toHaveLength(0);
+    expect(selectAssistantMessages(result.state)).toHaveLength(0);
     expect(result.state.cards).toBeNull();
     expect(result.state.restoreStatuses).toMatchObject([
       { responseId: 'response-reference', restoreMode: 'reference_only', payloadAvailable: false },
@@ -154,7 +154,7 @@ describe('M04 assistant response fixture (independent of M05 runtime)', () => {
 
     expect(result.accepted).toBe(true);
     expect(result.state.appliedResponseIds).toEqual(['response-1', 'response-2']);
-    expect(result.state.messages).toHaveLength(2);
+    expect(selectAssistantMessages(result.state)).toHaveLength(2);
     expect(result.state.revision).toBe(2);
   });
 

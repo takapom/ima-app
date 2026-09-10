@@ -6,10 +6,56 @@ export type AssistantResponseState = {
   readonly appliedResponseIds: readonly string[];
   readonly restoredResponseIds: readonly string[];
   readonly restoreStatuses: readonly RestoreStatus[];
-  readonly messages: readonly PublicMessage[];
+  readonly responseRecords: readonly AssistantResponseRecord[];
+  /** The current card payload is the only in-state source for rendered cards. */
   readonly cardSetId: string | null;
   readonly cards: CardsData | null;
+  readonly cardSetDisplay: CardSetDisplayState;
 };
+
+export type AssistantResponseRecord = {
+  readonly responseId: AssistantResponse['responseId'];
+  readonly turnId: AssistantResponse['turnId'];
+  readonly revision: AssistantResponse['revision'];
+  readonly kind: AssistantResponse['kind'];
+  readonly presentation: AssistantResponse['presentation'];
+  /** The identifier declared by the response payload, before keep semantics. */
+  readonly declaredCardSetId: AssistantResponse['cardSetId'];
+  /** The card set this response's message is associated with for display. */
+  readonly effectiveCardSetId: AssistantResponse['cardSetId'];
+  readonly messages: readonly PublicMessage[];
+};
+
+export type AssistantMessageRecord = {
+  readonly responseId: AssistantResponse['responseId'];
+  readonly turnId: AssistantResponse['turnId'];
+  readonly revision: AssistantResponse['revision'];
+  /** The identifier declared by the response payload. */
+  readonly declaredCardSetId: AssistantResponse['cardSetId'];
+  /** The card set actually visible when this message was applied. */
+  readonly cardSetId: AssistantResponse['cardSetId'];
+  readonly message: PublicMessage;
+};
+
+export type CardSetDisplayState =
+  | {
+      readonly kind: 'empty';
+      readonly reason: 'initial' | 'no_cards' | 'reference_only' | 'unavailable';
+      readonly responseId: AssistantResponse['responseId'] | null;
+    }
+  | {
+      readonly kind: 'available';
+      readonly responseId: AssistantResponse['responseId'];
+      readonly sourceRevision: AssistantResponse['revision'];
+    }
+  | {
+      readonly kind: 'kept';
+      /** The response that is currently explaining the retained card set. */
+      readonly responseId: AssistantResponse['responseId'];
+      /** The response that supplied the retained card payload. */
+      readonly sourceResponseId: AssistantResponse['responseId'];
+      readonly sourceRevision: AssistantResponse['revision'];
+    };
 
 export type RestoreStatus = {
   readonly responseId: AssistantResponse['responseId'];
@@ -35,13 +81,56 @@ export const createAssistantResponseState = (threadId: string): AssistantRespons
   appliedResponseIds: [],
   restoredResponseIds: [],
   restoreStatuses: [],
-  messages: [],
+  responseRecords: [],
   cardSetId: null,
   cards: null,
+  cardSetDisplay: {
+    kind: 'empty',
+    reason: 'initial',
+    responseId: null,
+  },
 });
+
+export const selectAssistantMessages = (state: AssistantResponseState): readonly PublicMessage[] =>
+  state.responseRecords.flatMap((record) => record.messages);
+
+export const selectAssistantMessageRecords = (
+  state: AssistantResponseState,
+): readonly AssistantMessageRecord[] =>
+  state.responseRecords.flatMap((record) =>
+    record.messages.map((message) => ({
+      responseId: record.responseId,
+      turnId: record.turnId,
+      revision: record.revision,
+      declaredCardSetId: record.declaredCardSetId,
+      cardSetId: record.effectiveCardSetId,
+      message,
+    })),
+  );
 
 const hasSeenResponse = (state: AssistantResponseState, responseId: string) =>
   state.appliedResponseIds.includes(responseId) || state.restoredResponseIds.includes(responseId);
+
+const currentCardSetSource = (
+  state: AssistantResponseState,
+): {
+  responseId: AssistantResponse['responseId'];
+  revision: AssistantResponse['revision'];
+} | null => {
+  if (state.cardSetDisplay.kind === 'available') {
+    return {
+      responseId: state.cardSetDisplay.responseId,
+      revision: state.cardSetDisplay.sourceRevision,
+    };
+  }
+  if (state.cardSetDisplay.kind === 'kept') {
+    return {
+      responseId: state.cardSetDisplay.sourceResponseId,
+      revision: state.cardSetDisplay.sourceRevision,
+    };
+  }
+  return null;
+};
 
 export const applyAssistantResponse = (
   state: AssistantResponseState,
@@ -55,18 +144,56 @@ export const applyAssistantResponse = (
     return state;
   }
 
+  const effectiveCardSetId =
+    response.kind === 'cards'
+      ? response.cardSetId
+      : state.cards === null
+        ? response.cardSetId
+        : state.cardSetId;
+  const responseRecord: AssistantResponseRecord = {
+    responseId: response.responseId,
+    turnId: response.turnId,
+    revision: response.revision,
+    kind: response.kind,
+    presentation: response.presentation,
+    declaredCardSetId: response.cardSetId,
+    effectiveCardSetId,
+    messages: response.message,
+  };
+
   const next = {
     ...state,
     revision: response.revision,
     appliedResponseIds: [...state.appliedResponseIds, response.responseId],
-    messages: [...state.messages, ...response.message],
+    responseRecords: [...state.responseRecords, responseRecord],
   };
 
   if (response.kind === 'message') {
+    if (state.cards !== null && state.cardSetId !== null) {
+      const source = currentCardSetSource(state);
+      if (source !== null) {
+        return {
+          ...next,
+          cardSetId: state.cardSetId,
+          cards: state.cards,
+          cardSetDisplay: {
+            kind: 'kept',
+            responseId: response.responseId,
+            sourceResponseId: source.responseId,
+            sourceRevision: source.revision,
+          },
+        };
+      }
+    }
     return {
       ...next,
-      cardSetId: state.cardSetId,
-      cards: state.cards,
+      cardSetId: null,
+      cards: null,
+      cardSetDisplay: {
+        kind: 'empty',
+        reason: 'no_cards',
+        responseId: response.responseId,
+      },
     };
   }
 
@@ -74,6 +201,11 @@ export const applyAssistantResponse = (
     ...next,
     cardSetId: response.cardSetId,
     cards: response.cards,
+    cardSetDisplay: {
+      kind: 'available',
+      responseId: response.responseId,
+      sourceRevision: response.revision,
+    },
   };
 };
 
@@ -100,7 +232,31 @@ export const acknowledgeRestoredResponse = (
         payloadAvailable: false,
       },
     ],
-    ...(reference.kind === 'cards' ? { cardSetId: null, cards: null } : {}),
+    ...(reference.kind === 'cards'
+      ? {
+          cardSetId: null,
+          cards: null,
+          cardSetDisplay: {
+            kind: 'empty' as const,
+            reason: reference.restoreMode,
+            responseId: reference.responseId,
+          },
+        }
+      : state.cards !== null && state.cardSetId !== null
+        ? (() => {
+            const source = currentCardSetSource(state);
+            return source === null
+              ? {}
+              : {
+                  cardSetDisplay: {
+                    kind: 'kept' as const,
+                    responseId: reference.responseId,
+                    sourceResponseId: source.responseId,
+                    sourceRevision: source.revision,
+                  },
+                };
+          })()
+        : {}),
   };
 };
 

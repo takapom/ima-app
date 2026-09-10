@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createJourneyShellState, journeyShellReducer } from './journey-shell';
+import { selectAssistantMessages } from './assistant-response';
 
 describe('journey shell state', () => {
   it('ignores a blank request and keeps the draft available', () => {
@@ -131,32 +132,43 @@ describe('journey shell state', () => {
     const responseState = {
       ...working.responseState,
       revision: 1,
-      messages: [
+      responseRecords: [
         {
-          text: '条件に合う候補はありませんでした。',
-          evidenceIds: [],
-          evidence: [],
-          basis: 'conversational' as const,
-          retention: {
-            retentionDecision: 'deny' as const,
-            retentionMode: 'session_only' as const,
-            sessionExpiresAt: '2026-09-10T00:00:00Z',
-            freshUntil: '2026-09-10T00:00:00Z',
-            displayUntil: '2026-09-10T00:00:00Z',
-            retentionUntil: null,
-            deletionScheduledAt: null,
-            attribution: null,
-            restoreMode: 'reference_only' as const,
-            policyStatus: 'policy_withheld' as const,
-            displayPolicyStatus: 'available' as const,
-          },
+          responseId: 'response-1',
+          turnId: 'turn-1',
+          revision: 1,
+          kind: 'message' as const,
+          presentation: 'keep' as const,
+          declaredCardSetId: null,
+          effectiveCardSetId: null,
+          messages: [
+            {
+              text: '条件に合う候補はありませんでした。',
+              evidenceIds: [],
+              evidence: [],
+              basis: 'conversational' as const,
+              retention: {
+                retentionDecision: 'deny' as const,
+                retentionMode: 'session_only' as const,
+                sessionExpiresAt: '2026-09-10T00:00:00Z',
+                freshUntil: '2026-09-10T00:00:00Z',
+                displayUntil: '2026-09-10T00:00:00Z',
+                retentionUntil: null,
+                deletionScheduledAt: null,
+                attribution: null,
+                restoreMode: 'reference_only' as const,
+                policyStatus: 'policy_withheld' as const,
+                displayPolicyStatus: 'available' as const,
+              },
+            },
+          ],
         },
       ],
     };
     const next = journeyShellReducer(working, { type: 'responseApplied', responseState });
 
     expect(next.phase).toBe('results');
-    expect(next.responseState.messages).toHaveLength(1);
+    expect(selectAssistantMessages(next.responseState)).toHaveLength(1);
   });
 
   it('does not decide a candidate that is absent from the response', () => {
