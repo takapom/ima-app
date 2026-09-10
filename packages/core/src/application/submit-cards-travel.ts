@@ -13,7 +13,8 @@ import {
   type SubmitValidationContext,
   type SubmitValidationIssue,
 } from './submit-cards-evidence';
-import { elapsedSecondsFloor, minimumStayIssue, openIntervalAt } from './submit-cards-stay';
+import { minimumStayIssue, openIntervalAt } from './submit-cards-stay';
+import { recalculateLastTrainAtArrival } from './last-train-recalculation';
 
 const MAX_DATE_MILLISECONDS = 8_640_000_000_000_000;
 
@@ -404,46 +405,74 @@ export const validateLastTrain = (
       ],
     };
   }
+  const evaluatedArrival = arrivalFromRoute(
+    candidateId,
+    selectionPath,
+    { ...context, departureAt: route.evaluatedAt },
+    route,
+    walking.observation.observationId,
+  );
+  if (evaluatedArrival.issue !== undefined || evaluatedArrival.arrivalAt === undefined) {
+    return {
+      info,
+      issues: [
+        evaluatedArrival.issue ??
+          issue(
+            'INVALID_EVIDENCE',
+            `${selectionPath}.walkingRoute`,
+            'walking observation arrival could not be computed',
+            ['durationSeconds'],
+            candidateId,
+            [walking.observation.observationId],
+          ),
+      ],
+    };
+  }
   const matchesContext =
     info.serviceDate === travel.serviceDate &&
     info.fromStationRef === travel.fromStationRef &&
     info.homeStationRef === homeStationRef &&
     (context.preferences.minimumStayMinutes === null ||
       info.minimumStayMinutes === context.preferences.minimumStayMinutes);
-  const lastDepartureMilliseconds = Date.parse(info.lastDepartureAt);
-  const leaveByMilliseconds = Date.parse(info.leaveBy);
-  const arrivePlaceMilliseconds = Date.parse(info.arrivePlaceAt);
-  const arrivalMilliseconds = Date.parse(arrival.arrivalAt);
-  const expectedLeaveBy = lastDepartureMilliseconds - info.placeToStationSeconds * 1000 - 180_000;
-  const staySeconds = elapsedSecondsFloor(leaveByMilliseconds, arrivePlaceMilliseconds);
-  const arithmeticIsValid =
-    Number.isFinite(staySeconds) &&
-    arrivePlaceMilliseconds <= leaveByMilliseconds &&
-    leaveByMilliseconds <= lastDepartureMilliseconds &&
-    Date.parse(info.arrivesHomeAt) >= lastDepartureMilliseconds &&
-    leaveByMilliseconds === expectedLeaveBy &&
-    info.availableStaySeconds === staySeconds;
-  const arrivalMatchesRoute = arrivePlaceMilliseconds === arrivalMilliseconds;
   const requiredStayMinutes = context.preferences.minimumStayMinutes ?? info.minimumStayMinutes;
+  const recalculated = recalculateLastTrainAtArrival({
+    info,
+    arrivalAt: arrival.arrivalAt,
+    earliestStoredArrivalAt: evaluatedArrival.arrivalAt,
+    minimumStayMinutes: requiredStayMinutes,
+  });
+  if (recalculated.status === 'error') {
+    return {
+      info,
+      issues: [
+        issue(
+          'INVALID_EVIDENCE',
+          `${selectionPath}.${recalculated.error.path ?? 'last_train'}`,
+          recalculated.error.message,
+          recalculated.error.missingFields,
+          candidateId,
+          [observation.observation.observationId],
+        ),
+      ],
+    };
+  }
+  const currentInfo = recalculated.data;
   const minimumStayConstraint = minimumStayIssue(
     candidateId,
     selectionPath,
     observations,
     arrival.arrivalAt,
     requiredStayMinutes,
-    info.leaveBy,
+    currentInfo.leaveBy,
   );
   const requiredStaySeconds = requiredStayMinutes * 60;
   const feasible =
-    info.usable &&
-    arrivePlaceMilliseconds >= arrivalMilliseconds &&
-    arithmeticIsValid &&
-    arrivalMatchesRoute &&
-    info.availableStaySeconds >= requiredStaySeconds &&
+    currentInfo.usable &&
+    currentInfo.availableStaySeconds >= requiredStaySeconds &&
     minimumStayConstraint === undefined;
   if (!matchesContext || !feasible) {
     return {
-      info,
+      info: currentInfo,
       issues: [
         issue(
           'CONSTRAINT_VIOLATION',
@@ -456,5 +485,5 @@ export const validateLastTrain = (
       ],
     };
   }
-  return { info, issues: [] };
+  return { info: currentInfo, issues: [] };
 };

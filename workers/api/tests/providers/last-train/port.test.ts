@@ -105,12 +105,15 @@ const execution: ToolExecutionContext = {
   revision: context.revision,
 };
 
-const routePorts = (calls: {
-  current: number;
-  station: number;
-  stationDestinations: string[];
-  routeExecutions?: ToolExecutionContext[];
-}): LastTrainRoutePorts => ({
+const routePorts = (
+  calls: {
+    current: number;
+    station: number;
+    stationDestinations: string[];
+    routeExecutions?: ToolExecutionContext[];
+  },
+  evaluatedAt = now,
+): LastTrainRoutePorts => ({
   currentToCandidate: {
     compute: (routeInput, _context, routeExecution) => {
       calls.current += 1;
@@ -121,7 +124,7 @@ const routePorts = (calls: {
           originRef: routeInput.originRef,
           destinationCandidateId: routeInput.destinationCandidateId,
           originRevision: routeInput.originRevision,
-          evaluatedAt: now,
+          evaluatedAt,
           durationSeconds: 600,
           distanceMeters: 900,
           warnings: [],
@@ -159,7 +162,7 @@ const routePorts = (calls: {
               originCandidateId: leg.originCandidateId,
               originRef: leg.originRef,
               destinationStationRef: leg.destinationStationRef,
-              evaluatedAt: now,
+              evaluatedAt,
               durationSeconds: 180,
               distanceMeters: 200,
               warnings: [],
@@ -204,12 +207,13 @@ const createPort = (
     ...value,
     operation: 'walking_route',
   }),
+  clock = (): string => now,
 ): ReturnType<typeof createLastTrainJourneyPort> =>
   createLastTrainJourneyPort({
     reader,
     routes,
     buildServiceDateContext,
-    clock: () => now,
+    clock,
     currentOriginRef: 'current-location',
     routeExecutionFor,
   });
@@ -270,6 +274,81 @@ describe('M14 LastTrainJourneyPort composition', () => {
     expect(readContexts).toHaveLength(2);
     expect(readContexts.every((value) => value.isHoliday === false)).toBe(true);
     expect(readContexts.every((value) => value.serviceDate === '2026-09-10')).toBe(true);
+  });
+
+  it('uses the post-route clock while keeping the route evaluation as the lower bound', async () => {
+    const calls = { current: 0, station: 0, stationDestinations: [] as string[] };
+    const routeEvaluatedAt = '2026-09-10T12:00:00Z';
+    const latestNow = '2026-09-10T12:00:05Z';
+    let clockCalls = 0;
+    const result = await createPort(
+      datasetPortFor(
+        [
+          { status: 'known', revision: 1, journeys: [makeJourney('journey-1')] },
+          { status: 'known', revision: 1, journeys: [makeJourney('journey-1')] },
+        ],
+        [],
+      ),
+      routePorts(calls, routeEvaluatedAt),
+      serviceDateContext,
+      (value) => ({ ...value, operation: 'walking_route' as const }),
+      () => {
+        clockCalls += 1;
+        return clockCalls === 1 ? routeEvaluatedAt : latestNow;
+      },
+    ).read(input, context, execution, { isCancelled: () => false });
+
+    expect(result).toMatchObject({
+      status: 'ok',
+      data: {
+        arrivePlaceAt: '2026-09-10T12:10:05.000Z',
+        availableStaySeconds: 9_235,
+        usable: true,
+      },
+    });
+
+    const lateClock = '2026-09-10T14:45:00Z';
+    let lateClockCalls = 0;
+    const lateResult = await createPort(
+      datasetPortFor(
+        [
+          { status: 'known', revision: 1, journeys: [makeJourney('journey-1')] },
+          { status: 'known', revision: 1, journeys: [makeJourney('journey-1')] },
+        ],
+        [],
+      ),
+      routePorts(calls, routeEvaluatedAt),
+      serviceDateContext,
+      (value) => ({ ...value, operation: 'walking_route' as const }),
+      () => {
+        lateClockCalls += 1;
+        return lateClockCalls === 1 ? routeEvaluatedAt : lateClock;
+      },
+    ).read(input, context, execution, { isCancelled: () => false });
+    expect(lateResult).toMatchObject({
+      status: 'ok',
+      data: { arrivePlaceAt: '2026-09-10T14:55:00.000Z', usable: false },
+    });
+  });
+
+  it('rejects a route evaluation that is ahead of the latest clock', async () => {
+    const calls = { current: 0, station: 0, stationDestinations: [] as string[] };
+    const result = await createPort(
+      datasetPortFor(
+        [
+          { status: 'known', revision: 1, journeys: [makeJourney('journey-1')] },
+          { status: 'known', revision: 1, journeys: [makeJourney('journey-1')] },
+        ],
+        [],
+      ),
+      routePorts(calls, '2026-09-10T12:00:05Z'),
+      serviceDateContext,
+      (value) => ({ ...value, operation: 'walking_route' as const }),
+      () => '2026-09-10T12:00:00Z',
+    ).read(input, context, execution, { isCancelled: () => false });
+
+    expect(result).toMatchObject({ status: 'error', error: { code: 'STALE_EVIDENCE' } });
+    expect(calls).toEqual({ current: 1, station: 1, stationDestinations: ['station-a'] });
   });
 
   it('requires an explicit service-date context instead of inventing a holiday', async () => {

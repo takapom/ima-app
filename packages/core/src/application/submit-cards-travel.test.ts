@@ -82,9 +82,37 @@ describe('submit-cards arrival and last-train validation', () => {
         fractionalTrain,
       ]),
     ).toBe(true);
+    fixture.registry.invalidateObservationReuse(
+      fixture.context.scope,
+      'candidate-1',
+      'walking_route',
+    );
+    const fractionalWalking = addObservation(
+      fixture.registry,
+      fixture.context,
+      'candidate-1',
+      'walking_route',
+      {
+        originRef: 'origin-1',
+        destinationCandidateId: 'candidate-1',
+        originRevision: 1,
+        evaluatedAt: '2026-09-10T12:00:00.123Z',
+        durationSeconds: 600,
+        distanceMeters: 800,
+        warnings: [],
+      },
+    );
+    expect(
+      fixture.registry.restoreObservationReuse(
+        fixture.context.scope,
+        'candidate-1',
+        'walking_route',
+        [fractionalWalking],
+      ),
+    ).toBe(true);
     const selection = makeSelection('candidate-1', ids);
     selection.evidenceIds = selection.evidenceIds.map((id) =>
-      id === ids.lastTrain ? fractionalTrain : id,
+      id === ids.lastTrain ? fractionalTrain : id === ids.walking ? fractionalWalking : id,
     );
     const context = {
       ...fixture.context,
@@ -93,6 +121,141 @@ describe('submit-cards arrival and last-train validation', () => {
     };
     const result = validateSubmitCards(makeInput([selection]), context, fixture.registry);
     expect(result.status).toBe('valid');
+  });
+
+  it('recomputes the published last-train arrival and stay at submit time', () => {
+    const fixture = makeFixture(['candidate-1'], {
+      homeStationRef: 'home-1',
+      minimumStayMinutes: 20,
+      openingStartAt: '2026-09-10T00:00:00Z',
+      openingEndAt: null,
+    });
+    const ids = fixture.ids.get('candidate-1');
+    if (ids === undefined) throw new Error('clock progression fixture missing');
+    for (const [serverNow, expectedStay] of [
+      ['2026-09-10T12:00:00.001Z', 38_219],
+      ['2026-09-10T12:00:05Z', 38_215],
+    ] as const) {
+      const context = { ...fixture.context, serverNow, departureAt: serverNow };
+      const result = validateSubmitCards(
+        makeInput([makeSelection('candidate-1', ids)]),
+        context,
+        fixture.registry,
+      );
+      expect(result.status).toBe('valid');
+      if (result.status === 'valid') {
+        expect(result.response.hero.lastTrain).toMatchObject({
+          arrivePlaceAt: new Date(Date.parse(serverNow) + 600_000).toISOString(),
+          availableStaySeconds: expectedStay,
+          usable: true,
+        });
+      }
+    }
+  });
+
+  it('accepts a last-train observation generated after the walking evaluation', () => {
+    const fixture = makeFixture(['candidate-1'], {
+      homeStationRef: 'home-1',
+      minimumStayMinutes: 20,
+      openingStartAt: '2026-09-10T00:00:00Z',
+      openingEndAt: null,
+    });
+    const ids = fixture.ids.get('candidate-1');
+    if (ids === undefined || ids.lastTrain === undefined)
+      throw new Error('post-route clock fixture missing');
+    fixture.registry.invalidateObservationReuse(fixture.context.scope, 'candidate-1', 'last_train');
+    const generatedAfterWalkingEvaluation = addObservation(
+      fixture.registry,
+      fixture.context,
+      'candidate-1',
+      'last_train',
+      {
+        serviceDate: '2026-09-10',
+        fromStationRef: 'station-from',
+        homeStationRef: 'home-1',
+        journeyRef: 'journey-post-route-clock',
+        lastDepartureAt: '2026-09-10T23:00:00Z',
+        arrivesHomeAt: '2026-09-10T23:30:00Z',
+        transfers: [],
+        placeToStationSeconds: 600,
+        arrivePlaceAt: '2026-09-10T12:10:05Z',
+        leaveBy: '2026-09-10T22:47:00Z',
+        availableStaySeconds: 38_215,
+        minimumStayMinutes: 20,
+        usable: true,
+      },
+    );
+    expect(
+      fixture.registry.restoreObservationReuse(fixture.context.scope, 'candidate-1', 'last_train', [
+        generatedAfterWalkingEvaluation,
+      ]),
+    ).toBe(true);
+    const selection = makeSelection('candidate-1', ids);
+    selection.evidenceIds = selection.evidenceIds.map((id) =>
+      id === ids.lastTrain ? generatedAfterWalkingEvaluation : id,
+    );
+    const context = {
+      ...fixture.context,
+      serverNow: '2026-09-10T12:00:05Z',
+      departureAt: '2026-09-10T12:00:05Z',
+    };
+    const result = validateSubmitCards(makeInput([selection]), context, fixture.registry);
+    expect(result.status).toBe('valid');
+    if (result.status === 'valid') {
+      expect(result.response.hero.lastTrain).toMatchObject({
+        arrivePlaceAt: '2026-09-10T12:10:05.000Z',
+        availableStaySeconds: 38_215,
+      });
+    }
+  });
+
+  it('rejects a submit after the last-train deadline or below minimum stay', () => {
+    const fixture = makeFixture(['candidate-1'], {
+      homeStationRef: 'home-1',
+      minimumStayMinutes: 20,
+      openingStartAt: '2026-09-10T00:00:00Z',
+      openingEndAt: null,
+    });
+    const ids = fixture.ids.get('candidate-1');
+    if (ids === undefined) throw new Error('deadline fixture missing');
+    if (ids.lastTrain === undefined) throw new Error('deadline train missing');
+    fixture.registry.invalidateObservationReuse(fixture.context.scope, 'candidate-1', 'last_train');
+    const deadlineTrain = addObservation(
+      fixture.registry,
+      fixture.context,
+      'candidate-1',
+      'last_train',
+      {
+        serviceDate: '2026-09-10',
+        fromStationRef: 'station-from',
+        homeStationRef: 'home-1',
+        journeyRef: 'journey-deadline',
+        lastDepartureAt: '2026-09-10T13:00:00Z',
+        arrivesHomeAt: '2026-09-10T13:30:00Z',
+        transfers: [],
+        placeToStationSeconds: 600,
+        arrivePlaceAt: '2026-09-10T12:10:00Z',
+        leaveBy: '2026-09-10T12:47:00Z',
+        availableStaySeconds: 2_220,
+        minimumStayMinutes: 20,
+        usable: true,
+      },
+    );
+    expect(
+      fixture.registry.restoreObservationReuse(fixture.context.scope, 'candidate-1', 'last_train', [
+        deadlineTrain,
+      ]),
+    ).toBe(true);
+    const selection = makeSelection('candidate-1', ids);
+    selection.evidenceIds = selection.evidenceIds.map((id) =>
+      id === ids.lastTrain ? deadlineTrain : id,
+    );
+    for (const serverNow of ['2026-09-10T12:26:01Z', '2026-09-10T12:46:01Z']) {
+      const context = { ...fixture.context, serverNow, departureAt: serverNow };
+      expect(validateSubmitCards(makeInput([selection]), context, fixture.registry).status).toBe(
+        'invalid',
+      );
+    }
   });
 
   it('treats an opening interval end as exclusive', () => {

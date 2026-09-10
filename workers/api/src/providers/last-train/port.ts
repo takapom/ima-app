@@ -377,6 +377,20 @@ export const createLastTrainJourneyPort = (
         issue('MISSING_CONTEXT', 'journey.context', 'service-date context expired'),
       );
     }
+    const latestNowMilliseconds = Date.parse(latestNow);
+    if (
+      Date.parse(currentRoute.output.evaluatedAt) > latestNowMilliseconds ||
+      Date.parse(stationRoute.output.evaluatedAt) > latestNowMilliseconds
+    ) {
+      return resultError(
+        issue(
+          'STALE_EVIDENCE',
+          'walking_route.evaluatedAt',
+          'walking route evaluation is ahead of the current clock',
+          ['evaluatedAt'],
+        ),
+      );
+    }
     const latestRead = await readLatest(options, latestContext);
     if (isCancelled(options, cancellation)) return cancelled();
     if (notApplicable) {
@@ -413,6 +427,9 @@ export const createLastTrainJourneyPort = (
     }
     const timing = calculateJourneyTiming({
       journey: latestJourney,
+      // Keep the latest clock so time spent fetching both routes reduces the available stay.
+      // Core later checks that this generated arrival is not earlier than the current-route
+      // observation's evaluatedAt plus its duration.
       evaluatedAt: latestNow,
       userToPlaceSeconds: currentRoute.output.durationSeconds,
       placeToStationSeconds: stationRoute.output.durationSeconds,
