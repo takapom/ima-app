@@ -12,6 +12,7 @@ import {
   type RouteReadCost,
 } from '../../../src/providers/routes/adapter';
 import { createGoogleRouteMatrixTransport } from '../../../src/providers/routes/transport';
+import type { RouteWaypointLookup } from '../../../src/providers/routes/resolver';
 
 const evaluatedAt = '2026-09-10T09:00:00.000Z';
 const currentCoordinates = { lat: 35.6595, lng: 139.7005 };
@@ -64,37 +65,26 @@ const execution: ToolExecutionContext = {
   revision: context.revision,
 };
 
-const currentLeg = (candidateId: string, coordinates = candidateCoordinates) => ({
+const currentLeg = (candidateId: string) => ({
   kind: 'current_to_candidate' as const,
   originRef: 'current',
   originCoordinates: currentCoordinates,
   originRevision: 2,
   destinationCandidateId: candidateId,
-  destinationCoordinates: coordinates,
 });
 
 const stationLeg = {
   kind: 'candidate_to_station' as const,
   originCandidateId: 'candidate-1',
   originRef: 'candidate-1-place',
-  originCoordinates: candidateCoordinates,
   destinationStationRef: 'station-1',
-  destinationCoordinates: stationCoordinates,
 };
 
-const stationLegFor = (
-  candidateId: string,
-  originRef: string,
-  originCoordinates: { readonly lat: number; readonly lng: number },
-  stationRef: string,
-  destinationCoordinates: { readonly lat: number; readonly lng: number },
-) => ({
+const stationLegFor = (candidateId: string, originRef: string, stationRef: string) => ({
   kind: 'candidate_to_station' as const,
   originCandidateId: candidateId,
   originRef,
-  originCoordinates,
   destinationStationRef: stationRef,
-  destinationCoordinates,
 });
 
 const budgetConfig = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudgetConfig => ({
@@ -113,6 +103,12 @@ type Fixture = {
 const makeFixture = (
   responseFor: (body: Record<string, unknown>) => unknown,
   resolveContext: () => HarnessContext = () => context,
+  resolveStationWaypoint: RouteWaypointLookup['resolveStationWaypoint'] = (stationRef) => ({
+    ok: true,
+    waypoint: {
+      coordinates: stationRef === 'station-1' ? stationCoordinates : { lat: 35.645, lng: 139.711 },
+    },
+  }),
 ): Fixture => {
   const bodies: Record<string, unknown>[] = [];
   const budget = new RuntimeBudget({
@@ -135,8 +131,16 @@ const makeFixture = (
       budget: createRuntimeRouteBudgetBoundary(budget),
       clock: () => evaluatedAt,
       resolveContext,
-      resolveCandidateCoordinates: (candidateId) =>
-        candidateId === 'candidate-1' ? candidateCoordinates : { lat: 35.657, lng: 139.702 },
+      waypointResolver: {
+        resolveCandidateWaypoint: (candidateId) => ({
+          ok: true,
+          waypoint: {
+            coordinates:
+              candidateId === 'candidate-1' ? candidateCoordinates : { lat: 35.657, lng: 139.702 },
+          },
+        }),
+        resolveStationWaypoint,
+      },
     }),
   };
 };
@@ -239,11 +243,57 @@ describe('Google walking route Core adapter', () => {
     }
   });
 
+  it('keeps a current route when every station waypoint is unavailable', async () => {
+    const fixture = makeFixture(
+      (body) => routeElements(body),
+      () => context,
+      () => ({
+        ok: false,
+        error: {
+          code: 'MISSING_EVIDENCE',
+          path: 'destinationStationRef',
+          retryable: false,
+          retryAfterMs: null,
+          message: 'station waypoint is unavailable',
+          missingFields: ['destinationStationRef'],
+        },
+      }),
+    );
+    const result = await fixture.adapter.computeDirected(
+      { legs: [currentLeg('candidate-1'), stationLeg] },
+      context,
+      execution,
+      { isCancelled: () => false },
+    );
+
+    expect(result.status).toBe('partial');
+    if (result.status === 'partial') {
+      expect(result.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ kind: 'route', leg: 'current_to_candidate' }),
+          expect.objectContaining({
+            kind: 'element_error',
+            leg: 'candidate_to_station',
+            reason: 'MISSING_EVIDENCE',
+          }),
+        ]),
+      );
+      expect(result.warnings).toEqual(
+        expect.arrayContaining([expect.objectContaining({ code: 'MISSING_EVIDENCE' })]),
+      );
+    }
+    expect(fixture.bodies).toHaveLength(1);
+    expect(fixture.budget.snapshot()).toMatchObject({
+      providerHttpRequests: 1,
+      routeElements: 1,
+    });
+  });
+
   it('keeps valid elements when another indexed element is malformed', async () => {
     const fixture = makeFixture((body) => routeElements(body, true));
     const result = await fixture.adapter.computeDirected(
       {
-        legs: [currentLeg('candidate-1'), currentLeg('candidate-2', { lat: 35.657, lng: 139.702 })],
+        legs: [currentLeg('candidate-1'), currentLeg('candidate-2')],
       },
       context,
       execution,
@@ -263,20 +313,8 @@ describe('Google walking route Core adapter', () => {
     const result = await fixture.adapter.computeDirected(
       {
         legs: [
-          stationLegFor(
-            'candidate-1',
-            'candidate-1-place',
-            candidateCoordinates,
-            'station-1',
-            stationCoordinates,
-          ),
-          stationLegFor(
-            'candidate-2',
-            'candidate-2-place',
-            { lat: 35.657, lng: 139.702 },
-            'station-2',
-            { lat: 35.645, lng: 139.711 },
-          ),
+          stationLegFor('candidate-1', 'candidate-1-place', 'station-1'),
+          stationLegFor('candidate-2', 'candidate-2-place', 'station-2'),
         ],
       },
       context,
@@ -318,7 +356,16 @@ describe('Google walking route Core adapter', () => {
       budget: createRuntimeRouteBudgetBoundary(budget),
       clock: () => evaluatedAt,
       resolveContext: () => context,
-      resolveCandidateCoordinates: () => candidateCoordinates,
+      waypointResolver: {
+        resolveCandidateWaypoint: () => ({
+          ok: true,
+          waypoint: { coordinates: candidateCoordinates },
+        }),
+        resolveStationWaypoint: () => ({
+          ok: true,
+          waypoint: { coordinates: stationCoordinates },
+        }),
+      },
     });
     const result = await adapter.computeDirected(
       { legs: [currentLeg('candidate-1'), stationLeg] },
@@ -363,7 +410,16 @@ describe('Google walking route Core adapter', () => {
       budget: preReservedRouteBudget(reservation.value),
       clock: () => evaluatedAt,
       resolveContext: () => context,
-      resolveCandidateCoordinates: () => candidateCoordinates,
+      waypointResolver: {
+        resolveCandidateWaypoint: () => ({
+          ok: true,
+          waypoint: { coordinates: candidateCoordinates },
+        }),
+        resolveStationWaypoint: () => ({
+          ok: true,
+          waypoint: { coordinates: stationCoordinates },
+        }),
+      },
     });
     const result = await preReserved.computeDirected(
       { legs: [currentLeg('candidate-1')] },

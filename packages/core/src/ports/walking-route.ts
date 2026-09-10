@@ -31,16 +31,13 @@ const CurrentToCandidateInputSchema = v.strictObject({
   originCoordinates: WalkingCoordinatesSchema,
   originRevision: RevisionSchema,
   destinationCandidateId: CandidateIdSchema,
-  destinationCoordinates: WalkingCoordinatesSchema,
 });
 
 const CandidateToStationInputSchema = v.strictObject({
   kind: v.literal('candidate_to_station'),
   originCandidateId: CandidateIdSchema,
   originRef: OpaqueIdSchema,
-  originCoordinates: WalkingCoordinatesSchema,
   destinationStationRef: OpaqueIdSchema,
-  destinationCoordinates: WalkingCoordinatesSchema,
 });
 
 export const DirectedWalkingRouteLegInputSchema = v.union([

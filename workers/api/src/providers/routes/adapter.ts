@@ -15,8 +15,6 @@ import {
 } from '@ima/core';
 import {
   GoogleRouteMatrixError,
-  GoogleRouteMatrixRequestSchema,
-  type GoogleRouteMatrixRequest,
   type GoogleRouteMatrixTransport,
   routeElementCount,
 } from './types';
@@ -24,6 +22,8 @@ import { normalizeGoogleRouteMatrix, type DirectedRouteMatrixResult } from './no
 import type { RuntimeBudgetDenial } from '../../runtime/runtime-budget';
 import type { RouteBudgetBoundary, RouteBudgetLease, RouteReadCost } from './budget';
 import { createWalkingRoutePortBridge } from './legacy-adapter';
+import { buildMatrixGroup, matrixPairKey, type MatrixGroup, type MatrixPreflight } from './matrix';
+import type { RouteWaypointLookup } from './resolver';
 
 export { createRuntimeRouteBudgetBoundary, preReservedRouteBudget } from './budget';
 export type { RouteBudgetBoundary, RouteBudgetLease, RouteReadCost } from './budget';
@@ -34,20 +34,9 @@ export type GoogleWalkingRouteAdapterOptions = {
   readonly clock: () => string;
   /** Returns the current Harness snapshot so a slow provider cannot outlive its turn context. */
   readonly resolveContext: () => HarnessContext;
-  /** Candidate coordinates come from the Core registry/application, never from model text. */
-  readonly resolveCandidateCoordinates: (
-    candidateId: string,
-    context: HarnessContext,
-  ) => WalkingCoordinates | undefined;
+  /** Worker resolves candidate and station references to provider waypoints. */
+  readonly waypointResolver: RouteWaypointLookup;
   readonly signal?: AbortSignal;
-};
-
-type MatrixGroupKind = 'current_to_candidate' | 'candidate_to_station';
-
-type MatrixGroup = {
-  readonly kind: MatrixGroupKind;
-  readonly request: GoogleRouteMatrixRequest;
-  readonly legsByPair: ReadonlyMap<string, DirectedWalkingRouteLegInput>;
 };
 
 type CurrentLocationValidation =
@@ -94,76 +83,6 @@ const issueForBudgetDenial = (denial: RuntimeBudgetDenial): Issue => {
   }
 };
 
-const pairKey = (originIndex: number, destinationIndex: number): string =>
-  `${originIndex}:${destinationIndex}`;
-
-const sameCoordinates = (
-  left: { readonly lat: number; readonly lng: number },
-  right: { readonly lat: number; readonly lng: number },
-): boolean => left.lat === right.lat && left.lng === right.lng;
-
-const buildGroup = (
-  kind: MatrixGroupKind,
-  legs: readonly DirectedWalkingRouteLegInput[],
-  originOverride?: { readonly lat: number; readonly lng: number },
-): MatrixGroup | Result<never> => {
-  const origins: GoogleRouteMatrixRequest['origins'][number][] = [];
-  const destinations: GoogleRouteMatrixRequest['destinations'][number][] = [];
-  const originIndexes = new Map<string, number>();
-  const destinationIndexes = new Map<string, number>();
-  const legsByPair = new Map<string, DirectedWalkingRouteLegInput>();
-
-  for (const leg of legs) {
-    const originRef = leg.originRef;
-    const destinationRef =
-      leg.kind === 'current_to_candidate' ? leg.destinationCandidateId : leg.destinationStationRef;
-    const originCoordinates = originOverride ?? leg.originCoordinates;
-    const destinationCoordinates = leg.destinationCoordinates;
-    const existingOriginIndex = originIndexes.get(originRef);
-    if (existingOriginIndex !== undefined) {
-      const existingOrigin = origins[existingOriginIndex];
-      if (
-        existingOrigin === undefined ||
-        !sameCoordinates(existingOrigin.coordinates, originCoordinates)
-      ) {
-        return invalidArgument('a route origin reference has conflicting coordinates');
-      }
-    } else {
-      originIndexes.set(originRef, origins.length);
-      origins.push({ ref: originRef, coordinates: originCoordinates });
-    }
-
-    const existingDestinationIndex = destinationIndexes.get(destinationRef);
-    if (existingDestinationIndex !== undefined) {
-      const existingDestination = destinations[existingDestinationIndex];
-      if (
-        existingDestination === undefined ||
-        !sameCoordinates(existingDestination.coordinates, destinationCoordinates)
-      ) {
-        return invalidArgument('a route destination reference has conflicting coordinates');
-      }
-    } else {
-      destinationIndexes.set(destinationRef, destinations.length);
-      destinations.push({ ref: destinationRef, coordinates: destinationCoordinates });
-    }
-
-    const originIndex = originIndexes.get(originRef);
-    const destinationIndex = destinationIndexes.get(destinationRef);
-    if (originIndex === undefined || destinationIndex === undefined) {
-      return invalidArgument('route matrix index construction failed');
-    }
-    const key = pairKey(originIndex, destinationIndex);
-    if (legsByPair.has(key)) return invalidArgument('duplicate route matrix pair');
-    legsByPair.set(key, leg);
-  }
-
-  const request = { origins, destinations } satisfies GoogleRouteMatrixRequest;
-  if (!v.safeParse(GoogleRouteMatrixRequestSchema, request).success) {
-    return invalidArgument('route matrix request is invalid');
-  }
-  return { kind, request, legsByPair };
-};
-
 const mapProviderError = (error: GoogleRouteMatrixError): Issue => {
   switch (error.code) {
     case 'CANCELLED':
@@ -205,7 +124,9 @@ const routeResultFor = (
   group: MatrixGroup,
   normalized: DirectedRouteMatrixResult,
 ): DirectedWalkingRouteResult | undefined => {
-  const leg = group.legsByPair.get(pairKey(normalized.originIndex, normalized.destinationIndex));
+  const leg = group.legsByPair.get(
+    matrixPairKey(normalized.originIndex, normalized.destinationIndex),
+  );
   if (leg === undefined) return undefined;
   if (normalized.kind !== 'route') {
     return {
@@ -337,17 +258,44 @@ export const createGoogleWalkingRouteAdapter = (
     }
 
     const groups: MatrixGroup[] = [];
+    const preflight: MatrixPreflight[] = [];
     if (currentLegs.length > 0) {
-      const group = buildGroup('current_to_candidate', currentLegs, currentCoordinates);
-      if ('status' in group) return group;
-      groups.push(group);
+      const group = buildMatrixGroup(
+        'current_to_candidate',
+        currentLegs,
+        context,
+        options.waypointResolver,
+        currentCoordinates,
+      );
+      if ('status' in group) {
+        if (group.failure === 'invalid') return resultError(group.error);
+        preflight.push(...group.preflight);
+      } else {
+        groups.push(group);
+      }
     }
     if (stationLegs.length > 0) {
-      const group = buildGroup('candidate_to_station', stationLegs);
-      if ('status' in group) return group;
-      groups.push(group);
+      const group = buildMatrixGroup(
+        'candidate_to_station',
+        stationLegs,
+        context,
+        options.waypointResolver,
+      );
+      if ('status' in group) {
+        if (group.failure === 'invalid') return resultError(group.error);
+        preflight.push(...group.preflight);
+      } else {
+        groups.push(group);
+      }
     }
-    if (groups.length === 0) return invalidArgument('at least one route leg is required');
+    if (groups.length === 0) {
+      if (preflight.length === 0) return invalidArgument('at least one route leg is required');
+      return {
+        status: 'partial',
+        data: preflight.map(({ result }) => result),
+        warnings: preflight.map(({ warning }) => warning),
+      };
+    }
     if (cancellation.isCancelled() || options.signal?.aborted) return cancelled();
 
     const cost: RouteReadCost = {
@@ -417,8 +365,14 @@ export const createGoogleWalkingRouteAdapter = (
         );
         if (latestLocation.status === 'invalid') return resultError(latestLocation.issue);
       }
-      const data: DirectedWalkingRouteResult[] = [];
-      const warnings: Issue[] = [];
+      const data: DirectedWalkingRouteResult[] = [
+        ...preflight.map(({ result }) => result),
+        ...groups.flatMap((group) => group.preflight.map(({ result }) => result)),
+      ];
+      const warnings: Issue[] = [
+        ...preflight.map(({ warning }) => warning),
+        ...groups.flatMap((group) => group.preflight.map(({ warning }) => warning)),
+      ];
       for (const groupResult of groupResults) {
         if ('error' in groupResult) {
           const groupIssue = mapProviderError(groupResult.error);
@@ -483,6 +437,9 @@ export const createGoogleWalkingRouteAdapter = (
 
   return {
     computeDirected,
-    ...createWalkingRoutePortBridge({ computeDirected }, options.resolveCandidateCoordinates),
+    ...createWalkingRoutePortBridge(
+      { computeDirected },
+      options.waypointResolver.resolveCandidateWaypoint,
+    ),
   };
 };

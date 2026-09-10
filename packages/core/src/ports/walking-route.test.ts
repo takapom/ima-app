@@ -14,15 +14,12 @@ describe('directed walking route contract', () => {
           originCoordinates: point(35.6595, 139.7005),
           originRevision: 2,
           destinationCandidateId: 'candidate-1',
-          destinationCoordinates: point(35.658, 139.7016),
         },
         {
           kind: 'candidate_to_station',
           originCandidateId: 'candidate-1',
           originRef: 'candidate-1-place',
-          originCoordinates: point(35.658, 139.7016),
           destinationStationRef: 'station-1',
-          destinationCoordinates: point(35.6467, 139.71),
         },
       ],
     });
@@ -36,10 +33,33 @@ describe('directed walking route contract', () => {
       originCoordinates: point(35.6595, 139.7005),
       originRevision: 2,
       destinationCandidateId: 'candidate-1',
-      destinationCoordinates: point(35.658, 139.7016),
     };
     expect(v.safeParse(DirectedWalkingRouteInputSchema, { legs: [current, current] }).success).toBe(
       false,
     );
+  });
+
+  it('keeps provider waypoint resolution outside the Core contract', () => {
+    const parsed = v.safeParse(DirectedWalkingRouteInputSchema, {
+      legs: [
+        {
+          kind: 'current_to_candidate',
+          originRef: 'current',
+          originCoordinates: point(35.6595, 139.7005),
+          originRevision: 2,
+          destinationCandidateId: 'candidate-1',
+          destinationCoordinates: point(35.658, 139.7016),
+        },
+        {
+          kind: 'candidate_to_station',
+          originCandidateId: 'candidate-1',
+          originRef: 'candidate-1-place',
+          destinationStationRef: 'station-1',
+          originCoordinates: point(35.658, 139.7016),
+          destinationCoordinates: point(35.6467, 139.71),
+        },
+      ],
+    });
+    expect(parsed.success).toBe(false);
   });
 });

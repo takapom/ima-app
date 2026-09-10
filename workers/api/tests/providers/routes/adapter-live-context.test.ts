@@ -66,7 +66,6 @@ const input = {
       originCoordinates: current,
       originRevision: 2,
       destinationCandidateId: 'candidate-1',
-      destinationCoordinates: candidate,
     },
   ],
 };
@@ -105,7 +104,16 @@ const makeAdapter = (resolveContext: () => HarnessContext, clock: () => string) 
       budget: createRuntimeRouteBudgetBoundary(budget),
       clock,
       resolveContext,
-      resolveCandidateCoordinates: () => candidate,
+      waypointResolver: {
+        resolveCandidateWaypoint: () => ({
+          ok: true,
+          waypoint: { coordinates: candidate },
+        }),
+        resolveStationWaypoint: () => ({
+          ok: true,
+          waypoint: { coordinates: candidate },
+        }),
+      },
     }),
   };
 };
@@ -158,7 +166,6 @@ describe('walking route live context boundary', () => {
             originCoordinates: inputOrigin,
             originRevision: 2,
             destinationCandidateId: 'candidate-1',
-            destinationCoordinates: candidate,
           },
         ],
       },

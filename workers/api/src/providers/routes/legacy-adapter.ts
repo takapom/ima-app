@@ -6,11 +6,11 @@ import type {
   Issue,
   Result,
   ToolExecutionContext,
-  WalkingCoordinates,
   WalkingRoute,
   WalkingRouteInput,
   WalkingRoutePort,
 } from '@ima/core';
+import type { RouteWaypointResolver } from './resolver';
 
 const issue = (code: Issue['code'], path: string | null, message: string): Issue => ({
   code,
@@ -23,15 +23,12 @@ const issue = (code: Issue['code'], path: string | null, message: string): Issue
 
 const resultError = <T>(error: Issue): Result<T> => ({ status: 'error', error });
 
-export type WalkingRouteCoordinateResolver = (
-  candidateId: string,
-  context: HarnessContext,
-) => WalkingCoordinates | undefined;
+export type WalkingRouteWaypointResolver = RouteWaypointResolver;
 
 /** Bridges the new directed port to the existing current→candidate Core port. */
 export const createWalkingRoutePortBridge = (
   directed: DirectedWalkingRoutePort,
-  resolveCandidateCoordinates: WalkingRouteCoordinateResolver,
+  resolveCandidateWaypoint: WalkingRouteWaypointResolver,
 ): WalkingRoutePort => ({
   async compute(
     input: WalkingRouteInput,
@@ -39,19 +36,8 @@ export const createWalkingRoutePortBridge = (
     execution: ToolExecutionContext,
     cancellation: CancellationToken,
   ): Promise<Result<WalkingRoute>> {
-    const destinationCoordinates = resolveCandidateCoordinates(
-      input.destinationCandidateId,
-      context,
-    );
-    if (destinationCoordinates === undefined) {
-      return resultError(
-        issue(
-          'UNKNOWN_CANDIDATE',
-          'destinationCandidateId',
-          'candidate coordinates are unavailable',
-        ),
-      );
-    }
+    const resolvedDestination = resolveCandidateWaypoint(input.destinationCandidateId, context);
+    if (!resolvedDestination.ok) return resultError(resolvedDestination.error);
     const result = await directed.computeDirected(
       {
         legs: [
@@ -61,7 +47,6 @@ export const createWalkingRoutePortBridge = (
             originCoordinates: input.originCoordinates,
             originRevision: input.originRevision,
             destinationCandidateId: input.destinationCandidateId,
-            destinationCoordinates,
           },
         ],
       },

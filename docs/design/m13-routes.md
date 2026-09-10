@@ -53,11 +53,15 @@ Worker adapterは方向別に行列を取得し、要求したpairのみを返�
 
 `RuntimeBudget.reserveRoute`はHTTP件数と行列全体のelementsを予約する。同じleaseのconsumeは一度だけ成功し、取消・期限・完了状態も再検査する。releaseは冪等で、使用済み予算は返却しない。外側で予約済みの場合も同じleaseを渡す。
 
-経路と既存Runtime budgetの関連35テストで、有向pair、部分失敗、取得中の位置変更、二重consumeを確認した。既存Portへの橋渡しは座標resolverを注入する段階であり、実Registryからprovider参照を解決するC3と、M16の本番構成での予算・観測登録の接続は未完了。fixtureのresolverを本番接続の証拠とはしない。
+経路と既存Runtime budgetの関連35テストで、有向pair、部分失敗、取得中の位置変更、二重consumeを確認した。C3では既存Portへの橋渡しもWorkerのRegistry resolver経由に固定する。CoreのcandidateIdは`CandidateRecord`のscope・provider・recordRefを通してWorker内でPlace ID waypointへ解決し、未登録・除外・異なるprovider・不正recordRefはそのlegだけを要素エラーとして扱う。有効なlegの行列と結果は保持する。駅の解決は別のWorker resolverを注入し、未設定時に座標や駅を推測しない。
+
+成功したcurrent→candidateの経路だけを、`google_routes/compute-route-matrix`という非provider-IDのsourceと、Hostが返すfreshness・retention policyでRegistryへ登録する。policyが利用できない場合は登録せず、directed結果では該当legを`MISSING_CONTEXT`として残す。経路の登録値はCoreの`WalkingRoute`だけとし、候補台帳のprovider-neutralなrecordRefから解決したGoogle Place IDを経路観測・公開DTOへ出さない。M16の本番構成での予算・保存経路の接続は、このWorker helperだけでは完了しない。
 
 ## 公式仕様
 
 - [Compute Route Matrix REST reference](https://developers.google.com/maps/documentation/routes/reference/rest/v2/TopLevel/computeRouteMatrix)
 - [Compute Route Matrix guide](https://developers.google.com/maps/documentation/routes/compute_route_matrix)
 - [Choose fields to return](https://developers.google.com/maps/documentation/routes/choose_fields)
+- [Waypoint（Place IDと緯度経度）](https://developers.google.com/maps/documentation/routes/reference/rest/v2/Waypoint)
+- [Route Matrixのlocation指定](https://developers.google.com/maps/documentation/routes/specify_location-rm)
 - [ProtoJSON format and implicit scalar defaults](https://protobuf.dev/programming-guides/json/)

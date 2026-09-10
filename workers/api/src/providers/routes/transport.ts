@@ -94,14 +94,17 @@ export const parseGoogleRouteMatrixResponse = (value: unknown): GoogleRouteMatri
 };
 
 const pointBody = (point: GoogleRouteMatrixRequest['origins'][number]) => ({
-  waypoint: {
-    location: {
-      latLng: {
-        latitude: point.coordinates.lat,
-        longitude: point.coordinates.lng,
-      },
-    },
-  },
+  waypoint:
+    'placeId' in point
+      ? { placeId: point.placeId }
+      : {
+          location: {
+            latLng: {
+              latitude: point.coordinates.lat,
+              longitude: point.coordinates.lng,
+            },
+          },
+        },
 });
 
 type GoogleRouteMatrixBody = {

@@ -20,10 +20,23 @@ const coordinate = v.strictObject({
   lng: v.pipe(v.number(), v.finite(), v.minValue(-180), v.maxValue(180)),
 });
 
-export const RouteMatrixPointSchema = v.strictObject({
-  ref: id,
-  coordinates: coordinate,
-});
+/** Google Place IDs stay inside the Worker provider boundary. */
+export const GooglePlaceIdSchema = v.pipe(
+  v.string(),
+  v.minLength(1),
+  v.maxLength(512),
+  v.regex(/^[A-Za-z0-9_-]+$/u),
+);
+export type GooglePlaceId = v.InferOutput<typeof GooglePlaceIdSchema>;
+
+export type GoogleRouteWaypoint =
+  | { readonly coordinates: { readonly lat: number; readonly lng: number } }
+  | { readonly placeId: GooglePlaceId };
+
+export const RouteMatrixPointSchema = v.union([
+  v.strictObject({ ref: id, coordinates: coordinate }),
+  v.strictObject({ ref: id, placeId: GooglePlaceIdSchema }),
+]);
 
 export type RouteMatrixPoint = v.InferOutput<typeof RouteMatrixPointSchema>;
 
@@ -37,6 +50,12 @@ export const GoogleRouteMatrixRequestSchema = v.pipe(
     (request) =>
       request.origins.length * request.destinations.length <= GOOGLE_ROUTE_MATRIX_MAX_ELEMENTS,
     'route matrix exceeds the provider element limit',
+  ),
+  v.check(
+    (request) =>
+      [...request.origins, ...request.destinations].filter((point) => 'placeId' in point).length <=
+      50,
+    'route matrix has too many place-id waypoints',
   ),
   v.check(
     (request) => new Set(request.origins.map((point) => point.ref)).size === request.origins.length,

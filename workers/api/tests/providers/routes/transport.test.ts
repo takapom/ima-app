@@ -76,6 +76,26 @@ describe('Google Route Matrix transport', () => {
     });
   });
 
+  it('serializes an opaque place ID waypoint without exposing it to Core values', async () => {
+    let body: unknown;
+    const transport = createGoogleRouteMatrixTransport({
+      apiKey: 'test-key',
+      fetcher: (_url, init) => {
+        body = typeof init?.body === 'string' ? JSON.parse(init.body) : undefined;
+        return Promise.resolve(response([route(0, 0)]));
+      },
+    });
+    await transport.compute({
+      origins: [{ ref: 'current', coordinates: { lat: 35.6595, lng: 139.7005 } }],
+      destinations: [{ ref: 'candidate-1', placeId: '-fixture_place' }],
+    });
+    expect(body).toEqual({
+      origins: [{ waypoint: { location: { latLng: { latitude: 35.6595, longitude: 139.7005 } } } }],
+      destinations: [{ waypoint: { placeId: '-fixture_place' } }],
+      travelMode: 'WALK',
+    });
+  });
+
   it('rejects invalid matrices before making an HTTP call', async () => {
     const fetcher = vi.fn(() => Promise.resolve(response([])));
     const transport = createGoogleRouteMatrixTransport({ apiKey: 'test-key', fetcher });
