@@ -35,6 +35,7 @@ export type RuntimeNativeModelReport = RuntimeGateModelReport & {
   readonly providerOptionsSeen: (RuntimeNativeProviderOptions | undefined)[];
   waitingStarted: boolean;
   abortObserved: boolean;
+  rawProviderErrorDetailSeen: boolean;
 };
 export type RuntimeNativeToolName = 'get_place_details' | 'submit_cards';
 
@@ -81,8 +82,12 @@ export type RuntimeNativeProviderErrorCode =
 export class RuntimeNativeProviderError extends Error {
   readonly code: RuntimeNativeProviderErrorCode;
 
-  constructor(code: RuntimeNativeProviderErrorCode) {
-    super(`runtime native scripted provider failed: ${code}`);
+  constructor(code: RuntimeNativeProviderErrorCode, detail?: string) {
+    super(
+      detail === undefined
+        ? `runtime native scripted provider failed: ${code}`
+        : `runtime native scripted provider failed: ${code}: ${detail}`,
+    );
     this.name = 'RuntimeNativeProviderError';
     this.code = code;
   }
@@ -292,6 +297,14 @@ const recordUnexpectedRequest = (
   });
 };
 
+const rawProviderErrorDetail = (options: RuntimeNativeModelCallOptions): string | undefined => {
+  const prompt = JSON.stringify(options.prompt) ?? '';
+  // The audit fixture deliberately simulates an upstream error carrying raw fields.
+  return prompt.includes('M24_USER_SENTINEL')
+    ? `${prompt} M24_PROVIDER_PAYLOAD_SENTINEL M24_KEY_SENTINEL`
+    : undefined;
+};
+
 type RuntimeNativeStreamResult = Awaited<ReturnType<RuntimeNativeModel['doStream']>>;
 
 const waitForAbort = (
@@ -349,12 +362,16 @@ export const createRuntimeNativeModel = (
       doGenerate: (options) => {
         recordUnexpectedRequest(report, call, options);
         call += 1;
-        return Promise.reject(new RuntimeNativeProviderError('UNEXPECTED_SDK_ERROR'));
+        const detail = rawProviderErrorDetail(options);
+        report.rawProviderErrorDetailSeen ||= detail !== undefined;
+        return Promise.reject(new RuntimeNativeProviderError('UNEXPECTED_SDK_ERROR', detail));
       },
       doStream: (options) => {
         recordUnexpectedRequest(report, call, options);
         call += 1;
-        return Promise.reject(new RuntimeNativeProviderError('UNEXPECTED_SDK_ERROR'));
+        const detail = rawProviderErrorDetail(options);
+        report.rawProviderErrorDetailSeen ||= detail !== undefined;
+        return Promise.reject(new RuntimeNativeProviderError('UNEXPECTED_SDK_ERROR', detail));
       },
     };
   }

@@ -122,6 +122,20 @@ export class ThreadDO extends ProductionThreadDO {
     });
   }
 
+  /** Fixed test probe proving that console calls made inside this DO reach the test observer. */
+  emitRuntimeNativeConsoleProbe(): void {
+    const error = new Error('M24_CONSOLE_CONTROL');
+    Object.defineProperty(error, 'cause', {
+      value: { detail: 'M24_CONSOLE_CONTROL_CAUSE' },
+      enumerable: false,
+    });
+    Object.defineProperty(error, 'hiddenDetail', {
+      value: 'M24_CONSOLE_CONTROL_PROPERTY',
+      enumerable: false,
+    });
+    console.warn(error, { M24_CONSOLE_CONTROL_KEY: true });
+  }
+
   protected override createRuntimeThinkConnectionOptions(): RuntimeThinkConnectionOptions<unknown> {
     let configureSession: ((session: Session) => Session) | undefined;
     return {
@@ -155,6 +169,7 @@ export class ThreadDO extends ProductionThreadDO {
           providerOptionsSeen: [],
           waitingStarted: false,
           abortObserved: false,
+          rawProviderErrorDetailSeen: false,
         };
         const execution = {
           scenario,

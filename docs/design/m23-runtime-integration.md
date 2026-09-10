@@ -53,19 +53,25 @@ flowchart LR
 
 ### 4. 保持
 
-| 要件                                      | 実経路とテストID                                                                                                                                            | 状態・証拠                                                                                                                                                                             |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| history/cardSet/originalTurnsの次turn復元 | `runtime-production-default.test.ts` / `carries committed history and cards across a follow-up...`                                                          | 実DOの次turnでhistory/cardSetをmodelへ渡し、追質問は追加検索なし、条件変更はcardSetを置換。                                                                                            |
-| DO eviction後の参照復元・期限・削除       | `runtime-production-context.test.ts` / reference restore, clear/delete, fixed expiry admission; `runtime-production-default.test.ts` / durable 05:00 anchor | anchorを延長せず、期限後admission拒否、削除後replay/context/photo参照を失効。alarm遅延は別fixture。                                                                                    |
-| alarm・削除再試行                         | `runtime-production-alarm.test.ts` / retry・corrupt anchor・遅延計測                                                                                        | SDK lifecycleのalarmを上書きせず、失敗時retry状態を保持。                                                                                                                              |
-| 保存前/失敗経路のcanary                   | `runtime-production-retention-audit.test.ts` / before-write inventory, typed failed turn                                                                    | 観測できるSQL/SDK公開面でprovider canaryの残存を検査。許可されたユーザー原文と禁止provider payloadを分ける。                                                                           |
-| 未監視保存面                              | 同保存監査                                                                                                                                                  | `thread_state`、`runtime_turn`、FTSの一部はCAS/索引副作用のため保存後監査、`_cf_KV` と `_cf_METADATA` は公開SQLから未観測。CAS/FTS/platformを含む「全保存先の保存前書込み0」は未証明。 |
+| 要件                                      | 実経路とテストID                                                                                                                                            | 状態・証拠                                                                                                                                                                                                    |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| history/cardSet/originalTurnsの次turn復元 | `runtime-production-default.test.ts` / `carries committed history and cards across a follow-up...`                                                          | 実DOの次turnでhistory/cardSetをmodelへ渡し、追質問は追加検索なし、条件変更はcardSetを置換。                                                                                                                   |
+| DO eviction後の参照復元・期限・削除       | `runtime-production-context.test.ts` / reference restore, clear/delete, fixed expiry admission; `runtime-production-default.test.ts` / durable 05:00 anchor | anchorを延長せず、期限後admission拒否、削除後replay/context/photo参照を失効。alarm遅延は別fixture。                                                                                                           |
+| alarm・削除再試行                         | `runtime-production-alarm.test.ts` / retry・corrupt anchor・遅延計測                                                                                        | SDK lifecycleのalarmを上書きせず、失敗時retry状態を保持。                                                                                                                                                     |
+| 保存前/失敗経路のcanary                   | `runtime-production-retention-audit.test.ts` / before-write inventory, typed failed turn                                                                    | 観測できるSQL/SDK公開面でprovider canaryの残存を検査。許可されたユーザー原文と禁止provider payloadを分ける。                                                                                                  |
+| 未監視保存面                              | `runtime-production-storage-audit.test.ts` / real DO public inventory                                                                                       | 実DOの`sqlite_master`で保存面を列挙し、4領域（host context、SDK raw messages、checkpoint、SQL）を行数と読取り成否で確認する。`_cf_KV`/`_cf_METADATA`は名前だけ見え、公開SQLでは読めないため未観測として残す。 |
 
 ## 失敗分類とログの境界
 
 `UPSTREAM_UNAVAILABLE` はSDK/fixture内部で観測される固定失敗コードとして記録する。公開runtime結果は `RUNTIME_FAILED`、HTTPは `PROVIDER_UNAVAILABLE` へ変換し、providerの例外本文・canary・secretを結果や固定分類メッセージへコピーしない。`native-result.test.ts` は任意文字列 `provider-secret-canary` がtyped failure本文に現れないことを確認する。
 
-SDK自身がstderrへ出す固定 `UPSTREAM_UNAVAILABLE` の出力と、raw provider本文がstderrへ流れないことは別の主張である。過去の実行では前者を観測したが、2026-09-11の親実行では再現していない。後者のSDK内部stderrを捕捉する証拠はまだない。このため「SDKログ全体の非漏出」は未確認として残す。
+SDK自身がstderrへ出す固定 `UPSTREAM_UNAVAILABLE` の出力と、raw provider本文がstderrへ流れないことは別の主張である。`runtime-native-sdk-log-audit.test.ts` は実DOのSDK入口で、raw user/provider/key sentinelを含むfixture例外を発生させ、`runInDurableObject`内の固定console正対照が観測できることを確認したうえで、`console.log/warn/error`のError（stack・cause・非列挙propertyを含む）へsentinelが出ないことを検査する。未実行のSDK recovery/lifecycle経路のログ非漏出は引き続き未確認とする。
+
+## 実DO保存面の公開観測
+
+`runtime-production-storage-audit.test.ts` は `PRODUCTION_THREADS` の実DOを初期化し、同じProduction Think/DO経路で1 turnを完了してから公開APIだけを読む。`sqlite_master`で得た全tableについて`SELECT *`の成功/拒否を記録し、`_cf_KV`と`_cf_METADATA`の名前は存在するが行読取りは拒否されること、その他の公開tableは読めることを確認する。非公開tableの行を取得するprivate SDKやSQL経路は使わない。
+
+同テストはhost context（`runtime_context_reference`）、SDK raw messages（`assistant_messages`）、checkpoint（`runtime_commit`/`runtime_turn`）の行を確認し、SQL全体のmarker検査を行う。`state.storage.list/get`は公開KVのキーと値だけを読んで、内部table名がキーとして現れないこととprovider markerの不在を確認する。これにより、公開APIから観測できる4領域と、platform-ownedで名前しか観測できない領域を分けて扱う。
 
 ## 実行と残件
 
@@ -73,6 +79,9 @@ SDK自身がstderrへ出す固定 `UPSTREAM_UNAVAILABLE` の出力と、raw prov
 
 ```sh
 bunx vitest run --config vitest.runtime-native.config.ts
+bunx vitest run --config vitest.runtime-native.config.ts \
+  workers/api/tests/runtime-native/runtime-production-storage-audit.test.ts \
+  workers/api/tests/runtime-native/runtime-native-sdk-log-audit.test.ts
 bunx eslint workers/api/tests/runtime-native/runtime-native.test.ts \
   workers/api/tests/runtime-native/runtime-production-worker.ts \
   workers/api/tests/runtime-native/runtime-production-provider-fixture.ts \
@@ -84,4 +93,4 @@ bunx prettier --check workers/api/tests/runtime-native/runtime-native.test.ts \
   docs/design/m23-runtime-integration.md
 ```
 
-bootstrapの初回作成・router/security境界、実OpenAI/Google API、実機、SDK内部stderr捕捉、CAS/FTS/platformの全保存前監査は別担当または未確認である。これらを本表のfixture合格から推測して完了扱いにしない。
+bootstrapの初回作成・router/security境界、実OpenAI/Google API、実機、未実行SDK recovery/lifecycle経路のログ、CAS/FTS/platformの全保存前監査は別担当または未確認である。これらを本表のfixture合格から推測して完了扱いにしない。
