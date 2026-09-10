@@ -8,13 +8,19 @@
 
 ## 実行プロファイル
 
-初回の実行可能プロファイルは `new-search` の3反復である。新規検索はHTTP入力だけで再現でき、実モデルの候補登録が取得できれば厳密なidentity対応を通して評価する。複数turn用の評価側 planner は、最初の入力だけをseedし、次の同じThreadDO requestには直前のschema検証済み公開responseの `threadId`・`turnId`・`revision` を引き継ぐ。prompt文字列から前turnを疑似復元しない。productionのDO binding/CASによる複数turn確定と候補identityの実測が未確認のため `continuity`、`reason`、`compare`、保存店参照、条件変更は実行対象に含めない。dataset全体のゲートを通過したとは報告しない。
+`new-search` の3反復だけが実モデルのlive profileである。新規検索はHTTP入力だけで再現でき、実モデルの候補登録が取得できれば厳密なidentity対応を通して評価する。複数turn用の評価側 planner は、最初の入力だけをseedし、次の同じThreadDO requestには直前のschema検証済み公開responseの `threadId`・`turnId`・`revision` を引き継ぐ。prompt文字列から前turnを疑似復元しない。
+
+キーなしで検証できる `reason` と `continuity` は、専用binding `MODEL_EVAL_CONTEXT_THREADS` の `ModelEvalFixtureThreadDO` で実SDK/DO経路を通す fixture profile とする。最初のprelude turnで実際にcardsを確定し、公開 `AssistantResponseSchema` から `cardSetId` と候補ID順を抽出して、次の `ThreadTurnRequest` の `cardSetId`・`candidateOrder`・選択状態へ構造化して渡す。候補名やprompt本文からIDを補正せず、preludeは評価反復数に含めない。正式入力の実装は [`scenario-input.ts`](../../workers/api/tooling/model-eval/scenario-input.ts)、profile宣言は [`execution-profile.ts`](../../workers/api/tooling/model-eval/execution-profile.ts)、同一DO検証は [`context-seed.test.ts`](../../workers/api/tests/model-eval-live/context-seed.test.ts) にある。
+
+このfixtureは19:00 JSTの時計で2候補を確定し、continuityの「2つ目」は公開card順の第二候補だけをDetailsでrefreshする。hostが捕捉したprovider record identityを評価candidateへrecordRefで対応付け、返答のevidenceにはその候補のrefresh済み `opening_hours` observationを含める。検索通信数が増えないこととcard set不一致の固定失敗も同じテストで確認する。
+
+card set、条件変更、詳細状態、期限切れ根拠、失敗応答、位置情報ポリシー、保存参照、prompt injection は必要な実状態または専用profileが未接続のため `unavailable` と明示する。未対応シナリオを本文注入だけで実行可能に見せず、dataset全体のゲートを通過したとは報告しない。
 
 座標はWorker入力に固定fixtureとして入る場合があるが、Coreのmodel projectionを通ったpromptをhost traceで監査する。`lat`、`lng`、精度、取得時刻、owner scopeのキーを検出した場合は重大なGPS露出として記録する。
 
 ## opt-in と検証
 
-通常のNode/Vitest suiteはlive runnerをimportしない。専用設定は`vitest.model-eval-live.config.ts`と`workers/api/wrangler.model-eval-live-test.jsonc`で提供する。
+通常のNode/Vitest suiteはlive runnerをimportしない。専用設定は`vitest.model-eval-live.config.ts`と`workers/api/wrangler.model-eval-live-test.jsonc`で提供する。fixture bindingと実モデルbindingは同じ専用pool内でも分離し、fixtureはAPI keyなしで実行する。
 
 ```sh
 MODEL_EVAL_LIVE=1 OPENAI_API_KEY=... \

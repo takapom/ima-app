@@ -7,8 +7,14 @@ import {
   wrapModelForLiveEvaluation,
   type LiveTraceSnapshot,
 } from '../../tooling/model-eval/live';
+import { fixedPlacesFetcher, MODEL_EVAL_NOW } from './model-eval-place-fixture';
 
-export const MODEL_EVAL_NOW = '2026-09-10T12:00:00.000Z';
+export {
+  fixedPlacesFetcher,
+  MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,
+  MODEL_EVAL_NOW,
+} from './model-eval-place-fixture';
+export { ModelEvalFixtureThreadDO } from './model-eval-context-worker';
 
 type ModelEvalEnv = Cloudflare.Env & {
   readonly OPENAI_API_KEY?: string;
@@ -44,78 +50,6 @@ const modelPolicy: ModelContextFieldPolicy = {
   cardSet: 'allow',
   displayName: 'allow',
 };
-
-type FixturePlace = {
-  readonly id: string;
-  readonly name: string;
-  readonly priceLevel: 'PRICE_LEVEL_INEXPENSIVE' | 'PRICE_LEVEL_MODERATE';
-  readonly closeHour: number;
-};
-
-const fixturePlaces: readonly FixturePlace[] = [
-  { id: 'eval-place-a', name: '青葉カフェ', priceLevel: 'PRICE_LEVEL_MODERATE', closeHour: 22 },
-  { id: 'eval-place-b', name: '川辺食堂', priceLevel: 'PRICE_LEVEL_INEXPENSIVE', closeHour: 21 },
-  { id: 'eval-place-c', name: '駅前ベーカリー', priceLevel: 'PRICE_LEVEL_MODERATE', closeHour: 20 },
-];
-
-/** The evaluator joins these provider record identities to dataset IDs exactly. */
-export const MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES = [
-  { provider: 'google_places', recordRef: 'eval-place-a', evaluationCandidateId: 'candidate-a' },
-  { provider: 'google_places', recordRef: 'eval-place-b', evaluationCandidateId: 'candidate-b' },
-  { provider: 'google_places', recordRef: 'eval-place-c', evaluationCandidateId: 'candidate-c' },
-] as const;
-
-const placeBody = (place: FixturePlace): Record<string, unknown> => ({
-  id: place.id,
-  displayName: { text: place.name },
-  formattedAddress: '東京都渋谷区',
-  primaryType: 'cafe',
-  businessStatus: 'OPERATIONAL',
-  googleMapsUri: `https://maps.google.com/?cid=${place.id}`,
-  currentOpeningHours: {
-    periods: [
-      {
-        open: { date: { year: 2026, month: 9, day: 10 }, hour: 9, minute: 0 },
-        close: {
-          date: { year: 2026, month: 9, day: 10 },
-          hour: place.closeHour,
-          minute: 0,
-        },
-      },
-    ],
-    weekdayDescriptions: [`毎日 9:00–${place.closeHour}:00`],
-    // The fixture clock is 21:00 JST; a period ending at 21:00 is closed.
-    openNow: place.closeHour > 21,
-  },
-  timeZone: { id: 'Asia/Tokyo' },
-  attributions: [{ provider: 'Google Maps', providerUri: 'https://maps.google.com' }],
-  priceLevel: place.priceLevel,
-});
-
-export const fixedPlacesFetcher =
-  (trace: LiveTraceRecorder): typeof fetch =>
-  (input, init) => {
-    trace.upstreamCall();
-    const request = new Request(input, init);
-    if (request.url.endsWith('/v1/places:searchText')) {
-      return Promise.resolve(
-        new Response(JSON.stringify({ places: fixturePlaces.map(placeBody) }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        }),
-      );
-    }
-    const id = decodeURIComponent(request.url.split('/').at(-1) ?? '');
-    const place = fixturePlaces.find((candidate) => candidate.id === id);
-    return Promise.resolve(
-      place === undefined
-        ? new Response(JSON.stringify({ error: 'not found' }), { status: 404 })
-        : new Response(JSON.stringify(placeBody(place)), {
-            status: 200,
-            headers: { 'content-type': 'application/json' },
-          }),
-    );
-  };
 
 export class ModelEvalThreadDO extends ProductionThreadDO {
   override maxSteps = 6;

@@ -5,7 +5,15 @@
   "compatibility_date": "2026-08-22",
   "compatibility_flags": ["nodejs_compat"],
   "durable_objects": {
-    "bindings": [{ "name": "MODEL_EVAL_THREADS", "class_name": "ModelEvalThreadDO" }],
+    "bindings": [
+      { "name": "MODEL_EVAL_THREADS", "class_name": "ModelEvalThreadDO" },
+      { "name": "MODEL_EVAL_CONTEXT_THREADS", "class_name": "ModelEvalFixtureThreadDO" },
+    ],
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ModelEvalThreadDO"] }],
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["ModelEvalThreadDO", "ModelEvalFixtureThreadDO"],
+    },
+  ],
 }

@@ -9,11 +9,12 @@ export default defineConfig({
       wrangler: { configPath: './workers/api/wrangler.model-eval-live-test.jsonc' },
       miniflare: {
         bindings: {
+          IMA_ENV: liveRequested ? 'production' : 'dev',
           MODEL_EVAL_LIVE: liveRequested ? '1' : '0',
           OPENAI_API_KEY: liveRequested ? (process.env.OPENAI_API_KEY ?? '') : '',
-          IMA_RUNTIME_MODE: liveRequested ? 'live' : 'disabled',
-          IMA_PROVIDER_OPENAI: liveRequested ? 'true' : 'false',
-          IMA_PROVIDER_PLACES: liveRequested ? 'true' : 'false',
+          IMA_RUNTIME_MODE: liveRequested ? 'live' : 'fixture',
+          IMA_PROVIDER_OPENAI: 'true',
+          IMA_PROVIDER_PLACES: 'true',
           IMA_PROVIDER_ROUTES: 'false',
           IMA_PROVIDER_LAST_TRAIN: 'false',
           IMA_PROVIDER_HOTPEPPER: 'false',
