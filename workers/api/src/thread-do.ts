@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { AssistantResponseSchema } from '@ima/contracts';
-import { RuntimeThinkHost } from './thread-runtime/runtime-host';
+import { RuntimeProductionThinkHost } from './thread-runtime/runtime-production-host';
 import { ThreadRuntimeController, type RuntimeThreadBinding } from './thread-runtime/controller';
 import {
   advanceThreadRevision,
@@ -87,7 +87,7 @@ const stateOf = (value: string): ThreadState => {
  * the owner-bound state methods. M10 can add the native loop without creating
  * a second per-thread object or migrating the binding.
  */
-export class ThreadDO extends RuntimeThinkHost<Cloudflare.Env> {
+export class ThreadDO extends RuntimeProductionThinkHost<Cloudflare.Env> {
   override includeMcpTools = false;
   override workspaceBash = false;
   override fetchTools = false as const;
