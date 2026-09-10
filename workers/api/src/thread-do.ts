@@ -1,5 +1,11 @@
 import { RuntimeProductionThinkHost } from './thread-runtime/runtime-production-host';
-import { ThreadRuntimeController, type RuntimeThreadBinding } from './thread-runtime/controller';
+import {
+  createRuntimeSavedCandidateResolver,
+  runtimeSavedCandidateBindingFor,
+  type RuntimeSavedCandidateResult,
+} from './thread-runtime/runtime-saved-candidate-rpc';
+import { ThreadRuntimeController } from './thread-runtime/controller';
+import { runtimeThreadBindingFor } from './thread-runtime/runtime-thread-binding';
 import {
   createDurableCommitPort,
   initializeDurableCommitTable,
@@ -10,11 +16,9 @@ import {
   type ThreadRuntimeCancelResult,
   type ThreadRuntimeReplayResult,
   type ThreadRuntimeResponseMetadata,
-  type ThreadRuntimeTarget,
-  type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
 } from './thread-runtime/admission';
-import { threadRuntimeResultFromNative } from './thread-runtime/native-result';
+import { executeRuntimeThreadTurn } from './thread-runtime/runtime-thread-turn-execution';
 import { createRuntimeSessionExpiryGate } from './thread-runtime/session-expiry';
 import { cleanupRuntimeResources } from './thread-runtime/thread-cleanup';
 import {
@@ -61,6 +65,8 @@ export type {
   ThreadStateErrorCode,
 } from './thread-types';
 
+export type ThreadSavedCandidateResult = RuntimeSavedCandidateResult;
+
 /** One DO owns owner-bound lifecycle, photo references, and the configured Think runtime. */
 export class ThreadDO
   extends RuntimeProductionThinkHost<Cloudflare.Env>
@@ -92,6 +98,14 @@ export class ThreadDO
   protected photoReferenceNow(): string {
     return new Date().toISOString();
   }
+
+  private readonly savedCandidateResolver = createRuntimeSavedCandidateResolver({
+    ready: () => this.ready,
+    expired: () => this.sessionExpired(),
+    read: () => runtimeSavedCandidateBindingFor(this.rowSync()),
+    snapshotFor: (scope) => this.runtimeProductionContextReferenceFor(scope),
+    now: () => this.runtimeProductionNow(),
+  });
 
   constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
     super(ctx, env);
@@ -146,22 +160,19 @@ export class ThreadDO
     this.runtimeController = new ThreadRuntimeController({
       storage: ctx.storage,
       ready: () => this.ready,
-      readBinding: (): RuntimeThreadBinding | undefined => {
-        const row = this.rowSync();
-        if (row === undefined) return undefined;
-        return {
-          threadId: row.thread_id,
-          ownerScopeRef: row.owner_scope_ref,
-          revision: row.revision,
-          active: row.active === 1,
-          deleted: row.deleted === 1,
-        };
-      },
+      readBinding: () => runtimeThreadBindingFor(this.rowSync()),
       getConnection: () => this.ensureRuntimeThinkConnection(),
-      execute: (input, target, isStale) => this.executeRuntimeTurn(input, target, isStale),
+      execute: (input, target, isStale) =>
+        executeRuntimeThreadTurn({
+          input,
+          target,
+          isStale,
+          run: (request) => this.requireRuntimeThinkConnection().run(request),
+        }),
       commitResponse: () => false,
-      onFinalResult: (target, result, durationMs) =>
-        this.recordRuntimeTurnTrace(target, result, durationMs),
+      onFinalResult: (target, result, durationMs) => {
+        this.recordRuntimeTurnTrace(target, result, durationMs);
+      },
       clearMessages: () => this.clearRuntimeMessages(),
     });
   }
@@ -448,31 +459,6 @@ export class ThreadDO
     }
   }
 
-  private async executeRuntimeTurn(
-    input: ThreadRuntimeTurnInput,
-    target: ThreadRuntimeTarget,
-    isStale: () => boolean,
-  ): Promise<ThreadRuntimeTurnResult> {
-    const request = {
-      ownerScopeRef: target.ownerScopeRef,
-      threadId: target.threadId,
-      turnId: target.turnId,
-      revision: target.revision,
-      ...(input.deviceId === undefined ? {} : { deviceId: input.deviceId }),
-      messages: [
-        {
-          id: input.input.requestId,
-          role: 'user' as const,
-          parts: [{ type: 'text' as const, text: input.input.text }],
-        },
-      ],
-      runtimeInput: input.input,
-      isStale,
-    };
-    const nativeResult = await this.requireRuntimeThinkConnection().run(request);
-    return threadRuntimeResultFromNative(nativeResult, isStale);
-  }
-
   async runRuntimeTurn(value: unknown): Promise<ThreadRuntimeTurnResult> {
     await this.ready;
     if (await this.sessionExpired()) return runtimeFailure('RUNTIME_FAILED');
@@ -493,5 +479,13 @@ export class ThreadDO
     await this.ready;
     if (await this.sessionExpired()) return [];
     return this.runtimeController.listRuntimeResponses(ownerScopeRef);
+  }
+
+  async resolveCandidateForSavedReference(
+    ownerScopeRef: unknown,
+    candidateId: unknown,
+    expectedRevision: unknown,
+  ): Promise<ThreadSavedCandidateResult> {
+    return this.savedCandidateResolver.resolve(ownerScopeRef, candidateId, expectedRevision);
   }
 }

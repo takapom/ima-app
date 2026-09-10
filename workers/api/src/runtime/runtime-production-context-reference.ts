@@ -15,6 +15,7 @@ import {
   OpaqueIdSchema,
   RetentionMetadataSchema,
   SavedPlaceRefSchema,
+  Text,
   TurnIdSchema,
 } from '@ima/core';
 
@@ -43,6 +44,15 @@ const EvidenceReferenceSchema = v.strictObject({
   expiresAt: IsoTimestampSchema,
   retention: RetentionMetadataSchema,
 });
+export const RuntimeProductionCandidateIdentityReferenceSchema = v.strictObject({
+  candidateId: OpaqueIdSchema,
+  provider: Text(80),
+  recordRef: Text(512),
+});
+export type RuntimeProductionCandidateIdentityReference = v.InferOutput<
+  typeof RuntimeProductionCandidateIdentityReferenceSchema
+>;
+
 export const RuntimeProductionContextReferenceSchema = v.strictObject({
   ownerScopeRef: OpaqueIdSchema,
   threadId: OpaqueIdSchema,
@@ -54,6 +64,10 @@ export const RuntimeProductionContextReferenceSchema = v.strictObject({
   originalTurns: v.pipe(v.array(OriginalTurnReferenceSchema), v.maxLength(32)),
   cardSet: v.nullable(CardSetRecordSchema),
   evidence: v.pipe(v.array(EvidenceReferenceSchema), v.maxLength(64)),
+  /** Session-only provider identities for the current card set; old snapshots omit this. */
+  candidateIdentities: v.optional(
+    v.pipe(v.array(RuntimeProductionCandidateIdentityReferenceSchema), v.maxLength(3)),
+  ),
 });
 export type RuntimeProductionContextReference = v.InferOutput<
   typeof RuntimeProductionContextReferenceSchema
@@ -72,6 +86,7 @@ export type RuntimeProductionContextStateForReference = {
   readonly evidence: readonly ModelEvidenceSource[];
   readonly savedPlaceRefs: readonly string[];
   readonly excludedCandidateIds: readonly string[];
+  readonly candidateIdentities: readonly RuntimeProductionCandidateIdentityReference[];
 };
 
 export const referenceSnapshotFor = (input: {
@@ -80,6 +95,7 @@ export const referenceSnapshotFor = (input: {
   readonly state: RuntimeProductionContextStateForReference;
 }): RuntimeProductionContextReference => {
   const cardSet = input.state.cardSet?.record ?? null;
+  const cardCandidateIds = new Set(cardSet?.entries.map((entry) => entry.candidateId) ?? []);
   return {
     ownerScopeRef: input.scope.ownerScopeRef,
     threadId: input.scope.threadId,
@@ -107,6 +123,9 @@ export const referenceSnapshotFor = (input: {
         expiresAt,
         retention,
       }),
+    ),
+    candidateIdentities: input.state.candidateIdentities.filter((identity) =>
+      cardCandidateIds.has(identity.candidateId),
     ),
   };
 };
@@ -146,12 +165,57 @@ export const stateFromReference = (snapshot: RuntimeProductionContextReference) 
   evidence: [],
   savedPlaceRefs: [...snapshot.savedPlaceRefs],
   excludedCandidateIds: [...(snapshot.excludedCandidateIds ?? [])],
+  candidateIdentities: [...(snapshot.candidateIdentities ?? [])],
   cardSetReferenceOnly: snapshot.cardSet !== null,
 });
+
+export const candidateIdentityForReference = (input: {
+  readonly snapshot: RuntimeProductionContextReference | undefined;
+  readonly scope: RegistryScope;
+  readonly candidateId: string;
+  readonly now: string;
+}): RuntimeProductionCandidateIdentityReference | undefined => {
+  const snapshot = input.snapshot;
+  if (
+    snapshot === undefined ||
+    snapshot.ownerScopeRef !== input.scope.ownerScopeRef ||
+    snapshot.threadId !== input.scope.threadId ||
+    snapshot.cardSet === null ||
+    snapshot.cardSet.scope.ownerScopeRef !== input.scope.ownerScopeRef ||
+    snapshot.cardSet.scope.threadId !== input.scope.threadId
+  ) {
+    return undefined;
+  }
+  const now = Date.parse(input.now);
+  const expiresAt = Date.parse(snapshot.sessionExpiresAt);
+  if (!Number.isFinite(now) || !Number.isFinite(expiresAt) || now >= expiresAt) return undefined;
+  if (
+    snapshot.cardSet.excludedCandidateIds.includes(input.candidateId) ||
+    (snapshot.excludedCandidateIds ?? []).includes(input.candidateId) ||
+    !snapshot.cardSet.entries.some((entry) => entry.candidateId === input.candidateId)
+  ) {
+    return undefined;
+  }
+  const identity = (snapshot.candidateIdentities ?? []).find(
+    (candidate) => candidate.candidateId === input.candidateId,
+  );
+  return identity === undefined ? undefined : { ...identity };
+};
 
 export const parseRuntimeProductionContextReference = (
   value: unknown,
 ): RuntimeProductionContextReference | undefined => {
   const parsed = v.safeParse(RuntimeProductionContextReferenceSchema, value);
-  return parsed.success ? parsed.output : undefined;
+  if (!parsed.success) return undefined;
+  const identities = parsed.output.candidateIdentities ?? [];
+  const currentCandidateIds = new Set(
+    parsed.output.cardSet?.entries.map((entry) => entry.candidateId) ?? [],
+  );
+  if (
+    new Set(identities.map((identity) => identity.candidateId)).size !== identities.length ||
+    identities.some((identity) => !currentCandidateIds.has(identity.candidateId))
+  ) {
+    return undefined;
+  }
+  return parsed.output;
 };

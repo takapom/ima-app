@@ -22,6 +22,7 @@ import type { RuntimeThinkComposition } from './runtime-think-connection';
 import {
   referenceSnapshotFor,
   stateFromReference,
+  type RuntimeProductionCandidateIdentityReference,
   type RuntimeProductionContextPersistence,
   type RuntimeProductionContextStateForReference,
 } from './runtime-production-context-reference';
@@ -48,6 +49,7 @@ type ProductionContextState = {
   readonly evidence: readonly ModelEvidenceSource[];
   readonly savedPlaceRefs: readonly string[];
   readonly excludedCandidateIds: readonly string[];
+  readonly candidateIdentities: readonly RuntimeProductionCandidateIdentityReference[];
 };
 
 type PendingTurn = {
@@ -74,6 +76,7 @@ export type RuntimeProductionContextStore = {
     readonly cardSet: CardSetSource | null;
     readonly evidence: readonly ModelEvidenceSource[];
     readonly savedPlaceRefs: readonly string[];
+    readonly candidateIdentities: readonly RuntimeProductionCandidateIdentityReference[];
   };
 };
 
@@ -135,7 +138,30 @@ const copyState = (state: ProductionContextState): ProductionContextState => ({
   evidence: structuredClone(state.evidence),
   savedPlaceRefs: [...state.savedPlaceRefs],
   excludedCandidateIds: [...state.excludedCandidateIds],
+  candidateIdentities: structuredClone(state.candidateIdentities),
 });
+
+const candidateIdentitiesFor = (
+  registry: CandidateObservationRegistryPort,
+  scope: RegistryScope,
+  cardSet: CardSetSource | null,
+): readonly RuntimeProductionCandidateIdentityReference[] => {
+  if (cardSet === null) return [];
+  return cardSet.record.entries.flatMap((entry) => {
+    const candidate = registry.readCandidate(scope, entry.candidateId);
+    if (candidate === undefined) return [];
+    if (candidate.ownerScopeRef !== scope.ownerScopeRef || candidate.threadId !== scope.threadId) {
+      return [];
+    }
+    return [
+      {
+        candidateId: candidate.candidateId,
+        provider: candidate.provider,
+        recordRef: candidate.recordRef,
+      },
+    ];
+  });
+};
 
 const responseEvidenceIds = (response: AssistantResponse): readonly string[] => {
   const ids: string[] = [];
@@ -269,6 +295,7 @@ export const createRuntimeProductionContextStore = (input: {
     evidence: [],
     savedPlaceRefs: [],
     excludedCandidateIds: [],
+    candidateIdentities: [],
   };
   let pending: PendingTurn | undefined;
   let boundScope: RegistryScope | undefined;
@@ -404,6 +431,10 @@ export const createRuntimeProductionContextStore = (input: {
     const evidence = responseEvidenceIds(parsed.output)
       .map((observationId) => evidenceSourceFor(input.registry, active.scope, observationId))
       .filter((source): source is ModelEvidenceSource => source !== undefined);
+    const candidateIdentities =
+      parsed.output.kind === 'cards'
+        ? candidateIdentitiesFor(input.registry, active.scope, nextCardSet)
+        : active.base.candidateIdentities;
     const byEvidenceId = new Map(
       active.base.evidence.map((source) => [source.observationId, source]),
     );
@@ -442,6 +473,7 @@ export const createRuntimeProductionContextStore = (input: {
       evidence: [...byEvidenceId.values()].slice(-64),
       savedPlaceRefs: [...active.input.savedPlaceRefs],
       excludedCandidateIds: nextExcluded,
+      candidateIdentities,
     };
     pending = undefined;
     persistState(active.scope);
@@ -456,6 +488,7 @@ export const createRuntimeProductionContextStore = (input: {
       cardSet: copyCardSet(state.cardSet),
       evidence: structuredClone(state.evidence),
       savedPlaceRefs: [...state.savedPlaceRefs],
+      candidateIdentities: structuredClone(state.candidateIdentities),
     }),
   };
 };

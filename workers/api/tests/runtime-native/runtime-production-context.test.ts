@@ -149,29 +149,71 @@ describe('M16 durable runtime context boundary', () => {
       throw new Error('reference restore fixture did not create cards');
     }
     const excludedCandidateId = firstResponse.output.cards.hero.candidateId;
+    const current = await stub.read(ownerScopeRef);
+    if (!current.ok) throw new Error('reference restore fixture lost its thread binding');
+    await expect(
+      stub.resolveCandidateForSavedReference(
+        ownerScopeRef,
+        excludedCandidateId,
+        current.snapshot.revision,
+      ),
+    ).resolves.toEqual({
+      ok: true,
+      candidateId: excludedCandidateId,
+      provider: 'google_places',
+      recordRef: 'm16-production-place',
+    });
+    await expect(
+      stub.resolveCandidateForSavedReference(
+        `m16-other-owner-${crypto.randomUUID()}`,
+        excludedCandidateId,
+        current.snapshot.revision,
+      ),
+    ).resolves.toEqual({ ok: false, code: 'FORBIDDEN' });
 
     const payload = await readContextPayload(stub);
     expect(payload).not.toBeNull();
     expect(payload).not.toContain('M16_LLM_INPUT_CANARY');
     expect(payload).not.toContain('M16_DENIED_FIELD_CANARY');
-    expect(payload).not.toContain('m16-production-place');
+    expect(payload).toContain('"candidateIdentities"');
+    expect(payload).toContain('"recordRef":"m16-production-place"');
     expect(payload).toContain('"history"');
     expect(payload).toContain('"cardSet"');
 
     await evictDurableObject(stub);
     const reopened = namespace.getByName(threadId);
+    await expect(
+      reopened.resolveCandidateForSavedReference(
+        ownerScopeRef,
+        excludedCandidateId,
+        current.snapshot.revision,
+      ),
+    ).resolves.toEqual({
+      ok: true,
+      candidateId: excludedCandidateId,
+      provider: 'google_places',
+      recordRef: 'm16-production-place',
+    });
     const second: ThreadRuntimeTarget = {
       ...first,
       turnId: `turn-${crypto.randomUUID()}`,
       revision: 2,
     };
     const secondRequest = requestFor(second, '[m16-follow-up] 前の候補について教えて');
+    const secondResult = await reopened.runRuntimeTurn({
+      ...secondRequest,
+      input: { ...secondRequest.input, excludeCandidateIds: [excludedCandidateId] },
+    });
+    expect(secondResult.status).toBe('completed');
+    const afterSecond = await reopened.read(ownerScopeRef);
+    if (!afterSecond.ok) throw new Error('reference restore fixture lost its thread binding');
     await expect(
-      reopened.runRuntimeTurn({
-        ...secondRequest,
-        input: { ...secondRequest.input, excludeCandidateIds: [excludedCandidateId] },
-      }),
-    ).resolves.toMatchObject({ status: 'completed' });
+      reopened.resolveCandidateForSavedReference(
+        ownerScopeRef,
+        excludedCandidateId,
+        afterSecond.snapshot.revision,
+      ),
+    ).resolves.toEqual({ ok: false, code: 'UNKNOWN_CANDIDATE' });
     const restoredPayload = await readContextPayload(reopened);
     const restoredReference = v.safeParse(
       RuntimeProductionContextReferenceSchema,
@@ -237,6 +279,9 @@ describe('M16 durable runtime context boundary', () => {
         record.deviceIdHash,
         new Date(0).toISOString(),
       ),
+    ).resolves.toEqual({ ok: false, code: 'NOT_FOUND' });
+    await expect(
+      stub.resolveCandidateForSavedReference(ownerScopeRef, 'deleted-candidate', 2),
     ).resolves.toEqual({ ok: false, code: 'NOT_FOUND' });
     await expect(stub.listRuntimeResponses(ownerScopeRef)).resolves.toEqual([]);
   });

@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import type { Session } from '@cloudflare/think';
-import type { CommitPort } from '@ima/core';
+import type { CommitPort, RegistryScope } from '@ima/core';
 import { IsoTimestampSchema } from '@ima/core';
 import {
   createRuntimeProductionConnectionOptions,
@@ -8,6 +8,7 @@ import {
 } from '../runtime/runtime-production-factory';
 import { sessionExpiryAt } from '../runtime/runtime-production-support';
 import { createDurableRuntimeContextPersistence } from './runtime-context-persistence';
+import type { RuntimeProductionContextReference } from '../runtime/runtime-production-context-reference';
 import { createRuntimeRetentionAlarmCapability } from './runtime-retention-alarm';
 import type { RuntimeThinkConnectionOptions } from '../runtime/runtime-think-connection';
 import {
@@ -155,6 +156,12 @@ export abstract class RuntimeProductionThinkHost<
       throw new Error('RUNTIME_RETENTION_CLOCK_INVALID');
     }
     return now >= expiresAt;
+  }
+
+  protected runtimeProductionContextReferenceFor(
+    scope: RegistryScope,
+  ): RuntimeProductionContextReference | undefined {
+    return this.productionContextPersistence.load(scope);
   }
 
   protected recordRuntimeTurnTrace(
