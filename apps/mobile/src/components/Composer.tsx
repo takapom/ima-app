@@ -1,5 +1,5 @@
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { colors, radii, spacing, typography } from '../theme/tokens';
+import { Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { colors, radii, scaleForDynamicType, spacing, typography } from '../theme/tokens';
 
 type ComposerProps = {
   readonly value: string;
@@ -25,6 +25,7 @@ export function Composer({
   onSubmit,
   disabled = false,
 }: ComposerProps): React.JSX.Element {
+  const { fontScale } = useWindowDimensions();
   const canSubmit = !disabled && onSubmit !== undefined && value.trim().length > 0;
   return (
     <View style={styles.container}>
@@ -51,7 +52,7 @@ export function Composer({
           placeholder={placeholder}
           placeholderTextColor={colors.faint}
           returnKeyType="default"
-          style={styles.input}
+          style={[styles.input, { maxHeight: scaleForDynamicType(96, fontScale) }]}
           value={value}
         />
         <Pressable
@@ -65,7 +66,9 @@ export function Composer({
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.sendText}>↑</Text>
+          <Text allowFontScaling={false} style={styles.sendText}>
+            ↑
+          </Text>
         </Pressable>
       </View>
     </View>

@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
-import { colors, radii, spacing, typography } from '../theme/tokens';
+import { colors, radii, scaleForDynamicType, spacing, typography } from '../theme/tokens';
 
 type CandidateCardProps = {
   readonly card: PublicCard;
@@ -41,6 +41,7 @@ export function CandidateCard({
   onChoose,
   onDecide,
 }: CandidateCardProps): React.JSX.Element {
+  const { fontScale } = useWindowDimensions();
   const identity = cardIdentity(card);
   const name = identity?.name ?? '候補';
   const choose = (): void => onChoose?.(card.candidateId);
@@ -55,7 +56,15 @@ export function CandidateCard({
         onPress={choose}
         style={({ pressed }) => [styles.alternative, pressed && styles.pressed]}
       >
-        <View style={styles.thumbnail}>
+        <View
+          style={[
+            styles.thumbnail,
+            {
+              minHeight: scaleForDynamicType(56, fontScale),
+              minWidth: scaleForDynamicType(56, fontScale),
+            },
+          ]}
+        >
           <Text style={styles.thumbnailText}>{photoLabel(card)}</Text>
         </View>
         <View style={styles.alternativeBody}>
@@ -71,7 +80,7 @@ export function CandidateCard({
 
   return (
     <View style={styles.hero}>
-      <View style={styles.heroVisual}>
+      <View style={[styles.heroVisual, { minHeight: scaleForDynamicType(168, fontScale) }]}>
         <Text style={styles.heroPhoto}>{photoLabel(card)}</Text>
         <View style={styles.heroOverlay}>
           <Text numberOfLines={1} style={styles.heroName}>
@@ -109,7 +118,6 @@ const styles = StyleSheet.create({
   },
   heroVisual: {
     backgroundColor: '#222224',
-    height: 168,
     justifyContent: 'flex-end',
     padding: spacing.section,
   },
@@ -180,9 +188,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#222224',
     borderRadius: 12,
-    height: 56,
     justifyContent: 'center',
-    width: 56,
+    minHeight: 56,
+    minWidth: 56,
+    padding: 4,
   },
   thumbnailText: {
     color: colors.faint,

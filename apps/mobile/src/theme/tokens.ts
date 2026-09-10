@@ -37,3 +37,6 @@ export const typography = {
   label: 12,
   button: 14,
 } as const;
+
+export const scaleForDynamicType = (base: number, fontScale: number): number =>
+  Math.round(base * Math.max(1, fontScale));

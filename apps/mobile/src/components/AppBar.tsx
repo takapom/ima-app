@@ -12,10 +12,13 @@ export function AppBar({ onMenu, onNewSearch }: AppBarProps): React.JSX.Element 
       <Pressable
         accessibilityLabel="メニュー"
         accessibilityRole="button"
+        hitSlop={8}
         onPress={onMenu}
         style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
       >
-        <Text style={styles.icon}>☰</Text>
+        <Text allowFontScaling={false} style={styles.icon}>
+          ☰
+        </Text>
       </Pressable>
       <Text style={styles.logo} accessibilityRole="header">
         ima<Text style={styles.logoDot}>.</Text>
@@ -23,10 +26,13 @@ export function AppBar({ onMenu, onNewSearch }: AppBarProps): React.JSX.Element 
       <Pressable
         accessibilityLabel="新しい検索"
         accessibilityRole="button"
+        hitSlop={8}
         onPress={onNewSearch}
         style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
       >
-        <Text style={styles.plus}>＋</Text>
+        <Text allowFontScaling={false} style={styles.plus}>
+          ＋
+        </Text>
       </Pressable>
     </View>
   );

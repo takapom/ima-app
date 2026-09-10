@@ -57,20 +57,26 @@ export function Drawer({
             <Pressable
               accessibilityLabel="メニューに戻る"
               accessibilityRole="button"
+              hitSlop={8}
               onPress={() => onViewChange('home')}
               style={styles.backButton}
             >
-              <Text style={styles.back}>‹</Text>
+              <Text allowFontScaling={false} style={styles.back}>
+                ‹
+              </Text>
               <Text style={styles.backLabel}>今夜</Text>
             </Pressable>
           )}
           <Pressable
             accessibilityLabel="メニューを閉じる"
             accessibilityRole="button"
+            hitSlop={8}
             onPress={onClose}
             style={styles.closeButton}
           >
-            <Text style={styles.close}>×</Text>
+            <Text allowFontScaling={false} style={styles.close}>
+              ×
+            </Text>
           </Pressable>
         </View>
 
@@ -250,9 +256,9 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: 'center',
-    height: 40,
+    height: spacing.touch,
     justifyContent: 'center',
-    width: 40,
+    width: spacing.touch,
   },
   close: {
     color: colors.muted,
