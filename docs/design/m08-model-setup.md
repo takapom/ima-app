@@ -2,8 +2,8 @@
 
 ## 状態
 
-M08のモデル設定境界を定義する。実Provider SDKの型検査、外部モデル通信、課金、本番Secret設定は未完了である。
-Provider依存の同期後に、Worker Adapterがこの設定境界を使ってProviderを生成する。
+M08のモデル設定境界とOpenAI Responses Provider factoryを実装した。
+`@ai-sdk/openai` 3.0.69の依存同期と実SDK型検査を確認した。外部モデル通信、課金、本番Secret設定は未実測である。
 
 ## 固定設定
 
@@ -38,13 +38,15 @@ Providerが返す`model`と`providerOptions`は、Workerの`createRuntimeTurnCom
 
 [`runtime-native.test.ts`](../../workers/api/tests/runtime-native/runtime-native.test.ts)で、
 実Thinkが呼ぶscripted V3 modelの3回すべてに固定設定が届くことを確認した。
-これはSDK内の配線検証であり、未導入のOpenAI Provider実装や外部通信の検証とは区別する。
+これはSDK内の配線検証であり、外部通信の検証とは区別する。
 
 ## 検証範囲
 
 [`provider-config.test.ts`](../../workers/api/tests/model/provider-config.test.ts) は、
 キーの欠落・空値・型不正、Fixture fallbackの禁止、固定モデル設定をNodeで検証する。
-依存同期前のため、`@ai-sdk/openai`の実Provider型・transport・Responses APIのlive挙動は未検証である。
+[`provider.test.ts`](../../workers/api/tests/model/provider.test.ts) は実ProviderをモックHTTPへ接続し、
+Responsesの固定モデル・reasoning・保存設定、認証ヘッダー、キー欠落、HTTP失敗の伝播を検証する。
+Responses APIのlive挙動はM35の外部検収で確認する。
 
 候補選定と互換性の調査根拠は
 [`model-provider-candidate.md`](./model-provider-candidate.md) および次の公式資料に記録する。
