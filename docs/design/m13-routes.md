@@ -47,6 +47,14 @@ timeoutはfetchだけでなくresponse bodyの読取とJSON parseまで含む。
 
 方向契約2件・位置検証5件のテストで境界を確認する。これらの閾値はMVPの初期設定であり、実機精度や実API性能の測定結果ではない。WorkerによるPort接続、取得後の再検証、Runtime budgetへの実予約は続くC2bで扱う。C2aだけでM13全体の完了とはしない。
 
+## C2b：Worker adapterと予算予約
+
+Worker adapterは方向別に行列を取得し、要求したpairのみを返す。一方の行列が失敗しても、他方の成功結果は保持する。現在地の鮮度・精度・revisionを取得前後に検査し、取得中の移動は実際にHTTPへ送った起点から判定する。WALKではdepartureTimeを送らず、Googleのリクエスト時刻を使う。
+
+`RuntimeBudget.reserveRoute`はHTTP件数と行列全体のelementsを予約する。同じleaseのconsumeは一度だけ成功し、取消・期限・完了状態も再検査する。releaseは冪等で、使用済み予算は返却しない。外側で予約済みの場合も同じleaseを渡す。
+
+経路と既存Runtime budgetの関連35テストで、有向pair、部分失敗、取得中の位置変更、二重consumeを確認した。既存Portへの橋渡しは座標resolverを注入する段階であり、実Registryからprovider参照を解決するC3と、M16の本番構成での予算・観測登録の接続は未完了。fixtureのresolverを本番接続の証拠とはしない。
+
 ## 公式仕様
 
 - [Compute Route Matrix REST reference](https://developers.google.com/maps/documentation/routes/reference/rest/v2/TopLevel/computeRouteMatrix)

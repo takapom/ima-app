@@ -1,4 +1,5 @@
 export type RuntimeReadOperation = 'search_places' | 'get_place_details';
+export type RuntimeBudgetOperation = RuntimeReadOperation | 'walking_route';
 
 export type RuntimeBudgetConfig = {
   readonly wholeTurnMs: number;
@@ -68,7 +69,7 @@ export type RuntimeBudgetResult<T> =
   | { readonly ok: false; readonly denial: RuntimeBudgetDenial };
 
 export type RuntimeReadReservationRequest = {
-  readonly operation: RuntimeReadOperation;
+  readonly operation: RuntimeBudgetOperation;
   readonly costUnits: number;
   readonly providerHttpRequests: number;
   readonly routeElements: number;
@@ -86,8 +87,20 @@ export type RuntimeReservation = {
 };
 
 export type RuntimeReadReservation = RuntimeReservation & {
-  readonly operation: RuntimeReadOperation;
+  readonly operation: RuntimeBudgetOperation;
   readonly retry: (failure: RuntimeRetryFailure, retryAfterMs?: number) => RuntimeRetryResult;
+};
+
+/** A route matrix admission uses one read slot and reserves every provider element up front. */
+export type RuntimeRouteReservationRequest = Omit<RuntimeReadReservationRequest, 'operation'>;
+
+export type RuntimeRouteReservation = RuntimeReadReservation & {
+  readonly operation: 'walking_route';
+  readonly costUnits: number;
+  readonly providerHttpRequests: number;
+  readonly routeElements: number;
+  /** Claims this reservation for one route computation. */
+  readonly consume: () => RuntimeBudgetResult<void>;
 };
 
 export type RuntimeSubmitReservation = {
@@ -339,6 +352,47 @@ export class RuntimeBudget {
     return {
       ok: true,
       value: { operation, release, retry },
+    };
+  }
+
+  /**
+   * Route providers use the same admission counters as place reads. Keeping this boundary on the
+   * budget makes a route adapter's pre-reserved path explicit and prevents a second reservation
+   * when a caller has already admitted the matrix as part of a larger operation.
+   */
+  reserveRoute(
+    request: RuntimeRouteReservationRequest,
+  ): RuntimeBudgetResult<RuntimeRouteReservation> {
+    const result = this.reserveRead({ operation: 'walking_route', ...request });
+    if (!result.ok) return result;
+    let released = false;
+    let consumed = false;
+    return {
+      ok: true,
+      value: {
+        ...result.value,
+        operation: 'walking_route',
+        costUnits: request.costUnits,
+        providerHttpRequests: request.providerHttpRequests,
+        routeElements: request.routeElements,
+        release: () => {
+          if (released) return;
+          released = true;
+          result.value.release();
+        },
+        consume: () => {
+          if (released || consumed) {
+            return {
+              ok: false,
+              denial: denial('BUDGET_EXCEEDED', 'route budget lease was already consumed'),
+            };
+          }
+          const blocked = this.checkAdmission(false);
+          if (blocked !== undefined) return { ok: false, denial: blocked };
+          consumed = true;
+          return { ok: true, value: undefined };
+        },
+      },
     };
   }
 
