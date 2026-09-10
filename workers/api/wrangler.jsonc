@@ -10,11 +10,13 @@
       { "name": "THREADS", "class_name": "ThreadDO" },
       { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
       { "name": "JOURNEY_DATASETS", "class_name": "JourneyDatasetDO" },
+      { "name": "TELEMETRY", "class_name": "TelemetryDO" },
     ],
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["ThreadDO", "RateLimitDO"] },
     { "tag": "v2", "new_sqlite_classes": ["JourneyDatasetDO"] },
+    { "tag": "v3", "new_sqlite_classes": ["TelemetryDO"] },
   ],
   "observability": {
     "enabled": true,

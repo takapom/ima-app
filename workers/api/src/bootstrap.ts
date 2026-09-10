@@ -39,6 +39,8 @@ import { createPhotoBodyHandler } from './providers/photo/http';
 import { createGooglePhotoMediaTransport } from './providers/photo/transport';
 import { createPhotoTokenCodec } from './providers/photo/token';
 import { createPhotoReferenceStoreResolver } from './providers/photo/rpc';
+import { createBestEffortEventsSink, createTelemetryEventsSink } from './telemetry/events';
+import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetry/telemetry-do';
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;
@@ -46,6 +48,7 @@ export type BootstrapEnv = {
   readonly PHOTO_TOKEN_SECRET?: string;
   readonly THREADS: DurableObjectNamespace<ThreadDO>;
   readonly RATE_LIMITS: DurableObjectNamespace<RateLimitDO>;
+  readonly TELEMETRY?: TelemetryNamespace;
 };
 
 /** 30 device requests and 100 owner requests per hour follows the M05 design ceiling. */
@@ -57,6 +60,8 @@ export const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = Object.freeze({
 
 export type BootstrapOptions = {
   readonly ownership: ResourceScopeAuthorizer;
+  /** Optional event collector; its failure is isolated from product operations. */
+  readonly events?: EventsSink;
   /** Production composition injects the authenticated, token-bound photo adapter. */
   readonly photo?: PhotoBodyHandler;
   /** Test/runtime composition may provide the already-scoped upstream fetcher. */
@@ -310,7 +315,12 @@ export const createHttpRouterConfig = (
   const handlers: HandlerDependencies = {
     application: createApplication(env, options),
     photo: options.photo ?? createConfiguredPhoto(env, options.photoFetcher),
-    events: createUnavailableEvents(),
+    events: createBestEffortEventsSink(
+      options.events ??
+        (env.TELEMETRY === undefined
+          ? createUnavailableEvents()
+          : createTelemetryEventsSink(createDurableTelemetryStore(env.TELEMETRY))),
+    ),
     rateLimiter: new DurableRateLimiter(
       env.RATE_LIMITS,
       options.rateLimit ?? DEFAULT_RATE_LIMIT_CONFIG,

@@ -307,8 +307,7 @@ describe('M05 Worker bootstrap and per-thread Durable Object', () => {
       method: 'POST',
       body: JSON.stringify(eventBody(eventRequestId, threadId)),
     });
-    expect(events.status).toBe(502);
-    expect((await json(events)).code).toBe('PROVIDER_UNAVAILABLE');
+    expect(events.status).toBe(204);
 
     for (const path of [
       '/v1/places/unknown-candidate?fields=identity',

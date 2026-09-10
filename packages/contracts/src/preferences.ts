@@ -90,14 +90,19 @@ export type CreateThreadResponse = v.InferOutput<typeof CreateThreadResponseSche
 
 export const EventNameSchema = v.picklist([
   'search_submitted',
+  'search_responded',
+  'search_failed',
   'turn_started',
   'turn_completed',
   'tool_called',
   'tool_result',
   'card_decided',
+  'maps_opened',
   'skip_tapped',
+  'recover_started',
   'save_tapped',
   'share_opened',
+  'share_cancelled',
   'error_shown',
 ]);
 
