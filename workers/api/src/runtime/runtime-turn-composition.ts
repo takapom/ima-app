@@ -180,6 +180,7 @@ const modelSource = (
   conditions,
   evidence: source.evidence,
   ...(source.stationDirectory === undefined ? {} : { stationDirectory: source.stationDirectory }),
+  ...(source.fieldPolicy === undefined ? {} : { fieldPolicy: source.fieldPolicy }),
 });
 
 const validationAt = (

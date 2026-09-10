@@ -21,6 +21,13 @@ import {
   projectModelEvidence,
   type ModelEvidence,
 } from './model-evidence';
+import {
+  denyModelContextFieldPolicy,
+  ModelContextFieldPolicySchema,
+  modelContextFieldAllowed,
+  modelEvidenceFieldDecision,
+} from './model-context-policy';
+import type { ModelContextFieldPolicy } from './model-context-policy';
 
 export {
   evaluateModelEvidenceAvailability,
@@ -33,6 +40,14 @@ export type {
   ModelEvidence,
   ModelEvidenceSource,
 } from './model-evidence';
+export {
+  denyModelContextFieldPolicy,
+  ModelContextFieldDecisionSchema,
+  ModelContextFieldPolicySchema,
+  modelContextFieldAllowed,
+  modelEvidenceFieldDecision,
+} from './model-context-policy';
+export type { ModelContextFieldDecision, ModelContextFieldPolicy } from './model-context-policy';
 export { ModelContextError } from './model-context-errors';
 export type { ModelContextErrorCode } from './model-context-errors';
 
@@ -108,6 +123,8 @@ export const ModelContextSourceSchema = v.strictObject({
   conditions: TurnConditionValuesSchema,
   evidence: v.pipe(v.array(ModelEvidenceSourceSchema), v.maxLength(64)),
   stationDirectory: v.optional(ModelStationDirectorySchema),
+  /** Optional for older Core callers; Worker production composition supplies an explicit policy. */
+  fieldPolicy: v.optional(ModelContextFieldPolicySchema),
 });
 export type ModelContextSource = v.InferOutput<typeof ModelContextSourceSchema>;
 
@@ -149,6 +166,7 @@ export type ProjectedModelContext = {
 const projectCardSet = (
   source: NonNullable<ModelContextSource['cardSet']>,
   harness: HarnessContext,
+  displayNameDecision: ModelContextFieldPolicy['displayName'],
 ): ModelCardSet => {
   const { record, candidates } = source;
   if (
@@ -175,7 +193,9 @@ const projectCardSet = (
     }
     return {
       candidateId: candidate.candidateId,
-      displayName: candidate.displayName,
+      displayName: modelContextFieldAllowed(displayNameDecision)
+        ? candidate.displayName
+        : '[withheld]',
       status: candidate.status,
     };
   });
@@ -197,6 +217,7 @@ export const projectModelContext = (source: unknown): ProjectedModelContext => {
   const parsed = v.safeParse(ModelContextSourceSchema, source);
   if (!parsed.success) throw new ModelContextError('INVALID_CONTEXT', 'model context is invalid');
   const value = parsed.output;
+  const fieldPolicy = value.fieldPolicy ?? denyModelContextFieldPolicy;
   const harness = value.harness;
   for (const entry of value.history) {
     if (entry.threadId !== harness.threadId) {
@@ -216,9 +237,20 @@ export const projectModelContext = (source: unknown): ProjectedModelContext => {
   ) {
     throw new ModelContextError('INVALID_EVIDENCE', 'evidence observation IDs are duplicated');
   }
-  const projectedEvidence = value.evidence.map((evidence) =>
-    projectModelEvidence(evidence, harness.serverNow),
-  );
+  const projectedEvidence = value.evidence.map((evidence) => {
+    const projected = projectModelEvidence(evidence, harness.serverNow);
+    if (projected.status !== 'known') return projected;
+    return modelContextFieldAllowed(modelEvidenceFieldDecision(fieldPolicy, evidence.field))
+      ? projected
+      : {
+          status: 'withheld' as const,
+          observationId: projected.observationId,
+          candidateId: projected.candidateId,
+          field: projected.field,
+          reason: 'model input policy denies this evidence field',
+          freshUntil: projected.freshUntil,
+        };
+  });
   const usableEvidenceIds = new Set(
     projectedEvidence.flatMap((evidence) =>
       evidence.status === 'known' ? [evidence.observationId] : [],
@@ -240,10 +272,15 @@ export const projectModelContext = (source: unknown): ProjectedModelContext => {
       status: 'unknown',
       reason: 'station directory was not supplied',
     },
-    history: value.history
-      .filter((entry) => entry.evidenceIds.every((id) => usableEvidenceIds.has(id)))
-      .map(({ threadId: _threadId, ...entry }) => entry),
-    cardSet: value.cardSet === null ? null : projectCardSet(value.cardSet, harness),
+    history: modelContextFieldAllowed(fieldPolicy.history)
+      ? value.history
+          .filter((entry) => entry.evidenceIds.every((id) => usableEvidenceIds.has(id)))
+          .map(({ threadId: _threadId, ...entry }) => entry)
+      : [],
+    cardSet:
+      value.cardSet === null || !modelContextFieldAllowed(fieldPolicy.cardSet)
+        ? null
+        : projectCardSet(value.cardSet, harness, fieldPolicy.displayName),
     evidence: projectedEvidence,
     capabilities: harness.capabilities,
     budget: harness.budget,

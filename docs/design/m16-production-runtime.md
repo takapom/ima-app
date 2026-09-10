@@ -36,6 +36,17 @@ store: false }` through the Think connection.
 - The default production plan marks every model call as an exploration/tool step. A host that
   owns a final text step must opt into `isFinalResponse` only after read tools are disabled.
 
+## Field use policy
+
+`runtime-field-policy.ts` receives a Worker-evaluated snapshot for each field and keeps
+`llm_input`, `display`, and `persistence` decisions independent. `unknown`, unavailable fields,
+and `fixture_only` activation in live mode deny the requested use; the production default is
+`unknown`/`disabled_m35`. The adapter maps only the `llm_input` decision into Core's model
+projection, where denied evidence is metadata-only and denied card names become `[withheld]`.
+Photo and public display adapters can use this API for their own decisions; their production
+connections remain to be implemented. Model input permission is not an implicit grant for either
+use. Generated policy fixtures are never a live allow profile.
+
 The production composition keeps search-area provenance in a connection-scoped map keyed by the
 server candidate ID, so a later Details refresh can reuse the area applied by the original search.
 If that provenance is unavailable, it uses the neutral `検索結果の地域` label and never infers a

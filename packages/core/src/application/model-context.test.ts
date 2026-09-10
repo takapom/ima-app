@@ -4,6 +4,23 @@ import {
   ModelContextError,
   projectModelContext,
 } from './model-context';
+import type { ModelContextFieldPolicy } from './model-context';
+
+const allowModelContextFieldPolicy: ModelContextFieldPolicy = {
+  evidence: {
+    identity: 'allow',
+    opening_hours: 'allow',
+    price: 'allow',
+    photos: 'allow',
+    contact: 'allow',
+    facilities: 'allow',
+    walking_route: 'allow',
+    last_train: 'allow',
+  },
+  history: 'allow',
+  cardSet: 'allow',
+  displayName: 'allow',
+};
 
 const harness = {
   threadId: 'thread-1',
@@ -153,6 +170,7 @@ const source = {
       },
     },
   ],
+  fieldPolicy: allowModelContextFieldPolicy,
   stationDirectory: {
     status: 'available' as const,
     stations: [
@@ -413,5 +431,39 @@ describe('model context projection', () => {
         stationDirectory: { status: 'available', stations: [] },
       }),
     ).toThrowError(ModelContextError);
+  });
+
+  it('applies model input policy independently to evidence, history, card set, and names', () => {
+    const projected = projectModelContext({
+      ...source,
+      fieldPolicy: {
+        ...allowModelContextFieldPolicy,
+        evidence: { ...allowModelContextFieldPolicy.evidence, identity: 'deny' },
+        history: 'deny',
+        cardSet: 'allow',
+        displayName: 'unknown',
+      },
+    });
+
+    expect(projected.history).toEqual([]);
+    expect(projected.cardSet?.candidates.map((candidate) => candidate.displayName)).toEqual([
+      '[withheld]',
+      '[withheld]',
+      '[withheld]',
+    ]);
+    expect(projected.evidence[0]).toMatchObject({
+      status: 'withheld',
+      reason: 'model input policy denies this evidence field',
+    });
+    expect(JSON.stringify(projected.evidence)).not.toContain('二つ目');
+  });
+
+  it('fails closed when a caller omits the policy snapshot', () => {
+    const projected = projectModelContext({ ...source, fieldPolicy: undefined });
+
+    expect(projected.history).toEqual([]);
+    expect(projected.cardSet).toBeNull();
+    expect(projected.evidence[0]?.status).toBe('withheld');
+    expect(JSON.stringify(projected.evidence)).not.toContain('二つ目');
   });
 });

@@ -74,6 +74,7 @@ import type {
   RuntimeThinkTurnBuildRequest,
 } from './runtime-think-connection';
 import type { RuntimeModelGuardCallOptions, RuntimeModelGuardModel } from './runtime-model-guard';
+import { defaultRuntimeModelContextPolicy } from './runtime-field-policy';
 
 type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;
@@ -196,6 +197,7 @@ const buildModelContext = (input: ThreadTurnRequest): RuntimeCompositionModelCon
   history: [],
   cardSet: null,
   evidence: [],
+  fieldPolicy: defaultRuntimeModelContextPolicy,
 });
 
 const buildComposition = (
