@@ -1,4 +1,4 @@
-# M12 Places Details Adapter：C1/C2境界
+# M12 Places Details Adapter：C1〜C3境界
 
 ## 状態
 
@@ -39,11 +39,28 @@ Googleのprotobuf scalar省略値（`day`、`hour`、`minute`）は0として扱
 
 `hours.test.ts` は東京の通常週・特殊日・跨日・24時間、protobuf省略値、切詰め、空period、欠落/不正timezone、DSTの不存在/重複時刻、境界不整合を2026年固定fixtureで検証する。実API・API key・Secretsは使用しない。
 
+## C3 Place Details transport
+
+`workers/api/src/providers/places-details/transport.ts` は、Provider IDを1件ずつ受け取り、`GET https://places.googleapis.com/v1/places/{placeId}`へ送る。リダイレクトは`error`、リクエストbodyは空、API keyは`X-Goog-Api-Key` headerだけに置き、URL・例外・ログへ複製しない。`X-Goog-FieldMask`は論理fieldから固定のallowlistへ変換し、wildcardや未対応fieldを使わない。`id`、`googleMapsUri`、`attributions`は各fieldの出典とrecord metadataに必要な共通補助fieldとして含め、`timeZone`、`currentOpeningHours`、`regularOpeningHours`は`opening_hours`だけで取得する。
+
+| Core field      | Google maskの主項目                                      | 境界で保持する補助metadata            |
+| --------------- | -------------------------------------------------------- | ------------------------------------- |
+| `identity`      | `displayName`、住所、種別、営業状態、移転情報            | `id`、`googleMapsUri`、`attributions` |
+| `opening_hours` | `currentOpeningHours`、`regularOpeningHours`、`timeZone` | `id`、`googleMapsUri`、`attributions` |
+| `price`         | `priceLevel`、`priceRange`                               | `id`、`googleMapsUri`、`attributions` |
+| `photos`        | `photos`                                                 | `id`、`googleMapsUri`、`attributions` |
+| `contact`       | 地図、公式サイト、電話                                   | `id`、`attributions`                  |
+
+`facilities`、`walking_route`、`last_train`はGoogle Details transportから取得しない。後続C4がCore Portの要求を項目ごとに分け、未提供能力を`unsupported`として返す。transportはHTTP成功bodyをJSON objectとしてだけ検査し、全Place schemaへ一括parseしない。bodyは`unknown`のままC1のfield parserとnormalizerへ渡すため、要求fieldと無関係な不正値が別fieldの成功を消さない。Providerが返した`movedPlace`/`movedPlaceId`はnormalizerへ渡すが、transportが移転先を追跡して別GETすることはない。
+
+timeoutはresponse bodyの読み取り完了まで適用し、呼出側の`AbortSignal`はfetchへだけ転送する。404、429（`Retry-After`）、5xx、malformed body、timeout、cancelはupstream本文を含まないtyped errorへ変換する。retry判断と再試行はRuntimeが所有し、transportは一度のGETだけを行う。
+
 ## 参照
 
 - [M12 issue #13](https://github.com/takapom/ima-app/issues/13)
 - [Place Details (New)](https://developers.google.com/maps/documentation/places/web-service/place-details)
 - [Places REST resource](https://developers.google.com/maps/documentation/places/web-service/reference/rest/v1/places)
 - [Place Photos (New)](https://developers.google.com/maps/documentation/places/web-service/place-photos)
+- [Place Details (New) field masks](https://developers.google.com/maps/documentation/places/web-service/choose-fields)
 - [Places policies](https://developers.google.com/maps/documentation/places/web-service/policies)
 - [Core details Port](../../packages/core/src/ports/operations.ts:104)
