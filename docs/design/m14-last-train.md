@@ -49,4 +49,4 @@ import/update/rollbackが成功したときは、active recordの`verifiedAt + 7
 
 Workerの`routeExecutionFor`は親と子executionのオブジェクト同一性を維持してキャンセル信号を橋渡しする。schema検証後のcloneへ置き換えるとWeakMapの信号を失うため、検証済みの元オブジェクトを経路Portへ渡す。CoreへAbortSignalを持ち込まない。
 
-Port fixtureでは21:00から徒歩600秒で21:10到着、23:50発から徒歩180秒とbuffer180秒を引いて23:44退出、滞在可能9,240秒を検証した。現在のCore Port戻り値では同駅を成功値に表現できず、徒歩取得後に制約エラーを返す。次の接続単位で固有の`not_applicable`結果とDetails fieldへの変換を追加する。production factory・実駅resolverへの結線と実API検証は、このPort単体の合格には含めない。
+Port fixtureでは21:00から徒歩600秒で21:10到着、23:50発から徒歩180秒とbuffer180秒を引いて23:44退出、滞在可能9,240秒を検証した。Core公開の`LastTrainJourneyResult`は通常の`Result`を保ったまま、同駅だけ`not_applicable`と`walkingVerificationRequired: true`で表現する。Details接続では、この結果を`last_train` fieldへ変換し、同駅を制約違反へ戻さず、徒歩検証の結果はM13のroute observationとして保持する。成功値の時刻表`source`と`verifiedAt`は観測登録へ継承し、保持期限は`verifiedAt + JOURNEY_VERIFICATION_MAX_AGE_MS`、対象列車の`lastDepartureAt`、policyの最短値へ制限する。再利用前にcapability・明示的なtravel context・current executionを再検証する。production factory・実駅resolverへの結線と実API検証は、この単位の合格には含めない。

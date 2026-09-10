@@ -253,7 +253,12 @@ describe('M14 LastTrainJourneyPort composition', () => {
     );
     const result = await port.read(input, context, execution, { isCancelled: () => false });
 
-    expect(result).toMatchObject({ status: 'ok', data: { journeyRef: 'journey-1' } });
+    expect(result).toMatchObject({
+      status: 'ok',
+      data: { journeyRef: 'journey-1' },
+      source: makeJourney('journey-1').source,
+      verifiedAt: makeJourney('journey-1').verifiedAt,
+    });
     if (result.status === 'ok') {
       expect(result.data.placeToStationSeconds).toBe(180);
       expect(result.data.arrivePlaceAt).toBe('2026-09-10T12:10:00.000Z');
@@ -390,7 +395,11 @@ describe('M14 LastTrainJourneyPort composition', () => {
       routePorts(calls),
     ).read(sameStationInput, sameStationContext, execution, { isCancelled: () => false });
 
-    expect(result).toMatchObject({ status: 'error', error: { code: 'CONSTRAINT_VIOLATION' } });
+    expect(result).toEqual({
+      status: 'not_applicable',
+      reason: 'same_station',
+      walkingVerificationRequired: true,
+    });
     expect(calls).toEqual({ current: 1, station: 1, stationDestinations: ['station-a'] });
   });
 });

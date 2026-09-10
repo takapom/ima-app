@@ -16,10 +16,10 @@ import {
   type Issue,
   type JourneyRecord,
   type JourneyServiceDateContext,
-  type LastTrainInfo,
   type LastTrainJourneyInput,
+  type LastTrainJourneyError,
   type LastTrainJourneyPort,
-  type Result,
+  type LastTrainJourneyResult,
   type ToolExecutionContext,
   type WalkingRoutePort,
 } from '@ima/core';
@@ -80,9 +80,9 @@ const issue = (
   missingFields: [...missingFields],
 });
 
-const resultError = <T>(error: Issue): Result<T> => ({ status: 'error', error });
+const resultError = (error: Issue): LastTrainJourneyError => ({ status: 'error', error });
 
-const cancelled = <T>(): Result<T> =>
+const cancelled = (): LastTrainJourneyError =>
   resultError(issue('CANCELLED', 'last_train', 'last-train journey read was cancelled'));
 
 const isCancelled = (options: LastTrainJourneyPortOptions, cancellation: CancellationToken) =>
@@ -124,7 +124,7 @@ const readerIssue = (result: Exclude<JourneyReadResult, { status: 'known' }>): I
   }
 };
 
-const failureForRead = <T>(result: JourneyReadResult): Result<T> =>
+const failureForRead = (result: JourneyReadResult): LastTrainJourneyError =>
   result.status === 'known'
     ? resultError(issue('INVALID_EVIDENCE', 'journey', 'journey read state is invalid'))
     : resultError(readerIssue(result));
@@ -211,7 +211,7 @@ export const createLastTrainJourneyPort = (
     context: HarnessContext,
     execution: ToolExecutionContext,
     cancellation: CancellationToken,
-  ): Promise<Result<LastTrainInfo>> {
+  ): Promise<LastTrainJourneyResult> {
     const parsedInput = v.safeParse(LastTrainJourneyInputSchema, input);
     const parsedContext = v.safeParse(HarnessContextSchema, context);
     const parsedExecution = v.safeParse(ToolExecutionContextSchema, execution);
@@ -389,13 +389,11 @@ export const createLastTrainJourneyPort = (
           ),
         );
       }
-      return resultError(
-        issue(
-          'CONSTRAINT_VIOLATION',
-          'journey.stations',
-          'last-train data is not applicable when the stations are the same',
-        ),
-      );
+      return {
+        status: 'not_applicable',
+        reason: 'same_station',
+        walkingVerificationRequired: true,
+      };
     }
     if (journey === undefined) {
       return resultError(
@@ -422,7 +420,7 @@ export const createLastTrainJourneyPort = (
       closedAt: null,
       lastOrderAt: null,
     });
-    if (timing.status === 'error') return timing;
+    if (timing.status === 'error') return resultError(timing.error);
     const info = v.safeParse(LastTrainInfoSchema, {
       serviceDate: latestJourney.serviceDate,
       fromStationRef: latestJourney.fromStationRef,
@@ -445,7 +443,19 @@ export const createLastTrainJourneyPort = (
     }
     const warnings = [...current.warnings, ...station.warnings, ...timing.warnings];
     return warnings.length === 0
-      ? { status: 'ok', data: info.output, warnings: [] }
-      : { status: 'partial', data: info.output, warnings };
+      ? {
+          status: 'ok',
+          data: info.output,
+          warnings: [],
+          source: latestJourney.source,
+          verifiedAt: latestJourney.verifiedAt,
+        }
+      : {
+          status: 'partial',
+          data: info.output,
+          warnings,
+          source: latestJourney.source,
+          verifiedAt: latestJourney.verifiedAt,
+        };
   },
 });

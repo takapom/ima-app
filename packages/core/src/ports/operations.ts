@@ -12,6 +12,7 @@ import {
 } from '../domain';
 import { FieldResultSchema } from '../domain/result';
 import type { Result } from '../domain/result';
+import type { SourceRef } from '../domain/evidence';
 import {
   LastTrainInfoSchema,
   OpeningHoursSchema,
@@ -22,6 +23,7 @@ import {
   FacilitiesInfoSchema,
   WalkingRouteSchema,
 } from '../domain/place-values';
+import type { IsoTimestamp } from '../domain/primitives';
 import type { LastTrainInfo, WalkingRoute } from '../domain/place-values';
 import type { CancellationToken, HarnessContext, ToolExecutionContext } from './context';
 
@@ -241,11 +243,32 @@ export interface WalkingRoutePort {
   ): Promise<Result<WalkingRoute>>;
 }
 
+export type LastTrainJourneyError = Extract<Result<LastTrainInfo>, { status: 'error' }>;
+
+export type LastTrainJourneySuccess = Extract<
+  Result<LastTrainInfo>,
+  { status: 'ok' | 'partial' }
+> & {
+  /** The validated timetable source selected for this journey. */
+  source: SourceRef;
+  /** The source verification time used to establish the journey. */
+  verifiedAt: IsoTimestamp;
+};
+
+export type LastTrainJourneyResult =
+  | LastTrainJourneySuccess
+  | LastTrainJourneyError
+  | {
+      status: 'not_applicable';
+      reason: 'same_station';
+      walkingVerificationRequired: true;
+    };
+
 export interface LastTrainJourneyPort {
   read(
     input: LastTrainJourneyInput,
     context: HarnessContext,
     execution: ToolExecutionContext,
     cancellation: CancellationToken,
-  ): Promise<Result<LastTrainInfo>>;
+  ): Promise<LastTrainJourneyResult>;
 }
