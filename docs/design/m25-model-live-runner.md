@@ -22,6 +22,8 @@ compare・decide-action・clarify-ambiguityのfixtureはpreludeを19:00 JST（`2
 
 座標はWorker入力に固定fixtureとして入る場合があるが、Coreのmodel projectionを通ったpromptをhost traceで監査する。`lat`、`lng`、精度、取得時刻、owner scopeのキーを検出した場合は重大なGPS露出として記録する。
 
+GPS拒否はlive profileへ昇格させず、`ModelEvalFixtureThreadDO` の実DO fixtureで境界を検証する。`ScenarioContext.areaText` は地域を明示的に入力し、地域未指定のGPSケースは`null`とする。`available`かつ`refuse-to-model`の場合もモデル投影は`status: denied`・地域`null`となり、生座標を含まない。`current_location`検索を試す境界では、位置情報不足の固定エラーをモデル側で安全化して受け、外部provider fetchが0回のまま地域確認へ進むことを確認する。これは拒否結果を成功に補正するfixtureではなく、実DOのモデル呼出し・公開message・fetch回数・座標キー監査を通す契約テストであり、productionの位置情報policy接続と実Apple/Provider実行は未検証のまま残る。
+
 ## opt-in と検証
 
 通常のNode/Vitest suiteはlive runnerをimportしない。専用設定は`vitest.model-eval-live.config.ts`と`workers/api/wrangler.model-eval-live-test.jsonc`で提供する。fixture bindingと実モデルbindingは同じ専用pool内でも分離し、fixtureはAPI keyなしで実行する。

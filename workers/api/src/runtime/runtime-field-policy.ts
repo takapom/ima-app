@@ -3,6 +3,7 @@ import * as v from 'valibot';
 import {
   ContactInfoSchema,
   FacilitiesInfoSchema,
+  IssueCodeSchema,
   LastTrainInfoSchema,
   modelContextFieldAllowed,
   modelEvidenceFieldDecision,
@@ -178,23 +179,8 @@ const MODEL_INPUT_WITHHELD = {
   reason: 'model input policy denies this evidence field',
 } as const;
 
-const ISSUE_CODES = [
-  'INVALID_ARGUMENT',
-  'UNKNOWN_CANDIDATE',
-  'INVALID_EVIDENCE',
-  'MISSING_EVIDENCE',
-  'STALE_EVIDENCE',
-  'STALE_TURN',
-  'CONSTRAINT_VIOLATION',
-  'CANCELLED',
-  'BUDGET_EXCEEDED',
-  'SCHEMA_MISMATCH',
-  'UNSUPPORTED_FIELD',
-  'MISSING_CONTEXT',
-  'UPSTREAM_UNAVAILABLE',
-] as const;
-
-const isIssueCode = (value: string): boolean => ISSUE_CODES.some((code) => code === value);
+/** Keep the model boundary in sync with Core; unknown provider codes remain unavailable. */
+const isIssueCode = (value: string): boolean => v.safeParse(IssueCodeSchema, value).success;
 
 const safeIssue = (value: JSONValue): JSONValue => {
   if (!isRecord(value))

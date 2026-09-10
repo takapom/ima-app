@@ -17,15 +17,20 @@ import {
   candidateOrderIn,
   candidateIdsIn,
   evidenceFor,
+  modelLocationIn,
+  modelLocationProjectionHasCoordinates,
+  modelToolErrorCodesIn,
   modelUserTextIn,
   observationFieldsFor,
   selectedCandidateIdIn,
+  type ProjectedModelLocation,
   type ProjectedObservation,
 } from './model-eval-context-values';
 
 export type ModelEvalFixturePhase = 'cards' | 'message';
 export type ModelEvalFixtureProfile =
-  'reason' | 'continuity' | 'compare' | 'decide-action' | 'clarify-ambiguity';
+  'reason' | 'continuity' | 'compare' | 'decide-action' | 'clarify-ambiguity' | 'gps-refusal';
+export type ModelEvalFixtureLocationProbe = 'clarify' | 'current-location';
 export type ModelEvalFixtureStep =
   'search_places' | 'get_place_details' | 'submit_cards' | 'final_message';
 
@@ -144,6 +149,15 @@ const submitInputFor = (
   };
 };
 
+const currentLocationSearchInput: SearchPlacesInput = {
+  mode: 'search',
+  query: '近くの店',
+  area: { kind: 'current_location', radiusMeters: 1000 },
+  openNow: false,
+  limit: 3,
+  excludeCandidateIds: [],
+};
+
 const fixtureModel = (
   phase: () => ModelEvalFixturePhase,
   profile: () => ModelEvalFixtureProfile,
@@ -151,6 +165,10 @@ const fixtureModel = (
   step: (name: ModelEvalFixtureStep) => void,
   detailsRequest: (candidateIds: readonly string[]) => void,
   finalEvidence: (snapshot: ModelEvalFixtureEvidenceSnapshot) => void,
+  modelLocationExposed: () => void,
+  modelLocation: (location: ProjectedModelLocation) => void,
+  toolErrors: (codes: readonly string[]) => void,
+  locationProbe: () => ModelEvalFixtureLocationProbe,
 ): RuntimeGateModel => {
   let call = 0;
   let previousPhase: ModelEvalFixturePhase | undefined;
@@ -169,11 +187,30 @@ const fixtureModel = (
       const prompt = options.prompt;
       trace.begin(prompt);
       trace.finish(usage);
+      if (modelLocationProjectionHasCoordinates(prompt)) modelLocationExposed();
+      const projectedLocation = modelLocationIn(prompt);
+      if (projectedLocation !== undefined) modelLocation(projectedLocation);
+      const toolErrorCodes = modelToolErrorCodesIn(prompt);
+      if (toolErrorCodes.length > 0) toolErrors(toolErrorCodes);
       const currentCall = call;
       call += 1;
       const finalResponse =
         Object.keys(options.tools ?? {}).length === 0 || options.toolChoice?.type === 'none';
       const shouldRefreshMessage = currentPhase === 'message' && currentCall === 0;
+      if (currentPhase === 'message' && profile() === 'gps-refusal') {
+        if (locationProbe() === 'current-location' && currentCall === 0) {
+          step('search_places');
+          return Promise.resolve({
+            stream: streamOf(toolParts(currentCall, 'search_places', currentLocationSearchInput)),
+          });
+        }
+        step('final_message');
+        return Promise.resolve({
+          stream: streamOf(
+            finalParts('位置情報を使わずに探すには地域を教えてください。', [], 'conversational'),
+          ),
+        });
+      }
       if (currentPhase === 'message' && profile() === 'clarify-ambiguity') {
         step('final_message');
         return Promise.resolve({
@@ -353,7 +390,11 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
   private fixturePhase: ModelEvalFixturePhase = 'cards';
   private fixtureProfile: ModelEvalFixtureProfile = 'reason';
   private fixtureNow = MODEL_EVAL_NOW;
+  private fixtureLocationProbe: ModelEvalFixtureLocationProbe = 'clarify';
+  private readonly fixtureToolErrorCodes: string[] = [];
+  private fixtureModelLocationExposed = false;
   private readonly fixtureTrace = new LiveTraceRecorder();
+  private readonly fixtureModelLocations: ProjectedModelLocation[] = [];
   private readonly fixtureSteps: ModelEvalFixtureStep[] = [];
   private readonly fixtureDetailsRequests: string[][] = [];
   private readonly fixtureEvidenceSnapshots: ModelEvalFixtureEvidenceSnapshot[] = [];
@@ -362,10 +403,14 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     phase: ModelEvalFixturePhase,
     now = MODEL_EVAL_NOW,
     profile: ModelEvalFixtureProfile = 'reason',
+    locationProbe: ModelEvalFixtureLocationProbe = 'clarify',
   ): void {
     this.fixturePhase = phase;
     this.fixtureNow = now;
     this.fixtureProfile = profile;
+    this.fixtureLocationProbe = locationProbe;
+    this.fixtureToolErrorCodes.length = 0;
+    this.fixtureModelLocationExposed = false;
   }
 
   protected override runtimeProductionNow(): string {
@@ -388,6 +433,18 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     return this.fixtureDetailsRequests.map((candidateIds) => [...candidateIds]);
   }
 
+  getModelEvalFixtureModelLocations(): readonly ProjectedModelLocation[] {
+    return this.fixtureModelLocations.map((location) => ({ ...location }));
+  }
+
+  getModelEvalFixtureToolErrorCodes(): readonly string[] {
+    return [...this.fixtureToolErrorCodes];
+  }
+
+  getModelEvalFixtureModelLocationExposed(): boolean {
+    return this.fixtureModelLocationExposed;
+  }
+
   getModelEvalFixtureEvidenceSnapshots(): readonly ModelEvalFixtureEvidenceSnapshot[] {
     return this.fixtureEvidenceSnapshots.map((snapshot) => ({
       candidateId: snapshot.candidateId,
@@ -407,6 +464,14 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
         (step) => this.fixtureSteps.push(step),
         (candidateIds) => this.fixtureDetailsRequests.push([...candidateIds]),
         (snapshot) => this.fixtureEvidenceSnapshots.push(snapshot),
+        () => {
+          this.fixtureModelLocationExposed = true;
+        },
+        (location) => this.fixtureModelLocations.push({ ...location }),
+        (codes) => {
+          this.fixtureToolErrorCodes.push(...codes);
+        },
+        () => this.fixtureLocationProbe,
       ),
       modelContextFieldPolicy: FIXTURE_MODEL_CONTEXT_FIELD_POLICY,
       candidateIdentityObserver: (

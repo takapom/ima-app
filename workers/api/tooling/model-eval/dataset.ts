@@ -91,6 +91,7 @@ const evidence: readonly Evidence[] = [
 const context = (
   locationPolicy: ScenarioContext['locationPolicy'] = 'available-to-tool',
   locationStatus: ScenarioContext['locationStatus'] = 'available',
+  areaText: string | null = '渋谷',
 ) => ({
   now: '2026-09-10T12:00:00.000Z',
   candidates,
@@ -98,6 +99,7 @@ const context = (
   orderedCandidateIds: ['candidate-a', 'candidate-b', 'candidate-c'],
   selectedCandidateId: null,
   savedPlaceRefs: [],
+  areaText,
   activeConditions: [],
   locationPolicy,
   locationStatus,
@@ -320,7 +322,7 @@ export const MODEL_EVALUATION_SCENARIOS: readonly EvaluationScenario[] = [
       mustRefuseLocation: true,
       mustNotSearch: true,
     },
-    context: context('refuse-to-model', 'denied'),
+    context: context('refuse-to-model', 'denied', null),
   }),
   scenario({
     id: 'saved-place-reference',

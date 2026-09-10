@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { JSONValue } from 'ai';
 import type { DetailField } from '@ima/core';
 import {
+  defaultRuntimeModelContextPolicy,
   defaultRuntimeModelProjectionPolicy,
   projectRuntimeToolResultForModel,
   runtimePolicyAllows,
@@ -85,6 +86,50 @@ describe('runtime field policy', () => {
     expect(
       runtimePolicyAllows(defaultRuntimeModelProjectionPolicy.evidence.identity, 'display', 'live'),
     ).toBe(false);
+  });
+
+  it('preserves Core location errors while sanitizing their details', () => {
+    const projected = projectRuntimeToolResultForModel(
+      {
+        status: 'error',
+        error: {
+          code: 'LOCATION_REQUIRED',
+          path: 'location',
+          retryable: false,
+          retryAfterMs: null,
+          message: 'coordinates must not reach the model',
+          missingFields: ['location'],
+        },
+      } as const,
+      defaultRuntimeModelContextPolicy,
+    );
+    expect(projected).toEqual({
+      status: 'error',
+      error: {
+        code: 'LOCATION_REQUIRED',
+        path: null,
+        retryable: false,
+        retryAfterMs: null,
+        message: 'tool result is unavailable',
+        missingFields: [],
+      },
+    });
+
+    const unknown = projectRuntimeToolResultForModel(
+      {
+        status: 'error',
+        error: {
+          code: 'PROVIDER_SECRET_LEAK',
+          path: 'provider',
+          retryable: false,
+          retryAfterMs: null,
+          message: 'private detail',
+          missingFields: [],
+        },
+      } as const,
+      defaultRuntimeModelContextPolicy,
+    );
+    expect(unknown).toMatchObject({ status: 'error', error: { code: 'UPSTREAM_UNAVAILABLE' } });
   });
 
   it('projects search and details results by field and drops unrecognized payloads', () => {

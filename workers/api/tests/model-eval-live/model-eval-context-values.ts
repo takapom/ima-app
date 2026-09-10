@@ -5,9 +5,15 @@ export type ModelContextEnvelope = {
   readonly originalUserText?: unknown;
   readonly context?: {
     readonly userText?: unknown;
+    readonly location?: unknown;
     readonly cardSet?: unknown;
     readonly evidence?: unknown;
   };
+};
+
+export type ProjectedModelLocation = {
+  readonly status: string;
+  readonly areaDescription: string | null;
 };
 
 export type ProjectedPromptValues = {
@@ -82,6 +88,59 @@ export const modelUserTextIn = (prompt: RuntimeGateModelCallOptions['prompt']): 
   const text = modelEnvelopeIn(prompt)?.originalUserText;
   return typeof text === 'string' ? text : '';
 };
+
+/** Reads only the model-visible location projection; raw coordinates are never returned. */
+export const modelLocationIn = (
+  prompt: RuntimeGateModelCallOptions['prompt'],
+): ProjectedModelLocation | undefined => {
+  const location = modelContextIn(prompt)?.location;
+  if (typeof location !== 'object' || location === null) return undefined;
+  const value = location as Record<string, unknown>;
+  if (typeof value.status !== 'string') return undefined;
+  if (!('areaDescription' in value)) return undefined;
+  if (value.areaDescription !== null && typeof value.areaDescription !== 'string') {
+    return undefined;
+  }
+  return {
+    status: value.status,
+    areaDescription: value.areaDescription,
+  };
+};
+
+/** Returns only whether the formal model projection contains a coordinate field. */
+export const modelLocationProjectionHasCoordinates = (
+  prompt: RuntimeGateModelCallOptions['prompt'],
+): boolean => {
+  const location = modelContextIn(prompt)?.location;
+  if (!record(location)) return false;
+  return ['lat', 'lng', 'accuracyMeters', 'capturedAt'].some((key) => key in location);
+};
+
+/** Reads only a fixed provider error code from tool output; prompt text is never retained. */
+export const modelToolErrorCodesIn = (
+  prompt: RuntimeGateModelCallOptions['prompt'],
+): readonly string[] => {
+  const messages = unknownArray(structuredPrompt(prompt));
+  if (messages === undefined) return [];
+  const codes = new Set<string>();
+  messages.forEach((message) => {
+    if (!record(message) || message.role !== 'tool') return;
+    const parts = unknownArray(message.content);
+    if (parts === undefined) return;
+    parts.forEach((part) => {
+      if (!record(part) || part.type !== 'tool-result' || !record(part.output)) return;
+      const outputValue = part.output.value;
+      if (!record(outputValue) || !record(outputValue.error)) return;
+      if (typeof outputValue.error.code === 'string') codes.add(outputValue.error.code);
+    });
+  });
+  return [...codes];
+};
+
+export const modelToolErrorCodeIn = (
+  prompt: RuntimeGateModelCallOptions['prompt'],
+  code: string,
+): boolean => modelToolErrorCodesIn(prompt).includes(code);
 
 /** Collects IDs and evidence only from projected context and structured tool output. */
 export const collectProjectedPromptValues = (

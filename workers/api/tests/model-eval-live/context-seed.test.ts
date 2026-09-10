@@ -20,7 +20,12 @@ import {
   MODEL_EVAL_CONTEXT_NOW,
   MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,
 } from './model-eval-place-fixture';
-import type { ModelEvalFixturePhase, ModelEvalFixtureThreadDO } from './model-eval-context-worker';
+import type {
+  ModelEvalFixtureLocationProbe,
+  ModelEvalFixturePhase,
+  ModelEvalFixtureProfile,
+  ModelEvalFixtureThreadDO,
+} from './model-eval-context-worker';
 
 type ContextTestEnv = Cloudflare.Env & {
   readonly MODEL_EVAL_CONTEXT_THREADS: DurableObjectNamespace<ModelEvalFixtureThreadDO>;
@@ -111,8 +116,10 @@ const initializeStub = async (name: string) => {
 const configure = async (
   stub: DurableObjectStub<ModelEvalFixtureThreadDO>,
   phase: ModelEvalFixturePhase,
+  profile: ModelEvalFixtureProfile = 'reason',
+  locationProbe: ModelEvalFixtureLocationProbe = 'clarify',
 ): Promise<void> => {
-  await stub.configureModelEvalFixture(phase, MODEL_EVAL_CONTEXT_NOW);
+  await stub.configureModelEvalFixture(phase, MODEL_EVAL_CONTEXT_NOW, profile, locationProbe);
 };
 
 describe('model-eval formal context through one Think Durable Object', () => {
@@ -289,5 +296,52 @@ describe('model-eval formal context through one Think Durable Object', () => {
     const after = await stub.getModelEvalFixtureTrace();
     expect(after.modelCalls).toBe(before.modelCalls);
     expect(after.upstreamCalls).toBe(before.upstreamCalls);
+  });
+
+  it('clarifies without a search when an available location is refused for model input', async () => {
+    const base = scenarioFor('gps-refusal');
+    const evaluationCase: EvaluationCase = {
+      ...base,
+      context: { ...base.context, locationStatus: 'available', areaText: null },
+    };
+    const name = `model-eval-gps-refusal-${crypto.randomUUID()}`;
+    const { stub, target } = await initializeStub(name);
+    await configure(stub, 'message', 'gps-refusal');
+    const result = await runSeed(stub, evaluationCase, seedFor(evaluationCase, target));
+    expect(result.kind).toBe('message');
+    if (result.kind !== 'message') return;
+    expect(result.message[0]?.text).toContain('地域');
+    expect(await stub.getModelEvalFixtureSteps()).toEqual(['final_message']);
+    const trace = await stub.getModelEvalFixtureTrace();
+    expect(trace.modelCalls).toBe(1);
+    expect(trace.upstreamCalls).toBe(0);
+    expect(trace.modelLocationExposed).toBe(false);
+    expect(await stub.getModelEvalFixtureToolErrorCodes()).toEqual([]);
+    expect(await stub.getModelEvalFixtureModelLocationExposed()).toBe(false);
+    expect(await stub.getModelEvalFixtureModelLocations()).toEqual([
+      { status: 'denied', areaDescription: null },
+    ]);
+  });
+
+  it('keeps current-location refusal as LOCATION_REQUIRED before asking for an area', async () => {
+    const evaluationCase = scenarioFor('gps-refusal');
+    const name = `model-eval-gps-required-${crypto.randomUUID()}`;
+    const { stub, target } = await initializeStub(name);
+    await configure(stub, 'message', 'gps-refusal', 'current-location');
+    const result = await runSeed(stub, evaluationCase, seedFor(evaluationCase, target));
+    expect(result.kind).toBe('message');
+    if (result.kind !== 'message') return;
+    expect(result.message[0]?.text).toContain('地域');
+    expect(await stub.getModelEvalFixtureSteps()).toEqual(['search_places', 'final_message']);
+    expect(await stub.getModelEvalFixtureToolErrorCodes()).toEqual(['LOCATION_REQUIRED']);
+    const trace = await stub.getModelEvalFixtureTrace();
+    expect(trace.modelCalls).toBe(2);
+    expect(trace.upstreamCalls).toBe(0);
+    expect(trace.modelLocationExposed).toBe(false);
+    expect(await stub.getModelEvalFixtureModelLocationExposed()).toBe(false);
+    expect(await stub.getModelEvalFixtureModelLocations()).toEqual([
+      { status: 'denied', areaDescription: null },
+      { status: 'denied', areaDescription: null },
+    ]);
   });
 });

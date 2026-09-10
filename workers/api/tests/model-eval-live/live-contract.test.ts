@@ -14,6 +14,10 @@ import {
   type LiveTraceSnapshot,
 } from '../../tooling/model-eval/live';
 import { resolveCandidateIdentityMapping } from '../../tooling/model-eval/candidate-mapping';
+import {
+  modelLocationProjectionHasCoordinates,
+  modelToolErrorCodeIn,
+} from './model-eval-context-values';
 
 describe('model-eval live opt-in boundary', () => {
   it('requires the explicit live flag before inspecting provider credentials', () => {
@@ -53,6 +57,53 @@ describe('model-eval live opt-in boundary', () => {
     const snapshot = recorder.snapshot();
     expect(snapshot.modelLocationExposed).toBe(true);
     expect(JSON.stringify(snapshot)).not.toContain('35.6595');
+  });
+
+  it('audits coordinate keys in the formal model projection', () => {
+    const prompt = [
+      {
+        role: 'user' as const,
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify({
+              kind: 'ima_turn_context',
+              context: {
+                location: { status: 'available', areaDescription: null, lat: 35.6595 },
+              },
+            }),
+          },
+        ],
+      },
+    ];
+    expect(modelLocationProjectionHasCoordinates(prompt)).toBe(true);
+  });
+
+  it('reads provider error codes only from structured tool results', () => {
+    const valid = [
+      {
+        role: 'tool' as const,
+        content: [
+          {
+            type: 'tool-result' as const,
+            toolCallId: 'tool-location-required',
+            toolName: 'search_places',
+            output: {
+              type: 'json' as const,
+              value: { status: 'error' as const, error: { code: 'LOCATION_REQUIRED' as const } },
+            },
+          },
+        ],
+      },
+    ];
+    expect(modelToolErrorCodeIn(valid, 'LOCATION_REQUIRED')).toBe(true);
+    const textOnly = [
+      {
+        role: 'assistant' as const,
+        content: [{ type: 'text' as const, text: '{"code":"LOCATION_REQUIRED"}' }],
+      },
+    ];
+    expect(modelToolErrorCodeIn(textOnly, 'LOCATION_REQUIRED')).toBe(false);
   });
 
   it('retains only exact candidate identity fields in the host trace', () => {

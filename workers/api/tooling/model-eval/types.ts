@@ -44,6 +44,8 @@ export type ScenarioContext = {
   readonly orderedCandidateIds: readonly string[];
   readonly selectedCandidateId: string | null;
   readonly savedPlaceRefs: readonly string[];
+  /** Explicit named area supplied to the request; null means the scenario has no area. */
+  readonly areaText: string | null;
   readonly activeConditions: readonly { readonly field: string; readonly value: JsonValue }[];
   readonly locationPolicy: 'refuse-to-model' | 'available-to-tool';
   readonly locationStatus: 'available' | 'denied' | 'unavailable';

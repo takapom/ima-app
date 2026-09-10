@@ -66,6 +66,7 @@ describe('model-eval formal scenario inputs', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.request.prefs.budget).toBe('normal');
+    expect(result.request.prefs.areaText).toBe('渋谷');
     expect(result.request.cardSetId).toBe(cardContext.cardSetId);
     expect(result.request.candidateOrder).toEqual([...cardContext.candidateOrder]);
     expect(result.request.selectedCandidateId).toBe('candidate-a');
@@ -99,9 +100,37 @@ describe('model-eval formal scenario inputs', () => {
       accuracyMeters: null,
       capturedAt: null,
     });
+    expect(result.request.prefs.areaText).toBeNull();
     expect(executionProfileFor(evaluationCase)).toMatchObject({
       status: 'unavailable',
       reason: 'LOCATION_POLICY_NOT_WIRED',
     });
+  });
+
+  it('redacts an available location before the request reaches the model when policy refuses it', () => {
+    const base = scenarioFor('gps-refusal');
+    const evaluationCase: EvaluationCase = {
+      ...base,
+      context: {
+        ...base.context,
+        locationStatus: 'available',
+        locationPolicy: 'refuse-to-model',
+        areaText: null,
+      },
+    };
+    const result = buildEvaluationTurnRequest({
+      evaluationCase,
+      seed: seedFor(evaluationCase),
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.request.location).toMatchObject({
+      status: 'denied',
+      lat: null,
+      lng: null,
+      accuracyMeters: null,
+      capturedAt: null,
+    });
+    expect(result.request.prefs.areaText).toBeNull();
   });
 });

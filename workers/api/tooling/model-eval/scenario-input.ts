@@ -8,7 +8,6 @@ import {
 import type { EvaluationCase, JsonValue, ScenarioContext } from './types';
 import type { EvaluationTurnSeed } from './turn-plan';
 
-export const MODEL_EVAL_AREA = '渋谷' as const;
 export const MODEL_EVAL_DEVICE_ID = 'model-eval-device' as const;
 
 export type EvaluationCardContext = {
@@ -159,7 +158,7 @@ export const buildEvaluationTurnRequest = (input: {
       homeStationRef: null,
       maxWalkMinutes: null,
       minimumStayMinutes: null,
-      areaText: MODEL_EVAL_AREA,
+      areaText: evaluationCase.context.areaText,
       budget,
     },
     ...(cardContext === undefined
