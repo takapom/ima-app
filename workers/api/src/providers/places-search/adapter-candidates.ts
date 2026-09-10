@@ -16,12 +16,9 @@ import {
   type SearchPlacesOutput,
   type SourceRef,
 } from '@ima/core';
-import {
-  normalizeGoogleHttpsUri,
-  normalizeGooglePrice,
-  type GoogleNormalizedValue,
-} from '../places/values';
+import { normalizeGooglePrice, type GoogleNormalizedValue } from '../places/values';
 import { normalizeGoogleIdentity } from '../places/identity';
+import { googleSourceMetadataIsValid, normalizeGoogleSourceMetadata } from '../places/source';
 import {
   GooglePlacesWireError,
   parseGooglePlaceWireField,
@@ -53,30 +50,7 @@ const candidateStatus = (value: string | undefined): CandidateRecord['status'] =
 };
 
 const sourceFor = (place: GooglePlaceWire | undefined, recordRef: string): readonly SourceRef[] => {
-  if (place === undefined) {
-    return [{ provider: 'google_places', recordRef, attribution: null, publicUrl: null }];
-  }
-  const mapUrl = normalizeGoogleHttpsUri(place.googleMapsUri);
-  const attributions = place.attributions ?? [];
-  if (attributions.length === 0) {
-    return [
-      {
-        provider: 'google_places',
-        recordRef,
-        attribution: null,
-        publicUrl: mapUrl.ok ? mapUrl.value : null,
-      },
-    ];
-  }
-  return attributions.map((attribution) => {
-    const publicUrl = normalizeGoogleHttpsUri(attribution.providerUri);
-    return {
-      provider: 'google_places',
-      recordRef,
-      attribution: attribution.provider,
-      publicUrl: publicUrl.ok ? publicUrl.value : null,
-    };
-  });
+  return normalizeGoogleSourceMetadata(place, recordRef).sources;
 };
 
 const observationContextFor = (
@@ -176,13 +150,6 @@ const recordOf = (value: unknown): Record<string, unknown> | undefined => {
   return Object.fromEntries(Object.entries(value));
 };
 
-const sourceUrlsAreValid = (source: GooglePlaceWire): boolean => {
-  if (!normalizeGoogleHttpsUri(source.googleMapsUri).ok) return false;
-  return (source.attributions ?? []).every(
-    (attribution) => normalizeGoogleHttpsUri(attribution.providerUri).ok,
-  );
-};
-
 const parsePlaceFields = (raw: unknown, index: number): ParsedPlaceFields | { error: Issue } => {
   let identity: GooglePlaceWire;
   let price: GooglePlaceWire;
@@ -217,7 +184,7 @@ const parsePlaceFields = (raw: unknown, index: number): ParsedPlaceFields | { er
   let sourceValid = true;
   try {
     source = parseGooglePlaceWireField('source', raw);
-    sourceValid = sourceUrlsAreValid(source);
+    sourceValid = googleSourceMetadataIsValid(source);
   } catch {
     source = undefined;
     sourceValid = false;

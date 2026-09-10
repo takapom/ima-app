@@ -55,6 +55,14 @@ Googleのprotobuf scalar省略値（`day`、`hour`、`minute`）は0として扱
 
 timeoutはresponse bodyの読み取り完了まで適用し、呼出側の`AbortSignal`はfetchへだけ転送する。404、429（`Retry-After`）、5xx、malformed body、timeout、cancelはupstream本文を含まないtyped errorへ変換する。retry判断と再試行はRuntimeが所有し、transportは一度のGETだけを行う。
 
+## C4 Core Port adapter
+
+`workers/api/src/providers/places-details/adapter.ts` は `PlaceDetailsPort.read` を実装し、候補の `ownerScopeRef` と `threadId` をCore Registryで照合してから、Google候補だけをC3 transportへ渡す。`facilities`、`walking_route`、`last_train`、および別providerの既知候補は、Googleの未取得や不明候補とは区別した `unsupported` として返す。候補ID、Providerが返した `id`、要求field集合は三者を突き合わせ、異なる応答を観測として登録しない。
+
+`reuse_valid` は現在の `ObservationContext` と有効期限が一致する観測だけを返す。`refresh`、または期限切れ観測の再取得では、providerへリクエストする前に対象fieldの古いreuseを無効化する。そのためHTTP失敗、応答field集合の不一致、帰属メタデータの不正、取消しのいずれでも古い値を再利用できない。新しい値は `PlacesDetailsObservationPolicy` が返す有限の `freshUntil`、`expiresAt`、`RetentionMetadata` とともに登録し、policyが未注入ならknown値を返さない。
+
+出典の共通整形は `workers/api/src/providers/places/source.ts` に集約する。M11検索とC4詳細取得は共通の検証結果が不正なら該当fieldをerrorにし、正常な候補・fieldはpartialとして維持する。area labelは住所から導出せず、Hostの `areaLabelFor` 注入がないidentityをknownにしない。C4のfixtureは実Google APIやSecretを使わず、C3の実transportを通したHTTP境界、Registry登録、再利用無効化、provider失敗、field mask、取消しを検証する。
+
 ## 参照
 
 - [M12 issue #13](https://github.com/takapom/ima-app/issues/13)
