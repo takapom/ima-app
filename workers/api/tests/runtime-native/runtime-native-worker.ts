@@ -240,6 +240,7 @@ export class ThreadDO extends ProductionThreadDO {
 
 export { RateLimitDO };
 export { ProductionThreadDO } from './runtime-production-worker';
+export { TelemetryDO } from '../../src/telemetry/telemetry-do';
 
 type RuntimeNativeEnv = Parameters<typeof production.fetch>[1];
 type RuntimeNativeExecutionContext = Parameters<typeof production.fetch>[2];

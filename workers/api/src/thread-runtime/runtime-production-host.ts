@@ -10,9 +10,23 @@ import { sessionExpiryAt } from '../runtime/runtime-production-support';
 import { createDurableRuntimeContextPersistence } from './runtime-context-persistence';
 import { createRuntimeRetentionAlarmCapability } from './runtime-retention-alarm';
 import type { RuntimeThinkConnectionOptions } from '../runtime/runtime-think-connection';
+import {
+  createBestEffortRuntimeTurnTraceSink,
+  emitRuntimeTurnTrace,
+  runtimeTraceModeFor,
+  runtimeTurnTraceOutcome,
+  telemetryObjectNameForRuntimeTraceMode,
+  type RuntimeTurnTraceSink,
+} from '../runtime/runtime-turn-trace';
+import { createDurableTelemetryStore, type TelemetryNamespace } from '../telemetry/telemetry-do';
 import { RuntimeThinkHost } from './runtime-host';
+import type { ThreadRuntimeTarget, ThreadRuntimeTurnResult } from './admission';
 
 type RuntimeRetentionAnchorRow = { readonly thread_created_at: string };
+type RuntimeTelemetryEnv = {
+  readonly IMA_RUNTIME_MODE?: unknown;
+  readonly TELEMETRY?: TelemetryNamespace;
+};
 
 const durableThreadCreatedAt = (ctx: DurableObjectState): string => {
   ctx.storage.sql.exec(`
@@ -52,10 +66,25 @@ export abstract class RuntimeProductionThinkHost<
   >;
   private readonly productionThreadCreatedAt: string | undefined;
   private readonly productionAnchorError: Error | undefined;
+  private readonly productionTraceSink: RuntimeTurnTraceSink | undefined;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.productionEnv = env;
+    const runtimeEnv = env as RuntimeTelemetryEnv;
+    const telemetry = runtimeEnv.TELEMETRY;
+    this.productionTraceSink =
+      telemetry === undefined
+        ? undefined
+        : createBestEffortRuntimeTurnTraceSink(
+            createDurableTelemetryStore(
+              telemetry,
+              telemetryObjectNameForRuntimeTraceMode(
+                runtimeTraceModeFor(runtimeEnv.IMA_RUNTIME_MODE),
+              ),
+            ),
+            (promise) => ctx.waitUntil(promise),
+          );
     this.productionContextPersistence = createDurableRuntimeContextPersistence(ctx.storage);
     try {
       this.productionThreadCreatedAt = durableThreadCreatedAt(ctx);
@@ -113,6 +142,33 @@ export abstract class RuntimeProductionThinkHost<
       throw new Error('RUNTIME_RETENTION_CLOCK_INVALID');
     }
     return now >= expiresAt;
+  }
+
+  protected recordRuntimeTurnTrace(
+    target: ThreadRuntimeTarget,
+    result: ThreadRuntimeTurnResult,
+    durationMs?: number,
+  ): void {
+    if (this.productionTraceSink === undefined) return;
+    try {
+      emitRuntimeTurnTrace(this.productionTraceSink, {
+        ownerScopeRef: target.ownerScopeRef,
+        threadId: target.threadId,
+        turnId: target.turnId,
+        revision: target.revision,
+        occurredAt: this.runtimeProductionNow(),
+        ...runtimeTurnTraceOutcome({
+          savedStatus: result.status,
+          responseAvailable: result.status === 'completed' && result.response !== null,
+          guardFailureCode: undefined,
+          failureCode: result.code,
+          cancelled: result.status === 'cancelled',
+        }),
+        ...(durationMs === undefined ? {} : { durationMs }),
+      });
+    } catch {
+      // A telemetry clock/sink failure never changes the persisted runtime result.
+    }
   }
 
   override configureSession(session: Session): Session | Promise<Session> {

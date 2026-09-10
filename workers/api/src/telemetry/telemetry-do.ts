@@ -313,8 +313,8 @@ export type TelemetryNamespace = DurableObjectNamespace<TelemetryDO>;
 export class DurableTelemetryStore implements TelemetryEventStore, TelemetryTraceStore {
   private readonly stub: TelemetryDOStub;
 
-  constructor(namespace: TelemetryNamespace) {
-    this.stub = namespace.getByName('telemetry-v1');
+  constructor(namespace: TelemetryNamespace, objectName = 'telemetry-v1') {
+    this.stub = namespace.getByName(objectName);
   }
 
   async write(record: TelemetryEventRecord | TraceRecord, ownerScopeRef: string): Promise<void> {
@@ -335,5 +335,7 @@ export class DurableTelemetryStore implements TelemetryEventStore, TelemetryTrac
   }
 }
 
-export const createDurableTelemetryStore = (namespace: TelemetryNamespace): DurableTelemetryStore =>
-  new DurableTelemetryStore(namespace);
+export const createDurableTelemetryStore = (
+  namespace: TelemetryNamespace,
+  objectName = 'telemetry-v1',
+): DurableTelemetryStore => new DurableTelemetryStore(namespace, objectName);

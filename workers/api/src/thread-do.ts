@@ -160,6 +160,8 @@ export class ThreadDO
       getConnection: () => this.ensureRuntimeThinkConnection(),
       execute: (input, target, isStale) => this.executeRuntimeTurn(input, target, isStale),
       commitResponse: () => false,
+      onFinalResult: (target, result, durationMs) =>
+        this.recordRuntimeTurnTrace(target, result, durationMs),
       clearMessages: () => this.clearRuntimeMessages(),
     });
   }

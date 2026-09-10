@@ -53,6 +53,11 @@ export type ThreadRuntimeControllerOptions = {
     isStale: () => boolean,
   ) => Promise<ThreadRuntimeTurnResult>;
   readonly commitResponse?: (target: ThreadRuntimeTarget, revision: number) => boolean;
+  readonly onFinalResult?: (
+    target: ThreadRuntimeTarget,
+    result: ThreadRuntimeTurnResult,
+    durationMs?: number,
+  ) => void;
   readonly clearMessages: () => Promise<void>;
 };
 type AdmissionOutcome = {
@@ -246,6 +251,23 @@ export class ThreadRuntimeController {
     return persistRuntimeResult({ ...this.options, target, result });
   }
 
+  private notifyFinalResult(
+    target: ThreadRuntimeTarget,
+    result: ThreadRuntimeTurnResult,
+    startedAtMs: number,
+  ): void {
+    const elapsed = performance.now() - startedAtMs;
+    const durationMs =
+      Number.isFinite(elapsed) && elapsed >= 0 && elapsed <= 600_000
+        ? Math.round(elapsed)
+        : undefined;
+    try {
+      this.options.onFinalResult?.(target, result, durationMs);
+    } catch {
+      // Runtime observation is best effort and cannot change the persisted result.
+    }
+  }
+
   private async waitForInvalidatedTurn(previous: ThreadRuntimeTarget | undefined): Promise<void> {
     if (previous === undefined) return;
     if (
@@ -276,22 +298,25 @@ export class ThreadRuntimeController {
     const admission = this.admit(input, inputDigest);
     if (admission.admission.status !== 'admitted') return admission.admission.result;
     await this.waitForInvalidatedTurn(admission.previousActive);
+    const target: ThreadRuntimeTarget = input;
+    const startedAtMs = performance.now();
     const admittedRow = this.rowSync(input);
     if (this.isStale(input)) {
       const result =
         admittedRow?.status === 'cancelled' || admittedRow?.status === 'cancel_requested'
           ? cancelledRuntimeResult()
           : runtimeFailure('STALE_TURN');
-      this.updateResult(input, result);
-      return result;
+      const finalResult = this.updateResult(input, result);
+      this.notifyFinalResult(target, finalResult, startedAtMs);
+      return finalResult;
     }
     const connection = this.options.getConnection();
     if (connection === undefined) {
       const result = runtimeFailure('RUNTIME_UNCONFIGURED');
-      this.updateResult(input, result);
-      return result;
+      const finalResult = this.updateResult(input, result);
+      this.notifyFinalResult(target, finalResult, startedAtMs);
+      return finalResult;
     }
-    const target: ThreadRuntimeTarget = input;
     this.activeTarget = target;
     const run = this.options.execute(input, target, () => this.isStale(target));
     this.activeRun = run;
@@ -310,6 +335,7 @@ export class ThreadRuntimeController {
       }
     } finally {
       result = this.updateResult(target, result ?? runtimeFailure('RUNTIME_FAILED'));
+      this.notifyFinalResult(target, result, startedAtMs);
       if (
         this.activeTarget?.ownerScopeRef === target.ownerScopeRef &&
         this.activeTarget.threadId === target.threadId &&
