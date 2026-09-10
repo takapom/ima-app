@@ -15,7 +15,7 @@
 
 ## 現在の実装と残件
 
-2026-09-11、`b4082ab` 時点。以下はIssueのClose判定ではなく、現在の実装状況である。
+2026-09-11、`7379ead` 時点。以下はIssueのClose判定ではなく、現在の実装状況である。
 
 | 対象                 | 実装・証跡                                                                                                                                                                                                                                                                                              | 残件                                                                        |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -31,9 +31,9 @@
 | #24 SDK/HTTP/DO統合  | 既存のM04〜M16各suite。`fc6f06c`でSDKエラー文字列の再送出を停止し、公開HTTP 502へ正規化。`e26a44b`で4領域対応表・0/2候補の実SDK応答                                                                                                                                                                     | 未監視保存面・SDK内部ログ、最新本番bootstrap/実アプリ接続の追加検証         |
 | #25 Provider契約     | 各AdapterのHTTP Fixture試験、`d2635ff` の明示live smoke・未設定skip・固定エラー報告。`1334564`で同名別店/再利用・臨休・photo 503と要求対応表を補完                                                                                                                                                      | journey実データadapterのCLI接続、実API検証                                  |
 | #26 モデル評価       | `07babb6`、`6829dc5`。14シナリオ×3反復の定義・評価ゲート、実Think/DOの明示live probe・trace/artifact                                                                                                                                                                                                    | `b4082ab`でID対応・複数turn基盤接続済み。全シナリオseed・42件実行・人手評価 |
-| #27 計測・flags      | `27b4553`。固定schema、実DO SQLite、厳密7日境界、書込み後alarm前倒し、HTTPイベント、実測/unknown別集計。`96b78bc`でfactory/写真HTTPの停止・Fixture隔離、`d3d74bd`で確定turnのtrace生成、`39ca731`で実モデルcall/token計測                                                                               | `300b091`でProvider通信計測済み。host配線・障害観測・既定Provider構成       |
+| #27 計測・flags      | `27b4553`。固定schema、実DO SQLite、厳密7日境界、書込み後alarm前倒し、HTTPイベント、実測/unknown別集計。`96b78bc`でfactory/写真HTTPの停止・Fixture隔離、`d3d74bd`で確定turnのtrace生成、`39ca731`で実モデルcall/token計測                                                                               | `7379ead`でhost配線済み。障害観測・写真通信計測・既定Provider構成           |
 | #28 App Integrity    | `6eeaede`、`11d0c70`。HTTP検証gate、nonce/key/counter境界、raw body・期限・取消・store障害、環境分離、nonce/keyの実DO永続化。`936ed77`で認証付きnonce/enroll/revoke HTTPを接続、`7dc653e`で実Worker暗号API/public key変換canary                                                                         | Apple verifier、native実機                                                  |
-| #29 環境統合         | `26e59ff`。3環境の設定、EAS profile/ID・HTTPS検証、秘密値を出さないpreflight、CI・runbook。`2556400`でキーなしdev Fixtureを既定HTTP/factoryへ接続                                                                                                                                                       | 既定hostのProvider構成、CI dry-run/手動deploy入口、実deploy/復旧の証跡      |
+| #29 環境統合         | `26e59ff`。3環境の設定、EAS profile/ID・HTTPS検証、秘密値を出さないpreflight、CI・runbook。`2556400`でキーなしdev Fixture、`1b7b0b8`で認証付き合成写真を既定HTTPへ接続                                                                                                                                  | 既定hostのProvider構成、CI dry-run/手動deploy入口、実deploy/復旧の証跡      |
 | #30 実機・MVP監査    | この対応表を作成中                                                                                                                                                                                                                                                                                      | 実アプリ→HTTP→実SDK→実APIの一連検証とスクリーンショット・ログ               |
 
 ## 直近の検証記録
@@ -80,6 +80,8 @@
 - 2026-09-11 01:57–59 JST: 親の `bun run test` 全9suite、186ファイル972テスト合格（Node 831、App Integrity HTTP 1、Worker 47、HTTP/mobile 22、Think 5、Think runtime 24、native 35、Production HTTP 1、dev Fixture 6）。全体lint（検出Fixture22件）・全workspace型検査・依存538 modules / 2,183 dependencies・Fixture31件も合格。実行時点は `39ca731` と監査文書の変更を含む。ビルド・実API・実機は未実測のままである。
 - 2026-09-11 02:14 JST: #20出典リンクの親関連3ファイル19テスト、mobile型、対象lint/format合格。`dc1905b`は339行。HTTP(S)のURL検証・非同期通知の競合を確認。実端末Linkingの起動は未実測。
 - 2026-09-11 02:29–33 JST: #27の親実transport関連15ファイル89テスト、#26専用評価18テスト（実モデル1件skip）・native mapping/trace 2テスト、Worker型3系統、対象lint/format、依存549 modules / 2,255 dependencies・Fixture31件が合格。`300b091`は959行、`b4082ab`は1,116行。Provider通信計測はhost配線前。ID変換は実DO/SDKと合成Providerによる検証であり、42件の実モデル評価ではない。
+- 2026-09-11 02:44–46 JST: #29の親dev Fixture9テスト・写真HTTP/RPC回帰3テスト、#27の親factory/transport関連15テスト・native計測1テスト、Worker型3系統、対象lint/format、依存550 modules / 2,267 dependencies・Fixture31件が合格。`1b7b0b8`は381行、`7379ead`は266行。合成画像の既定HTTP提供、実通信件数とTelemetryDO件数の一致、replay・次turn・namespace分離を確認。実API・実機は未実測。
+- 2026-09-11 02:47–49 JST: 親の `bun run test` 全9suite、190ファイル993テスト合格（Node848、App Integrity HTTP1、Worker47、HTTP/mobile22、Think5、Think runtime24、native36、Production HTTP1、dev Fixture9）。全workspace型検査・全体lint（検出Fixture22件）・全体formatも合格。`7379ead`時点の検証であり、後続評価seedの作業中変更は別途検証する。
 - この記録は全体テスト・ビルド・実機の最終合格を意味しない。以後の変更で再検証する。
 - Web起動試行: Expo 57の既定設定ではMetroの `EMFILE: too many open files, watch` で失敗。既存Watchmanを有効化した再試行は `watch-project` が130秒超応答せず停止した。Web exportも同じ待機で停止。画面表示・Webビルドは未確認であり、起動成功とは扱わない。
 
