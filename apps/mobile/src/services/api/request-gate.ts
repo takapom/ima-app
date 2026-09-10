@@ -2,7 +2,8 @@ import type { AssistantResponse } from '@ima/contracts';
 
 export type ApiOperationInput = {
   readonly threadId: string;
-  readonly turnId: string;
+  /** Initial search requests let the server derive the turn ID from the idempotency key. */
+  readonly turnId: string | null;
   readonly baseRevision: number;
   readonly idempotencyKey: string;
 };
@@ -50,7 +51,7 @@ const validRevision = (value: number): boolean =>
 
 const validOperation = (input: ApiOperationInput): boolean =>
   input.threadId.length > 0 &&
-  input.turnId.length > 0 &&
+  (input.turnId === null || input.turnId.length > 0) &&
   input.idempotencyKey.length > 0 &&
   validRevision(input.baseRevision);
 
@@ -162,7 +163,9 @@ export const createApiRequestGate = (): ApiRequestGate => {
       return { accepted: false, reason: 'stale_attempt' };
     }
     if (response.threadId !== threadId) return { accepted: false, reason: 'thread_mismatch' };
-    if (response.turnId !== token.turnId) return { accepted: false, reason: 'turn_mismatch' };
+    if (token.turnId !== null && response.turnId !== token.turnId) {
+      return { accepted: false, reason: 'turn_mismatch' };
+    }
     if (response.revision < token.expectedRevision || response.revision <= revision) {
       return { accepted: false, reason: 'stale_revision' };
     }
