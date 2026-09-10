@@ -15,7 +15,7 @@
 
 ## 現在の実装と残件
 
-2026-09-11、`1a66cff` 時点。以下はIssueのClose判定ではなく、現在の実装状況である。
+2026-09-11、`4b30ba2` 時点。以下はIssueのClose判定ではなく、現在の実装状況である。
 
 | 対象                 | 実装・証跡                                                                                                                                                                                                                                                                                                                                                                                                                                | 残件                                                                                                                                                   |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -99,6 +99,12 @@
 - 2026-09-11 05:11–16 JST: #26の親専用suite10ファイル39テスト合格・実モデル1件skip、追加した選択残存拒否/1候補選択の境界2テスト、Worker型3系統、対象ESLint/formatが合格。`51ee980`は786行。19時preludeから21時targetへのFixture時計と正式入力を同期し、比較A/B・順序と独立した選択Aのfresh根拠を確認。実モデルの意味評価・42件実行は未実施。
 - 2026-09-11 05:24–25 JST: alarm回帰修正後の親native14ファイル39テスト、Worker型3系統、対象ESLint/formatが合格。`1a66cff`は120行。固定05:00/05:05境界をcapabilityの直接呼出しで検証し、実Lifecycle予約は十分未来の相対JST日付で実schedulerとの競合を避ける。DOの保存anchorとcached anchorも再起動で一致させた。本番実装は未変更。並行作業を含む依存検査587 modules / 2,463 dependencies・Fixture31件も合格。
 - 2026-09-11 05:25–26 JST: 親の `bun run test` 全9suite、201ファイル1,054テストが合格（Node883、App Integrity HTTP1、Worker64、HTTP/mobile22、Think5、Think runtime24、native39、Production HTTP2、dev Fixture14）。`1a66cff`と保存UIの作業中変更を含む時点の結果。05:05のalarm回帰は解消し、未実行だった後続HTTP/Fixtureまで通過した。実API・実機・buildは引き続き未実施。
+- 2026-09-11 05:28–29 JST: #23の親mobile全34ファイル193テスト、mobile型、対象ESLint/formatが合格。`18b2db9`は495行。保存pendingの二重実行、取消後の旧finallyによる新処理解除、同一key再試行、revision変更後の遅着を抑止する操作境界を接続。正式API/SQLiteは注入時に利用するservice adapterまでであり、App composition自動配線・Expo SDKは次単位。実React mount/端末操作は未実測。
+- 2026-09-11 05:46–47 JST: #26の親専用suite10ファイル44テスト合格・実モデル1件skip、field policy4テスト・型修正後のlive contract10テスト、Worker型3系統、対象ESLint/formatが合格。`fff1d0a`は340行。固定地名を補わないGPS拒否、実promptの座標キー監査、正対照、実tool結果のLOCATION_REQUIRED・外部通信0を確認。重複したエラーcode許可リストをCore schemaへ統合し、未知codeと内部詳細は引き続き安全化する。GPSの実モデル評価は未実施。
+- 2026-09-11 05:53–06:03 JST: #23 App保存接続の親mobile35ファイル197テストと型検査、追加後の保存scope/Worker関連7ファイル35テスト、mobile型・対象ESLint/formatが合格。`bf43584`は859行。App→JourneyScreen→hookへ正式storageを注入し、controllerの現在thread/revision・表示期限を確認する。pending/cancelled時は保存APIを呼ばず、API待機中のsession期限到来後もSQLiteへ保存しない。Node SQLiteと固定HTTPでの検証であり、Expo端末adapter・保存一覧refreshは未接続。
+- 2026-09-11 06:05–06:06 JST: #17保存参照model境界の親5ファイル29テスト、Core型・Worker型3系統が合格。`77966d3`は1,179行。modelにはopaque saved refだけを渡し、選択された最大5件をWorkerの非同期resolverへ委譲する。解決成功時のcandidateId/savedPlaceRef対応、部分失敗・raw error除去・不正warnings・待機中cancelによるCore Details I/O抑止を確認。所有者DOからの実再取得とproduction配線は次単位。並行作業を含む依存検査596 modules / 2,520 dependencies・Fixture31件も合格。
+- 2026-09-11 06:05–06:07 JST: 親の `bun run test` 全9suite、205ファイル1,076テストが合格（Node905、App Integrity HTTP1、Worker64、HTTP/mobile22、Think5、Think runtime24、native39、Production HTTP2、dev Fixture14）。`77966d3`と評価Fixtureの作業中変更を含む。実API・実モデル・実機・buildは未実施。
+- 2026-09-11 06:07–06:08 JST: 親全体lint（500行上限・検出Fixture22件を含む）と #26専用suite11ファイル46テストが合格、実モデル1件skip。`4b30ba2`は496行。condition-change/mixed-intentの正式予算→model入力、検索意図→実送信query、recordRef→候補IDとfresh price根拠の接続を確認。固定modelによるkeyless Fixtureであり、live profile昇格・実モデル条件理解の合格ではない。
 - この記録は全体テスト・ビルド・実機の最終合格を意味しない。以後の変更で再検証する。
 - Web起動試行: Expo 57の既定設定ではMetroの `EMFILE: too many open files, watch` で失敗。既存Watchmanを有効化した再試行は `watch-project` が130秒超応答せず停止した。Web exportも同じ待機で停止。画面表示・Webビルドは未確認であり、起動成功とは扱わない。
 
