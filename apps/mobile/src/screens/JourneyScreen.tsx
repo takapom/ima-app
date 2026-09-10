@@ -198,9 +198,11 @@ function JourneyScreenStateOwner({
       const context: JourneySubmitContext = {
         conditions: journey.conditions,
         removedChipLabels: journey.removedChipLabels,
+        cardSetId: renderedResponse.cardSetId,
         promotedCandidateId: actions.state.promotedCandidateId,
         selectedCandidateId: actions.state.decidedCandidateId,
         candidateOrder: actions.candidateOrder,
+        excludeCandidateIds: actions.state.tonightExcludedCandidateIds,
       };
       setRequestStartRevision(renderedResponse.revision);
       journey.beginRequest(value);
@@ -210,9 +212,11 @@ function JourneyScreenStateOwner({
       actions.candidateOrder,
       actions.state.decidedCandidateId,
       actions.state.promotedCandidateId,
+      actions.state.tonightExcludedCandidateIds,
       journey.beginRequest,
       journey.conditions,
       journey.removedChipLabels,
+      renderedResponse.cardSetId,
       renderedResponse.revision,
       onSubmit,
     ],
@@ -224,9 +228,11 @@ function JourneyScreenStateOwner({
     const context: JourneySubmitContext = {
       conditions: journey.conditions,
       removedChipLabels: journey.removedChipLabels,
+      cardSetId: renderedResponse.cardSetId,
       promotedCandidateId: actions.state.promotedCandidateId,
       selectedCandidateId: actions.state.decidedCandidateId,
       candidateOrder: actions.candidateOrder,
+      excludeCandidateIds: actions.state.tonightExcludedCandidateIds,
     };
     setRequestStartRevision(renderedResponse.revision);
     journey.beginRequest(journey.query);
@@ -236,12 +242,14 @@ function JourneyScreenStateOwner({
     journey.conditions,
     journey.query,
     journey.removedChipLabels,
+    renderedResponse.cardSetId,
     renderedResponse.revision,
     onRetry,
     onSubmit,
     actions.candidateOrder,
     actions.state.decidedCandidateId,
     actions.state.promotedCandidateId,
+    actions.state.tonightExcludedCandidateIds,
   ]);
   const cancel = useCallback((): void => {
     setRequestStartRevision(null);

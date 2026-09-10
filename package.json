@@ -23,7 +23,8 @@
     "typecheck": "bun run scripts/run-workspaces.mjs typecheck && tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config vitest.config.ts && vitest run --config vitest.worker.config.ts && bun run test:runtime",
     "test:runtime": "vitest run --config vitest.runtime.config.ts && vitest run --config vitest.think.config.ts && vitest run --config vitest.think-runtime.config.ts && bun run test:runtime-native",
-    "test:runtime-native": "vitest run --config vitest.runtime-native.config.ts",
+    "test:runtime-native": "vitest run --config vitest.runtime-native.config.ts && bun run test:runtime-production-http",
+    "test:runtime-production-http": "vitest run --config vitest.runtime-production-http.config.ts",
     "build": "bun run scripts/run-workspaces.mjs build",
     "commit-size": "node scripts/check-commit-size.mjs"
   },

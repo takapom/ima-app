@@ -29,3 +29,9 @@ bun run start
 ```
 
 `mobile-runtime.ts` は `process.env.EXPO_PUBLIC_*` の静的なプロパティ参照を使う。Expo bundlerが置換できない動的な `process.env[name]` lookup や、liveへのfixture fallbackは実装しない。
+
+## 実Workerとの表示コンテキスト検証
+
+HTTP接続の候補表示コンテキストは `workers/api/tests/runtime-production-http.test.ts` で検証する。`SELF.fetch` から実HTTP router、`ProductionThreadDO`、同じproduction factoryへ到達し、`cardSetId`、選択候補、主提案順、除外候補がモデルへ渡ることを観測する。旧cardSetはHTTP `409 CONFLICT`となり、`evictDurableObject` 後もowner/threadに束縛された除外IDをSQL参照から復元する。
+
+この検証は固定fixtureのモデル・providerを使うため、実OpenAI/Placesや実機の成功を意味しない。通常のruntime-native globから分離した専用configを `test:runtime-native` の後段で実行し、`bun run test:runtime-production-http` で単独再実行できる。

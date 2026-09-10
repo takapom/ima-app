@@ -25,6 +25,13 @@ import {
   type RuntimeProductionContextPersistence,
   type RuntimeProductionContextStateForReference,
 } from './runtime-production-context-reference';
+import {
+  cardSetFor,
+  cardSetForDisplayContext,
+  hasDisplayContext,
+  stagedCardSetFor,
+  RuntimeProductionContextLimitError,
+} from './runtime-production-display-context';
 
 type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 
@@ -40,6 +47,7 @@ type ProductionContextState = {
   readonly cardSetReferenceOnly: boolean;
   readonly evidence: readonly ModelEvidenceSource[];
   readonly savedPlaceRefs: readonly string[];
+  readonly excludedCandidateIds: readonly string[];
 };
 
 type PendingTurn = {
@@ -92,6 +100,10 @@ const turnKey = (scope: RegistryScope, input: ThreadTurnRequest): string =>
     clientNow: input.clientNow,
     location: input.location,
     prefs: input.prefs,
+    cardSetId: input.cardSetId,
+    promotedCandidateId: input.promotedCandidateId,
+    selectedCandidateId: input.selectedCandidateId,
+    candidateOrder: input.candidateOrder,
     savedPlaceRefs: input.savedPlaceRefs,
     excludeCandidateIds: input.excludeCandidateIds,
     mode: input.mode,
@@ -103,6 +115,15 @@ const appendBounded = <T>(items: readonly T[], next: readonly T[], max: number):
 
 const unique = (items: readonly string[]): readonly string[] => [...new Set(items)];
 
+const nextExcludedCandidateIds = (
+  current: readonly string[],
+  requested: readonly string[],
+): readonly string[] => {
+  const next = unique([...current, ...requested]);
+  if (next.length > 50) throw new RuntimeProductionContextLimitError();
+  return next;
+};
+
 const copyCardSet = (cardSet: CardSetSource | null): CardSetSource | null =>
   cardSet === null ? null : structuredClone(cardSet);
 
@@ -113,6 +134,7 @@ const copyState = (state: ProductionContextState): ProductionContextState => ({
   cardSetReferenceOnly: state.cardSetReferenceOnly,
   evidence: structuredClone(state.evidence),
   savedPlaceRefs: [...state.savedPlaceRefs],
+  excludedCandidateIds: [...state.excludedCandidateIds],
 });
 
 const responseEvidenceIds = (response: AssistantResponse): readonly string[] => {
@@ -172,92 +194,6 @@ const evidenceSourceFor = (
     retention: observation.retention,
   });
   return parsed.success ? parsed.output : undefined;
-};
-
-const candidateSourceFor = (
-  registry: CandidateObservationRegistryPort,
-  scope: RegistryScope,
-  record: NonNullable<CardSetSource['record']>,
-): CardSetSource['candidates'] | undefined => {
-  const excluded = new Set(record.excludedCandidateIds);
-  const candidates = record.entries.map((entry) =>
-    registry.readCandidate(scope, entry.candidateId),
-  );
-  if (candidates.some((candidate) => candidate === undefined)) return undefined;
-  return candidates.map((candidate) => {
-    if (candidate === undefined) throw new Error('candidate disappeared while projecting context');
-    if (candidate.ownerScopeRef !== scope.ownerScopeRef || candidate.threadId !== scope.threadId) {
-      throw new Error('candidate scope changed while projecting context');
-    }
-    return {
-      candidateId: candidate.candidateId,
-      ownerScopeRef: candidate.ownerScopeRef,
-      threadId: candidate.threadId,
-      displayName: candidate.displayName,
-      status: candidate.status,
-      excluded: excluded.has(candidate.candidateId) || candidate.excluded,
-    };
-  });
-};
-
-const cardSetFor = (
-  registry: CandidateObservationRegistryPort,
-  scope: RegistryScope,
-  record: CardSetSource['record'],
-): CardSetSource | null => {
-  const candidates = candidateSourceFor(registry, scope, record);
-  if (candidates === undefined) return null;
-  const excluded = unique([
-    ...record.excludedCandidateIds,
-    ...candidates
-      .filter((candidate) => candidate.excluded)
-      .map((candidate) => candidate.candidateId),
-  ]);
-  const selectedCandidateId =
-    record.selectedCandidateId !== null && excluded.includes(record.selectedCandidateId)
-      ? null
-      : record.selectedCandidateId;
-  const parsed = v.safeParse(CardSetRecordSchema, {
-    ...record,
-    selectedCandidateId,
-    excludedCandidateIds: excluded,
-  });
-  return parsed.success ? { record: parsed.output, candidates } : null;
-};
-
-const stagedCardSetFor = (
-  registry: CandidateObservationRegistryPort,
-  scope: RegistryScope,
-  previous: CardSetSource | null,
-  excludedCandidateIds: readonly string[],
-  referenceOnly = false,
-): CardSetSource | null => {
-  if (previous === null) return null;
-  const entryIds = new Set(previous.record.entries.map((entry) => entry.candidateId));
-  const excluded = unique([
-    ...previous.record.excludedCandidateIds,
-    ...excludedCandidateIds.filter((candidateId) => entryIds.has(candidateId)),
-  ]);
-  const selectedCandidateId =
-    previous.record.selectedCandidateId !== null &&
-    excluded.includes(previous.record.selectedCandidateId)
-      ? null
-      : previous.record.selectedCandidateId;
-  const parsed = v.safeParse(CardSetRecordSchema, {
-    ...previous.record,
-    selectedCandidateId,
-    excludedCandidateIds: excluded,
-  });
-  if (!parsed.success) return null;
-  const resolved = cardSetFor(registry, scope, parsed.output);
-  if (resolved !== null || !referenceOnly) return resolved;
-  return {
-    record: parsed.output,
-    candidates: previous.candidates.map((candidate) => ({
-      ...candidate,
-      excluded: excluded.includes(candidate.candidateId) || candidate.excluded,
-    })),
-  };
 };
 
 const cardSetFromResponse = (
@@ -332,6 +268,7 @@ export const createRuntimeProductionContextStore = (input: {
     cardSetReferenceOnly: false,
     evidence: [],
     savedPlaceRefs: [],
+    excludedCandidateIds: [],
   };
   let pending: PendingTurn | undefined;
   let boundScope: RegistryScope | undefined;
@@ -382,15 +319,28 @@ export const createRuntimeProductionContextStore = (input: {
     }
     boundScope ??= safeScope;
     restoreForScope(safeScope);
-    const stagedCardSet = stagedCardSetFor(
-      input.registry,
-      safeScope,
-      copyCardSet(state.cardSet),
-      request.excludeCandidateIds,
-      state.cardSetReferenceOnly,
-    );
+    // Reject an over-bound exclusion history before any model/provider work is started.
+    nextExcludedCandidateIds(state.excludedCandidateIds, request.excludeCandidateIds);
+    const explicitDisplayContext = hasDisplayContext(request);
+    const stagedCardSet = cardSetForDisplayContext({
+      registry: input.registry,
+      scope: safeScope,
+      previous: copyCardSet(state.cardSet),
+      request,
+      referenceOnly: state.cardSetReferenceOnly,
+      knownExcludedCandidateIds: state.excludedCandidateIds,
+      legacyStage: () =>
+        stagedCardSetFor(
+          input.registry,
+          safeScope,
+          copyCardSet(state.cardSet),
+          request.excludeCandidateIds,
+          state.cardSetReferenceOnly,
+        ),
+    });
     const cardSet =
-      stagedCardSet ?? (state.cardSetReferenceOnly ? copyCardSet(state.cardSet) : null);
+      stagedCardSet ??
+      (explicitDisplayContext || !state.cardSetReferenceOnly ? null : copyCardSet(state.cardSet));
     pending = {
       key: turnKey(safeScope, request),
       input: structuredClone(request),
@@ -425,6 +375,12 @@ export const createRuntimeProductionContextStore = (input: {
     )
       return;
 
+    // Check the durable reference bound before projecting candidates or mutating the registry.
+    const nextExcluded = nextExcludedCandidateIds(
+      active.base.excludedCandidateIds,
+      active.input.excludeCandidateIds,
+    );
+
     const responseCardSet =
       parsed.output.kind === 'cards'
         ? cardSetFromResponse(input.registry, active.scope, parsed.output)
@@ -457,9 +413,15 @@ export const createRuntimeProductionContextStore = (input: {
         ? (active.cardSet?.record.entries.map((entry) => entry.candidateId) ?? [])
         : [],
     );
+    const knownExcludedCandidateIds = new Set(active.base.excludedCandidateIds);
     for (const candidateId of active.input.excludeCandidateIds) {
       const candidate = input.registry.readCandidate(active.scope, candidateId);
-      if (candidate === undefined && !referenceCandidateIds.has(candidateId)) return;
+      if (
+        candidate === undefined &&
+        !referenceCandidateIds.has(candidateId) &&
+        !knownExcludedCandidateIds.has(candidateId)
+      )
+        return;
     }
     try {
       for (const candidateId of active.input.excludeCandidateIds) {
@@ -479,6 +441,7 @@ export const createRuntimeProductionContextStore = (input: {
         parsed.output.kind === 'cards' ? false : active.base.cardSetReferenceOnly,
       evidence: [...byEvidenceId.values()].slice(-64),
       savedPlaceRefs: [...active.input.savedPlaceRefs],
+      excludedCandidateIds: nextExcluded,
     };
     pending = undefined;
     persistState(active.scope);

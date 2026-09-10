@@ -14,6 +14,10 @@ import {
   type ProductionProviderFixtureReport,
   type ProductionScenario,
 } from './runtime-production-provider-fixture';
+import {
+  modelCardSetSnapshotsIn,
+  type RuntimeProductionCardSetSnapshot,
+} from './runtime-production-model-observation';
 
 export const RUNTIME_PRODUCTION_NOW = '2026-09-10T12:00:00.000Z';
 
@@ -88,6 +92,7 @@ export type RuntimeProductionReport = {
   readonly deniedFieldCanarySeen: boolean;
   readonly modelHistorySeen: boolean;
   readonly modelCardSetSeen: boolean;
+  readonly modelCardSetSnapshots: readonly RuntimeProductionCardSetSnapshot[];
 };
 
 export type RuntimeProductionProviderOptions = {
@@ -109,6 +114,7 @@ type MutableRuntimeProductionReport = ProductionProviderFixtureReport & {
   deniedFieldCanarySeen: boolean;
   modelHistorySeen: boolean;
   modelCardSetSeen: boolean;
+  modelCardSetSnapshots: RuntimeProductionCardSetSnapshot[];
 };
 
 const usage = {
@@ -241,6 +247,7 @@ const modelForProduction = (
       report.deniedFieldCanarySeen ||= prompt.includes(DENIED_FIELD_CANARY);
       report.modelHistorySeen ||= prompt.includes('history\\":[{');
       report.modelCardSetSeen ||= prompt.includes('cardSet\\":{');
+      report.modelCardSetSnapshots.push(...modelCardSetSnapshotsIn(prompt));
       const finalOnly =
         Object.keys(options.tools ?? {}).length === 0 || options.toolChoice?.type === 'none';
       report.finalResponseFlags.push(finalOnly);
@@ -426,6 +433,7 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
       deniedFieldCanarySeen: false,
       modelHistorySeen: false,
       modelCardSetSeen: false,
+      modelCardSetSnapshots: [],
     };
     this.productionReport = report;
     const retention = this.llmOnlyModel ? LLM_ONLY_RETENTION : ALLOW_RETENTION;

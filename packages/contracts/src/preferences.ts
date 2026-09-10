@@ -46,6 +46,15 @@ export type LocationSnapshot = v.InferOutput<typeof LocationSnapshotSchema>;
 
 export const SearchModeSchema = v.picklist(['search', 'recover']);
 
+const CandidateOrderSchema = v.pipe(
+  v.array(OpaqueIdSchema),
+  v.maxLength(3),
+  v.check(
+    (candidateIds) => new Set(candidateIds).size === candidateIds.length,
+    'candidate display order must be unique',
+  ),
+);
+
 /** HTTP input; Worker must project location and credentials before model input. */
 const SearchTurnFields = {
   schemaVersion: SchemaVersionSchema,
@@ -56,6 +65,11 @@ const SearchTurnFields = {
   clientNow: IsoTimestampSchema,
   location: LocationSnapshotSchema,
   prefs: PreferencesSchema,
+  /** Optional for clients that do not yet send the displayed-card context. */
+  cardSetId: v.optional(v.nullable(OpaqueIdSchema)),
+  promotedCandidateId: v.optional(v.nullable(OpaqueIdSchema)),
+  selectedCandidateId: v.optional(v.nullable(OpaqueIdSchema)),
+  candidateOrder: v.optional(CandidateOrderSchema),
   savedPlaceRefs: v.pipe(v.array(OpaqueIdSchema), v.maxLength(50)),
   excludeCandidateIds: v.pipe(v.array(OpaqueIdSchema), v.maxLength(50)),
   mode: SearchModeSchema,

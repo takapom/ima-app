@@ -1,7 +1,4 @@
-import {
-  isRuntimeThinkConnectionError,
-  type RuntimeThinkConnection,
-} from '../runtime/runtime-think-connection';
+import { type RuntimeThinkConnection } from '../runtime/runtime-think-connection';
 import {
   cancelledRuntimeResult,
   isThreadRuntimeTarget,
@@ -15,8 +12,8 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-  type ThreadRuntimeFailureCode,
 } from './admission';
+import { runtimeResultForError } from './controller-errors';
 import { persistRuntimeResult } from './result-persistence';
 import { cancelRuntimeForLifecycle as cancelRuntimeForLifecycleRows } from './lifecycle-cancel';
 import { isRuntimeTargetStale } from './stale-check';
@@ -100,30 +97,6 @@ const resultFromRow = (row: RuntimeTurnRow): ThreadRuntimeTurnResult => {
   if (row.status === 'failed') return runtimeFailure('RUNTIME_FAILED', row.request_id);
   return cancelledRuntimeResult();
 };
-
-const runtimeErrorCode = (error: unknown): ThreadRuntimeFailureCode => {
-  if (isRuntimeThinkConnectionError(error)) {
-    switch (error.code) {
-      case 'CANCELLED':
-        return 'CANCELLED';
-      case 'STALE_TURN':
-        return 'STALE_TURN';
-      case 'TURN_ALREADY_ACTIVE':
-        return 'TURN_ALREADY_ACTIVE';
-      case 'RUNTIME_UNCONFIGURED':
-        return 'RUNTIME_UNCONFIGURED';
-      case 'TURN_NOT_ACTIVE':
-      case 'COMPOSITION_INVALID':
-        return 'RUNTIME_FAILED';
-      default:
-        return 'RUNTIME_FAILED';
-    }
-  }
-  return 'RUNTIME_FAILED';
-};
-
-const resultForError = (error: unknown): ThreadRuntimeTurnResult =>
-  runtimeFailure(runtimeErrorCode(error));
 
 const responseColumns =
   'response_revision, response_kind, response_presentation, response_card_set_id';
@@ -326,9 +299,9 @@ export class ThreadRuntimeController {
     try {
       result = await run;
     } catch (error: unknown) {
-      if (isRuntimeThinkConnectionError(error)) {
-        result = resultForError(error);
-      } else {
+      const mapped = runtimeResultForError(error);
+      if (mapped !== undefined) result = mapped;
+      else {
         result = runtimeFailure('RUNTIME_FAILED');
         unexpectedError = error;
         hasUnexpectedError = true;

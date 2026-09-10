@@ -139,8 +139,12 @@ export const createJourneyApiRequestFactory = (
     clientNow: options.now(),
     location: unavailableLocation,
     prefs: preferencesFor(input),
+    cardSetId: input.context.cardSetId,
+    promotedCandidateId: input.context.promotedCandidateId,
+    selectedCandidateId: input.context.selectedCandidateId,
+    candidateOrder: [...input.context.candidateOrder],
     savedPlaceRefs: [],
-    excludeCandidateIds: [],
+    excludeCandidateIds: [...input.context.excludeCandidateIds],
     mode: 'search' as const,
     idempotencyKey: options.idFactory('operation'),
   });

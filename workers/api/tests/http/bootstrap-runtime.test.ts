@@ -123,6 +123,37 @@ describe('HTTP runtime bootstrap adapter', () => {
     expect(result.response.response.revision).toBe(searchInput.revision + 1);
   });
 
+  it('passes displayed-card context through the HTTP adapter into the runtime input', async () => {
+    let received: ThreadRuntimeTurnInput | undefined;
+    const stub = makeStub({
+      runRuntimeTurn: vi.fn((value: unknown) => {
+        if (!isThreadRuntimeTurnInput(value)) throw new Error('invalid fixture runtime input');
+        received = value;
+        return Promise.resolve(runtimeResultFor(value));
+      }),
+    });
+    const operation = {
+      ...runtimeOperation,
+      input: {
+        ...runtimeOperation.input,
+        cardSetId: 'card-set-1',
+        promotedCandidateId: 'candidate-2',
+        selectedCandidateId: 'candidate-2',
+        candidateOrder: ['candidate-2', 'candidate-1'],
+        excludeCandidateIds: ['candidate-3'],
+      },
+    };
+
+    await expect(makeHandler(stub).handle(operation, contextFor())).resolves.toMatchObject({
+      kind: 'search',
+    });
+    expect(received?.input.cardSetId).toBe('card-set-1');
+    expect(received?.input.promotedCandidateId).toBe('candidate-2');
+    expect(received?.input.selectedCandidateId).toBe('candidate-2');
+    expect(received?.input.candidateOrder).toEqual(['candidate-2', 'candidate-1']);
+    expect(received?.input.excludeCandidateIds).toEqual(['candidate-3']);
+  });
+
   it('maps a completed duplicate to CONFLICT so the client can GET replay', async () => {
     const stub = makeStub({
       runRuntimeTurn: vi.fn(() => Promise.resolve(runtimeFailure('IDEMPOTENCY_CONFLICT'))),
@@ -130,6 +161,15 @@ describe('HTTP runtime bootstrap adapter', () => {
     const handler = makeHandler(stub);
 
     await expect(handler.handle(runtimeOperation, contextFor())).rejects.toMatchObject({
+      failure: { status: 409, code: 'CONFLICT' },
+    });
+  });
+
+  it('maps a rejected displayed-card context to a public conflict', async () => {
+    const stub = makeStub({
+      runRuntimeTurn: vi.fn(() => Promise.resolve(runtimeFailure('REVISION_CONFLICT'))),
+    });
+    await expect(makeHandler(stub).handle(runtimeOperation, contextFor())).rejects.toMatchObject({
       failure: { status: 409, code: 'CONFLICT' },
     });
   });

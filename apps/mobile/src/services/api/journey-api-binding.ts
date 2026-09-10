@@ -10,9 +10,12 @@ import type { JourneyApiController } from './journey-controller-types';
 export type JourneyApiSubmitContext = {
   readonly conditions: JourneyConditions;
   readonly removedChipLabels: readonly string[];
+  /** The card set currently visible to the user, if any. */
+  readonly cardSetId: string | null;
   readonly promotedCandidateId: string | null;
   readonly selectedCandidateId: string | null;
   readonly candidateOrder: readonly string[];
+  readonly excludeCandidateIds: readonly string[];
 };
 
 export type JourneyApiSearchFactoryInput = {

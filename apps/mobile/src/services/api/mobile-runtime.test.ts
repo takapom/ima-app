@@ -22,9 +22,11 @@ const context = {
     budget: 'normal' as const,
   },
   removedChipLabels: [],
-  promotedCandidateId: null,
-  selectedCandidateId: null,
-  candidateOrder: [],
+  cardSetId: 'card-set-1',
+  promotedCandidateId: 'candidate-2',
+  selectedCandidateId: 'candidate-2',
+  candidateOrder: ['candidate-2', 'candidate-1'],
+  excludeCandidateIds: ['candidate-3'],
 };
 
 describe('mobile journey runtime composition', () => {
@@ -45,6 +47,11 @@ describe('mobile journey runtime composition', () => {
     expect(request.text).toBe('駅の近くで静かな店');
     expect(request.prefs).toMatchObject({ maxWalkMinutes: 12, budget: 'normal' });
     expect(request.prefs.homeStationRef).toBeNull();
+    expect(request.cardSetId).toBe('card-set-1');
+    expect(request.promotedCandidateId).toBe('candidate-2');
+    expect(request.selectedCandidateId).toBe('candidate-2');
+    expect(request.candidateOrder).toEqual(['candidate-2', 'candidate-1']);
+    expect(request.excludeCandidateIds).toEqual(['candidate-3']);
   });
 
   it('does not claim a runtime when mode or credentials are absent', () => {
