@@ -12,6 +12,7 @@ export { createJourneyApiComposition } from './composition';
 export {
   createJourneyApiRequestFactory,
   createMobileJourneyRuntime,
+  JourneyApiRequestFactoryError,
   mobileJourneyRuntimeMessage,
 } from './mobile-runtime';
 export type {
