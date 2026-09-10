@@ -3,14 +3,19 @@ import { colors, radii, spacing, typography } from '../theme/tokens';
 
 type ErrorStateProps = {
   readonly message: string;
+  readonly title?: string;
   readonly onRetry?: () => void;
 };
 
-export function ErrorState({ message, onRetry }: ErrorStateProps): React.JSX.Element {
+export function ErrorState({
+  message,
+  title = '検索できませんでした',
+  onRetry,
+}: ErrorStateProps): React.JSX.Element {
   const canRetry = onRetry !== undefined;
   return (
     <View style={styles.container}>
-      <Text style={styles.kicker}>検索できませんでした</Text>
+      <Text style={styles.kicker}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
       <Pressable
         accessibilityRole="button"

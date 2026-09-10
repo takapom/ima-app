@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { MAX_CHIPS, MAX_QUERY_LENGTH, appendSuggestion, uniqueTerms } from '../state/journey-input';
 import { colors, radii, scaleForDynamicType, spacing, typography } from '../theme/tokens';
 
 type ComposerProps = {
@@ -7,14 +8,10 @@ type ComposerProps = {
   readonly suggestions: readonly string[];
   readonly onChange: (value: string) => void;
   readonly onSubmit?: (value: string) => void;
+  readonly onCancel?: () => void;
   readonly disabled?: boolean;
-};
-
-const appendSuggestion = (value: string, suggestion: string): string => {
-  const current = value.trim();
-  if (current.length === 0) return suggestion;
-  if (current.includes(suggestion)) return current;
-  return `${current}、${suggestion}`;
+  readonly pending?: boolean;
+  readonly maxLength?: number;
 };
 
 export function Composer({
@@ -23,19 +20,31 @@ export function Composer({
   suggestions,
   onChange,
   onSubmit,
+  onCancel,
   disabled = false,
+  pending = false,
+  maxLength = MAX_QUERY_LENGTH,
 }: ComposerProps): React.JSX.Element {
   const { fontScale } = useWindowDimensions();
-  const canSubmit = !disabled && onSubmit !== undefined && value.trim().length > 0;
+  const visibleSuggestions = uniqueTerms(suggestions, MAX_CHIPS);
+  const canSubmit =
+    !disabled &&
+    !pending &&
+    onSubmit !== undefined &&
+    value.trim().length > 0 &&
+    value.length <= maxLength;
+  const canCancel = pending && onCancel !== undefined;
+  const actionEnabled = pending ? canCancel : canSubmit;
   return (
     <View style={styles.container}>
-      {suggestions.length > 0 ? (
+      {visibleSuggestions.length > 0 ? (
         <View style={styles.suggestions}>
-          {suggestions.map((suggestion) => (
+          {visibleSuggestions.map((suggestion) => (
             <Pressable
               accessibilityRole="button"
+              disabled={disabled || pending}
               key={suggestion}
-              onPress={() => onChange(appendSuggestion(value, suggestion))}
+              onPress={() => onChange(appendSuggestion(value, suggestion, maxLength))}
               style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}
             >
               <Text style={styles.suggestionText}>＋{suggestion}</Text>
@@ -46,8 +55,9 @@ export function Composer({
       <View style={styles.inputRow}>
         <TextInput
           accessibilityLabel="検索条件"
-          editable={!disabled}
+          editable={!disabled && !pending}
           multiline
+          maxLength={maxLength}
           onChangeText={onChange}
           placeholder={placeholder}
           placeholderTextColor={colors.faint}
@@ -55,19 +65,22 @@ export function Composer({
           style={[styles.input, { maxHeight: scaleForDynamicType(96, fontScale) }]}
           value={value}
         />
+        <Text accessibilityLabel={`${value.length}文字`} style={styles.counter}>
+          {value.length}/{maxLength}
+        </Text>
         <Pressable
-          accessibilityLabel="検索を送信"
+          accessibilityLabel={pending ? '検索を取り消す' : '検索を送信'}
           accessibilityRole="button"
-          disabled={!canSubmit}
-          onPress={() => onSubmit?.(value)}
+          disabled={!actionEnabled}
+          onPress={() => (pending ? onCancel?.() : onSubmit?.(value))}
           style={({ pressed }) => [
             styles.send,
-            !canSubmit && styles.sendDisabled,
+            !actionEnabled && styles.sendDisabled,
             pressed && styles.pressed,
           ]}
         >
           <Text allowFontScaling={false} style={styles.sendText}>
-            ↑
+            {pending ? '×' : '↑'}
           </Text>
         </Pressable>
       </View>
@@ -121,6 +134,11 @@ const styles = StyleSheet.create({
     minHeight: 36,
     paddingHorizontal: 0,
     paddingVertical: 7,
+  },
+  counter: {
+    color: colors.faint,
+    fontSize: 10,
+    marginBottom: 13,
   },
   send: {
     alignItems: 'center',

@@ -1,5 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ConditionEditor } from './ConditionEditor';
 import { colors, radii, spacing, typography } from '../theme/tokens';
+import type { ConditionScope, JourneyConditions } from '../state/journey-input';
 import type { DrawerView, SavedPlaceItem, SearchHistoryItem } from '../state/journey-shell';
 
 type DrawerProps = {
@@ -10,6 +12,11 @@ type DrawerProps = {
   readonly onClose: () => void;
   readonly onNewSearch: () => void;
   readonly onViewChange: (view: DrawerView) => void;
+  readonly conditions: JourneyConditions;
+  readonly savedConditions: JourneyConditions;
+  readonly conditionScope: ConditionScope;
+  readonly onConditionScopeChange: (scope: ConditionScope) => void;
+  readonly onConditionsChange: (scope: ConditionScope, changes: Partial<JourneyConditions>) => void;
   readonly onHistorySelect?: (item: SearchHistoryItem) => void;
   readonly onSavedPlaceSelect?: (item: SavedPlaceItem) => void;
 };
@@ -18,6 +25,7 @@ const viewTitle: Record<DrawerView, string> = {
   home: '今夜',
   history: '今夜の履歴',
   saved: '保存した店',
+  conditions: '条件',
 };
 
 export function Drawer({
@@ -28,6 +36,11 @@ export function Drawer({
   onClose,
   onNewSearch,
   onViewChange,
+  conditions,
+  savedConditions,
+  conditionScope,
+  onConditionScopeChange,
+  onConditionsChange,
   onHistorySelect,
   onSavedPlaceSelect,
 }: DrawerProps): React.JSX.Element | null {
@@ -89,6 +102,7 @@ export function Drawer({
             <HomeView
               history={history}
               savedPlaces={savedPlaces}
+              onConditions={() => onViewChange('conditions')}
               onNewSearch={onNewSearch}
               onViewChange={onViewChange}
             />
@@ -112,7 +126,7 @@ export function Drawer({
               )}
               title={viewTitle[view]}
             />
-          ) : (
+          ) : view === 'saved' ? (
             <ListView
               emptyLabel="保存した店はまだありません"
               items={savedPlaces}
@@ -129,6 +143,13 @@ export function Drawer({
               )}
               title={viewTitle[view]}
             />
+          ) : (
+            <ConditionEditor
+              conditions={conditionScope === 'thread' ? conditions : savedConditions}
+              onChange={(changes) => onConditionsChange(conditionScope, changes)}
+              onScopeChange={onConditionScopeChange}
+              scope={conditionScope}
+            />
           )}
         </ScrollView>
       </View>
@@ -141,11 +162,13 @@ type HomeViewProps = {
   readonly savedPlaces: readonly SavedPlaceItem[];
   readonly onNewSearch: () => void;
   readonly onViewChange: (view: DrawerView) => void;
+  readonly onConditions: () => void;
 };
 
 function HomeView({
   history,
   savedPlaces,
+  onConditions,
   onNewSearch,
   onViewChange,
 }: HomeViewProps): React.JSX.Element {
@@ -184,6 +207,13 @@ function HomeView({
         >
           <Text style={styles.navText}>保存した店</Text>
           <Text style={styles.navCount}>{savedPlaces.length}</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onConditions}
+          style={({ pressed }) => [styles.navRow, pressed && styles.rowPressed]}
+        >
+          <Text style={styles.navText}>条件</Text>
         </Pressable>
       </View>
     </View>

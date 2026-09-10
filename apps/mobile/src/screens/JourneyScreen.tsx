@@ -4,6 +4,7 @@ import type { PublicCard } from '@ima/contracts';
 import { AppBar } from '../components/AppBar';
 import { Canvas } from '../components/Canvas';
 import { Composer } from '../components/Composer';
+import { ConditionChips } from '../components/ConditionChips';
 import { DecidedState } from '../components/DecidedState';
 import { Drawer } from '../components/Drawer';
 import { EmptyState } from '../components/EmptyState';
@@ -12,9 +13,20 @@ import { ResultsState } from '../components/ResultsState';
 import { WorkingState } from '../components/WorkingState';
 import { useJourneyShell } from '../hooks/useJourneyShell';
 import type { AssistantResponseState } from '../state/assistant-response';
+import {
+  DEFAULT_SUGGESTIONS,
+  type ConditionScope,
+  type JourneyConditions,
+  suggestionsFor,
+} from '../state/journey-input';
 import type { SavedPlaceItem, SearchHistoryItem } from '../state/journey-shell';
 
-export type JourneyRequestStatus = 'idle' | 'pending' | 'error';
+export type JourneyRequestStatus = 'idle' | 'pending' | 'error' | 'cancelled';
+
+export type JourneySubmitContext = {
+  readonly conditions: JourneyConditions;
+  readonly removedChipLabels: readonly string[];
+};
 
 export type JourneyScreenProps = {
   readonly threadId?: string;
@@ -23,15 +35,20 @@ export type JourneyScreenProps = {
   readonly errorMessage?: string;
   readonly history?: readonly SearchHistoryItem[];
   readonly savedPlaces?: readonly SavedPlaceItem[];
-  readonly onSubmit?: (query: string) => void;
-  readonly onRetry?: (query: string) => void;
+  readonly initialSavedConditions?: JourneyConditions;
+  readonly onSubmit?: (query: string, context: JourneySubmitContext) => void;
+  readonly onCancel?: () => void;
+  readonly onRetry?: (query: string, context: JourneySubmitContext) => void;
   readonly onNewSearch?: () => void;
   readonly onPromote?: (candidateId: string) => void;
   readonly onHistorySelect?: (item: SearchHistoryItem) => void;
   readonly onSavedPlaceSelect?: (item: SavedPlaceItem) => void;
+  readonly onConditionRemoved?: (label: string) => void;
+  readonly onConditionsChange?: (
+    scope: ConditionScope,
+    changes: Partial<JourneyConditions>,
+  ) => void;
 };
-
-const SUGGESTIONS = ['食後', '静か', '徒歩10分', '終電まで'] as const;
 
 export function JourneyScreen(props: JourneyScreenProps): React.JSX.Element {
   const stateKey = props.threadId ?? 'mobile-thread';
@@ -58,30 +75,54 @@ function JourneyScreenStateOwner({
   history = [],
   savedPlaces = [],
   onSubmit,
+  initialSavedConditions,
+  onCancel,
   onRetry,
   onNewSearch,
   onPromote,
   onHistorySelect,
   onSavedPlaceSelect,
+  onConditionRemoved,
+  onConditionsChange,
 }: JourneyScreenProps): React.JSX.Element {
-  const journey = useJourneyShell(threadId);
+  const journey = useJourneyShell(threadId, initialSavedConditions);
   const renderedResponse = responseState ?? journey.responseState;
 
   const submit = useCallback(
     (value: string): void => {
       const query = value.trim();
       if (query.length === 0 || onSubmit === undefined) return;
+      const context: JourneySubmitContext = {
+        conditions: journey.conditions,
+        removedChipLabels: journey.removedChipLabels,
+      };
       journey.beginRequest(value);
-      onSubmit(value);
+      onSubmit(value, context);
     },
-    [journey.beginRequest, onSubmit],
+    [journey.beginRequest, journey.conditions, journey.removedChipLabels, onSubmit],
   );
   const retry = useCallback((): void => {
     const query = journey.query.trim();
-    if (query.length === 0 || onRetry === undefined) return;
+    const retryHandler = onRetry ?? onSubmit;
+    if (query.length === 0 || retryHandler === undefined) return;
+    const context: JourneySubmitContext = {
+      conditions: journey.conditions,
+      removedChipLabels: journey.removedChipLabels,
+    };
     journey.beginRequest(journey.query);
-    onRetry(journey.query);
-  }, [journey.beginRequest, journey.query, onRetry]);
+    retryHandler(journey.query, context);
+  }, [
+    journey.beginRequest,
+    journey.conditions,
+    journey.query,
+    journey.removedChipLabels,
+    onRetry,
+    onSubmit,
+  ]);
+  const cancel = useCallback((): void => {
+    journey.cancelRequest();
+    onCancel?.();
+  }, [journey.cancelRequest, onCancel]);
   const reset = useCallback((): void => {
     journey.reset();
     onNewSearch?.();
@@ -89,6 +130,20 @@ function JourneyScreenStateOwner({
   const decide = useCallback(
     (candidateId: string): void => journey.decide(candidateId, renderedResponse),
     [journey.decide, renderedResponse],
+  );
+  const removeChip = useCallback(
+    (label: string): void => {
+      journey.removeChip(label);
+      onConditionRemoved?.(label);
+    },
+    [journey.removeChip, onConditionRemoved],
+  );
+  const changeConditions = useCallback(
+    (scope: ConditionScope, changes: Partial<JourneyConditions>): void => {
+      journey.updateConditions(scope, changes);
+      onConditionsChange?.(scope, changes);
+    },
+    [journey.updateConditions, onConditionsChange],
   );
   const phase = resolvePhase(requestStatus, journey.phase, renderedResponse);
   const decided = selectedCard(renderedResponse, journey.selectedCandidateId);
@@ -105,6 +160,9 @@ function JourneyScreenStateOwner({
           {phase === 'empty' ? <EmptyState onExample={journey.updateDraft} /> : null}
           {phase === 'working' ? <WorkingState query={journey.query} /> : null}
           {phase === 'results' ? (
+            <ConditionChips chips={journey.chips} onRemove={removeChip} />
+          ) : null}
+          {phase === 'results' ? (
             <ResultsState
               cards={renderedResponse.cards}
               messages={renderedResponse.messages}
@@ -116,7 +174,14 @@ function JourneyScreenStateOwner({
           {phase === 'error' ? (
             <ErrorState
               message={errorMessage}
-              {...(onRetry === undefined ? {} : { onRetry: retry })}
+              {...(onRetry === undefined && onSubmit === undefined ? {} : { onRetry: retry })}
+            />
+          ) : null}
+          {phase === 'cancelled' ? (
+            <ErrorState
+              message="入力内容は残しています。編集してから再送できます。"
+              title="検索を取り消しました"
+              {...(onRetry === undefined && onSubmit === undefined ? {} : { onRetry: retry })}
             />
           ) : null}
         </ScrollView>
@@ -124,10 +189,14 @@ function JourneyScreenStateOwner({
       <Composer
         disabled={phase === 'working'}
         onChange={journey.updateDraft}
+        onCancel={cancel}
         placeholder={
           phase === 'empty' ? 'いま何してる？そのまま書いて' : 'ちがう条件も、そのまま書いて'
         }
-        suggestions={journey.draft.trim().length > 0 ? SUGGESTIONS : []}
+        pending={phase === 'working'}
+        suggestions={
+          journey.draft.trim().length > 0 ? suggestionsFor(journey.draft, DEFAULT_SUGGESTIONS) : []
+        }
         value={journey.draft}
         {...(onSubmit === undefined ? {} : { onSubmit: submit })}
       />
@@ -136,6 +205,11 @@ function JourneyScreenStateOwner({
         onClose={journey.closeDrawer}
         onNewSearch={reset}
         onViewChange={journey.setDrawerView}
+        conditions={journey.conditions}
+        savedConditions={journey.savedConditions}
+        conditionScope={journey.conditionScope}
+        onConditionScopeChange={journey.changeConditionScope}
+        onConditionsChange={changeConditions}
         open={journey.drawerOpen}
         savedPlaces={savedPlaces}
         view={journey.drawerView}
@@ -153,6 +227,9 @@ const resolvePhase = (
 ): ReturnType<typeof useJourneyShell>['phase'] => {
   if (requestStatus === 'pending') return 'working';
   if (requestStatus === 'error') return 'error';
+  if (requestStatus === 'cancelled') return 'cancelled';
+  if (localPhase === 'cancelled') return 'cancelled';
+  if (localPhase === 'error') return 'error';
   if (localPhase === 'decided') return 'decided';
   if (responseState.cards !== null || responseState.messages.length > 0) return 'results';
   if (localPhase === 'working') return 'working';
