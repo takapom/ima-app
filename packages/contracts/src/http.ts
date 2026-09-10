@@ -16,6 +16,7 @@ import {
   ThreadTurnRequestSchema,
 } from './preferences';
 import { PublicErrorSchema } from './errors';
+import type { PublicError } from './errors';
 import { PublicCandidateRefSchema } from './public';
 import { PublicPlaceDetailsDataSchema } from './values';
 import {
@@ -25,6 +26,8 @@ import {
   SearchResponseSchema,
 } from './response';
 import type { AssistantCardsResponse, AssistantMessageResponse, ParseResult } from './response';
+import type { CreateThreadResponse } from './preferences';
+import type { CreateThreadRequest, SearchRequest, ThreadTurnRequest } from './preferences';
 import type { RetentionMetadata } from './public';
 
 export const APP_TOKEN_HEADER = 'X-App-Token' as const;
@@ -211,6 +214,47 @@ export const SavedReferenceResponseSchema = v.strictObject({
 export const EventsAcceptedResponseSchema = v.null();
 
 export const ErrorResponseSchema = PublicErrorSchema;
+
+const parseSchema = <Schema extends v.GenericSchema>(
+  schema: Schema,
+  input: unknown,
+): ParseResult<v.InferOutput<Schema>> => {
+  const parsed = v.safeParse(schema, input);
+  return parsed.success
+    ? { success: true, data: parsed.output }
+    : { success: false, issues: parsed.issues.map((issue) => issue.message) };
+};
+
+/** Runtime validation entry points for mobile services; schemas stay owned by contracts. */
+export const parseRequestHeaders = (input: unknown): ParseResult<RequestHeaders> =>
+  parseSchema(RequestHeadersSchema, input);
+
+export const parseSearchRequest = (input: unknown): ParseResult<SearchRequest> =>
+  parseSchema(SearchRequestSchema, input);
+
+export const parseThreadTurnRequest = (input: unknown): ParseResult<ThreadTurnRequest> =>
+  parseSchema(ThreadTurnRequestSchema, input);
+
+export const parseCreateThreadRequest = (input: unknown): ParseResult<CreateThreadRequest> =>
+  parseSchema(CreateThreadRequestSchema, input);
+
+export const parsePublicError = (input: unknown): ParseResult<PublicError> =>
+  parseSchema(PublicErrorSchema, input);
+
+export const parseCreateThreadResponse = (input: unknown): ParseResult<CreateThreadResponse> =>
+  parseSchema(CreateThreadResponseSchema, input);
+
+export const parseLifecycleResponse = (
+  input: unknown,
+): ParseResult<v.InferOutput<typeof LifecycleResponseSchema>> =>
+  parseSchema(LifecycleResponseSchema, input);
+
+export const parseLifecycleCommand = (input: unknown): ParseResult<LifecycleCommand> =>
+  parseSchema(LifecycleCommandSchema, input);
+
+export const parseThreadPath = (
+  input: unknown,
+): ParseResult<v.InferOutput<typeof ThreadPathSchema>> => parseSchema(ThreadPathSchema, input);
 
 /** Adapter result for a photo route: metadata is validated, while the HTTP body is bytes. */
 export const PhotoBinaryRouteResponseSchema = v.strictObject({
