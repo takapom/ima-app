@@ -146,6 +146,17 @@ export const fixedPlacesFetcher =
     }
     const id = decodeURIComponent(new URL(request.url).pathname.split('/').at(-1) ?? '');
     const place = fixturePlaces.find((candidate) => candidate.id === id);
+    if (responseMode === 'upstream-failure') {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: 'UPSTREAM_UNAVAILABLE',
+            message: MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL,
+          },
+        }),
+        { status: 503, headers: { 'content-type': 'application/json' } },
+      );
+    }
     return Promise.resolve(
       place === undefined
         ? new Response(JSON.stringify({ error: 'not found' }), { status: 404 })

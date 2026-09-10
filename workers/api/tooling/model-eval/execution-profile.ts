@@ -71,8 +71,8 @@ const profiles: Record<ScenarioId, EvaluationExecutionProfile> = {
     requiresApiKey: false,
   },
   repair: {
-    status: 'unavailable',
-    reason: 'EXPIRED_EVIDENCE_NOT_SEEDED',
+    status: 'fixture_ready',
+    kind: 'card_context',
     requiresApiKey: false,
   },
   'gps-refusal': {

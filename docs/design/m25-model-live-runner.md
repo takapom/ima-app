@@ -26,6 +26,8 @@ compare・decide-action・clarify-ambiguityのfixtureはpreludeを19:00 JST（`2
 
 `candidate-failure` は keyless の fixture profile として、実際の固定 Places transport が返す 503 を production adapter の typed `UPSTREAM_UNAVAILABLE` へ通し、モデルがその構造化エラーを受けて安全な候補未取得メッセージを返す境界だけを検証する。200 の空検索は別状態として扱い、候補・Details・raw provider bodyを生成または公開しない。この profile は `liveEvaluationProfileFor` の対象外であり、fixture の成功は実モデルの品質評価や live 実行可能性を意味しない。
 
+`repair` は期限切れ根拠の再取得を検証する keyless fixture profile である。prelude は19:00 JSTにカードを確定し、営業時間のprovider freshnessを21:00 JSTちょうどで失効させる。対象turnは正式card contextのheroだけへ`get_place_details`の`refresh`を一度実行し、成功時は21:00より後のfreshUntilを持つ新しい営業時間evidenceを公開する。refreshが503で失敗した場合は旧evidenceを再利用せず、固定されたunknownメッセージと空のevidenceを返す。provider freshness、retention、display、sessionの期限は別々に検証し、このprofileは`live`へ昇格せず実モデル評価の成功を示さない。実装と回帰は [`model-eval-repair.ts`](../../workers/api/tests/model-eval-live/model-eval-repair.ts) と [`repair.test.ts`](../../workers/api/tests/model-eval-live/repair.test.ts) にある。
+
 座標はWorker入力に固定fixtureとして入る場合があるが、Coreのmodel projectionを通ったpromptをhost traceで監査する。`lat`、`lng`、精度、取得時刻、owner scopeのキーを検出した場合は重大なGPS露出として記録する。
 
 GPS拒否はlive profileへ昇格させず、`ModelEvalFixtureThreadDO` の実DO fixtureで境界を検証する。`ScenarioContext.areaText` は地域を明示的に入力し、地域未指定のGPSケースは`null`とする。`available`かつ`refuse-to-model`の場合もモデル投影は`status: denied`・地域`null`となり、生座標を含まない。`current_location`検索を試す境界では、位置情報不足の固定エラーをモデル側で安全化して受け、外部provider fetchが0回のまま地域確認へ進むことを確認する。これは拒否結果を成功に補正するfixtureではなく、実DOのモデル呼出し・公開message・fetch回数・座標キー監査を通す契約テストであり、productionの位置情報policy接続と実Apple/Provider実行は未検証のまま残る。

@@ -41,6 +41,7 @@ import {
   searchQueryFor,
   type ModelEvalConditionFixtureProfile,
 } from './condition-context-fixture';
+import { repairOverridesFor, repairPartsFor } from './model-eval-repair';
 import { specificPlacePartsFor } from './model-eval-specific-place';
 
 export type ModelEvalFixturePhase = 'cards' | 'message';
@@ -53,6 +54,7 @@ export type ModelEvalFixtureProfile =
   | 'clarify-ambiguity'
   | 'candidate-failure'
   | 'gps-refusal'
+  | 'repair'
   | ModelEvalConditionFixtureProfile;
 export type ModelEvalFixtureLocationProbe = 'clarify' | 'current-location';
 export type ModelEvalFixtureDisplayNamePolicy = 'visible' | 'withheld';
@@ -176,6 +178,17 @@ const fixtureModel = (
       if (currentPhase === 'message' && profile() === 'specific-place') {
         return Promise.resolve({
           stream: specificPlacePartsFor({
+            prompt,
+            currentCall,
+            step,
+            detailsRequest,
+            finalEvidence,
+          }),
+        });
+      }
+      if (currentPhase === 'message' && profile() === 'repair') {
+        return Promise.resolve({
+          stream: repairPartsFor({
             prompt,
             currentCall,
             step,
@@ -427,7 +440,9 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     }));
   }
 
-  protected override createRuntimeProductionOverrides() {
+  protected override createRuntimeProductionOverrides(): ReturnType<
+    ProductionThreadDO['createRuntimeProductionOverrides']
+  > {
     const base = super.createRuntimeProductionOverrides();
     return {
       ...base,
@@ -464,6 +479,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
           this.fixturePlacesResponseMode,
           this.fixturePlaceDisplayNameMode,
         )(input, init),
+      ...repairOverridesFor(this.fixtureProfile, () => this.fixturePhase),
       googlePlacesApiKey: 'model-eval-fixed-provider-key',
       placesCursorSecret: 'model-eval-fixed-cursor-secret',
       placesEnabled: true,
