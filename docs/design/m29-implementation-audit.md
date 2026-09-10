@@ -14,7 +14,7 @@
 
 ## 現在の実装と残件
 
-2026-09-10、`e86e596` 時点。以下はIssueのClose判定ではなく、現在の実装状況である。
+2026-09-10、`31b10f0` 時点。以下はIssueのClose判定ではなく、現在の実装状況である。
 
 | 対象                 | 実装・証跡                                                                                                                     | 残件                                                                                     |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
@@ -24,13 +24,13 @@
 | #18 画面基盤         | `f4835ea`、`45da9df`、`6f8e768`。画面・キーボード対応、native/Web依存                                                          | safe-area、フォント・ライセンス・splash接続、実機・視覚比較                              |
 | #19 入力・条件       | `8f99074`。候補語、条件編集、取消・再送、保存条件の区別                                                                        | 位置情報SDK・駅参照・APIへの接続                                                         |
 | #20 結果表示         | `58bf3df`、`1ec097b`、`6ea03ac`、`8a60978`、`ad9895a`。履歴・fact/推定/出典、表示中と復帰時の期限処理、時計巻戻し防止          | 写真表示と操作、出典リンクの端末service接続                                              |
-| #21 決定・地図・共有 | `455dd99`。明示操作の状態、地図URL・共有・保存・hapticsの注入serviceとFake試験                                                 | UI wiring、実端末service、非同期操作の整合、地図利用policy                               |
+| #21 決定・地図・共有 | `455dd99`、`31b10f0`。候補操作UI、取消・再提案と応答受信の状態遷移、古い非同期通知の抑止、RN地図/共有境界、地図利用policy      | SQLite/hapticsの実接続、地図座標resolver、実機操作の確認                                 |
 | #22 端末保存         | 未実装                                                                                                                         | SQLite migration、保存前・読取前失効、05:00、破損・重複・削除、保持Fixture               |
 | #23 API接続          | 応答JSON検証とstate適用の基礎あり                                                                                              | HTTP/auth/Abort/timeout、操作接続、履歴切替・遅着、端末/サーバ復元の調停                 |
 | #24 SDK/HTTP/DO統合  | 既存のM04〜M16各suiteあり                                                                                                      | 最新本番bootstrapで要求対応表と4領域回帰を統合                                           |
 | #25 Provider契約     | 各AdapterのHTTP Fixture試験あり                                                                                                | suiteの要求対応、明示実行のlive smokeと未設定検出                                        |
 | #26 モデル評価       | 未実装                                                                                                                         | 12シナリオ以上×3回、結果・禁止動作、人手採点、時間・コスト測定                           |
-| #27 計測・flags      | 未実装                                                                                                                         | 最小イベント、機密情報を含めないtrace、保持・削除、停止・復旧                            |
+| #27 計測・flags      | `27b4553`。固定schema、実DO SQLite、厳密7日境界、書込み後alarm前倒し、HTTPイベント、実測/unknown別集計、flags契約              | 本番のtrace生成・flagsによる呼出し停止・障害観測の接続                                   |
 | #28 App Integrity    | 未実装                                                                                                                         | native/Worker互換性検証、nonce/enroll/assertion、replay・迂回防止、実機検証              |
 | #29 環境統合         | 基礎wrangler/CIあり                                                                                                            | 環境・EAS・Secrets・preflight・runbookの統合、デプロイ/復旧の証跡                        |
 | #30 実機・MVP監査    | この対応表を作成中                                                                                                             | 実アプリ→HTTP→実SDK→実APIの一連検証とスクリーンショット・ログ                            |
@@ -46,6 +46,8 @@
 - 2026-09-10 16:29 JST: mobile 72テスト・型・lint/format合格。Core/終電の関連104テストに加え、追加の時計境界を含むport 9テスト合格。Core/Worker source・testsの型検査合格。
 - 2026-09-10 16:46–47 JST: production factory/context、実Think/DO multi-turnの親検証合格。候補を維持する追質問では追加検索せず、予算変更で候補集合を置換する。cancelはcontext単体では非Response値としてモデル化しており、実取消との統合は#24で確認する。
 - 2026-09-10 16:48 JST: `bun run test` 全6suite、135ファイル・735テスト合格（Node 636、Worker 32、HTTP/mobile 22、Think 5、Think runtime 24、native 16）。実行時点の作業中変更も含む。未処理例外ログの負例3件は引き続き記録されており、テスト合格だけで解決扱いにしない。
+- 2026-09-10 17:23–26 JST: telemetry単体6、実DO/HTTP bootstrap計10テスト合格。Worker source/testsの型検査、変更対象lint/format、依存検査409 modules / 1,674 dependencies・Fixture31件合格。Provider接続の作業中型エラーは解消後に再検査した。
+- 2026-09-10 17:30–33 JST: mobile全14ファイル・89テスト、型検査、lint/format合格。外部応答はpayloadを複製せず状態だけsettleし、取消後の応答では取消状態を解除しない。実React hook rendererと端末Share/Linking操作は未実測であり、純粋state/service試験と区別する。
 - この記録は全体テスト・ビルド・実機の最終合格を意味しない。以後の変更で再検証する。
 - Web起動試行: Expo 57の既定設定ではMetroの `EMFILE: too many open files, watch` で失敗。既存Watchmanを有効化した再試行は `watch-project` が130秒超応答せず停止した。Web exportも同じ待機で停止。画面表示・Webビルドは未確認であり、起動成功とは扱わない。
 
