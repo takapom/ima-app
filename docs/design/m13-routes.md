@@ -39,7 +39,13 @@ parserはproviderの未許可フィールドや本文を保持せず、pair単�
 
 timeoutはfetchだけでなくresponse bodyの読取とJSON parseまで含む。呼出元の`AbortSignal`は同じ処理へ伝播し、期限切れ・取消・HTTP失敗・schema失敗を型付きエラーへ変換する。upstream本文やAPI keyはエラーへ含めない。
 
-locationのfreshness、accuracy、revisionの照合と、Coreの`WalkingRoutePort`へ接続するcurrent→candidate / candidate→stationの業務制約は次の実装単位で行う。このtransport単位だけで候補の営業可否や徒歩表示を確定しない。
+## C2a：Coreの方向契約と位置検証
+
+`packages/core/src/ports/walking-route.ts`は現在地→候補と候補→駅を別のlegとして定義し、同じ方向・候補の重複要求を拒否する。既存の`WalkingRoutePort`は維持する。Provider SDKやHTTP型をCoreへ持ち込まない。
+
+`packages/core/src/application/walking-route-policy.ts`は、現在地がavailableかつprecise、取得から120秒以内、accuracyが100m以下であることを検査する。将来の取得時刻、位置revisionの不一致、経路起点から100m超の移動は拒否する。100m以内の確認に使う直線距離は徒歩時間の推定には使わず、浮動小数の丸めや不正値から有効な位置判定を作らない。
+
+方向契約2件・位置検証5件のテストで境界を確認する。これらの閾値はMVPの初期設定であり、実機精度や実API性能の測定結果ではない。WorkerによるPort接続、取得後の再検証、Runtime budgetへの実予約は続くC2bで扱う。C2aだけでM13全体の完了とはしない。
 
 ## 公式仕様
 

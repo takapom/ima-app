@@ -5,3 +5,4 @@ export * from './operations';
 export * from './registry';
 export * from './submission';
 export * from './commit';
+export * from './walking-route';
