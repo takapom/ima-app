@@ -2,7 +2,10 @@ import { SELF } from 'cloudflare:test';
 import { expect, it } from 'vitest';
 import { parseSearchResponse, type SearchResponse } from '../packages/contracts/src';
 import { applySearchResponseJson } from '../apps/mobile/src/services/assistant-response';
-import { createAssistantResponseState } from '../apps/mobile/src/state/assistant-response';
+import {
+  createAssistantResponseState,
+  selectAssistantMessages,
+} from '../apps/mobile/src/state/assistant-response';
 
 const threadId = 'thread-http-mobile';
 
@@ -84,7 +87,7 @@ it('routes an accepted SDK final message without manufacturing cards', async () 
   const applied = applySearchResponseJson(createAssistantResponseState(threadId), body);
   expect(applied.accepted).toBe(true);
   expect(applied.state.cards).toBeNull();
-  expect(applied.state.messages).toHaveLength(1);
+  expect(selectAssistantMessages(applied.state)).toHaveLength(1);
 });
 
 it('keeps cards when the SDK submits before an empty final step', async () => {
