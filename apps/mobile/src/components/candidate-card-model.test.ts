@@ -92,7 +92,7 @@ describe('candidate card model', () => {
         lastOrderAt: null,
         lastOrderRaw: '19:30',
       }),
-    ).toContain('営業中 · 平日 10:00–20:00 · L.O. 19:30 · 次の境界');
+    ).toContain('確認時点では営業中 · 平日 10:00–20:00 · L.O. 19:30 · 営業時間の切替');
   });
 
   it('formats last train from its service date and source offset', () => {

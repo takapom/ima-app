@@ -140,14 +140,14 @@ export const formatOpeningHours = (value: OpeningHours): string => {
     value.listedOpenAtEvaluation === null
       ? '営業状況 未確認'
       : value.listedOpenAtEvaluation
-        ? '営業中'
+        ? '確認時点では営業中'
         : '営業時間外';
   const schedule = value.weeklyText.length > 0 ? value.weeklyText.join(' / ') : '営業時間記載あり';
   const lastOrder = value.lastOrderRaw === null ? null : `L.O. ${value.lastOrderRaw}`;
   const nextBoundary =
     value.nextBoundaryAt === null
       ? null
-      : `次の境界 ${formatAtZone(value.nextBoundaryAt, value.timeZone)}`;
+      : `営業時間の切替 ${formatAtZone(value.nextBoundaryAt, value.timeZone)}`;
   return [openStatus, schedule, lastOrder, nextBoundary, `時間帯 ${value.timeZone}`]
     .filter((part): part is string => part !== null)
     .join(' · ');
