@@ -116,6 +116,9 @@ const defaultPlan = (
       registry,
       clock: productionClockPort(clock),
       observationPolicy: policy,
+      ...(overrides.candidateIdentityObserver === undefined
+        ? {}
+        : { observeCandidate: overrides.candidateIdentityObserver }),
     });
     const searchAdapter = createPlacesSearchAdapter({
       transport: createGoogleTextSearchTransport({

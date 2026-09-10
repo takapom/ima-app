@@ -1,4 +1,4 @@
-import type { ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
+import type { CandidateRecord, ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
 import { ThreadDO as ProductionThreadDOBase } from '../../src/thread-do';
 import type {
   RuntimeGateModel,
@@ -94,6 +94,11 @@ export type RuntimeProductionReport = {
   readonly modelCardSetSeen: boolean;
   readonly modelCardSetSnapshots: readonly RuntimeProductionCardSetSnapshot[];
 };
+
+export type RuntimeProductionCandidateIdentity = Pick<
+  CandidateRecord,
+  'provider' | 'recordRef' | 'candidateId'
+>;
 
 export type RuntimeProductionProviderOptions = {
   readonly openai: {
@@ -380,6 +385,7 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
   private llmOnlyModel = false;
   private multiTurnModel = false;
   private productionScenario: ProductionScenario = 'default';
+  private productionCandidateIdentities: RuntimeProductionCandidateIdentity[] = [];
 
   protected override runtimeProductionNow(): string {
     return this.productionNow;
@@ -398,11 +404,16 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
     this.llmOnlyModel = runtimeTurnUsesLlmOnlyPolicy(value);
     this.multiTurnModel = runtimeTurnUsesMultiTurnPolicy(value);
     this.productionScenario = productionScenarioFor(value);
+    this.productionCandidateIdentities = [];
     return super.runRuntimeTurn(value);
   }
 
   getRuntimeProductionReport(): RuntimeProductionReport | null {
     return this.productionReport === null ? null : structuredClone(this.productionReport);
+  }
+
+  getRuntimeProductionCandidateIdentities(): readonly RuntimeProductionCandidateIdentity[] {
+    return structuredClone(this.productionCandidateIdentities);
   }
 
   getRuntimeAnchorStatus():
@@ -448,6 +459,13 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
       ...base,
       modelForTurn: modelForProduction(report, this.llmOnlyModel, () => this.productionScenario),
       fetcher: fetcherForProduction(report, () => this.productionScenario),
+      candidateIdentityObserver: (record: RuntimeProductionCandidateIdentity) => {
+        this.productionCandidateIdentities.push({
+          provider: record.provider,
+          recordRef: record.recordRef,
+          candidateId: record.candidateId,
+        });
+      },
       observationPolicy: policy,
       detailsObservationPolicy: policy,
       modelContextFieldPolicy: this.llmOnlyModel

@@ -1,4 +1,4 @@
-import type { ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
+import type { CandidateRecord, ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
 import { ThreadDO as ProductionThreadDO } from '../../src/thread-do';
 import { createLiveOpenAIProvider } from '../../src/model/provider';
 import { sessionExpiryAt } from '../../src/runtime/runtime-production-support';
@@ -58,6 +58,13 @@ const fixturePlaces: readonly FixturePlace[] = [
   { id: 'eval-place-c', name: '駅前ベーカリー', priceLevel: 'PRICE_LEVEL_MODERATE', closeHour: 20 },
 ];
 
+/** The evaluator joins these provider record identities to dataset IDs exactly. */
+export const MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES = [
+  { provider: 'google_places', recordRef: 'eval-place-a', evaluationCandidateId: 'candidate-a' },
+  { provider: 'google_places', recordRef: 'eval-place-b', evaluationCandidateId: 'candidate-b' },
+  { provider: 'google_places', recordRef: 'eval-place-c', evaluationCandidateId: 'candidate-c' },
+] as const;
+
 const placeBody = (place: FixturePlace): Record<string, unknown> => ({
   id: place.id,
   displayName: { text: place.name },
@@ -77,7 +84,8 @@ const placeBody = (place: FixturePlace): Record<string, unknown> => ({
       },
     ],
     weekdayDescriptions: [`毎日 9:00–${place.closeHour}:00`],
-    openNow: true,
+    // The fixture clock is 21:00 JST; a period ending at 21:00 is closed.
+    openNow: place.closeHour > 21,
   },
   timeZone: { id: 'Asia/Tokyo' },
   attributions: [{ provider: 'Google Maps', providerUri: 'https://maps.google.com' }],
@@ -142,6 +150,9 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
     return {
       ...base,
       modelForTurn: wrapModelForLiveEvaluation(provider.model, this.liveTrace),
+      candidateIdentityObserver: (
+        record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,
+      ) => this.liveTrace.observeCandidateIdentity(record),
       fetcher: fixedPlacesFetcher(this.liveTrace),
       googlePlacesApiKey: 'model-eval-fixed-provider-key',
       placesCursorSecret: 'model-eval-fixed-cursor-secret',

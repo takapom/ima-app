@@ -35,6 +35,10 @@ export type PlacesSearchRegistrationOptions = {
   readonly clock: ClockPort;
   /** Returning undefined withholds provider payload under the active policy. */
   readonly observationPolicy: PlacesSearchObservationPolicy;
+  /** Host-only identity hook; display fields are not required by the observer. */
+  readonly observeCandidate?: (
+    record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,
+  ) => void;
 };
 
 /**
@@ -44,7 +48,19 @@ export type PlacesSearchRegistrationOptions = {
 export const createPlacesSearchRegistration = (
   options: PlacesSearchRegistrationOptions,
 ): PlacesSearchRegistration => ({
-  registerCandidate: (input) => options.registry.registerCandidate(input),
+  registerCandidate: (input) => {
+    const record = options.registry.registerCandidate(input);
+    try {
+      options.observeCandidate?.({
+        provider: record.provider,
+        recordRef: record.recordRef,
+        candidateId: record.candidateId,
+      });
+    } catch {
+      // Identity observation is diagnostic and must not change a successful registration.
+    }
+    return record;
+  },
   registerObservation: (input) => {
     const policy = options.observationPolicy({
       now: options.clock.now(),

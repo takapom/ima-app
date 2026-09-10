@@ -15,6 +15,11 @@ import type {
   ToolCall,
 } from './types';
 import { aggregateEvaluationRuns } from './aggregate';
+import {
+  createCandidateIdentityCapture,
+  type CandidateIdentityMapping,
+  type RuntimeCandidateIdentity,
+} from './candidate-mapping';
 
 export const LIVE_MODEL_VERSION = 'openai:gpt-5.6-luna' as const;
 export const LIVE_PROMPT_VERSION = 'm25-production-default-v1' as const;
@@ -54,7 +59,9 @@ export type LiveTraceSnapshot = {
   readonly measuredCostUsd: null;
   readonly modelLocationExposed: boolean;
   readonly preservedConditionFields: readonly string[];
-  /** False until the production registry exposes candidateId↔provider record identity. */
+  /** Registry records observed by the host for this attempt; no display-name join is allowed. */
+  readonly candidateIdentities: readonly RuntimeCandidateIdentity[];
+  /** True only when this attempt captured at least one non-conflicting identity. */
   readonly candidateIdentityMapAvailable: boolean;
 };
 
@@ -94,6 +101,7 @@ export class LiveTraceRecorder {
   private inputTokenSamples = 0;
   private outputTokenSamples = 0;
   private readonly names: string[] = [];
+  private readonly candidateIdentityCapture = createCandidateIdentityCapture();
   private locationExposed = false;
   private upstream = 0;
 
@@ -139,6 +147,10 @@ export class LiveTraceRecorder {
     this.upstream += 1;
   }
 
+  observeCandidateIdentity(value: unknown): void {
+    this.candidateIdentityCapture.observe(value);
+  }
+
   snapshot(): LiveTraceSnapshot {
     return {
       complete: !this.failed && this.startedCalls > 0 && this.completedCalls === this.startedCalls,
@@ -159,7 +171,8 @@ export class LiveTraceRecorder {
       measuredCostUsd: null,
       modelLocationExposed: this.locationExposed,
       preservedConditionFields: [],
-      candidateIdentityMapAvailable: false,
+      candidateIdentities: this.candidateIdentityCapture.snapshot(),
+      candidateIdentityMapAvailable: this.candidateIdentityCapture.isUsable(),
     };
   }
 }
@@ -304,11 +317,15 @@ export const buildEvaluationRunFromResponse = (
   trace: LiveTraceSnapshot,
   humanReview?: HumanReview,
   versions: { readonly modelVersion?: string; readonly promptVersion?: string } = {},
+  candidateIdentityMap?: CandidateIdentityMapping,
 ): LiveConversion => {
   const parsed = v.safeParse(AssistantResponseSchema, response);
   if (!parsed.success) return { ok: false, code: 'PUBLIC_RESPONSE_INVALID' };
   const output = parsed.output;
-  if (output.kind === 'cards' && !trace.candidateIdentityMapAvailable) {
+  if (
+    output.kind === 'cards' &&
+    (!trace.candidateIdentityMapAvailable || candidateIdentityMap === undefined)
+  ) {
     return { ok: false, code: 'CANDIDATE_ID_MAPPING_UNAVAILABLE', response: output };
   }
   const claims: EvidenceClaim[] = [];
@@ -320,10 +337,14 @@ export const buildEvaluationRunFromResponse = (
   );
   if (output.kind === 'cards') {
     for (const card of [output.cards.hero, ...output.cards.alts]) {
-      const cardClaims = claimsForCard(evaluationCase, card, card.candidateId);
+      const candidateId = candidateIdentityMap?.byRuntimeCandidateId.get(card.candidateId);
+      if (candidateId === undefined) {
+        return { ok: false, code: 'CANDIDATE_ID_MAPPING_UNAVAILABLE', response: output };
+      }
+      const cardClaims = claimsForCard(evaluationCase, card, candidateId);
       claims.push(...cardClaims);
       selections.push({
-        candidateId: card.candidateId,
+        candidateId,
         evidenceIds: cardClaims.flatMap((claim) => claim.evidenceIds),
         why: card.why.text,
       });

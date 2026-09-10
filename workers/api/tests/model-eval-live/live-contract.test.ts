@@ -13,6 +13,7 @@ import {
   LiveTraceRecorder,
   type LiveTraceSnapshot,
 } from '../../tooling/model-eval/live';
+import { resolveCandidateIdentityMapping } from '../../tooling/model-eval/candidate-mapping';
 
 describe('model-eval live opt-in boundary', () => {
   it('requires the explicit live flag before inspecting provider credentials', () => {
@@ -52,6 +53,26 @@ describe('model-eval live opt-in boundary', () => {
     const snapshot = recorder.snapshot();
     expect(snapshot.modelLocationExposed).toBe(true);
     expect(JSON.stringify(snapshot)).not.toContain('35.6595');
+  });
+
+  it('retains only exact candidate identity fields in the host trace', () => {
+    const recorder = new LiveTraceRecorder();
+    recorder.observeCandidateIdentity({
+      provider: 'google_places',
+      recordRef: 'eval-place-a',
+      candidateId: 'runtime-candidate-1',
+      displayName: '店舗名は評価キーではない',
+    });
+    const snapshot = recorder.snapshot();
+    expect(snapshot.candidateIdentities).toEqual([
+      {
+        provider: 'google_places',
+        recordRef: 'eval-place-a',
+        candidateId: 'runtime-candidate-1',
+      },
+    ]);
+    expect(JSON.stringify(snapshot)).not.toContain('店舗名は評価キーではない');
+    expect(snapshot.candidateIdentityMapAvailable).toBe(true);
   });
 
   it('does not score cards when the production registry identity map is unavailable', () => {
@@ -132,6 +153,7 @@ describe('model-eval live opt-in boundary', () => {
       measuredCostUsd: null,
       modelLocationExposed: false,
       preservedConditionFields: [],
+      candidateIdentities: [],
       candidateIdentityMapAvailable: false,
     };
     const converted = buildEvaluationRunFromResponse(evaluationCase, response, trace);
@@ -141,6 +163,84 @@ describe('model-eval live opt-in boundary', () => {
     });
     if (converted.ok) throw new Error('expected mapping to remain unverified');
     expect(converted.response).toBeDefined();
+
+    const mapping = resolveCandidateIdentityMapping(
+      [
+        {
+          provider: 'google_places',
+          recordRef: 'eval-place-a',
+          candidateId: 'runtime-candidate-1',
+        },
+      ],
+      [
+        {
+          provider: 'google_places',
+          recordRef: 'eval-place-a',
+          evaluationCandidateId: 'candidate-a',
+        },
+        {
+          provider: 'google_places',
+          recordRef: 'eval-place-b',
+          evaluationCandidateId: 'candidate-b',
+        },
+        {
+          provider: 'google_places',
+          recordRef: 'eval-place-c',
+          evaluationCandidateId: 'candidate-c',
+        },
+      ],
+    );
+    if (!mapping.ok) throw new Error('expected fixture identity mapping');
+    const evaluated = buildEvaluationRunFromResponse(
+      evaluationCase,
+      response,
+      {
+        ...trace,
+        candidateIdentities: [
+          {
+            provider: 'google_places',
+            recordRef: 'eval-place-a',
+            candidateId: 'runtime-candidate-1',
+          },
+        ],
+        candidateIdentityMapAvailable: true,
+      },
+      undefined,
+      {},
+      mapping,
+    );
+    expect(evaluated.ok).toBe(true);
+    if (evaluated.ok) {
+      expect(evaluated.run.response.selections[0]?.candidateId).toBe('candidate-a');
+    }
+
+    const unmappedCard = {
+      ...response,
+      cards: {
+        ...response.cards,
+        hero: { ...response.cards.hero, candidateId: 'runtime-candidate-unknown' },
+      },
+    };
+    expect(
+      buildEvaluationRunFromResponse(
+        evaluationCase,
+        unmappedCard,
+        {
+          ...trace,
+          candidateIdentities: [
+            {
+              provider: 'google_places',
+              recordRef: 'eval-place-a',
+              candidateId: 'runtime-candidate-1',
+            },
+          ],
+          candidateIdentityMapAvailable: true,
+        },
+        undefined,
+        {},
+        mapping,
+      ),
+    ).toMatchObject({ ok: false, code: 'CANDIDATE_ID_MAPPING_UNAVAILABLE' });
   });
 
   it('marks a probe artifact unverified when every case is unresolved', () => {

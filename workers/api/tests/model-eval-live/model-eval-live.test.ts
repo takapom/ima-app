@@ -10,16 +10,27 @@ import {
   LIVE_PROMPT_VERSION,
   resolveModelEvalLiveOptIn,
   writeLiveProbeArtifact,
+  LiveTraceRecorder,
   type LiveProbeAttempt,
   type LiveProbeFailure,
   type LiveTraceSnapshot,
 } from '../../tooling/model-eval/live';
+import { resolveCandidateIdentityMapping } from '../../tooling/model-eval/candidate-mapping';
+import {
+  advanceEvaluationTurn,
+  createEvaluationTurnSeed,
+  type EvaluationTurnSeed,
+} from '../../tooling/model-eval/turn-plan';
 import type { EvaluationCase, EvaluationRun } from '../../tooling/model-eval/types';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
 } from '../../src/thread-runtime/admission';
-import type { ModelEvalThreadDO } from './model-eval-live-worker';
+import {
+  MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,
+  fixedPlacesFetcher,
+  type ModelEvalThreadDO,
+} from './model-eval-live-worker';
 
 type LiveTestEnv = Cloudflare.Env & {
   readonly MODEL_EVAL_LIVE?: string;
@@ -36,15 +47,16 @@ const safeId = (value: string): string => value.replace(/[^a-zA-Z0-9_-]/gu, '_')
 
 const requestFor = (
   evaluationCase: EvaluationCase,
-  target: ThreadRuntimeTarget,
+  seed: EvaluationTurnSeed,
 ): ThreadRuntimeTurnInput => {
-  const idempotencyKey = `model-eval-${safeId(evaluationCase.caseId)}`;
+  const turnSuffix = `turn-${seed.index + 1}`;
+  const idempotencyKey = `model-eval-${safeId(evaluationCase.caseId)}-${turnSuffix}`;
   const input = {
     schemaVersion: 'v1' as const,
-    requestId: `request-${safeId(evaluationCase.caseId)}`,
-    turnId: target.turnId,
-    revision: target.revision,
-    text: evaluationCase.userTurns[0] ?? '条件に合う場所を探して。',
+    requestId: `request-${safeId(evaluationCase.caseId)}-${turnSuffix}`,
+    turnId: seed.target.turnId,
+    revision: seed.target.revision,
+    text: seed.text,
     clientNow: evaluationCase.context.now,
     location: {
       status: evaluationCase.context.locationStatus,
@@ -68,7 +80,7 @@ const requestFor = (
     idempotencyKey,
   };
   return {
-    ...target,
+    ...seed.target,
     idempotencyKey,
     deviceId: 'model-eval-device',
     input,
@@ -101,6 +113,43 @@ const versionsFor = (profile: LiveProfile | null) => ({
 });
 
 describe('opt-in live model evaluation runner', () => {
+  it('keeps fixture opening status consistent with the fixed 21:00 JST clock', async () => {
+    const trace = new LiveTraceRecorder();
+    const response = await fixedPlacesFetcher(trace)(
+      new Request('https://places.googleapis.com/v1/places:searchText', { method: 'POST' }),
+    );
+    const body: unknown = await response.json();
+    if (
+      typeof body !== 'object' ||
+      body === null ||
+      !('places' in body) ||
+      !Array.isArray(body.places)
+    ) {
+      throw new Error('fixture places response malformed');
+    }
+    const rawPlaces: unknown = body.places;
+    const places = (rawPlaces as readonly unknown[]).flatMap(
+      (place): readonly [string, boolean | undefined][] => {
+        if (typeof place !== 'object' || place === null || !('id' in place)) return [];
+        const hours = 'currentOpeningHours' in place ? place.currentOpeningHours : undefined;
+        if (
+          typeof place.id !== 'string' ||
+          typeof hours !== 'object' ||
+          hours === null ||
+          !('openNow' in hours) ||
+          (hours.openNow !== undefined && typeof hours.openNow !== 'boolean')
+        ) {
+          return [];
+        }
+        return [[place.id, hours.openNow]];
+      },
+    );
+    const statusById = new Map(places);
+    expect(statusById.get('eval-place-a')).toBe(true);
+    expect(statusById.get('eval-place-b')).toBe(false);
+    expect(statusById.get('eval-place-c')).toBe(false);
+  });
+
   it('runs the honest new-search profile through Think and converts its public response', async ({
     skip,
   }) => {
@@ -146,7 +195,26 @@ describe('opt-in live model evaluation runner', () => {
           continue;
         }
 
-        const result = await stub.runRuntimeTurn(requestFor(evaluationCase, target));
+        const firstSeed = createEvaluationTurnSeed({
+          caseId: evaluationCase.caseId,
+          userTurns: evaluationCase.userTurns,
+          target,
+        });
+        if (!firstSeed.ok) throw new Error(firstSeed.code);
+        let seed = firstSeed.seed;
+        let result: Awaited<ReturnType<typeof stub.runRuntimeTurn>> | undefined;
+        for (const [index, text] of evaluationCase.userTurns.entries()) {
+          if (index > 0) {
+            if (result?.status !== 'completed' || result.response === null) {
+              throw new Error('MULTI_TURN_RESPONSE_INVALID');
+            }
+            const next = advanceEvaluationTurn(seed, result.response, text);
+            if (!next.ok) throw new Error(next.code);
+            seed = next.seed;
+          }
+          result = await stub.runRuntimeTurn(requestFor(evaluationCase, seed));
+        }
+        if (result === undefined) throw new Error('MULTI_TURN_SEED_UNAVAILABLE');
         const trace = await readTrace(() => stub.getModelEvalTrace());
         const profile = await readProfile(() => stub.getModelEvalProfile());
         const versions = versionsFor(profile);
@@ -179,12 +247,17 @@ describe('opt-in live model evaluation runner', () => {
           });
           continue;
         }
+        const mapping = resolveCandidateIdentityMapping(
+          trace.candidateIdentities,
+          MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,
+        );
         const converted = buildEvaluationRunFromResponse(
           evaluationCase,
           result.response,
           trace,
           undefined,
           versions,
+          mapping.ok ? mapping : undefined,
         );
         if (!converted.ok) {
           const status =

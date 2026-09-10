@@ -1,6 +1,7 @@
 import type { TurnConfig } from '@cloudflare/think';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type {
+  CandidateRecord,
   CandidateObservationRegistryPort,
   CommitHashPort,
   CommitPort,
@@ -68,6 +69,10 @@ export type RuntimeProductionOverrides = {
   readonly modelForTurn?: RuntimeModelGuardModel;
   /** Optional Worker-owned sink for one trace record per actual SDK model call. */
   readonly modelTraceSink?: RuntimeModelTraceSink;
+  /** Optional host-owned observer for exact provider candidate identity mapping. */
+  readonly candidateIdentityObserver?: (
+    record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,
+  ) => void;
   readonly googlePlacesApiKey?: string;
   readonly placesCursorSecret?: string;
   /** Dedicated Routes key; absence keeps route and last-train provider calls disabled. */
