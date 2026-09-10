@@ -310,6 +310,50 @@ export const selectedCandidateIdIn = (
   return selected === null || typeof selected === 'string' ? selected : undefined;
 };
 
+export type ModelCandidateMentionResolution =
+  | { readonly ok: true; readonly candidateId: string }
+  | {
+      readonly ok: false;
+      readonly reason:
+        'card_set_missing' | 'display_name_withheld' | 'no_match' | 'multiple_matches';
+    };
+
+/** Resolves a user mention against the model-visible card names without order fallback. */
+export const candidateMentionedIn = (
+  prompt: RuntimeGateModelCallOptions['prompt'],
+): ModelCandidateMentionResolution => {
+  const cardSet = modelContextIn(prompt)?.cardSet;
+  if (!record(cardSet) || !Array.isArray(cardSet.entries) || !Array.isArray(cardSet.candidates)) {
+    return { ok: false, reason: 'card_set_missing' };
+  }
+  const candidates = new Map<string, string>();
+  for (const candidate of cardSet.candidates) {
+    if (!record(candidate) || !isCandidateId(candidate.candidateId)) continue;
+    if (typeof candidate.displayName !== 'string') continue;
+    candidates.set(candidate.candidateId, candidate.displayName);
+  }
+  const presented = cardSet.entries.flatMap((entry) => {
+    if (!record(entry) || !isCandidateId(entry.candidateId)) return [];
+    const displayName = candidates.get(entry.candidateId);
+    return displayName === undefined ? [] : [{ candidateId: entry.candidateId, displayName }];
+  });
+  if (presented.length === 0) return { ok: false, reason: 'card_set_missing' };
+  const userText = modelUserTextIn(prompt);
+  const matches = presented.filter(
+    ({ displayName }) => displayName !== '[withheld]' && userText.includes(displayName),
+  );
+  const match = matches[0];
+  if (matches.length === 1 && match !== undefined)
+    return { ok: true, candidateId: match.candidateId };
+  if (matches.length > 1) return { ok: false, reason: 'multiple_matches' };
+  return {
+    ok: false,
+    reason: presented.some(({ displayName }) => displayName === '[withheld]')
+      ? 'display_name_withheld'
+      : 'no_match',
+  };
+};
+
 /** Returns only field/observation IDs projected for one candidate. */
 export const observationFieldsFor = (
   prompt: RuntimeGateModelCallOptions['prompt'],

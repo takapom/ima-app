@@ -13,6 +13,7 @@ type FixturePlace = {
 
 export type ModelEvalPlacesResponseMode =
   'normal' | 'empty' | 'upstream-failure' | 'schema-failure';
+export type ModelEvalPlaceDisplayNameMode = 'normal' | 'duplicate';
 
 export const MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL = 'M25_FIXTURE_PRIVATE_UPSTREAM_BODY';
 
@@ -40,9 +41,13 @@ const localHourFor = (now: string): number => {
   return Number.isInteger(hour) ? hour : 0;
 };
 
-const placeBody = (place: FixturePlace, now: string): Record<string, unknown> => ({
+const placeBody = (
+  place: FixturePlace,
+  now: string,
+  displayName = place.name,
+): Record<string, unknown> => ({
   id: place.id,
-  displayName: { text: place.name },
+  displayName: { text: displayName },
   formattedAddress: '東京都渋谷区',
   primaryType: 'cafe',
   businessStatus: 'OPERATIONAL',
@@ -72,6 +77,7 @@ export const fixedPlacesFetcher =
     now = MODEL_EVAL_NOW,
     observeSearchQuery?: (query: string) => void,
     responseMode: ModelEvalPlacesResponseMode = 'normal',
+    displayNameMode: ModelEvalPlaceDisplayNameMode = 'normal',
   ): typeof fetch =>
   async (input, init) => {
     trace.upstreamCall();
@@ -119,7 +125,17 @@ export const fixedPlacesFetcher =
         new Response(
           JSON.stringify({
             places:
-              responseMode === 'empty' ? [] : fixturePlaces.map((place) => placeBody(place, now)),
+              responseMode === 'empty'
+                ? []
+                : fixturePlaces.map((place) =>
+                    placeBody(
+                      place,
+                      now,
+                      displayNameMode === 'duplicate' && place.id === 'eval-place-b'
+                        ? fixturePlaces[0]?.name
+                        : place.name,
+                    ),
+                  ),
           }),
           {
             status: 200,
@@ -133,9 +149,20 @@ export const fixedPlacesFetcher =
     return Promise.resolve(
       place === undefined
         ? new Response(JSON.stringify({ error: 'not found' }), { status: 404 })
-        : new Response(JSON.stringify(placeBody(place, now)), {
-            status: 200,
-            headers: { 'content-type': 'application/json' },
-          }),
+        : new Response(
+            JSON.stringify(
+              placeBody(
+                place,
+                now,
+                displayNameMode === 'duplicate' && place.id === 'eval-place-b'
+                  ? fixturePlaces[0]?.name
+                  : place.name,
+              ),
+            ),
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' },
+            },
+          ),
     );
   };

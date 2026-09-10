@@ -8,6 +8,7 @@ import {
   fixedPlacesFetcher,
   MODEL_EVAL_NOW,
   MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL,
+  type ModelEvalPlaceDisplayNameMode,
   type ModelEvalPlacesResponseMode,
 } from './model-eval-place-fixture';
 import { LiveTraceRecorder } from '../../tooling/model-eval/live';
@@ -40,18 +41,25 @@ import {
   searchQueryFor,
   type ModelEvalConditionFixtureProfile,
 } from './condition-context-fixture';
+import { specificPlacePartsFor } from './model-eval-specific-place';
 
 export type ModelEvalFixturePhase = 'cards' | 'message';
 export type ModelEvalFixtureProfile =
   | 'reason'
   | 'continuity'
   | 'compare'
+  | 'specific-place'
   | 'decide-action'
   | 'clarify-ambiguity'
   | 'candidate-failure'
   | 'gps-refusal'
   | ModelEvalConditionFixtureProfile;
 export type ModelEvalFixtureLocationProbe = 'clarify' | 'current-location';
+export type ModelEvalFixtureDisplayNamePolicy = 'visible' | 'withheld';
+export type ModelEvalFixtureOptions = {
+  readonly placeDisplayNameMode?: ModelEvalPlaceDisplayNameMode;
+  readonly displayNamePolicy?: ModelEvalFixtureDisplayNamePolicy;
+};
 export type ModelEvalFixtureStep =
   'search_places' | 'get_place_details' | 'submit_cards' | 'final_message';
 export type { ModelEvalFixtureEvidenceSnapshot } from './model-eval-context-output';
@@ -80,6 +88,13 @@ const currentLocationSearchInput: SearchPlacesInput = {
   limit: 3,
   excludeCandidateIds: [],
 };
+
+const modelContextFieldPolicyFor = (
+  displayName: ModelContextFieldPolicy['displayName'],
+): ModelContextFieldPolicy => ({
+  ...FIXTURE_MODEL_CONTEXT_FIELD_POLICY,
+  displayName,
+});
 
 const fixtureModel = (
   phase: () => ModelEvalFixturePhase,
@@ -156,6 +171,17 @@ const fixtureModel = (
         step('final_message');
         return Promise.resolve({
           stream: streamOf(finalParts('どの候補を指していますか？', [], 'conversational')),
+        });
+      }
+      if (currentPhase === 'message' && profile() === 'specific-place') {
+        return Promise.resolve({
+          stream: specificPlacePartsFor({
+            prompt,
+            currentCall,
+            step,
+            detailsRequest,
+            finalEvidence,
+          }),
         });
       }
       if (!shouldRefreshMessage && (currentPhase === 'message' || finalResponse)) {
@@ -300,7 +326,7 @@ const fixtureModel = (
             'submit_cards',
             submitInputFor(
               prompt,
-              profile() === 'decide-action'
+              profile() === 'decide-action' || profile() === 'specific-place'
                 ? [candidates[1], candidates[0], ...candidates.slice(2)].filter(
                     (candidateId): candidateId is string => candidateId !== undefined,
                   )
@@ -319,6 +345,8 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
   private fixtureNow = MODEL_EVAL_NOW;
   private fixtureLocationProbe: ModelEvalFixtureLocationProbe = 'clarify';
   private fixturePlacesResponseMode: ModelEvalPlacesResponseMode = 'normal';
+  private fixturePlaceDisplayNameMode: ModelEvalPlaceDisplayNameMode = 'normal';
+  private fixtureDisplayNamePolicy: ModelEvalFixtureDisplayNamePolicy = 'visible';
   private readonly fixtureToolErrorCodes: string[] = [];
   private fixtureModelLocationExposed = false;
   private fixturePrivateUpstreamBodyExposed = false;
@@ -335,12 +363,15 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     profile: ModelEvalFixtureProfile = 'reason',
     locationProbe: ModelEvalFixtureLocationProbe = 'clarify',
     placesResponseMode: ModelEvalPlacesResponseMode = 'normal',
+    options: ModelEvalFixtureOptions = {},
   ): void {
     this.fixturePhase = phase;
     this.fixtureNow = now;
     this.fixtureProfile = profile;
     this.fixtureLocationProbe = locationProbe;
     this.fixturePlacesResponseMode = placesResponseMode;
+    this.fixturePlaceDisplayNameMode = options.placeDisplayNameMode ?? 'normal';
+    this.fixtureDisplayNamePolicy = options.displayNamePolicy ?? 'visible';
     this.fixtureToolErrorCodes.length = 0;
     this.fixtureModelLocationExposed = false;
     this.fixturePrivateUpstreamBodyExposed = false;
@@ -419,7 +450,9 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
           this.fixturePrivateUpstreamBodyExposed = true;
         },
       ),
-      modelContextFieldPolicy: FIXTURE_MODEL_CONTEXT_FIELD_POLICY,
+      modelContextFieldPolicy: modelContextFieldPolicyFor(
+        this.fixtureDisplayNamePolicy === 'withheld' ? 'deny' : 'allow',
+      ),
       candidateIdentityObserver: (
         record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,
       ) => this.fixtureTrace.observeCandidateIdentity(record),
@@ -429,6 +462,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
           this.fixtureNow,
           (query) => this.fixtureSearchQueries.push(query),
           this.fixturePlacesResponseMode,
+          this.fixturePlaceDisplayNameMode,
         )(input, init),
       googlePlacesApiKey: 'model-eval-fixed-provider-key',
       placesCursorSecret: 'model-eval-fixed-cursor-secret',

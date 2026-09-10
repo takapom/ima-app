@@ -39,11 +39,7 @@ const profiles: Record<ScenarioId, EvaluationExecutionProfile> = {
     kind: 'card_context',
     requiresApiKey: false,
   },
-  'specific-place': {
-    status: 'unavailable',
-    reason: 'DETAILS_STATE_NOT_SEEDED',
-    requiresApiKey: false,
-  },
+  'specific-place': { status: 'fixture_ready', kind: 'card_context', requiresApiKey: false },
   'decide-action': {
     status: 'fixture_ready',
     kind: 'card_context',
