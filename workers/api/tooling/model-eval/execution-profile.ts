@@ -3,7 +3,8 @@ import type { EvaluationScenario, ScenarioId } from './types';
 export type EvaluationExecutionProfile =
   | {
       readonly status: 'fixture_ready';
-      readonly kind: 'card_context' | 'same_do_continuity' | 'condition_context';
+      readonly kind:
+        'card_context' | 'same_do_continuity' | 'condition_context' | 'failure_response';
       readonly requiresApiKey: false;
     }
   | {
@@ -54,8 +55,8 @@ const profiles: Record<ScenarioId, EvaluationExecutionProfile> = {
     requiresApiKey: false,
   },
   'candidate-failure': {
-    status: 'unavailable',
-    reason: 'FAILURE_PROFILE_NOT_CONFIGURED',
+    status: 'fixture_ready',
+    kind: 'failure_response',
     requiresApiKey: false,
   },
   'mixed-intent': {

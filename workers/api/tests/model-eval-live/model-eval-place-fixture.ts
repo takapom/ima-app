@@ -11,6 +11,11 @@ type FixturePlace = {
   readonly closeHour: number;
 };
 
+export type ModelEvalPlacesResponseMode =
+  'normal' | 'empty' | 'upstream-failure' | 'schema-failure';
+
+export const MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL = 'M25_FIXTURE_PRIVATE_UPSTREAM_BODY';
+
 const fixturePlaces: readonly FixturePlace[] = [
   { id: 'eval-place-a', name: '青葉カフェ', priceLevel: 'PRICE_LEVEL_MODERATE', closeHour: 22 },
   { id: 'eval-place-b', name: '川辺食堂', priceLevel: 'PRICE_LEVEL_INEXPENSIVE', closeHour: 21 },
@@ -66,6 +71,7 @@ export const fixedPlacesFetcher =
     trace: LiveTraceRecorder,
     now = MODEL_EVAL_NOW,
     observeSearchQuery?: (query: string) => void,
+    responseMode: ModelEvalPlacesResponseMode = 'normal',
   ): typeof fetch =>
   async (input, init) => {
     trace.upstreamCall();
@@ -85,9 +91,36 @@ export const fixedPlacesFetcher =
           observeSearchQuery(body.textQuery);
         }
       }
+      if (responseMode === 'upstream-failure') {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              error: {
+                code: 'UPSTREAM_UNAVAILABLE',
+                message: MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL,
+              },
+            }),
+            {
+              status: 503,
+              headers: { 'content-type': 'application/json' },
+            },
+          ),
+        );
+      }
+      if (responseMode === 'schema-failure') {
+        return Promise.resolve(
+          new Response(JSON.stringify({ places: 'M25_FIXTURE_INVALID_PLACES' }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        );
+      }
       return Promise.resolve(
         new Response(
-          JSON.stringify({ places: fixturePlaces.map((place) => placeBody(place, now)) }),
+          JSON.stringify({
+            places:
+              responseMode === 'empty' ? [] : fixturePlaces.map((place) => placeBody(place, now)),
+          }),
           {
             status: 200,
             headers: { 'content-type': 'application/json' },

@@ -153,6 +153,66 @@ export const modelToolErrorCodeIn = (
   code: string,
 ): boolean => modelToolErrorCodesIn(prompt).includes(code);
 
+export type ProjectedSearchResult =
+  | {
+      readonly kind: 'success';
+      readonly status: 'ok' | 'partial';
+      readonly candidateCount: number;
+    }
+  | { readonly kind: 'error'; readonly code: string }
+  | { readonly kind: 'unknown' };
+
+/** Reads search status only from a structured tool result; absent data stays unknown. */
+export const modelSearchResultIn = (
+  prompt: RuntimeGateModelCallOptions['prompt'],
+): ProjectedSearchResult => {
+  const messages = unknownArray(structuredPrompt(prompt));
+  if (messages === undefined) return { kind: 'unknown' };
+  for (const message of messages) {
+    if (!record(message) || message.role !== 'tool') continue;
+    const parts = unknownArray(message.content);
+    if (parts === undefined) continue;
+    for (const part of parts) {
+      if (
+        !record(part) ||
+        part.type !== 'tool-result' ||
+        part.toolName !== 'search_places' ||
+        !record(part.output)
+      )
+        continue;
+      const outputValue = part.output.value;
+      if (!record(outputValue)) continue;
+      if (outputValue.status === 'error') {
+        const error = outputValue.error;
+        const code = record(error) && typeof error.code === 'string' ? error.code : null;
+        if (code !== null) return { kind: 'error', code };
+        continue;
+      }
+      if (outputValue.status !== 'ok' && outputValue.status !== 'partial') continue;
+      const data = outputValue.data;
+      if (!record(data) || !Array.isArray(data.candidates)) continue;
+      return {
+        kind: 'success',
+        status: outputValue.status,
+        candidateCount: data.candidates.length,
+      };
+    }
+  }
+  return { kind: 'unknown' };
+};
+
+/** Audits one marker without retaining the model prompt or provider body. */
+export const modelPromptContains = (
+  prompt: RuntimeGateModelCallOptions['prompt'],
+  marker: string,
+): boolean => {
+  try {
+    return JSON.stringify(structuredPrompt(prompt)).includes(marker);
+  } catch {
+    return false;
+  }
+};
+
 /** Collects IDs and evidence only from projected context and structured tool output. */
 export const collectProjectedPromptValues = (
   prompt: RuntimeGateModelCallOptions['prompt'],

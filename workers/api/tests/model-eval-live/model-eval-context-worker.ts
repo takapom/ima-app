@@ -4,7 +4,12 @@ import type {
   RuntimeGateModel,
   RuntimeGateModelCallOptions,
 } from '../runtime-gate/runtime-gate-provider';
-import { fixedPlacesFetcher, MODEL_EVAL_NOW } from './model-eval-place-fixture';
+import {
+  fixedPlacesFetcher,
+  MODEL_EVAL_NOW,
+  MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL,
+  type ModelEvalPlacesResponseMode,
+} from './model-eval-place-fixture';
 import { LiveTraceRecorder } from '../../tooling/model-eval/live';
 import {
   evidenceSnapshotFor,
@@ -22,6 +27,8 @@ import {
   modelLocationIn,
   modelLocationProjectionHasCoordinates,
   modelPreferenceBudgetIn,
+  modelPromptContains,
+  modelSearchResultIn,
   modelToolErrorCodesIn,
   modelUserTextIn,
   selectedCandidateIdIn,
@@ -41,6 +48,7 @@ export type ModelEvalFixtureProfile =
   | 'compare'
   | 'decide-action'
   | 'clarify-ambiguity'
+  | 'candidate-failure'
   | 'gps-refusal'
   | ModelEvalConditionFixtureProfile;
 export type ModelEvalFixtureLocationProbe = 'clarify' | 'current-location';
@@ -84,6 +92,7 @@ const fixtureModel = (
   modelLocation: (location: ProjectedModelLocation) => void,
   toolErrors: (codes: readonly string[]) => void,
   locationProbe: () => ModelEvalFixtureLocationProbe,
+  privateUpstreamBodyExposed: () => void,
 ): RuntimeGateModel => {
   let call = 0;
   let previousPhase: ModelEvalFixturePhase | undefined;
@@ -107,9 +116,25 @@ const fixtureModel = (
       if (projectedLocation !== undefined) modelLocation(projectedLocation);
       const toolErrorCodes = modelToolErrorCodesIn(prompt);
       if (toolErrorCodes.length > 0) toolErrors(toolErrorCodes);
+      if (modelPromptContains(prompt, MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL)) {
+        privateUpstreamBodyExposed();
+      }
       assertConditionProjection(profile(), modelPreferenceBudgetIn(prompt));
       const currentCall = call;
       call += 1;
+      if (currentPhase === 'cards' && profile() === 'candidate-failure' && currentCall > 0) {
+        step('final_message');
+        const searchResult = modelSearchResultIn(prompt);
+        const text =
+          searchResult.kind === 'error' && searchResult.code === 'UPSTREAM_UNAVAILABLE'
+            ? '候補を取得できませんでした。'
+            : searchResult.kind === 'success' && searchResult.candidateCount === 0
+              ? '条件に合う候補は見つかりませんでした。'
+              : '候補を確認できませんでした。';
+        return Promise.resolve({
+          stream: streamOf(finalParts(text, [], 'conversational')),
+        });
+      }
       const finalResponse =
         Object.keys(options.tools ?? {}).length === 0 || options.toolChoice?.type === 'none';
       const shouldRefreshMessage = currentPhase === 'message' && currentCall === 0;
@@ -293,8 +318,10 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
   private fixtureProfile: ModelEvalFixtureProfile = 'reason';
   private fixtureNow = MODEL_EVAL_NOW;
   private fixtureLocationProbe: ModelEvalFixtureLocationProbe = 'clarify';
+  private fixturePlacesResponseMode: ModelEvalPlacesResponseMode = 'normal';
   private readonly fixtureToolErrorCodes: string[] = [];
   private fixtureModelLocationExposed = false;
+  private fixturePrivateUpstreamBodyExposed = false;
   private readonly fixtureTrace = new LiveTraceRecorder();
   private readonly fixtureModelLocations: ProjectedModelLocation[] = [];
   private readonly fixtureSteps: ModelEvalFixtureStep[] = [];
@@ -307,13 +334,16 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     now = MODEL_EVAL_NOW,
     profile: ModelEvalFixtureProfile = 'reason',
     locationProbe: ModelEvalFixtureLocationProbe = 'clarify',
+    placesResponseMode: ModelEvalPlacesResponseMode = 'normal',
   ): void {
     this.fixturePhase = phase;
     this.fixtureNow = now;
     this.fixtureProfile = profile;
     this.fixtureLocationProbe = locationProbe;
+    this.fixturePlacesResponseMode = placesResponseMode;
     this.fixtureToolErrorCodes.length = 0;
     this.fixtureModelLocationExposed = false;
+    this.fixturePrivateUpstreamBodyExposed = false;
     this.fixtureSearchQueries.length = 0;
   }
 
@@ -353,6 +383,10 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     return this.fixtureModelLocationExposed;
   }
 
+  getModelEvalFixturePrivateUpstreamBodyExposed(): boolean {
+    return this.fixturePrivateUpstreamBodyExposed;
+  }
+
   getModelEvalFixtureEvidenceSnapshots(): readonly ModelEvalFixtureEvidenceSnapshot[] {
     return this.fixtureEvidenceSnapshots.map((snapshot) => ({
       candidateId: snapshot.candidateId,
@@ -381,14 +415,20 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
           this.fixtureToolErrorCodes.push(...codes);
         },
         () => this.fixtureLocationProbe,
+        () => {
+          this.fixturePrivateUpstreamBodyExposed = true;
+        },
       ),
       modelContextFieldPolicy: FIXTURE_MODEL_CONTEXT_FIELD_POLICY,
       candidateIdentityObserver: (
         record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,
       ) => this.fixtureTrace.observeCandidateIdentity(record),
       fetcher: (input: RequestInfo | URL, init?: RequestInit) =>
-        fixedPlacesFetcher(this.fixtureTrace, this.fixtureNow, (query) =>
-          this.fixtureSearchQueries.push(query),
+        fixedPlacesFetcher(
+          this.fixtureTrace,
+          this.fixtureNow,
+          (query) => this.fixtureSearchQueries.push(query),
+          this.fixturePlacesResponseMode,
         )(input, init),
       googlePlacesApiKey: 'model-eval-fixed-provider-key',
       placesCursorSecret: 'model-eval-fixed-cursor-secret',
