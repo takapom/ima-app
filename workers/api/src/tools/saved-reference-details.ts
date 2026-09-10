@@ -153,6 +153,7 @@ export const resolveModelDetailsInput = async (
     try {
       resolved = await dependencies.resolver({
         savedPlaceRef: request.savedPlaceRef,
+        fields: [...request.fields],
         context,
         execution,
         cancellation,

@@ -31,6 +31,8 @@ export type PublicToolInvocation = Pick<ToolExecutionOptions, 'toolCallId' | 'ab
 /** Worker-owned async boundary for resolving one model-selected saved reference. */
 export type SavedPlaceReferenceResolutionRequest = {
   readonly savedPlaceRef: SavedPlaceRef;
+  /** Fields selected for this reference; the Worker may use them for the fresh provider read. */
+  readonly fields: readonly DetailField[];
   readonly context: HarnessContext;
   readonly execution: ToolExecutionContext;
   readonly cancellation: CancellationToken;
