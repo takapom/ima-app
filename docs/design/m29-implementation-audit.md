@@ -14,7 +14,7 @@
 
 ## 現在の実装と残件
 
-2026-09-10、`b088b7b` 時点。以下はIssueのClose判定ではなく、現在の実装状況である。
+2026-09-10、`6829dc5` 時点。以下はIssueのClose判定ではなく、現在の実装状況である。
 
 | 対象                 | 実装・証跡                                                                                                                                                                                                         | 残件                                                                        |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
@@ -29,7 +29,7 @@
 | #23 API接続          | `b088b7b`。公開schemaの送受信検証、認証・全処理timeout/Abort、応答相関、取消/再試行/世代の適用制御                                                                                                                 | 画面操作・履歴切替・端末/サーバ復元の接続、SecureStore、保存参照発行        |
 | #24 SDK/HTTP/DO統合  | 既存のM04〜M16各suiteあり                                                                                                                                                                                          | 最新本番bootstrapで要求対応表と4領域回帰を統合                              |
 | #25 Provider契約     | 各AdapterのHTTP Fixture試験、`d2635ff` の明示live smoke・未設定skip・固定エラー報告                                                                                                                                | suiteの要求対応、journey実データadapterのCLI接続、実API検証                 |
-| #26 モデル評価       | `07babb6`。14シナリオ×3反復の定義、根拠値/期限/対象/禁止動作判定、人手90%・重大違反0件ゲート、実測/unknown別集計                                                                                                   | 実Think/DO・固定Providerによる実モデルrunner、42件の実行と人手評価          |
+| #26 モデル評価       | `07babb6`、`6829dc5`。14シナリオ×3反復の定義・評価ゲート、実Think/DOの明示live probe・trace/artifact                                                                                                               | 候補ID対応・複数turnのseed接続、42件の実モデル実行と人手評価                |
 | #27 計測・flags      | `27b4553`。固定schema、実DO SQLite、厳密7日境界、書込み後alarm前倒し、HTTPイベント、実測/unknown別集計、flags契約                                                                                                  | 本番のtrace生成・flagsによる呼出し停止・障害観測の接続                      |
 | #28 App Integrity    | 未実装                                                                                                                                                                                                             | native/Worker互換性検証、nonce/enroll/assertion、replay・迂回防止、実機検証 |
 | #29 環境統合         | 基礎wrangler/CIあり                                                                                                                                                                                                | 環境・EAS・Secrets・preflight・runbookの統合、デプロイ/復旧の証跡           |
@@ -54,6 +54,7 @@
 - 2026-09-10 22:01–02 JST: #22のmobile/公開保持契約の18ファイル・109テスト、mobile/contracts型検査、対象lint/format合格。Node24の実SQLite試験であり、Expo SQLite・実機接続の証明ではない。
 - 2026-09-10 22:19–25 JST: #17のguard/final/Think connection 4ファイル・26テスト、実SDK/DO 5ファイル・19テスト、Worker型3系統、対象lint/format合格。final-onlyのsearch/submitは副作用0、予算終了後はmodel call 0。既知guard失敗は型付き失敗へ変換し、未知SDK失敗の未処理ログ2件は残る。依存検査456 modules / 1,835 dependencies・Fixture31件合格。
 - 2026-09-10 22:33–34 JST: #23のmobile/contracts 25ファイル・134テスト、mobile/contracts型検査、対象lint/format合格。全処理timeout、null相関拒否、同keyの別threadへ旧cancel/retryを適用しない回帰を含む。依存検査459 modules / 1,846 dependencies・Fixture31件合格。HTTP transportは注入fetch試験であり実Worker/実機接続は未実測。
+- 2026-09-10 22:36–37 JST: #26の専用Worker poolはopt-outで7テスト合格・実モデル1件skip。Worker型3系統と対象lint/format合格。probeは新規検索3反復に限定し、カードの候補対応表がない間は未評価artifactを出力する。実モデル品質や全42件の検収を意味しない。
 - この記録は全体テスト・ビルド・実機の最終合格を意味しない。以後の変更で再検証する。
 - Web起動試行: Expo 57の既定設定ではMetroの `EMFILE: too many open files, watch` で失敗。既存Watchmanを有効化した再試行は `watch-project` が130秒超応答せず停止した。Web exportも同じ待機で停止。画面表示・Webビルドは未確認であり、起動成功とは扱わない。
 
