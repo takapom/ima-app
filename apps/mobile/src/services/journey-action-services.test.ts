@@ -1,0 +1,198 @@
+import { describe, expect, it } from 'vitest';
+import type { PublicCard } from '@ima/contracts';
+import { triggerDecisionHaptics, type DecisionHapticsService } from './journey-haptics';
+import { buildAppleWalkingMapUrl } from './journey-map';
+import {
+  prepareJourneyShare,
+  shareJourneyCandidate,
+  type JourneyShareService,
+} from './journey-share';
+import { saveJourneyCandidate, type JourneyStorageService } from './journey-storage';
+
+const retention = {
+  retentionDecision: 'deny' as const,
+  retentionMode: 'session_only' as const,
+  sessionExpiresAt: '2026-09-10T00:00:00Z',
+  freshUntil: '2026-09-10T00:00:00Z',
+  displayUntil: '2026-09-10T00:00:00Z',
+  retentionUntil: null,
+  deletionScheduledAt: null,
+  attribution: null,
+  restoreMode: 'reference_only' as const,
+  policyStatus: 'policy_withheld' as const,
+  displayPolicyStatus: 'available' as const,
+};
+
+const saveCard: PublicCard = {
+  candidateId: 'candidate-1',
+  facts: {
+    identity: {
+      status: 'known',
+      value: {
+        name: '夜カフェ',
+        area: '恵比寿',
+        address: null,
+        category: 'cafe',
+        businessStatus: 'operational',
+        sourceUrl: null,
+      },
+      evidence: [
+        {
+          evidenceId: 'identity-1',
+          attribution: null,
+          retention,
+        },
+      ],
+    },
+  },
+  why: {
+    text: '静かに話せる',
+    evidenceIds: [],
+    evidence: [],
+    basis: 'conversational',
+    retention,
+  },
+};
+
+describe('journey action services', () => {
+  it('keeps map destination construction separate from sharing', () => {
+    const map = buildAppleWalkingMapUrl({ latitude: 35.6467, longitude: 139.71 });
+    expect(map.status).toBe('ready');
+    if (map.status !== 'ready') return;
+    const prepared = prepareJourneyShare({
+      name: '夜カフェ',
+      walkingDurationSeconds: 12 * 60,
+      mapUrl: map.url,
+    });
+
+    expect(prepared).toEqual({
+      status: 'ready',
+      message: '夜カフェ\n徒歩12分\nhttps://maps.apple.com/?daddr=35.6467%2C139.71&dirflg=w',
+    });
+  });
+
+  it('does not share when a trusted HTTPS map link is unavailable', async () => {
+    const service: JourneyShareService = {
+      openShareSheet: () => Promise.resolve({ status: 'opened' }),
+    };
+    const result = await shareJourneyCandidate(service, {
+      name: '夜カフェ',
+      walkingDurationSeconds: null,
+      mapUrl: null,
+    });
+
+    expect(result).toEqual({ status: 'unavailable', reason: 'map_link_missing' });
+  });
+
+  it('requires an HTTPS URL with a host before opening the share sheet', () => {
+    expect(
+      prepareJourneyShare({
+        name: '夜カフェ',
+        walkingDurationSeconds: 0,
+        mapUrl: 'http://example.com/map',
+      }),
+    ).toEqual({ status: 'unavailable', reason: 'map_link_missing' });
+    expect(
+      prepareJourneyShare({ name: '夜カフェ', walkingDurationSeconds: 0, mapUrl: 'https://' }),
+    ).toEqual({ status: 'unavailable', reason: 'map_link_missing' });
+    expect(
+      prepareJourneyShare({
+        name: '夜カフェ',
+        walkingDurationSeconds: 0,
+        mapUrl: 'https://example.com/map',
+      }),
+    ).toEqual({
+      status: 'ready',
+      message: '夜カフェ\n徒歩1分\nhttps://example.com/map',
+    });
+  });
+
+  it('exposes native share opened and cancellation without claiming delivery', async () => {
+    const messages: string[] = [];
+    const opened: JourneyShareService = {
+      openShareSheet: ({ message }) => {
+        messages.push(message);
+        return Promise.resolve({ status: 'opened' });
+      },
+    };
+    const cancelled: JourneyShareService = {
+      openShareSheet: () => Promise.resolve({ status: 'cancelled' }),
+    };
+    const candidate = {
+      name: '夜カフェ',
+      walkingDurationSeconds: null,
+      mapUrl: 'https://example.com/map',
+    };
+
+    await expect(shareJourneyCandidate(opened, candidate)).resolves.toEqual({ status: 'opened' });
+    await expect(shareJourneyCandidate(cancelled, candidate)).resolves.toEqual({
+      status: 'cancelled',
+    });
+    expect(messages).toEqual(['夜カフェ\nhttps://example.com/map']);
+  });
+
+  it('maps a native share exception to a failure result', async () => {
+    const service: JourneyShareService = {
+      openShareSheet: () => Promise.reject(new Error('native unavailable')),
+    };
+    await expect(
+      shareJourneyCandidate(service, {
+        name: '夜カフェ',
+        walkingDurationSeconds: 60,
+        mapUrl: 'https://example.com/map',
+      }),
+    ).resolves.toEqual({ status: 'failed', reason: 'share_unavailable' });
+  });
+
+  it('keeps save and haptics behind injectable services', async () => {
+    const saved: string[] = [];
+    const received: PublicCard[] = [];
+    const storage: JourneyStorageService = {
+      saveCandidate: (card) => {
+        received.push(card);
+        saved.push(card.candidateId);
+        return Promise.resolve({ status: 'saved', savedPlaceRef: 'saved-1' });
+      },
+    };
+    const hapticCalls: string[] = [];
+    const haptics: DecisionHapticsService = {
+      decision: () => {
+        hapticCalls.push('decision');
+      },
+    };
+
+    await expect(saveJourneyCandidate(storage, saveCard)).resolves.toEqual({
+      status: 'saved',
+      savedPlaceRef: 'saved-1',
+    });
+    await expect(triggerDecisionHaptics(haptics)).resolves.toEqual({ status: 'performed' });
+    expect(saved).toEqual(['candidate-1']);
+    const receivedCard = received[0];
+    if (receivedCard === undefined) throw new Error('save boundary did not receive the card');
+    expect(receivedCard.facts.identity.status).toBe('known');
+    if (receivedCard.facts.identity.status === 'known') {
+      expect(receivedCard.facts.identity.evidence[0]?.retention.retentionDecision).toBe('deny');
+    }
+    expect(hapticCalls).toEqual(['decision']);
+  });
+
+  it('reports unavailable storage and haptics without hiding the action result', async () => {
+    const storage: JourneyStorageService = {
+      saveCandidate: () => Promise.reject(new Error('sqlite not connected')),
+    };
+    const haptics: DecisionHapticsService = {
+      decision: () => {
+        throw new Error('native haptics not connected');
+      },
+    };
+
+    await expect(saveJourneyCandidate(storage, saveCard)).resolves.toEqual({
+      status: 'failed',
+      reason: 'storage_unavailable',
+    });
+    await expect(triggerDecisionHaptics(haptics)).resolves.toEqual({
+      status: 'failed',
+      reason: 'haptics_unavailable',
+    });
+  });
+});

@@ -1,0 +1,65 @@
+export type JourneyShareCandidate = {
+  readonly name: string;
+  /** A route value already returned by the public response, in seconds. */
+  readonly walkingDurationSeconds: number | null;
+  /** A trusted HTTPS map link; this module does not geocode or invent one. */
+  readonly mapUrl: string | null;
+};
+
+export type SharePreparation =
+  | { readonly status: 'ready'; readonly message: string }
+  | { readonly status: 'unavailable'; readonly reason: 'name_missing' | 'map_link_missing' };
+
+export type ShareSheetResult =
+  | { readonly status: 'opened' }
+  | { readonly status: 'cancelled' }
+  | { readonly status: 'failed'; readonly reason: 'share_unavailable' };
+
+export type JourneyShareService = {
+  readonly openShareSheet: (input: { readonly message: string }) => Promise<ShareSheetResult>;
+};
+
+const isHttpsUrl = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname.length > 0;
+  } catch {
+    return false;
+  }
+};
+
+const formatWalking = (seconds: number | null): string | null => {
+  if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return null;
+  return `徒歩${Math.max(1, Math.round(seconds / 60))}分`;
+};
+
+export const prepareJourneyShare = (candidate: JourneyShareCandidate): SharePreparation => {
+  const name = candidate.name.trim();
+  if (name.length === 0) return { status: 'unavailable', reason: 'name_missing' };
+  if (candidate.mapUrl === null || !isHttpsUrl(candidate.mapUrl)) {
+    return { status: 'unavailable', reason: 'map_link_missing' };
+  }
+
+  const lines = [name];
+  const walking = formatWalking(candidate.walkingDurationSeconds);
+  if (walking !== null) lines.push(walking);
+  lines.push(candidate.mapUrl);
+  return { status: 'ready', message: lines.join('\n') };
+};
+
+/**
+ * `opened` means the native share sheet opened. It does not claim delivery to
+ * LINE or any other recipient; cancellation and native failure stay distinct.
+ */
+export const shareJourneyCandidate = async (
+  service: JourneyShareService,
+  candidate: JourneyShareCandidate,
+): Promise<SharePreparation | ShareSheetResult> => {
+  const prepared = prepareJourneyShare(candidate);
+  if (prepared.status !== 'ready') return prepared;
+  try {
+    return await service.openShareSheet({ message: prepared.message });
+  } catch {
+    return { status: 'failed', reason: 'share_unavailable' };
+  }
+};
