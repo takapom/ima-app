@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "wrangler dev --local",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.tests.json --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.tests.json --noEmit && tsc -p tooling/tsconfig.json --noEmit",
     "build": "wrangler deploy --dry-run"
   },
   "dependencies": {
