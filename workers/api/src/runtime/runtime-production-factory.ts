@@ -5,8 +5,8 @@ import type {
   CandidateRecord,
   CommitHashPort,
   CommitPort,
+  ConstraintValidationContext,
   DetailField,
-  GetPlaceDetailsInput,
   HarnessContext,
   IdPort,
   ModelContextFieldPolicy,
@@ -17,10 +17,6 @@ import { CandidateObservationRegistry } from '@ima/core';
 import { normalizeGoogleOpeningHours } from '../providers/places/hours';
 import { createPlacesDetailsAdapter } from '../providers/places-details/adapter';
 import type { PlacesDetailsObservationPolicy } from '../providers/places-details/adapter-types';
-import {
-  isSupportedField,
-  observationContextFor,
-} from '../providers/places-details/adapter-support';
 import { createGooglePlaceDetailsTransport } from '../providers/places-details/transport';
 import { createPlacesSearchAdapter } from '../providers/places-search/adapter';
 import type { PlacesSearchObservationPolicy } from '../providers/places-search/registration';
@@ -33,8 +29,6 @@ import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../model/provider-options';
 import {
   createRuntimeReadAttemptSignalBridge,
   type RuntimeReadAttemptSignalBridge,
-  type RuntimeReadCost,
-  type RuntimeReadCostRequest,
 } from './runtime-read-ports';
 import {
   createRuntimeTurnComposition,
@@ -43,6 +37,10 @@ import {
   type RuntimeCompositionValidationContext,
   type RuntimePublicResponseDependencies,
 } from './runtime-turn-composition';
+import {
+  createRuntimeProductionContextStore,
+  wrapRuntimeProductionCommit,
+} from './runtime-production-context';
 import { RuntimeBudget } from './runtime-budget';
 import {
   defaultProductionObservationPolicy,
@@ -75,6 +73,7 @@ import type {
 import type { RuntimeModelGuardCallOptions, RuntimeModelGuardModel } from './runtime-model-guard';
 import { defaultRuntimeModelContextPolicy } from './runtime-field-policy';
 import { unavailableSubmit } from './runtime-production-submit';
+import { resolveRuntimeProductionReadCost } from './runtime-production-read-cost';
 
 type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;
@@ -91,10 +90,12 @@ export type RuntimeProductionTurnPlan = {
   readonly details: PlaceDetailsPort;
   readonly retention: RuntimeRetentionContext;
   readonly modelContext: RuntimeCompositionModelContext;
+  readonly constraintContext: ConstraintValidationContext;
   readonly validationContext: RuntimeCompositionValidationContext;
   readonly ids: Pick<IdPort, 'nextCallId' | 'nextResponseId'>;
   readonly hashes: CommitHashPort;
   readonly publicResponse?: RuntimePublicResponseDependencies;
+  readonly onCommitted?: (response: unknown) => void;
   /** Set true only for a host-owned final response step with read tools disabled. */
   readonly isFinalResponse?: (params: RuntimeModelGuardCallOptions) => boolean;
 };
@@ -173,78 +174,6 @@ const areaLabelFor = (
   areaByCandidate: ReadonlyMap<string, string>,
 ): string => areaByCandidate.get(candidate.candidateId) ?? '検索結果の地域';
 
-const buildModelContext = (
-  input: ThreadTurnRequest,
-  fieldPolicy: ModelContextFieldPolicy = defaultRuntimeModelContextPolicy,
-): RuntimeCompositionModelContext => ({
-  userText: input.text,
-  history: [],
-  cardSet: null,
-  evidence: [],
-  fieldPolicy,
-});
-
-const buildComposition = (
-  options: RuntimeTurnCompositionCoreOptions,
-  publicResponse: RuntimePublicResponseDependencies | undefined,
-) =>
-  publicResponse === undefined
-    ? createRuntimeTurnComposition(options)
-    : createRuntimeTurnComposition({ ...options, publicResponse });
-
-const detailsProviderCost = (
-  input: GetPlaceDetailsInput,
-  context: HarnessContext,
-  registry: CandidateObservationRegistryPort,
-): number => {
-  let requests = 0;
-  const scope = productionScopeFor(context);
-  const observationContext = observationContextFor(context);
-  for (const request of input.requests) {
-    let needsProvider = false;
-    try {
-      const candidate = registry.readCandidate(scope, request.candidateId);
-      if (candidate === undefined || candidate.excluded || candidate.provider !== 'google_places') {
-        continue;
-      }
-      for (const field of request.fields) {
-        if (!isSupportedField(field)) continue;
-        if (input.freshness === 'reuse_valid') {
-          const reused = registry.evaluateObservationReuse({
-            scope,
-            candidateId: request.candidateId,
-            field,
-            context: observationContext,
-          });
-          if (reused.status === 'reusable') continue;
-        }
-        needsProvider = true;
-        break;
-      }
-    } catch {
-      // A registry failure must reserve conservatively; it must never undercharge an external read.
-      needsProvider = true;
-    }
-    if (needsProvider) requests += 1;
-  }
-  return requests;
-};
-
-const resolveReadCost = (
-  request: RuntimeReadCostRequest,
-  registry: CandidateObservationRegistryPort,
-): RuntimeReadCost => {
-  const providerRequests =
-    request.operation === 'search_places'
-      ? 1
-      : detailsProviderCost(request.input, request.context, registry);
-  return {
-    costUnits: providerRequests,
-    providerHttpRequests: providerRequests,
-    routeElements: 0,
-  };
-};
-
 const defaultPlan = (
   input: ProductionBuildInput,
   env: unknown,
@@ -254,6 +183,7 @@ const defaultPlan = (
   registry: CandidateObservationRegistry,
   continuation: ReturnType<typeof createPlacesSearchContinuation>,
   areaByCandidate: Map<string, string>,
+  contextStore: ReturnType<typeof createRuntimeProductionContextStore>,
   turnRetention: ReturnType<typeof productionRetentionFor>,
   fixedSessionExpiresAt: string,
 ): RuntimeProductionTurnPlan => {
@@ -319,6 +249,12 @@ const defaultPlan = (
     retention: turnRetention,
   };
   const cardSetId = ids.nextCardSetId();
+  const fieldPolicy = overrides.modelContextFieldPolicy ?? defaultRuntimeModelContextPolicy;
+  const context = contextStore.beginTurn(
+    input.runtimeInput,
+    productionScopeFor(input.context),
+    fieldPolicy,
+  );
   return {
     model: overrides.modelForTurn ?? createLiveOpenAIProvider(env).model,
     providerOptions: OPENAI_PROVIDER_REQUEST_OPTIONS,
@@ -329,7 +265,7 @@ const defaultPlan = (
     search,
     details,
     retention,
-    modelContext: buildModelContext(input.runtimeInput, overrides.modelContextFieldPolicy),
+    modelContext: context.modelContext,
     validationContext: (at) => validationContextFor(input.context, at.now),
     ids,
     hashes: productionHash,
@@ -338,6 +274,8 @@ const defaultPlan = (
       cardSetId,
       resolveCardEvidence: cardEvidenceResolver(registry, input.context),
     },
+    constraintContext: context.constraintContext,
+    onCommitted: (response) => contextStore.commitTurn(input.runtimeInput, response),
   };
 };
 
@@ -351,6 +289,7 @@ const makeOptions = (
   monotonicNow: () => number,
 ) => {
   const areaByCandidate = new Map<string, string>();
+  const contextStore = createRuntimeProductionContextStore({ registry });
   let fixedSessionExpiresAt =
     overrides.threadCreatedAt === undefined
       ? undefined
@@ -396,6 +335,7 @@ const makeOptions = (
             registry,
             continuation,
             areaByCandidate,
+            contextStore,
             turnRetention,
             fixedSessionExpiresAt,
           ));
@@ -429,15 +369,24 @@ const makeOptions = (
       },
       attemptSignalBridge: bridge,
       commit: input.commit,
-      resolveReadCost: (read) => resolveReadCost(read, plan.registry),
+      resolveReadCost: (read) => resolveRuntimeProductionReadCost(read, plan.registry),
       validationContext: plan.validationContext,
-      constraintContext: { threadId: request.threadId, originalTurns: [] },
+      constraintContext:
+        prepared === undefined
+          ? plan.constraintContext
+          : { threadId: request.threadId, originalTurns: [] },
       persistMessages: () => Promise.resolve({ requestId: request.turnId, status: 'completed' }),
       isFinalResponse: plan.isFinalResponse ?? (() => false),
       stopWhen: () => budget.snapshot().completed,
       idempotencyKey: runtimeInput.idempotencyKey,
     };
-    return buildComposition(base, plan.publicResponse);
+    const composition =
+      plan.publicResponse === undefined
+        ? createRuntimeTurnComposition(base)
+        : createRuntimeTurnComposition({ ...base, publicResponse: plan.publicResponse });
+    return plan.onCommitted === undefined
+      ? composition
+      : wrapRuntimeProductionCommit(composition, plan.onCommitted);
   };
   return {
     clock,

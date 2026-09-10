@@ -63,6 +63,13 @@ const LLM_ONLY_MODEL_CONTEXT_FIELD_POLICY: ModelContextFieldPolicy = {
   evidence: { ...FIXTURE_MODEL_CONTEXT_FIELD_POLICY.evidence, opening_hours: 'deny' },
 };
 
+const MULTITURN_MODEL_CONTEXT_FIELD_POLICY: ModelContextFieldPolicy = {
+  ...FIXTURE_MODEL_CONTEXT_FIELD_POLICY,
+  history: 'allow',
+  cardSet: 'allow',
+  displayName: 'allow',
+};
+
 export type RuntimeProductionReport = {
   readonly calls: number;
   readonly providerOptionsSeen: readonly RuntimeProductionProviderOptions[];
@@ -72,6 +79,8 @@ export type RuntimeProductionReport = {
   readonly fetchUrls: readonly string[];
   readonly llmInputCanarySeen: boolean;
   readonly deniedFieldCanarySeen: boolean;
+  readonly modelHistorySeen: boolean;
+  readonly modelCardSetSeen: boolean;
 };
 
 export type RuntimeProductionProviderOptions = {
@@ -91,6 +100,8 @@ type MutableRuntimeProductionReport = {
   fetchUrls: string[];
   llmInputCanarySeen: boolean;
   deniedFieldCanarySeen: boolean;
+  modelHistorySeen: boolean;
+  modelCardSetSeen: boolean;
 };
 
 const usage = {
@@ -116,11 +127,36 @@ const candidateIdsIn = (prompt: string): string[] =>
 const observationIdsIn = (prompt: string): string[] =>
   [...prompt.matchAll(/"observationId":"([^"]+)"/gu)].map((match) => match[1] ?? '');
 
+type ProductionScenario = 'default' | 'multiturn' | 'follow-up' | 'condition-change';
+
+const productionScenarioFor = (value: unknown): ProductionScenario => {
+  if (typeof value !== 'object' || value === null || !('input' in value)) return 'default';
+  const input = value.input;
+  if (typeof input !== 'object' || input === null || !('text' in input)) return 'default';
+  if (typeof input.text !== 'string') return 'default';
+  if (input.text.includes('[m16-follow-up]')) return 'follow-up';
+  if (input.text.includes('[m16-condition-change]')) return 'condition-change';
+  if (input.text.includes('[m16-multiturn]')) return 'multiturn';
+  return 'default';
+};
+
 const runtimeTurnUsesLlmOnlyPolicy = (value: unknown): boolean => {
   if (typeof value !== 'object' || value === null || !('input' in value)) return false;
   const input = value.input;
   if (typeof input !== 'object' || input === null || !('text' in input)) return false;
   return typeof input.text === 'string' && input.text.includes('[m16-llm-only]');
+};
+
+const runtimeTurnUsesMultiTurnPolicy = (value: unknown): boolean => {
+  if (typeof value !== 'object' || value === null || !('input' in value)) return false;
+  const input = value.input;
+  if (typeof input !== 'object' || input === null || !('text' in input)) return false;
+  return (
+    typeof input.text === 'string' &&
+    (input.text.includes('[m16-multiturn]') ||
+      input.text.includes('[m16-follow-up]') ||
+      input.text.includes('[m16-condition-change]'))
+  );
 };
 
 const observedProviderOptions = (
@@ -172,10 +208,17 @@ const streamOf = (
     },
   });
 
-const finalMessageParts = (): RuntimeGateModelStreamPart[] => {
+const finalMessageParts = (
+  text = '条件を確認しました。',
+  evidenceIds: readonly string[] = [],
+): RuntimeGateModelStreamPart[] => {
   const envelope = JSON.stringify({
     kind: 'final_message',
-    message: { text: '条件を確認しました。', evidenceIds: [], basis: 'conversational' },
+    message: {
+      text,
+      evidenceIds,
+      basis: evidenceIds.length > 0 ? 'grounded' : 'conversational',
+    },
   });
   return [
     { type: 'stream-start', warnings: [] },
@@ -189,66 +232,81 @@ const finalMessageParts = (): RuntimeGateModelStreamPart[] => {
 const modelForProduction = (
   report: MutableRuntimeProductionReport,
   finalAfterDetails = false,
+  scenario: () => ProductionScenario = () => 'default',
 ): RuntimeGateModel => ({
   specificationVersion: 'v3',
   provider: 'm16-production-scripted-provider',
   modelId: 'm16-production-default-plan',
   supportedUrls: {},
   doGenerate: () => Promise.reject(new Error('M16_PRODUCTION_STREAM_ONLY')),
-  doStream: (options: RuntimeGateModelCallOptions) => {
-    const prompt = JSON.stringify(options.prompt);
-    report.llmInputCanarySeen ||= prompt.includes(LLM_INPUT_CANARY);
-    report.deniedFieldCanarySeen ||= prompt.includes(DENIED_FIELD_CANARY);
-    if (prompt.includes('[m16-final-reserve]')) {
-      report.calls += 1;
-      report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
-      report.toolNames.push('final_message');
-      return Promise.resolve({ stream: streamOf(finalMessageParts()) });
-    }
-    const candidateIds = candidateIdsIn(prompt);
-    const observationIds = observationIdsIn(prompt);
-    report.observationIdsSeen.push(observationIds);
-    if (finalAfterDetails && report.calls >= 2) {
-      report.calls += 1;
-      report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
-      report.toolNames.push('final_message');
-      return Promise.resolve({ stream: streamOf(finalMessageParts()) });
-    }
-    const candidateId = candidateIds.at(-1) ?? 'missing-candidate';
-    const evidenceIds = observationIds.slice(-2);
-    let input: unknown;
-    let toolName: string;
-    const phase = report.calls % 3;
-    if (phase === 0) {
-      toolName = 'search_places';
-      input = searchInput;
-    } else if (phase === 1) {
-      toolName = 'get_place_details';
-      input = {
-        requests: [{ candidateId, fields: ['identity', 'opening_hours'] }],
-        freshness: 'refresh',
-      };
-    } else {
-      toolName = 'submit_cards';
-      input = {
-        message: [{ text: '渋谷の候補です。', evidenceIds, basis: 'grounded' }],
-        hero: {
-          candidateId,
-          evidenceIds,
-          why: {
-            text: '検索結果と詳細を確認しました。',
+  doStream: (() => {
+    let conditionChangeCalls = 0;
+    return (options: RuntimeGateModelCallOptions) => {
+      const prompt = JSON.stringify(options.prompt);
+      report.llmInputCanarySeen ||= prompt.includes(LLM_INPUT_CANARY);
+      report.deniedFieldCanarySeen ||= prompt.includes(DENIED_FIELD_CANARY);
+      report.modelHistorySeen ||= prompt.includes('history\\":[{');
+      report.modelCardSetSeen ||= prompt.includes('cardSet\\":{');
+      if (prompt.includes('[m16-final-reserve]')) {
+        report.calls += 1;
+        report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
+        report.toolNames.push('final_message');
+        return Promise.resolve({ stream: streamOf(finalMessageParts()) });
+      }
+      const candidateIds = candidateIdsIn(prompt);
+      const observationIds = observationIdsIn(prompt);
+      report.observationIdsSeen.push(observationIds);
+      if (scenario() === 'follow-up') {
+        report.calls += 1;
+        report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
+        report.toolNames.push('final_message');
+        return Promise.resolve({
+          stream: streamOf(finalMessageParts('前の候補を維持します。', observationIds.slice(-2))),
+        });
+      }
+      if (finalAfterDetails && report.calls >= 2) {
+        report.calls += 1;
+        report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
+        report.toolNames.push('final_message');
+        return Promise.resolve({ stream: streamOf(finalMessageParts()) });
+      }
+      const candidateId = candidateIds.at(-1) ?? 'missing-candidate';
+      const evidenceIds = observationIds.slice(-2);
+      let input: unknown;
+      let toolName: string;
+      const conditionChange = scenario() === 'condition-change';
+      const phase = conditionChange ? conditionChangeCalls++ % 3 : report.calls % 3;
+      if (phase === 0) {
+        toolName = 'search_places';
+        input = searchInput;
+      } else if (phase === 1) {
+        toolName = 'get_place_details';
+        input = {
+          requests: [{ candidateId, fields: ['identity', 'opening_hours'] }],
+          freshness: 'refresh',
+        };
+      } else {
+        toolName = 'submit_cards';
+        input = {
+          message: [{ text: '渋谷の候補です。', evidenceIds, basis: 'grounded' }],
+          hero: {
+            candidateId,
             evidenceIds,
-            basis: 'grounded',
+            why: {
+              text: '検索結果と詳細を確認しました。',
+              evidenceIds,
+              basis: 'grounded',
+            },
           },
-        },
-        alts: [],
-      };
-    }
-    report.calls += 1;
-    report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
-    report.toolNames.push(toolName);
-    return Promise.resolve({ stream: streamOf(toolParts(report.calls, toolName, input)) });
-  },
+          alts: [],
+        };
+      }
+      report.calls += 1;
+      report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
+      report.toolNames.push(toolName);
+      return Promise.resolve({ stream: streamOf(toolParts(report.calls, toolName, input)) });
+    };
+  })(),
 });
 
 const fetcherForProduction =
@@ -322,9 +380,13 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
   override maxSteps = 6;
   private productionReport: MutableRuntimeProductionReport | null = null;
   private llmOnlyModel = false;
+  private multiTurnModel = false;
+  private productionScenario: ProductionScenario = 'default';
 
   override async runRuntimeTurn(value: unknown) {
     this.llmOnlyModel = runtimeTurnUsesLlmOnlyPolicy(value);
+    this.multiTurnModel = runtimeTurnUsesMultiTurnPolicy(value);
+    this.productionScenario = productionScenarioFor(value);
     return super.runRuntimeTurn(value);
   }
 
@@ -355,6 +417,8 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
       fetchUrls: [],
       llmInputCanarySeen: false,
       deniedFieldCanarySeen: false,
+      modelHistorySeen: false,
+      modelCardSetSeen: false,
     };
     this.productionReport = report;
     const retention = this.llmOnlyModel ? LLM_ONLY_RETENTION : ALLOW_RETENTION;
@@ -366,13 +430,15 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
     const budgetStart = performance.now();
     let finalResponseMode = false;
     return {
-      modelForTurn: modelForProduction(report, this.llmOnlyModel),
+      modelForTurn: modelForProduction(report, this.llmOnlyModel, () => this.productionScenario),
       fetcher: fetcherForProduction(report),
       observationPolicy: policy,
       detailsObservationPolicy: policy,
       modelContextFieldPolicy: this.llmOnlyModel
         ? LLM_ONLY_MODEL_CONTEXT_FIELD_POLICY
-        : FIXTURE_MODEL_CONTEXT_FIELD_POLICY,
+        : this.multiTurnModel
+          ? MULTITURN_MODEL_CONTEXT_FIELD_POLICY
+          : FIXTURE_MODEL_CONTEXT_FIELD_POLICY,
       placesEnabled: true,
       retention,
       clock: () => RUNTIME_PRODUCTION_NOW,
