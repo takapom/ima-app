@@ -35,10 +35,8 @@ export const threadRuntimeResultFromNative = (
     };
   }
   if (nativeResult.status === 'error') {
-    if (nativeResult.runtimeGuardFailureCode !== undefined) {
-      return runtimeFailure('RUNTIME_FAILED', nativeResult.requestId);
-    }
-    throw new Error(nativeResult.error ?? 'runtime Think turn failed');
+    /* SaveMessagesResult.error is provider-controlled text; never rethrow it. */
+    return runtimeFailure('RUNTIME_FAILED', nativeResult.requestId);
   }
   throw new Error('runtime Think turn returned an unknown status');
 };

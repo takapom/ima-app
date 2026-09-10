@@ -193,7 +193,7 @@ describe('runtime native HTTP composition', () => {
     expect(staleParsed.output.code).toBe('STALE_TURN');
   });
 
-  it('keeps a scripted SDK failure inside the public error vocabulary', async () => {
+  it('maps a scripted provider failure to the public provider error', async () => {
     const { threadId } = await createThread();
     const requestId = `native-http-error-${crypto.randomUUID()}`;
     const errorResponse = await call(
@@ -205,12 +205,12 @@ describe('runtime native HTTP composition', () => {
         body: JSON.stringify(turnBody(requestId, 'unexpected-sdk-error')),
       },
     );
-    expect(errorResponse.status).toBe(500);
+    expect(errorResponse.status).toBe(502);
     const parsed = v.safeParse(ErrorResponseSchema, await errorResponse.json());
     expect(parsed.success).toBe(true);
     if (!parsed.success) return;
-    expect(parsed.output.status).toBe(500);
-    expect(parsed.output.code).toBe('INTERNAL');
+    expect(parsed.output.status).toBe(502);
+    expect(parsed.output.code).toBe('PROVIDER_UNAVAILABLE');
     expect(JSON.stringify(parsed.output)).not.toContain('UPSTREAM_UNAVAILABLE');
     expect(JSON.stringify(parsed.output)).not.toContain('runtime native scripted provider failed');
 

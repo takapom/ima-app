@@ -177,7 +177,7 @@ describe('native Think runtime fixture', () => {
     expect(report.commitWrites).toBe(0);
   });
 
-  it('propagates an unexpected SDK error without a commit', async () => {
+  it('returns a typed provider failure without a commit', async () => {
     const threadId = `runtime-native-error-${crypto.randomUUID()}`;
     const target: ThreadRuntimeTarget = {
       ownerScopeRef: RUNTIME_NATIVE_OWNER,
@@ -191,8 +191,12 @@ describe('native Think runtime fixture', () => {
       ok: true,
     });
     await expect(
-      Promise.resolve(stub.runRuntimeTurn(requestFor(target, 'unexpected-sdk-error'))),
-    ).rejects.toThrow('UPSTREAM_UNAVAILABLE');
+      stub.runRuntimeTurn(requestFor(target, 'unexpected-sdk-error')),
+    ).resolves.toMatchObject({
+      status: 'failed',
+      code: 'RUNTIME_FAILED',
+      response: null,
+    });
     const report = await stub.getRuntimeNativeReport();
     expect(report).not.toBeNull();
     if (report === null) return;
