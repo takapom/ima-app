@@ -56,12 +56,15 @@ export const executionIsCurrent = (
   execution.turnId === context.turnId &&
   execution.revision === context.revision;
 
-export const observationContextFor = (context: HarnessContext): ObservationContext => ({
+export const observationContextFor = (
+  context: HarnessContext,
+  originRef: string | null = null,
+): ObservationContext => ({
   ownerScopeRef: context.ownerScopeRef,
   threadId: context.threadId,
   capabilityVersion: context.capabilities.version,
   locationRevision: context.location.revision,
-  originRef: null,
+  originRef,
   homeStationRef: context.preferences.homeStationRef,
   minimumStayMinutes: context.preferences.minimumStayMinutes,
   timeContext: 'now',

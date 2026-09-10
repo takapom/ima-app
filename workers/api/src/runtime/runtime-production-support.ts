@@ -282,6 +282,7 @@ export const harnessContextFor = (
 export const validationContextFor = (
   context: HarnessContext,
   now: string,
+  originRef: string | null = null,
 ): SubmitValidationContext => ({
   scope: { ownerScopeRef: context.ownerScopeRef, threadId: context.threadId },
   serverNow: now,
@@ -291,7 +292,7 @@ export const validationContextFor = (
     threadId: context.threadId,
     capabilityVersion: context.capabilities.version,
     locationRevision: context.location.revision,
-    originRef: null,
+    originRef,
     homeStationRef: context.preferences.homeStationRef,
     minimumStayMinutes: context.preferences.minimumStayMinutes,
     timeContext: 'now',

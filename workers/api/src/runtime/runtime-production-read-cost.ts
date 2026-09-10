@@ -14,10 +14,11 @@ const detailsProviderCost = (
   input: GetPlaceDetailsInput,
   context: HarnessContext,
   registry: CandidateObservationRegistryPort,
+  originRefFor?: (context: HarnessContext) => string | undefined,
 ): number => {
   let requests = 0;
   const scope = productionScopeFor(context);
-  const observationContext = observationContextFor(context);
+  const observationContext = observationContextFor(context, originRefFor?.(context) ?? null);
   for (const request of input.requests) {
     let needsProvider = false;
     try {
@@ -51,11 +52,12 @@ const detailsProviderCost = (
 export const resolveRuntimeProductionReadCost = (
   request: RuntimeReadCostRequest,
   registry: CandidateObservationRegistryPort,
+  originRefFor?: (context: HarnessContext) => string | undefined,
 ): RuntimeReadCost => {
   const providerRequests =
     request.operation === 'search_places'
       ? 1
-      : detailsProviderCost(request.input, request.context, registry);
+      : detailsProviderCost(request.input, request.context, registry, originRefFor);
   return {
     costUnits: providerRequests,
     providerHttpRequests: providerRequests,

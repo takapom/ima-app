@@ -5,6 +5,7 @@ import type {
   Result,
   SearchPlacesInput,
   SearchPlacesOutput,
+  HarnessContext,
   ToolExecutionContext,
 } from '@ima/core';
 import type { GoogleTextSearchRequest, PlacesSearchCursorBinding } from './types';
@@ -31,6 +32,8 @@ export type PlacesSearchAdapterOptions = {
   readonly normalizeOpeningHours: PlacesSearchOpeningHoursNormalizer;
   /** Runtime may bridge its cancellation signal to the provider fetch. */
   readonly signalFor?: (execution: ToolExecutionContext) => AbortSignal | undefined;
+  /** Current-origin routes share their structured context with search evidence. */
+  readonly originRefFor?: (context: HarnessContext) => string | undefined;
 };
 
 export type SearchPlan = {

@@ -9,6 +9,7 @@ import {
   type HarnessContext,
   type Issue,
   type Result,
+  type ToolExecutionContext,
   type WalkingCoordinates,
   type WalkingRoutePort,
   validateWalkingLocation,
@@ -37,6 +38,8 @@ export type GoogleWalkingRouteAdapterOptions = {
   /** Worker resolves candidate and station references to provider waypoints. */
   readonly waypointResolver: RouteWaypointLookup;
   readonly signal?: AbortSignal;
+  /** Resolves the signal for this exact route attempt; used by the runtime WeakMap bridge. */
+  readonly signalFor?: (execution: ToolExecutionContext) => AbortSignal | undefined;
 };
 
 type CurrentLocationValidation =
@@ -214,6 +217,7 @@ export const createGoogleWalkingRouteAdapter = (
     execution,
     cancellation,
   ) => {
+    const signal = options.signalFor?.(execution) ?? options.signal;
     const parsedInput = v.safeParse(DirectedWalkingRouteInputSchema, input);
     const parsedContext = v.safeParse(HarnessContextSchema, context);
     if (!parsedInput.success || !parsedContext.success) {
@@ -236,7 +240,7 @@ export const createGoogleWalkingRouteAdapter = (
     ) {
       return resultError(issue('STALE_TURN', null, 'walking route context is stale'));
     }
-    if (cancellation.isCancelled() || options.signal?.aborted) return cancelled();
+    if (cancellation.isCancelled() || signal?.aborted) return cancelled();
 
     const departureAt = options.clock();
     if (!v.safeParse(IsoTimestampSchema, departureAt).success) {
@@ -296,7 +300,7 @@ export const createGoogleWalkingRouteAdapter = (
         warnings: preflight.map(({ warning }) => warning),
       };
     }
-    if (cancellation.isCancelled() || options.signal?.aborted) return cancelled();
+    if (cancellation.isCancelled() || signal?.aborted) return cancelled();
 
     const cost: RouteReadCost = {
       providerHttpRequests: groups.length,
@@ -331,11 +335,11 @@ export const createGoogleWalkingRouteAdapter = (
     }
 
     try {
-      if (cancellation.isCancelled() || options.signal?.aborted) return cancelled();
+      if (cancellation.isCancelled() || signal?.aborted) return cancelled();
       const groupResults = await Promise.all(
         groups.map(async (group) => {
           try {
-            const response = await options.transport.compute(group.request, options.signal);
+            const response = await options.transport.compute(group.request, signal);
             return { group, response } as const;
           } catch (error: unknown) {
             if (!(error instanceof GoogleRouteMatrixError)) throw error;
@@ -343,7 +347,7 @@ export const createGoogleWalkingRouteAdapter = (
           }
         }),
       );
-      if (cancellation.isCancelled() || options.signal?.aborted) return cancelled();
+      if (cancellation.isCancelled() || signal?.aborted) return cancelled();
       const evaluatedAt = options.clock();
       const liveAfterFetch = v.safeParse(HarnessContextSchema, options.resolveContext());
       if (!v.safeParse(IsoTimestampSchema, evaluatedAt).success || !liveAfterFetch.success) {

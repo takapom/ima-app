@@ -56,12 +56,13 @@ const sourceFor = (place: GooglePlaceWire | undefined, recordRef: string): reado
 const observationContextFor = (
   context: HarnessContext,
   locationRevision: number,
+  originRef: string | null = null,
 ): ObservationContext => ({
   ownerScopeRef: context.ownerScopeRef,
   threadId: context.threadId,
   capabilityVersion: context.capabilities.version,
   locationRevision,
-  originRef: null,
+  originRef,
   homeStationRef: context.preferences.homeStationRef,
   minimumStayMinutes: context.preferences.minimumStayMinutes,
   timeContext: 'now',
@@ -256,7 +257,11 @@ export const buildCandidates = (
   const warnings: Issue[] = [];
   const seenRecordRefs = new Set<string>();
   const seenCandidateIds = new Set<string>();
-  const observationContext = observationContextFor(context, plan.binding.locationRevision);
+  const observationContext = observationContextFor(
+    context,
+    plan.binding.locationRevision,
+    options.originRefFor?.(context) ?? null,
+  );
   let excludedCount = 0;
   let partial = false;
 

@@ -1,12 +1,10 @@
-import type { Session, TurnConfig } from '@cloudflare/think';
+import type { TurnConfig } from '@cloudflare/think';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type {
   CandidateObservationRegistryPort,
-  CandidateRecord,
   CommitHashPort,
   CommitPort,
   ConstraintValidationContext,
-  DetailField,
   HarnessContext,
   IdPort,
   ModelContextFieldPolicy,
@@ -24,6 +22,12 @@ import { createPlacesSearchRegistration } from '../providers/places-search/regis
 import { createPlacesSearchContinuation } from '../providers/places-search/continuation';
 import { createPlacesSearchCursorStore } from '../providers/places-search/cursor';
 import { createGoogleTextSearchTransport } from '../providers/places-search/transport';
+import type { JourneyServiceDateContextBuilder } from '../providers/last-train/port';
+import type { LastTrainObservationPolicy } from '../providers/last-train/registration';
+import type { PhotoTokenPreparerDependencies } from '../providers/photo/issuance';
+import type { PhotoReferenceStoreResolver } from '../providers/photo/types';
+import type { WalkingRouteObservationPolicy } from '../providers/routes/registration';
+import type { RouteWaypointResolver } from '../providers/routes/resolver';
 import { createLiveOpenAIProvider } from '../model/provider';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../model/provider-options';
 import {
@@ -63,9 +67,23 @@ import {
   validationContextFor,
 } from './runtime-production-support';
 import {
-  sanitizeRuntimeCompactionSummary,
-  type RuntimeRetentionContext,
-} from './runtime-retention';
+  createRuntimeLastTrainRevisionState,
+  readActiveJourneyRevision,
+  type RuntimeJourneyDataset,
+  type RuntimeLastTrainCompositionOptions,
+} from './runtime-provider-composition';
+import {
+  areaLabelFor,
+  capabilitiesWithProviders,
+  cardEvidenceResolver,
+  createRuntimeProductionProviders,
+  isConfiguredSecret,
+  runtimeProductionProviderAvailabilityFor,
+  type RuntimeProductionProviderAvailability,
+} from './runtime-production-provider-config';
+import { type RuntimeProductionProviderComposition } from './runtime-production-providers';
+import { type RuntimeRetentionContext } from './runtime-retention';
+import { configureRuntimeProductionSession } from './runtime-production-session';
 import type {
   RuntimeThinkConnectionOptions,
   RuntimeThinkTurnBuildRequest,
@@ -74,7 +92,6 @@ import type { RuntimeModelGuardCallOptions, RuntimeModelGuardModel } from './run
 import { defaultRuntimeModelContextPolicy } from './runtime-field-policy';
 import { unavailableSubmit } from './runtime-production-submit';
 import { resolveRuntimeProductionReadCost } from './runtime-production-read-cost';
-
 type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;
   readonly runtimeInput: ThreadTurnRequest;
@@ -95,22 +112,36 @@ export type RuntimeProductionTurnPlan = {
   readonly ids: Pick<IdPort, 'nextCallId' | 'nextResponseId'>;
   readonly hashes: CommitHashPort;
   readonly publicResponse?: RuntimePublicResponseDependencies;
+  readonly provider?: RuntimeProductionProviderComposition;
   readonly onCommitted?: (response: unknown) => void;
-  /** Set true only for a host-owned final response step with read tools disabled. */
   readonly isFinalResponse?: (params: RuntimeModelGuardCallOptions) => boolean;
 };
-
 export type RuntimeProductionOverrides = {
-  /** Test/host injection point; production leaves this unset. */
   readonly prepareTurn?: (input: ProductionBuildInput) => RuntimeProductionTurnPlan;
   readonly modelForTurn?: RuntimeModelGuardModel;
   readonly googlePlacesApiKey?: string;
   readonly placesCursorSecret?: string;
+  /** Dedicated Routes key; absence keeps route and last-train provider calls disabled. */
+  readonly googleRoutesApiKey?: string;
   readonly fetcher?: typeof fetch;
   readonly observationPolicy?: PlacesSearchObservationPolicy;
+  readonly routeObservationPolicy?: WalkingRouteObservationPolicy;
   readonly detailsObservationPolicy?: PlacesDetailsObservationPolicy;
   /** Explicit provider capability gate; retention policy is evaluated separately. */
   readonly placesEnabled?: boolean;
+  /** Host-owned provider capability gate; no default allow is inferred from retention. */
+  readonly routesEnabled?: boolean;
+  readonly photosEnabled?: boolean;
+  readonly photoTokenSecret?: string;
+  readonly photoReferenceResolver?: PhotoReferenceStoreResolver;
+  readonly photoDisplayPolicyFor?: PhotoTokenPreparerDependencies['displayPolicyFor'];
+  readonly resolveStationWaypoint?: RouteWaypointResolver;
+  readonly currentOriginRefFor?: (context: HarnessContext) => string | undefined;
+  readonly journeyDataset?: RuntimeJourneyDataset;
+  readonly buildServiceDateContext?: JourneyServiceDateContextBuilder;
+  readonly lastTrainObservationPolicy?: LastTrainObservationPolicy;
+  readonly fromStationRefFor?: RuntimeLastTrainCompositionOptions['fromStationRefFor'];
+  readonly activeJourneyRevision?: number | null;
   /** Host-owned final response admission; the default plan keeps this false. */
   readonly isFinalResponse?: (params: RuntimeModelGuardCallOptions) => boolean;
   /** Host-evaluated retention snapshot; it does not grant model input access. */
@@ -123,57 +154,11 @@ export type RuntimeProductionOverrides = {
   readonly monotonicNow?: () => number;
   readonly epochNow?: () => number;
 };
-
 export type RuntimeProductionConnectionOptions = {
   readonly env: unknown;
   readonly commit: CommitPort;
   readonly overrides?: RuntimeProductionOverrides;
 };
-
-const isConfiguredSecret = (value: string | undefined): value is string =>
-  value !== undefined && value.trim().length > 0;
-
-const detailFieldFor = (field: string): DetailField | undefined => {
-  switch (field) {
-    case 'identity':
-    case 'opening_hours':
-    case 'price':
-    case 'photos':
-    case 'contact':
-    case 'facilities':
-    case 'walking_route':
-    case 'last_train':
-      return field;
-    default:
-      return undefined;
-  }
-};
-
-const cardEvidenceResolver =
-  (
-    registry: CandidateObservationRegistryPort,
-    context: HarnessContext,
-  ): NonNullable<RuntimePublicResponseDependencies['resolveCardEvidence']> =>
-  (candidateId, evidenceId) => {
-    const observation = registry.readObservation(productionScopeFor(context), evidenceId);
-    if (observation === undefined || observation.candidateId !== candidateId) return undefined;
-    const field = detailFieldFor(observation.field);
-    if (field === undefined) return undefined;
-    return {
-      observationId: observation.observationId,
-      candidateId: observation.candidateId,
-      field,
-      sources: observation.sources,
-      retention: observation.retention,
-    };
-  };
-
-const areaLabelFor = (
-  candidate: Readonly<CandidateRecord>,
-  _context: HarnessContext,
-  areaByCandidate: ReadonlyMap<string, string>,
-): string => areaByCandidate.get(candidate.candidateId) ?? '検索結果の地域';
-
 const defaultPlan = (
   input: ProductionBuildInput,
   env: unknown,
@@ -186,6 +171,9 @@ const defaultPlan = (
   contextStore: ReturnType<typeof createRuntimeProductionContextStore>,
   turnRetention: ReturnType<typeof productionRetentionFor>,
   fixedSessionExpiresAt: string,
+  budget: RuntimeBudget,
+  providerAvailability: RuntimeProductionProviderAvailability,
+  lastTrainRevisionState: ReturnType<typeof createRuntimeLastTrainRevisionState>,
 ): RuntimeProductionTurnPlan => {
   const apiKey = overrides.googlePlacesApiKey;
   const cursorSecret = overrides.placesCursorSecret;
@@ -218,6 +206,9 @@ const defaultPlan = (
     clock,
     normalizeOpeningHours: normalizeGoogleOpeningHours,
     signalFor: input.attemptSignalBridge.signalFor,
+    ...(overrides.currentOriginRefFor === undefined
+      ? {}
+      : { originRefFor: overrides.currentOriginRefFor }),
   });
   const search: PlaceSearchPort = {
     search: async (searchInput, context, execution, cancellation) => {
@@ -241,6 +232,9 @@ const defaultPlan = (
     observationPolicy: detailsPolicy,
     areaLabelFor: (candidate, context) => areaLabelFor(candidate, context, areaByCandidate),
     signalFor: input.attemptSignalBridge.signalFor,
+    ...(overrides.currentOriginRefFor === undefined
+      ? {}
+      : { originRefFor: overrides.currentOriginRefFor }),
   });
   const retention: RuntimeRetentionContext = {
     ownerScopeRef: input.context.ownerScopeRef,
@@ -255,6 +249,44 @@ const defaultPlan = (
     productionScopeFor(input.context),
     fieldPolicy,
   );
+  const provider = createRuntimeProductionProviders({
+    availability: providerAvailability,
+    activeJourneyRevision: providerAvailability.activeJourneyRevision,
+    baseDetails: details,
+    registry,
+    context: input.context,
+    clock,
+    budget,
+    signalFor: input.attemptSignalBridge.signalFor,
+    ...(input.request.signal === undefined ? {} : { requestSignal: input.request.signal }),
+    ...(overrides.fetcher === undefined ? {} : { fetcher: overrides.fetcher }),
+    ...(overrides.googleRoutesApiKey === undefined
+      ? {}
+      : { googleRoutesApiKey: overrides.googleRoutesApiKey }),
+    ...(overrides.routeObservationPolicy === undefined
+      ? {}
+      : { routeObservationPolicy: overrides.routeObservationPolicy }),
+    ...(overrides.resolveStationWaypoint === undefined
+      ? {}
+      : { resolveStationWaypoint: overrides.resolveStationWaypoint }),
+    ...(overrides.currentOriginRefFor === undefined
+      ? {}
+      : { currentOriginRefFor: overrides.currentOriginRefFor }),
+    ...(overrides.journeyDataset === undefined ? {} : { journeyDataset: overrides.journeyDataset }),
+    ...(overrides.buildServiceDateContext === undefined
+      ? {}
+      : { buildServiceDateContext: overrides.buildServiceDateContext }),
+    ...(overrides.lastTrainObservationPolicy === undefined
+      ? {}
+      : { lastTrainObservationPolicy: overrides.lastTrainObservationPolicy }),
+    ...(overrides.fromStationRefFor === undefined
+      ? {}
+      : { fromStationRefFor: overrides.fromStationRefFor }),
+    revisionState: lastTrainRevisionState,
+    photoConfiguration: overrides,
+    env,
+    ...(input.request.deviceId === undefined ? {} : { deviceId: input.request.deviceId }),
+  });
   return {
     model: overrides.modelForTurn ?? createLiveOpenAIProvider(env).model,
     providerOptions: OPENAI_PROVIDER_REQUEST_OPTIONS,
@@ -263,22 +295,26 @@ const defaultPlan = (
       : { isFinalResponse: overrides.isFinalResponse }),
     registry,
     search,
-    details,
+    details: provider.details,
     retention,
     modelContext: context.modelContext,
-    validationContext: (at) => validationContextFor(input.context, at.now),
+    validationContext: (at) =>
+      validationContextFor(input.context, at.now, overrides.currentOriginRefFor?.(input.context)),
     ids,
     hashes: productionHash,
     publicResponse: {
       textRetention: turnRetention,
       cardSetId,
       resolveCardEvidence: cardEvidenceResolver(registry, input.context),
+      ...(provider.preparePhotoTokens === undefined
+        ? {}
+        : { preparePhotoTokens: provider.preparePhotoTokens }),
     },
+    provider,
     constraintContext: context.constraintContext,
     onCommitted: (response) => contextStore.commitTurn(input.runtimeInput, response),
   };
 };
-
 const makeOptions = (
   input: RuntimeProductionConnectionOptions,
   overrides: RuntimeProductionOverrides,
@@ -290,11 +326,12 @@ const makeOptions = (
 ) => {
   const areaByCandidate = new Map<string, string>();
   const contextStore = createRuntimeProductionContextStore({ registry });
+  const lastTrainRevisionState = createRuntimeLastTrainRevisionState();
   let fixedSessionExpiresAt =
     overrides.threadCreatedAt === undefined
       ? undefined
       : sessionExpiryAt(overrides.threadCreatedAt);
-  const buildTurn = (request: RuntimeThinkTurnBuildRequest) => {
+  const buildTurn = async (request: RuntimeThinkTurnBuildRequest) => {
     const runtimeInput = request.runtimeInput;
     if (runtimeInput === undefined) throw new Error('RUNTIME_INPUT_MISSING');
     fixedSessionExpiresAt ??= sessionExpiryAt(request.serverNow);
@@ -307,10 +344,29 @@ const makeOptions = (
       prepareTurn: overrides.prepareTurn,
       ...(overrides.placesEnabled === undefined ? {} : { placesEnabled: overrides.placesEnabled }),
     });
-    const context = harnessContextFor(request, runtimeInput, request.serverNow, {
-      capabilities: productionCapabilities({
+    const activeJourneyRevision =
+      overrides.activeJourneyRevision !== undefined
+        ? overrides.activeJourneyRevision
+        : overrides.journeyDataset === undefined
+          ? undefined
+          : await readActiveJourneyRevision(overrides.journeyDataset);
+    const baseContext = harnessContextFor(request, runtimeInput, request.serverNow, {
+      capabilities: productionCapabilities({ placesEnabled }),
+    });
+    const providerAvailability: RuntimeProductionProviderAvailability =
+      runtimeProductionProviderAvailabilityFor({
+        env: input.env,
+        context: baseContext,
         placesEnabled,
-      }),
+        activeJourneyRevision,
+        configuration: overrides,
+        ...(request.deviceId === undefined ? {} : { deviceId: request.deviceId }),
+      });
+    const context = harnessContextFor(request, runtimeInput, request.serverNow, {
+      capabilities: capabilitiesWithProviders(
+        productionCapabilities({ placesEnabled }),
+        providerAvailability,
+      ),
     });
     const bridge = createRuntimeReadAttemptSignalBridge();
     const buildInput: ProductionBuildInput = {
@@ -320,6 +376,12 @@ const makeOptions = (
       attemptSignalBridge: bridge,
     };
     const prepared = overrides.prepareTurn?.(buildInput);
+    const budget = new RuntimeBudget({
+      startedAtMs: monotonicNow(),
+      now: monotonicNow,
+      ...(request.signal === undefined ? {} : { signal: request.signal }),
+      ...(request.isStale === undefined ? {} : { isStale: request.isStale }),
+    });
     const plan =
       prepared ??
       (continuation === undefined
@@ -338,13 +400,10 @@ const makeOptions = (
             contextStore,
             turnRetention,
             fixedSessionExpiresAt,
+            budget,
+            providerAvailability,
+            lastTrainRevisionState,
           ));
-    const budget = new RuntimeBudget({
-      startedAtMs: monotonicNow(),
-      now: monotonicNow,
-      ...(request.signal === undefined ? {} : { signal: request.signal }),
-      ...(request.isStale === undefined ? {} : { isStale: request.isStale }),
-    });
     const base: RuntimeTurnCompositionCoreOptions = {
       request,
       context,
@@ -369,7 +428,8 @@ const makeOptions = (
       },
       attemptSignalBridge: bridge,
       commit: input.commit,
-      resolveReadCost: (read) => resolveRuntimeProductionReadCost(read, plan.registry),
+      resolveReadCost: (read) =>
+        resolveRuntimeProductionReadCost(read, plan.registry, overrides.currentOriginRefFor),
       validationContext: plan.validationContext,
       constraintContext:
         prepared === undefined
@@ -390,17 +450,7 @@ const makeOptions = (
   };
   return {
     clock,
-    configureSession: (session: Session): Session =>
-      session.onCompaction((messages) => {
-        const first = messages[0];
-        const last = messages[messages.length - 1];
-        if (first === undefined || last === undefined) return Promise.resolve(null);
-        return Promise.resolve({
-          fromMessageId: first.id,
-          toMessageId: last.id,
-          summary: sanitizeRuntimeCompactionSummary(undefined),
-        });
-      }),
+    configureSession: configureRuntimeProductionSession,
     buildTurn,
   } satisfies RuntimeThinkConnectionOptions<unknown>;
 };
@@ -413,6 +463,8 @@ export const createRuntimeProductionConnectionOptions = (
   const monotonicNow = overrides.monotonicNow ?? productionMonotonicNow;
   const apiKey = overrides.googlePlacesApiKey ?? googlePlacesApiKey(input.env);
   const cursorSecret = overrides.placesCursorSecret ?? placesCursorSecret(input.env);
+  const routesApiKey =
+    overrides.googleRoutesApiKey ?? productionSecret(input.env, 'GOOGLE_ROUTES_API_KEY');
   const modelReady =
     overrides.prepareTurn !== undefined ||
     overrides.modelForTurn !== undefined ||
@@ -442,6 +494,7 @@ export const createRuntimeProductionConnectionOptions = (
     ...overrides,
     ...(isConfiguredSecret(apiKey) ? { googlePlacesApiKey: apiKey } : {}),
     ...(isConfiguredSecret(cursorSecret) ? { placesCursorSecret: cursorSecret } : {}),
+    ...(isConfiguredSecret(routesApiKey) ? { googleRoutesApiKey: routesApiKey } : {}),
   };
   return makeOptions(input, resolvedOverrides, ids, registry, continuation, clock, monotonicNow);
 };

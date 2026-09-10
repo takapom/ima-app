@@ -89,7 +89,7 @@ const reusableField = (
       scope: { ownerScopeRef: context.ownerScopeRef, threadId: context.threadId },
       candidateId: candidate.candidateId,
       field,
-      context: observationContextFor(context),
+      context: observationContextFor(context, options.originRefFor?.(context) ?? null),
     });
     if (reused.status !== 'reusable') return undefined;
     const result = storedFieldFor(reused.observation, field);
@@ -142,7 +142,10 @@ const processResponse = (
   const providerId = providerIdFrom(response.body);
   const source = sourceInfo(response.body, work.candidate.recordRef);
   const sourceConflict = providerId !== work.candidate.recordRef;
-  const observationContext = observationContextFor(context);
+  const observationContext = observationContextFor(
+    context,
+    options.originRefFor?.(context) ?? null,
+  );
   for (const field of work.fetchFields) {
     if (cancellation.isCancelled() || isSignalAborted(signal)) return cancelled();
     if (sourceConflict) {

@@ -34,4 +34,6 @@ export type PlacesDetailsAdapterOptions = {
   readonly areaLabelFor: PlacesDetailsAreaLabel;
   /** Runtime may bridge its cancellation signal to the provider fetch. */
   readonly signalFor?: (execution: ToolExecutionContext) => AbortSignal | undefined;
+  /** Current-origin route evidence shares its structured context with detail evidence. */
+  readonly originRefFor?: (context: HarnessContext) => string | undefined;
 };
