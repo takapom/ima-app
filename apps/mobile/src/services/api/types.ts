@@ -11,6 +11,7 @@ import type {
   ThreadTurnRequest,
   PublicError,
 } from '@ima/contracts';
+import type { SavedReferenceRefreshResponse } from './saved-reference-refresh';
 
 export type ApiMode = 'fixture' | 'live';
 
@@ -124,6 +125,10 @@ export type JourneyApiClient = {
     input: SavedReferenceDeleteRequest,
     options?: ApiRequestOptions,
   ) => Promise<ApiResult<null>>;
+  readonly refreshSavedReference: (
+    savedPlaceRef: string,
+    options?: ApiRequestOptions,
+  ) => Promise<ApiResult<SavedReferenceRefreshResponse>>;
 };
 
 export type LifecycleResponse = {

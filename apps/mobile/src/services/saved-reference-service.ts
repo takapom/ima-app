@@ -1,7 +1,12 @@
-import { parseSavedReferencePath, type RetentionMetadata } from '@ima/contracts';
+import {
+  parseSavedReferencePath,
+  type PublicPlaceDetailsData,
+  type RetentionMetadata,
+} from '@ima/contracts';
 import { canPersistOwnerScopedReference } from './sqlite/retention';
 import type { SqliteStore } from './sqlite/types';
 import type { ApiError, ApiRequestOptions, JourneyApiClient } from './api/types';
+import { parseSavedReferenceRefreshResponse } from './api/saved-reference-refresh';
 import type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
 
 export type SavedReferenceScope = {
@@ -26,6 +31,12 @@ export type SavedReferenceDeleteInput = {
   readonly signal?: AbortSignal;
 };
 
+export type SavedReferenceRefreshInput = {
+  /** A threadless refresh is independent of the active conversation scope. */
+  readonly savedPlaceRef: ServerSavedPlaceRef;
+  readonly signal?: AbortSignal;
+};
+
 type SavedReferenceFailureReason =
   'aborted' | 'api' | 'invalid_input' | 'retention_denied' | 'stale' | 'storage_unavailable';
 
@@ -46,8 +57,21 @@ export type SavedReferenceSaveResult =
 export type SavedReferenceDeleteResult =
   { readonly status: 'deleted' | 'already_deleted' } | SavedReferenceFailure;
 
+export type SavedReferenceRefreshResult =
+  | {
+      readonly status: 'refreshed';
+      readonly savedPlaceRef: ServerSavedPlaceRef;
+      readonly candidateId: string;
+      readonly evidenceIds: readonly string[];
+      readonly data: PublicPlaceDetailsData;
+    }
+  | SavedReferenceFailure;
+
 export type SavedReferenceServiceOptions = {
-  readonly api: Pick<JourneyApiClient, 'createSavedReference' | 'deleteSavedReference'>;
+  readonly api: Pick<
+    JourneyApiClient,
+    'createSavedReference' | 'deleteSavedReference' | 'refreshSavedReference'
+  >;
   readonly sqlite: Pick<SqliteStore, 'savePlace' | 'listSavedPlaces' | 'deleteSavedPlace'>;
   readonly requestIdFactory: () => string;
   /**
@@ -60,6 +84,7 @@ export type SavedReferenceServiceOptions = {
 export type SavedReferenceService = {
   readonly save: (input: SavedReferenceSaveInput) => Promise<SavedReferenceSaveResult>;
   readonly remove: (input: SavedReferenceDeleteInput) => Promise<SavedReferenceDeleteResult>;
+  readonly refresh: (input: SavedReferenceRefreshInput) => Promise<SavedReferenceRefreshResult>;
 };
 
 const failure = (reason: SavedReferenceFailureReason, error?: ApiError): SavedReferenceFailure =>
@@ -248,5 +273,39 @@ export const createSavedReferenceService = (
     }
   };
 
-  return { save, remove };
+  const refresh = async (
+    input: SavedReferenceRefreshInput,
+  ): Promise<SavedReferenceRefreshResult> => {
+    if (!isServerSavedPlaceRef(input.savedPlaceRef)) return failure('invalid_input');
+    const before = preflight(input.signal, undefined, options.currentScope);
+    if (before !== null) return before;
+
+    let result: Awaited<ReturnType<SavedReferenceServiceOptions['api']['refreshSavedReference']>>;
+    try {
+      result = await options.api.refreshSavedReference(
+        input.savedPlaceRef,
+        apiOptions(input.signal),
+      );
+    } catch {
+      return input.signal?.aborted ? failure('aborted') : failure('api');
+    }
+    if (!result.ok) return mapApiFailure(result.error);
+    const after = preflight(input.signal, undefined, options.currentScope);
+    if (after !== null) return after;
+    const parsedRefresh = parseSavedReferenceRefreshResponse(result.data, input.savedPlaceRef);
+    if (!parsedRefresh.success) {
+      return failure('invalid_input');
+    }
+    const response = parsedRefresh.data;
+
+    return {
+      status: 'refreshed',
+      savedPlaceRef: input.savedPlaceRef,
+      candidateId: response.candidate.candidateId,
+      evidenceIds: response.candidate.evidenceIds,
+      data: response.data,
+    };
+  };
+
+  return { save, remove, refresh };
 };

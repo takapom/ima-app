@@ -70,6 +70,7 @@ const serviceFor = (
 ): SavedReferenceService => ({
   save,
   remove: () => Promise.resolve({ status: 'already_deleted' }),
+  refresh: () => Promise.resolve({ status: 'failed' as const, reason: 'api' as const }),
 });
 
 const optionsFor = (

@@ -15,6 +15,7 @@ import {
   parseThreadSnapshot,
   type ParseResult,
 } from '@ima/contracts';
+import { parseSavedReferenceRefreshResponse } from './saved-reference-refresh';
 import type {
   ApiClientOptions,
   ApiError,
@@ -394,6 +395,25 @@ export const createJourneyApiClient = (options: ApiClientOptions): JourneyApiCli
               ? { success: true, data: null }
               : { success: false, issues: ['expected empty response'] },
           requestId: parsed.data.requestId,
+        },
+        requestOptions,
+      );
+    },
+    refreshSavedReference: (savedPlaceRef, requestOptions) => {
+      const path = parseSavedReferencePath({ savedPlaceRef });
+      if (!path.success) {
+        return Promise.resolve(
+          issueResult(CLIENT_REQUEST_ID, 'savedReferenceRefresh', path.issues, null),
+        );
+      }
+      return request(
+        {
+          route: 'savedReferenceRefresh',
+          method: 'GET',
+          path: `/v1/saved/${encodeURIComponent(path.data.savedPlaceRef)}/refresh`,
+          expectedStatus: 200,
+          parseResponse: (value) =>
+            parseSavedReferenceRefreshResponse(value, path.data.savedPlaceRef),
         },
         requestOptions,
       );

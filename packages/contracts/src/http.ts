@@ -278,6 +278,7 @@ export const SavedReferenceResponseSchema = v.strictObject({
   candidate: PublicCandidateRefSchema,
   data: PublicPlaceDetailsDataSchema,
 });
+export type SavedReferenceResponse = v.InferOutput<typeof SavedReferenceResponseSchema>;
 
 export const EventsAcceptedResponseSchema = v.null();
 
@@ -308,6 +309,9 @@ export const parseCreateThreadRequest = (input: unknown): ParseResult<CreateThre
 
 export const parsePublicError = (input: unknown): ParseResult<PublicError> =>
   parseSchema(PublicErrorSchema, input);
+
+export const parseSavedReferenceResponse = (input: unknown): ParseResult<SavedReferenceResponse> =>
+  parseSchema(SavedReferenceResponseSchema, input);
 
 export const parseCreateThreadResponse = (input: unknown): ParseResult<CreateThreadResponse> =>
   parseSchema(CreateThreadResponseSchema, input);

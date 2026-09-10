@@ -1,4 +1,6 @@
 export { createJourneyApiClient } from './client';
+export { parseSavedReferenceRefreshResponse } from './saved-reference-refresh';
+export type { SavedReferenceRefreshResponse } from './saved-reference-refresh';
 export { createJourneyPhotoClient } from './photo-client';
 export type {
   JourneyPhotoClient,

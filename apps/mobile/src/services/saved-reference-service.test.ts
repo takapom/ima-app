@@ -1,11 +1,13 @@
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import type {
+  PublicPlaceDetailsData,
   RetentionMetadata,
   SavedReferenceCreateRequest,
   SavedReferenceCreateResponse,
 } from '@ima/contracts';
 import { createSavedReferenceService, type SavedReferenceScope } from './saved-reference-service';
+import type { SavedReferenceRefreshResponse } from './api/saved-reference-refresh';
 import { createSqliteStore } from './sqlite/store';
 import type {
   LocalSavedEntryId,
@@ -52,13 +54,72 @@ const responseFor = (
   requestId: input.requestId,
 });
 
-type ApiStub = Pick<JourneyApiClient, 'createSavedReference' | 'deleteSavedReference'>;
+const refreshRetention: RetentionMetadata = {
+  retentionDecision: 'allow',
+  retentionMode: 'provider_limited',
+  sessionExpiresAt: '2026-09-11T05:00:00+09:00',
+  freshUntil: '2026-09-11T04:00:00+09:00',
+  displayUntil: '2026-09-11T04:30:00+09:00',
+  retentionUntil: '2026-09-11T05:00:00+09:00',
+  deletionScheduledAt: '2026-09-11T05:00:00+09:00',
+  attribution: null,
+  restoreMode: 'full',
+  policyStatus: 'available',
+  displayPolicyStatus: 'available',
+};
+
+const refreshData: PublicPlaceDetailsData = {
+  items: [
+    {
+      candidateId: 'candidate-1',
+      fields: {
+        identity: {
+          status: 'known',
+          value: {
+            name: '夜カフェ',
+            area: '恵比寿',
+            address: null,
+            category: 'cafe',
+            businessStatus: 'operational',
+            sourceUrl: null,
+          },
+          evidence: [
+            {
+              evidenceId: 'evidence-1',
+              attribution: null,
+              retention: refreshRetention,
+            },
+          ],
+        },
+      },
+    },
+  ],
+};
+
+const refreshResponseFor = (requestId: string): SavedReferenceRefreshResponse => ({
+  schemaVersion: 'v1',
+  requestId,
+  savedPlaceRef: 'saved-ref-1',
+  candidate: { candidateId: 'candidate-1', evidenceIds: ['evidence-1'] },
+  data: refreshData,
+});
+
+type ApiStub = Pick<
+  JourneyApiClient,
+  'createSavedReference' | 'deleteSavedReference' | 'refreshSavedReference'
+>;
 
 const apiStub = (
   createSavedReference: JourneyApiClient['createSavedReference'],
   deleteSavedReference: JourneyApiClient['deleteSavedReference'] = (_savedPlaceRef, input) =>
     Promise.resolve({ ok: true, data: null, requestId: input.requestId }),
-): ApiStub => ({ createSavedReference, deleteSavedReference });
+  refreshSavedReference: JourneyApiClient['refreshSavedReference'] = () =>
+    Promise.resolve({
+      ok: true,
+      data: refreshResponseFor('refresh-request'),
+      requestId: 'refresh-request',
+    }),
+): ApiStub => ({ createSavedReference, deleteSavedReference, refreshSavedReference });
 
 const asLocal = (value: string): LocalSavedEntryId => value as LocalSavedEntryId;
 const asServer = (value: string): ServerSavedPlaceRef => value as ServerSavedPlaceRef;
@@ -244,6 +305,93 @@ describe('saved reference service', () => {
       error: { kind: 'timeout' },
     });
     expect(store.listSavedPlaces()).toEqual([]);
+  });
+
+  it('returns refreshed public details without writing SQLite state', async () => {
+    let refreshCalls = 0;
+    const { service, store } = create(
+      apiStub(
+        (_threadId, input) => Promise.resolve(responseFor(input)),
+        undefined,
+        (_savedRef, _input) => {
+          refreshCalls += 1;
+          return Promise.resolve({
+            ok: true,
+            data: refreshResponseFor('refresh-1'),
+            requestId: 'refresh-request',
+          });
+        },
+      ),
+    );
+    const before = store.listSavedPlaces();
+
+    await expect(
+      service.refresh({ savedPlaceRef: asServer('saved-ref-1') }),
+    ).resolves.toMatchObject({
+      status: 'refreshed',
+      savedPlaceRef: 'saved-ref-1',
+      candidateId: 'candidate-1',
+      evidenceIds: ['evidence-1'],
+      data: refreshData,
+    });
+    expect(refreshCalls).toBe(1);
+    expect(store.listSavedPlaces()).toEqual(before);
+  });
+
+  it('suppresses a late refresh after cancellation and rejects inconsistent API data', async () => {
+    let resolveRefresh:
+      | ((result: Awaited<ReturnType<JourneyApiClient['refreshSavedReference']>>) => void)
+      | undefined;
+    let markStarted: (() => void) | undefined;
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
+    const { service, store } = create(
+      apiStub(
+        (_threadId, input) => Promise.resolve(responseFor(input)),
+        undefined,
+        () => {
+          markStarted?.();
+          return new Promise((resolve) => {
+            resolveRefresh = resolve;
+          });
+        },
+      ),
+    );
+    const controller = new AbortController();
+    const pending = service.refresh({
+      savedPlaceRef: asServer('saved-ref-1'),
+      signal: controller.signal,
+    });
+    await started;
+    controller.abort();
+    resolveRefresh?.({
+      ok: true,
+      data: refreshResponseFor('refresh-late'),
+      requestId: 'refresh-late',
+    });
+    await expect(pending).resolves.toEqual({ status: 'failed', reason: 'aborted' });
+    expect(store.listSavedPlaces()).toEqual([]);
+
+    const inconsistent = create(
+      apiStub(
+        (_threadId, input) => Promise.resolve(responseFor(input)),
+        undefined,
+        () =>
+          Promise.resolve({
+            ok: true,
+            data: {
+              ...refreshResponseFor('refresh-invalid'),
+              candidate: { candidateId: 'candidate-2', evidenceIds: [] },
+            },
+            requestId: 'refresh-invalid',
+          }),
+      ),
+    );
+    await expect(
+      inconsistent.service.refresh({ savedPlaceRef: asServer('saved-ref-1') }),
+    ).resolves.toEqual({ status: 'failed', reason: 'invalid_input' });
+    expect(inconsistent.store.listSavedPlaces()).toEqual([]);
   });
 
   it('deletes only the matching local reference and ignores a late delete', async () => {
