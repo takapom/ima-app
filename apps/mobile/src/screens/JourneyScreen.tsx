@@ -14,6 +14,7 @@ import { WorkingState } from '../components/WorkingState';
 import { useAssistantResponseProjection } from '../hooks/useAssistantResponseProjection';
 import { useJourneyActions, type JourneyActionServices } from '../hooks/useJourneyActions';
 import { useJourneyShell } from '../hooks/useJourneyShell';
+import { useJourneySourceLink } from '../hooks/useJourneySourceLink';
 import {
   useJourneyApiController,
   type JourneyApiControllerBinding,
@@ -22,6 +23,10 @@ import {
 import type { AssistantResponseClock } from '../services/assistant-response-clock';
 import type { JourneyPhotoClient } from '../services/api/photo-client';
 import type { WalkingMapDestinationResolver } from '../services/journey-map';
+import {
+  selectJourneyNoticeText,
+  type JourneySourceLinkService,
+} from '../services/journey-source-link';
 import {
   selectAssistantMessageRecords,
   selectAssistantMessages,
@@ -64,6 +69,7 @@ export type JourneyScreenProps = {
   readonly onPromote?: (candidateId: string) => void;
   readonly onRecover?: (intent: RecoverIntent) => void;
   readonly actionServices?: JourneyActionServices;
+  readonly sourceLinkService?: JourneySourceLinkService;
   readonly mapDestinationResolver?: WalkingMapDestinationResolver;
   readonly onSourcePress?: (sourceLink: string) => void;
   readonly onHistorySelect?: (item: SearchHistoryItem) => void;
@@ -148,6 +154,7 @@ function JourneyScreenStateOwner({
   onConditionRemoved,
   onConditionsChange,
   photoClient,
+  sourceLinkService,
 }: JourneyScreenProps): React.JSX.Element {
   const journey = useJourneyShell(threadId, initialSavedConditions);
   const renderedResponse = useAssistantResponseProjection(
@@ -195,6 +202,19 @@ function JourneyScreenStateOwner({
     ...(onPromote === undefined ? {} : { onPromote }),
     ...(onRecover === undefined ? {} : { onRecover }),
   });
+  const sourceLink = useJourneySourceLink({
+    contextKey: [
+      threadId,
+      renderedResponse.cardSetId ?? '',
+      renderedResponse.cardSetDisplay.kind === 'kept'
+        ? (renderedResponse.cardSetDisplay.sourceResponseId ?? '')
+        : (renderedResponse.cardSetDisplay.responseId ?? ''),
+    ].join(':'),
+    service: sourceLinkService ?? actions.sourceLinkService,
+  });
+  useEffect(() => {
+    if (actions.notice !== null) sourceLink.clear();
+  }, [actions.notice, sourceLink.clear]);
   const renderedMessageRecords = selectAssistantMessageRecords(renderedResponse);
 
   const submit = useCallback(
@@ -303,6 +323,17 @@ function JourneyScreenStateOwner({
     },
     [journey.updateConditions, onConditionsChange],
   );
+  const openSourceLink = useCallback(
+    (sourceLinkValue: string): void => {
+      actions.clearNotice();
+      if (onSourcePress !== undefined) {
+        onSourcePress(sourceLinkValue);
+        return;
+      }
+      sourceLink.open(sourceLinkValue);
+    },
+    [actions.clearNotice, onSourcePress, sourceLink.open],
+  );
   const decided = selectedCard(renderedResponse, actions.state.decidedCandidateId);
   const phase = resolveJourneyPhase(
     requestStatus,
@@ -333,13 +364,16 @@ function JourneyScreenStateOwner({
               cardSetDisplay={renderedResponse.cardSetDisplay}
               messageRecords={renderedMessageRecords}
               candidateOrder={actions.candidateOrder}
-              notice={actions.notice?.text ?? null}
+              notice={selectJourneyNoticeText(
+                actions.notice?.text ?? null,
+                sourceLink.notice?.text ?? null,
+              )}
               onDecide={decide}
               onSave={(card) => {
                 void actions.save(card).catch(actions.reportFailure);
               }}
               onSkip={actions.skipTonight}
-              {...(onSourcePress === undefined ? {} : { onSourcePress })}
+              onSourcePress={openSourceLink}
               {...(photoClient === undefined ? {} : { photoClient })}
               onChoose={actions.promote}
             />

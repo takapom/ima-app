@@ -3,6 +3,7 @@ import type { PublicCard } from '@ima/contracts';
 import {
   createNativeJourneyMapService,
   createNativeJourneyShareService,
+  createNativeJourneySourceLinkService,
 } from '../services/journey-native';
 import {
   createUnavailableDecisionHapticsService,
@@ -21,6 +22,7 @@ import {
   shareJourneyCandidate,
   type JourneyShareService,
 } from '../services/journey-share';
+import type { JourneySourceLinkService } from '../services/journey-source-link';
 import { journeyShareInputFor } from '../services/journey-share-input';
 import {
   createJourneyActionState,
@@ -44,6 +46,8 @@ export type JourneyActionServices = {
   readonly share: JourneyShareService;
   readonly storage: JourneyStorageService;
   readonly haptics: DecisionHapticsService;
+  /** Optional for older hosts; the default composition supplies native Linking. */
+  readonly sourceLink?: JourneySourceLinkService;
 };
 export type JourneyActionNotice = {
   readonly tone: 'info' | 'success' | 'error';
@@ -62,6 +66,7 @@ export type JourneyActionsController = {
   readonly state: JourneyActionState;
   readonly candidateOrder: readonly string[];
   readonly notice: JourneyActionNotice | null;
+  readonly sourceLinkService: JourneySourceLinkService;
   readonly promote: (candidateId: string) => void;
   readonly decide: (candidateId: string) => boolean;
   readonly save: (card: PublicCard) => Promise<void>;
@@ -90,11 +95,12 @@ const hapticsText = (result: DecisionHapticsResult): JourneyActionNotice | null 
     : { tone: 'info', text: '決定しました。触覚フィードバックは利用できません。' };
 export const createDefaultJourneyActionServices = (
   resolveDestination: Parameters<typeof createNativeJourneyMapService>[0] = () => null,
-): JourneyActionServices => ({
+): JourneyActionServices & { readonly sourceLink: JourneySourceLinkService } => ({
   map: createNativeJourneyMapService(resolveDestination),
   share: createNativeJourneyShareService(),
   storage: createUnavailableJourneyStorageService(),
   haptics: createUnavailableDecisionHapticsService(),
+  sourceLink: createNativeJourneySourceLinkService(),
 });
 export const useJourneyActions = ({
   threadId,
@@ -121,6 +127,7 @@ export const useJourneyActions = ({
     [mapDestinationResolver],
   );
   const services = actionServices ?? fallbackServices;
+  const sourceLinkService = services.sourceLink ?? fallbackServices.sourceLink;
   const responseCards = responseState.cards;
   const candidateIdKey =
     responseCards === null
@@ -433,6 +440,7 @@ export const useJourneyActions = ({
     state: effectiveState,
     candidateOrder,
     notice,
+    sourceLinkService,
     promote,
     decide,
     save,

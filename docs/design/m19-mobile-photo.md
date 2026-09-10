@@ -16,6 +16,10 @@ flowchart LR
 
 `CandidateCard` は `PhotoRegion` を使い、主提案と別案の写真表示を同じ経路に揃える。写真領域だけを横 paging し、候補カードの選択操作とは分離する。主提案は `onLayout` で得た表示幅を各ページへ渡し、別案は固定サムネイル幅を使う。active page だけを読み込み、未選択ページの写真を先行取得しない。
 
+## 出典リンク
+
+カードの出典は `CandidateCard` から `JourneyScreen` のservice境界へ渡す。既定の `JourneySourceLinkService` は `http:` / `https:` とhostだけを許可し、URL内のusername/password、危険scheme、不正URLを `Linking` より前に拒否する。許可後も `Linking.canOpenURL` と `Linking.openURL` を通し、開けない場合とnative例外を別の失敗結果へ変換して画面通知へ表示する。公開contractsの通常出典はHTTPSであり、serviceのhttp対応は入力境界の安全検査として保持する。実端末のLinking画面遷移とcanOpenURLのOS設定は未実測である。
+
 ## 認証・応答検証
 
 - `photoToken` は `parsePhotoPath` で検証し、URL へ provider の参照を組み立てない。

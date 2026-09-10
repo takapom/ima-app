@@ -7,6 +7,7 @@ import {
   type WalkingMapDestinationResolver,
 } from './journey-map';
 import type { JourneyShareService, ShareSheetResult } from './journey-share';
+import { prepareSourceLink, type JourneySourceLinkService } from './journey-source-link';
 
 /**
  * Native adapters stay at the service boundary. The resolver must receive
@@ -40,6 +41,22 @@ export const createNativeJourneyShareService = (): JourneyShareService => ({
       return { status: 'failed', reason: 'share_unavailable' };
     } catch {
       return { status: 'failed', reason: 'share_unavailable' };
+    }
+  },
+});
+
+export const createNativeJourneySourceLinkService = (): JourneySourceLinkService => ({
+  openSourceLink: async (sourceLink) => {
+    const prepared = prepareSourceLink(sourceLink);
+    if (prepared.status !== 'ready') return prepared;
+    try {
+      if (!(await Linking.canOpenURL(prepared.url))) {
+        return { status: 'unavailable', reason: 'link_unavailable' };
+      }
+      await Linking.openURL(prepared.url);
+      return { status: 'opened' };
+    } catch {
+      return { status: 'failed', reason: 'native_unavailable' };
     }
   },
 });
