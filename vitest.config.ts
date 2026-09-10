@@ -10,6 +10,7 @@ export default defineConfig({
       'workers/api/tests/http/*.test.ts',
       'workers/api/tests/tools/*.test.ts',
       'workers/api/tests/model/*.test.ts',
+      'workers/api/tests/providers/**/*.test.ts',
       'workers/api/tests/runtime/*.test.ts',
       'workers/api/tests/runtime-gate/runtime-gate-contract.test.ts',
       'workers/api/tests/runtime-gate/runtime-gate-core.test.ts',
