@@ -48,27 +48,33 @@ export type ModelEvidenceAvailabilityInput = {
   readonly retention: RetentionMetadata;
 };
 
+type ModelEvidenceProjection = 'llm_input' | 'legacy';
+
 export type ModelEvidenceAvailability =
   | { readonly status: 'available' }
   | { readonly status: 'withheld'; readonly reason: string }
   | { readonly status: 'stale'; readonly reason: string };
 
 /** Shared freshness gate; a null policy bound does not remove local source freshness. */
-export const evaluateModelEvidenceAvailability = (
+const evaluateModelEvidenceAvailabilityForUse = (
   input: ModelEvidenceAvailabilityInput,
+  use: ModelEvidenceProjection,
 ): ModelEvidenceAvailability => {
   const { now, fetchedAt, freshUntil, expiresAt, retention } = input;
   const nowMs = Date.parse(now);
   const fetchedAtMs = Date.parse(fetchedAt);
   const sourceFreshUntilMs = freshUntil === null ? null : Date.parse(freshUntil);
   const sourceExpiresAtMs = Date.parse(expiresAt);
-  const policyBoundaries = [
-    retention.sessionExpiresAt,
-    retention.freshUntil,
-    retention.displayUntil,
-    retention.retentionUntil,
-    retention.deletionScheduledAt,
-  ];
+  const policyBoundaries =
+    use === 'llm_input'
+      ? [retention.sessionExpiresAt, retention.freshUntil, retention.deletionScheduledAt]
+      : [
+          retention.sessionExpiresAt,
+          retention.freshUntil,
+          retention.displayUntil,
+          retention.retentionUntil,
+          retention.deletionScheduledAt,
+        ];
   if (
     !Number.isFinite(nowMs) ||
     !Number.isFinite(fetchedAtMs) ||
@@ -87,9 +93,10 @@ export const evaluateModelEvidenceAvailability = (
     return { status: 'withheld', reason: 'evidence policy window is invalid' };
   }
   if (
-    retention.retentionDecision !== 'allow' ||
-    retention.policyStatus !== 'available' ||
-    retention.displayPolicyStatus !== 'available'
+    use !== 'llm_input' &&
+    (retention.retentionDecision !== 'allow' ||
+      retention.policyStatus !== 'available' ||
+      retention.displayPolicyStatus !== 'available')
   ) {
     return { status: 'withheld', reason: 'evidence policy does not allow model input' };
   }
@@ -104,6 +111,16 @@ export const evaluateModelEvidenceAvailability = (
   }
   return { status: 'available' };
 };
+
+/** The legacy gate used by display/persistence callers. */
+export const evaluateModelEvidenceAvailability = (
+  input: ModelEvidenceAvailabilityInput,
+): ModelEvidenceAvailability => evaluateModelEvidenceAvailabilityForUse(input, 'legacy');
+
+/** Model input keeps source freshness and session/deletion bounds independent of storage/display. */
+export const evaluateModelEvidenceAvailabilityForLlmInput = (
+  input: ModelEvidenceAvailabilityInput,
+): ModelEvidenceAvailability => evaluateModelEvidenceAvailabilityForUse(input, 'llm_input');
 
 export type ModelEvidence =
   | {
@@ -186,7 +203,11 @@ const schemaForField = (field: DetailField): v.GenericSchema => {
   }
 };
 
-const projectEvidence = (source: ModelEvidenceSource, now: string): ModelEvidence => {
+const projectEvidence = (
+  source: ModelEvidenceSource,
+  now: string,
+  use: ModelEvidenceProjection,
+): ModelEvidence => {
   const retention = source.retention;
   const retentionFreshUntil = retention.freshUntil;
   const locallyBound =
@@ -199,22 +220,35 @@ const projectEvidence = (source: ModelEvidenceSource, now: string): ModelEvidenc
   if (!locallyBound || !sourceWindowsAreOrdered) {
     throw new ModelContextError('INVALID_EVIDENCE', 'evidence freshness exceeds policy freshness');
   }
-  const availability = evaluateModelEvidenceAvailability({
-    now,
-    fetchedAt: source.fetchedAt,
-    freshUntil: source.freshUntil,
-    expiresAt: source.expiresAt,
-    retention,
-  });
-  const effectiveFreshUntil = [
-    source.freshUntil,
-    source.expiresAt,
-    retention.sessionExpiresAt,
-    retention.freshUntil,
-    retention.displayUntil,
-    retention.retentionUntil,
-    retention.deletionScheduledAt,
-  ]
+  const availability = evaluateModelEvidenceAvailabilityForUse(
+    {
+      now,
+      fetchedAt: source.fetchedAt,
+      freshUntil: source.freshUntil,
+      expiresAt: source.expiresAt,
+      retention,
+    },
+    use,
+  );
+  const effectiveBoundaries =
+    use === 'llm_input'
+      ? [
+          source.freshUntil,
+          source.expiresAt,
+          retention.sessionExpiresAt,
+          retention.freshUntil,
+          retention.deletionScheduledAt,
+        ]
+      : [
+          source.freshUntil,
+          source.expiresAt,
+          retention.sessionExpiresAt,
+          retention.freshUntil,
+          retention.displayUntil,
+          retention.retentionUntil,
+          retention.deletionScheduledAt,
+        ];
+  const effectiveFreshUntil = [...effectiveBoundaries]
     .filter((boundary): boundary is string => boundary !== null)
     .sort((left, right) => Date.parse(left) - Date.parse(right))[0];
   if (effectiveFreshUntil === undefined) {
@@ -258,5 +292,15 @@ export const projectModelEvidence = (source: unknown, now: unknown): ModelEviden
   if (!parsedSource.success || !parsedNow.success) {
     throw new ModelContextError('INVALID_EVIDENCE', 'model evidence source or clock is invalid');
   }
-  return projectEvidence(parsedSource.output, parsedNow.output);
+  return projectEvidence(parsedSource.output, parsedNow.output, 'legacy');
+};
+
+/** Projects one observation for the SDK model-input surface only. */
+export const projectModelEvidenceForLlmInput = (source: unknown, now: unknown): ModelEvidence => {
+  const parsedSource = v.safeParse(ModelEvidenceSourceSchema, source);
+  const parsedNow = v.safeParse(IsoTimestampSchema, now);
+  if (!parsedSource.success || !parsedNow.success) {
+    throw new ModelContextError('INVALID_EVIDENCE', 'model evidence source or clock is invalid');
+  }
+  return projectEvidence(parsedSource.output, parsedNow.output, 'llm_input');
 };

@@ -18,7 +18,7 @@ import { TurnConditionValuesSchema, type TurnConditionValues } from './turn-cons
 import { ModelContextError } from './model-context-errors';
 import {
   ModelEvidenceSourceSchema,
-  projectModelEvidence,
+  projectModelEvidenceForLlmInput,
   type ModelEvidence,
 } from './model-evidence';
 import {
@@ -31,8 +31,10 @@ import type { ModelContextFieldPolicy } from './model-context-policy';
 
 export {
   evaluateModelEvidenceAvailability,
+  evaluateModelEvidenceAvailabilityForLlmInput,
   ModelEvidenceSourceSchema,
   projectModelEvidence,
+  projectModelEvidenceForLlmInput,
 } from './model-evidence';
 export type {
   ModelEvidenceAvailability,
@@ -238,7 +240,7 @@ export const projectModelContext = (source: unknown): ProjectedModelContext => {
     throw new ModelContextError('INVALID_EVIDENCE', 'evidence observation IDs are duplicated');
   }
   const projectedEvidence = value.evidence.map((evidence) => {
-    const projected = projectModelEvidence(evidence, harness.serverNow);
+    const projected = projectModelEvidenceForLlmInput(evidence, harness.serverNow);
     if (projected.status !== 'known') return projected;
     return modelContextFieldAllowed(modelEvidenceFieldDecision(fieldPolicy, evidence.field))
       ? projected

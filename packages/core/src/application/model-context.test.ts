@@ -277,13 +277,20 @@ describe('model context projection', () => {
         displayPolicyStatus: 'policy_withheld' as const,
       },
     };
-    const projected = projectModelContext({ ...source, evidence: [firstEvidence, withheld] });
+    const projected = projectModelContext({
+      ...source,
+      fieldPolicy: {
+        ...allowModelContextFieldPolicy,
+        evidence: { ...allowModelContextFieldPolicy.evidence, identity: 'deny' },
+      },
+      evidence: [firstEvidence, withheld],
+    });
     expect(projected.evidence[1]).toEqual({
       status: 'withheld',
       observationId: 'observation-withheld',
       candidateId: 'candidate-2',
       field: 'identity',
-      reason: 'evidence policy does not allow model input',
+      reason: 'model input policy denies this evidence field',
       freshUntil: '2026-09-10T12:30:00Z',
     });
     expect(JSON.stringify(projected.evidence[1])).not.toContain('二つ目');
@@ -411,7 +418,7 @@ describe('model context projection', () => {
     const projected = projectModelContext({ ...source, evidence: [widerSourceWindow] });
     expect(projected.evidence[0]).toMatchObject({
       status: 'known',
-      freshUntil: '2026-09-10T12:30:00Z',
+      freshUntil: '2026-09-10T12:45:00Z',
     });
   });
 
