@@ -238,12 +238,15 @@ describe('native SQLite adapter', () => {
     const driver = driverFor();
     const first = createNativeSqliteAdapter(optionsFor(driver, 'owner-a-dev'));
     const second = createNativeSqliteAdapter(optionsFor(driver, 'owner-b-dev'));
-    first.initialize().saveThread({
+    const firstStore = first.initialize();
+    firstStore.saveThread({
       id: 'thread-a',
       createdAt: '2026-09-08T04:30:00+09:00',
       expiresAt: '2026-09-08T05:00:00+09:00',
     });
+    expect(firstStore.listThreads()).toMatchObject([{ id: 'thread-a' }]);
     expect(second.initialize().listTurns('thread-a')).toEqual([]);
+    expect(second.initialize().listThreads()).toEqual([]);
     expect(scopes).toEqual(['owner-a-dev', 'owner-b-dev']);
     first.close();
     second.close();

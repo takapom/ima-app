@@ -11,6 +11,7 @@ import type {
   SqliteStore,
   SqliteStoreOptions,
   ThreadInput,
+  ThreadRecord,
   ThreadTurnInput,
   ThreadTurnRecord,
 } from './types';
@@ -80,6 +81,36 @@ export const createSqliteStore = (
          ON CONFLICT(id) DO NOTHING`,
       )
       .run(input.id, createdAt, storedExpiry);
+  };
+
+  const listThreads = (): readonly ThreadRecord[] => {
+    cleanupExpired();
+    const now = currentIso(options.clock);
+    const nowMilliseconds = Date.parse(now);
+    return database
+      .prepare('SELECT id, created_at, expires_at FROM thread ORDER BY created_at DESC, id DESC')
+      .all()
+      .flatMap((row) => {
+        const id = opaqueId(text(row, 'id'));
+        const createdAt = iso(text(row, 'created_at'));
+        const expiresAt = iso(text(row, 'expires_at'));
+        const createdMilliseconds = createdAt === null ? Number.NaN : Date.parse(createdAt);
+        const expiresMilliseconds = expiresAt === null ? Number.NaN : Date.parse(expiresAt);
+        if (
+          id === null ||
+          createdAt === null ||
+          expiresAt === null ||
+          !Number.isFinite(nowMilliseconds) ||
+          !Number.isFinite(createdMilliseconds) ||
+          !Number.isFinite(expiresMilliseconds) ||
+          createdMilliseconds > nowMilliseconds ||
+          createdMilliseconds >= expiresMilliseconds ||
+          expiresMilliseconds <= nowMilliseconds
+        ) {
+          return [];
+        }
+        return [{ id, createdAt, expiresAt }];
+      });
   };
 
   const appendTurn = (input: ThreadTurnInput): void => {
@@ -226,6 +257,7 @@ export const createSqliteStore = (
     saveSkipTonight,
     isSkippedTonight,
     saveThread,
+    listThreads,
     appendTurn,
     listTurns,
     writeSnapshot,

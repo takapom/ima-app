@@ -119,6 +119,7 @@ export type SqliteStore = {
   readonly saveSkipTonight: (candidateRef: string, expiresAt?: string) => void;
   readonly isSkippedTonight: (candidateRef: string) => boolean;
   readonly saveThread: (input: ThreadInput) => void;
+  readonly listThreads: () => readonly ThreadRecord[];
   readonly appendTurn: (input: ThreadTurnInput) => void;
   readonly listTurns: (threadId: string) => readonly ThreadTurnRecord[];
   readonly writeSnapshot: (input: SnapshotInput) => boolean;

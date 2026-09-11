@@ -135,6 +135,7 @@ const transactionalStoreFor = (
       ),
     isSkippedTonight: (candidateRef) => transaction(() => store.isSkippedTonight(candidateRef)),
     saveThread: (input) => transaction(() => store.saveThread(input)),
+    listThreads: () => transaction(() => store.listThreads()),
     appendTurn: (input) => transaction(() => store.appendTurn(input)),
     listTurns: (threadId) => transaction(() => store.listTurns(threadId)),
     writeSnapshot: (input) => transaction(() => store.writeSnapshot(input)),
