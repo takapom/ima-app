@@ -25,6 +25,7 @@ describe('model-eval live turn plans', () => {
     expect(liveEvaluationProfileFor(scenarioFor('repair'))).toBe('repair');
     expect(liveEvaluationProfileFor(scenarioFor('candidate-failure'))).toBe('candidate-failure');
     expect(liveEvaluationProfileFor(scenarioFor('prompt-injection'))).toBe('prompt-injection');
+    expect(liveEvaluationProfileFor(scenarioFor('gps-refusal'))).toBe('gps-refusal');
   });
 
   it('passes condition and mixed-intent turns directly to the live model', () => {
@@ -41,8 +42,8 @@ describe('model-eval live turn plans', () => {
     }
   });
 
-  it('passes failure and prompt-injection turns directly to the live model', () => {
-    for (const id of ['candidate-failure', 'prompt-injection'] as const) {
+  it('passes direct one-turn profiles, including GPS refusal, to the live model', () => {
+    for (const id of ['candidate-failure', 'prompt-injection', 'gps-refusal'] as const) {
       const scenario = scenarioFor(id);
       expect(createLiveEvaluationTurnPlan(scenario)).toEqual({
         ok: true,

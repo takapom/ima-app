@@ -196,6 +196,7 @@ describe('opt-in live model evaluation runner', () => {
       'prompt-injection',
       'continuity',
       'repair',
+      'gps-refusal',
     ]);
     if (hasRuntimeFailure) throw new Error('M25_LIVE_RUNTIME_FAILED');
     expect(artifacts.every((artifact) => artifact.status === 'unverified')).toBe(true);
