@@ -56,6 +56,38 @@ describe('mobile journey runtime composition', () => {
     expect(request.excludeCandidateIds).toEqual(['candidate-3']);
   });
 
+  it('carries a host location snapshot through the request factory and runtime binding', () => {
+    const location = {
+      status: 'available' as const,
+      lat: 35.6595,
+      lng: 139.7005,
+      accuracyMeters: 24,
+      precise: true,
+      capturedAt: '2026-09-11T03:00:00.000Z',
+    };
+    const requests = createJourneyApiRequestFactory({
+      now: () => '2026-09-11T03:00:00.000Z',
+      idFactory: (prefix) => `${prefix}-location`,
+    });
+    const request = requests.search({
+      threadId: 'thread-1',
+      revision: 1,
+      query: '位置つき検索',
+      context,
+      location,
+    });
+
+    expect(parseSearchRequest(request).success).toBe(true);
+    expect(request.location).toEqual(location);
+
+    const locationService = { acquire: () => Promise.resolve(location) };
+    const runtime = createMobileJourneyRuntime({
+      env: baseEnv,
+      location: locationService,
+    });
+    expect(runtime.binding?.location).toBe(locationService);
+  });
+
   it('propagates explicit saved references without mapping them to candidate IDs', () => {
     const requests = createJourneyApiRequestFactory({
       now: () => '2026-09-10T10:00:00.000Z',

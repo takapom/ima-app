@@ -26,6 +26,7 @@ import { createSavedReferenceJourneyStorage, type JourneyStorageService } from '
 import { createSavedPlaceListService } from '../saved-place-list';
 import { createSavedReferenceService, type SavedReferenceScope } from '../saved-reference-service';
 import type { SqliteStore } from '../sqlite/types';
+import type { LocationService } from '../location/types';
 import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from './types';
 import { projectAssistantResponseState } from '../../state/assistant-response-projection';
 
@@ -64,6 +65,8 @@ export type MobileJourneyRuntimeOptions = {
   readonly idFactory?: (prefix: string) => string;
   /** Both fields are required to connect saving; partial injection fails closed. */
   readonly savedReference?: MobileJourneySavedReferenceOptions;
+  /** Host-composed foreground location service; acquisition remains submit-triggered. */
+  readonly location?: LocationService;
 };
 
 type RequestFactoryOptions = {
@@ -179,7 +182,7 @@ export const createJourneyApiRequestFactory = (
     revision: input.revision,
     text: input.query,
     clientNow: options.now(),
-    location: unavailableLocation,
+    location: input.location ?? unavailableLocation,
     prefs: preferencesFor(input),
     cardSetId: input.context.cardSetId,
     promotedCandidateId: input.context.promotedCandidateId,
@@ -418,6 +421,7 @@ export const createMobileJourneyRuntime = (
       controller,
       photoClient,
       requests: createJourneyApiRequestFactory({ now, idFactory }),
+      ...(options.location === undefined ? {} : { location: options.location }),
       ...(savedReferenceServices === undefined
         ? {}
         : {

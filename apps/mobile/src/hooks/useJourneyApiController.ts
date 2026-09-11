@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import type { CreateThreadResponse, SearchResponse } from '@ima/contracts';
+import type { CreateThreadResponse, LocationSnapshot, SearchResponse } from '@ima/contracts';
 import type { JourneyApiControllerState } from '../services/api/journey-controller';
 import type {
   JourneyApiControllerBinding,
@@ -13,6 +13,12 @@ import {
   releaseJourneyApiController,
   submissionScopeMatches,
 } from './journey-api-operation-flow';
+import {
+  locationDraftScopeMatches,
+  prepareJourneyLocation,
+  unavailableJourneyLocation,
+  type JourneyLocationDraft,
+} from './journey-location-operation';
 
 export type {
   JourneyApiCancelFactoryInput,
@@ -71,7 +77,9 @@ const noSnapshot = (): JourneyApiControllerState => emptyState;
 
 export const requestStatusFor = (
   status: JourneyApiControllerState['status'],
+  locationPending = false,
 ): JourneyApiRequestStatus => {
+  if (locationPending) return 'pending';
   if (
     status === 'creating' ||
     status === 'pending' ||
@@ -109,6 +117,7 @@ type LastSubmission = {
   readonly query: string;
   readonly context: JourneyApiSubmitContext;
   readonly threadId: string | null;
+  readonly location: LocationSnapshot;
 };
 
 const rejectedUnavailable = (): ApiResult<never> => ({
@@ -137,18 +146,70 @@ export const useJourneyApiController = (
   const [requestState, setRequestState] = useState<LastSubmission | null>(null);
   const [boundaryError, setBoundaryError] = useState<string | null>(null);
   const [viewKey, setViewKey] = useState(0);
+  const [locationPending, setLocationPending] = useState(false);
+  const locationPendingRef = useRef(false);
+  const locationAbortRef = useRef<AbortController | null>(null);
+  const locationDraftRef = useRef<JourneyLocationDraft | null>(null);
   const operationGeneration = useRef(0);
+  const locationService = binding?.location;
   const reportUnexpected = useCallback((): void => {
     setBoundaryError('検索を開始できません。もう一度試してください。');
   }, []);
+
+  const abortLocation = useCallback((): void => {
+    locationAbortRef.current?.abort();
+    locationAbortRef.current = null;
+    locationPendingRef.current = false;
+    setLocationPending(false);
+  }, []);
+
+  const acquireLocation = useCallback(
+    (generation: number): LocationSnapshot | Promise<LocationSnapshot | null> => {
+      if (locationService === undefined) {
+        return unavailableJourneyLocation();
+      }
+      locationAbortRef.current?.abort();
+      const abort = new AbortController();
+      locationAbortRef.current = abort;
+      locationPendingRef.current = true;
+      setLocationPending(true);
+      return (async (): Promise<LocationSnapshot | null> => {
+        const preparation = await prepareJourneyLocation(locationService, abort.signal);
+        if (locationAbortRef.current === abort) {
+          locationAbortRef.current = null;
+          locationPendingRef.current = false;
+          setLocationPending(false);
+        }
+        if (
+          locationAbortRef.current !== null ||
+          generation !== operationGeneration.current ||
+          preparation.kind === 'cancelled'
+        ) {
+          return null;
+        }
+        return preparation.snapshot;
+      })();
+    },
+    [locationService],
+  );
+
+  useEffect(() => {
+    return () => {
+      operationGeneration.current += 1;
+      abortLocation();
+      locationDraftRef.current = null;
+    };
+  }, [abortLocation, locationService]);
 
   useEffect(() => {
     if (!controller) return undefined;
     return () => {
       operationGeneration.current += 1;
+      abortLocation();
+      locationDraftRef.current = null;
       releaseJourneyApiController(controller);
     };
-  }, [controller]);
+  }, [abortLocation, controller]);
 
   const submit = useCallback(
     async (
@@ -158,6 +219,7 @@ export const useJourneyApiController = (
       if (!controller || !requests) return rejectedUnavailable();
       const current = controller.getState();
       if (
+        locationPendingRef.current ||
         current.status === 'creating' ||
         current.status === 'pending' ||
         current.status === 'cancelling' ||
@@ -168,32 +230,74 @@ export const useJourneyApiController = (
       }
       const generation = ++operationGeneration.current;
       setBoundaryError(null);
-      setRequestState({ query, context, threadId: current.threadId });
-      if (current.threadId === null) {
+      const startedThreadId = current.threadId;
+      const startedRevision = current.responseState?.revision ?? 0;
+      const startedTurnId = current.activeTurnId;
+      locationDraftRef.current = {
+        query,
+        context,
+        threadId: startedThreadId,
+        revision: startedRevision,
+        turnId: startedTurnId,
+      };
+      const locationResult = acquireLocation(generation);
+      const location = locationResult instanceof Promise ? await locationResult : locationResult;
+      if (location === null || generation !== operationGeneration.current) {
+        return rejectedAborted<SearchResponse>();
+      }
+      const currentAfterLocation = controller.getState();
+      if (
+        currentAfterLocation.status === 'creating' ||
+        currentAfterLocation.status === 'pending' ||
+        currentAfterLocation.status === 'cancelling' ||
+        currentAfterLocation.status === 'reading' ||
+        currentAfterLocation.status === 'replaying'
+      ) {
+        locationDraftRef.current = null;
+        return rejectedAborted<SearchResponse>();
+      }
+      if (
+        currentAfterLocation.threadId !== startedThreadId ||
+        (currentAfterLocation.responseState?.revision ?? 0) !== startedRevision ||
+        currentAfterLocation.activeTurnId !== startedTurnId
+      ) {
+        locationDraftRef.current = null;
+        return rejectedAborted<SearchResponse>();
+      }
+      locationDraftRef.current = null;
+      setRequestState({
+        query,
+        context,
+        threadId: currentAfterLocation.threadId,
+        location,
+      });
+      if (currentAfterLocation.threadId === null) {
         const created = await controller.createThread(requests.createThread());
         if (generation !== operationGeneration.current)
           return rejectedAborted<CreateThreadResponse>();
         if (!created.ok) return created;
-        setRequestState({ query, context, threadId: created.data.threadId });
+        setRequestState({ query, context, threadId: created.data.threadId, location });
         const search = requests.search({
           threadId: created.data.threadId,
           revision: created.data.revision,
           query,
           context,
+          location,
         });
         const result = await controller.search(search);
         return generation === operationGeneration.current
           ? result
           : rejectedAborted<SearchResponse>();
       }
-      const revision = current.responseState?.revision ?? 0;
+      const revision = currentAfterLocation.responseState?.revision ?? 0;
       if (revision === 0) {
         const result = await controller.search(
           requests.search({
-            threadId: current.threadId,
+            threadId: currentAfterLocation.threadId,
             revision,
             query,
             context,
+            location,
           }),
         );
         return generation === operationGeneration.current
@@ -201,26 +305,43 @@ export const useJourneyApiController = (
           : rejectedAborted<SearchResponse>();
       }
       const result = await controller.turn(
-        current.threadId,
+        currentAfterLocation.threadId,
         requests.turn({
-          threadId: current.threadId,
+          threadId: currentAfterLocation.threadId,
           revision,
-          turnId: current.activeTurnId,
+          turnId: currentAfterLocation.activeTurnId,
           query,
           context,
+          location,
         }),
       );
       return generation === operationGeneration.current
         ? result
         : rejectedAborted<SearchResponse>();
     },
-    [controller, requests],
+    [acquireLocation, controller, requests],
   );
 
   const retry = useCallback(async (): Promise<
     ApiResult<CreateThreadResponse> | ApiResult<SearchResponse>
   > => {
     if (!controller || !requests) return rejectedUnavailable();
+    if (locationPendingRef.current) return rejectedAborted<SearchResponse>();
+    const locationDraft = locationDraftRef.current;
+    if (locationDraft !== null) {
+      const current = controller.getState();
+      if (
+        !locationDraftScopeMatches(locationDraft, {
+          threadId: current.threadId,
+          revision: current.responseState?.revision ?? 0,
+          turnId: current.activeTurnId,
+        })
+      ) {
+        locationDraftRef.current = null;
+        return rejectedAborted<SearchResponse>();
+      }
+      return submit(locationDraft.query, locationDraft.context);
+    }
     const generation = ++operationGeneration.current;
     setBoundaryError(null);
     const last = requestState;
@@ -250,6 +371,7 @@ export const useJourneyApiController = (
               revision: created.revision,
               query: last.query,
               context: last.context,
+              location: last.location,
             }),
           );
         },
@@ -270,13 +392,19 @@ export const useJourneyApiController = (
     }
     if (generation !== operationGeneration.current) return rejectedAborted<SearchResponse>();
     return retried.result;
-  }, [controller, requests, requestState]);
+  }, [controller, requests, requestState, submit]);
 
   const cancel = useCallback(async (): Promise<ApiResult<LifecycleResponse> | ApiResult<never>> => {
     if (!controller || !requests) return rejectedUnavailable();
+    const locationWasPending = locationPendingRef.current;
     ++operationGeneration.current;
+    abortLocation();
     setBoundaryError(null);
     const current = controller.getState();
+    if (locationWasPending) {
+      controller.cancelPending();
+      return { ok: false, requestId: 'controller', error: { kind: 'aborted' } };
+    }
     if (current.threadId === null) {
       controller.cancelPending();
       return { ok: false, requestId: 'controller', error: { kind: 'aborted' } };
@@ -289,12 +417,14 @@ export const useJourneyApiController = (
         turnId: current.activeTurnId,
       }),
     );
-  }, [controller, requests]);
+  }, [abortLocation, controller, requests]);
 
   const selectHistory = useCallback(
     async (threadId: string): Promise<void> => {
       if (!controller) return;
       const generation = ++operationGeneration.current;
+      abortLocation();
+      locationDraftRef.current = null;
       setBoundaryError(null);
       setRequestState(null);
       setViewKey((current) => current + 1);
@@ -304,33 +434,37 @@ export const useJourneyApiController = (
         () => generation === operationGeneration.current,
       );
     },
-    [controller],
+    [abortLocation, controller],
   );
 
   const replay = useCallback(
     async (threadId: string): Promise<void> => {
       if (!controller) return;
       ++operationGeneration.current;
+      abortLocation();
+      locationDraftRef.current = null;
       setBoundaryError(null);
       await controller.replayThread(threadId);
     },
-    [controller],
+    [abortLocation, controller],
   );
 
   const reset = useCallback((): void => {
     ++operationGeneration.current;
+    abortLocation();
+    locationDraftRef.current = null;
     controller?.reset();
     setViewKey((current) => current + 1);
     setBoundaryError(null);
     setRequestState(null);
-  }, [controller]);
+  }, [abortLocation, controller]);
 
   return {
     connected,
     viewKey,
     state,
     responseState: state.responseState,
-    requestStatus: requestStatusFor(state.status),
+    requestStatus: requestStatusFor(state.status, locationPending),
     errorMessage: boundaryError ?? journeyApiErrorMessage(state.error),
     submit,
     retry,

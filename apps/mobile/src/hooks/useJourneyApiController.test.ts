@@ -19,6 +19,7 @@ describe('Journey API hook boundary', () => {
     expect(requestStatusFor('error')).toBe('error');
     expect(requestStatusFor('cancelled')).toBe('cancelled');
     expect(requestStatusFor('idle')).toBe('idle');
+    expect(requestStatusFor('idle', true)).toBe('pending');
   });
 
   it('keeps public error messages safe and actionable without exposing response details', () => {

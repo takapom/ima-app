@@ -1,10 +1,12 @@
 import type {
   CreateThreadRequest,
   LifecycleCommand,
+  LocationSnapshot,
   SearchRequest,
   ThreadTurnRequest,
 } from '@ima/contracts';
 import type { JourneyConditions } from '../../state/journey-input';
+import type { LocationService } from '../location/types';
 import type { JourneyApiController } from './journey-controller-types';
 import type { JourneyPhotoClient } from './photo-client';
 import type { JourneyStorageService } from '../journey-storage';
@@ -38,6 +40,8 @@ export type JourneyApiSearchFactoryInput = {
   readonly revision: number;
   readonly query: string;
   readonly context: JourneyApiSubmitContext;
+  /** Snapshot acquired for this explicit submit; omitted callers fail closed to unavailable. */
+  readonly location?: LocationSnapshot;
 };
 
 export type JourneyApiTurnFactoryInput = JourneyApiSearchFactoryInput & {
@@ -60,6 +64,8 @@ export type JourneyApiRequestFactory = {
 export type JourneyApiControllerBinding = {
   readonly controller: JourneyApiController;
   readonly requests: JourneyApiRequestFactory;
+  /** Host-composed explicit foreground location acquisition service. */
+  readonly location?: LocationService;
   /** Authenticated binary photo access; absent when the host has no API composition. */
   readonly photoClient?: JourneyPhotoClient;
   /** Formal owner-scoped save adapter; absent when SQLite was not injected by the host. */
