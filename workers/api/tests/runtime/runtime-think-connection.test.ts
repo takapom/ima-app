@@ -31,7 +31,7 @@ import {
 } from '../../src/runtime/runtime-retention';
 import { createRuntimeRetentionTransform } from '../../src/runtime/runtime-retention-transform';
 import { createToolRegistry } from '../tools/registry-fixture';
-import { createThinkGateModel } from '../think-gate/think-gate-provider';
+import { modelFor } from '../support/runtime-model-fixture';
 
 const NOW = '2026-09-10T00:00:00Z';
 
@@ -215,7 +215,7 @@ const buildComposition = (
     beforeStep: () => ({ activeTools: ['search_places', 'get_place_details', 'submit_cards'] }),
   });
   return {
-    model: createThinkGateModel('final-sentinel', { calls: 0, requests: [] }),
+    model: modelFor('message', { calls: 0, requests: [] }),
     turn,
     retention: { context: retention, transform: retentionTransform },
     projectStep: projection,
@@ -348,7 +348,8 @@ describe('RuntimeThinkConnection', () => {
       status: 'completed',
       response: { responseId: 'response-runtime-connection' },
     });
-    expect(accepted).toEqual(['THINK_GATE_STORE_FACT_CAFE_LUNA']);
+    expect(accepted).toHaveLength(1);
+    expect(accepted[0]).toContain('Fixture message completed.');
     expect(projectedAt).toEqual([NOW]);
     expect(saved).toHaveLength(1);
     expect(saved[0]?.parts).toEqual([{ type: 'text', text: RUNTIME_RETENTION_WITHHELD }]);

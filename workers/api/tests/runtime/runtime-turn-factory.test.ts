@@ -27,7 +27,7 @@ import {
 } from '../../src/runtime/runtime-turn-factory';
 import { invokePublicToolEnvelope } from '../../src/tools';
 import { createToolRegistry } from '../tools/registry-fixture';
-import { createThinkGateModel } from '../think-gate/think-gate-provider';
+import { modelFor } from '../support/runtime-model-fixture';
 
 const context: HarnessContext = {
   threadId: 'thread-tools',
@@ -214,7 +214,7 @@ describe('createRuntimeTurnFactory', () => {
       'submit_cards',
     ]);
 
-    const model = createThinkGateModel('final-sentinel', { calls: 0, requests: [] });
+    const model = modelFor('message', { calls: 0, requests: [] });
     const turn: TurnContext = {
       system: '',
       messages: [],

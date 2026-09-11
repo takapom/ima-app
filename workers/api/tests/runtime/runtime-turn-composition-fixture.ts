@@ -15,7 +15,7 @@ import type {
 } from '@ima/core';
 import type { JSONValue, TextStreamPart, ToolResultPart, ToolSet } from 'ai';
 import { createToolRegistry } from '../tools/registry-fixture';
-import { createThinkGateModel } from '../think-gate/think-gate-provider';
+import { modelFor } from '../support/runtime-model-fixture';
 import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
@@ -249,7 +249,7 @@ export const createComposition = (
   const calls = { search: [] as number[] };
   const fixture = createToolRegistry();
   const registry = fixture.registry;
-  const model = createThinkGateModel('final-sentinel', { calls: 0, requests: [] });
+  const model = modelFor('message', { calls: 0, requests: [] });
   const request: RuntimeCompositionTurnRequest = {
     ...SCOPE,
     turnId: context.turnId,
