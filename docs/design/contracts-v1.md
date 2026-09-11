@@ -88,6 +88,8 @@ M05はhandlerを注入し、Workerで認証・parse・DTO変換・error envelope
 
 `PublicError` は`schemaVersion`、`requestId`、HTTP status、公開error code、短いmessageだけを返す。schemaでstatusとcodeの組み合わせを固定し、Secrets、stack、他threadの存在やprovider内部情報を返さない。401は認証不足、403はowner scope不一致、409はrevision/idempotency/schema/キャンセル競合、410は写真・cursor・根拠の期限切れ、413はサイズ超過、415はcontent type、422はstrict schema/業務入力、429はrate limit、502/504はprovider/timeout、500はWorker失敗に使う。`restart`は新turnを開始し、`resume`は同一threadの中断状態を継続する。保存参照のrefreshはowner-scoped `savedPlaceRef`を明示し、candidateIdをthread間で自動移送しない。
 
+`GET /v1/saved/:savedPlaceRef/refresh` はthreadlessなpreview取得であり、owner shardのprovider identityを再取得して、そのrequestだけのcandidate/evidenceへ射影する。候補ID、provider payload、住所は既存の保存参照やThreadへコピーしない。通常のsearch/detailsではareaをHostが注入する規則を維持するが、このrouteに限り、Details identityの検証済み非空`formattedAddress`が160文字以内なら、文字列を変更せず所在地表示へ使える。検索範囲のareaとして再利用せず、地域名の抽出・推測・切捨て・永続化をしない。欠損・長過ぎる・不正な住所は成功へ変換せず、provider/responseの境界エラーにする。公開前にowner/ref、request開始時に固定したsession期限、現在時刻、display policy、帰属を再確認し、再確認できない場合は生成済みの一時candidate/evidenceを公開しない。
+
 写真の成功bodyはJSONではない。`PhotoBinaryRouteResponse`の`bodyKind=binary`と`PhotoResponseDescriptor`はWorker/renderer間で検証するメタデータ（token、content type、期限、request ID）で、HTTPでは許可された`Content-Type`、`Expires`、`X-Ima-Request-Id`へ射影し、画像bytesをbodyにする。JSONは失敗時の`PublicError`だけに使う。写真tokenはWorker発行のopaque値で、provider handleや署名URLをmobileへ露出しない。
 
 利用手順は、端末がowner credentialを生成して`POST /v1/threads`を呼び、返されたserver-issued `threadId`で`POST /v1/threads/:threadId/turns`を呼ぶ順序とする。`GET .../read`相当のread/replayは同一threadの公開recordを再配送する。`resume`は中断したturnを同一threadで継続し、`restart`は新turnを開始する。保存店のrefreshは保存参照から公開factsを再取得し、別threadのcandidate IDを持ち込まない。

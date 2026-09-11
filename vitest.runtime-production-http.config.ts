@@ -28,6 +28,8 @@ export default defineConfig({
     include: [
       'workers/api/tests/runtime-production-http.test.ts',
       'workers/api/tests/runtime-production-saved-reference-http.test.ts',
+      'workers/api/tests/runtime-production-saved-reference-refresh.test.ts',
+      'workers/api/tests/runtime-production-saved-reference-refresh-timeout.test.ts',
     ],
   },
 });

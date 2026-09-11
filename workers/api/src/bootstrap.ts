@@ -49,7 +49,13 @@ import {
   type SavedReferenceNamespace,
   type SavedReferenceRpcDeleteResult,
   type SavedReferenceRpcRegistrationResult,
-} from './saved-references/saved-reference-do';
+} from './saved-references/saved-reference-rpc';
+import {
+  createSavedReferenceRefreshForBootstrap,
+  type SavedReferenceRefreshBootstrapOptions,
+} from './saved-references/saved-reference-refresh-bootstrap';
+
+export { createApplicationScopeAuthorizer } from './saved-references/saved-reference-refresh';
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;
@@ -102,7 +108,7 @@ export type BootstrapOptions = {
   readonly appIntegrity?: AppIntegrityGate;
   /** Native verifier injection; absent means the default gate remains fail-closed. */
   readonly appIntegrityVerifier?: AppIntegrityVerifier;
-};
+} & Omit<SavedReferenceRefreshBootstrapOptions, 'clock'>;
 
 const unavailable = (): HttpBoundaryError =>
   new HttpBoundaryError({ status: 502, code: 'PROVIDER_UNAVAILABLE' });
@@ -253,6 +259,7 @@ const threadStub = (env: BootstrapEnv, threadId: string) => env.THREADS.getByNam
 const handleApplication = async (
   env: BootstrapEnv,
   runtime: ApplicationHandler,
+  savedReferenceRefresh: ReturnType<typeof createSavedReferenceRefreshForBootstrap>,
   operation: ApplicationOperation,
   context: HandlerContext,
 ): Promise<ApplicationResult> => {
@@ -373,8 +380,10 @@ const handleApplication = async (
       );
       return { kind: 'delete_thread', response: null };
     case 'place':
-    case 'saved_reference_refresh':
       throw unavailable();
+    case 'saved_reference_refresh':
+      if (savedReferenceRefresh === undefined) throw unavailable();
+      return savedReferenceRefresh.handle(operation, context);
   }
 };
 
@@ -386,9 +395,10 @@ const createApplication = (env: BootstrapEnv, options: BootstrapOptions): Applic
       ? {}
       : { onCancellationError: options.onCancellationError }),
   });
+  const savedReferenceRefresh = createSavedReferenceRefreshForBootstrap(env, options);
   return {
     handle(operation, context) {
-      return handleApplication(env, runtime, operation, context);
+      return handleApplication(env, runtime, savedReferenceRefresh, operation, context);
     },
   };
 };

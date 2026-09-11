@@ -1,4 +1,5 @@
 import {
+  createApplicationScopeAuthorizer,
   createHttpRouterConfig,
   createThreadScopeAuthorizer,
   type BootstrapEnv,
@@ -40,7 +41,10 @@ export default {
         : { adminToken: env.JOURNEY_DATASET_ADMIN_TOKEN }),
     });
     if (managementResponse !== null) return managementResponse;
-    const ownership = createThreadScopeAuthorizer(env.THREADS);
+    const ownership = createApplicationScopeAuthorizer(
+      createThreadScopeAuthorizer(env.THREADS),
+      env.SAVED_REFERENCES,
+    );
     return routeRequest(
       request,
       createHttpRouterConfig(env, {

@@ -19,6 +19,8 @@ flowchart LR
 
 `identity.ts` はdisplay name、Hostが注入したarea label、住所、primary type、business status、HTTPSのGoogle Maps source URLを既存Core `PlaceIdentity`へ変換する。areaは`formattedAddress`から推測しない。`FUTURE_OPENING`はCoreに対応する状態がないため`unknown`へ変換し、元statusはWorker内部metadataだけに残す。移転先も内部resolver用metadataに保持するが、自動追跡や候補差し替えは行わない。
 
+例外として、threadlessの `GET /v1/saved/:savedPlaceRef/refresh` 専用adapterは、同じDetails identity応答で検証済みの非空`formattedAddress`（160文字以内）を、そのまま一時的な所在地表示の`PlaceIdentity.area`へ渡せる。これは検索範囲のareaではなく、providerが返した所在地の表示である。文字列の切り出し・切捨て・地域名の推測・永続保存は行わず、欠損・上限超過・不正な値はknown結果にしない。通常のsearch/details adapterのarea意味論は変わらない。
+
 `values.ts` はGoogleのprice level、完全な同一通貨のprice range、contact link/phone、photo metadataを変換する。有限な上限がないprice rangeはknown rangeにせず、levelだけを保持できる。円換算や金額の推測はしない。写真はCoreのphoto referenceと帰属だけを最大3件保持し、表示可能なauthor attributionがない写真はwithholdする。photo referenceはprovider内部handleであり、公開`photoToken`への変換はWorker response/M15境界の責務である。
 
 normalizerは`known`、`unknown`、明示的なschema/source-conflict errorを返す。Observation生成、Registry書込み、SDK呼出し、Application state変更は行わない。Observation ID、`fetchedAt`、freshness、retention、`reuse_valid`は後続のM06/M07 compositionが注入する。
@@ -62,6 +64,8 @@ timeoutはresponse bodyの読み取り完了まで適用し、呼出側の`Abort
 `reuse_valid` は現在の `ObservationContext` と有効期限が一致する観測だけを返す。`refresh`、または期限切れ観測の再取得では、providerへリクエストする前に対象fieldの古いreuseを無効化する。そのためHTTP失敗、応答field集合の不一致、帰属メタデータの不正、取消しのいずれでも古い値を再利用できない。新しい値は `PlacesDetailsObservationPolicy` が返す有限の `freshUntil`、`expiresAt`、`RetentionMetadata` とともに登録し、policyが未注入ならknown値を返さない。
 
 出典の共通整形は `workers/api/src/providers/places/source.ts` に集約する。M11検索とC4詳細取得は共通の検証結果が不正なら該当fieldをerrorにし、正常な候補・fieldはpartialとして維持する。area labelは住所から導出せず、Hostの `areaLabelFor` 注入がないidentityをknownにしない。C4のfixtureは実Google APIやSecretを使わず、C3の実transportを通したHTTP境界、Registry登録、再利用無効化、provider失敗、field mask、取消しを検証する。
+
+保存参照のthreadless refreshだけは上記の表示目的の限定例外を持つ。owner-scopedな保存行を再読し、provider identityと帰属を検証した後に一時的な公開DTOを生成するが、住所その他のprovider payloadをDOやThreadへ保存しない。候補ID・evidence IDもrequest-scopedに発行し、元threadのcandidate IDを再利用しない。
 
 ## 参照
 
