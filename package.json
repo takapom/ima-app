@@ -25,7 +25,7 @@
     "typecheck": "bun run scripts/run-workspaces.mjs typecheck && tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config vitest.config.ts && bun run test:app-integrity && vitest run --config vitest.worker.config.ts && bun run test:runtime",
     "test:app-integrity": "vitest run --config vitest.app-integrity.config.ts",
-    "test:runtime": "vitest run --config vitest.think-runtime.config.ts && bun run test:runtime-native",
+    "test:runtime": "bun run test:runtime-native",
     "test:runtime-native": "vitest run --config vitest.runtime-native.config.ts && bun run test:runtime-production-http && bun run test:runtime-dev-fixture",
     "test:runtime-production-http": "vitest run --config vitest.runtime-production-http.config.ts",
     "test:runtime-dev-fixture": "vitest run --config vitest.runtime-dev-fixture.config.ts",
