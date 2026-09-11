@@ -241,11 +241,12 @@ describe('keyless formal card-context profiles through one fixture DO', () => {
         expect(result.execution.attempt.status).toBe('evaluated');
         expect(result.execution.attempt.trace?.toolNames).not.toContain('search_places');
       } else {
-        expect(result.execution.failure).toMatchObject({
-          status: 'unverified_mapping',
-          code: 'CANDIDATE_ID_MAPPING_UNAVAILABLE',
-        });
+        expect(result.execution.failure).toBeUndefined();
+        expect(result.execution.attempt.status).toBe('evaluated');
         expect(result.execution.attempt.publicResponse?.kind).toBe('message');
+        expect(
+          result.execution.run?.response.selections.map((selection) => selection.candidateId),
+        ).toEqual(profile === 'compare' ? ['candidate-a', 'candidate-b'] : ['candidate-a']);
       }
       expect(result.execution.attempt.trace?.toolNames).not.toContain('search_places');
     },

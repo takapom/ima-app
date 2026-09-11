@@ -1,5 +1,5 @@
 import type { AssistantResponse } from '@ima/contracts';
-import type { RuntimeCandidateIdentity } from './candidate-mapping';
+import type { RuntimeCandidateIdentity, RuntimeEvidenceReference } from './candidate-mapping';
 import type { LiveEvaluationProfile } from './live-plan';
 import type { EvaluationReport, EvaluationRun } from './types';
 
@@ -21,6 +21,10 @@ export type LiveTraceSnapshot = {
   readonly candidateIdentities: readonly RuntimeCandidateIdentity[];
   /** True only when this attempt captured at least one non-conflicting identity. */
   readonly candidateIdentityMapAvailable: boolean;
+  /** Registry/model evidence identity only; values and provider payloads are omitted. */
+  readonly evidenceReferences?: readonly RuntimeEvidenceReference[];
+  /** False/absent means message evidence cannot be joined for automatic evaluation. */
+  readonly evidenceReferenceMapAvailable?: boolean;
 };
 
 export type ModelEvalLiveCliCode = 0 | 1 | 2;

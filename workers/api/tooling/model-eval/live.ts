@@ -14,7 +14,15 @@ import type {
   ToolCall,
 } from './types';
 import { aggregateEvaluationRuns } from './aggregate';
-import { createCandidateIdentityCapture, type CandidateIdentityMapping } from './candidate-mapping';
+import {
+  createCandidateIdentityCapture,
+  createEvidenceReferenceCapture,
+  type CandidateIdentityMapping,
+} from './candidate-mapping';
+import {
+  messageSelectionsForEvaluation,
+  observeStructuredEvidenceReferences,
+} from './message-evidence';
 import { savedRefsFor } from './saved-reference';
 import type {
   LiveProbeArtifact,
@@ -95,6 +103,7 @@ export class LiveTraceRecorder {
   private outputTokenSamples = 0;
   private readonly names: string[] = [];
   private readonly candidateIdentityCapture = createCandidateIdentityCapture();
+  private readonly evidenceReferenceCapture = createEvidenceReferenceCapture();
   private locationExposed = false;
   private upstream = 0;
 
@@ -102,6 +111,7 @@ export class LiveTraceRecorder {
     this.startedCalls += 1;
     this.startedAt = performance.now();
     this.locationExposed ||= containsRestrictedLocation(prompt);
+    observeStructuredEvidenceReferences(prompt, this.evidenceReferenceCapture);
   }
 
   finish(usage: unknown): void {
@@ -166,6 +176,8 @@ export class LiveTraceRecorder {
       preservedConditionFields: [],
       candidateIdentities: this.candidateIdentityCapture.snapshot(),
       candidateIdentityMapAvailable: this.candidateIdentityCapture.isUsable(),
+      evidenceReferences: this.evidenceReferenceCapture.snapshot(),
+      evidenceReferenceMapAvailable: this.evidenceReferenceCapture.isUsable(),
     };
   }
 }
@@ -300,7 +312,10 @@ export type LiveConversion =
   | { readonly ok: true; readonly run: EvaluationRun; readonly response: AssistantResponse }
   | {
       readonly ok: false;
-      readonly code: 'PUBLIC_RESPONSE_INVALID' | 'CANDIDATE_ID_MAPPING_UNAVAILABLE';
+      readonly code:
+        | 'PUBLIC_RESPONSE_INVALID'
+        | 'CANDIDATE_ID_MAPPING_UNAVAILABLE'
+        | 'MESSAGE_EVIDENCE_MAPPING_UNAVAILABLE';
       readonly response?: AssistantResponse;
     };
 
@@ -341,6 +356,24 @@ export const buildEvaluationRunFromResponse = (
         evidenceIds: cardClaims.flatMap((claim) => claim.evidenceIds),
         why: card.why.text,
       });
+    }
+  } else {
+    const messageSelections = messageSelectionsForEvaluation({
+      response: output,
+      evaluationCase,
+      evidenceReferences: trace.evidenceReferences ?? [],
+      evidenceReferenceMapAvailable: trace.evidenceReferenceMapAvailable === true,
+      candidateIdentityMap: candidateIdentityMap?.ok === true ? candidateIdentityMap : undefined,
+    });
+    if (!messageSelections.ok) {
+      return { ok: false, code: messageSelections.code, response: output };
+    }
+    selections.push(...messageSelections.selections);
+    if (
+      evaluationCase.expected.requiredCandidateIds.length > 0 &&
+      messageSelections.selections.length === 0
+    ) {
+      return { ok: false, code: 'MESSAGE_EVIDENCE_MAPPING_UNAVAILABLE', response: output };
     }
   }
   const forbiddenBehaviors: ObservedForbiddenBehavior[] = trace.modelLocationExposed

@@ -73,6 +73,7 @@ export type LiveTraceDeltaResult =
 
 const safeFailureCodes = new Set([
   'CANDIDATE_ID_MAPPING_UNAVAILABLE',
+  'MESSAGE_EVIDENCE_MAPPING_UNAVAILABLE',
   'INITIALIZE_FAILED',
   'MODEL_STREAM_ABORTED',
   'MODEL_STREAM_TIMEOUT',
@@ -221,7 +222,9 @@ const executionFailure = (input: {
 }): LiveCaseExecution => {
   const code = safeFailureCode(input.code);
   const status =
-    code === 'CANDIDATE_ID_MAPPING_UNAVAILABLE' ? 'unverified_mapping' : 'runtime_failed';
+    code === 'CANDIDATE_ID_MAPPING_UNAVAILABLE' || code === 'MESSAGE_EVIDENCE_MAPPING_UNAVAILABLE'
+      ? 'unverified_mapping'
+      : 'runtime_failed';
   const versions = versionsFor(input.profile);
   const attempt: LiveProbeAttempt = {
     caseId: input.evaluationCase.caseId,
@@ -350,7 +353,7 @@ export const executeLiveEvaluationCase = async (input: {
       fullTrace.candidateIdentities,
       input.expectedIdentities,
     );
-    let converted = buildEvaluationRunFromResponse(
+    const converted = buildEvaluationRunFromResponse(
       input.evaluationCase,
       targetResponse,
       targetTraceResult.trace,
@@ -358,17 +361,6 @@ export const executeLiveEvaluationCase = async (input: {
       versionsFor(profile),
       mapping.ok ? mapping : undefined,
     );
-    if (
-      converted.ok &&
-      input.evaluationCase.expected.requiredCandidateIds.length > 0 &&
-      targetResponse.kind === 'message'
-    ) {
-      converted = {
-        ok: false,
-        code: 'CANDIDATE_ID_MAPPING_UNAVAILABLE',
-        response: targetResponse,
-      };
-    }
     if (!converted.ok) {
       return executionFailure({
         evaluationCase: input.evaluationCase,

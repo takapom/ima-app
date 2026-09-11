@@ -204,7 +204,7 @@ describe('saved-place-reference fixture through the owner DO and production runt
     expect(converted.ok).toBe(true);
     if (!converted.ok) return;
     expect(converted.run.trace.resolvedSavedPlaceRefs).toEqual(['saved-place-a']);
-    expect(converted.run.trace.selectedCandidateIds).toEqual([]);
+    expect(converted.run.trace.selectedCandidateIds).toEqual(['candidate-a']);
     expect(liveEvaluationProfileFor(run.evaluationCase)).toBeNull();
   });
 

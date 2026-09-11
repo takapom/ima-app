@@ -116,8 +116,11 @@ describe('keyless live host timing and freshness boundary', () => {
         upstreamCalls: 1,
         complete: true,
       });
-      expect(result.execution.failure?.code).toBe('CANDIDATE_ID_MAPPING_UNAVAILABLE');
-      expect(result.execution.attempt.status).toBe('unverified_mapping');
+      expect(result.execution.failure).toBeUndefined();
+      expect(result.execution.attempt.status).toBe('evaluated');
+      expect(
+        result.execution.run?.response.selections.map((selection) => selection.candidateId),
+      ).toEqual(['candidate-a']);
       const prelude = v.safeParse(AssistantResponseSchema, result.turns[0]?.response);
       expect(prelude.success).toBe(true);
       if (!prelude.success) throw new Error('M25_LIVE_HOST_PRELUDE_INVALID');
