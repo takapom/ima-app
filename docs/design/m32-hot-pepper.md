@@ -1,6 +1,6 @@
 # M32 / #33 Hot Pepper Adapter
 
-この単位は `workers/api` 内の任意 Hot Pepper provider adapter である。既存の Places Details Port、公開 contracts、bootstrap、Core は変更せず、HP が無効・未設定でも Places の基本経路を組み立てられる境界を先に検証する。実キー・実アカウント・課金・利用許諾の確認は M35 に残る。
+この単位は `workers/api` 内の任意 Hot Pepper provider adapter と、既存の Places Details Port へ補足を合成する Worker 境界である。公開 contracts と Core の Port は変更せず、HP が無効・未設定でも Places の基本経路を組み立てられる。実キー・実アカウント・課金・利用許諾の確認は M35 に残る。
 
 ```mermaid
 flowchart LR
@@ -12,6 +12,7 @@ flowchart LR
   N --> P[field and attribution policy]
   P --> O[temporary Worker supplement]
   P -. deny .-> U[unsupported overlay]
+  O --> D[Places Details result]
 ```
 
 ## 境界
@@ -21,6 +22,8 @@ flowchart LR
 - `transport.ts` は `GET https://webservice.recruit.co.jp/hotpepper/gourmet/v1/` を一度だけ呼ぶ。API key は Hot Pepper API の要求どおり query parameter に置くが、例外・ログ・返却値には含めない。`redirect: "manual"`、256KB 上限の本文 reader、body read 完了までの timeout、呼出し側の cancel を適用する。上限超過時は本文を cancel して固定 `SCHEMA_MISMATCH` にする。
 - `matching.ts` は Places candidate と HP shop の同一性だけを判定する。Haversine はオーバーレイを拒否するフィルタであり、徒歩時間として返さない。
 - `normalize.ts` は HP 固有の自由文を Core の営業時間時刻へ推測変換しない。`adapter.ts` は optional provider の capability / policy gate と各 normalizer を合成する。
+- `composition.ts` は `PlaceDetailsPort` の Worker-only overlay であり、`facilities` と、Places の価格が known でない場合だけ `price.rawLabel` を補う。既知の Places 価格を上書きせず、HP の `open` / `close` / LO を Core の `opening_hours` へ変換しない。HP の provider input policy、field policy、観測期限 policy、候補 identity resolver がすべて明示された場合だけ production factory へ接続する。
+- HP の読み取り後に候補の所有・除外状態と response の `candidateId` を再確認する。照合失敗、policy deny、期限切れ、遅着は Places の結果を落とさず、HP field を `unsupported` または既存の partial outcome として扱う。HP 観測の retention は Google Places policy を流用せず、専用 `hotPepperObservationPolicy` で決める。
 
 ## 店舗照合
 
@@ -49,13 +52,14 @@ Hot Pepper API の公式項目名と意味をそのまま扱い、値を補完�
 - `fixture` mode は明示的に注入された transport がある場合だけ作る。未注入時に実 Hot Pepper endpoint を作らない。
 - `live` mode は `HOTPEPPER_API_KEY` が空なら作らない。`fixture_only` policy は live mode で allow にならず、`live_verified` policy と M35 の実環境確認が必要である。
 - adapter の既定 policy は `disabled_until_m35` / deny である。policy で伏せた field は raw value を含まない `unsupported` へ落とす。
+- Registry の immutable な HP 観測は、再利用時だけでなく production の公開 evidence resolver と message mapper でも現在の field policy で再投影する。保存・表示を撤回した古い retention は返さず、再解決できない根拠は公開しない。
 - この単位は provider payload を SQL/KV/DO、ログ、Telemetry、公開 contracts へ保存しない。Places の candidate は HP 不在時もそのまま扱える。
 
 ## 試験と残件
 
 `workers/api/tests/providers/hot-pepper/` は、allowlist と API body error、HTTP status、timeout/cancel、キーなし、fixture/live 分離、同名支店・近接曖昧・移転、LO/`close`、価格単位、施設値、出典競合、field policy を検証する。全 fixture は生成データであり、live provider の成功を証明しない。
 
-この単位の後に、既存 Places Details Port の optional capability 合成、実 production host の provider 構成、M35 の実キー検収を別単位で行う。HP を基本検索の必須依存にはしない。
+この単位で既存 Places Details Port の optional capability 合成と production factory 接続まで検証する。実キー・実アカウント・課金・利用許諾の検収、live verified policy の有効化は M35 の別単位で行う。HP を基本検索の必須依存にはしない。
 
 ## 参照
 

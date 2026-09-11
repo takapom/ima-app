@@ -33,6 +33,7 @@ import {
   capabilitiesWithProviders,
   cardEvidenceResolver,
   createRuntimeProductionProviders,
+  hotPepperRuntimeModeFor,
   runtimeProductionProviderAvailabilityFor,
   type RuntimeProductionProviderAvailability,
 } from './runtime-production-provider-config';
@@ -164,6 +165,16 @@ const defaultPlan = (
     ...(input.request.deviceId === undefined ? {} : { deviceId: input.request.deviceId }),
   });
   const modelFromConfiguredProvider = overrides.modelForTurn === undefined;
+  const cardEvidence = cardEvidenceResolver(
+    registry,
+    input.context,
+    providerAvailability.hotPepperEnabled && overrides.hotPepperFieldPolicy !== undefined
+      ? {
+          hotPepperFieldPolicy: overrides.hotPepperFieldPolicy,
+          hotPepperMode: hotPepperRuntimeModeFor(env) ?? 'live',
+        }
+      : {},
+  );
   return {
     model: overrides.modelForTurn ?? createLiveOpenAIProvider(env).model,
     ...(modelFromConfiguredProvider ? { modelTraceProvider: 'openai' as const } : {}),
@@ -180,7 +191,7 @@ const defaultPlan = (
     publicResponse: {
       textRetention: turnRetention,
       cardSetId,
-      resolveCardEvidence: cardEvidenceResolver(registry, input.context),
+      resolveCardEvidence: cardEvidence,
       ...(provider.preparePhotoTokens === undefined
         ? {}
         : { preparePhotoTokens: provider.preparePhotoTokens }),

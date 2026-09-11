@@ -1,4 +1,13 @@
 import type { CandidateObservationRegistry, PlaceDetailsPort, PlaceSearchPort } from '@ima/core';
+import {
+  createConfiguredHotPepperAdapter,
+  type HotPepperEnvironment,
+} from '../providers/hot-pepper/adapter';
+import {
+  createHotPepperDetailsOverlay,
+  createHotPepperReuseFilter,
+} from '../providers/hot-pepper/composition';
+import { denyHotPepperFieldPolicy } from '../providers/hot-pepper/types';
 import { normalizeGoogleOpeningHours } from '../providers/places/hours';
 import { createPlacesDetailsAdapter } from '../providers/places-details/adapter';
 import { createGooglePlaceDetailsTransport } from '../providers/places-details/transport';
@@ -26,6 +35,30 @@ import {
 } from './runtime-saved-reference-production';
 import type { ProductionBuildInput, RuntimeProductionOverrides } from './runtime-production-types';
 import type { ProductionIds } from './runtime-production-support';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const hotPepperEnvironmentFor = (
+  environment: unknown,
+  apiKey: string | undefined,
+): HotPepperEnvironment => {
+  const source = isRecord(environment) ? environment : {};
+  const result: {
+    -readonly [Key in keyof HotPepperEnvironment]?: HotPepperEnvironment[Key];
+  } = {};
+  if ('IMA_RUNTIME_MODE' in source) result.IMA_RUNTIME_MODE = source.IMA_RUNTIME_MODE;
+  if ('IMA_PROVIDER_HOTPEPPER' in source) {
+    result.IMA_PROVIDER_HOTPEPPER = source.IMA_PROVIDER_HOTPEPPER;
+  }
+  if ('IMA_KILL_SWITCH' in source) result.IMA_KILL_SWITCH = source.IMA_KILL_SWITCH;
+  if (apiKey !== undefined) {
+    result.HOTPEPPER_API_KEY = apiKey;
+  } else if ('HOTPEPPER_API_KEY' in source) {
+    result.HOTPEPPER_API_KEY = source.HOTPEPPER_API_KEY;
+  }
+  return result;
+};
 
 export type RuntimeProductionPlacePorts = {
   readonly search: PlaceSearchPort;
@@ -112,6 +145,39 @@ export const createRuntimeProductionPlacePorts = (input: {
     ...(input.overrides.fetcher === undefined ? {} : { fetcher: input.overrides.fetcher }),
     ...(input.providerTraceObserver === undefined ? {} : { observer: input.providerTraceObserver }),
   });
+  const hotPepperFieldPolicy = input.overrides.hotPepperFieldPolicy;
+  const hotPepperProviderInputPolicy = input.overrides.hotPepperProviderInputPolicy;
+  const hotPepperObservationPolicy =
+    input.overrides.hotPepperObservationPolicy === undefined
+      ? undefined
+      : capProductionObservationPolicy(
+          input.overrides.hotPepperObservationPolicy,
+          input.fixedSessionExpiresAt,
+        );
+  const hotPepperCandidateReferenceFor = input.overrides.hotPepperCandidateReferenceFor;
+  const hotPepper =
+    input.providerAvailability.hotPepperEnabled &&
+    hotPepperFieldPolicy !== undefined &&
+    hotPepperProviderInputPolicy !== undefined &&
+    hotPepperObservationPolicy !== undefined &&
+    hotPepperCandidateReferenceFor !== undefined
+      ? createConfiguredHotPepperAdapter(
+          hotPepperEnvironmentFor(input.env, input.overrides.hotPepperApiKey),
+          {
+            policy: hotPepperFieldPolicy,
+            providerInputPolicy: hotPepperProviderInputPolicy,
+            ...(input.overrides.hotPepperTransport === undefined
+              ? {}
+              : { transport: input.overrides.hotPepperTransport }),
+            ...(input.overrides.hotPepperFetcher === undefined
+              ? {}
+              : { fetcher: input.overrides.hotPepperFetcher }),
+            ...(input.providerTraceObserver === undefined
+              ? {}
+              : { observer: input.providerTraceObserver }),
+          },
+        )
+      : undefined;
   const savedNamespace = runtimeSavedReferenceNamespaceFor(input.env);
   const savedReference =
     savedNamespace === undefined
@@ -129,7 +195,7 @@ export const createRuntimeProductionPlacePorts = (input: {
             : { requestSignal: input.build.request.signal }),
           signalFor: input.build.attemptSignalBridge.signalFor,
         });
-  details = createPlacesDetailsAdapter({
+  const placesDetails = createPlacesDetailsAdapter({
     transport: detailsTransport,
     registry: input.registry,
     clock: productionClockPort(input.clock),
@@ -141,5 +207,25 @@ export const createRuntimeProductionPlacePorts = (input: {
       ? {}
       : { originRefFor: input.overrides.currentOriginRefFor }),
   });
+  if (
+    hotPepper !== undefined &&
+    hotPepperFieldPolicy !== undefined &&
+    hotPepperObservationPolicy !== undefined &&
+    hotPepperCandidateReferenceFor !== undefined
+  ) {
+    details = createHotPepperDetailsOverlay({
+      inner: placesDetails,
+      adapter: hotPepper,
+      registry: input.registry,
+      clock: productionClockPort(input.clock),
+      observationPolicy: hotPepperObservationPolicy,
+      fieldPolicy: hotPepperFieldPolicy,
+      candidateReferenceFor: hotPepperCandidateReferenceFor,
+      reserveProviderRequest: () => input.budget.reserveProviderRequest().ok,
+      signalFor: input.build.attemptSignalBridge.signalFor,
+    });
+  } else {
+    details = createHotPepperReuseFilter(placesDetails, denyHotPepperFieldPolicy, 'live');
+  }
   return { search, details, ...(savedReference === undefined ? {} : { savedReference }) };
 };

@@ -20,6 +20,14 @@ import type { RouteWaypointResolver } from '../providers/routes/resolver';
 import type { RuntimeProviderTransportObserver } from '../providers/telemetry/runtime-provider-trace-contract';
 import type { JourneyServiceDateContextBuilder } from '../providers/last-train/port';
 import type { LastTrainObservationPolicy } from '../providers/last-train/registration';
+import { operationalCapabilityMode, resolveOperationalFlags } from '../telemetry/flags';
+import type { RuntimeProductionHotPepperConfiguration } from '../providers/hot-pepper/composition';
+import {
+  denyHotPepperFieldPolicy,
+  type HotPepperFieldPolicy,
+  type HotPepperRuntimeMode,
+} from '../providers/hot-pepper/types';
+import { reprojectHotPepperObservationRetention } from '../providers/hot-pepper/policy-projection';
 import type {
   RuntimeJourneyDataset,
   RuntimeLastTrainCompositionOptions,
@@ -37,24 +45,26 @@ export type RuntimeProductionProviderAvailability = {
   readonly lastTrainEnabled: boolean;
   readonly routesEnabled: boolean;
   readonly photosEnabled: boolean;
+  readonly hotPepperEnabled: boolean;
 };
 
 export const isConfiguredSecret = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
 
-export type RuntimeProductionAvailabilityConfiguration = RuntimeProductionPhotoConfiguration & {
-  /** Host-owned flag; omitted only by direct unit fixtures, where the capability is explicit. */
-  readonly lastTrainEnabled?: boolean;
-  readonly routesEnabled?: boolean;
-  readonly googleRoutesApiKey?: string;
-  readonly routeObservationPolicy?: WalkingRouteObservationPolicy;
-  readonly currentOriginRefFor?: (context: HarnessContext) => string | undefined;
-  readonly journeyDataset?: RuntimeJourneyDataset;
-  readonly buildServiceDateContext?: JourneyServiceDateContextBuilder;
-  readonly lastTrainObservationPolicy?: LastTrainObservationPolicy;
-  readonly fromStationRefFor?: RuntimeLastTrainCompositionOptions['fromStationRefFor'];
-  readonly resolveStationWaypoint?: RouteWaypointResolver;
-};
+export type RuntimeProductionAvailabilityConfiguration = RuntimeProductionPhotoConfiguration &
+  RuntimeProductionHotPepperConfiguration & {
+    /** Host-owned flag; omitted only by direct unit fixtures, where the capability is explicit. */
+    readonly lastTrainEnabled?: boolean;
+    readonly routesEnabled?: boolean;
+    readonly googleRoutesApiKey?: string;
+    readonly routeObservationPolicy?: WalkingRouteObservationPolicy;
+    readonly currentOriginRefFor?: (context: HarnessContext) => string | undefined;
+    readonly journeyDataset?: RuntimeJourneyDataset;
+    readonly buildServiceDateContext?: JourneyServiceDateContextBuilder;
+    readonly lastTrainObservationPolicy?: LastTrainObservationPolicy;
+    readonly fromStationRefFor?: RuntimeLastTrainCompositionOptions['fromStationRefFor'];
+    readonly resolveStationWaypoint?: RouteWaypointResolver;
+  };
 
 export type RuntimeProductionAvailabilityOptions = {
   readonly env: unknown;
@@ -94,12 +104,30 @@ export const runtimeProductionProviderAvailabilityFor = (
     input.configuration.photoDisplayPolicyFor !== undefined &&
     isConfiguredSecret(photoSecret) &&
     photoReferenceAvailable(input.env, input.configuration.photoReferenceResolver);
+  const hotPepperMode = operationalCapabilityMode(resolveOperationalFlags(input.env), 'hotpepper');
+  const hotPepperCredentialReady =
+    hotPepperMode === 'fixture'
+      ? input.configuration.hotPepperTransport !== undefined
+      : hotPepperMode === 'live'
+        ? isConfiguredSecret(
+            input.configuration.hotPepperApiKey ?? productionSecret(input.env, 'HOTPEPPER_API_KEY'),
+          )
+        : false;
+  const hotPepperEnabled =
+    input.placesEnabled &&
+    input.configuration.hotPepperEnabled === true &&
+    input.configuration.hotPepperCandidateReferenceFor !== undefined &&
+    input.configuration.hotPepperFieldPolicy !== undefined &&
+    input.configuration.hotPepperProviderInputPolicy !== undefined &&
+    input.configuration.hotPepperObservationPolicy !== undefined &&
+    hotPepperCredentialReady;
   return {
     activeJourneyRevision: input.activeJourneyRevision,
     placesEnabled: input.placesEnabled,
     lastTrainEnabled,
     routesEnabled,
     photosEnabled,
+    hotPepperEnabled,
   };
 };
 
@@ -114,6 +142,9 @@ export const capabilitiesWithProviders = (
   }
   if (availability.lastTrainEnabled && !detailFields.includes('last_train')) {
     detailFields.push('last_train');
+  }
+  if (availability.hotPepperEnabled && !detailFields.includes('facilities')) {
+    detailFields.push('facilities');
   }
   return {
     ...base,
@@ -139,22 +170,41 @@ const detailFieldFor = (field: string): DetailField | undefined => {
   }
 };
 
+export const hotPepperRuntimeModeFor = (env: unknown): HotPepperRuntimeMode | undefined => {
+  const mode = operationalCapabilityMode(resolveOperationalFlags(env), 'hotpepper');
+  return mode === 'fixture' || mode === 'live' ? mode : undefined;
+};
+
+export type RuntimeCardEvidenceResolverOptions = {
+  readonly hotPepperFieldPolicy?: HotPepperFieldPolicy;
+  readonly hotPepperMode?: HotPepperRuntimeMode;
+};
+
 export const cardEvidenceResolver =
   (
-    registry: CandidateObservationRegistryPort,
+    registry: Pick<CandidateObservationRegistryPort, 'readObservation'>,
     context: HarnessContext,
+    options: RuntimeCardEvidenceResolverOptions = {},
   ): NonNullable<RuntimePublicResponseDependencies['resolveCardEvidence']> =>
   (candidateId, evidenceId) => {
     const observation = registry.readObservation(productionScopeFor(context), evidenceId);
     if (observation === undefined || observation.candidateId !== candidateId) return undefined;
     const field = detailFieldFor(observation.field);
     if (field === undefined) return undefined;
+    const retention = reprojectHotPepperObservationRetention(
+      options.hotPepperFieldPolicy ?? denyHotPepperFieldPolicy,
+      options.hotPepperMode ?? 'live',
+      observation.field,
+      observation.sources,
+      observation.retention,
+    );
+    if (retention === undefined) return undefined;
     return {
       observationId: observation.observationId,
       candidateId: observation.candidateId,
       field,
       sources: observation.sources,
-      retention: observation.retention,
+      retention,
     };
   };
 

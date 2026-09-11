@@ -40,6 +40,7 @@ import type { RuntimeThinkTurnBuildRequest } from './runtime-think-connection';
 import type { RuntimeProviderTraceSink } from '../providers/telemetry/runtime-provider-trace';
 import type { SavedReferenceDetailsHandoff } from '../providers/places-details/handoff';
 import type { SavedPlaceReferenceResolver } from '../tools/types';
+import type { RuntimeProductionHotPepperConfiguration } from '../providers/hot-pepper/composition';
 
 export type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;
@@ -69,7 +70,7 @@ export type RuntimeProductionTurnPlan = {
   readonly onCommitted?: (response: unknown) => void;
 };
 
-export type RuntimeProductionOverrides = {
+export type RuntimeProductionOverrides = RuntimeProductionHotPepperConfiguration & {
   readonly prepareTurn?: (input: ProductionBuildInput) => RuntimeProductionTurnPlan;
   readonly modelForTurn?: RuntimeModelGuardModel;
   /** Optional Worker-owned sink for one trace record per actual SDK model call. */
