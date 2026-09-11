@@ -8,6 +8,7 @@ import {
   type ModelEvalPlacesResponseMode,
 } from './model-eval-place-fixture';
 import { LiveTraceRecorder } from '../../tooling/model-eval/live';
+import type { LiveSavedReferenceBinding } from '../../tooling/model-eval/saved-reference-live';
 import { fixtureModel } from './model-eval-context-model';
 import {
   type ModelEvalFixtureDisplayNamePolicy,
@@ -112,6 +113,10 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     this.fixtureResolvedSavedPlaceEvidenceIds.length = 0;
   }
 
+  configureModelEvalSavedReference(binding: LiveSavedReferenceBinding | null): void {
+    this.fixtureTrace.configureSavedReferenceBindings(binding === null ? [] : [binding]);
+  }
+
   protected override runtimeProductionNow(): string {
     return this.fixtureNow;
   }
@@ -131,6 +136,10 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
 
   getModelEvalFixtureCandidateIdentities() {
     return this.fixtureTrace.snapshot().candidateIdentities;
+  }
+
+  getModelEvalFixtureRecorderTrace() {
+    return this.fixtureTrace.snapshot();
   }
 
   getModelEvalFixtureDetailsRequests(): readonly (readonly string[])[] {

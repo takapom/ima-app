@@ -24,13 +24,17 @@ import {
   observeStructuredEvidenceReferences,
 } from './message-evidence';
 import { savedRefsFor } from './saved-reference';
+import { LIVE_MODEL_VERSION, LIVE_PROMPT_VERSION } from './live-cli';
+import {
+  savedReferenceObservationsFromPrompt,
+  type LiveSavedReferenceBinding,
+} from './saved-reference-live';
 import type {
   LiveProbeArtifact,
   LiveProbeAttempt,
   LiveProbeFailure,
   LiveProbeProfile,
   LiveTraceSnapshot,
-  ModelEvalLiveCliCode,
 } from './live-types';
 
 export type {
@@ -39,32 +43,18 @@ export type {
   LiveProbeFailure,
   LiveProbeProfile,
   LiveTraceSnapshot,
-  ModelEvalLiveCliCode,
 } from './live-types';
 
-export const LIVE_MODEL_VERSION = 'openai:gpt-5.6-luna' as const;
-export const LIVE_PROMPT_VERSION = 'm25-production-default-v1' as const;
-
-export type LiveOptIn =
-  | { readonly enabled: true }
-  | {
-      readonly enabled: false;
-      readonly code: 'LIVE_FLAG_REQUIRED' | 'MODEL_PROVIDER_KEY_MISSING';
-    };
+export {
+  LIVE_MODEL_VERSION,
+  LIVE_PROMPT_VERSION,
+  resolveModelEvalLiveOptIn,
+  runModelEvalLiveCli,
+  type LiveOptIn,
+} from './live-cli';
 
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
-
-export const resolveModelEvalLiveOptIn = (env: unknown): LiveOptIn => {
-  const values = record(env) ? env : {};
-  if (values.MODEL_EVAL_LIVE !== '1' && values.MODEL_EVAL_LIVE !== 'true') {
-    return { enabled: false, code: 'LIVE_FLAG_REQUIRED' };
-  }
-  if (typeof values.OPENAI_API_KEY !== 'string' || values.OPENAI_API_KEY.trim() === '') {
-    return { enabled: false, code: 'MODEL_PROVIDER_KEY_MISSING' };
-  }
-  return { enabled: true };
-};
 
 const numericProperty = (value: unknown, key: string): number | null => {
   if (!record(value)) return null;
@@ -104,14 +94,32 @@ export class LiveTraceRecorder {
   private readonly names: string[] = [];
   private readonly candidateIdentityCapture = createCandidateIdentityCapture();
   private readonly evidenceReferenceCapture = createEvidenceReferenceCapture();
+  private savedReferenceBindings: readonly LiveSavedReferenceBinding[] = [];
+  private readonly resolvedSavedPlaceRefs = new Set<string>();
   private locationExposed = false;
   private upstream = 0;
+
+  configureSavedReferenceBindings(bindings: readonly LiveSavedReferenceBinding[]): void {
+    this.savedReferenceBindings = [...bindings];
+    this.resolvedSavedPlaceRefs.clear();
+  }
 
   begin(prompt: unknown): void {
     this.startedCalls += 1;
     this.startedAt = performance.now();
     this.locationExposed ||= containsRestrictedLocation(prompt);
     observeStructuredEvidenceReferences(prompt, this.evidenceReferenceCapture);
+    for (const observation of savedReferenceObservationsFromPrompt(
+      prompt,
+      this.savedReferenceBindings,
+    )) {
+      this.resolvedSavedPlaceRefs.add(observation.semanticRef);
+      this.candidateIdentityCapture.observe({
+        provider: observation.provider,
+        recordRef: observation.recordRef,
+        candidateId: observation.candidateId,
+      });
+    }
   }
 
   finish(usage: unknown): void {
@@ -178,6 +186,7 @@ export class LiveTraceRecorder {
       candidateIdentityMapAvailable: this.candidateIdentityCapture.isUsable(),
       evidenceReferences: this.evidenceReferenceCapture.snapshot(),
       evidenceReferenceMapAvailable: this.evidenceReferenceCapture.isUsable(),
+      resolvedSavedPlaceRefs: [...this.resolvedSavedPlaceRefs],
     };
   }
 }
@@ -460,33 +469,4 @@ export const writeLiveProbeArtifact = (
   write: (line: string) => void,
 ): void => {
   write(JSON.stringify(artifact));
-};
-
-/** Preflight only; the paid call is made by the dedicated Worker test, never this CLI. */
-export const runModelEvalLiveCli = (
-  args: readonly string[],
-  env: unknown,
-  write: (line: string) => void,
-): ModelEvalLiveCliCode => {
-  if (!args.includes('--live')) {
-    write(
-      JSON.stringify({ mode: 'model-eval-live', status: 'skipped', code: 'LIVE_FLAG_REQUIRED' }),
-    );
-    return 2;
-  }
-  const optIn = resolveModelEvalLiveOptIn({ ...(record(env) ? env : {}), MODEL_EVAL_LIVE: '1' });
-  if (!optIn.enabled) {
-    write(JSON.stringify({ mode: 'model-eval-live', status: 'skipped', code: optIn.code }));
-    return 2;
-  }
-  write(
-    JSON.stringify({
-      mode: 'model-eval-live',
-      status: 'worker-required',
-      provider: 'openai',
-      model: LIVE_MODEL_VERSION,
-      costUsd: null,
-    }),
-  );
-  return 2;
 };

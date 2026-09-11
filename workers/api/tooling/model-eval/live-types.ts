@@ -25,6 +25,8 @@ export type LiveTraceSnapshot = {
   readonly evidenceReferences?: readonly RuntimeEvidenceReference[];
   /** False/absent means message evidence cannot be joined for automatic evaluation. */
   readonly evidenceReferenceMapAvailable?: boolean;
+  /** Semantic saved aliases observed in structured Details results; opaque refs are omitted. */
+  readonly resolvedSavedPlaceRefs?: readonly string[];
 };
 
 export type ModelEvalLiveCliCode = 0 | 1 | 2;

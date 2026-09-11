@@ -43,6 +43,7 @@ type SavedReferenceRun = {
     readonly resolvedSavedPlaceCandidateIds: readonly string[];
     readonly resolvedSavedPlaceEvidenceIds: readonly string[];
   };
+  readonly recorderTrace: LiveTraceSnapshot;
 };
 
 const testEnv = (): SavedReferenceTestEnv => {
@@ -113,6 +114,7 @@ const runSavedReference = async (input: {
       ...(input.threadCreatedAt === undefined ? {} : { threadCreatedAt: input.threadCreatedAt }),
     },
   );
+  await stub.configureModelEvalSavedReference(input.binding);
   const runtimeCase = {
     ...evaluationCase,
     context: { ...evaluationCase.context, savedPlaceRefs: [input.binding.runtimeRef] },
@@ -139,6 +141,7 @@ const runSavedReference = async (input: {
     result,
     response: parsed.success ? parsed.output : undefined,
     trace: await stub.getModelEvalFixtureTrace(),
+    recorderTrace: await stub.getModelEvalFixtureRecorderTrace(),
   };
 };
 
@@ -168,6 +171,7 @@ describe('saved-place-reference fixture through the owner DO and production runt
     expect(JSON.stringify(run.response)).not.toContain(binding.runtimeRef);
     expect(await run.stub.getModelEvalFixtureSavedReferenceRequests()).toEqual(['saved-place-a']);
     expect(run.trace.resolvedSavedPlaceRefs).toEqual(['saved-place-a']);
+    expect(run.recorderTrace.resolvedSavedPlaceRefs).toEqual(['saved-place-a']);
     expect(run.trace.resolvedSavedPlaceCandidateIds).toHaveLength(1);
     expect(run.trace.resolvedSavedPlaceCandidateIds[0]).toMatch(/^runtime-candidate-/u);
     expect(run.trace.toolNames).not.toContain('search_places');
@@ -179,6 +183,13 @@ describe('saved-place-reference fixture through the owner DO and production runt
     const identities = await run.stub.getModelEvalFixtureCandidateIdentities();
     expect(identities).toHaveLength(1);
     expect(identities[0]?.recordRef).toBe('eval-place-a');
+    expect(run.recorderTrace.candidateIdentities).toEqual([
+      {
+        provider: 'google_places',
+        recordRef: 'eval-place-a',
+        candidateId: run.trace.resolvedSavedPlaceCandidateIds[0],
+      },
+    ]);
     const mapping = identityMappingFor(identities);
     expect(mapping.pairs).toEqual([
       {
@@ -205,7 +216,7 @@ describe('saved-place-reference fixture through the owner DO and production runt
     if (!converted.ok) return;
     expect(converted.run.trace.resolvedSavedPlaceRefs).toEqual(['saved-place-a']);
     expect(converted.run.trace.selectedCandidateIds).toEqual(['candidate-a']);
-    expect(liveEvaluationProfileFor(run.evaluationCase)).toBeNull();
+    expect(liveEvaluationProfileFor(run.evaluationCase)).toBe('saved-place-reference');
   });
 
   it('withholds the reference when the owner shard does not match', async () => {
@@ -261,7 +272,7 @@ describe('saved-place-reference fixture through the owner DO and production runt
       kind: 'saved_reference',
       requiresApiKey: false,
     });
-    expect(liveEvaluationProfileFor(evaluationCase)).toBeNull();
+    expect(liveEvaluationProfileFor(evaluationCase)).toBe('saved-place-reference');
   });
 
   it('does not admit opaque or unknown aliases into the evaluation trace', () => {
