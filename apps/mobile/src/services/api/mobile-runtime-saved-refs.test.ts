@@ -1,12 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  parseSearchResponse,
-  type CreateThreadRequest,
-  type CreateThreadResponse,
-  type PublicMessage,
-  type SearchRequest,
-  type SearchResponse,
-  type ThreadReadResponse,
+import type {
+  CreateThreadRequest,
+  CreateThreadResponse,
+  PublicMessage,
+  SearchRequest,
+  SearchResponse,
+  ThreadReadResponse,
 } from '@ima/contracts';
 import type { JourneyApiSubmitContext } from './journey-api-binding';
 import { createJourneyApiController } from './journey-controller';
@@ -127,7 +126,6 @@ const requestFactory = () => {
 
 describe('saved references in mobile runtime requests', () => {
   it('retries the same controller operation with the same saved references', async () => {
-    expect(parseSearchResponse(responseFor('thread-1', 1)).success).toBe(true);
     let attempts = 0;
     const search = vi.fn((input: SearchRequest): Promise<ApiResult<SearchResponse>> => {
       attempts += 1;

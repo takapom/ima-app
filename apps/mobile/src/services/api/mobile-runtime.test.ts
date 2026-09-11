@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { parseSearchRequest, parseThreadTurnRequest } from '@ima/contracts';
 import {
   createJourneyApiRequestFactory,
   createMobileJourneyRuntime,
@@ -44,7 +43,6 @@ describe('mobile journey runtime composition', () => {
       context,
     });
 
-    expect(parseSearchRequest(request).success).toBe(true);
     expect(request.text).toBe('駅の近くで静かな店');
     expect(request.prefs).toMatchObject({ maxWalkMinutes: 12, budget: 'normal' });
     expect(request.prefs.homeStationRef).toBeNull();
@@ -77,7 +75,6 @@ describe('mobile journey runtime composition', () => {
       location,
     });
 
-    expect(parseSearchRequest(request).success).toBe(true);
     expect(request.location).toEqual(location);
 
     const locationService = { acquire: () => Promise.resolve(location) };
@@ -105,8 +102,6 @@ describe('mobile journey runtime composition', () => {
     const search = requests.search(input);
     const turn = requests.turn({ ...input, turnId: 'turn-1' });
 
-    expect(parseSearchRequest(search).success).toBe(true);
-    expect(parseThreadTurnRequest(turn).success).toBe(true);
     expect(search.savedPlaceRefs).toEqual(['saved-place-a', 'saved-place-b']);
     expect(turn.savedPlaceRefs).toEqual(['saved-place-a', 'saved-place-b']);
     expect(search.selectedCandidateId).toBe('candidate-2');

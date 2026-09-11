@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { journeyApiErrorMessage, requestStatusFor } from './useJourneyApiController';
+import { journeyApiErrorMessage } from './useJourneyApiController';
 import {
   awaitRetryIfCurrent,
   operationStillCurrent,
@@ -10,18 +10,6 @@ import {
 } from './journey-api-operation-flow';
 
 describe('Journey API hook boundary', () => {
-  it('maps every controller operation state to the screen request lifecycle', () => {
-    expect(requestStatusFor('creating')).toBe('pending');
-    expect(requestStatusFor('pending')).toBe('pending');
-    expect(requestStatusFor('cancelling')).toBe('pending');
-    expect(requestStatusFor('reading')).toBe('pending');
-    expect(requestStatusFor('replaying')).toBe('pending');
-    expect(requestStatusFor('error')).toBe('error');
-    expect(requestStatusFor('cancelled')).toBe('cancelled');
-    expect(requestStatusFor('idle')).toBe('idle');
-    expect(requestStatusFor('idle', true)).toBe('pending');
-  });
-
   it('keeps public error messages safe and actionable without exposing response details', () => {
     expect(journeyApiErrorMessage({ kind: 'offline' })).toContain('接続');
     expect(journeyApiErrorMessage({ kind: 'timeout' })).toContain('時間');

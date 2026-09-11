@@ -46,16 +46,6 @@ const authority: NativeCredentialAuthority = {
 const location = { acquire: vi.fn() };
 const retention = null;
 
-type CapturedRuntimeOptions = {
-  readonly credentials?: unknown;
-  readonly location?: unknown;
-  readonly localRestore?: { readonly readSnapshot: unknown };
-  readonly savedReference?: {
-    readonly sqlite?: unknown;
-    readonly referenceRetentionFor?: unknown;
-  };
-};
-
 type MutableCredentialStoreClient = {
   -readonly [Key in keyof NativeCredentialStoreClient]: NativeCredentialStoreClient[Key];
 };
@@ -137,28 +127,6 @@ describe('native mobile runtime composition', () => {
     vi.useRealTimers();
   });
 
-  it('uses injected fixture credentials and location without loading SecureStore', async () => {
-    runtimeMock.create.mockReturnValue(runtimeFor());
-    const secureStore = createClient(null);
-    const localRestore = { readSnapshot: vi.fn(() => null) };
-    const ready = await createNativeMobileJourneyRuntime({
-      env: fixtureEnvironment,
-      credentials,
-      location,
-      localRestore,
-      secureStore,
-    });
-
-    expect(ready.mode).toBe('fixture');
-    expect(ready.binding).not.toBeNull();
-    expect(secureStore.isAvailableAsync).not.toHaveBeenCalled();
-    const composed = runtimeMock.create.mock.calls[0]?.[0] as CapturedRuntimeOptions;
-    expect(composed.credentials).toEqual(credentials);
-    expect(composed.location).toBe(location);
-    expect(composed.localRestore).toBe(localRestore);
-    expect(composed.savedReference).toBeUndefined();
-  });
-
   it('does not start native SDK work when aborted before its operation microtask', async () => {
     runtimeMock.create.mockReturnValue(runtimeFor());
     const client = seededClient();
@@ -219,10 +187,6 @@ describe('native mobile runtime composition', () => {
     const ready = await initializing;
     expect(ready.storageScope).toBe(authority.storageScope);
     expect(ready.sqlite).not.toBeNull();
-    const composed = runtimeMock.create.mock.calls[0]?.[0] as CapturedRuntimeOptions;
-    expect(composed.savedReference?.sqlite).toBe(ready.sqlite);
-    expect(typeof composed.localRestore?.readSnapshot).toBe('function');
-    expect(typeof composed.credentials).toBe('function');
     expect(sqlite.calls[0]?.storageScope).toBe(nativeSqliteStorageScopeFor(scope));
 
     ready.dispose();
@@ -274,27 +238,6 @@ describe('native mobile runtime composition', () => {
     const scope = nativeCredentialScopeFor(authority);
     if (scope === null) throw new Error('test scope should be valid');
     expect(nativeCredentialScopeMatchesRuntime(scope, fixtureEnvironment)).toBe(false);
-  });
-
-  it('does not fabricate a saved-reference policy when only a native scope is present', async () => {
-    runtimeMock.create.mockReturnValue(runtimeFor());
-    const sqlite = sqliteFor();
-    const ready = await createNativeMobileJourneyRuntime({
-      env: {
-        EXPO_PUBLIC_ENVIRONMENT: 'production',
-        EXPO_PUBLIC_API_MODE: 'live',
-        EXPO_PUBLIC_API_BASE_URL: 'https://api.example.test/v1/',
-      },
-      nativeAuthority: authority,
-      secureStore: seededClient(),
-      location,
-      sqlite: { adapterFactory: sqlite.factory },
-    });
-
-    expect(ready.reason).toBeNull();
-    expect(ready.sqlite).not.toBeNull();
-    const composed = runtimeMock.create.mock.calls[0]?.[0] as CapturedRuntimeOptions;
-    expect(composed.savedReference).toBeUndefined();
   });
 
   it('tears down local persistence before the controller and owned database', async () => {

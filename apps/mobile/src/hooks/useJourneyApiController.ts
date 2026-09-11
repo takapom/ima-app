@@ -74,7 +74,7 @@ const emptyState: JourneyApiControllerState = {
 const noSubscribe = (): (() => void) => () => undefined;
 const noSnapshot = (): JourneyApiControllerState => emptyState;
 
-export const requestStatusFor = (
+const requestStatusFor = (
   status: JourneyApiControllerState['status'],
   locationPending = false,
 ): JourneyApiRequestStatus => {
