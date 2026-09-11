@@ -66,8 +66,8 @@ const runFixture = async (responseMode: ModelEvalPlacesResponseMode) => {
   return { evaluationCase, response: parsed.output, result, stub };
 };
 
-describe('candidate-failure fixture profile through the production adapter and one DO', () => {
-  it('declares a fixture-only profile without changing the canonical scenario', () => {
+describe('candidate-failure profile through the production adapter and one DO', () => {
+  it('keeps the canonical fixture input and exposes its live profile', () => {
     const evaluationCase = scenarioFor('candidate-failure');
     expect(evaluationCase.userTurns).toEqual(['条件に合う店がないなら、分かる範囲で教えて。']);
     expect(evaluationCase.context.now).toBe(MODEL_EVAL_NOW);
@@ -76,7 +76,7 @@ describe('candidate-failure fixture profile through the production adapter and o
       kind: 'failure_response',
       requiresApiKey: false,
     });
-    expect(liveEvaluationProfileFor(evaluationCase)).toBeNull();
+    expect(liveEvaluationProfileFor(evaluationCase)).toBe('candidate-failure');
   });
 
   it('keeps an upstream failure distinct from an empty successful search', async () => {

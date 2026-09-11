@@ -10,7 +10,9 @@ export type LiveEvaluationProfile =
   | 'decide-action'
   | 'clarify-ambiguity'
   | 'specific-place'
-  | 'repair';
+  | 'repair'
+  | 'candidate-failure'
+  | 'prompt-injection';
 
 export type LiveEvaluationTiming = {
   readonly preludeClientNow?: string;
@@ -48,6 +50,8 @@ const profileFor: Partial<Record<ScenarioId, LiveEvaluationProfile>> = {
   'decide-action': 'decide-action',
   'clarify-ambiguity': 'clarify-ambiguity',
   repair: 'repair',
+  'candidate-failure': 'candidate-failure',
+  'prompt-injection': 'prompt-injection',
 };
 
 /** Returns the only scenarios that have an executable live turn shape. */
@@ -69,7 +73,13 @@ export const createLiveEvaluationTurnPlan = (
   if (extra.length > 0 || first === undefined) {
     return { ok: false, code: 'LIVE_TURN_SHAPE_UNSUPPORTED' };
   }
-  if (profile === 'new-search' || profile === 'condition-change' || profile === 'mixed-intent') {
+  if (
+    profile === 'new-search' ||
+    profile === 'condition-change' ||
+    profile === 'mixed-intent' ||
+    profile === 'candidate-failure' ||
+    profile === 'prompt-injection'
+  ) {
     if (second !== undefined) return { ok: false, code: 'LIVE_TURN_SHAPE_UNSUPPORTED' };
     return {
       ok: true,

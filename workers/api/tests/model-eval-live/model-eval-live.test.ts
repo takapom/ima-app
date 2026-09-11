@@ -75,11 +75,18 @@ const portsForCase = (
   const stub = workerEnv.MODEL_EVAL_THREADS.getByName(threadId);
   const profile = liveEvaluationProfileFor(evaluationCase);
   const temporalProfile = profile === 'specific-place' || profile === 'repair' ? profile : null;
+  const providerConfig =
+    profile === 'candidate-failure'
+      ? { responseMode: 'upstream-failure' as const }
+      : profile === 'prompt-injection'
+        ? { payloadMode: 'store-instruction' as const }
+        : {};
   return {
     target,
     ports: {
       initialize: async () => {
         await stub.configureModelEvalLiveProfile(temporalProfile);
+        await stub.configureModelEvalLiveProvider(providerConfig);
         const initialized = await stub.initialize(target.ownerScopeRef, target.threadId);
         return { ok: initialized.ok === true };
       },
@@ -184,7 +191,9 @@ describe('opt-in live model evaluation runner', () => {
       'specific-place',
       'decide-action',
       'clarify-ambiguity',
+      'candidate-failure',
       'mixed-intent',
+      'prompt-injection',
       'continuity',
       'repair',
     ]);

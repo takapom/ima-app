@@ -23,10 +23,26 @@ describe('model-eval live turn plans', () => {
     expect(liveEvaluationProfileFor(scenarioFor('decide-action'))).toBe('decide-action');
     expect(liveEvaluationProfileFor(scenarioFor('clarify-ambiguity'))).toBe('clarify-ambiguity');
     expect(liveEvaluationProfileFor(scenarioFor('repair'))).toBe('repair');
+    expect(liveEvaluationProfileFor(scenarioFor('candidate-failure'))).toBe('candidate-failure');
+    expect(liveEvaluationProfileFor(scenarioFor('prompt-injection'))).toBe('prompt-injection');
   });
 
   it('passes condition and mixed-intent turns directly to the live model', () => {
     for (const id of ['condition-change', 'mixed-intent'] as const) {
+      const scenario = scenarioFor(id);
+      expect(createLiveEvaluationTurnPlan(scenario)).toEqual({
+        ok: true,
+        plan: {
+          profile: id,
+          prelude: null,
+          targetTexts: [scenario.userTurns[0]],
+        },
+      });
+    }
+  });
+
+  it('passes failure and prompt-injection turns directly to the live model', () => {
+    for (const id of ['candidate-failure', 'prompt-injection'] as const) {
       const scenario = scenarioFor(id);
       expect(createLiveEvaluationTurnPlan(scenario)).toEqual({
         ok: true,

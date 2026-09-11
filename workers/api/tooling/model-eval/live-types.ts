@@ -1,5 +1,6 @@
 import type { AssistantResponse } from '@ima/contracts';
 import type { RuntimeCandidateIdentity } from './candidate-mapping';
+import type { LiveEvaluationProfile } from './live-plan';
 import type { EvaluationReport, EvaluationRun } from './types';
 
 export type LiveTraceSnapshot = {
@@ -24,17 +25,7 @@ export type LiveTraceSnapshot = {
 
 export type ModelEvalLiveCliCode = 0 | 1 | 2;
 
-export type LiveProbeProfile =
-  | 'new-search'
-  | 'condition-change'
-  | 'mixed-intent'
-  | 'reason'
-  | 'continuity'
-  | 'compare'
-  | 'decide-action'
-  | 'clarify-ambiguity'
-  | 'specific-place'
-  | 'repair';
+export type LiveProbeProfile = LiveEvaluationProfile;
 
 export type LiveProbeAttemptStatus = 'evaluated' | 'unverified_mapping' | 'runtime_failed';
 

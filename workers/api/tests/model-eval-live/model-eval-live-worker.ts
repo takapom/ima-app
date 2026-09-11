@@ -17,10 +17,16 @@ import {
 import {
   fixtureModel,
   type ModelEvalFixturePhase,
+  type ModelEvalFixtureProfile,
   type ModelEvalFixtureStep,
 } from './model-eval-context-model';
 import type { ModelEvalFixtureEvidenceSnapshot } from './model-eval-context-output';
-import { fixedPlacesFetcher, MODEL_EVAL_NOW } from './model-eval-place-fixture';
+import {
+  fixedPlacesFetcher,
+  MODEL_EVAL_NOW,
+  type ModelEvalPlacePayloadMode,
+  type ModelEvalPlacesResponseMode,
+} from './model-eval-place-fixture';
 
 export {
   fixedPlacesFetcher,
@@ -37,6 +43,11 @@ type ModelEvalEnv = Cloudflare.Env & {
 };
 
 type ModelEvalTemporalProfile = 'specific-place' | 'repair';
+
+type ModelEvalLiveProviderConfig = {
+  readonly responseMode?: ModelEvalPlacesResponseMode;
+  readonly payloadMode?: ModelEvalPlacePayloadMode;
+};
 
 const retentionFor = (sessionExpiresAt: string): RetentionMetadata => ({
   retentionDecision: 'allow',
@@ -75,6 +86,8 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
   private liveModel = 'unknown';
   private liveNow = MODEL_EVAL_NOW;
   private liveTemporalProfile: ModelEvalTemporalProfile | null = null;
+  private livePlacesResponseMode: ModelEvalPlacesResponseMode = 'normal';
+  private livePlacePayloadMode: ModelEvalPlacePayloadMode = 'normal';
   private captureRuntimeInput = false;
   private capturedRuntimeInput: ThreadRuntimeTurnInput | null = null;
 
@@ -103,6 +116,11 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
   configureModelEvalLiveProfile(profile: ModelEvalTemporalProfile | null): void {
     this.liveTemporalProfile = profile;
     this.liveNow = MODEL_EVAL_NOW;
+  }
+
+  configureModelEvalLiveProvider(config: ModelEvalLiveProviderConfig = {}): void {
+    this.livePlacesResponseMode = config.responseMode ?? 'normal';
+    this.livePlacePayloadMode = config.payloadMode ?? 'normal';
   }
 
   override async runRuntimeTurn(value: unknown): Promise<ThreadRuntimeTurnResult> {
@@ -162,7 +180,14 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
         record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,
       ) => this.liveTrace.observeCandidateIdentity(record),
       fetcher: (...args: Parameters<typeof fetch>) =>
-        fixedPlacesFetcher(this.liveTrace, this.liveNow)(...args),
+        fixedPlacesFetcher(
+          this.liveTrace,
+          this.liveNow,
+          undefined,
+          this.livePlacesResponseMode,
+          'normal',
+          this.livePlacePayloadMode,
+        )(...args),
       googlePlacesApiKey: 'model-eval-fixed-provider-key',
       placesCursorSecret: 'model-eval-fixed-cursor-secret',
       observationPolicy: policy,
@@ -180,7 +205,10 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
 /** Uses the production host/factory with the existing fixed model for keyless timing tests. */
 export class ModelEvalFixtureLiveThreadDO extends ModelEvalThreadDO {
   private fixturePhase: ModelEvalFixturePhase = 'cards';
-  private fixtureProfile: 'specific-place' | 'repair' = 'specific-place';
+  private fixtureProfile: Extract<
+    ModelEvalFixtureProfile,
+    'specific-place' | 'repair' | 'candidate-failure' | 'prompt-injection'
+  > = 'specific-place';
   private readonly fixtureTrace = new LiveTraceRecorder();
   private readonly fixtureSteps: ModelEvalFixtureStep[] = [];
   private readonly fixtureDetailsRequests: string[][] = [];
@@ -188,14 +216,21 @@ export class ModelEvalFixtureLiveThreadDO extends ModelEvalThreadDO {
 
   configureModelEvalLiveFixture(
     phase: ModelEvalFixturePhase,
-    profile: 'specific-place' | 'repair',
+    profile: Extract<
+      ModelEvalFixtureProfile,
+      'specific-place' | 'repair' | 'candidate-failure' | 'prompt-injection'
+    >,
+    providerConfig: ModelEvalLiveProviderConfig = {},
   ): void {
     this.fixturePhase = phase;
     this.fixtureProfile = profile;
     this.fixtureSteps.length = 0;
     this.fixtureDetailsRequests.length = 0;
     this.fixtureEvidenceSnapshots.length = 0;
-    this.configureModelEvalLiveProfile(profile);
+    this.configureModelEvalLiveProfile(
+      profile === 'specific-place' || profile === 'repair' ? profile : null,
+    );
+    this.configureModelEvalLiveProvider(providerConfig);
   }
 
   configureModelEvalLivePhase(phase: ModelEvalFixturePhase): void {
