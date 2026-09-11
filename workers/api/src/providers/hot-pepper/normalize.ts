@@ -24,7 +24,7 @@ const boundedText = (value: string | null | undefined, maxLength: number): strin
 const markerForLastOrder = /(?:L(?:[.．]\s*)?O(?:[.．])?|ラストオーダー)/iu;
 const lastOrderTime =
   /(?:(?:料理|ドリンク)\s*)?(?:L(?:[.．]\s*)?O(?:[.．])?|ラストオーダー)\s*[:：]?\s*(?:翌\s*)?\d{1,2}[:：]\d{2}/giu;
-const clockTime = /(?:翌\s*)?(\d{1,2})[:：](\d{2})/u;
+const clockTime = /(?:(翌)\s*)?(\d{1,2})[:：](\d{2})/u;
 type InvalidLastOrder = { readonly kind: 'invalid' };
 const invalidLastOrder: InvalidLastOrder = { kind: 'invalid' };
 
@@ -34,10 +34,16 @@ const lastOrderFor = (source: string | null): string | null | InvalidLastOrder =
   const matches = [...source.matchAll(lastOrderTime)].map((match) => match[0]);
   if (matches.length === 0) return invalidLastOrder;
   const times = matches.map((match) => clockTime.exec(match));
-  if (times.some((match) => match === null || Number(match[1]) > 29 || Number(match[2]) > 59)) {
+  if (times.some((match) => match === null || Number(match[2]) > 29 || Number(match[3]) > 59)) {
     return invalidLastOrder;
   }
-  const distinct = new Set(times.map((match) => `${match?.[1] ?? ''}:${match?.[2] ?? ''}`));
+  const distinct = new Set(
+    times.map((match) =>
+      match === null
+        ? ''
+        : `${match[1] === undefined ? 'same-day' : 'next-day'}:${match[2]}:${match[3]}`,
+    ),
+  );
   return distinct.size === 1 ? (matches[0] ?? invalidLastOrder) : invalidLastOrder;
 };
 
