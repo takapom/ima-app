@@ -40,13 +40,6 @@ const baseFiles = {
     "import type { Model } from '../domain/model.js';\nimport type { Port } from '../ports/index.js';\nexport type Application = (model: Model, port: Port) => void;\n",
   'packages/core/src/helpers/util.ts': 'export const helper = true;\n',
   'packages/core/src/adapters/index.ts': 'export const adapter = true;\n',
-  'packages/eval/package.json': JSON.stringify({
-    name: '@ima/eval',
-    exports: { '.': { types: './src/index.ts', default: './src/index.ts' } },
-    dependencies: { '@ima/core': 'workspace:*' },
-  }),
-  'packages/eval/src/index.ts':
-    "import type { Application } from '@ima/core';\nexport type Eval = Application;\n",
   'workers/api/package.json': JSON.stringify({ name: '@ima/api' }),
   'workers/api/src/index.ts': 'export const api = true;\n',
   'node_modules/react/package.json': JSON.stringify({
@@ -99,8 +92,8 @@ const cases = [
     rule: 'mobile-only-contracts',
   },
   {
-    name: 'api-cannot-import-eval',
-    source: "import '@ima/eval';\n",
+    name: 'api-cannot-import-mobile',
+    source: "import '../../../apps/mobile/src/index.js';\n",
     rule: 'api-only-contracts-core',
     target: 'workers/api/src/index.ts',
   },
@@ -205,14 +198,9 @@ const cases = [
     addManifestDependency: ['apps/mobile/package.json', '@ima/core'],
   },
   {
-    name: 'api-manifest-cannot-declare-eval-without-import',
+    name: 'api-manifest-cannot-declare-mobile-without-import',
     manifestRule: 'manifest-api-only-contracts-core',
-    addManifestDependency: ['workers/api/package.json', '@ima/eval'],
-  },
-  {
-    name: 'eval-manifest-cannot-declare-contracts-without-import',
-    manifestRule: 'manifest-eval-only-core',
-    addManifestDependency: ['packages/eval/package.json', '@ima/contracts'],
+    addManifestDependency: ['workers/api/package.json', '@ima/mobile'],
   },
   {
     name: 'vitest-is-allowed-only-for-test-runner',
@@ -265,7 +253,6 @@ function runFixture(testCase) {
     writeFixture(root, baseFiles);
     linkWorkspace(root, '@ima/contracts', '../../packages/contracts');
     linkWorkspace(root, '@ima/core', '../../packages/core');
-    linkWorkspace(root, '@ima/eval', '../../packages/eval');
     const sourcePath = testCase.target ?? 'apps/mobile/src/index.ts';
     if (testCase.source !== undefined) {
       writeFixture(root, { [sourcePath]: testCase.source });

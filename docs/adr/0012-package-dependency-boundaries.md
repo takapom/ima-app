@@ -1,9 +1,10 @@
 # ADR 0012: package境界で依存方向を固定する
 
-- **Status:** Accepted
+- **Status:** Accepted（0015 が eval 配置を部分上書き）
 - **Date:** 2026-09-09
 - **Deciders:** プロダクトオーナー
 - **Supersedes (in part):** [0006](./0006-lightweight-frontend-hexagonal-backend.md)のCoreをWorker内部へ配置する例と、共有契約をpackages/schemaとする配置。
+- **Superseded in part by:** [0015](./0015-eval-package-retired.md)
 
 ## Decision
 
@@ -15,14 +16,12 @@
 | `packages/contracts` | 公開HTTPリクエスト・応答、描画データとその検証schema | 他のアプリ内packageなし |
 | `packages/core` | Application、Domain、入力/出力Ports、観測・業務検証 | 他のアプリ内packageなし |
 | `workers/api` | HTTP、Cloudflare/LLM SDK、Tool Binding、外部Adapter、Bootstrap | contracts、core |
-| `packages/eval` | Core向けFixture Adapterと評価シナリオ。本番非配置 | core |
 
 ```mermaid
 flowchart TD
     Mobile[apps/mobile] --> Contracts[packages/contracts]
     API[workers/api] --> Contracts
     API --> Core[packages/core]
-    Eval[packages/eval] --> Core
 ```
 
 矢印はコードの依存方向。coreとcontractsは互いに依存せず、公開契約とCore内部型の変換はworkers/apiが担当する。schema検証等の必要な汎用ライブラリまで禁止するものではない。Cloudflare・AI・店舗provider SDKへの依存はCoreに認めない。
@@ -34,7 +33,7 @@ flowchart TD
 - モデル向けTool Bindingはworkers/api側の入力Adapter。Coreの能力契約やsubmit検証と分離する。
 - Bootstrapが具象Adapterを構成し、CoreのPortへ注入する。Coreから外側を直接importしない。
 - contractsへ業務処理や内部Portを移さない。mobileからCoreへ直接依存しない。
-- SDK/DO/HTTPを対象とする統合テストはworkers/api側で行う。Core向けevalのために本番packageからevalを参照しない。
+- SDK/DO/HTTPを対象とする統合テストはworkers/api側で行う。Coreの単体テストはcoreに置く。
 
 ## 境界を維持する仕組み
 

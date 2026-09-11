@@ -60,19 +60,13 @@ module.exports = {
       name: 'mobile-only-contracts',
       severity: 'error',
       from: { path: '^apps/mobile(?:/|$)' },
-      to: { path: '^(?:packages/core|packages/eval|workers/api)(?:/|$)' },
+      to: { path: '^(?:packages/(?!contracts(?:/|$))|workers/)' },
     },
     {
       name: 'api-only-contracts-core',
       severity: 'error',
       from: { path: '^workers/api(?:/|$)' },
-      to: { path: '^(?:apps/mobile|packages/eval)(?:/|$)' },
-    },
-    {
-      name: 'eval-only-core',
-      severity: 'error',
-      from: { path: '^packages/eval(?:/|$)' },
-      to: { path: '^(?:apps/mobile|packages/contracts|workers/api)(?:/|$)' },
+      to: { path: '^(?:apps/mobile(?:/|$)|packages/(?!(?:contracts|core)(?:/|$)))' },
     },
     {
       name: 'core-contracts-independent',
@@ -101,7 +95,7 @@ module.exports = {
     {
       name: 'no-cross-workspace-relative-import',
       severity: 'error',
-      from: { path: '^(?:apps/mobile|workers/api|packages/eval)(?:/|$)' },
+      from: { path: '^(?:apps/mobile|workers/api)(?:/|$)' },
       to: {
         path: '^packages/(?:contracts|core)(?:/|$)',
         dependencyTypes: ['local', 'aliased'],
@@ -112,7 +106,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^packages/contracts(?:/|$)' },
       to: {
-        path: '^packages/(?:core|eval)(?:/|$)',
+        path: '^packages/(?!contracts(?:/|$))',
         dependencyTypes: ['local', 'aliased'],
       },
     },
@@ -121,14 +115,14 @@ module.exports = {
       severity: 'error',
       from: { path: '^packages/core(?:/|$)' },
       to: {
-        path: '^packages/(?:contracts|eval)(?:/|$)',
+        path: '^packages/(?!core(?:/|$))',
         dependencyTypes: ['local', 'aliased'],
       },
     },
     {
       name: 'no-private-workspace-import-from-app',
       severity: 'error',
-      from: { path: '^(?:apps/mobile|workers/api|packages/eval)(?:/|$)' },
+      from: { path: '^(?:apps/mobile|workers/api)(?:/|$)' },
       to: { path: '^packages/(?:contracts|core)/(?!src/index\\.ts$)' },
     },
     {
@@ -146,7 +140,7 @@ module.exports = {
         path: '^(?:apps/mobile|workers/api|packages/contracts|packages/core)(?:/|$)',
         pathNot: '(^|/)(?:test|tests)(/|$)|\\.(?:test|spec)\\.[^/]+$',
       },
-      to: { path: '(^|/)(?:fixtures|packages/eval)(/|$)' },
+      to: { path: '(^|/)fixtures(/|$)' },
     },
     {
       name: 'core-domain-only-domain',

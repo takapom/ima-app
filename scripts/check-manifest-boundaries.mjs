@@ -10,10 +10,6 @@ const workspaceRules = {
     allowed: new Set(['@ima/contracts', '@ima/core']),
     rule: 'manifest-api-only-contracts-core',
   },
-  'packages/eval': {
-    allowed: new Set(['@ima/core']),
-    rule: 'manifest-eval-only-core',
-  },
   'packages/contracts': {
     allowed: new Set(),
     rule: 'manifest-contracts-independent',
