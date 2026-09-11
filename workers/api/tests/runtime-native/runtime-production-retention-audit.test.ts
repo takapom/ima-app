@@ -7,7 +7,7 @@ import {
   readRetentionWriteAudit,
   type RetentionSqlReader,
   type RetentionStorageReader,
-} from '../runtime-gate/retention/retention-audit';
+} from '../support/retention-audit';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,

@@ -7,7 +7,7 @@ import type {
   RetentionStorageReader,
   RetentionWriteAuditInstallReport,
   RetentionWriteAuditReport,
-} from './retention-audit';
+} from '../../support/retention-audit';
 import type { RetentionExpiryClock } from './retention-fixture';
 
 export type RetentionPolicy = 'allow' | 'deny' | 'unknown' | 'failure' | 'disconnect';

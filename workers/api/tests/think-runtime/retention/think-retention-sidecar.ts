@@ -4,7 +4,7 @@ import type { UIMessage } from 'ai';
 import {
   RetentionMessageMetadataSchema,
   type RetentionMessageMetadata,
-} from '../../runtime-gate/retention/retention-policy';
+} from '../../support/retention-policy';
 
 const SIDECAR_PREFIX = 'm04:retention:message:';
 

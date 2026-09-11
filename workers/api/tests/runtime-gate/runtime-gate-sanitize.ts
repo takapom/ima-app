@@ -1,7 +1,7 @@
 import type { UIMessage } from 'ai';
 import type { RetentionRuntimeContext } from './retention/retention-runtime-contract';
 import type { RetentionExpiryClock } from './retention/retention-fixture';
-import { parseRetentionMessage, sanitizeMessageForPersistence } from './retention/retention-policy';
+import { parseRetentionMessage, sanitizeMessageForPersistence } from '../support/retention-policy';
 
 /** Rebuild the server-owned envelope before applying the retention decision. */
 export function sanitizeRuntimeGateMessage(

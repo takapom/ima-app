@@ -2,7 +2,7 @@ import { env, runInDurableObject } from 'cloudflare:test';
 import { ThreadTurnRequestSchema, type ThreadTurnRequest } from '@ima/contracts';
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { observeForbiddenValue } from '../runtime-gate/retention/retention-audit';
+import { observeForbiddenValue } from '../support/retention-audit';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,

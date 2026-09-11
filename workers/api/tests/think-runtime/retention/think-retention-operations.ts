@@ -20,7 +20,7 @@ import {
   readRetentionWriteAudit,
   resetRetentionWriteAudit,
   type RetentionAuditReport,
-} from '../../runtime-gate/retention/retention-audit';
+} from '../../support/retention-audit';
 import type { ThinkRetentionSurface } from './think-retention-runtime';
 
 export type ThinkRetentionOperation = RetentionOperation | 'compact' | 'inventory';

@@ -13,7 +13,7 @@ import {
   observeRetentionMessage,
   type RetentionAuditReport,
   type RetentionStorageReader,
-} from '../../runtime-gate/retention/retention-audit';
+} from '../../support/retention-audit';
 import {
   FixtureClock,
   type RetentionExpiryClock,
@@ -25,7 +25,7 @@ import {
   parseRetentionMessage,
   sanitizeMessageForPersistence,
   type RetentionMessageMetadata,
-} from '../../runtime-gate/retention/retention-policy';
+} from '../../support/retention-policy';
 import type {
   RetentionPolicy,
   RetentionRuntimeContext,

@@ -20,7 +20,7 @@ import {
   writeAudit,
 } from './retention-runtime';
 import type { RetentionOperation, RetentionRuntimeSurface } from './retention-runtime';
-import { isRetentionExpired, parseRetentionMessage } from './retention-policy';
+import { isRetentionExpired, parseRetentionMessage } from '../../support/retention-policy';
 
 function responseOperation(
   operation: Extract<RetentionOperation, 'read' | 'replay' | 'recover' | 'display' | 'remodel'>,

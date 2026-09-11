@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { auditRetentionSurface, type RetentionSqlReader } from './retention-audit';
+import { auditRetentionSurface, type RetentionSqlReader } from '../../support/retention-audit';
 
 const MARKERS = ['M04_SQL_CANARY'];
 

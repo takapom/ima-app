@@ -10,7 +10,7 @@ import {
   type RetentionSqlReader,
   type RetentionWriteAuditInstallReport,
   type RetentionWriteAuditReport,
-} from './retention-audit';
+} from '../../support/retention-audit';
 import {
   auditCurrentRetentionSurface,
   makeRetentionMessage,

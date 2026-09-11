@@ -1,9 +1,9 @@
 import type { UIMessage } from 'ai';
 import { expect, it } from 'vitest';
 import type { RetentionMetadata } from '@ima/core';
-import { auditRetentionSurface } from './retention-audit';
+import { auditRetentionSurface } from '../../support/retention-audit';
 import { FixtureClock, makeRetentionMessage } from './retention-fixture';
-import { sanitizeMessageForPersistence } from './retention-policy';
+import { sanitizeMessageForPersistence } from '../../support/retention-policy';
 
 const MARKERS = ['M04_PROVIDER_CANARY', 'M04_GENERATED_CANARY'];
 

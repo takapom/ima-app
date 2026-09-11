@@ -12,7 +12,7 @@ import {
   type RetentionMessage,
   isRetentionExpired,
   parseRetentionMessage,
-} from './retention-policy';
+} from '../../support/retention-policy';
 import {
   auditRetentionSurface,
   observeRetentionMessage,
@@ -21,7 +21,7 @@ import {
   type RetentionMessageObservation,
   type RetentionSqlReader,
   type RetentionStorageReader,
-} from './retention-audit';
+} from '../../support/retention-audit';
 
 /** Clock used by the test harness; production code supplies its own ClockPort. */
 export class FixtureClock implements RetentionClock {
