@@ -24,6 +24,10 @@ import { createDurableTelemetryStore, type TelemetryNamespace } from '../telemet
 import { createRuntimeProductionTelemetrySinks } from './runtime-production-telemetry';
 import { RuntimeThinkHost } from './runtime-host';
 import type { ThreadRuntimeTarget, ThreadRuntimeTurnResult } from './admission';
+import {
+  createRuntimeJourneyDatasetBinding,
+  type JourneyDatasetRuntimeNamespace,
+} from '../providers/last-train/runtime-binding';
 
 type RuntimeRetentionAnchorRow = { readonly thread_created_at: string };
 type RuntimeTelemetryEnv = {
@@ -61,7 +65,8 @@ const durableThreadCreatedAt = (ctx: DurableObjectState): string => {
  * Model/provider/registry construction stays in the Worker-owned production factory.
  */
 export abstract class RuntimeProductionThinkHost<
-  Env extends Cloudflare.Env = Cloudflare.Env,
+  Env extends Cloudflare.Env & { readonly JOURNEY_DATASETS?: JourneyDatasetRuntimeNamespace } =
+    Cloudflare.Env & { readonly JOURNEY_DATASETS?: JourneyDatasetRuntimeNamespace },
 > extends RuntimeThinkHost<Env> {
   private readonly productionEnv: Env;
   private readonly productionContextPersistence: ReturnType<
@@ -126,9 +131,11 @@ export abstract class RuntimeProductionThinkHost<
       throw this.productionAnchorError ?? new Error('RUNTIME_RETENTION_ANCHOR_INVALID');
     }
     const photoDisplayPolicyFor = this.runtimeProductionPhotoDisplayPolicyFor();
+    const journeyDataset = createRuntimeJourneyDatasetBinding(this.productionEnv.JOURNEY_DATASETS);
     return {
       threadCreatedAt,
       contextPersistence: this.productionContextPersistence,
+      ...(journeyDataset === undefined ? {} : { journeyDataset }),
       ...(photoDisplayPolicyFor === undefined
         ? {}
         : { photosEnabled: true, photoDisplayPolicyFor }),

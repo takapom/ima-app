@@ -34,8 +34,11 @@ import {
   cardEvidenceResolver,
   createRuntimeProductionProviders,
   hotPepperRuntimeModeFor,
+  runtimeProductionLastTrainReadinessFor,
   runtimeProductionProviderAvailabilityFor,
+  runtimeProductionRouteReadinessFor,
   type RuntimeProductionProviderAvailability,
+  type RuntimeProductionRouteReadiness,
 } from './runtime-production-provider-config';
 import { configureRuntimeProductionSession } from './runtime-production-session';
 import type {
@@ -82,6 +85,7 @@ const defaultPlan = (
   fixedSessionExpiresAt: string,
   budget: RuntimeBudget,
   providerAvailability: RuntimeProductionProviderAvailability,
+  routeReadiness: RuntimeProductionRouteReadiness,
   lastTrainRevisionState: ReturnType<typeof createRuntimeLastTrainRevisionState>,
 ): RuntimeProductionTurnPlan => {
   const providerTraceObserver =
@@ -149,6 +153,7 @@ const defaultPlan = (
     ...(overrides.currentOriginRefFor === undefined
       ? {}
       : { currentOriginRefFor: overrides.currentOriginRefFor }),
+    currentOriginRef: routeReadiness.currentOriginRef,
     ...(overrides.journeyDataset === undefined ? {} : { journeyDataset: overrides.journeyDataset }),
     ...(overrides.buildServiceDateContext === undefined
       ? {}
@@ -185,7 +190,7 @@ const defaultPlan = (
     retention,
     modelContext: context.modelContext,
     validationContext: (at) =>
-      validationContextFor(input.context, at.now, overrides.currentOriginRefFor?.(input.context)),
+      validationContextFor(input.context, at.now, routeReadiness.currentOriginRef ?? undefined),
     ids,
     hashes: productionHash,
     publicResponse: {
@@ -241,15 +246,21 @@ const makeOptions = (
       prepareTurn: overrides.prepareTurn,
       ...(overrides.placesEnabled === undefined ? {} : { placesEnabled: overrides.placesEnabled }),
     });
-    const activeJourneyRevision =
-      overrides.activeJourneyRevision !== undefined
-        ? overrides.activeJourneyRevision
-        : overrides.lastTrainEnabled === false || overrides.journeyDataset === undefined
-          ? undefined
-          : await readActiveJourneyRevision(overrides.journeyDataset);
     const baseContext = harnessContextFor(request, runtimeInput, request.serverNow, {
       capabilities: productionCapabilities({ placesEnabled }),
     });
+    const routeReadiness = runtimeProductionRouteReadinessFor(overrides, baseContext);
+    const journeyReadiness = runtimeProductionLastTrainReadinessFor(
+      overrides,
+      baseContext,
+      routeReadiness,
+    );
+    const activeJourneyRevision =
+      overrides.activeJourneyRevision !== undefined
+        ? overrides.activeJourneyRevision
+        : journeyReadiness === undefined
+          ? undefined
+          : await readActiveJourneyRevision(journeyReadiness.dataset);
     const providerAvailability: RuntimeProductionProviderAvailability =
       runtimeProductionProviderAvailabilityFor({
         env: input.env,
@@ -257,6 +268,7 @@ const makeOptions = (
         placesEnabled,
         activeJourneyRevision,
         configuration: overrides,
+        routeReadiness,
         ...(request.deviceId === undefined ? {} : { deviceId: request.deviceId }),
       });
     const context = harnessContextFor(request, runtimeInput, request.serverNow, {
@@ -300,6 +312,7 @@ const makeOptions = (
             fixedSessionExpiresAt,
             budget,
             providerAvailability,
+            routeReadiness,
             lastTrainRevisionState,
           ));
     const model =

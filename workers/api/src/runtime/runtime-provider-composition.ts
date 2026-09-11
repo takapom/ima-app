@@ -28,7 +28,7 @@ import {
 } from '../providers/last-train/details';
 import {
   createLastTrainJourneyPort,
-  type JourneyDatasetReadPort,
+  type RuntimeJourneyDataset,
   type LastTrainJourneyPortOptions,
   type LastTrainRoutePorts,
 } from '../providers/last-train/port';
@@ -38,10 +38,8 @@ import {
 } from '../providers/photo/issuance';
 import type { RuntimePhotoTokenPreparer } from './runtime-response';
 
-/** The named JourneyDatasetDO read surface plus its cheap active-revision probe. */
-export type RuntimeJourneyDataset = JourneyDatasetReadPort & {
-  readonly readRevision: () => Promise<number | null>;
-};
+/** Kept at this runtime export for callers while the protocol type lives with last-train ports. */
+export type { RuntimeJourneyDataset } from '../providers/last-train/port';
 
 export type RuntimeLastTrainRevisionState = {
   readonly byCandidate: Map<string, { readonly revision: number; readonly evaluationKey: string }>;

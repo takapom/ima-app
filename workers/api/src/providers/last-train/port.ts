@@ -31,6 +31,11 @@ export type JourneyDatasetReadPort = {
   readonly read: (context: JourneyServiceDateContext) => Promise<JourneyReadResult>;
 };
 
+/** Runtime production adds a cheap active-revision probe to the validated read surface. */
+export type RuntimeJourneyDataset = JourneyDatasetReadPort & {
+  readonly readRevision: () => Promise<number | null>;
+};
+
 export type JourneyDatasetSource = JourneyDatasetReader | JourneyDatasetReadPort;
 
 export type JourneyServiceDateContextBuilder = (

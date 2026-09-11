@@ -89,6 +89,9 @@ const call = async (body: unknown, now = NOW, token = ADMIN_TOKEN): Promise<Resp
 
 describe('M14 shared journey dataset management boundary', () => {
   it('uses one named DO RPC for import/update/rollback/expiry with server time', async () => {
+    const firstStub = testEnv(env).JOURNEY_DATASETS.getByName(JOURNEY_DATASET_DO_NAME);
+    await expect(firstStub.readRevision()).resolves.toBeNull();
+
     const imported = await call({
       kind: 'import',
       records: [journey('journey-one', '2026-09-04T12:00:00Z')],
@@ -99,7 +102,7 @@ describe('M14 shared journey dataset management boundary', () => {
       status: 'imported',
       revision: 1,
     });
-    const firstStub = testEnv(env).JOURNEY_DATASETS.getByName(JOURNEY_DATASET_DO_NAME);
+    await expect(firstStub.readRevision()).resolves.toBe(1);
     await expect(
       runInDurableObject(firstStub, async (_instance, state) => state.storage.getAlarm()),
     ).resolves.toBe(Date.parse('2026-09-11T12:00:00Z'));
@@ -133,6 +136,7 @@ describe('M14 shared journey dataset management boundary', () => {
     });
     expect(rolledBack.status).toBe(200);
     expect((await json(rolledBack)).result).toMatchObject({ status: 'imported', revision: 3 });
+    await expect(firstStub.readRevision()).resolves.toBe(3);
 
     const stub = testEnv(env).JOURNEY_DATASETS.getByName(JOURNEY_DATASET_DO_NAME);
     await expect(

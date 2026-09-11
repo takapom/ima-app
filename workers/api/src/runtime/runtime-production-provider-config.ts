@@ -73,29 +73,82 @@ export type RuntimeProductionAvailabilityOptions = {
   readonly activeJourneyRevision: number | null | undefined;
   readonly configuration: RuntimeProductionAvailabilityConfiguration;
   readonly deviceId?: string;
+  /** Reuse the factory's one origin evaluation instead of calling the resolver again. */
+  readonly routeReadiness?: RuntimeProductionRouteReadiness;
+};
+
+export type RuntimeProductionRouteReadiness = {
+  readonly enabled: boolean;
+  readonly currentOriginRef: string | null;
+};
+
+const routesConfiguredFor = (configuration: RuntimeProductionAvailabilityConfiguration): boolean =>
+  configuration.routesEnabled === true &&
+  isConfiguredSecret(configuration.googleRoutesApiKey) &&
+  configuration.routeObservationPolicy !== undefined &&
+  configuration.currentOriginRefFor !== undefined;
+
+export const runtimeProductionRouteReadinessFor = (
+  configuration: RuntimeProductionAvailabilityConfiguration,
+  context: HarnessContext,
+): RuntimeProductionRouteReadiness => {
+  const currentOriginRefFor = configuration.currentOriginRefFor;
+  if (!routesConfiguredFor(configuration) || currentOriginRefFor === undefined) {
+    return { enabled: false, currentOriginRef: null };
+  }
+  try {
+    const currentOriginRef = currentOriginRefFor(context);
+    return currentOriginRef !== undefined && currentOriginRef.trim().length > 0
+      ? { enabled: true, currentOriginRef }
+      : { enabled: false, currentOriginRef: null };
+  } catch {
+    return { enabled: false, currentOriginRef: null };
+  }
+};
+
+export type RuntimeProductionLastTrainReadiness = {
+  readonly dataset: RuntimeJourneyDataset;
+  readonly currentOriginRef: string;
+};
+
+export const runtimeProductionLastTrainReadinessFor = (
+  configuration: RuntimeProductionAvailabilityConfiguration,
+  context: HarnessContext,
+  routeReadiness = runtimeProductionRouteReadinessFor(configuration, context),
+): RuntimeProductionLastTrainReadiness | undefined => {
+  if (
+    configuration.lastTrainEnabled === false ||
+    !routeReadiness.enabled ||
+    routeReadiness.currentOriginRef === null ||
+    configuration.journeyDataset === undefined ||
+    configuration.buildServiceDateContext === undefined ||
+    configuration.lastTrainObservationPolicy === undefined ||
+    configuration.fromStationRefFor === undefined ||
+    configuration.resolveStationWaypoint === undefined
+  ) {
+    return undefined;
+  }
+  return {
+    dataset: configuration.journeyDataset,
+    currentOriginRef: routeReadiness.currentOriginRef,
+  };
 };
 
 export const runtimeProductionProviderAvailabilityFor = (
   input: RuntimeProductionAvailabilityOptions,
 ): RuntimeProductionProviderAvailability => {
-  const routesEnabled =
-    input.configuration.routesEnabled === true &&
-    isConfiguredSecret(input.configuration.googleRoutesApiKey) &&
-    input.configuration.routeObservationPolicy !== undefined &&
-    input.configuration.currentOriginRefFor !== undefined;
-  const currentOriginRef = input.configuration.currentOriginRefFor?.(input.context);
+  const routeReadiness =
+    input.routeReadiness ?? runtimeProductionRouteReadinessFor(input.configuration, input.context);
+  const routesEnabled = routeReadiness.enabled;
+  const lastTrainReadiness = runtimeProductionLastTrainReadinessFor(
+    input.configuration,
+    input.context,
+    routeReadiness,
+  );
   const lastTrainEnabled =
-    input.configuration.lastTrainEnabled !== false &&
-    routesEnabled &&
     input.activeJourneyRevision !== undefined &&
     input.activeJourneyRevision !== null &&
-    input.configuration.journeyDataset !== undefined &&
-    input.configuration.buildServiceDateContext !== undefined &&
-    input.configuration.lastTrainObservationPolicy !== undefined &&
-    input.configuration.fromStationRefFor !== undefined &&
-    input.configuration.resolveStationWaypoint !== undefined &&
-    currentOriginRef !== undefined &&
-    currentOriginRef.trim().length > 0;
+    lastTrainReadiness !== undefined;
   const photoSecret =
     input.configuration.photoTokenSecret ?? productionSecret(input.env, 'PHOTO_TOKEN_SECRET');
   const photosEnabled =
@@ -314,6 +367,7 @@ export type RuntimeProductionProviderAssemblyOptions = {
   readonly photoConfiguration: RuntimeProductionPhotoConfiguration;
   readonly env: unknown;
   readonly deviceId?: string;
+  readonly currentOriginRef?: string | null;
 };
 
 /** Builds the host-only provider graph after capability and secret gates have been evaluated. */
@@ -324,11 +378,24 @@ export const createRuntimeProductionProviders = (
     ...execution,
     operation: 'walking_route',
   });
+  const currentOriginRef =
+    input.currentOriginRef !== undefined
+      ? (input.currentOriginRef ?? undefined)
+      : input.availability.routesEnabled
+        ? (() => {
+            try {
+              return input.currentOriginRefFor?.(input.context);
+            } catch {
+              return undefined;
+            }
+          })()
+        : undefined;
   const route =
     input.availability.routesEnabled &&
     input.googleRoutesApiKey !== undefined &&
     input.routeObservationPolicy !== undefined &&
-    input.currentOriginRefFor !== undefined
+    input.currentOriginRefFor !== undefined &&
+    currentOriginRef !== undefined
       ? {
           apiKey: input.googleRoutesApiKey,
           budget: createRuntimeRouteBudgetBoundary(input.budget),
@@ -337,7 +404,7 @@ export const createRuntimeProductionProviders = (
           ...(input.resolveStationWaypoint === undefined
             ? {}
             : { resolveStationWaypoint: input.resolveStationWaypoint }),
-          currentOriginRefFor: input.currentOriginRefFor,
+          currentOriginRefFor: () => currentOriginRef,
           observationPolicy: input.routeObservationPolicy,
           ...(input.fetcher === undefined ? {} : { fetcher: input.fetcher }),
           ...(input.requestSignal === undefined ? {} : { signal: input.requestSignal }),
@@ -348,7 +415,6 @@ export const createRuntimeProductionProviders = (
             : { providerTraceObserver: input.providerTraceObserver }),
         }
       : undefined;
-  const currentOriginRef = input.currentOriginRefFor?.(input.context);
   const lastTrain =
     input.availability.lastTrainEnabled &&
     input.activeJourneyRevision !== undefined &&
@@ -358,8 +424,7 @@ export const createRuntimeProductionProviders = (
     input.lastTrainObservationPolicy !== undefined &&
     input.fromStationRefFor !== undefined &&
     input.resolveStationWaypoint !== undefined &&
-    currentOriginRef !== undefined &&
-    currentOriginRef.trim().length > 0
+    currentOriginRef !== undefined
       ? {
           activeRevision: input.activeJourneyRevision,
           dataset: input.journeyDataset,

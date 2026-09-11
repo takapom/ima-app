@@ -8,8 +8,9 @@ import {
 } from './owner';
 import { type JourneyReadResult } from './reader';
 import { JOURNEY_DATASET_MAX_RECORDS } from './types';
+import { JourneyDatasetStorageError } from './store';
 
-export const JOURNEY_DATASET_DO_NAME = 'm14-last-train-v1' as const;
+export { JOURNEY_DATASET_DO_NAME } from './dataset-identity';
 
 const revision = v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1)));
 const records = v.pipe(v.array(v.unknown()), v.maxLength(JOURNEY_DATASET_MAX_RECORDS));
@@ -145,5 +146,21 @@ export class JourneyDatasetDO extends DurableObject {
   async read(context: JourneyServiceDateContext): Promise<JourneyReadResult> {
     await this.ready;
     return createJourneyDatasetOwner(this.ctx.storage).read(context);
+  }
+
+  /** Reads only the active revision; the dataset payload never crosses this RPC boundary. */
+  async readRevision(): Promise<number | null> {
+    await this.ready;
+    const row = this.ctx.storage.sql
+      .exec<{ readonly current_revision: number | null }>(
+        'SELECT current_revision FROM m14_last_train_state WHERE singleton = 1',
+      )
+      .toArray()[0];
+    if (row === undefined) throw new JourneyDatasetStorageError('READ_FAILED');
+    if (row.current_revision === null) return null;
+    if (!Number.isSafeInteger(row.current_revision) || row.current_revision < 1) {
+      throw new JourneyDatasetStorageError('READ_FAILED');
+    }
+    return row.current_revision;
   }
 }
