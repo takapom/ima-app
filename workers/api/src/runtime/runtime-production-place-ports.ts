@@ -225,7 +225,12 @@ export const createRuntimeProductionPlacePorts = (input: {
       signalFor: input.build.attemptSignalBridge.signalFor,
     });
   } else {
-    details = createHotPepperReuseFilter(placesDetails, denyHotPepperFieldPolicy, 'live');
+    details = createHotPepperReuseFilter(
+      placesDetails,
+      denyHotPepperFieldPolicy,
+      'live',
+      () => input.budget.reserveProviderRequest().ok,
+    );
   }
   return { search, details, ...(savedReference === undefined ? {} : { savedReference }) };
 };

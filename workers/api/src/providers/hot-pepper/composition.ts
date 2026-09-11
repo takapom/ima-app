@@ -13,6 +13,7 @@ import {
   type GetPlaceDetailsInput,
   type GetPlaceDetailsOutput,
   type HarnessContext,
+  type Issue,
   type PlaceDetailsPort,
   type Result,
   type ToolExecutionContext,
@@ -29,6 +30,12 @@ import type {
   HotPepperSupplement,
 } from './types';
 import type { HotPepperTransport } from './transport';
+import { openingHoursNeedsHotPepper } from './opening-hours';
+import {
+  hotPepperOpeningSourcesAreReusable,
+  refreshGoogleOpening,
+  registerHotPepperOpeningHours,
+} from './opening-hours-overlay';
 import {
   hotPepperFieldAllowed,
   isKnown,
@@ -72,16 +79,31 @@ export type HotPepperDetailsOverlayOptions = {
 
 type DetailsItem = GetPlaceDetailsOutput['items'][number];
 
-const overlayFields: readonly HotPepperOverlayField[] = ['facilities', 'price'];
+const outputResultWithWarnings = (
+  items: readonly DetailsItem[],
+  additionalWarnings: readonly Issue[],
+): Result<GetPlaceDetailsOutput> => {
+  const result = outputResult(items);
+  if (result.status === 'error' || additionalWarnings.length === 0) return result;
+  const warnings = [...result.warnings, ...additionalWarnings];
+  return {
+    status: warnings.length === 0 ? 'ok' : 'partial',
+    data: result.data,
+    warnings,
+  };
+};
 
-const sourceFor = (supplement: HotPepperSupplement) => [
-  {
-    provider: supplement.source.provider,
-    recordRef: supplement.source.recordRef,
-    attribution: supplement.source.attribution,
-    publicUrl: supplement.source.publicUrl,
-  },
-];
+const overlayFields: readonly HotPepperOverlayField[] = ['facilities', 'opening_hours', 'price'];
+
+const sourceFor = (supplement: HotPepperSupplement) =>
+  [
+    {
+      provider: supplement.source.provider,
+      recordRef: supplement.source.recordRef,
+      attribution: supplement.source.attribution,
+      publicUrl: supplement.source.publicUrl,
+    },
+  ] as const;
 
 const valueForPrice = (
   value: HotPepperPriceSupplement,
@@ -95,7 +117,7 @@ const valueForPrice = (
 };
 
 const fieldValueFor = (
-  field: HotPepperOverlayField,
+  field: Exclude<HotPepperOverlayField, 'opening_hours'>,
   supplement: HotPepperSupplement,
 ):
   | v.InferOutput<typeof FacilitiesInfoSchema>
@@ -123,26 +145,18 @@ const reusableFieldFor = (
       context: observationContextFor(context),
     });
     if (reuse.status !== 'reusable') return undefined;
-    if (
-      reuse.observation.sources.length === 0 ||
-      !reuse.observation.sources.every((source) => source.provider === 'hotpepper')
-    ) {
+    const sourcesAreUsable =
+      field === 'opening_hours'
+        ? hotPepperOpeningSourcesAreReusable(reuse.observation.sources)
+        : reuse.observation.sources.length > 0 &&
+          reuse.observation.sources.every((source) => source.provider === 'hotpepper');
+    if (!sourcesAreUsable) {
       return undefined;
     }
-    if (!hotPepperFieldAllowed(options.fieldPolicy, options.adapter.mode, field)) return undefined;
-    const schema = field === 'facilities' ? FacilitiesInfoSchema : PriceInfoSchema;
-    const retention = retentionFor(
-      options.fieldPolicy,
-      options.adapter.mode,
-      field,
-      reuse.observation.retention,
-    );
-    if (retention === undefined) return undefined;
-    const parsed = v.safeParse(ObservationSchema(schema), {
-      ...reuse.observation,
-      retention,
+    return reprojectHotPepperField(options.fieldPolicy, options.adapter.mode, field, {
+      status: 'known',
+      observations: [reuse.observation],
     });
-    return parsed.success ? { status: 'known', observations: [parsed.output] } : undefined;
   } catch {
     return undefined;
   }
@@ -223,6 +237,7 @@ const overlayItem = async (
   context: HarnessContext,
   execution: ToolExecutionContext,
   cancellation: CancellationToken,
+  warnings: Issue[],
 ): Promise<DetailsItem> => {
   let candidate: Readonly<CandidateRecord> | undefined;
   try {
@@ -237,6 +252,7 @@ const overlayItem = async (
   const requested = overlayFields.filter((field) => request.fields.includes(field));
   if (requested.length === 0) return item;
   const fields: Record<string, unknown> = { ...item.fields };
+  const originalOpening = fields.opening_hours;
   for (const field of overlayFields) {
     fields[field] = reprojectHotPepperField(
       options.fieldPolicy,
@@ -245,8 +261,25 @@ const overlayItem = async (
       fields[field],
     );
   }
+  if (
+    requested.includes('opening_hours') &&
+    isKnown(originalOpening) &&
+    !isKnown(fields.opening_hours)
+  ) {
+    const recovered = await refreshGoogleOpening(
+      options.inner,
+      request.candidateId,
+      context,
+      execution,
+      cancellation,
+      options.reserveProviderRequest,
+    );
+    if (recovered !== undefined) fields.opening_hours = recovered;
+  }
   const projectedItem = (): DetailsItem => ({ candidateId: item.candidateId, fields });
-  const missing = requested.filter((field) => !isKnown(fields[field]));
+  const fieldNeedsProvider = (field: HotPepperOverlayField): boolean =>
+    field === 'opening_hours' ? openingHoursNeedsHotPepper(fields[field]) : !isKnown(fields[field]);
+  const missing = requested.filter(fieldNeedsProvider);
   if (missing.length === 0) return { candidateId: item.candidateId, fields };
 
   if (cancellation.isCancelled()) return projectedItem();
@@ -259,15 +292,13 @@ const overlayItem = async (
   const signalIsAborted = (): boolean => signal?.aborted === true;
   if (signalIsAborted()) return projectedItem();
 
-  if (request.fields.includes('facilities') || request.fields.includes('price')) {
-    for (const field of missing) {
-      if (freshness !== 'refresh') {
-        const reused = reusableFieldFor(options, context, request.candidateId, field);
-        if (reused !== undefined) fields[field] = reused;
-      }
+  for (const field of missing) {
+    if (freshness !== 'refresh') {
+      const reused = reusableFieldFor(options, context, request.candidateId, field);
+      if (reused !== undefined) fields[field] = reused;
     }
   }
-  const stillMissing = missing.filter((field) => !isKnown(fields[field]));
+  const stillMissing = missing.filter(fieldNeedsProvider);
   if (stillMissing.length === 0 || cancellation.isCancelled() || signalIsAborted()) {
     return { candidateId: item.candidateId, fields };
   }
@@ -276,7 +307,7 @@ const overlayItem = async (
   );
   if (allowedFields.length === 0) return { candidateId: item.candidateId, fields };
   if (freshness === 'refresh') {
-    for (const field of allowedFields) {
+    for (const field of allowedFields.filter((field) => field !== 'opening_hours')) {
       try {
         options.registry.invalidateObservationReuse(
           { ownerScopeRef: context.ownerScopeRef, threadId: context.threadId },
@@ -330,6 +361,24 @@ const overlayItem = async (
     return { candidateId: item.candidateId, fields };
   }
   for (const field of allowedFields) {
+    if (field === 'opening_hours') {
+      const registered = registerHotPepperOpeningHours(
+        {
+          registry: options.registry,
+          clock: options.clock,
+          observationPolicy: options.observationPolicy,
+          fieldPolicy: options.fieldPolicy,
+          mode: options.adapter.mode,
+        },
+        context,
+        request.candidateId,
+        fields[field],
+        supplement.value,
+      );
+      if (registered?.status === 'registered') fields[field] = registered.value;
+      if (registered?.status === 'conflict') warnings.push(registered.warning);
+      continue;
+    }
     const value = fieldValueFor(field, supplement.value);
     if (value === undefined) continue;
     const registered = registerField(
@@ -350,17 +399,35 @@ export const createHotPepperReuseFilter = (
   inner: PlaceDetailsPort,
   fieldPolicy: HotPepperFieldPolicy,
   mode: HotPepperAdapter['mode'],
+  reserveProviderRequest: () => boolean = () => false,
 ): PlaceDetailsPort => ({
   async read(input, context, execution, cancellation): Promise<Result<GetPlaceDetailsOutput>> {
     const base = await inner.read(input, context, execution, cancellation);
     if (base.status === 'error') return base;
-    const items = base.data.items.map((item) => {
+    const items: DetailsItem[] = [];
+    for (const item of base.data.items) {
       const fields: Record<string, unknown> = { ...item.fields };
+      const originalOpening = fields.opening_hours;
       for (const field of overlayFields) {
         fields[field] = reprojectHotPepperField(fieldPolicy, mode, field, fields[field]);
       }
-      return { candidateId: item.candidateId, fields };
-    });
+      const requestedOpening = input.requests.some(
+        (request) =>
+          request.candidateId === item.candidateId && request.fields.includes('opening_hours'),
+      );
+      if (requestedOpening && isKnown(originalOpening) && !isKnown(fields.opening_hours)) {
+        const recovered = await refreshGoogleOpening(
+          inner,
+          item.candidateId,
+          context,
+          execution,
+          cancellation,
+          reserveProviderRequest,
+        );
+        if (recovered !== undefined) fields.opening_hours = recovered;
+      }
+      items.push({ candidateId: item.candidateId, fields });
+    }
     return outputResult(items);
   },
 });
@@ -377,6 +444,7 @@ export const createHotPepperDetailsOverlay = (
     if (!parsedInput.success || !parsedOutput.success || cancellation.isCancelled()) return base;
     const byCandidate = new Map(parsedOutput.output.items.map((item) => [item.candidateId, item]));
     const nextItems: DetailsItem[] = [];
+    const warnings: Issue[] = [];
     for (const request of parsedInput.output.requests) {
       const item = byCandidate.get(request.candidateId);
       if (item === undefined) return base;
@@ -389,9 +457,10 @@ export const createHotPepperDetailsOverlay = (
           context,
           execution,
           cancellation,
+          warnings,
         ),
       );
     }
-    return outputResult(nextItems);
+    return outputResultWithWarnings(nextItems, warnings);
   },
 });

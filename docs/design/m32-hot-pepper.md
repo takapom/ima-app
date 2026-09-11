@@ -1,6 +1,6 @@
 # M32 / #33 Hot Pepper Adapter
 
-この単位は `workers/api` 内の任意 Hot Pepper provider adapter と、既存の Places Details Port へ補足を合成する Worker 境界である。公開 contracts と Core の Port は変更せず、HP が無効・未設定でも Places の基本経路を組み立てられる。実キー・実アカウント・課金・利用許諾の確認は M35 に残る。
+この単位は `workers/api` 内の任意 Hot Pepper provider adapter と、既存の Places Details Port へ補足を合成する Worker 境界である。Core の Details Port は維持し、公開 EvidenceRef には provider 非依存の任意複数 attribution を追加した。HP が無効・未設定でも Places の基本経路を組み立てられる。実キー・実アカウント・課金・利用許諾の確認は M35 に残る。
 
 ```mermaid
 flowchart LR
@@ -21,8 +21,8 @@ flowchart LR
 - `wire.ts` は Gourmet Search の JSON envelope と必要な店舗項目だけを allowlist parse する。未知 property は捨て、malformed envelope は `SCHEMA_MISMATCH` にする。XML はこの adapter の対象外である。
 - `transport.ts` は `GET https://webservice.recruit.co.jp/hotpepper/gourmet/v1/` を一度だけ呼ぶ。API key は Hot Pepper API の要求どおり query parameter に置くが、例外・ログ・返却値には含めない。`redirect: "manual"`、256KB 上限の本文 reader、body read 完了までの timeout、呼出し側の cancel を適用する。上限超過時は本文を cancel して固定 `SCHEMA_MISMATCH` にする。
 - `matching.ts` は Places candidate と HP shop の同一性だけを判定する。Haversine はオーバーレイを拒否するフィルタであり、徒歩時間として返さない。
-- `normalize.ts` は HP 固有の自由文を Core の営業時間時刻へ推測変換しない。`adapter.ts` は optional provider の capability / policy gate と各 normalizer を合成する。
-- `composition.ts` は `PlaceDetailsPort` の Worker-only overlay であり、`facilities` と、Places の価格が known でない場合だけ `price.rawLabel` を補う。既知の Places 価格を上書きせず、HP の `open` / `close` / LO を Core の `opening_hours` へ変換しない。HP の provider input policy、field policy、観測期限 policy、候補 identity resolver がすべて明示された場合だけ production factory へ接続する。
+- `normalize.ts` は HP 固有の自由文を Core の営業時間時刻へ推測変換しない。`open` は掲載文、`close` は定休日文として扱い、閉店時刻や日付境界を作らない。`opening-hours.ts` は Google の既存 `opening_hours` の区間・タイムゾーン・評価時刻を保持し、HP が明記した LO 文だけを `lastOrderRaw` へ補足する。
+- `composition.ts` は `PlaceDetailsPort` の Worker-only overlay であり、`facilities` と、Places の価格が known でない場合だけ `price.rawLabel` を補う。既知の Places 価格を上書きしない。営業時間の補足は Google 観測との atomic replacement が成功した場合だけ登録し、Google と HP の source ref を両方保持する。HP の provider input policy、field policy、観測期限 policy、候補 identity resolver がすべて明示された場合だけ production factory へ接続する。
 - HP の読み取り後に候補の所有・除外状態と response の `candidateId` を再確認する。照合失敗、policy deny、期限切れ、遅着は Places の結果を落とさず、HP field を `unsupported` または既存の partial outcome として扱う。HP 観測の retention は Google Places policy を流用せず、専用 `hotPepperObservationPolicy` で決める。
 
 ## 店舗照合
@@ -33,6 +33,15 @@ flowchart LR
 - 同名でも遠い候補、座標を欠く候補、名称だけが似た支店は `NO_MATCH` とする。
 - 既に検証済みの `hotPepperRecordRef` がある場合は、同じ ID・名称・近距離の三つを要求する。ID欠落、名称変更、移転、距離超過は `SOURCE_CONFLICT` とし、新 ID を自動追跡しない。
 - HP の店舗 ID は内部 record reference であり、公開 candidate ID と同一視しない。
+
+## 営業時間の補足
+
+- HP の `open` / `close` から `intervals`、`lastOrderAt`、タイムゾーンを作らない。LO のマーカーと時刻が同じ文に明記された場合だけ、日付を含まない `lastOrderRaw` を追加する。LO が不明、複数値、空白、取得失敗、取消、期限切れの場合は Google 値を保持する。
+- Google にすでに `lastOrderAt` がある場合や、Google の `lastOrderRaw` と HP の文字列が異なる場合は HP を合成せず、固定の `SOURCE_CONFLICT` warning を返す。warning に provider 原文や時刻を含めない。
+- 合成対象の fresh / display / retention / deletion / session bound は Google と HP の交差（各最短期限）だけを使う。片側だけが期限を欠く場合は登録を拒否し、HP の取得時刻で Google の期限を延長しない。Core の `retentionDoesNotExceed` を双方の元 retention に適用する。
+- source が Google と HP の混在になることを許すのは `opening_hours` だけである。価格・設備で異なる provider を混在させない。HP の LLM、表示、永続化 policy はそれぞれ再評価し、表示または永続化を撤回した観測を古い retention のまま公開しない。
+- HP 観測を再利用できなくなった場合の Google 再取得は、追加の provider budget を予約できたときだけ行う。再取得結果は Google source のみであることを検証し、同じ混在観測を再利用して policy を迂回しない。
+- 公開 EvidenceRef の複数 attribution は `packages/contracts` の公開 DTO に追加した provider 非依存の additive 契約で接続する。この単位では source ref を削らず、既存の単一 attribution 表現を勝手に拡張しない。
 
 ## フィールド正規化
 

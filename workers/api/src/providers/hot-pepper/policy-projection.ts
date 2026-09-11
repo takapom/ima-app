@@ -2,6 +2,7 @@ import * as v from 'valibot';
 import {
   FacilitiesInfoSchema,
   ObservationSchema,
+  OpeningHoursSchema,
   PriceInfoSchema,
   RetentionMetadataSchema,
   type SourceRef,
@@ -10,7 +11,7 @@ import {
 import type { HotPepperFieldPolicy, HotPepperPolicyRecord, HotPepperRuntimeMode } from './types';
 import { hotPepperPolicyAllows, hotPepperPolicyRecordAllows } from './types';
 
-export type HotPepperOverlayField = 'price' | 'facilities';
+export type HotPepperOverlayField = 'opening_hours' | 'price' | 'facilities';
 
 type KnownFieldValue = {
   readonly status: 'known';
@@ -122,6 +123,25 @@ const hasMixedHotPepperSource = (value: KnownFieldValue): boolean =>
     );
   });
 
+const hasSupportedMixedOpeningSource = (value: KnownFieldValue): boolean =>
+  value.observations.length > 0 &&
+  value.observations.every((observation) => {
+    if (typeof observation !== 'object' || observation === null) return false;
+    if (!('sources' in observation) || !Array.isArray(observation.sources)) return false;
+    const sources = observation.sources.filter(
+      (source): source is { readonly provider: unknown } =>
+        typeof source === 'object' && source !== null && 'provider' in source,
+    );
+    return (
+      sources.length === observation.sources.length &&
+      sources.some((source) => source.provider === 'hotpepper') &&
+      sources.some((source) => source.provider === 'google_places') &&
+      sources.every(
+        (source) => source.provider === 'hotpepper' || source.provider === 'google_places',
+      )
+    );
+  });
+
 /** Reprojects an existing HP observation before either reuse or public output. */
 export const reprojectHotPepperField = (
   policy: HotPepperFieldPolicy,
@@ -136,10 +156,21 @@ export const reprojectHotPepperField = (
   ) {
     return { status: 'unsupported', reason: 'Hot Pepper field is withheld by provider policy' };
   }
-  if (!isKnown(value) || hasMixedHotPepperSource(value)) {
+  if (!isKnown(value)) {
     return { status: 'unsupported', reason: 'Hot Pepper field has mixed provider sources' };
   }
-  const schema = field === 'facilities' ? FacilitiesInfoSchema : PriceInfoSchema;
+  if (
+    hasMixedHotPepperSource(value) &&
+    (field !== 'opening_hours' || !hasSupportedMixedOpeningSource(value))
+  ) {
+    return { status: 'unsupported', reason: 'Hot Pepper field has mixed provider sources' };
+  }
+  const schema =
+    field === 'facilities'
+      ? FacilitiesInfoSchema
+      : field === 'price'
+        ? PriceInfoSchema
+        : OpeningHoursSchema;
   const observations = value.observations.map((observation) => {
     const parsed = v.safeParse(ObservationSchema(schema), observation);
     if (!parsed.success) return undefined;
@@ -163,10 +194,17 @@ export const reprojectHotPepperObservationRetention = (
 ): RetentionMetadata | undefined => {
   const hasHotPepper = sources.some((source) => source.provider === 'hotpepper');
   if (!hasHotPepper) return retention;
+  const allHotPepper =
+    sources.length > 0 && sources.every((source) => source.provider === 'hotpepper');
+  const mixedOpening =
+    field === 'opening_hours' &&
+    sources.some((source) => source.provider === 'google_places') &&
+    sources.every(
+      (source) => source.provider === 'hotpepper' || source.provider === 'google_places',
+    );
   if (
-    (field !== 'price' && field !== 'facilities') ||
-    sources.length === 0 ||
-    !sources.every((source) => source.provider === 'hotpepper')
+    (field !== 'price' && field !== 'facilities' && field !== 'opening_hours') ||
+    (!allHotPepper && !mixedOpening)
   ) {
     return undefined;
   }
