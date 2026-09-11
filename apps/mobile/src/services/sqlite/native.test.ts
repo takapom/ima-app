@@ -226,6 +226,8 @@ describe('native SQLite adapter', () => {
 
   it('requires an opaque scope and keeps distinct scopes isolated', () => {
     expect(isValidStorageScope('owner-a-dev')).toBe(true);
+    expect(isValidStorageScope(`a${'b'.repeat(238)}`)).toBe(true);
+    expect(isValidStorageScope(`a${'b'.repeat(240)}`)).toBe(false);
     expect(isValidStorageScope('../owner-a')).toBe(false);
     expect(isValidStorageScope('')).toBe(false);
     expect(() => createNativeSqliteAdapter(optionsFor(driverFor(), '../owner-a'))).toThrow(

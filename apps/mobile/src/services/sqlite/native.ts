@@ -53,7 +53,11 @@ const defaultDriver: NativeSqliteDriver = {
   openDatabaseSync: SQLite.openDatabaseSync,
 };
 
-const STORAGE_SCOPE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
+// Keep enough room for the verified environment/origin namespace encoded by
+// native composition while still rejecting path separators and SQL filename
+// surprises. The host-provided scope itself is validated separately by the
+// native credential authority contract.
+const STORAGE_SCOPE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,239}$/;
 
 export const isValidStorageScope = (value: string): boolean =>
   typeof value === 'string' && STORAGE_SCOPE_PATTERN.test(value);

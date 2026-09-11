@@ -1,18 +1,17 @@
-import { useMemo } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JourneyScreen } from './src/screens/JourneyScreen';
+import { useNativeMobileRuntime } from './src/hooks/useNativeMobileRuntime';
 import {
-  createMobileJourneyRuntime,
-  mobileJourneyRuntimeMessage,
-  type MobileJourneyRuntimeOptions,
-} from './src/services/api/mobile-runtime';
+  nativeMobileRuntimeMessage,
+  type NativeMobileRuntimeOptions,
+} from './src/services/api/native-mobile-runtime';
 import type { JourneyApiControllerBinding } from './src/services/api/journey-api-binding';
 
 export type AppProps = {
   /** The host supplies fixture/live credentials and request fields at this boundary. */
   readonly journeyApi?: JourneyApiControllerBinding;
   /** Optional formal SQLite/reference policy injection for the same runtime API client. */
-  readonly mobileRuntimeOptions?: MobileJourneyRuntimeOptions;
+  readonly mobileRuntimeOptions?: NativeMobileRuntimeOptions;
   readonly [key: string]: unknown;
 };
 
@@ -28,17 +27,19 @@ export default function App({ journeyApi, mobileRuntimeOptions }: AppProps): Rea
 }
 
 function AppContent({ journeyApi, mobileRuntimeOptions }: AppProps): React.JSX.Element {
-  const runtime = useMemo(
-    () => createMobileJourneyRuntime(mobileRuntimeOptions),
-    [mobileRuntimeOptions],
-  );
-  const binding = journeyApi ?? runtime.binding;
-  if (binding !== null && binding !== undefined) return <JourneyScreen api={binding} />;
+  const nativeRuntime = useNativeMobileRuntime({
+    ...(journeyApi === undefined ? {} : { journeyApi }),
+    ...(mobileRuntimeOptions === undefined ? {} : { mobileRuntimeOptions }),
+  });
+  if (nativeRuntime.binding !== null) return <JourneyScreen api={nativeRuntime.binding} />;
+  if (nativeRuntime.status === 'loading') {
+    return <JourneyScreen requestStatus="pending" errorMessage="接続を準備しています。" />;
+  }
   return (
     <JourneyScreen
       requestStatus="error"
       errorMessage={
-        mobileJourneyRuntimeMessage(runtime.reason) ??
+        nativeMobileRuntimeMessage(nativeRuntime.reason) ??
         '検索を開始できません。アプリ設定を確認してください。'
       }
     />
