@@ -8,7 +8,14 @@ import type {
   StoredObservation,
 } from '../domain/registry';
 import type { RegistryScope } from '../domain/freshness';
-import type { CandidateId } from '../domain/primitives';
+import type { CandidateId, ObservationId } from '../domain/primitives';
+
+export type ObservationReplacement = {
+  /** The new immutable observation to publish after the expected observations are checked. */
+  readonly registration: ObservationRegistration;
+  /** The current unsuppressed observation used as the compare-and-set anchor. */
+  readonly expectedObservationId: ObservationId;
+};
 
 export interface CandidateObservationRegistryPort {
   registerCandidate(input: CandidateRegistration): Readonly<CandidateRecord>;
@@ -33,6 +40,8 @@ export interface CandidateObservationRegistryPort {
     scope: RegistryScope,
     candidateId?: CandidateId,
   ): readonly ReadonlyStoredObservation[];
+  /** Registers a replacement before suppressing its current same-context reuse set. */
+  replaceObservation(input: ObservationReplacement): ReadonlyStoredObservation;
   /** Blocks reuse after a failed/withheld refresh while retaining immutable history. */
   invalidateObservationReuse(scope: RegistryScope, candidateId: CandidateId, field: string): void;
   /** Reopens reuse only when the result names an observation created after invalidation. */

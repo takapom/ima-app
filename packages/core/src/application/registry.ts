@@ -1,11 +1,8 @@
 import * as v from 'valibot';
-import { AnyObservationSchema } from '../domain/evidence';
 import {
   contextKeyForObservation,
   matchesObservationContext,
   observationFreshness,
-  ObservationContextSchema,
-  RegistryScopeSchema,
   type RegistryScope,
 } from '../domain/freshness';
 import {
@@ -17,76 +14,19 @@ import {
   type ObservationReuseQuery,
   type ObservationReuseResult,
   type ReadonlyStoredObservation,
-  type RegistryJsonValue,
   type StoredObservation,
 } from '../domain/registry';
-import { RetentionMetadataSchema } from '../domain/retention';
-import {
-  CandidateIdSchema,
-  IsoTimestampSchema,
-  OpaqueIdSchema,
-  type CandidateId,
-} from '../domain/primitives';
-import type { CandidateObservationRegistryPort } from '../ports/registry';
+import { CandidateIdSchema, IsoTimestampSchema, type CandidateId } from '../domain/primitives';
+import type { CandidateObservationRegistryPort, ObservationReplacement } from '../ports/registry';
 import type { ClockPort, RegistryIdPort } from '../ports/context';
-
-function cloneJsonValue(value: unknown, stack = new Set<object>()): RegistryJsonValue | undefined {
-  if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
-  if (typeof value !== 'object' || stack.has(value)) return undefined;
-  stack.add(value);
-  if (Array.isArray(value)) {
-    const result: RegistryJsonValue[] = [];
-    for (const item of value) {
-      const cloned = cloneJsonValue(item, stack);
-      if (cloned === undefined) return undefined;
-      result.push(cloned);
-    }
-    stack.delete(value);
-    return result;
-  }
-  if (Object.getPrototypeOf(value) !== Object.prototype) return undefined;
-  const result: { [key: string]: RegistryJsonValue } = {};
-  for (const [key, item] of Object.entries(value)) {
-    const cloned = cloneJsonValue(item, stack);
-    if (cloned === undefined) return undefined;
-    Object.defineProperty(result, key, {
-      configurable: true,
-      enumerable: true,
-      value: cloned,
-      writable: true,
-    });
-  }
-  stack.delete(value);
-  return result;
-}
-
-function freezeDeep(value: unknown, seen = new Set<object>()): void {
-  if (typeof value !== 'object' || value === null || seen.has(value)) return;
-  seen.add(value);
-  for (const child of Object.values(value)) freezeDeep(child, seen);
-  Object.freeze(value);
-}
-
-function valueKey(value: RegistryJsonValue): string {
-  const normalized = (input: RegistryJsonValue): RegistryJsonValue => {
-    if (Array.isArray(input)) return input.map(normalized);
-    if (input === null || typeof input !== 'object') return input;
-    const result: { [key: string]: RegistryJsonValue } = {};
-    for (const [key, nested] of Object.entries(input).sort(([left], [right]) =>
-      left.localeCompare(right),
-    )) {
-      Object.defineProperty(result, key, {
-        configurable: true,
-        enumerable: true,
-        value: normalized(nested),
-        writable: true,
-      });
-    }
-    return result;
-  };
-  return JSON.stringify(normalized(value)) ?? '';
-}
+import {
+  assertOpaqueId,
+  assertScope,
+  prepareObservation as prepareStoredObservation,
+  scopeError,
+  validateReplacement as validateObservationReplacement,
+  valueKey,
+} from './registry-observation';
 
 function identityKey(ownerScopeRef: string, provider: string, recordRef: string): string {
   return JSON.stringify([ownerScopeRef, provider, recordRef]);
@@ -105,21 +45,6 @@ function reuseKey(scope: RegistryScope, candidateId: CandidateId, field: string)
   return JSON.stringify([scope.ownerScopeRef, scope.threadId, candidateId, field]);
 }
 
-function assertScope(scope: RegistryScope): void {
-  if (!v.safeParse(RegistryScopeSchema, scope).success) {
-    throw new RegistryError('INVALID_ARGUMENT', 'registry scope is invalid');
-  }
-}
-
-function assertOpaqueId(id: string, used: ReadonlySet<string>, kind: string): string {
-  if (!v.safeParse(OpaqueIdSchema, id).success) {
-    throw new RegistryError('INVALID_ID', `${kind} generator returned an invalid ID`);
-  }
-  if (used.has(id))
-    throw new RegistryError('DUPLICATE_ID', `${kind} generator returned a duplicate ID`);
-  return id;
-}
-
 function assertCandidateId(id: string, used: ReadonlySet<CandidateId>): CandidateId {
   const parsed = v.safeParse(CandidateIdSchema, id);
   if (!parsed.success)
@@ -127,19 +52,6 @@ function assertCandidateId(id: string, used: ReadonlySet<CandidateId>): Candidat
   if (used.has(parsed.output))
     throw new RegistryError('DUPLICATE_ID', 'candidateId generator returned a duplicate ID');
   return parsed.output;
-}
-
-function scopeError(
-  expected: RegistryScope,
-  actual: Pick<CandidateRecord, 'ownerScopeRef' | 'threadId'>,
-): RegistryError | undefined {
-  if (expected.ownerScopeRef !== actual.ownerScopeRef) {
-    return new RegistryError('OWNER_SCOPE_MISMATCH', 'registry owner scope does not match');
-  }
-  if (expected.threadId !== actual.threadId) {
-    return new RegistryError('THREAD_SCOPE_MISMATCH', 'registry thread scope does not match');
-  }
-  return undefined;
 }
 
 export class CandidateObservationRegistry implements CandidateObservationRegistryPort {
@@ -259,84 +171,51 @@ export class CandidateObservationRegistry implements CandidateObservationRegistr
   }
 
   registerObservation(input: ObservationRegistration): Readonly<StoredObservation> {
-    assertScope(input.scope);
-    const candidate = this.candidates.get(input.candidateId);
-    if (candidate === undefined)
-      throw new RegistryError('UNKNOWN_CANDIDATE', 'candidate is not registered');
-    const accessError = scopeError(input.scope, candidate);
-    if (accessError !== undefined) throw accessError;
-    if (
-      input.context.ownerScopeRef !== input.scope.ownerScopeRef ||
-      input.context.threadId !== input.scope.threadId
-    ) {
-      throw new RegistryError('THREAD_SCOPE_MISMATCH', 'observation context does not match scope');
-    }
-    if (!v.safeParse(ObservationContextSchema, input.context).success) {
-      throw new RegistryError('INVALID_ARGUMENT', 'observation context is invalid');
-    }
-    if (
-      !v.safeParse(IsoTimestampSchema, input.freshUntil).success ||
-      !v.safeParse(IsoTimestampSchema, input.expiresAt).success ||
-      !v.safeParse(RetentionMetadataSchema, input.retention).success
-    ) {
-      throw new RegistryError(
-        'INVALID_OBSERVATION',
-        'observation timestamps or retention are invalid',
-      );
-    }
-    // A null policy freshUntil carries no finite provider bound; the required local freshUntil
-    // still governs reuse, so null never turns an observation into an indefinitely fresh value.
-    if (
-      input.retention.freshUntil !== null &&
-      Date.parse(input.freshUntil) > Date.parse(input.retention.freshUntil)
-    ) {
-      throw new RegistryError(
-        'INVALID_OBSERVATION',
-        'observation freshness exceeds the retention freshness bound',
-      );
-    }
-    const value = cloneJsonValue(input.value);
-    if (value === undefined)
-      throw new RegistryError('INVALID_OBSERVATION', 'observation value must be JSON data');
-    const fetchedAt = this.now();
-    const observationId = assertOpaqueId(
-      this.ids.nextObservationId(),
-      new Set(this.observations.keys()),
-      'observationId',
-    );
-    const observation: StoredObservation = {
-      observationId,
-      candidateId: input.candidateId,
-      field: input.field,
-      value,
-      basis: input.basis,
-      fetchedAt,
-      sourceUpdatedAt: input.sourceUpdatedAt,
-      expiresAt: input.expiresAt,
-      freshUntil: input.freshUntil,
-      contextKey: contextKeyForObservation(input.context, input.field),
-      context: { ...input.context },
-      sources: input.sources.map((source) => ({ ...source })),
-      retention: {
-        ...input.retention,
-        attribution:
-          input.retention.attribution === null ? null : { ...input.retention.attribution },
-      },
-    };
-    const parsed = v.safeParse(AnyObservationSchema, observation);
-    if (!parsed.success || Date.parse(input.freshUntil) > Date.parse(input.expiresAt)) {
-      throw new RegistryError(
-        'INVALID_OBSERVATION',
-        'observation timestamps or fields are invalid',
-      );
-    }
-    freezeDeep(observation);
-    const stored: ReadonlyStoredObservation = Object.freeze(observation);
-    this.observations.set(observationId, stored);
-    const ids = this.observationIdsByCandidate.get(input.candidateId) ?? [];
-    ids.push(observationId);
-    this.observationIdsByCandidate.set(input.candidateId, ids);
+    const stored = this.prepareObservation(input);
+    this.storeObservation(stored);
     return stored;
+  }
+
+  replaceObservation(input: ObservationReplacement): ReadonlyStoredObservation {
+    const { registration, expectedObservationId } = input;
+    const { key, observationIds } = this.validateReplacement(registration, expectedObservationId);
+    const stored = this.prepareObservation(registration);
+    this.storeObservation(stored);
+    const suppressed = new Set(this.suppressedReuse.get(key) ?? []);
+    for (const observationId of observationIds) suppressed.add(observationId);
+    this.suppressedReuse.set(key, suppressed);
+    return stored;
+  }
+
+  private prepareObservation(input: ObservationRegistration): ReadonlyStoredObservation {
+    return prepareStoredObservation(input, {
+      candidateFor: (candidateId) => this.candidates.get(candidateId),
+      now: () => this.now(),
+      nextObservationId: () => this.ids.nextObservationId(),
+      existingObservationIds: new Set(this.observations.keys()),
+    });
+  }
+
+  private storeObservation(stored: ReadonlyStoredObservation): void {
+    this.observations.set(stored.observationId, stored);
+    const ids = this.observationIdsByCandidate.get(stored.candidateId) ?? [];
+    ids.push(stored.observationId);
+    this.observationIdsByCandidate.set(stored.candidateId, ids);
+  }
+
+  private validateReplacement(
+    registration: ObservationRegistration,
+    expectedObservationId: string,
+  ): { readonly key: string; readonly observationIds: readonly string[] } {
+    return validateObservationReplacement(registration, expectedObservationId, {
+      candidateFor: (candidateId) => this.candidates.get(candidateId),
+      observationFor: (observationId) => this.observations.get(observationId),
+      observationsFor: (scope, candidateId) => this.listObservations(scope, candidateId),
+      blockedFor: (key) => this.blockedReuse.get(key),
+      suppressedFor: (key) => this.suppressedReuse.get(key),
+      keyFor: reuseKey,
+      now: () => this.now(),
+    });
   }
 
   readObservation(
