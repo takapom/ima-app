@@ -1326,5 +1326,33 @@
     "deliverables": "workers/api（live検収）・docs（証跡）：live profile別preflight/実API結果・許諾確認・未検証一覧",
     "completion_rule": "本Issueの成果物とテストを同じPRで提出する。後段の監査Issueに単体/契約テスト作成を先送りしない。外部キー/資格/実データが必要な実測だけは担当ゲートへ明示する。 責務で分割し、行数回避の圧縮や必要テストの切離しをしない。適用外項目は理由を示し、外部実測ゲートは維持する。",
     "package_ownership": "workers/api（live検収）・docs（証跡）"
+  },
+  {
+    "key": "M36",
+    "title": "製品経路の品質を残し重複試験・死コード・フロント層を刈る",
+    "phase": "保守",
+    "dependencies": [
+      "M29"
+    ],
+    "why": "ADR0014以前のSDK比較suiteと未配線Port、フロントの余分な層が製品品質の正本を隠している。",
+    "scope": [
+      "runtime-gate / think-gate / think-runtime専用DOを既定testから外し、製品経路が使うヘルパだけtests/supportへ残す",
+      "空tool-bindings、常時502のplace GET、未配線Core Port/レジストリ、未使用packages/evalを削除する",
+      "mobileのcompositionと三重の応答状態、保存プレビューの二重hookを畳む。画面・E2E試験は追加しない"
+    ],
+    "acceptance": [
+      "mixed-step拒否・invalid修正・replay・retention canaryの正本がruntime-nativeに残る",
+      "eval workspaceが無く、compositionが無く、shellが応答payloadを持たない",
+      "画面確認は未実施と記録し、合格と扱わない"
+    ],
+    "references": [
+      "docs/adr/0006-lightweight-frontend-hexagonal-backend.md",
+      "docs/adr/0012-package-dependency-boundaries.md",
+      "docs/adr/0014-think-runtime-adoption.md",
+      "https://github.com/takapom/ima-app/issues/37"
+    ],
+    "deliverables": "workers/api tests/support、packages/core、apps/mobile、ADR0012部分更新",
+    "completion_rule": "各コミット追加＋削除2,000行以内。手書き500行。画面・E2Eは完了条件にしない。",
+    "package_ownership": "workers/api・packages/core・packages/eval・apps/mobile・docs/adr"
   }
 ]

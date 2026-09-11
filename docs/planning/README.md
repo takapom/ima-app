@@ -67,7 +67,7 @@ Cloudflare側へ実行管理を集約しThinkを先に検証、不適合ならAI
 
 ## Issue一覧
 
-[親Issue #1](https://github.com/takapom/ima-app/issues/1)で全体進捗を管理する。実装Issueは35件、作成時点では全件Open・未実装。原本は[backlog.json](./backlog.json)。各Issueに目的・実装範囲・完了条件・直接依存・根拠文書を記載する。
+[親Issue #1](https://github.com/takapom/ima-app/issues/1)で全体進捗を管理する。実装Issueは35件＋品質刈り[M36 / #37](https://github.com/takapom/ima-app/issues/37)。原本は[backlog.json](./backlog.json)。各Issueに目的・実装範囲・完了条件・直接依存・根拠文書を記載する。
 
 | ID | フェーズ | タスク | 直接依存 |
 |---|---|---|---|
@@ -106,3 +106,4 @@ Cloudflare側へ実行管理を集約しThinkを先に検証、不適合ならAI
 | [M33 / #34](https://github.com/takapom/ima-app/issues/34) | データ整備 | 対応終電journeyの実データを検証・投入する | [M14 / #15](https://github.com/takapom/ima-app/issues/15), [M34 / #35](https://github.com/takapom/ima-app/issues/35) |
 | [M34 / #35](https://github.com/takapom/ima-app/issues/35) | 基盤 | 非本番Worker・EASの最小環境とSecrets設定口を先行整備する | [M02 / #3](https://github.com/takapom/ima-app/issues/3), [M04 / #5](https://github.com/takapom/ima-app/issues/5) |
 | [M35 / #36](https://github.com/takapom/ima-app/issues/36) | ライブ検証 | キー設定後の実API・モデル接続を非本番環境で検収する | [M08 / #9](https://github.com/takapom/ima-app/issues/9), [M24 / #25](https://github.com/takapom/ima-app/issues/25), [M34 / #35](https://github.com/takapom/ima-app/issues/35), [M31 / #32](https://github.com/takapom/ima-app/issues/32) |
+| [M36 / #37](https://github.com/takapom/ima-app/issues/37) | 保守 | 製品経路の品質を残し重複試験・死コード・フロント層を刈る | [M29 / #30](https://github.com/takapom/ima-app/issues/30) |

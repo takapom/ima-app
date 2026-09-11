@@ -384,6 +384,15 @@
         35,
         32
       ]
+    },
+    {
+      "key": "M36",
+      "number": 37,
+      "url": "https://github.com/takapom/ima-app/issues/37",
+      "title": "[M36] 製品経路の品質を残し重複試験・死コード・フロント層を刈る",
+      "dependencies": [
+        30
+      ]
     }
   ]
 }
