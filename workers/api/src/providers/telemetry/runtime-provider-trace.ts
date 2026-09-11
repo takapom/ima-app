@@ -2,6 +2,7 @@ import { GooglePlaceDetailsError } from '../places-details/types';
 import { GoogleTextSearchError } from '../places-search/types';
 import { GoogleRouteMatrixError } from '../routes/types';
 import { PhotoProviderError } from '../photo/media';
+import { HotPepperError } from '../hot-pepper/types';
 import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '../../telemetry/schema';
 import { parseTraceRecord, type TelemetryTraceStore } from '../../telemetry/trace';
 import {
@@ -45,7 +46,11 @@ export type RuntimeProviderTraceOptions = {
 };
 
 type ProviderError =
-  GoogleTextSearchError | GooglePlaceDetailsError | GoogleRouteMatrixError | PhotoProviderError;
+  | GoogleTextSearchError
+  | GooglePlaceDetailsError
+  | GoogleRouteMatrixError
+  | PhotoProviderError
+  | HotPepperError;
 
 type CallState = {
   readonly callId: string;
@@ -139,7 +144,8 @@ const isProviderError = (error: unknown): error is ProviderError =>
   error instanceof GoogleTextSearchError ||
   error instanceof GooglePlaceDetailsError ||
   error instanceof GoogleRouteMatrixError ||
-  error instanceof PhotoProviderError;
+  error instanceof PhotoProviderError ||
+  error instanceof HotPepperError;
 
 const outcomeForError = (
   error: unknown,
@@ -164,6 +170,16 @@ const outcomeForError = (
         return { status: 'error', resultCode: 'INTERNAL' };
       case 'EXPIRED':
         return { status: 'error', resultCode: 'EXPIRED' };
+      case 'NO_MATCH':
+        return { status: 'error', resultCode: 'NOT_FOUND' };
+      case 'AMBIGUOUS_MATCH':
+      case 'SOURCE_CONFLICT':
+        return { status: 'error', resultCode: 'CONFLICT' };
+      case 'MISSING_ATTRIBUTION':
+      case 'UNSUPPORTED':
+        return { status: 'error', resultCode: 'PROVIDER_UNAVAILABLE' };
+      case 'POLICY_DENIED':
+        return { status: 'error', resultCode: 'FORBIDDEN' };
       case 'UNSUPPORTED_MEDIA_TYPE':
       case 'RESULT_TOO_LARGE':
       case 'REDIRECT_REJECTED':

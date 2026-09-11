@@ -5,6 +5,7 @@ import { createGoogleTextSearchTransport } from '../../../src/providers/places-s
 import type { GoogleTextSearchRequest } from '../../../src/providers/places-search/types';
 import { createGoogleRouteMatrixTransport } from '../../../src/providers/routes/transport';
 import { PhotoProviderError } from '../../../src/providers/photo/media';
+import { HotPepperError } from '../../../src/providers/hot-pepper/types';
 import {
   routeElementCount,
   type GoogleRouteMatrixRequest,
@@ -317,6 +318,32 @@ describe('runtime provider transport trace', () => {
       { provider: 'photo', status: 'error', resultCode: 'EXPIRED' },
       { provider: 'photo', status: 'error', resultCode: 'PROVIDER_UNAVAILABLE' },
     ]);
+  });
+
+  it('classifies typed Hot Pepper transport failures without retaining provider details', () => {
+    const traces: RuntimeProviderTrace[] = [];
+    const observer = createRuntimeProviderTransportObserver(
+      baseTraceOptions((trace) => {
+        traces.push(trace);
+      }),
+    );
+    const cases = [
+      { error: new HotPepperError('TIMEOUT'), resultCode: 'PROVIDER_TIMEOUT' },
+      { error: new HotPepperError('CANCELLED'), resultCode: 'CANCELLED' },
+      { error: new HotPepperError('RATE_LIMITED'), resultCode: 'RATE_LIMITED' },
+      { error: new HotPepperError('NOT_FOUND'), resultCode: 'NOT_FOUND' },
+      { error: new HotPepperError('SOURCE_CONFLICT'), resultCode: 'CONFLICT' },
+    ] as const;
+    for (const { error } of cases) {
+      observer.begin({ provider: 'hotpepper' }).complete({ status: 'error', error });
+    }
+
+    expect(traces).toHaveLength(cases.length);
+    expect(traces.map((trace) => trace.resultCode)).toEqual(
+      cases.map(({ resultCode }) => resultCode),
+    );
+    expect(traces.every((trace) => trace.provider === 'hotpepper')).toBe(true);
+    expect(JSON.stringify(traces)).not.toContain('Hot Pepper provider failed');
   });
 
   it('keeps telemetry writes best effort and schedules the full validated record pipeline', async () => {

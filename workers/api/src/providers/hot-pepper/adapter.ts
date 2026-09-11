@@ -186,7 +186,7 @@ export type ConfiguredHotPepperAdapterOptions = Omit<
   HotPepperAdapterOptions,
   'transport' | 'mode'
 > &
-  Pick<HotPepperTransportOptions, 'fetcher' | 'timeoutMs'> & {
+  Pick<HotPepperTransportOptions, 'fetcher' | 'timeoutMs' | 'observer'> & {
     readonly transport?: HotPepperTransport;
   };
 

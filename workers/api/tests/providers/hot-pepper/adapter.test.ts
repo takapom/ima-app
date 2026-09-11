@@ -12,6 +12,7 @@ import {
   type HotPepperProviderInputPolicy,
 } from '../../../src/providers/hot-pepper/types';
 import type { HotPepperTransport } from '../../../src/providers/hot-pepper/transport';
+import type { RuntimeProviderTransportCompletion } from '../../../src/providers/telemetry/runtime-provider-trace-contract';
 import {
   parseHotPepperResponse,
   type HotPepperShopWire,
@@ -142,6 +143,40 @@ describe('Hot Pepper adapter', () => {
     expect(live?.mode).toBe('live');
     const result = await live?.read(candidate, 'display');
     expect(result).toMatchObject({ status: 'unsupported' });
+  });
+
+  it('forwards an observer to the configured live transport', async () => {
+    const completed: RuntimeProviderTransportCompletion[] = [];
+    const observer = {
+      begin: () => ({
+        complete: (completion: RuntimeProviderTransportCompletion) => completed.push(completion),
+      }),
+    };
+    const allowLive: HotPepperFieldPolicy = () => ({
+      decision: 'allow',
+      activation: 'live_verified',
+    });
+    const allowLiveInput: HotPepperProviderInputPolicy = () => ({
+      decision: 'allow',
+      activation: 'live_verified',
+    });
+    const adapter = createConfiguredHotPepperAdapter(
+      {
+        IMA_RUNTIME_MODE: 'live',
+        IMA_PROVIDER_HOTPEPPER: 'true',
+        HOTPEPPER_API_KEY: 'key-never-logged',
+      },
+      {
+        policy: allowLive,
+        providerInputPolicy: allowLiveInput,
+        observer,
+        fetcher: () =>
+          Promise.resolve(new Response(JSON.stringify({ results: { shop: [shop()] } }))),
+      },
+    );
+    if (adapter === undefined) throw new Error('live adapter was not configured');
+    await expect(adapter.read(candidate, 'display')).resolves.toMatchObject({ status: 'ok' });
+    expect(completed).toEqual([{ status: 'ok' }]);
   });
 
   it('applies field and attribution policy without leaking a known value', async () => {

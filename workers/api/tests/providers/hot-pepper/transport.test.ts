@@ -9,6 +9,10 @@ import {
   createHotPepperTransport,
   type HotPepperTransportOptions,
 } from '../../../src/providers/hot-pepper/transport';
+import type {
+  RuntimeProviderTransportCompletion,
+  RuntimeProviderTransportObserver,
+} from '../../../src/providers/telemetry/runtime-provider-trace-contract';
 
 const request: HotPepperSearchRequest = {
   keyword: '静かなカフェ 恵比寿',
@@ -77,15 +81,132 @@ describe('Hot Pepper transport', () => {
 
   it('rejects missing keys and malformed requests before starting HTTP', async () => {
     const fetcher = vi.fn<typeof fetch>(() => Promise.resolve(response(bodyFor())));
+    let beginCount = 0;
+    const observer: RuntimeProviderTransportObserver = {
+      begin: () => {
+        beginCount += 1;
+        return { complete: () => undefined };
+      },
+    };
     await expect(
-      createHotPepperTransport({ apiKey: '', fetcher }).search(request),
+      createHotPepperTransport({ apiKey: '', fetcher, observer }).search(request),
     ).rejects.toMatchObject({
       code: 'MISSING_API_KEY',
     });
     await expect(
-      createHotPepperTransport({ apiKey: 'key', fetcher }).search({ ...request, count: 21 }),
+      createHotPepperTransport({ apiKey: 'key', fetcher, observer }).search({
+        ...request,
+        count: 21,
+      }),
     ).rejects.toMatchObject({ code: 'INVALID_REQUEST' });
+    const cancelled = new AbortController();
+    cancelled.abort();
+    await expect(
+      createHotPepperTransport({ apiKey: 'key', fetcher, observer }).search(
+        request,
+        cancelled.signal,
+      ),
+    ).rejects.toMatchObject({ code: 'CANCELLED' });
     expect(fetcher).not.toHaveBeenCalled();
+    expect(beginCount).toBe(0);
+  });
+
+  it('observes one complete fetch and classifies a non-success status', async () => {
+    const began: Parameters<RuntimeProviderTransportObserver['begin']>[0][] = [];
+    const completed: RuntimeProviderTransportCompletion[] = [];
+    const observer: RuntimeProviderTransportObserver = {
+      begin: (input) => {
+        began.push(input);
+        return { complete: (completion) => completed.push(completion) };
+      },
+    };
+    await expect(
+      makeTransport(() => Promise.resolve(response(bodyFor())), { observer }).search(request),
+    ).resolves.toMatchObject({ resultsAvailable: 1 });
+    await expect(
+      makeTransport(() => Promise.resolve(response({ error: 'provider-body-canary' }, 429)), {
+        observer,
+      }).search(request),
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+
+    expect(began).toEqual([{ provider: 'hotpepper' }, { provider: 'hotpepper' }]);
+    expect(completed).toHaveLength(2);
+    expect(completed[0]).toEqual({ status: 'ok' });
+    expect(completed[1]).toMatchObject({ status: 'error', error: { code: 'RATE_LIMITED' } });
+    expect(JSON.stringify(completed)).not.toContain('provider-body-canary');
+  });
+
+  it('classifies a timeout while the provider fetch is pending', async () => {
+    vi.useFakeTimers();
+    try {
+      const completed: RuntimeProviderTransportCompletion[] = [];
+      const observer: RuntimeProviderTransportObserver = {
+        begin: () => ({ complete: (completion) => completed.push(completion) }),
+      };
+      const transport = makeTransport(() => new Promise<Response>(() => undefined), {
+        observer,
+        timeoutMs: 10,
+      });
+      const pending = transport.search(request);
+      const expectation = expect(pending).rejects.toMatchObject({ code: 'TIMEOUT' });
+      await vi.advanceTimersByTimeAsync(10);
+      await expectation;
+      expect(completed).toHaveLength(1);
+      expect(completed[0]).toMatchObject({ status: 'error', error: { code: 'TIMEOUT' } });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('classifies cancellation while reading the provider body', async () => {
+    const cancelled = new AbortController();
+    const completed: RuntimeProviderTransportCompletion[] = [];
+    const observer: RuntimeProviderTransportObserver = {
+      begin: () => ({ complete: (completion) => completed.push(completion) }),
+    };
+    let streamController: ReadableStreamDefaultController<Uint8Array> | undefined;
+    let chunkDelivered!: () => void;
+    const firstChunk = new Promise<void>((resolve) => {
+      chunkDelivered = resolve;
+    });
+    let readerRequestedNextChunk!: () => void;
+    const nextChunkRequested = new Promise<void>((resolve) => {
+      readerRequestedNextChunk = resolve;
+    });
+    let sent = false;
+    const body = new ReadableStream<Uint8Array>({
+      start: (controller) => {
+        streamController = controller;
+      },
+      pull: (controller) => {
+        if (!sent) {
+          sent = true;
+          controller.enqueue(new TextEncoder().encode('{"results":'));
+          chunkDelivered();
+          return;
+        }
+        readerRequestedNextChunk();
+      },
+    });
+    let fetchCount = 0;
+    const fetcher: NonNullable<HotPepperTransportOptions['fetcher']> = (_input, init) => {
+      fetchCount += 1;
+      init?.signal?.addEventListener(
+        'abort',
+        () => streamController?.error(new DOMException('aborted', 'AbortError')),
+        { once: true },
+      );
+      return Promise.resolve(new Response(body));
+    };
+    const transport = makeTransport(fetcher, { observer, timeoutMs: 1_000 });
+    const pending = transport.search(request, cancelled.signal);
+    await firstChunk;
+    await nextChunkRequested;
+    cancelled.abort();
+    await expect(pending).rejects.toMatchObject({ code: 'CANCELLED' });
+    expect(fetchCount).toBe(1);
+    expect(completed).toHaveLength(1);
+    expect(completed[0]).toMatchObject({ status: 'error', error: { code: 'CANCELLED' } });
   });
 
   it('maps HTTP and body-level errors without exposing provider text or keys', async () => {

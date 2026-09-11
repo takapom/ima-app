@@ -6,12 +6,22 @@ import {
   type HotPepperSearchRequest,
 } from './types';
 import { parseHotPepperResponse, type HotPepperSearchPage } from './wire';
+import {
+  beginRuntimeProviderTransportCall,
+  completeRuntimeProviderTransportCall,
+} from '../telemetry/runtime-provider-trace-contract';
+import type {
+  RuntimeProviderTransportCall,
+  RuntimeProviderTransportObserver,
+} from '../telemetry/runtime-provider-trace-contract';
 
 export type HotPepperTransportOptions = {
   /** The composition owner reads this from the Worker secret binding. */
   readonly apiKey?: string;
   readonly timeoutMs?: number;
   readonly fetcher?: typeof fetch;
+  /** Optional observer invoked immediately before the provider fetch starts. */
+  readonly observer?: RuntimeProviderTransportObserver;
 };
 
 export interface HotPepperTransport {
@@ -155,41 +165,56 @@ const searchWith = async (
 
   const fetcher = options.fetcher ?? globalThis.fetch;
   const url = requestUrlFor(parsedRequest.output, apiKey);
-  const upstream = await fetchWithDeadline(
-    async (requestSignal) => {
-      const response = await fetcher(url, {
-        method: 'GET',
-        headers: { accept: 'application/json' },
-        redirect: 'manual',
-        signal: requestSignal,
-      });
-      if (!response.ok) {
-        await discardResponseBody(response);
-        return { response, body: null };
-      }
-      return { response, body: await readJson(response) };
-    },
-    signal,
-    options.timeoutMs,
-  );
+  let observation: RuntimeProviderTransportCall | undefined;
+  try {
+    const upstream = await fetchWithDeadline(
+      async (requestSignal) => {
+        observation = beginRuntimeProviderTransportCall(options.observer, {
+          provider: 'hotpepper',
+        });
+        const response = await fetcher(url, {
+          method: 'GET',
+          headers: { accept: 'application/json' },
+          redirect: 'manual',
+          signal: requestSignal,
+        });
+        if (!response.ok) {
+          await discardResponseBody(response);
+          return { response, body: null };
+        }
+        return { response, body: await readJson(response) };
+      },
+      signal,
+      options.timeoutMs,
+    );
 
-  if (!upstream.response.ok) {
-    if (upstream.response.status === 404) {
-      throw new HotPepperError('NOT_FOUND', { status: 404 });
+    if (!upstream.response.ok) {
+      if (upstream.response.status === 404) {
+        throw new HotPepperError('NOT_FOUND', { status: 404 });
+      }
+      if (upstream.response.status === 429) {
+        throw new HotPepperError('RATE_LIMITED', {
+          status: 429,
+          retryAfterMs: parseRetryAfter(upstream.response.headers.get('retry-after')),
+        });
+      }
+      if (upstream.response.status >= 500) {
+        throw new HotPepperError('UPSTREAM_UNAVAILABLE', { status: upstream.response.status });
+      }
+      throw new HotPepperError('INVALID_REQUEST', { status: upstream.response.status });
     }
-    if (upstream.response.status === 429) {
-      throw new HotPepperError('RATE_LIMITED', {
-        status: 429,
-        retryAfterMs: parseRetryAfter(upstream.response.headers.get('retry-after')),
-      });
-    }
-    if (upstream.response.status >= 500) {
-      throw new HotPepperError('UPSTREAM_UNAVAILABLE', { status: upstream.response.status });
-    }
-    throw new HotPepperError('INVALID_REQUEST', { status: upstream.response.status });
+    if (upstream.body === null) throw new HotPepperError('SCHEMA_MISMATCH');
+    const page = parseHotPepperResponse(upstream.body);
+    completeRuntimeProviderTransportCall(observation, { status: 'ok' });
+    return page;
+  } catch (error: unknown) {
+    completeRuntimeProviderTransportCall(observation, {
+      status: 'error',
+      error,
+      ...(signal === undefined ? {} : { signal }),
+    });
+    throw error;
   }
-  if (upstream.body === null) throw new HotPepperError('SCHEMA_MISMATCH');
-  return parseHotPepperResponse(upstream.body);
 };
 
 export const createHotPepperTransport = (
