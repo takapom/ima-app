@@ -123,17 +123,13 @@ function JourneyScreenStateOwner({
   preferenceState,
 }: JourneyScreenStateOwnerProps): React.JSX.Element {
   const persistedPreferences = preferenceState;
-  const journey = useJourneyShell(threadId, persistedPreferences.savedConditions);
+  const journey = useJourneyShell(persistedPreferences.savedConditions);
   const savedPlaceUi = useJourneySavedPlacePreview(
     savedPlacePreview,
     onSavedPlaceSelect,
     requestStatus === 'pending' || journey.phase === 'working',
   );
-  const renderedResponse = useAssistantResponseProjection(
-    responseState ?? journey.responseState,
-    now,
-    responseClock,
-  );
+  const renderedResponse = useAssistantResponseProjection(responseState, now, responseClock);
   const [requestStartRevision, setRequestStartRevision] = useState<number | null>(null);
   const lastObservedResponseRevision = useRef(renderedResponse.revision);
   useEffect(() => {
@@ -150,7 +146,7 @@ function JourneyScreenStateOwner({
       }
       return;
     }
-    journey.settleResponse(renderedResponse.revision);
+    journey.settleResponse();
     savedPlaceUi.responseSettled();
     setRequestStartRevision((current) =>
       current !== null && renderedResponse.revision > current ? null : current,
@@ -277,9 +273,9 @@ function JourneyScreenStateOwner({
   const decide = useCallback(
     (candidateId: string): void => {
       if (!actions.decide(candidateId)) return;
-      journey.decide(candidateId, renderedResponse);
+      journey.decide();
     },
-    [actions.decide, journey.decide, renderedResponse],
+    [actions.decide, journey.decide],
   );
   const recover = useCallback((): void => {
     if (actions.state.decidedCandidateId !== null) {

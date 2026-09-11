@@ -5,15 +5,14 @@ import {
   type DrawerView,
   type JourneyShellState,
 } from '../state/journey-shell';
-import type { AssistantResponseState } from '../state/assistant-response';
 import type { ConditionScope, JourneyConditions } from '../state/journey-input';
 
 export type JourneyShellController = JourneyShellState & {
   readonly beginRequest: (query: string) => void;
-  readonly settleResponse: (revision: number) => void;
+  readonly settleResponse: () => void;
   readonly failRequest: (message: string) => void;
   readonly cancelRequest: () => void;
-  readonly decide: (candidateId: string, responseState?: AssistantResponseState) => void;
+  readonly decide: () => void;
   readonly updateDraft: (value: string) => void;
   readonly removeChip: (label: string) => void;
   readonly changeConditionScope: (scope: ConditionScope) => void;
@@ -25,32 +24,22 @@ export type JourneyShellController = JourneyShellState & {
 };
 
 export const useJourneyShell = (
-  threadId = 'mobile-thread',
   initialSavedConditions?: JourneyConditions,
 ): JourneyShellController => {
-  const [state, dispatch] = useReducer(journeyShellReducer, threadId, (id) =>
-    createJourneyShellState(id, initialSavedConditions),
+  const [state, dispatch] = useReducer(journeyShellReducer, initialSavedConditions, (saved) =>
+    createJourneyShellState(saved),
   );
   const beginRequest = useCallback(
     (query: string) => dispatch({ type: 'beginRequest', query }),
     [],
   );
-  const settleResponse = useCallback(
-    (revision: number) => dispatch({ type: 'responseSettled', revision }),
-    [],
-  );
+  const settleResponse = useCallback(() => dispatch({ type: 'responseSettled' }), []);
   const failRequest = useCallback(
     (message: string) => dispatch({ type: 'requestFailed', message }),
     [],
   );
   const cancelRequest = useCallback(() => dispatch({ type: 'cancelRequest' }), []);
-  const decide = useCallback(
-    (candidateId: string, responseState?: AssistantResponseState) =>
-      responseState === undefined
-        ? dispatch({ type: 'decided', candidateId })
-        : dispatch({ type: 'decided', candidateId, responseState }),
-    [],
-  );
+  const decide = useCallback(() => dispatch({ type: 'decided' }), []);
   const updateDraft = useCallback((value: string) => dispatch({ type: 'draftChanged', value }), []);
   const removeChip = useCallback((label: string) => dispatch({ type: 'chipRemoved', label }), []);
   const changeConditionScope = useCallback(

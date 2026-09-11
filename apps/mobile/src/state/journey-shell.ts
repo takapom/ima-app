@@ -1,4 +1,3 @@
-import { createAssistantResponseState, type AssistantResponseState } from './assistant-response';
 import {
   conditionChangesForChip,
   createDefaultJourneyConditions,
@@ -39,14 +38,12 @@ export type JourneyShellState = {
   readonly drawerOpen: boolean;
   readonly drawerView: DrawerView;
   readonly errorMessage: string | null;
-  readonly responseState: AssistantResponseState;
 };
 
 export type JourneyShellAction =
   | { readonly type: 'draftChanged'; readonly value: string }
   | { readonly type: 'beginRequest'; readonly query: string }
-  | { readonly type: 'responseApplied'; readonly responseState: AssistantResponseState }
-  | { readonly type: 'responseSettled'; readonly revision: number }
+  | { readonly type: 'responseSettled' }
   | { readonly type: 'requestFailed'; readonly message: string }
   | { readonly type: 'cancelRequest' }
   | { readonly type: 'chipRemoved'; readonly label: string }
@@ -56,18 +53,13 @@ export type JourneyShellAction =
       readonly scope: ConditionScope;
       readonly changes: Partial<JourneyConditions>;
     }
-  | {
-      readonly type: 'decided';
-      readonly candidateId: string;
-      readonly responseState?: AssistantResponseState;
-    }
+  | { readonly type: 'decided' }
   | { readonly type: 'toggleDrawer' }
   | { readonly type: 'closeDrawer' }
   | { readonly type: 'setDrawerView'; readonly view: DrawerView }
   | { readonly type: 'reset' };
 
 export const createJourneyShellState = (
-  threadId: string,
   initialSavedConditions: JourneyConditions = createDefaultJourneyConditions(),
 ): JourneyShellState => ({
   phase: 'empty',
@@ -82,19 +74,7 @@ export const createJourneyShellState = (
   drawerOpen: false,
   drawerView: 'home',
   errorMessage: null,
-  responseState: createAssistantResponseState(threadId),
 });
-
-const hasCandidate = (
-  state: JourneyShellState,
-  candidateId: string,
-  responseState = state.responseState,
-): boolean => {
-  const cards = responseState.cards;
-  return (
-    cards !== null && [cards.hero, ...cards.alts].some((card) => card.candidateId === candidateId)
-  );
-};
 
 export const journeyShellReducer = (
   state: JourneyShellState,
@@ -121,18 +101,8 @@ export const journeyShellReducer = (
             drawerOpen: false,
           };
     }
-    case 'responseApplied':
-      return {
-        ...state,
-        responseState: action.responseState,
-        requestState: 'idle',
-        phase: action.responseState.revision > 0 ? 'results' : state.phase,
-        draft: action.responseState.revision > 0 ? '' : state.draft,
-        removedChipLabels: action.responseState.revision > 0 ? [] : state.removedChipLabels,
-        errorMessage: null,
-      };
     case 'responseSettled':
-      return state.requestState === 'pending' && action.revision > state.responseState.revision
+      return state.requestState === 'pending'
         ? { ...state, requestState: 'idle', phase: 'results', errorMessage: null }
         : state;
     case 'requestFailed':
@@ -179,9 +149,7 @@ export const journeyShellReducer = (
       };
     }
     case 'decided':
-      return hasCandidate(state, action.candidateId, action.responseState)
-        ? { ...state, phase: 'decided' }
-        : state;
+      return { ...state, phase: 'decided' };
     case 'toggleDrawer':
       return { ...state, drawerOpen: !state.drawerOpen };
     case 'closeDrawer':
@@ -189,6 +157,6 @@ export const journeyShellReducer = (
     case 'setDrawerView':
       return { ...state, drawerView: action.view };
     case 'reset':
-      return createJourneyShellState(state.responseState.threadId, state.savedConditions);
+      return createJourneyShellState(state.savedConditions);
   }
 };

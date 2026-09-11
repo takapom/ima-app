@@ -1,6 +1,9 @@
 import { AppState } from 'react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AssistantResponseState } from '../state/assistant-response';
+import {
+  createAssistantResponseState,
+  type AssistantResponseState,
+} from '../state/assistant-response';
 import {
   nextAssistantResponseExpiryAt,
   projectAssistantResponseState,
@@ -14,15 +17,19 @@ import {
   type AssistantResponseClock,
 } from '../services/assistant-response-clock';
 
+const emptyAssistantResponseState = createAssistantResponseState('mobile-thread');
+
 /**
  * Refreshes the render projection at the next retention boundary while retaining raw state.
  * Tests and hosts can pass `now`; the default clock lives at the service boundary.
+ * Null or undefined means the controller has no response yet.
  */
 export const useAssistantResponseProjection = (
-  state: AssistantResponseState,
+  state: AssistantResponseState | null | undefined,
   now?: AssistantResponseProjectionNow,
   clock: AssistantResponseClock = systemAssistantResponseClock,
 ): AssistantResponseState => {
+  const source = state ?? emptyAssistantResponseState;
   const monotonicClock = useMemo(() => createMonotonicAssistantResponseClock(clock), [clock]);
   const [projectionNow, setProjectionNow] = useState<AssistantResponseProjectionNow>(() =>
     now === undefined ? monotonicClock() : now,
@@ -53,18 +60,18 @@ export const useAssistantResponseProjection = (
 
   useEffect(() => {
     observeNow(now ?? monotonicClock());
-  }, [monotonicClock, now, observeNow, state]);
+  }, [monotonicClock, now, observeNow, source]);
 
   useEffect(() => {
     if (now !== undefined) return undefined;
 
-    const expiryAt = nextAssistantResponseExpiryAt(state, renderNow);
+    const expiryAt = nextAssistantResponseExpiryAt(source, renderNow);
     const delay =
       expiryAt === null ? null : Math.max(1, Date.parse(expiryAt) - Date.parse(renderNow) + 1);
     const timer = delay === null ? null : setTimeout(() => observeNow(monotonicClock()), delay);
     return () => {
       if (timer !== null) clearTimeout(timer);
     };
-  }, [monotonicClock, now, observeNow, renderNow, state]);
-  return useMemo(() => projectAssistantResponseState(state, renderNow), [renderNow, state]);
+  }, [monotonicClock, now, observeNow, renderNow, source]);
+  return useMemo(() => projectAssistantResponseState(source, renderNow), [renderNow, source]);
 };

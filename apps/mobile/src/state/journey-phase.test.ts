@@ -24,4 +24,9 @@ describe('journey phase projection', () => {
   it('lets an external failed recovery request own the error phase', () => {
     expect(resolveJourneyPhase('error', 'working', true, false)).toBe('error');
   });
+
+  it('derives results from idle request status and mounted cards', () => {
+    expect(resolveJourneyPhase('idle', 'empty', true, false)).toBe('results');
+    expect(resolveJourneyPhase('idle', 'results', false, false)).toBe('empty');
+  });
 });

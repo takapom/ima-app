@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { createJourneyShellState, journeyShellReducer } from './journey-shell';
-import { selectAssistantMessages } from './assistant-response';
 
 describe('journey shell state', () => {
   it('ignores a blank request and keeps the draft available', () => {
-    const initial = createJourneyShellState('thread-1');
+    const initial = createJourneyShellState();
     const drafted = journeyShellReducer(initial, { type: 'draftChanged', value: '  ' });
     const next = journeyShellReducer(drafted, { type: 'beginRequest', query: '  ' });
 
     expect(next).toBe(drafted);
     expect(next.phase).toBe('empty');
     expect(next.draft).toBe('  ');
+    expect(next).not.toHaveProperty('responseState');
   });
 
   it('keeps the original query and draft while a real request is pending', () => {
-    const initial = journeyShellReducer(createJourneyShellState('thread-1'), {
+    const initial = journeyShellReducer(createJourneyShellState(), {
       type: 'draftChanged',
       value: '恵比寿で静かに話したい。',
     });
@@ -30,7 +30,7 @@ describe('journey shell state', () => {
   });
 
   it('cancels a pending request without dropping the editable draft', () => {
-    const initial = journeyShellReducer(createJourneyShellState('thread-1'), {
+    const initial = journeyShellReducer(createJourneyShellState(), {
       type: 'draftChanged',
       value: '  恵比寿で静かに話したい。  ',
     });
@@ -47,7 +47,7 @@ describe('journey shell state', () => {
   });
 
   it('keeps retry in the same raw query and records explicit chip removal', () => {
-    const working = journeyShellReducer(createJourneyShellState('thread-1'), {
+    const working = journeyShellReducer(createJourneyShellState(), {
       type: 'beginRequest',
       query: '  静か。徒歩10分  ',
     });
@@ -68,7 +68,7 @@ describe('journey shell state', () => {
   });
 
   it('keeps thread conditions separate from saved settings', () => {
-    const initial = createJourneyShellState('thread-1');
+    const initial = createJourneyShellState();
     const thread = journeyShellReducer(initial, {
       type: 'conditionChanged',
       scope: 'thread',
@@ -87,13 +87,13 @@ describe('journey shell state', () => {
 
   it('preserves saved settings through reset and can seed a new thread', () => {
     const savedSettings = {
-      ...createJourneyShellState('seed').savedConditions,
+      ...createJourneyShellState().savedConditions,
       stationLabel: '渋谷',
       maxWalkMinutes: 10,
     };
-    const initial = createJourneyShellState('thread-1', savedSettings);
+    const initial = createJourneyShellState(savedSettings);
     const reset = journeyShellReducer(initial, { type: 'reset' });
-    const nextThread = createJourneyShellState('thread-2', reset.savedConditions);
+    const nextThread = createJourneyShellState(reset.savedConditions);
 
     expect(reset.savedConditions).toEqual(savedSettings);
     expect(reset.conditions).toEqual(savedSettings);
@@ -101,7 +101,7 @@ describe('journey shell state', () => {
   });
 
   it('removes a preference chip from effective conditions as well as from the UI list', () => {
-    const withConditions = journeyShellReducer(createJourneyShellState('thread-1'), {
+    const withConditions = journeyShellReducer(createJourneyShellState(), {
       type: 'conditionChanged',
       scope: 'thread',
       changes: { maxWalkMinutes: 10 },
@@ -124,79 +124,33 @@ describe('journey shell state', () => {
     expect(restored.removedChipLabels).not.toContain('徒歩10分');
   });
 
-  it('moves a completed message response out of working', () => {
-    const working = journeyShellReducer(createJourneyShellState('thread-1'), {
-      type: 'beginRequest',
-      query: '近くで探して',
-    });
-    const responseState = {
-      ...working.responseState,
-      revision: 1,
-      responseRecords: [
-        {
-          responseId: 'response-1',
-          turnId: 'turn-1',
-          revision: 1,
-          kind: 'message' as const,
-          presentation: 'keep' as const,
-          declaredCardSetId: null,
-          effectiveCardSetId: null,
-          messages: [
-            {
-              text: '条件に合う候補はありませんでした。',
-              evidenceIds: [],
-              evidence: [],
-              basis: 'conversational' as const,
-              retention: {
-                retentionDecision: 'deny' as const,
-                retentionMode: 'session_only' as const,
-                sessionExpiresAt: '2026-09-10T00:00:00Z',
-                freshUntil: '2026-09-10T00:00:00Z',
-                displayUntil: '2026-09-10T00:00:00Z',
-                retentionUntil: null,
-                deletionScheduledAt: null,
-                attribution: null,
-                restoreMode: 'reference_only' as const,
-                policyStatus: 'policy_withheld' as const,
-                displayPolicyStatus: 'available' as const,
-              },
-            },
-          ],
-        },
-      ],
-    };
-    const next = journeyShellReducer(working, { type: 'responseApplied', responseState });
+  it('records a local decided phase without copying response payload', () => {
+    const next = journeyShellReducer(createJourneyShellState(), { type: 'decided' });
 
-    expect(next.phase).toBe('results');
-    expect(selectAssistantMessages(next.responseState)).toHaveLength(1);
-  });
-
-  it('does not decide a candidate that is absent from the response', () => {
-    const initial = createJourneyShellState('thread-1');
-    const next = journeyShellReducer(initial, { type: 'decided', candidateId: 'missing' });
-
-    expect(next).toBe(initial);
+    expect(next.phase).toBe('decided');
+    expect(next).not.toHaveProperty('responseState');
   });
 
   it('settles an external response without copying its payload into shell state', () => {
-    const working = journeyShellReducer(createJourneyShellState('thread-1'), {
+    const working = journeyShellReducer(createJourneyShellState(), {
       type: 'beginRequest',
       query: '近くで探して',
     });
-    const settled = journeyShellReducer(working, { type: 'responseSettled', revision: 1 });
+    const settled = journeyShellReducer(working, { type: 'responseSettled' });
 
     expect(settled.phase).toBe('results');
     expect(settled.requestState).toBe('idle');
-    expect(settled.responseState).toBe(working.responseState);
+    expect(settled.draft).toBe(working.draft);
+    expect(settled).not.toHaveProperty('responseState');
   });
 
   it('does not settle a response that arrives after cancellation', () => {
-    const working = journeyShellReducer(createJourneyShellState('thread-1'), {
+    const working = journeyShellReducer(createJourneyShellState(), {
       type: 'beginRequest',
       query: '近くで探して',
     });
     const cancelled = journeyShellReducer(working, { type: 'cancelRequest' });
-    const late = journeyShellReducer(cancelled, { type: 'responseSettled', revision: 1 });
+    const late = journeyShellReducer(cancelled, { type: 'responseSettled' });
 
     expect(late).toBe(cancelled);
   });
