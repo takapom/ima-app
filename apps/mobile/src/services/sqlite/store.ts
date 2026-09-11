@@ -1,4 +1,3 @@
-import type { Preferences } from '@ima/contracts';
 import { createSavedPlaceStore } from './saved-places';
 import { cleanupExpiredRows, currentIso } from './expiration';
 import { migrateSqlite } from './schema';
@@ -8,6 +7,7 @@ import type {
   SnapshotRecord,
   SqliteConnection,
   SqlitePreferences,
+  SqlitePreferencesInput,
   SqliteStore,
   SqliteStoreOptions,
   ThreadInput,
@@ -15,7 +15,16 @@ import type {
   ThreadTurnInput,
   ThreadTurnRecord,
 } from './types';
-import { iso, number, opaqueId, readPreferences, readSnapshot, text } from './rows';
+import {
+  isStationLabel,
+  iso,
+  number,
+  opaqueId,
+  readPreferences,
+  readSnapshot,
+  stationLabelFrom,
+  text,
+} from './rows';
 
 const optionalTimestamp = (value: string | undefined, fallback: string): string | null =>
   value === undefined ? fallback : iso(value);
@@ -221,18 +230,40 @@ export const createSqliteStore = (
     return row === undefined ? null : readSnapshot(row);
   };
 
-  const savePreferences = (preferences: Preferences): void => {
+  const savePreferences = (preferences: SqlitePreferencesInput): void => {
+    const stationLabelInput = preferences.stationLabel;
+    if (stationLabelInput !== undefined && !isStationLabel(stationLabelInput)) {
+      throw new Error('SQLITE_INVALID_PREFERENCES');
+    }
+    const current = database.prepare('SELECT station_label FROM prefs WHERE id = 1').get();
+    const rawStoredStationLabel = current?.station_label;
+    const storedStationLabelInvalid =
+      current !== undefined &&
+      rawStoredStationLabel !== null &&
+      rawStoredStationLabel !== undefined &&
+      !isStationLabel(rawStoredStationLabel);
+    if (stationLabelInput === undefined && storedStationLabelInvalid) {
+      throw new Error('SQLITE_INVALID_PREFERENCES');
+    }
+    const storedStationLabel =
+      stationLabelInput === undefined
+        ? stationLabelFrom(current ?? {})
+        : stationLabelInput.length === 0
+          ? null
+          : stationLabelInput;
     database
       .prepare(
         `INSERT INTO prefs (
-          id, home_station_ref, max_walk_minutes, minimum_stay_minutes, area_text, budget, updated_at
-        ) VALUES (1, ?, ?, ?, ?, ?, ?)
+          id, home_station_ref, max_walk_minutes, minimum_stay_minutes, area_text, budget,
+          station_label, updated_at
+        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           home_station_ref = excluded.home_station_ref,
           max_walk_minutes = excluded.max_walk_minutes,
           minimum_stay_minutes = excluded.minimum_stay_minutes,
           area_text = excluded.area_text,
           budget = excluded.budget,
+          station_label = excluded.station_label,
           updated_at = excluded.updated_at`,
       )
       .run(
@@ -241,6 +272,7 @@ export const createSqliteStore = (
         preferences.minimumStayMinutes,
         preferences.areaText,
         preferences.budget,
+        storedStationLabel,
         currentIso(options.clock),
       );
   };

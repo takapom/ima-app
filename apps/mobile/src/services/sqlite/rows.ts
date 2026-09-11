@@ -5,6 +5,18 @@ import type {
   SqlitePreferences,
 } from './types';
 
+/** Keep local station input bounded like the existing public Text(160) labels. */
+export const STATION_LABEL_MAX_LENGTH = 160;
+
+export const isStationLabel = (value: unknown): value is string =>
+  typeof value === 'string' && value.length <= STATION_LABEL_MAX_LENGTH;
+
+export const stationLabelFrom = (row: Record<string, unknown>): string | null => {
+  const value = row.station_label;
+  if (value === null || value === undefined) return null;
+  return isStationLabel(value) && value.length > 0 ? value : null;
+};
+
 export const text = (row: Record<string, unknown>, key: string): string | null => {
   const value = row[key];
   return typeof value === 'string' && value.length > 0 ? value : null;
@@ -145,11 +157,15 @@ export const readPreferences = (
   const areaText = row.area_text;
   const budget = row.budget;
   const rawHomeStationRef = row.home_station_ref;
+  const rawStationLabel = row.station_label;
   const homeStationRef = text(row, 'home_station_ref');
+  const stationLabel = stationLabelFrom(row);
   const homeStationRefValid =
     rawHomeStationRef === null ||
     rawHomeStationRef === undefined ||
     (typeof rawHomeStationRef === 'string' && opaqueId(rawHomeStationRef) !== null);
+  const stationLabelValid =
+    rawStationLabel === null || rawStationLabel === undefined || isStationLabel(rawStationLabel);
   if (
     (maxWalkMinutes !== null &&
       (!Number.isInteger(maxWalkMinutes) || maxWalkMinutes < 1 || maxWalkMinutes > 180)) ||
@@ -163,7 +179,8 @@ export const readPreferences = (
       budget !== 'cheap' &&
       budget !== 'normal' &&
       budget !== 'any') ||
-    !homeStationRefValid
+    !homeStationRefValid ||
+    !stationLabelValid
   ) {
     return null;
   }
@@ -173,6 +190,7 @@ export const readPreferences = (
     minimumStayMinutes,
     areaText: typeof areaText === 'string' ? areaText : null,
     budget: budget === 'cheap' || budget === 'normal' || budget === 'any' ? budget : null,
+    stationLabel,
     updatedAt,
   };
 };

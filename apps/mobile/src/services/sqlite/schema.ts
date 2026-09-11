@@ -1,6 +1,6 @@
 import type { SqliteConnection } from './types';
 
-export const SQLITE_SCHEMA_VERSION = 1;
+export const SQLITE_SCHEMA_VERSION = 2;
 
 const schemaSql = `
   CREATE TABLE IF NOT EXISTS thread (
@@ -37,6 +37,7 @@ const schemaSql = `
     ),
     area_text TEXT,
     budget TEXT CHECK (budget IS NULL OR budget IN ('cheap', 'normal', 'any')),
+    station_label TEXT,
     updated_at TEXT NOT NULL
   );
   CREATE TABLE IF NOT EXISTS saved_place (
@@ -70,10 +71,14 @@ export const migrateSqlite = (database: SqliteConnection): void => {
     const current = database.prepare('PRAGMA user_version').get();
     const version = typeof current?.user_version === 'number' ? current.user_version : 0;
     if (version > SQLITE_SCHEMA_VERSION) throw new Error('SQLITE_UNSUPPORTED_SCHEMA_VERSION');
-    if (version < SQLITE_SCHEMA_VERSION) {
+    if (version === 0) {
       database.exec(schemaSql);
-      database.exec(`PRAGMA user_version = ${SQLITE_SCHEMA_VERSION}`);
+    } else if (version === 1) {
+      database.exec('ALTER TABLE prefs ADD COLUMN station_label TEXT');
+    } else if (version !== SQLITE_SCHEMA_VERSION) {
+      throw new Error('SQLITE_UNSUPPORTED_SCHEMA_VERSION');
     }
+    database.exec(`PRAGMA user_version = ${SQLITE_SCHEMA_VERSION}`);
     database.exec('COMMIT');
   } catch (error) {
     database.exec('ROLLBACK');

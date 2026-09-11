@@ -107,7 +107,13 @@ export type ThreadTurnRecord = {
   readonly timestamp: string;
 };
 
-export type SqlitePreferences = Preferences & { readonly updatedAt: string };
+/** Local-only input; stationLabel is never sent as a canonical station reference. */
+export type SqlitePreferencesInput = Preferences & { readonly stationLabel?: string };
+
+export type SqlitePreferences = Preferences & {
+  readonly stationLabel: string | null;
+  readonly updatedAt: string;
+};
 
 export type SqliteStore = {
   readonly savePlace: (input: SavedPlaceInput) => SavePlaceResult;
@@ -124,7 +130,7 @@ export type SqliteStore = {
   readonly listTurns: (threadId: string) => readonly ThreadTurnRecord[];
   readonly writeSnapshot: (input: SnapshotInput) => boolean;
   readonly readSnapshot: (threadId: string) => SnapshotRecord | null;
-  readonly savePreferences: (preferences: Preferences) => void;
+  readonly savePreferences: (preferences: SqlitePreferencesInput) => void;
   readonly readPreferences: () => SqlitePreferences | null;
   readonly cleanupExpired: () => void;
 };
