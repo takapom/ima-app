@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MobileJourneyRuntime } from './mobile-runtime';
 import type { JourneyApiControllerBinding } from './journey-api-binding';
+import type { JourneyApiController } from './journey-controller-types';
 import type { NativeSqliteAdapter, NativeSqliteAdapterOptions } from '../sqlite/native';
 import type { SqliteStore } from '../sqlite/types';
 import {
@@ -48,6 +49,7 @@ const retention = null;
 type CapturedRuntimeOptions = {
   readonly credentials?: unknown;
   readonly location?: unknown;
+  readonly localRestore?: { readonly readSnapshot: unknown };
   readonly savedReference?: {
     readonly sqlite?: unknown;
     readonly referenceRetentionFor?: unknown;
@@ -58,11 +60,30 @@ type MutableCredentialStoreClient = {
   -readonly [Key in keyof NativeCredentialStoreClient]: NativeCredentialStoreClient[Key];
 };
 
-const runtimeFor = (): MobileJourneyRuntime => ({
-  mode: 'fixture',
-  reason: null,
-  binding: {} as unknown as JourneyApiControllerBinding,
-});
+const runtimeFor = (events: string[] = []): MobileJourneyRuntime => {
+  const state = {
+    mode: 'fixture',
+    threadId: null,
+    responseState: null,
+    localSnapshot: null,
+    activeTurnId: null,
+    status: 'idle',
+    error: null,
+    lastRequestId: null,
+  } as ReturnType<JourneyApiController['getState']>;
+  const controller = {
+    getState: () => state,
+    subscribe: () => () => events.push('unsubscribe'),
+    dispose: vi.fn(() => {
+      events.push('controller');
+    }),
+  } as unknown as JourneyApiController;
+  return {
+    mode: 'fixture',
+    reason: null,
+    binding: { controller } as unknown as JourneyApiControllerBinding,
+  };
+};
 
 const createClient = (raw: string | null): MutableCredentialStoreClient => {
   const values = new Map<string, string>();
@@ -119,10 +140,12 @@ describe('native mobile runtime composition', () => {
   it('uses injected fixture credentials and location without loading SecureStore', async () => {
     runtimeMock.create.mockReturnValue(runtimeFor());
     const secureStore = createClient(null);
+    const localRestore = { readSnapshot: vi.fn(() => null) };
     const ready = await createNativeMobileJourneyRuntime({
       env: fixtureEnvironment,
       credentials,
       location,
+      localRestore,
       secureStore,
     });
 
@@ -132,6 +155,7 @@ describe('native mobile runtime composition', () => {
     const composed = runtimeMock.create.mock.calls[0]?.[0] as CapturedRuntimeOptions;
     expect(composed.credentials).toEqual(credentials);
     expect(composed.location).toBe(location);
+    expect(composed.localRestore).toBe(localRestore);
     expect(composed.savedReference).toBeUndefined();
   });
 
@@ -197,6 +221,7 @@ describe('native mobile runtime composition', () => {
     expect(ready.sqlite).not.toBeNull();
     const composed = runtimeMock.create.mock.calls[0]?.[0] as CapturedRuntimeOptions;
     expect(composed.savedReference?.sqlite).toBe(ready.sqlite);
+    expect(typeof composed.localRestore?.readSnapshot).toBe('function');
     expect(typeof composed.credentials).toBe('function');
     expect(sqlite.calls[0]?.storageScope).toBe(nativeSqliteStorageScopeFor(scope));
 
@@ -270,6 +295,30 @@ describe('native mobile runtime composition', () => {
     expect(ready.sqlite).not.toBeNull();
     const composed = runtimeMock.create.mock.calls[0]?.[0] as CapturedRuntimeOptions;
     expect(composed.savedReference).toBeUndefined();
+  });
+
+  it('tears down local persistence before the controller and owned database', async () => {
+    const events: string[] = [];
+    runtimeMock.create.mockReturnValue(runtimeFor(events));
+    const close = vi.fn<() => void>(() => {
+      events.push('database');
+    });
+    const sqlite = sqliteFor(close);
+    const ready = await createNativeMobileJourneyRuntime({
+      env: {
+        EXPO_PUBLIC_ENVIRONMENT: 'production',
+        EXPO_PUBLIC_API_MODE: 'live',
+        EXPO_PUBLIC_API_BASE_URL: 'https://api.example.test/v1/',
+      },
+      nativeAuthority: authority,
+      secureStore: seededClient(),
+      location,
+      sqlite: { adapterFactory: sqlite.factory },
+    });
+
+    ready.dispose();
+    ready.dispose();
+    expect(events).toEqual(['unsubscribe', 'controller', 'database']);
   });
 
   it('bounds a pending SecureStore load and ignores its late completion', async () => {

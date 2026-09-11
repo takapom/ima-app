@@ -28,6 +28,11 @@ import {
 } from './mobile-runtime';
 import type { ApiCredentialProvider } from './types';
 import { waitFor, type WaitResult } from './native-runtime-deferred';
+import {
+  createLocalSessionPersistence,
+  createSqliteJourneyLocalRestore,
+  type LocalSessionPersistence,
+} from './local-session-persistence';
 
 export const NATIVE_RUNTIME_INIT_TIMEOUT_MS = 5_000;
 const NATIVE_RUNTIME_TIMEOUT_CAP_MS = 15_000;
@@ -283,9 +288,15 @@ const sqliteFor = async (
 
 const disposeResources = (
   runtime: MobileJourneyRuntime | null,
+  persistence: LocalSessionPersistence | null,
   adapter: NativeSqliteAdapter | null,
 ): void => {
   try {
+    try {
+      persistence?.dispose();
+    } catch {
+      // Persistence is auxiliary; controller teardown must still run.
+    }
     try {
       runtime?.binding?.controller.dispose();
     } catch {
@@ -302,27 +313,31 @@ const runtimeOptionsFor = (
   credentials: ApiCredentialProvider | undefined,
   location: LocationService | null,
   savedReference: MobileJourneySavedReferenceOptions | undefined,
+  localRestore: MobileJourneyRuntimeOptions['localRestore'],
+  now: () => string,
 ): MobileJourneyRuntimeOptions => ({
   env,
   ...(credentials === undefined ? {} : { credentials }),
   ...(options.fetchImpl === undefined ? {} : { fetchImpl: options.fetchImpl }),
-  ...(options.now === undefined ? {} : { now: options.now }),
+  now,
   ...(options.requestIdFactory === undefined ? {} : { requestIdFactory: options.requestIdFactory }),
   ...(options.idFactory === undefined ? {} : { idFactory: options.idFactory }),
   ...(location === null ? {} : { location }),
   ...(savedReference === undefined ? {} : { savedReference }),
+  ...(localRestore === undefined ? {} : { localRestore }),
 });
 
 const readyRuntimeFor = (
   runtime: MobileJourneyRuntime,
   scope: NativeCredentialScope | null,
   sqlite: SqliteLoadResult | null,
+  persistence: LocalSessionPersistence | null,
 ): NativeMobileJourneyRuntime => {
   let disposed = false;
   const dispose = (): void => {
     if (disposed) return;
     disposed = true;
-    disposeResources(runtime, sqlite?.adapter ?? null);
+    disposeResources(runtime, persistence, sqlite?.adapter ?? null);
   };
   return {
     ...runtime,
@@ -342,11 +357,13 @@ export const createNativeMobileJourneyRuntime = async (
   const timeoutMs = timeoutFor(options.initTimeoutMs);
   const deadlineAt = Date.now() + timeoutMs;
   const remainingTimeout = (): number => Math.max(0, deadlineAt - Date.now());
+  const now = options.now ?? (() => new Date().toISOString());
   const authority = options.nativeAuthority;
   let scope: NativeCredentialScope | null = null;
   let credentialProvider: NativeCredentialProvider | undefined;
   let sqlite: SqliteLoadResult | null = null;
   let runtime: MobileJourneyRuntime | null = null;
+  let persistence: LocalSessionPersistence | null = null;
 
   if (signal?.aborted) return unavailable('native_initialization_aborted');
   if (authority !== undefined) {
@@ -377,7 +394,6 @@ export const createNativeMobileJourneyRuntime = async (
   const policy = options.referenceRetentionFor ?? options.savedReference?.referenceRetentionFor;
   if (authority !== undefined && options.sqlite !== null) {
     if (scope === null) return unavailable('native_authority_invalid');
-    const now = options.now ?? (() => new Date().toISOString());
     const sqliteResult = await sqliteFor(options, scope, now, deadlineAt, signal);
     if (sqliteResult.status === 'aborted') return unavailable('native_initialization_aborted');
     if (sqliteResult.status === 'timeout') return unavailable('native_init_timeout');
@@ -398,6 +414,10 @@ export const createNativeMobileJourneyRuntime = async (
     if (sqlite !== null) closeAdapter(sqlite.adapter);
     return unavailable('native_initialization_aborted');
   }
+  const localRestore =
+    sqlite?.store === undefined
+      ? options.localRestore
+      : createSqliteJourneyLocalRestore(sqlite.store);
   const savedReference =
     authority !== undefined && sqlite?.store !== undefined && policy !== undefined
       ? { sqlite: sqlite.store, referenceRetentionFor: policy }
@@ -410,15 +430,17 @@ export const createNativeMobileJourneyRuntime = async (
     credentialProvider ?? options.credentials,
     location,
     savedReference,
+    localRestore,
+    now,
   );
   try {
     runtime = createMobileJourneyRuntime(runtimeOptions);
   } catch {
-    disposeResources(null, sqlite?.adapter ?? null);
+    disposeResources(null, null, sqlite?.adapter ?? null);
     return unavailable('native_runtime_failed');
   }
   if (runtime.binding === null || runtime.reason !== null) {
-    disposeResources(runtime, sqlite?.adapter ?? null);
+    disposeResources(runtime, null, sqlite?.adapter ?? null);
     return {
       ...runtime,
       storageScope: null,
@@ -426,7 +448,19 @@ export const createNativeMobileJourneyRuntime = async (
       dispose: () => undefined,
     };
   }
-  return readyRuntimeFor(runtime, scope, sqlite);
+  if (sqlite?.store !== undefined) {
+    try {
+      persistence = createLocalSessionPersistence({
+        controller: runtime.binding.controller,
+        store: sqlite.store,
+        now,
+      });
+    } catch {
+      disposeResources(runtime, persistence, sqlite.adapter);
+      return unavailable('native_runtime_failed');
+    }
+  }
+  return readyRuntimeFor(runtime, scope, sqlite, persistence);
 };
 
 export const nativeMobileRuntimeMessage = (
