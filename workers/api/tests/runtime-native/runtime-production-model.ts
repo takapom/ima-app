@@ -3,7 +3,7 @@ import type {
   RuntimeGateModel,
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,
-} from '../runtime-gate/runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 import {
   DENIED_FIELD_CANARY,
   LLM_INPUT_CANARY,

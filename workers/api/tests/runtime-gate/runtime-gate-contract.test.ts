@@ -5,7 +5,7 @@ import {
   searchPlacesEnvelopeSchema,
   submitCardsEnvelopeSchema,
 } from './runtime-gate-contract';
-import { detailsInput, searchInput, validSubmitInput } from './runtime-gate-provider';
+import { detailsInput, searchInput, validSubmitInput } from '../support/runtime-model-fixture';
 
 const metadata = {
   turnConstraints: {

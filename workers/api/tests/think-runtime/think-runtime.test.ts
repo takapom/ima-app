@@ -2,7 +2,7 @@ import { env, evictDurableObject, SELF } from 'cloudflare:test';
 import { expect, it, vi } from 'vitest';
 import type { ThinkRuntimeGateAgent, ThinkRuntimePublicReport } from './think-runtime-agent';
 import type { ThinkRuntimeTableObservation } from './think-runtime-audit';
-import { STALE_NATIVE_CONTENT_CANARY } from '../runtime-gate/runtime-gate-provider';
+import { STALE_NATIVE_CONTENT_CANARY } from '../support/runtime-model-fixture';
 
 const NATIVE_CONTENT_AGENT = `think-native-content-${crypto.randomUUID()}`;
 

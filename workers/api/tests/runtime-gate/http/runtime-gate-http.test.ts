@@ -4,7 +4,7 @@ import {
   validSubmitInput,
   validSubmitInputThree,
   validSubmitInputTwo,
-} from '../runtime-gate-provider';
+} from '../../support/runtime-model-fixture';
 import type { SubmitCardsInput } from '@ima/core';
 
 const context = { threadId: 'thread-http-mobile', turnId: 'turn-http-mobile', revision: 1 };

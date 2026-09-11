@@ -3,7 +3,7 @@ import type { CommitPort } from '@ima/core';
 import { describe, expect, it } from 'vitest';
 import { createRuntimeProductionConnectionOptions } from '../../src/runtime/runtime-production-factory';
 import { invokePublicToolEnvelope } from '../../src/tools';
-import { modelFor, type RuntimeGateModelReport } from '../runtime-gate/runtime-gate-provider';
+import { modelFor, type RuntimeGateModelReport } from '../support/runtime-model-fixture';
 import {
   ALLOW_MODEL_CONTEXT_FIELDS,
   ALLOW_RETENTION,

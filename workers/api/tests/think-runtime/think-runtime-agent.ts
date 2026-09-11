@@ -49,7 +49,7 @@ import {
   type RuntimeGateModel,
   type RuntimeGateModelReport,
   type RuntimeGateScenario,
-} from '../runtime-gate/runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 import {
   wrapRuntimeGateStepBuffer,
   type RuntimeGateStepReport,

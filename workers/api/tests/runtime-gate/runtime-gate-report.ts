@@ -3,7 +3,7 @@ import type { GetPlaceDetailsInput, SearchPlacesInput, SubmitCardsInput } from '
 import type { RuntimeGateCoreReport } from './runtime-gate-core';
 import type { RuntimeGateSseEvent } from './runtime-gate-sse';
 import type { RuntimeGateStepReport } from './runtime-gate-step';
-import type { RuntimeGateModelReport, RuntimeGateScenario } from './runtime-gate-provider';
+import type { RuntimeGateModelReport, RuntimeGateScenario } from '../support/runtime-model-fixture';
 
 export type RuntimeGateToolName = 'search_places' | 'get_place_details' | 'submit_cards';
 export type RuntimeGateToolInput = SearchPlacesInput | GetPlaceDetailsInput | SubmitCardsInput;

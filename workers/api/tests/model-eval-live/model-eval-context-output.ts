@@ -2,7 +2,7 @@ import type { ModelGetPlaceDetailsInput, SearchPlacesInput, SubmitCardsInput } f
 import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,
-} from '../runtime-gate/runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 import {
   candidateIdsIn,
   evidenceFor,

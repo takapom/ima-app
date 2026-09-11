@@ -2,7 +2,7 @@ import type { ModelGetPlaceDetailsInput } from '@ima/core';
 import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,
-} from '../runtime-gate/runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 import { finalParts, toolParts } from './model-eval-context-output';
 import { modelContextIn } from './model-eval-context-values';
 

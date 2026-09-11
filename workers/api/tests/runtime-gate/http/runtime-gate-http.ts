@@ -5,7 +5,7 @@ import {
   allObservations,
   observationFor,
   type RuntimeGateObservation,
-} from '../runtime-gate-observations';
+} from '../../support/runtime-model-observations';
 import {
   SearchResponseSchema,
   type EvidenceRef,

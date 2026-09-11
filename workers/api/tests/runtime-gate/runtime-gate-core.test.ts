@@ -7,7 +7,7 @@ import {
   runtimeGateExecutionContext,
   runtimeGateHarnessContext,
 } from './runtime-gate-core';
-import { detailsInput, searchInput, validSubmitInput } from './runtime-gate-provider';
+import { detailsInput, searchInput, validSubmitInput } from '../support/runtime-model-fixture';
 
 it('passes typed server context and cancellation through the public Core Ports', async () => {
   const core = new RuntimeGateCore();

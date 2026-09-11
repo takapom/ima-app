@@ -5,7 +5,7 @@ import {
   type RuntimeGateModelCallOptions,
   type RuntimeGateModelReport,
   type RuntimeGateModelStreamPart,
-} from '../runtime-gate/runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 
 /** The scripted provider is a deterministic SDK boundary, not a model-quality evaluation. */
 export const RUNTIME_NATIVE_SCENARIOS = [

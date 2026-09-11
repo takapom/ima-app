@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import * as v from 'valibot';
 import { AssistantResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import type { RuntimeGateModelCallOptions } from '../runtime-gate/runtime-gate-provider';
+import type { RuntimeGateModelCallOptions } from '../support/runtime-model-fixture';
 import { MODEL_EVALUATION_SCENARIOS } from '../../tooling/model-eval/dataset';
 import { executionProfileFor } from '../../tooling/model-eval/execution-profile';
 import { liveEvaluationProfileFor } from '../../tooling/model-eval/live-plan';

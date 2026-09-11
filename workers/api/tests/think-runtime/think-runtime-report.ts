@@ -5,9 +5,9 @@ import type { RuntimeGateCoreReport } from '../runtime-gate/runtime-gate-core';
 import type {
   RuntimeGateModelReport,
   RuntimeGateScenario,
-} from '../runtime-gate/runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 import type { RuntimeGateStepReport } from '../runtime-gate/runtime-gate-step';
-import { DENIED_MARKER } from '../runtime-gate/runtime-gate-provider';
+import { DENIED_MARKER } from '../support/runtime-model-fixture';
 import { markerRowsByTable, type ThinkRuntimeTableObservation } from './think-runtime-audit';
 import type { ThinkRuntimeReplayReport } from './think-runtime-replay';
 import type { ThinkRuntimeTransformReport } from './think-runtime-transform';

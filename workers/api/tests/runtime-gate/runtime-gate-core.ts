@@ -23,7 +23,7 @@ import {
   type SubmitCardsPortResult,
   type ToolExecutionContext,
 } from '@ima/core';
-import { identityObservationId, observationFor } from './runtime-gate-observations';
+import { identityObservationId, observationFor } from '../support/runtime-model-observations';
 
 export type RuntimeGateCoreCall = {
   operation: 'search_places' | 'get_place_details' | 'submit_cards';

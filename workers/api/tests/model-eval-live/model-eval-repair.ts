@@ -2,7 +2,7 @@ import type { GetPlaceDetailsInput, RetentionMetadata } from '@ima/core';
 import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,
-} from '../runtime-gate/runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 import {
   finalParts,
   streamOf,

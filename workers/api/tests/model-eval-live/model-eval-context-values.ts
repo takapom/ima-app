@@ -1,4 +1,4 @@
-import type { RuntimeGateModelCallOptions } from '../runtime-gate/runtime-gate-provider';
+import type { RuntimeGateModelCallOptions } from '../support/runtime-model-fixture';
 
 export type ModelContextEnvelope = {
   readonly kind: 'ima_turn_context';

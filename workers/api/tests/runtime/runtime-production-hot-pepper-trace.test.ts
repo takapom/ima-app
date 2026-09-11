@@ -17,7 +17,7 @@ import {
   buildRequest,
   readOnlyCommit,
 } from './runtime-production-factory-fixtures';
-import { modelFor, type RuntimeGateModelReport } from '../runtime-gate/runtime-gate-provider';
+import { modelFor, type RuntimeGateModelReport } from '../support/runtime-model-fixture';
 
 const hpFieldPolicy: HotPepperFieldPolicy = (field: HotPepperField, use: HotPepperPolicyUse) => ({
   decision:

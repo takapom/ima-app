@@ -1,7 +1,7 @@
 import type {
   RuntimeGateModel,
   RuntimeGateModelCallOptions,
-} from '../runtime-gate/runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 import {
   MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL,
   type ModelEvalPlaceDisplayNameMode,

@@ -3,7 +3,7 @@ import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStream,
   RuntimeGateModelStreamPart,
-} from '../runtime-gate/runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 
 function isJsonObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

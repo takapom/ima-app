@@ -1,7 +1,7 @@
 import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,
-} from '../runtime-gate/runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 import {
   evidenceSnapshotFor,
   finalParts,

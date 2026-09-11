@@ -47,7 +47,7 @@ import {
   type RuntimeGateModel,
   type RuntimeGateModelReport,
   type RuntimeGateScenario,
-} from './runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 import { wrapRuntimeGateStepBuffer, type RuntimeGateStepReport } from './runtime-gate-step';
 import { sanitizeSseResponse, type RuntimeGateSseEvent } from './runtime-gate-sse';
 import {

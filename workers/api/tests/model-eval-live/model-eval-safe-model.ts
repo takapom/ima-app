@@ -1,7 +1,7 @@
 import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,
-} from '../runtime-gate/runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 import { finalParts, toolParts } from './model-eval-context-output';
 import { modelSearchResultIn } from './model-eval-context-values';
 

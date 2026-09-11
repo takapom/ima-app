@@ -11,7 +11,7 @@ import {
   buildRequest,
   readOnlyCommit as commit,
 } from './runtime-production-factory-fixtures';
-import { modelFor } from '../runtime-gate/runtime-gate-provider';
+import { modelFor } from '../support/runtime-model-fixture';
 
 const baseEnvironment = {
   ...FIXTURE_OPERATIONAL_ENV,

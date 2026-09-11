@@ -13,7 +13,7 @@ import {
   resolveCandidateIdentityMapping,
   type RuntimeCandidateIdentity,
 } from '../../tooling/model-eval/candidate-mapping';
-import { modelFor, type RuntimeGateModelReport } from '../runtime-gate/runtime-gate-provider';
+import { modelFor, type RuntimeGateModelReport } from '../support/runtime-model-fixture';
 
 const NOW = '2026-09-10T12:00:00.000Z';
 const scope = { ownerScopeRef: 'model-eval-owner', threadId: 'model-eval-thread' } as const;

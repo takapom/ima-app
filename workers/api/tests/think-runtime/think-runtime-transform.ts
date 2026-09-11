@@ -1,5 +1,5 @@
 import type { LanguageModelUsage, StreamTextTransform, TextStreamPart, ToolSet } from 'ai';
-import { DENIED_MARKER } from '../runtime-gate/runtime-gate-provider';
+import { DENIED_MARKER } from '../support/runtime-model-fixture';
 
 export type ThinkRuntimeTransformReport = {
   inputParts: number;

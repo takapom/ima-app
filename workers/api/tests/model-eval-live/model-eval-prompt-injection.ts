@@ -1,4 +1,4 @@
-import type { RuntimeGateModelCallOptions } from '../runtime-gate/runtime-gate-provider';
+import type { RuntimeGateModelCallOptions } from '../support/runtime-model-fixture';
 import { modelContextIn, modelUserTextIn } from './model-eval-context-values';
 
 /** Marker is provider data in the fixture; it is never used as a response instruction. */

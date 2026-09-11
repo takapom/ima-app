@@ -8,7 +8,7 @@ import {
   type RuntimeGateModel,
   type RuntimeGateModelCallOptions,
   type RuntimeGateModelStreamPart,
-} from './runtime-gate-provider';
+} from '../support/runtime-model-fixture';
 
 export type RuntimeGateStepAcceptance = {
   toolNames: string[];
