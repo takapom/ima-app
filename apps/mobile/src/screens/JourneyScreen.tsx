@@ -19,7 +19,7 @@ import {
   type UseJourneyPreferencesResult,
 } from '../hooks/useJourneyPreferences';
 import { useJourneySourceLink } from '../hooks/useJourneySourceLink';
-import { useJourneySavedPlacePreview } from '../hooks/useJourneySavedPlacePreview';
+import { useSavedPlacePreview } from '../hooks/useSavedPlacePreview';
 import { selectedCardFor } from './journey-screen-model';
 import { useJourneyApiController } from '../hooks/useJourneyApiController';
 import { selectJourneyNoticeText } from '../services/journey-source-link';
@@ -124,7 +124,7 @@ function JourneyScreenStateOwner({
 }: JourneyScreenStateOwnerProps): React.JSX.Element {
   const persistedPreferences = preferenceState;
   const journey = useJourneyShell(persistedPreferences.savedConditions);
-  const savedPlaceUi = useJourneySavedPlacePreview(
+  const savedPlaceUi = useSavedPlacePreview(
     savedPlacePreview,
     onSavedPlaceSelect,
     requestStatus === 'pending' || journey.phase === 'working',

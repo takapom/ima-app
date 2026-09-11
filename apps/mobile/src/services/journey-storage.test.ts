@@ -195,4 +195,24 @@ describe('journey storage action boundary', () => {
       service.saveCandidate(candidate, { idempotencyKey: 'save-operation-1' }),
     ).resolves.toEqual({ status: 'failed', reason: 'stale' });
   });
+
+  it('fails stale when the host reports the candidate is not visible', async () => {
+    let calls = 0;
+    const service = serviceFor(() => {
+      calls += 1;
+      return Promise.resolve({
+        status: 'saved',
+        localSavedEntryId: localEntry,
+        serverSavedPlaceRef: savedReference,
+      });
+    });
+
+    await expect(
+      createSavedReferenceJourneyStorage({
+        ...optionsFor(service),
+        isCandidateVisible: () => false,
+      }).saveCandidate(candidate, { idempotencyKey: 'save-operation-1' }),
+    ).resolves.toEqual({ status: 'failed', reason: 'stale' });
+    expect(calls).toBe(0);
+  });
 });

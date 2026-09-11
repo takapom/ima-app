@@ -350,20 +350,14 @@ const savedReferenceRuntimeServicesFor = (
     currentScope,
     requestIdFactory,
   });
-  const storage = createSavedReferenceJourneyStorage({
-    service,
-    currentScope,
-    referenceRetentionFor,
-  });
   return {
-    storage: {
-      saveCandidate: (candidate, saveOptions) => {
-        if (!visibleCandidateFor(controller, candidate.candidateId, now)) {
-          return Promise.resolve({ status: 'failed', reason: 'stale' as const });
-        }
-        return storage.saveCandidate(candidate, saveOptions);
-      },
-    },
+    storage: createSavedReferenceJourneyStorage({
+      service,
+      currentScope,
+      referenceRetentionFor,
+      isCandidateVisible: (candidate) =>
+        visibleCandidateFor(controller, candidate.candidateId, now),
+    }),
     savedPlacePreview: {
       listService: createSavedPlaceListService({ sqlite: options.sqlite, now }),
       refreshService: service,

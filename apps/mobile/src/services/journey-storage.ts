@@ -59,6 +59,8 @@ export type SavedReferenceJourneyStorageOptions = {
   readonly currentScope: () => SavedReferenceScope | null;
   /** Dedicated owner-scoped reference policy; never derive this from card evidence. */
   readonly referenceRetentionFor: (candidate: JourneySaveCandidate) => RetentionMetadata | null;
+  /** Host projection of currently visible cards; omitted hosts skip this gate. */
+  readonly isCandidateVisible?: (candidate: JourneySaveCandidate) => boolean;
 };
 
 const failed = (reason: JourneyStorageFailureReason): SaveCandidateResult => ({
@@ -86,6 +88,16 @@ export const createSavedReferenceJourneyStorage = (
   options: SavedReferenceJourneyStorageOptions,
 ): JourneyStorageService => ({
   saveCandidate: async (candidate, saveOptions = {}) => {
+    if (options.isCandidateVisible !== undefined) {
+      let visible: boolean;
+      try {
+        visible = options.isCandidateVisible(candidate);
+      } catch {
+        return failed('stale');
+      }
+      if (!visible) return failed('stale');
+    }
+
     const idempotencyKey = saveOptions.idempotencyKey;
     if (idempotencyKey === undefined || idempotencyKey.length === 0) {
       return failed('invalid_input');

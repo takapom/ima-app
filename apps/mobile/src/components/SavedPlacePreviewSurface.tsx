@@ -1,9 +1,9 @@
 import { SavedPlaceConsultationBanner } from './SavedPlaceConsultationBanner';
 import { SavedPlacePreviewPanel } from './SavedPlacePreviewPanel';
-import type { JourneySavedPlacePreviewController } from '../hooks/useJourneySavedPlacePreview';
+import type { SavedPlacePreviewUi } from '../hooks/useSavedPlacePreview';
 
 type SavedPlacePreviewSurfaceProps = {
-  readonly controller: JourneySavedPlacePreviewController;
+  readonly controller: SavedPlacePreviewUi;
   readonly onSourcePress?: (sourceLink: string) => void;
 };
 
