@@ -17,7 +17,10 @@ import type {
   JourneyApiTurnFactoryInput,
   JourneySavedPlacePreviewBinding,
 } from './journey-api-binding';
-import type { JourneyApiControllerState } from './journey-controller-types';
+import type {
+  JourneyApiControllerState,
+  JourneyLocalRestorePort,
+} from './journey-controller-types';
 import { createJourneyApiComposition } from './composition';
 import { createJourneyApiClient } from './client';
 import { createJourneyPhotoClient } from './photo-client';
@@ -63,6 +66,8 @@ export type MobileJourneyRuntimeOptions = {
   readonly now?: () => string;
   readonly requestIdFactory?: () => string;
   readonly idFactory?: (prefix: string) => string;
+  /** Host-composed metadata-only restore; response payloads are fetched again. */
+  readonly localRestore?: JourneyLocalRestorePort;
   /** Both fields are required to connect saving; partial injection fails closed. */
   readonly savedReference?: MobileJourneySavedReferenceOptions;
   /** Host-composed foreground location service; acquisition remains submit-triggered. */
@@ -405,7 +410,12 @@ export const createMobileJourneyRuntime = (
     ...(options.fetchImpl === undefined ? {} : { fetchImpl: options.fetchImpl }),
   } as const;
   const api = createJourneyApiClient(clientOptions);
-  const controller = createJourneyApiComposition({ ...clientOptions, api, clock: now });
+  const controller = createJourneyApiComposition({
+    ...clientOptions,
+    api,
+    clock: now,
+    ...(options.localRestore === undefined ? {} : { localRestore: options.localRestore }),
+  });
   const photoClient = createJourneyPhotoClient({ ...clientOptions, now });
   const savedReferenceServices = savedReferenceRuntimeServicesFor(
     controller,

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseSearchRequest, parseThreadTurnRequest } from '@ima/contracts';
 import {
   createJourneyApiRequestFactory,
@@ -167,6 +167,20 @@ describe('mobile journey runtime composition', () => {
     expect(
       createMobileJourneyRuntime({ env: { ...baseEnv, EXPO_PUBLIC_ENVIRONMENT: 'production' } }),
     ).toMatchObject({ mode: 'unconfigured', reason: 'fixture_requires_dev' });
+  });
+
+  it('passes the host local restore port to the controller composition', async () => {
+    const readSnapshot = vi.fn(() => null);
+    const runtime = createMobileJourneyRuntime({
+      env: baseEnv,
+      localRestore: { readSnapshot },
+    });
+    if (runtime.binding === null) throw new Error('fixture binding should be available');
+
+    await expect(runtime.binding.controller.restoreLocal('thread-restore')).resolves.toEqual({
+      status: 'empty',
+    });
+    expect(readSnapshot).toHaveBeenCalledWith('thread-restore');
   });
 
   it('keeps live restricted to HTTPS and allows injected credentials at the boundary', () => {
