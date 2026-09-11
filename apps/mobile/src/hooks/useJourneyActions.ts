@@ -6,11 +6,11 @@ import {
   createNativeJourneySourceLinkService,
 } from '../services/journey-native';
 import {
-  createUnavailableDecisionHapticsService,
   triggerDecisionHaptics,
   type DecisionHapticsResult,
   type DecisionHapticsService,
 } from '../services/journey-haptics';
+import { createNativeDecisionHapticsService } from '../services/journey-native-haptics';
 import type { JourneyMapOpenResult, JourneyMapService } from '../services/journey-map';
 import {
   createUnavailableJourneyStorageService,
@@ -103,7 +103,7 @@ export const createDefaultJourneyActionServices = (
   map: createNativeJourneyMapService(resolveDestination),
   share: createNativeJourneyShareService(),
   storage: createUnavailableJourneyStorageService(),
-  haptics: createUnavailableDecisionHapticsService(),
+  haptics: createNativeDecisionHapticsService(),
   sourceLink: createNativeJourneySourceLinkService(),
 });
 export const useJourneyActions = ({
