@@ -26,6 +26,7 @@ describe('journey history service', () => {
         { id: 'thread-new', label: '検索履歴', query: '', time: '9/8 04:20' },
         { id: 'thread-old', label: '検索履歴', query: '', time: '9/8 03:30' },
       ],
+      nextExpiryAt: '2026-09-07T20:00:00.000Z',
     });
     if (result.status !== 'available') throw new Error('expected history');
     expect(Object.keys(result.items[0] ?? {}).sort()).toEqual(['id', 'label', 'query', 'time']);
@@ -45,7 +46,7 @@ describe('journey history service', () => {
       },
     }).list();
 
-    expect(result).toEqual({ status: 'available', items: [] });
+    expect(result).toEqual({ status: 'available', items: [], nextExpiryAt: null });
   });
 
   it('distinguishes missing and failed storage from an empty history', () => {
@@ -56,6 +57,7 @@ describe('journey history service', () => {
     expect(createJourneyHistoryService({ sqlite: { listThreads: () => [] } }).list()).toEqual({
       status: 'available',
       items: [],
+      nextExpiryAt: null,
     });
     expect(
       createJourneyHistoryService({

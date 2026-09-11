@@ -11,7 +11,12 @@ export type JourneyHistoryItem = {
 };
 
 export type JourneyHistoryResult =
-  | { readonly status: 'available'; readonly items: readonly JourneyHistoryItem[] }
+  | {
+      readonly status: 'available';
+      readonly items: readonly JourneyHistoryItem[];
+      /** Earliest valid row expiry; null when the available list is empty. */
+      readonly nextExpiryAt: string | null;
+    }
   | {
       readonly status: 'unavailable';
       readonly reason: 'storage_unavailable';
@@ -70,6 +75,19 @@ const itemFor = (thread: ThreadRecord): JourneyHistoryItem | null => {
   return time === null ? null : { id, label: '検索履歴', query: '', time };
 };
 
+const nextExpiryAtFor = (threads: readonly ThreadRecord[]): string | null => {
+  let next: { readonly value: string; readonly milliseconds: number } | null = null;
+  for (const thread of threads) {
+    if (itemFor(thread) === null) continue;
+    const milliseconds = Date.parse(thread.expiresAt);
+    if (!Number.isFinite(milliseconds)) continue;
+    if (next === null || milliseconds < next.milliseconds) {
+      next = { value: thread.expiresAt, milliseconds };
+    }
+  }
+  return next?.value ?? null;
+};
+
 /**
  * Read-only projection for the drawer. Expiry and ordering are owned by the
  * SQLite store; this service never reconstructs query, place, or response data.
@@ -81,11 +99,12 @@ export const createJourneyHistoryService = (
     if (options.sqlite === undefined)
       return { status: 'unavailable', reason: 'storage_unavailable' };
     try {
-      const items = options.sqlite.listThreads().flatMap((thread) => {
+      const threads = options.sqlite.listThreads();
+      const items = threads.flatMap((thread) => {
         const item = itemFor(thread);
         return item === null ? [] : [item];
       });
-      return { status: 'available', items };
+      return { status: 'available', items, nextExpiryAt: nextExpiryAtFor(threads) };
     } catch {
       return { status: 'unavailable', reason: 'storage_unavailable' };
     }

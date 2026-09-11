@@ -10,6 +10,7 @@ type DrawerProps = {
   readonly open: boolean;
   readonly view: DrawerView;
   readonly history: readonly SearchHistoryItem[];
+  readonly historyUnavailable?: boolean;
   readonly savedPlaces: readonly SavedPlaceItem[];
   readonly savedPlacesUnavailable?: boolean;
   readonly onClose: () => void;
@@ -36,6 +37,7 @@ export function Drawer({
   open,
   view,
   history,
+  historyUnavailable = false,
   savedPlaces,
   savedPlacesUnavailable = false,
   onClose,
@@ -118,6 +120,7 @@ export function Drawer({
           {view === 'home' ? (
             <HomeView
               history={history}
+              historyUnavailable={historyUnavailable}
               savedPlaces={savedPlaces}
               onConditions={() => onViewChange('conditions')}
               onNewSearch={onNewSearch}
@@ -125,7 +128,9 @@ export function Drawer({
             />
           ) : view === 'history' ? (
             <ListView
-              emptyLabel="まだ今夜の検索はありません"
+              emptyLabel={
+                historyUnavailable ? '履歴を利用できません' : 'まだ今夜の検索はありません'
+              }
               items={history}
               renderItem={(item) => (
                 <Pressable
@@ -179,6 +184,7 @@ export function Drawer({
 
 type HomeViewProps = {
   readonly history: readonly SearchHistoryItem[];
+  readonly historyUnavailable: boolean;
   readonly savedPlaces: readonly SavedPlaceItem[];
   readonly onNewSearch: () => void;
   readonly onViewChange: (view: DrawerView) => void;
@@ -187,6 +193,7 @@ type HomeViewProps = {
 
 function HomeView({
   history,
+  historyUnavailable,
   savedPlaces,
   onConditions,
   onNewSearch,
@@ -202,7 +209,9 @@ function HomeView({
         <Text style={styles.newButtonText}>新しい検索</Text>
       </Pressable>
       <Text style={styles.sectionLabel}>今夜の履歴</Text>
-      {history.length === 0 ? (
+      {historyUnavailable ? (
+        <Text style={styles.empty}>履歴を利用できません</Text>
+      ) : history.length === 0 ? (
         <Text style={styles.empty}>まだ今夜の検索はありません</Text>
       ) : (
         history.slice(0, 4).map((item) => (

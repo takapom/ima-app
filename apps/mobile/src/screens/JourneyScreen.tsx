@@ -101,6 +101,7 @@ function JourneyScreenStateOwner({
   requestStatus = 'idle',
   errorMessage = '時間をおいてもう一度試してください。',
   history = [],
+  historyUnavailable = false,
   savedPlaces,
   onSubmit,
   onCancel,
@@ -438,6 +439,7 @@ function JourneyScreenStateOwner({
       />
       <Drawer
         history={history}
+        historyUnavailable={historyUnavailable}
         onClose={journey.closeDrawer}
         onNewSearch={reset}
         onViewChange={journey.setDrawerView}

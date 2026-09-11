@@ -32,6 +32,8 @@ export type JourneyScreenProps = {
   readonly requestStatus?: JourneyRequestStatus;
   readonly errorMessage?: string;
   readonly history?: readonly SearchHistoryItem[];
+  /** True when the owner-scoped history store could not be read. */
+  readonly historyUnavailable?: boolean;
   readonly savedPlaces?: readonly SavedPlaceItem[];
   readonly initialSavedConditions?: JourneyConditions;
   readonly onSubmit?: (query: string, context: JourneySubmitContext) => void;
