@@ -58,7 +58,7 @@ const availableTurn = (requestId: string, maxWalkMinutes = 15): ThreadTurnReques
     requestId,
     turnId: null,
     revision: 1,
-    text: '開発用Fixtureから徒歩15分以内の候補を探して',
+    text: '恵比寿で徒歩15分以内の候補を探して',
     clientNow: capturedAt,
     location: {
       status: 'available',
@@ -72,7 +72,7 @@ const availableTurn = (requestId: string, maxWalkMinutes = 15): ThreadTurnReques
       homeStationRef: null,
       maxWalkMinutes,
       minimumStayMinutes: null,
-      areaText: '開発用Fixture',
+      areaText: '恵比寿',
       budget: 'normal',
     },
     savedPlaceRefs: [],
