@@ -140,29 +140,12 @@ export interface IdPort {
   nextResponseId(): string;
 }
 
-export interface SavedPlaceIdPort {
-  nextSavedPlaceRef(): string;
-}
-
-export interface CardSetIdPort {
-  nextCardSetId(): string;
-}
-
 export interface RegistryIdPort extends IdPort {
   nextPlaceRef(): string;
 }
 
 export interface ClockPort {
   now(): string;
-}
-
-export interface TelemetryPort {
-  record(event: {
-    code: string;
-    turnId: string;
-    revision: v.InferOutput<typeof SafeIntegerSchema>;
-    durationMs: v.InferOutput<typeof SafeIntegerSchema>;
-  }): void;
 }
 
 export type RegisteredCandidate = {

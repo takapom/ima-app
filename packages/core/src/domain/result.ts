@@ -3,12 +3,6 @@ import { ObservationSchema } from './evidence';
 import { IssueSchema } from './issue';
 import { Text } from './primitives';
 
-export const WarningSchema = v.strictObject({
-  code: Text(80),
-  message: Text(300),
-});
-export type Warning = v.InferOutput<typeof WarningSchema>;
-
 export const FieldResultSchema = <T extends v.GenericSchema>(value: T) =>
   v.variant('status', [
     v.pipe(

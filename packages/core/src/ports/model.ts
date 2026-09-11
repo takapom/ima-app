@@ -1,10 +1,8 @@
 import * as v from 'valibot';
 import { EvidenceTextSchema } from '../domain/evidence';
 import { ModelActionMetadataSchema } from '../domain/constraints';
-import type { Result } from '../domain/result';
 import { CandidateIdSchema, ObservationIdSchema, Text } from '../domain/primitives';
 import { ModelContextSchema } from './context';
-import type { CancellationToken } from './context';
 import { ModelGetPlaceDetailsInputSchema, SearchPlacesInputSchema } from './operations';
 
 const EvidenceIdsSchema = v.pipe(
@@ -71,8 +69,3 @@ export const ModelDecisionSchema = v.pipe(
   ),
 );
 export type ModelDecision = v.InferOutput<typeof ModelDecisionSchema>;
-
-export interface ModelPort {
-  /** Adapter boundary only; loop ownership remains with the selected SDK/runtime. */
-  respond(request: ModelRequest, cancellation: CancellationToken): Promise<Result<ModelDecision>>;
-}
