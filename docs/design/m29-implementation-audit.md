@@ -167,3 +167,24 @@ Expo位置情報・haptics・SQLite・SecureStoreの新規依存追加、およ�
 - 2026-09-11 11:32–11:34 JST: #33のLO日跨ぎ照合を`e4a0c5a`へ記録（62行）。親の関連3ファイル20テスト、対象lint/formatが合格。料理23時・ドリンク翌23時を同じ値へ縮退させずunknownとし、同じ日付修飾の重複は保持する。実APIは未実施。
 - 2026-09-11 11:25–11:35 JST: #26の保存参照live入力を`c6afee3`へ記録（487行）。親の専用20ファイル87テストが合格、実モデル1件skip。簡潔化後の対象2ファイル14テスト、Worker型3系統、対象lint/formatも合格。実Owner DOで発行したopaque refを正式入力へ渡し、正式Details応答の観測ID・field・candidate・providerを照合してsemantic aliasへ変換する。recordRefをモデルへ露出せず、user本文の偽tool-resultを無視する。live対象14 profileは接続済みだが、42反復の実モデル・人手品質評価は未実施。
 - 2026-09-11 11:37–11:39 JST: #33の原子的な観測置換を`669aca3`へ記録（875行）。親Core全23ファイル109テスト、Core/Eval/Worker型、対象lint/format、依存検査675 modules / 3,013 dependencies・Fixture31件が合格。現在freshな観測を比較元として登録成功後だけ旧観測の再利用を抑止し、履歴参照は残す。失敗・scope/context/field不一致・既存競合・期限切れ比較元では旧観測を維持する。並行編集時の一時的なPort/Class型不整合は解消済み。
+- 2026-09-11 11:41–11:42 JST: 親の全体9suiteが228ファイル1,237テストで合格（Node1,050、App Integrity HTTP1、Worker64、HTTP/mobile22、Think5、Think runtime24、native39、Production HTTP18、dev Fixture14）。全workspace型と全体lint（検出Fixture22件）も合格。`6f6fa9f`以後の途中検証であり、後続のLO統合の最終検証は別途行う。実API・実モデル・実機の成功を含まない。
+- 2026-09-11 12:11–12:13 JST: #33の複数帰属を`ac8a01e`へ記録（253行）。親の関連4ファイル24テスト、全workspace型、対象lint/formatが合格。公開EvidenceRefに任意の複数帰属を追加し、単一sourceの既存表現を維持。Google/HP双方とpolicy帰属を表示し、provider recordは公開しない。
+- 2026-09-11 12:13–12:15 JST: #33のLO合成を`d8bfb4b`へ記録（1,219行）。親のHP関連10ファイル63テスト、全体lint、対象formatが合格。Googleの営業時間区間を保持し、HP明示LOだけを原子的に補足する。競合warning、双方の期限上限、許可撤回後の予算付きGoogle再取得、混在sourceの再取得拒否を確認した。
+- 2026-09-11 12:15–12:16 JST: #15の本番dataset DO接続を`1296622`へ記録（443行）。親の関連5ファイル25テストと実DO管理1ファイル5テストが合格。固定名DOを遅延取得し、revision probeは1秒で打ち切る。origin評価を一度に揃え、設定不足ではprobeしない。空→import後1→rollback後3のrevisionを実DOで検証。駅・運行日resolverと検証済み実データの供給は未完了。
+- 2026-09-11 12:14–12:16 JST: 上記コードを含む親の全体9suiteが232ファイル1,259テストで合格（Node1,072、App Integrity HTTP1、Worker64、HTTP/mobile22、Think5、Think runtime24、native39、Production HTTP18、dev Fixture14）。全workspace型、全体lint（Fixture22件）、依存検査683 modules / 3,063 dependencies（Fixture31件）が合格。実モデルは無効化して実行。ローカルbuild・browserは前回の承認拒否を再試行せず、これら新規コミットのbuild/CIは未確認。コミットはmain上・各2,000行以内、未push。
+
+## 2026-09-11 継続実装後の未完了条件
+
+全sub-issue完了ではない。以下はテスト合格やFixtureで代替せず、未実装コードと外部検収を区別する。
+
+| 対象            | 未実装・未決定                                                                                                                                             | 必要な外部検収                                                |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| #18             | `apps/mobile/App.tsx`のfont/splash接続、フォント資産・OFL                                                                                                  | 実機画面・視覚比較・アクセシビリティ                          |
+| #19/#21/#22/#23 | `mobile-runtime.ts`の実位置取得、SQLite/SecureStoreのnative composition、Haptics用依存。Expo Location/Haptics/SQLite/SecureStoreはmobileの直接依存に未登録 | 権限・再起動・オフライン・実アプリHTTP/E2E                    |
+| #21             | Apple Maps維持＋独立座標源か、Google Mapsへの要件変更か未決定。Share/Linking service自体は存在                                                             | 実機での地図・共有・触覚操作                                  |
+| #28             | 実Apple App Attest verifierとnative client未実装。注入Port・fail-closed bootstrap・合成canaryは実装済み                                                    | Team/App ID・entitlement・署名・実iPhoneの証明とreplay検証    |
+| #15/#34         | dataset DO接続済み。駅waypoint・乗車駅・祝日/運行日resolverと検証済み実時刻表は未供給                                                                      | 正規出典・利用許諾・非本番import/rollback                     |
+| #26             | 全14 profileのlive入口は接続済み                                                                                                                           | 3反復ずつの実モデル評価と人手品質・費用確認                   |
+| #30/#31/#35/#36 | preflight/設定は実装済み。実プロジェクト・API・署名環境の設定は未確認                                                                                      | 非本番実API、iPhone E2E、署名配布、利用許諾・削除・保持の検収 |
+
+依存導入・asset取得・ローカルbuild/browserの以前の承認拒否を、この監査や別経路から回避していない。新規コードはローカルmainにコミット済みで未push。ユーザー既存のmobile起動設定などの未コミット変更は保全した。
