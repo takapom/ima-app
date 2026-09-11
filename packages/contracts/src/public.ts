@@ -105,9 +105,18 @@ export const parseRetentionMetadata = (input: unknown): RetentionMetadata | null
 };
 
 /** Minimal evidence metadata safe for mobile rendering; provider records stay internal. */
+const EvidenceAttributionsSchema = v.pipe(
+  v.array(AttributionSchema),
+  v.minLength(1),
+  // Core permits eight source refs; retention may carry one additional policy credit.
+  v.maxLength(9),
+);
+
 export const EvidenceRefSchema = v.strictObject({
   evidenceId: OpaqueIdSchema,
   attribution: v.nullable(AttributionSchema),
+  /** Credits from every public source; provider IDs and record references stay internal. */
+  attributions: v.optional(EvidenceAttributionsSchema),
   retention: RetentionMetadataSchema,
 });
 export type EvidenceRef = v.InferOutput<typeof EvidenceRefSchema>;

@@ -147,6 +147,32 @@ describe('candidate card model', () => {
     ]);
   });
 
+  it('prefers all public source credits when an evidence item has plural attributions', () => {
+    const multiSourceEvidence: EvidenceRef = {
+      ...evidence('multi-source-1', 'Hot Pepper'),
+      attributions: [
+        { label: 'Google Maps', sourceLink: 'https://maps.google.com' },
+        { label: 'Hot Pepper', sourceLink: 'https://www.hotpepper.jp' },
+      ],
+    };
+
+    expect(collectAttributions([[multiSourceEvidence]])).toEqual([
+      { label: 'Google Maps', sourceLink: 'https://maps.google.com' },
+      { label: 'Hot Pepper', sourceLink: 'https://www.hotpepper.jp' },
+    ]);
+  });
+
+  it('falls back to the legacy attribution for an empty invalid plural field', () => {
+    const legacyEvidence: EvidenceRef = {
+      ...evidence('legacy-fallback-1', 'Legacy'),
+      attributions: [],
+    };
+
+    expect(collectAttributions([[legacyEvidence]])).toEqual([
+      { label: 'Legacy', sourceLink: 'https://example.com/legacy-fallback-1' },
+    ]);
+  });
+
   it('does not render known values when their public evidence is no longer available', () => {
     const expiredEvidence = {
       ...evidence('expired-1', '期限切れ情報'),

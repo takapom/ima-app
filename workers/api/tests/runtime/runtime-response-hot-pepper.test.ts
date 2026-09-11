@@ -47,6 +47,29 @@ const hpEvidence: EvidenceLink = {
   retention: availableRetention,
 };
 
+const hpSource = hpEvidence.sources[0];
+if (hpSource === undefined) throw new Error('HP source fixture is missing');
+
+const policyRetention: RetentionMetadata = {
+  ...availableRetention,
+  attribution: { label: 'Policy credit', sourceLink: 'https://example.com/policy-credit' },
+};
+
+const googleAndHpEvidence: EvidenceLink = {
+  ...hpEvidence,
+  observationId: 'google-hp-observation',
+  retention: policyRetention,
+  sources: [
+    {
+      provider: 'google_places',
+      recordRef: 'google-record',
+      attribution: 'Google Maps',
+      publicUrl: 'https://maps.google.com',
+    },
+    hpSource,
+  ],
+};
+
 const response: ValidatedMessageResponse = {
   presentation: 'keep',
   message: {
@@ -85,5 +108,64 @@ describe('runtime public Hot Pepper evidence', () => {
         resolveCardEvidence: () => undefined,
       }),
     ).toThrowError(new RuntimePublicResponseError('CARD_EVIDENCE_MISSING'));
+  });
+
+  it('publishes every source credit without exposing provider records', () => {
+    const mixedResponse: ValidatedMessageResponse = {
+      presentation: 'keep',
+      message: {
+        ...response.message,
+        evidenceIds: [googleAndHpEvidence.observationId],
+        evidence: [googleAndHpEvidence],
+      },
+    };
+    const publicResponse = mapCommittedResponseToPublic(mixedResponse, options);
+    const publicMessage = publicResponse.message[0];
+    if (publicMessage === undefined) throw new Error('public message fixture is missing');
+    expect(publicMessage.evidence).toEqual([
+      {
+        evidenceId: googleAndHpEvidence.observationId,
+        attribution: policyRetention.attribution,
+        attributions: [
+          { label: 'Google Maps', sourceLink: 'https://maps.google.com' },
+          { label: 'ホットペッパー', sourceLink: 'https://www.hotpepper.jp' },
+          { label: 'Policy credit', sourceLink: 'https://example.com/policy-credit' },
+        ],
+        retention: policyRetention,
+      },
+    ]);
+    const serialized = JSON.stringify(publicResponse);
+    expect(serialized).not.toContain('google_places');
+    expect(serialized).not.toContain('google-record');
+    expect(serialized).not.toContain('hp-record');
+  });
+
+  it('keeps a policy-owned singular credit unchanged for one source', () => {
+    const policyOnlyEvidence: EvidenceLink = {
+      ...hpEvidence,
+      observationId: 'policy-only-observation',
+      retention: policyRetention,
+    };
+    const publicResponse = mapCommittedResponseToPublic(
+      {
+        presentation: 'keep',
+        message: {
+          ...response.message,
+          evidenceIds: [policyOnlyEvidence.observationId],
+          evidence: [policyOnlyEvidence],
+        },
+      },
+      options,
+    );
+    const publicMessage = publicResponse.message[0];
+    if (publicMessage === undefined) throw new Error('public message fixture is missing');
+    expect(publicMessage.evidence).toEqual([
+      {
+        evidenceId: policyOnlyEvidence.observationId,
+        attribution: policyRetention.attribution,
+        retention: policyRetention,
+      },
+    ]);
+    expect(publicMessage.evidence[0]).not.toHaveProperty('attributions');
   });
 });

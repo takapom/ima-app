@@ -12,11 +12,18 @@ export const collectAttributions = (
   const attributions: AttributionPresentation[] = [];
   for (const evidence of evidenceGroups) {
     for (const item of evidence) {
-      if (item.attribution === null) continue;
-      const key = `${item.attribution.label}|${item.attribution.sourceLink ?? ''}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      attributions.push(item.attribution);
+      const itemAttributions =
+        item.attributions === undefined || item.attributions.length === 0
+          ? item.attribution === null
+            ? []
+            : [item.attribution]
+          : item.attributions;
+      for (const attribution of itemAttributions) {
+        const key = `${attribution.label}|${attribution.sourceLink ?? ''}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        attributions.push(attribution);
+      }
     }
   }
   return attributions;

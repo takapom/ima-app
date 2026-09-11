@@ -145,11 +145,40 @@ const publicRetention = (retention: RetentionMetadata): PublicRetentionMetadata 
   displayPolicyStatus: retention.displayPolicyStatus,
 });
 
+type PublicAttribution = NonNullable<EvidenceRef['attribution']>;
+
+const publicSourceAttributions = (sources: EvidenceLink['sources']): PublicAttribution[] => {
+  const seen = new Set<string>();
+  const attributions: PublicAttribution[] = [];
+  for (const source of sources) {
+    if (source.attribution === null) continue;
+    const attribution = { label: source.attribution, sourceLink: source.publicUrl };
+    const key = `${attribution.label}|${attribution.sourceLink ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    attributions.push(attribution);
+  }
+  return attributions;
+};
+
 const publicEvidence = (link: EvidenceLink): EvidenceRef => {
   const retention = publicRetention(link.retention);
+  const singular = retention.attribution;
+  const sourceAttributions = publicSourceAttributions(link.sources);
+  const attributions =
+    sourceAttributions.length > 1
+      ? singular === null ||
+        sourceAttributions.some(
+          (attribution) =>
+            attribution.label === singular.label && attribution.sourceLink === singular.sourceLink,
+        )
+        ? sourceAttributions
+        : [...sourceAttributions, singular]
+      : undefined;
   return {
     evidenceId: link.observationId,
     attribution: retention.attribution,
+    ...(attributions === undefined ? {} : { attributions }),
     retention,
   };
 };

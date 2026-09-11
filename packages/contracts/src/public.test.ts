@@ -1,5 +1,6 @@
+import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { parseRetentionMetadata } from './public';
+import { EvidenceRefSchema, parseRetentionMetadata } from './public';
 
 const allowed = {
   retentionDecision: 'allow',
@@ -41,5 +42,48 @@ describe('parseRetentionMetadata', () => {
         displayPolicyStatus: 'policy_withheld',
       }),
     ).toMatchObject({ retentionDecision: 'unknown', policyStatus: 'policy_withheld' });
+  });
+});
+
+describe('EvidenceRefSchema', () => {
+  const evidence = {
+    evidenceId: 'evidence-1',
+    attribution: null,
+    retention: allowed,
+  };
+
+  it('accepts legacy singular attribution and bounded plural attributions', () => {
+    expect(v.safeParse(EvidenceRefSchema, evidence).success).toBe(true);
+    expect(
+      v.safeParse(EvidenceRefSchema, {
+        ...evidence,
+        attributions: [
+          { label: 'Google Maps', sourceLink: 'https://maps.google.com' },
+          { label: 'ホットペッパー', sourceLink: 'https://www.hotpepper.jp' },
+        ],
+      }).success,
+    ).toBe(true);
+  });
+
+  it('rejects an unbounded plural attribution payload', () => {
+    expect(
+      v.safeParse(EvidenceRefSchema, {
+        ...evidence,
+        attributions: Array.from({ length: 10 }, (_, index) => ({
+          label: `Source ${index + 1}`,
+          sourceLink: `https://example.com/source-${index + 1}`,
+        })),
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects an empty plural field instead of hiding a legacy attribution', () => {
+    expect(
+      v.safeParse(EvidenceRefSchema, {
+        ...evidence,
+        attribution: { label: 'Legacy', sourceLink: 'https://example.com/legacy' },
+        attributions: [],
+      }).success,
+    ).toBe(false);
   });
 });

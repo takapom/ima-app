@@ -171,6 +171,50 @@ describe('saved place preview view projection', () => {
     });
   });
 
+  it('keeps all source credits in the saved-place presentation', () => {
+    const sourceIdentity = details.items[0]?.fields.identity;
+    if (sourceIdentity?.status !== 'known') throw new Error('expected known identity fixture');
+    const sourceEvidence = sourceIdentity.evidence[0];
+    if (sourceEvidence === undefined) throw new Error('expected identity evidence fixture');
+    const multiSourceDetails: PublicPlaceDetailsData = {
+      items: [
+        {
+          candidateId: 'candidate-1',
+          fields: {
+            identity: {
+              status: 'known',
+              value: sourceIdentity.value,
+              evidence: [
+                {
+                  ...sourceEvidence,
+                  attributions: [
+                    { label: 'Google Maps', sourceLink: 'https://maps.google.com/?cid=1' },
+                    { label: 'ホットペッパー', sourceLink: 'https://www.hotpepper.jp' },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+    };
+    const state = previewState({
+      status: 'ready',
+      selected: { ...listItem(), name: null, area: null, restoreMode: 'reference_only' },
+      payload: {
+        savedPlaceRef: asServer('saved-ref-1'),
+        candidateId: 'candidate-1',
+        evidenceIds: [sourceEvidence.evidenceId],
+        data: multiSourceDetails,
+      },
+    });
+
+    expect(savedPlacePreviewDisplayFor(state)?.attributions).toEqual([
+      { label: 'Google Maps', sourceLink: 'https://maps.google.com/?cid=1' },
+      { label: 'ホットペッパー', sourceLink: 'https://www.hotpepper.jp' },
+    ]);
+  });
+
   it('maps failure reasons without exposing raw API errors', () => {
     const state = previewState({
       status: 'failed',
