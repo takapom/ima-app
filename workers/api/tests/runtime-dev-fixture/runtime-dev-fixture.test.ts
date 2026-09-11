@@ -13,11 +13,9 @@ import { routeRequest } from '../../src/http/router';
 import { createPhotoReferenceStoreResolver } from '../../src/providers/photo/rpc';
 import { createPhotoTokenCodec } from '../../src/providers/photo/token';
 import type { RateLimitDO, ThreadDO } from '../../src/thread-do';
-import type { RuntimeModelGuardCallOptions } from '../../src/runtime/runtime-model-guard';
 import { createRuntimeProductionConnectionOptions } from '../../src/runtime/runtime-production-factory';
 import {
   createDevFixtureFetcher,
-  createDevFixtureModel,
   devFixtureEnvironmentFor,
   DEV_FIXTURE_PHOTO_REF,
   DEV_FIXTURE_PHOTO_TOKEN_SECRET,
@@ -25,6 +23,7 @@ import {
   isKeylessDevFixtureEnvironment,
 } from '../../src/runtime/runtime-dev-fixture';
 import { readOnlyCommit } from '../runtime/runtime-production-factory-fixtures';
+import { toolCallInput } from './runtime-dev-fixture-test-support';
 
 const OWNER_CREDENTIAL = `${'A'.repeat(42)}E`;
 const NOW = '2026-09-11T03:00:00.000Z';
@@ -102,7 +101,7 @@ const turnInput = (requestId: string): ThreadTurnRequest => ({
   requestId,
   turnId: null,
   revision: 1,
-  text: '開発用Fixtureから候補を探して',
+  text: '恵比寿で24時間営業のカフェを探して',
   clientNow: NOW,
   location: {
     status: 'unavailable',
@@ -116,7 +115,7 @@ const turnInput = (requestId: string): ThreadTurnRequest => ({
     homeStationRef: null,
     maxWalkMinutes: null,
     minimumStayMinutes: null,
-    areaText: '開発用Fixture',
+    areaText: '恵比寿',
     budget: 'normal',
   },
   savedPlaceRefs: [],
@@ -124,33 +123,6 @@ const turnInput = (requestId: string): ThreadTurnRequest => ({
   mode: 'search',
   idempotencyKey: `dev-fixture-turn-${requestId}`,
 });
-
-const toolCallInput = async (
-  prompt: RuntimeModelGuardCallOptions['prompt'],
-): Promise<Record<string, unknown>> => {
-  const model = createDevFixtureModel();
-  const result = await model.doStream({ prompt });
-  const collected: unknown[] = [];
-  await result.stream.pipeTo(
-    new WritableStream({
-      write(part) {
-        collected.push(part);
-      },
-    }),
-  );
-  const call = collected.find(
-    (part): part is { type: 'tool-call'; input: string } =>
-      typeof part === 'object' &&
-      part !== null &&
-      (part as { type?: unknown }).type === 'tool-call',
-  );
-  if (call === undefined) throw new Error('fixture model did not emit a tool call');
-  const parsed: unknown = JSON.parse(call.input);
-  if (typeof parsed !== 'object' || parsed === null || !('input' in parsed)) {
-    throw new Error('fixture tool call envelope was invalid');
-  }
-  return (parsed as { input: Record<string, unknown> }).input;
-};
 
 describe('keyless dev fixture graph', () => {
   it('requires the exact dev fixture mode and preserves explicit provider gates', () => {
@@ -270,7 +242,12 @@ describe('keyless dev fixture graph', () => {
       },
     ]);
     expect(candidateInput).toMatchObject({
-      requests: [{ candidateId: 'candidate-from-result' }],
+      requests: [
+        {
+          candidateId: 'candidate-from-result',
+          fields: ['identity', 'opening_hours', 'price', 'photos', 'walking_route'],
+        },
+      ],
     });
 
     const submitInput = await toolCallInput([
@@ -342,7 +319,7 @@ describe('keyless dev fixture graph', () => {
       requests: [
         {
           candidateId: 'candidate-from-search',
-          fields: ['identity', 'opening_hours', 'photos', 'walking_route'],
+          fields: ['identity', 'opening_hours', 'price', 'photos', 'walking_route'],
         },
       ],
     });
@@ -374,7 +351,28 @@ describe('keyless dev fixture graph', () => {
     if (!response.success) throw new Error('dev fixture cards response was invalid');
     expect(response.output.response.kind).toBe('cards');
     if (response.output.response.kind !== 'cards') throw new Error('cards response was missing');
-    expect(response.output.response.cards.hero.candidateId).toBeTruthy();
+    const hero = response.output.response.cards.hero;
+    expect(hero.candidateId).toBeTruthy();
+    expect(hero.facts.identity.status).toBe('known');
+    if (hero.facts.identity.status !== 'known')
+      throw new Error('fixture identity was not returned');
+    expect(hero.facts.identity.value).toMatchObject({
+      name: '灯り坂ラウンジ（サンプル）',
+      area: '恵比寿',
+      address: '東京都渋谷区恵比寿・架空のサンプル店舗',
+    });
+    expect(hero.facts.price?.status).toBe('known');
+    if (hero.facts.price?.status !== 'known') throw new Error('fixture price was not returned');
+    expect(hero.facts.price.value.range).toMatchObject({
+      currency: 'JPY',
+      min: 1200,
+      max: 2400,
+    });
+    const customerText = [
+      ...response.output.response.message.map((item) => item.text),
+      hero.why.text,
+    ];
+    expect(customerText.join(' ')).not.toMatch(/Fixture|provider|開発用/u);
   });
 
   it('serves a token-bound fixture photo over the default HTTP entry', async () => {

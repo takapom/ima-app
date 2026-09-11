@@ -24,6 +24,10 @@ flowchart LR
   Photo -->|fixed PNG bytes| HTTP
 ```
 
+Places fixture は候補を1件だけ返す。表示名は `灯り坂ラウンジ（サンプル）`、エリアは恵比寿、
+住所は `東京都渋谷区恵比寿・架空のサンプル店舗`、価格帯は JPY 1,200〜2,400 円である。
+営業時間は24時間営業として返すため、評価用 clock がどの時刻でも営業中になる。
+
 model が出力する公開 tool は 3 つだけである。fixture fetcher が受け付けるのは
 `https://places.googleapis.com` の `POST /v1/places:searchText`、
 `GET /v1/places/dev-fixture-place`、および

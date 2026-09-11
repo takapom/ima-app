@@ -10,6 +10,11 @@ import { createPhotoReferenceStoreResolver, type PhotoReferenceRpc } from '../pr
 import { createPhotoTokenCodec } from '../providers/photo/token';
 import { GOOGLE_ROUTE_MATRIX_ENDPOINT } from '../providers/routes/types';
 import type { PhotoBodyHandler } from '../http/handler';
+import {
+  DEV_FIXTURE_PHOTO_REF,
+  DEV_FIXTURE_PLACE_ID,
+  fixturePlace,
+} from './runtime-dev-fixture-place';
 import type { RuntimeFieldUsePolicy } from './runtime-field-policy';
 import {
   sessionExpiryAt,
@@ -20,8 +25,7 @@ import type { RuntimeProductionOverrides } from './runtime-production-types';
 
 export const DEV_FIXTURE_PLACES_KEY = 'dev-fixture-places-key';
 export const DEV_FIXTURE_CURSOR_SECRET = 'dev-fixture-cursor-secret';
-export const DEV_FIXTURE_PLACE_ID = 'dev-fixture-place';
-export const DEV_FIXTURE_PHOTO_REF = 'places/dev-fixture-place/photos/dev-fixture-photo';
+export { DEV_FIXTURE_PHOTO_REF, DEV_FIXTURE_PLACE_ID } from './runtime-dev-fixture-place';
 export const DEV_FIXTURE_ROUTES_KEY = 'dev-fixture-routes-key';
 export const DEV_FIXTURE_ORIGIN_REF = 'dev-fixture-current-location';
 export const DEV_FIXTURE_ROUTE_DURATION_SECONDS = 480;
@@ -279,8 +283,8 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
       name: 'search_places',
       input: {
         mode: 'search',
-        query: 'dev fixture cafe',
-        area: { kind: 'named_area', name: '開発用Fixture' },
+        query: 'カフェ',
+        area: { kind: 'named_area', name: '恵比寿' },
         openNow: true,
         limit: 1,
         excludeCandidateIds: [],
@@ -298,7 +302,10 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
       name: 'get_place_details',
       input: {
         requests: [
-          { candidateId, fields: ['identity', 'opening_hours', 'photos', 'walking_route'] },
+          {
+            candidateId,
+            fields: ['identity', 'opening_hours', 'price', 'photos', 'walking_route'],
+          },
         ],
         freshness: 'refresh',
       },
@@ -308,13 +315,17 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
     name: 'submit_cards',
     input: {
       message: [
-        { text: '開発用Fixtureの候補です。', evidenceIds: observations, basis: 'grounded' },
+        {
+          text: '恵比寿の24時間営業のお店です。価格帯は1,200〜2,400円です。',
+          evidenceIds: observations,
+          basis: 'grounded',
+        },
       ],
       hero: {
         candidateId,
         evidenceIds: observations,
         why: {
-          text: 'Fixture provider の根拠を確認しました。',
+          text: '営業時間を気にせず立ち寄れる、恵比寿の一軒です。',
           evidenceIds: observations,
           basis: 'grounded',
         },
@@ -337,36 +348,6 @@ export const createDevFixtureModel = (): RuntimeModelGuardModel => {
       calls += 1;
       return Promise.resolve({ stream: streamOf(toolParts(calls, step.name, step.input)) });
     },
-  };
-};
-
-const fixturePlace = (clock: () => string): Record<string, unknown> => {
-  const now = Date.parse(clock());
-  if (!Number.isFinite(now)) throw new Error('DEV_FIXTURE_CLOCK_INVALID');
-  return {
-    id: DEV_FIXTURE_PLACE_ID,
-    displayName: { text: '開発用Fixture Cafe' },
-    formattedAddress: '開発用Fixture',
-    primaryType: 'cafe',
-    businessStatus: 'OPERATIONAL',
-    googleMapsUri: 'https://maps.google.com/?cid=dev-fixture',
-    priceLevel: 'PRICE_LEVEL_MODERATE',
-    photos: [
-      {
-        name: DEV_FIXTURE_PHOTO_REF,
-        widthPx: 1,
-        heightPx: 1,
-        googleMapsUri: 'https://maps.google.com/?cid=dev-fixture&photo=1',
-        authorAttributions: [{ displayName: 'Ima dev fixture' }],
-      },
-    ],
-    currentOpeningHours: {
-      periods: [{ open: { day: 0, hour: 0, minute: 0 } }],
-      weekdayDescriptions: ['開発用Fixtureは終日営業'],
-      openNow: true,
-    },
-    timeZone: { id: 'Asia/Tokyo' },
-    attributions: [{ provider: 'Google Maps', providerUri: 'https://maps.google.com' }],
   };
 };
 
