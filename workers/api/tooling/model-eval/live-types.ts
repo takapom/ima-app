@@ -25,7 +25,14 @@ export type LiveTraceSnapshot = {
 export type ModelEvalLiveCliCode = 0 | 1 | 2;
 
 export type LiveProbeProfile =
-  'new-search' | 'reason' | 'continuity' | 'compare' | 'decide-action' | 'clarify-ambiguity';
+  | 'new-search'
+  | 'condition-change'
+  | 'mixed-intent'
+  | 'reason'
+  | 'continuity'
+  | 'compare'
+  | 'decide-action'
+  | 'clarify-ambiguity';
 
 export type LiveProbeAttemptStatus = 'evaluated' | 'unverified_mapping' | 'runtime_failed';
 

@@ -8,7 +8,7 @@
 
 ## 実行プロファイル
 
-実モデルのlive runnerは`new-search`、`reason`、`compare`、`decide-action`、`clarify-ambiguity`、`continuity`の6 profileを明示的に実行対象とし、それぞれ3反復のartifactへ分ける。新規検索はHTTP入力だけで再現でき、実モデルの候補登録が取得できれば厳密なidentity対応を通して評価する。`reason`、`compare`、`decide-action`、`clarify-ambiguity`は同じThreadDOで候補カードを準備するsynthetic prelude、`continuity`はdatasetの初回turnをpreludeとして実行し、いずれも公開responseからcardSetと候補順を検証して対象turnへ渡す。`compare`、`clarify-ambiguity`、`continuity`は少なくとも2候補、`reason`、`decide-action`は要求候補を含むcard setが必要で、固定時計で候補が不足する場合は`PRELUDE_CARD_SET_UNAVAILABLE`として失敗にする。fixtureの時計や候補をlive経路へ差し替えない。preludeは反復数・対象turnのmetrics・採点へ含めず、対象turnのtraceはpreludeとの差分として記録する。複数turn用の評価側 planner は、最初の入力だけをseedし、次の同じThreadDO requestには直前のschema検証済み公開responseの `threadId`・`turnId`・`revision` を引き継ぐ。prompt文字列から前turnを疑似復元しない。
+実モデルのlive runnerは`new-search`、`condition-change`、`mixed-intent`、`reason`、`compare`、`decide-action`、`clarify-ambiguity`、`continuity`の8 profileを明示的に実行対象とし、それぞれ3反復のartifactへ分ける。新規検索・条件変更・混合意図は、datasetの1 turnを正式入力としてそのまま実モデルへ渡す。`buildEvaluationTurnRequest` が同じ `ScenarioContext` からarea、budget、location policy、user intentを構築し、固定モデルの応答をlive結果へ代入しない。実モデルの候補登録が取得できれば厳密なidentity対応を通して評価する。`reason`、`compare`、`decide-action`、`clarify-ambiguity`は同じThreadDOで候補カードを準備するsynthetic prelude、`continuity`はdatasetの初回turnをpreludeとして実行し、いずれも公開responseからcardSetと候補順を検証して対象turnへ渡す。`compare`、`clarify-ambiguity`、`continuity`は少なくとも2候補、`reason`、`decide-action`は要求候補を含むcard setが必要で、固定時計で候補が不足する場合は`PRELUDE_CARD_SET_UNAVAILABLE`として失敗にする。fixtureの時計や候補をlive経路へ差し替えない。preludeは反復数・対象turnのmetrics・採点へ含めず、対象turnのtraceはpreludeとの差分として記録する。複数turn用の評価側 planner は、最初の入力だけをseedし、次の同じThreadDO requestには直前のschema検証済み公開responseの `threadId`・`turnId`・`revision` を引き継ぐ。prompt文字列から前turnを疑似復元しない。
 
 preludeがcards以外を返す、対象responseがschema不正になる、またはmessageから候補identityを安全に得られない場合は、応答を補正せず固定分類のruntime failure／`unverified_mapping`としてartifactへ残す。その他のdataset profileは未接続の`unavailable`であり、live runnerの対象へ暗黙追加しない。キーなしの専用fixtureは、同じformal context経路を外部課金なしで検証する契約として引き続き別bindingで実行する。
 
@@ -20,7 +20,7 @@ compare・decide-action・clarify-ambiguityのfixtureはpreludeを19:00 JST（`2
 
 `specific-place`はpreludeでカード順を確定した後、対象turnを19:00 JSTから21:00 JSTへ進め、正式card contextの表示名とユーザー文面の一意一致だけで対象を解決する。青葉カフェを2番目へ置いても候補順の先頭へフォールバックせず、AだけをDetails refreshする。表示名が伏せられている、重複している、または一意に一致しない場合は候補を推測せず確認メッセージへ進み、Detailsを追加しない。検索通信数、freshな営業時間evidence、provider `recordRef` とruntime `candidateId` の対応を同じDOで検証する。実DO回帰は [`specific-place.test.ts`](../../workers/api/tests/model-eval-live/specific-place.test.ts) にあり、このfixtureはkeyless契約でlive profileへは昇格しない。
 
-条件変更と混合意図は、実モデルlive profileへ昇格させず、専用のkeyless fixtureとして一つのcards turnを検証する。[`condition-context.test.ts`](../../workers/api/tests/model-eval-live/condition-context.test.ts) は既存のcanonical時刻・正式scenario contextをそのまま使い、`prefs.budget` と model projectionのbudgetが `normal` であること、静かさを含む実際のPlaces検索クエリ、provider responseから得たpriceのfresh evidenceを確認する。候補は表示名で補正せず、hostが捕捉した `eval-place-a` のrecordRefと公開cardのruntime candidate IDをmappingする。検索結果のquietnessは店舗事実へ昇格せず、condition/mixed fixtureが通ることも実モデルの意味理解や評価合格を示さない。Detailsのcandidate limitはこのcanonical時刻で利用できる候補を選ぶためのfixture制御であり、実モデルの結果をcorrectifyする経路ではない。
+条件変更と混合意図は、実モデルlive profileとしても実行可能だが、実モデルの品質合格をキーなしで主張しない。[`condition-context.test.ts`](../../workers/api/tests/model-eval-live/condition-context.test.ts) は既存のcanonical時刻・正式scenario contextをそのまま使うkeyless契約で、`prefs.budget` と model projectionのbudgetが `normal` であること、静かさを含む実際のPlaces検索クエリ、provider responseから得たpriceのfresh evidenceを確認する。live経路では同じ `EvaluationCase` を `live-plan.ts` から `ModelEvalThreadDO` へ渡し、実モデルの公開responseとhost traceだけをartifactへ変換する。候補は表示名で補正せず、hostが捕捉した `eval-place-a` のrecordRefと公開cardのruntime candidate IDをmappingする。検索結果のquietnessは店舗事実へ昇格せず、keyless fixtureが通ることも実モデルの意味理解や評価合格を示さない。Detailsのcandidate limitはこのcanonical時刻で利用できる候補を選ぶためのfixture制御であり、実モデルの結果をcorrectifyする経路ではない。API keyがない場合はlive profileを実行せず、`MODEL_PROVIDER_KEY_MISSING`としてskipする。
 
 期限切れ根拠と位置情報ポリシーは必要な実状態または専用profileが未接続のため `unavailable` と明示する。保存参照は [`saved-reference.test.ts`](../../workers/api/tests/model-eval-live/saved-reference.test.ts) で専用 `SavedReferenceDO` の owner-bound な実bindingを作り、正式なDetails tool-resultからだけ semantic alias、provider `recordRef`、fresh evidenceを解決する。opaque referenceはrequest/tool入力に限定し、公開responseやartifactへ出さない。owner不一致、削除済み、期限切れは旧identityを復活させず、resolved refsを空にして安全な未解決messageへ進む。候補IDやclaimsはmessage responseから変換できる場合だけ採点対象にするため、保存参照のfixtureではtraceの解決候補を `selectedCandidateIds` へ補完せず、検証済みsemantic refsだけをEvaluationRunへ渡す。現在のconverterはmessage内の候補・evidenceをrubricの品質評価へ変換できないため、このfixtureの成功をシナリオ全体の採点合格とは扱わない。この単位は実DOとkeyless runtime接続の境界検証であり、saved-referenceのlive profileは未対応のままにする。
 
@@ -36,7 +36,9 @@ GPS拒否はlive profileへ昇格させず、`ModelEvalFixtureThreadDO` の実DO
 
 ## opt-in と検証
 
-通常のNode/Vitest suiteはlive runnerをimportしない。専用設定は`vitest.model-eval-live.config.ts`と`workers/api/wrangler.model-eval-live-test.jsonc`で提供する。fixture bindingと実モデルbindingは同じ専用pool内でも分離し、fixtureはAPI keyなしで実行する。
+通常のNode/Vitest suiteはlive runnerをimportしない。専用設定は`vitest.model-eval-live.config.ts`と`workers/api/wrangler.model-eval-live-test.jsonc`で提供する。fixture bindingと実モデルbindingは同じ専用pool内でも分離し、fixtureは実API keyなしで実行する。
+
+専用poolの非live分岐では、実モデル用 `ModelEvalThreadDO` のcapture-only seamをlifecycle初期化より先に有効化する。`MODEL_EVAL_LIVE=0` ではprovider呼出し前に停止するため、実API keyも外部通信も不要である。実モデルの実行は明示的なlive flagと実キーが揃った場合だけ許可する。
 
 ```sh
 MODEL_EVAL_LIVE=1 OPENAI_API_KEY=... \

@@ -1,7 +1,14 @@
 import type { EvaluationCase, ScenarioId } from './types';
 
 export type LiveEvaluationProfile =
-  'new-search' | 'reason' | 'continuity' | 'compare' | 'decide-action' | 'clarify-ambiguity';
+  | 'new-search'
+  | 'condition-change'
+  | 'mixed-intent'
+  | 'reason'
+  | 'continuity'
+  | 'compare'
+  | 'decide-action'
+  | 'clarify-ambiguity';
 
 export type LiveEvaluationTiming = {
   readonly preludeClientNow?: string;
@@ -30,6 +37,8 @@ export type LiveEvaluationTurnPlanResult =
 
 const profileFor: Partial<Record<ScenarioId, LiveEvaluationProfile>> = {
   'new-search': 'new-search',
+  'condition-change': 'condition-change',
+  'mixed-intent': 'mixed-intent',
   reason: 'reason',
   continuity: 'continuity',
   compare: 'compare',
@@ -56,7 +65,7 @@ export const createLiveEvaluationTurnPlan = (
   if (extra.length > 0 || first === undefined) {
     return { ok: false, code: 'LIVE_TURN_SHAPE_UNSUPPORTED' };
   }
-  if (profile === 'new-search') {
+  if (profile === 'new-search' || profile === 'condition-change' || profile === 'mixed-intent') {
     if (second !== undefined) return { ok: false, code: 'LIVE_TURN_SHAPE_UNSUPPORTED' };
     return {
       ok: true,

@@ -3,6 +3,12 @@ import { ThreadDO as ProductionThreadDO } from '../../src/thread-do';
 import { createLiveOpenAIProvider } from '../../src/model/provider';
 import { sessionExpiryAt } from '../../src/runtime/runtime-production-support';
 import {
+  isThreadRuntimeTurnInput,
+  runtimeFailure,
+  type ThreadRuntimeTurnInput,
+  type ThreadRuntimeTurnResult,
+} from '../../src/thread-runtime/admission';
+import {
   LiveTraceRecorder,
   wrapModelForLiveEvaluation,
   type LiveTraceSnapshot,
@@ -57,6 +63,8 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
   private readonly liveEnv: ModelEvalEnv;
   private readonly liveTrace = new LiveTraceRecorder();
   private liveModel = 'unknown';
+  private captureRuntimeInput = false;
+  private capturedRuntimeInput: ThreadRuntimeTurnInput | null = null;
 
   constructor(ctx: DurableObjectState, env: ModelEvalEnv) {
     super(ctx, env);
@@ -69,6 +77,30 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
 
   getModelEvalProfile(): { readonly model: string; readonly promptVersion: string } {
     return { model: this.liveModel, promptVersion: 'm25-production-default-v1' };
+  }
+
+  configureModelEvalRequestCapture(enabled: boolean): void {
+    this.captureRuntimeInput = enabled;
+    this.capturedRuntimeInput = null;
+  }
+
+  getModelEvalRequestCapture(): ThreadRuntimeTurnInput | null {
+    return this.capturedRuntimeInput === null ? null : structuredClone(this.capturedRuntimeInput);
+  }
+
+  override async runRuntimeTurn(value: unknown): Promise<ThreadRuntimeTurnResult> {
+    if (this.captureRuntimeInput) {
+      if (isThreadRuntimeTurnInput(value)) {
+        this.capturedRuntimeInput = structuredClone(value);
+      }
+      return runtimeFailure('RUNTIME_UNCONFIGURED');
+    }
+    return super.runRuntimeTurn(value);
+  }
+
+  protected override async startRuntimeLifecycle(): Promise<void> {
+    if (this.captureRuntimeInput) return;
+    await super.startRuntimeLifecycle();
   }
 
   protected override createRuntimeProductionOverrides() {

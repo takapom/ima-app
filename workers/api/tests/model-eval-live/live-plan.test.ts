@@ -12,13 +12,29 @@ const scenarioFor = (id: string) => {
 };
 
 describe('model-eval live turn plans', () => {
-  it('exposes the fixed-clock card-context profiles alongside existing profiles', () => {
+  it('exposes every profile with an executable live turn shape', () => {
     expect(liveEvaluationProfileFor(scenarioFor('new-search'))).toBe('new-search');
+    expect(liveEvaluationProfileFor(scenarioFor('condition-change'))).toBe('condition-change');
+    expect(liveEvaluationProfileFor(scenarioFor('mixed-intent'))).toBe('mixed-intent');
     expect(liveEvaluationProfileFor(scenarioFor('reason'))).toBe('reason');
     expect(liveEvaluationProfileFor(scenarioFor('continuity'))).toBe('continuity');
     expect(liveEvaluationProfileFor(scenarioFor('compare'))).toBe('compare');
     expect(liveEvaluationProfileFor(scenarioFor('decide-action'))).toBe('decide-action');
     expect(liveEvaluationProfileFor(scenarioFor('clarify-ambiguity'))).toBe('clarify-ambiguity');
+  });
+
+  it('passes condition and mixed-intent turns directly to the live model', () => {
+    for (const id of ['condition-change', 'mixed-intent'] as const) {
+      const scenario = scenarioFor(id);
+      expect(createLiveEvaluationTurnPlan(scenario)).toEqual({
+        ok: true,
+        plan: {
+          profile: id,
+          prelude: null,
+          targetTexts: [scenario.userTurns[0]],
+        },
+      });
+    }
   });
 
   it('uses one synthetic card prelude for each formal card-context profile', () => {
