@@ -83,6 +83,7 @@ const REQUEST_TIMEOUT = new Error('saved-reference-refresh-timeout');
 const REQUEST_CANCELLED = new Error('saved-reference-refresh-cancelled');
 const REQUEST_ABORTED = new Error('saved-reference-refresh-aborted');
 const AUTHORIZATION_TIMEOUT = new Error('saved-reference-refresh-authorization-timeout');
+const AUTHORIZATION_ABORTED = new Error('saved-reference-refresh-authorization-aborted');
 
 /**
  * Stop waiting at the Worker boundary when the request ends. The underlying
@@ -102,6 +103,33 @@ const awaitAbortable = async <T>(operation: Promise<T>, signal: AbortSignal): Pr
   });
   try {
     return await Promise.race([operation, abort]);
+  } finally {
+    removeAbort();
+  }
+};
+
+/** Waits for an owner read without pretending that the underlying DO RPC is cancellable. */
+const awaitAuthorization = async <T>(
+  operation: Promise<T>,
+  timeoutPromise: Promise<never>,
+  signal?: AbortSignal,
+): Promise<T> => {
+  operation.catch(() => undefined);
+  if (signal?.aborted === true) throw AUTHORIZATION_ABORTED;
+  let removeAbort = (): void => undefined;
+  const abortPromise =
+    signal === undefined
+      ? undefined
+      : new Promise<never>((_resolve, reject) => {
+          const onAbort = (): void => reject(AUTHORIZATION_ABORTED);
+          removeAbort = (): void => signal.removeEventListener('abort', onAbort);
+          signal.addEventListener('abort', onAbort, { once: true });
+          if (signal.aborted) onAbort();
+        });
+  try {
+    return abortPromise === undefined
+      ? await Promise.race([operation, timeoutPromise])
+      : await Promise.race([operation, timeoutPromise, abortPromise]);
   } finally {
     removeAbort();
   }
@@ -334,7 +362,11 @@ const savedReferenceDecision = async (
   namespace: SavedReferenceNamespace,
   ownerScopeRef: string,
   savedPlaceRef: string,
+  signal?: AbortSignal,
 ): Promise<ResourceScopeDecision> => {
+  if (signal?.aborted === true) {
+    return { allowed: false, failure: { status: 409, code: 'CANCELLED' } };
+  }
   const timeout = 10_000;
   let authorizationTimer: ReturnType<typeof setTimeout> | undefined;
   let readPromise: Promise<Awaited<ReturnType<OwnerSavedReferenceRpc['read']>>>;
@@ -347,9 +379,8 @@ const savedReferenceDecision = async (
     authorizationTimer = setTimeout(() => reject(AUTHORIZATION_TIMEOUT), timeout);
   });
   // A late RPC rejection must remain handled after the bounded authorizer returns.
-  readPromise.catch(() => undefined);
   try {
-    const result = await Promise.race([readPromise, timeoutPromise]);
+    const result = await awaitAuthorization(readPromise, timeoutPromise, signal);
     if (
       result.ok &&
       result.reference !== null &&
@@ -369,6 +400,9 @@ const savedReferenceDecision = async (
     if (error === AUTHORIZATION_TIMEOUT) {
       return { allowed: false, failure: { status: 504, code: 'TIMEOUT' } };
     }
+    if (error === AUTHORIZATION_ABORTED) {
+      return { allowed: false, failure: { status: 409, code: 'CANCELLED' } };
+    }
     return { allowed: false, failure: { status: 500, code: 'INTERNAL' } };
   } finally {
     if (authorizationTimer !== undefined) clearTimeout(authorizationTimer);
@@ -383,7 +417,7 @@ export const createSavedReferenceScopeAuthorizer = (
     if (input.resource.kind !== 'saved_reference') {
       return Promise.resolve({ allowed: false, failure: { status: 404, code: 'NOT_FOUND' } });
     }
-    return savedReferenceDecision(namespace, input.ownerScopeRef, input.resource.id);
+    return savedReferenceDecision(namespace, input.ownerScopeRef, input.resource.id, input.signal);
   },
 });
 

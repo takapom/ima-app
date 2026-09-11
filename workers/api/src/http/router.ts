@@ -52,6 +52,8 @@ export interface ResourceScopeAuthorizer {
   authorize(input: {
     readonly ownerScopeRef: string;
     readonly resource: ResourceReference;
+    /** Caller-side cancellation; an underlying RPC may not support abort. */
+    readonly signal?: AbortSignal;
   }): Promise<ResourceScopeDecision>;
 }
 
@@ -105,8 +107,13 @@ const checkResource = async (
   ownerScopeRef: string,
   resource: ResourceReference,
   config: HttpRouterConfig,
+  signal?: AbortSignal,
 ): Promise<BoundaryFailure | null> => {
-  const decision = await config.ownership.authorize({ ownerScopeRef, resource });
+  const decision = await config.ownership.authorize({
+    ownerScopeRef,
+    resource,
+    ...(signal === undefined ? {} : { signal }),
+  });
   return decision.allowed ? null : decision.failure;
 };
 
@@ -259,6 +266,7 @@ const routeAuthorized = async (
       auth.ownerScopeRef,
       { kind: 'saved_reference', id: route.path.savedPlaceRef },
       config,
+      request.signal,
     );
     if (failure !== null) return toErrorResponse(requestId, failure);
     const aborted = cancellationResponse(requestId, request);

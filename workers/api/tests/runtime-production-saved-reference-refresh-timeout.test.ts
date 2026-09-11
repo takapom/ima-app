@@ -1,6 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
+import * as v from 'valibot';
+import { env } from 'cloudflare:test';
+import { ErrorResponseSchema } from '@ima/contracts';
 import type { SavedPlaceReference } from '@ima/core';
 import type { GooglePlaceDetailsResponse } from '../src/providers/places-details/types';
+import {
+  createApplicationScopeAuthorizer,
+  createHttpRouterConfig,
+  createThreadScopeAuthorizer,
+} from '../src/bootstrap';
+import { routeRequest } from '../src/http/router';
 import {
   createSavedReferenceRefreshHandler,
   createSavedReferenceScopeAuthorizer,
@@ -15,6 +24,10 @@ import {
   registerReference,
   responseFor,
   retentionFor,
+  configuredEnvironment,
+  httpRequest,
+  testEnv,
+  START_NOW,
 } from './runtime-production-saved-reference-refresh-fixtures';
 
 describe('threadless saved-reference refresh request lifetime', () => {
@@ -211,6 +224,67 @@ describe('threadless saved-reference refresh request lifetime', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('stops waiting for HTTP authorization on abort and ignores the late owner read', async () => {
+    const { credential, owner } = await ownerFor();
+    const recordRef = `ChIJ-refresh-authorizer-abort-${crypto.randomUUID()}`;
+    const { reference } = await registerReference(owner, recordRef);
+    const controller = new AbortController();
+    let authorizationStartedResolve: (() => void) | undefined;
+    const authorizationStarted = new Promise<void>((resolve) => {
+      authorizationStartedResolve = resolve;
+    });
+    let release: (result: {
+      readonly ok: true;
+      readonly reference: SavedPlaceReference | null;
+    }) => void = () => undefined;
+    const namespace = createReadDelayedNamespace(reference, (nextRelease) => {
+      release = nextRelease;
+      authorizationStartedResolve?.();
+    });
+    let providerCalls = 0;
+    const requestId = `refresh-http-authorizer-abort-${crypto.randomUUID()}`;
+    const bindings = testEnv(env);
+    const config = createHttpRouterConfig(configuredEnvironment(namespace), {
+      ownership: createApplicationScopeAuthorizer(
+        createThreadScopeAuthorizer(bindings.THREADS),
+        namespace,
+      ),
+      clock: () => START_NOW,
+      requestIdFactory: () => requestId,
+      savedReferenceRefreshTransport: {
+        read: () => {
+          providerCalls += 1;
+          return Promise.resolve(responseFor(recordRef));
+        },
+      },
+      savedReferenceRefreshPolicy: retentionFor,
+    });
+    const request = new Request(
+      httpRequest(`/v1/saved/${reference.savedPlaceRef}/refresh`, credential, requestId),
+      { signal: controller.signal },
+    );
+    const pendingResponse = routeRequest(request, config);
+    await authorizationStarted;
+    controller.abort();
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const response = await Promise.race([
+      pendingResponse,
+      new Promise<Response>((resolve) => {
+        timeout = setTimeout(() => resolve(new Response(null, { status: 599 })), 250);
+      }),
+    ]);
+    if (timeout !== undefined) clearTimeout(timeout);
+    expect(response.status).toBe(409);
+    const parsed = v.safeParse(ErrorResponseSchema, await response.json());
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) throw new Error('M17_REFRESH_ABORT_RESPONSE_INVALID');
+    expect(parsed.output.code).toBe('CANCELLED');
+
+    release({ ok: true, reference });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(providerCalls).toBe(0);
   });
 
   it('maps a non-timeout owner authorization error to internal', async () => {
