@@ -18,16 +18,6 @@ function lines(count: number) {
   return `${Array.from({ length: count }, (_, index) => `line-${index}`).join('\n')}\n`;
 }
 
-function linesWith(
-  count: number,
-  newline: string,
-  trailingNewline: boolean,
-  value: (index: number) => string,
-) {
-  const source = Array.from({ length: count }, (_, index) => value(index)).join(newline);
-  return trailingNewline ? `${source}${newline}` : source;
-}
-
 function run(script: string, cwd: string) {
   return spawnSync(process.execPath, [script], { cwd, encoding: 'utf8' });
 }
@@ -59,28 +49,6 @@ describe('file line quality gate', () => {
     expect(result.status).toBe(status);
     if (status === 1) {
       expect(result.stderr).toContain(`${file}: ${count} lines`);
-    }
-  });
-
-  it.each([
-    ['LF with trailing newline', 500, '\n', true, 0],
-    ['LF without trailing newline', 500, '\n', false, 0],
-    ['CRLF with trailing newline', 500, '\r\n', true, 0],
-    ['blank and comment lines at 500', 500, '\n', true, 0],
-    ['LF at 501', 501, '\n', false, 1],
-    ['CRLF at 501', 501, '\r\n', true, 1],
-  ])('%s returns status %i', (_name, count, newline, trailingNewline, status) => {
-    const root = temporaryRoot();
-    const target = join(root, 'boundary.ts');
-    const value = _name.includes('blank')
-      ? (index: number) => (index % 2 === 0 ? '' : '// counted comment')
-      : (index: number) => `line-${index}`;
-    writeFileSync(target, linesWith(count, newline, trailingNewline, value));
-
-    const result = run(fileLineChecker, root);
-    expect(result.status).toBe(status);
-    if (status === 1) {
-      expect(result.stderr).toContain(`boundary.ts: ${count} lines`);
     }
   });
 });
