@@ -124,6 +124,17 @@
 - 2026-09-11 07:59–08:02 JST: 上記のCloudflare import・budget循環を修正後、親全体9suiteが213ファイル1,140テストで合格。依存検査635 modules / 2,747 dependencies・Fixture31件も合格。並行実装を含む途中の証跡であり、後続のdeadline修正は再検証が必要。
 - Web起動試行: Expo 57の既定設定ではMetroの `EMFILE: too many open files, watch` で失敗。既存Watchmanを有効化した再試行は `watch-project` が130秒超応答せず停止した。Web exportも同じ待機で停止。画面表示・Webビルドは未確認であり、起動成功とは扱わない。
 
+## 全sub-issueへの継続とpush後の検証
+
+2026-09-11の追加指示で対象を#31〜#36を含む全sub-issueへ拡張した。ユーザーによるpush後、ローカルmainとorigin/mainは`c621503`で一致した。IssueがOpenであることとコード未実装は同義ではないため、各要件を実装・検証・外部前提へ分けて照合する。
+
+- [config-dry-run #34545883046](https://github.com/takapom/ima-app/actions/runs/34545883046): `c621503`のdev/staging/production全3ジョブで、Wrangler型生成とWorker bundleのdry-runが成功。実資源へのdeploy、EAS署名build、実API成功を示すものではない。
+- [quality #34545883039](https://github.com/takapom/ima-app/actions/runs/34545883039): 09:26 JSTに全項目成功を確認。format/lint/architecture/typecheck/test/buildと、pushした各コミットの2,000行検査が通過した。iOS export/Worker dry-runのbuild成功であり、署名・配布・実機成功ではない。
+- #31は配布・プライバシーのコード/設定と実配布を分ける。App Attest・署名・実機・実終電データが未検証のまま外部配布を許可しない。
+- #32の仕様・期待値Fixtureは実装済みで、アカウント依存の利用許諾は#36の検収に残る。#33は任意Providerの実装を確認し、キーがなくても基本Places経路を維持する。
+- #34は対応ペアの実時刻表・正規出典・非本番への投入とrollback証跡が必要。合成データを実データとして投入しない。
+- #35は上記CIで設定dry-runの証跡を得た。#36の実接続には非本番環境・API設定・利用許諾確認が必要。
+
 ## 外部検証に必要な前提
 
 #30は[#36](https://github.com/takapom/ima-app/issues/36)の非本番実API検収に依存する。OpenAI、Google Places/Details/Routes/photosの設定・アカウント条件、iPhone開発ビルドの利用可否は未確認。キーの値を監査文書・チャットへ記録しない。
