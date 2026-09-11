@@ -10,9 +10,6 @@ import type {
   ThreadTurnRequest,
   LifecycleCommandSchema,
   LifecycleResponseSchema,
-  PlacePathSchema,
-  PlaceQuerySchema,
-  PlaceResponseSchema,
   PhotoPathSchema,
   SavedReferenceCreateRequest,
   SavedReferenceCreateResponse,
@@ -25,9 +22,6 @@ import type { CancellationToken } from '@ima/core';
 
 export type LifecycleCommand = v.InferOutput<typeof LifecycleCommandSchema>;
 export type LifecycleResponse = v.InferOutput<typeof LifecycleResponseSchema>;
-export type PlacePath = v.InferOutput<typeof PlacePathSchema>;
-export type PlaceQuery = v.InferOutput<typeof PlaceQuerySchema>;
-export type PlaceResponse = v.InferOutput<typeof PlaceResponseSchema>;
 export type PhotoPath = v.InferOutput<typeof PhotoPathSchema>;
 export type SavedReferenceCreateInput = SavedReferenceCreateRequest;
 export type SavedReferenceDeleteInput = SavedReferenceDeleteRequest;
@@ -69,11 +63,6 @@ export type ApplicationOperation =
       readonly path: ThreadPath;
       readonly input: LifecycleCommand;
     }
-  | {
-      readonly kind: 'place';
-      readonly path: PlacePath;
-      readonly query: PlaceQuery;
-    }
   | { readonly kind: 'saved_reference_refresh'; readonly path: SavedReferencePath }
   | {
       readonly kind: 'saved_reference_create';
@@ -94,7 +83,6 @@ export type ApplicationResult =
   | { readonly kind: 'replay_thread'; readonly response: ThreadReadResponse }
   | { readonly kind: 'lifecycle'; readonly response: LifecycleResponse }
   | { readonly kind: 'delete_thread'; readonly response: null }
-  | { readonly kind: 'place'; readonly response: PlaceResponse }
   | { readonly kind: 'saved_reference_refresh'; readonly response: SavedReferenceResponse }
   | { readonly kind: 'saved_reference_create'; readonly response: SavedReferenceCreateOutput }
   | { readonly kind: 'saved_reference_delete'; readonly response: null };

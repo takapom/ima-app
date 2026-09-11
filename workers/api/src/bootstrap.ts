@@ -379,8 +379,6 @@ const handleApplication = async (
         ),
       );
       return { kind: 'delete_thread', response: null };
-    case 'place':
-      throw unavailable();
     case 'saved_reference_refresh':
       if (savedReferenceRefresh === undefined) throw unavailable();
       return savedReferenceRefresh.handle(operation, context);

@@ -42,13 +42,6 @@ describe('HTTP router boundary', () => {
         expected: undefined,
       },
       {
-        name: 'place',
-        path: '/v1/places/candidate-1?fields=identity',
-        method: 'GET',
-        status: 200,
-        expected: { kind: 'place', path: { candidateId }, query: { fields: ['identity'] } },
-      },
-      {
         name: 'saved',
         path: '/v1/saved/saved-1/refresh',
         method: 'GET',
@@ -141,7 +134,7 @@ describe('HTTP router boundary', () => {
       },
     ];
 
-    expect(cases).toHaveLength(16);
+    expect(cases).toHaveLength(15);
     for (const testCase of cases) {
       const harness = makeHarness();
       const response = await routeRequest(
@@ -176,14 +169,6 @@ describe('HTTP router boundary', () => {
     );
     expect(mismatchResponse.status).toBe(400);
     expect(mismatched.calls.application).toBe(0);
-
-    const invalidQuery = makeHarness();
-    const queryResponse = await routeRequest(
-      makeRequest('/v1/places/candidate-1?fields=identity&debug=true'),
-      invalidQuery.config,
-    );
-    expect(queryResponse.status).toBe(400);
-    expect(invalidQuery.calls.rate).toBe(0);
 
     const unsupportedQueries = [
       { path: '/v1/search?debug=true', method: 'POST', json: searchInput },
@@ -226,6 +211,7 @@ describe('HTTP router boundary', () => {
     }
 
     for (const path of [
+      '/v1/places/candidate-1?fields=identity',
       '/v1/threads/thread-1/unknown',
       '/v1/threads/thread-1/replay/extra',
       '/v1/admin/config',
@@ -259,15 +245,6 @@ describe('HTTP router boundary', () => {
     expect(searchResponse.status).toBe(403);
     expect(search.calls.ownership).toEqual(['thread']);
     expect(search.calls.application).toBe(0);
-
-    const place = makeHarness({ denyKind: 'candidate' });
-    const placeResponse = await routeRequest(
-      makeRequest('/v1/places/candidate-1?fields=identity'),
-      place.config,
-    );
-    expect(placeResponse.status).toBe(403);
-    expect(place.calls.ownership).toEqual(['candidate']);
-    expect(place.calls.application).toBe(0);
 
     const saved = makeHarness({ denyKind: 'saved_reference' });
     const savedResponse = await routeRequest(

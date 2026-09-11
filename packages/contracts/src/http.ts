@@ -1,6 +1,5 @@
 import * as v from 'valibot';
 import {
-  DetailFieldSchema,
   IsoTimestampSchema,
   OpaqueIdSchema,
   RequestIdSchema,
@@ -139,19 +138,6 @@ export const PhotoPathSchema = v.strictObject({
   token: v.pipe(v.string(), v.minLength(1), v.maxLength(512)),
 });
 
-export const PlacePathSchema = v.strictObject({
-  candidateId: OpaqueIdSchema,
-});
-
-export const PlaceQuerySchema = v.strictObject({
-  fields: v.pipe(
-    v.array(DetailFieldSchema),
-    v.minLength(1),
-    v.maxLength(8),
-    v.check((fields) => new Set(fields).size === fields.length, 'duplicate field'),
-  ),
-});
-
 export const ThreadPathSchema = v.strictObject({
   threadId: OpaqueIdSchema,
 });
@@ -263,14 +249,6 @@ export const LifecycleResponseSchema = v.strictObject({
 
 export const EmptyResponseSchema = v.null();
 
-export const PlaceResponseSchema = v.strictObject({
-  schemaVersion: SchemaVersionSchema,
-  requestId: RequestIdSchema,
-  threadId: OpaqueIdSchema,
-  revision: RevisionSchema,
-  data: PublicPlaceDetailsDataSchema,
-});
-
 export const SavedReferenceResponseSchema = v.strictObject({
   schemaVersion: SchemaVersionSchema,
   requestId: RequestIdSchema,
@@ -372,13 +350,6 @@ export const RouteContracts = {
     path: '/v1/photos/:token',
     request: PhotoPathSchema,
     response: PhotoBinaryRouteResponseSchema,
-    successStatus: 200,
-  },
-  place: {
-    method: 'GET',
-    path: '/v1/places/:candidateId',
-    request: v.strictObject({ path: PlacePathSchema, query: PlaceQuerySchema }),
-    response: PlaceResponseSchema,
     successStatus: 200,
   },
   savedReferenceRefresh: {

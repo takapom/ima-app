@@ -307,7 +307,7 @@ describe('App Integrity gate', () => {
         route: 'search',
         ownerScopeRef: OWNER,
         deviceId: DEVICE,
-        request: requestFor(validNext.nonce, '/v1/places/candidate-1'),
+        request: requestFor(validNext.nonce, '/v1/threads/thread-1'),
         now: NOW,
         maxBodyBytes: 32 * 1024,
       }),

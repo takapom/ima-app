@@ -309,11 +309,7 @@ describe('M05 Worker bootstrap and per-thread Durable Object', () => {
     });
     expect(events.status).toBe(204);
 
-    for (const path of [
-      '/v1/places/unknown-candidate?fields=identity',
-      '/v1/saved/unknown-saved/refresh',
-      '/v1/photos/unknown-photo-token',
-    ]) {
+    for (const path of ['/v1/saved/unknown-saved/refresh', '/v1/photos/unknown-photo-token']) {
       const response = await call(
         path,
         OWNER_A,

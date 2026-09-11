@@ -1,13 +1,11 @@
 import * as v from 'valibot';
 import {
-  PlacePathSchema,
-  PlaceQuerySchema,
   PhotoPathSchema,
   SavedReferencePathSchema,
   ThreadPathSchema,
 } from '@ima/contracts';
 import type { BoundaryFailure } from './errors';
-import type { PlacePath, PlaceQuery, PhotoPath, SavedReferencePath, ThreadPath } from './handler';
+import type { PhotoPath, SavedReferencePath, ThreadPath } from './handler';
 
 export type LifecycleAction = 'cancel' | 'resume' | 'restart' | 'end';
 
@@ -18,7 +16,6 @@ export type MatchedRoute =
   | { readonly kind: 'create_thread' }
   | { readonly kind: 'search' }
   | { readonly kind: 'photos'; readonly path: PhotoPath }
-  | { readonly kind: 'place'; readonly path: PlacePath; readonly query: PlaceQuery }
   | { readonly kind: 'saved_reference_refresh'; readonly path: SavedReferencePath }
   | { readonly kind: 'saved_reference_create'; readonly path: ThreadPath }
   | { readonly kind: 'saved_reference_delete'; readonly path: SavedReferencePath }
@@ -62,35 +59,10 @@ const parsePhoto = (token: string): PhotoPath | null => {
   return parsed.success ? parsed.output : null;
 };
 
-const parsePlace = (candidateId: string): PlacePath | null => {
-  const decoded = decodeSegment(candidateId);
-  if (decoded === null) return null;
-  const parsed = v.safeParse(PlacePathSchema, { candidateId: decoded });
-  return parsed.success ? parsed.output : null;
-};
-
 const parseSaved = (savedPlaceRef: string): SavedReferencePath | null => {
   const decoded = decodeSegment(savedPlaceRef);
   if (decoded === null) return null;
   const parsed = v.safeParse(SavedReferencePathSchema, { savedPlaceRef: decoded });
-  return parsed.success ? parsed.output : null;
-};
-
-const parsePlaceQuery = (url: URL): PlaceQuery | null => {
-  const rawQuery = url.search.startsWith('?') ? url.search.slice(1) : '';
-  for (const parameter of rawQuery.split('&')) {
-    if (parameter.length === 0) continue;
-    const rawKey = parameter.split('=', 1)[0] ?? '';
-    try {
-      if (decodeURIComponent(rawKey.replaceAll('+', ' ')) !== 'fields') return null;
-    } catch {
-      return null;
-    }
-  }
-  const fields = url.searchParams
-    .getAll('fields')
-    .flatMap((value) => value.split(',').map((field) => field.trim()));
-  const parsed = v.safeParse(PlaceQuerySchema, { fields });
   return parsed.success ? parsed.output : null;
 };
 
@@ -142,13 +114,6 @@ export const matchRoute = (request: Request): MatchResult => {
       : url.search.length === 0
         ? { ok: true, route: { kind: 'photos', path } }
         : { ok: false, failure: invalidArgument() };
-  }
-  if (request.method === 'GET' && first === 'places' && segments.length === 3) {
-    const path = parsePlace(second ?? '');
-    const query = parsePlaceQuery(url);
-    return path === null || query === null
-      ? { ok: false, failure: invalidArgument() }
-      : { ok: true, route: { kind: 'place', path, query } };
   }
   if (
     request.method === 'GET' &&

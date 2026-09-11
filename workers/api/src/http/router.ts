@@ -6,7 +6,6 @@ import {
   EventsRequestSchema,
   LifecycleCommandSchema,
   LifecycleResponseSchema,
-  PlaceResponseSchema,
   SavedReferenceCreateRequestSchema,
   SavedReferenceCreateResponseSchema,
   SavedReferenceDeleteRequestSchema,
@@ -38,7 +37,7 @@ import { rateLimitedResponse } from './rate-limit-response';
 
 export const DEFAULT_JSON_BODY_LIMIT_BYTES = 32 * 1024;
 
-export type ResourceKind = 'thread' | 'candidate' | 'saved_reference' | 'photo';
+export type ResourceKind = 'thread' | 'saved_reference' | 'photo';
 
 export type ResourceReference = {
   readonly kind: ResourceKind;
@@ -238,27 +237,6 @@ const routeAuthorized = async (
     if (integrityResponse !== null) return integrityResponse;
     return ensurePhotoResponse(route.path, requestId, photoContext, config.handlers.photo, () =>
       validatedServerNow(config),
-    );
-  }
-  if (route.kind === 'place') {
-    const failure = await checkResource(
-      auth.ownerScopeRef,
-      { kind: 'candidate', id: route.path.candidateId },
-      config,
-    );
-    if (failure !== null) return toErrorResponse(requestId, failure);
-    const aborted = cancellationResponse(requestId, request);
-    if (aborted !== null) return aborted;
-    const integrityResponse = await checkIntegrity();
-    if (integrityResponse !== null) return integrityResponse;
-    return ensureApplicationResponse(
-      { kind: 'place', path: route.path, query: route.query },
-      'place',
-      PlaceResponseSchema,
-      200,
-      requestId,
-      makeContext(request, auth, serverNow),
-      config,
     );
   }
   if (route.kind === 'saved_reference_refresh') {

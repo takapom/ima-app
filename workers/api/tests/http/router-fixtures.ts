@@ -4,7 +4,6 @@ import {
   EventsRequestSchema,
   LifecycleCommandSchema,
   LifecycleResponseSchema,
-  PlaceResponseSchema,
   PhotoResponseDescriptorSchema,
   SavedReferenceCreateResponseSchema,
   SavedReferenceResponseSchema,
@@ -200,14 +199,6 @@ export const lifecycleResponse = parse(LifecycleResponseSchema, {
   state: 'active',
 });
 
-export const placeResponse = parse(PlaceResponseSchema, {
-  schemaVersion: 'v1',
-  requestId,
-  threadId,
-  revision: 1,
-  data: { items: [{ candidateId, fields: { identity } }] },
-});
-
 export const savedReferenceResponse = parse(SavedReferenceResponseSchema, {
   schemaVersion: 'v1',
   requestId,
@@ -270,8 +261,6 @@ const applicationResult = (operation: ApplicationOperation): ApplicationResult =
       return { kind: operation.kind, response: lifecycleResponse };
     case 'delete_thread':
       return { kind: operation.kind, response: null };
-    case 'place':
-      return { kind: operation.kind, response: placeResponse };
     case 'saved_reference_refresh':
       return { kind: operation.kind, response: savedReferenceResponse };
     case 'saved_reference_create':
