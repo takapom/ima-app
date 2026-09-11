@@ -1,4 +1,5 @@
 export const MAX_QUERY_LENGTH = 500 as const;
+export const MAX_STATION_LABEL_LENGTH = 160 as const;
 export const MAX_CHIPS = 4 as const;
 
 export const DEFAULT_SUGGESTIONS = ['食後', '静か', '徒歩10分', '終電まで'] as const;

@@ -4,12 +4,10 @@ import type {
   SnapshotRecord,
   SqlitePreferences,
 } from './types';
-
-/** Keep local station input bounded like the existing public Text(160) labels. */
-export const STATION_LABEL_MAX_LENGTH = 160;
+import { MAX_STATION_LABEL_LENGTH } from '../../state/journey-input';
 
 export const isStationLabel = (value: unknown): value is string =>
-  typeof value === 'string' && value.length <= STATION_LABEL_MAX_LENGTH;
+  typeof value === 'string' && value.length <= MAX_STATION_LABEL_LENGTH;
 
 export const stationLabelFrom = (row: Record<string, unknown>): string | null => {
   const value = row.station_label;

@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
   budgetLabel,
   stationSupportLabel,
+  MAX_STATION_LABEL_LENGTH,
   type BudgetOption,
   type ConditionScope,
   type JourneyConditions,
@@ -13,6 +14,7 @@ type ConditionEditorProps = {
   readonly scope: ConditionScope;
   readonly onScopeChange: (scope: ConditionScope) => void;
   readonly onChange: (changes: Partial<JourneyConditions>) => void;
+  readonly notice?: string | null;
 };
 
 const walkOptions: readonly (number | null)[] = [null, 5, 10, 15];
@@ -28,6 +30,7 @@ export function ConditionEditor({
   scope,
   onScopeChange,
   onChange,
+  notice = null,
 }: ConditionEditorProps): React.JSX.Element {
   return (
     <View style={styles.container}>
@@ -35,6 +38,7 @@ export function ConditionEditor({
       <Text style={styles.description}>
         この検索だけの条件と、次回も使う設定を分けて編集できます。
       </Text>
+      {scope === 'saved' && notice !== null ? <Text style={styles.notice}>{notice}</Text> : null}
       <View accessibilityRole="tablist" style={styles.scopeTabs}>
         <ScopeTab
           label="この検索"
@@ -51,6 +55,7 @@ export function ConditionEditor({
       <ConditionRow label="帰宅駅">
         <TextInput
           accessibilityLabel="帰宅駅"
+          maxLength={MAX_STATION_LABEL_LENGTH}
           onChangeText={(stationLabel) => onChange({ stationLabel, stationSupport: 'unknown' })}
           placeholder="駅名を入力"
           placeholderTextColor={colors.faint}
@@ -195,6 +200,11 @@ const styles = StyleSheet.create({
   support: {
     color: colors.faint,
     fontSize: typography.label,
+  },
+  notice: {
+    color: colors.cream,
+    fontSize: typography.label,
+    lineHeight: 20,
   },
   valueButton: {
     borderColor: colors.border,

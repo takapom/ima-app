@@ -20,6 +20,7 @@ type DrawerProps = {
   readonly conditionScope: ConditionScope;
   readonly onConditionScopeChange: (scope: ConditionScope) => void;
   readonly onConditionsChange: (scope: ConditionScope, changes: Partial<JourneyConditions>) => void;
+  readonly conditionNotice?: string | null;
   readonly onHistorySelect?: (item: SearchHistoryItem) => void;
   readonly onSavedPlaceSelect?: (item: SavedPlaceItem) => void;
 };
@@ -45,6 +46,7 @@ export function Drawer({
   conditionScope,
   onConditionScopeChange,
   onConditionsChange,
+  conditionNotice = null,
   onHistorySelect,
   onSavedPlaceSelect,
 }: DrawerProps): React.JSX.Element | null {
@@ -165,6 +167,7 @@ export function Drawer({
               conditions={conditionScope === 'thread' ? conditions : savedConditions}
               onChange={(changes) => onConditionsChange(conditionScope, changes)}
               onScopeChange={onConditionScopeChange}
+              notice={conditionNotice}
               scope={conditionScope}
             />
           )}

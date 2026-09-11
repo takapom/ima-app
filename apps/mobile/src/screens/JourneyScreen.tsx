@@ -12,29 +12,20 @@ import { ResultsState } from '../components/ResultsState';
 import { SavedPlacePreviewSurface } from '../components/SavedPlacePreviewSurface';
 import { WorkingState } from '../components/WorkingState';
 import { useAssistantResponseProjection } from '../hooks/useAssistantResponseProjection';
-import { useJourneyActions, type JourneyActionServices } from '../hooks/useJourneyActions';
+import { useJourneyActions } from '../hooks/useJourneyActions';
 import { useJourneyShell } from '../hooks/useJourneyShell';
+import {
+  useJourneyPreferences,
+  type UseJourneyPreferencesResult,
+} from '../hooks/useJourneyPreferences';
 import { useJourneySourceLink } from '../hooks/useJourneySourceLink';
 import { useJourneySavedPlacePreview } from '../hooks/useJourneySavedPlacePreview';
 import { selectedCardFor } from './journey-screen-model';
-import {
-  useJourneyApiController,
-  type JourneyApiControllerBinding,
-  type JourneySavedPlacePreviewBinding,
-  type JourneyApiSubmitContext,
-} from '../hooks/useJourneyApiController';
-import type { AssistantResponseClock } from '../services/assistant-response-clock';
-import type { JourneyPhotoClient } from '../services/api/photo-client';
-import type { WalkingMapDestinationResolver } from '../services/journey-map';
-import type { JourneyStorageService } from '../services/journey-storage';
-import {
-  selectJourneyNoticeText,
-  type JourneySourceLinkService,
-} from '../services/journey-source-link';
+import { useJourneyApiController } from '../hooks/useJourneyApiController';
+import { selectJourneyNoticeText } from '../services/journey-source-link';
 import {
   selectAssistantMessageRecords,
   selectAssistantMessages,
-  type AssistantResponseState,
 } from '../state/assistant-response';
 import {
   DEFAULT_SUGGESTIONS,
@@ -42,68 +33,38 @@ import {
   type JourneyConditions,
   suggestionsFor,
 } from '../state/journey-input';
-import type { AssistantResponseProjectionNow } from '../state/assistant-response-projection';
-import type { SavedPlaceItem, SearchHistoryItem } from '../state/journey-shell';
-import type { RecoverIntent } from '../state/journey-actions';
-import { resolveJourneyPhase, type JourneyRequestStatus } from '../state/journey-phase';
+import { resolveJourneyPhase } from '../state/journey-phase';
+import type { JourneyScreenProps, JourneySubmitContext } from './journey-screen-props';
 
+export type { JourneyScreenProps, JourneySubmitContext } from './journey-screen-props';
 export type { JourneyRequestStatus } from '../state/journey-phase';
 
-export type JourneySubmitContext = JourneyApiSubmitContext;
-
-export type JourneyScreenProps = {
-  readonly threadId?: string;
-  /** Optional HTTP composition; omitted hosts keep the fixture-free shell disconnected. */
-  readonly api?: JourneyApiControllerBinding;
-  /** Host-composed authenticated photo loader; omitted hosts show the public fallback. */
-  readonly photoClient?: JourneyPhotoClient;
-  readonly responseState?: AssistantResponseState | null;
-  /** Injected render time for deterministic expiry boundaries. */
-  readonly now?: AssistantResponseProjectionNow;
-  readonly responseClock?: AssistantResponseClock;
-  readonly requestStatus?: JourneyRequestStatus;
-  readonly errorMessage?: string;
-  readonly history?: readonly SearchHistoryItem[];
-  readonly savedPlaces?: readonly SavedPlaceItem[];
-  readonly initialSavedConditions?: JourneyConditions;
-  readonly onSubmit?: (query: string, context: JourneySubmitContext) => void;
-  readonly onCancel?: () => void;
-  readonly onRetry?: (query: string, context: JourneySubmitContext) => void;
-  readonly onNewSearch?: () => void;
-  readonly onPromote?: (candidateId: string) => void;
-  readonly onRecover?: (intent: RecoverIntent) => void;
-  readonly actionServices?: JourneyActionServices;
-  /** Runtime-composed owner-scoped storage; absent hosts remain unavailable. */
-  readonly storage?: JourneyStorageService;
-  /** Runtime-composed saved list/preview; absent hosts keep the saved drawer unavailable. */
-  readonly savedPlacePreview?: JourneySavedPlacePreviewBinding;
-  readonly sourceLinkService?: JourneySourceLinkService;
-  readonly mapDestinationResolver?: WalkingMapDestinationResolver;
-  readonly onSourcePress?: (sourceLink: string) => void;
-  readonly onHistorySelect?: (item: SearchHistoryItem) => void;
-  readonly onSavedPlaceSelect?: (item: SavedPlaceItem) => void;
-  readonly onConditionRemoved?: (label: string) => void;
-  readonly onConditionsChange?: (
-    scope: ConditionScope,
-    changes: Partial<JourneyConditions>,
-  ) => void;
+type JourneyScreenStateOwnerProps = JourneyScreenProps & {
+  readonly preferenceState: UseJourneyPreferencesResult;
 };
 
 export function JourneyScreen(props: JourneyScreenProps): React.JSX.Element {
   const api = useJourneyApiController(props.api);
+  const preferenceState = useJourneyPreferences({
+    service: props.preferences,
+    initialSavedConditions: props.initialSavedConditions,
+  });
   const connectedPhotoClient = props.photoClient ?? props.api?.photoClient;
   const connectedStorage = props.storage ?? props.api?.storage;
   const connectedSavedPlacePreview = props.savedPlacePreview ?? props.api?.savedPlacePreview;
   const stateKey = api.connected
-    ? `api-${api.state.threadId ?? props.threadId ?? 'auto'}-${api.viewKey}`
-    : (props.threadId ?? 'mobile-thread');
-  if (!api.connected) return <JourneyScreenStateOwner key={stateKey} {...props} />;
+    ? `api-${api.state.threadId ?? props.threadId ?? 'auto'}-${api.viewKey}-${preferenceState.sourceKey}`
+    : `${props.threadId ?? 'mobile-thread'}-${preferenceState.sourceKey}`;
+  if (!api.connected) {
+    return <JourneyScreenStateOwner key={stateKey} preferenceState={preferenceState} {...props} />;
+  }
   const runApiTask = (task: Promise<unknown>): void => {
     void task.catch(() => api.reportUnexpected());
   };
   return (
     <JourneyScreenStateOwner
       key={stateKey}
+      preferenceState={preferenceState}
       {...props}
       threadId={api.state.threadId ?? props.threadId ?? 'mobile-thread'}
       responseState={api.responseState}
@@ -142,7 +103,6 @@ function JourneyScreenStateOwner({
   history = [],
   savedPlaces,
   onSubmit,
-  initialSavedConditions,
   onCancel,
   onRetry,
   onNewSearch,
@@ -159,8 +119,10 @@ function JourneyScreenStateOwner({
   photoClient,
   sourceLinkService,
   savedPlacePreview,
-}: JourneyScreenProps): React.JSX.Element {
-  const journey = useJourneyShell(threadId, initialSavedConditions);
+  preferenceState,
+}: JourneyScreenStateOwnerProps): React.JSX.Element {
+  const persistedPreferences = preferenceState;
+  const journey = useJourneyShell(threadId, persistedPreferences.savedConditions);
   const savedPlaceUi = useJourneySavedPlacePreview(
     savedPlacePreview,
     onSavedPlaceSelect,
@@ -341,10 +303,24 @@ function JourneyScreenStateOwner({
   );
   const changeConditions = useCallback(
     (scope: ConditionScope, changes: Partial<JourneyConditions>): void => {
-      journey.updateConditions(scope, changes);
+      const result = persistedPreferences.applyConditionChange(
+        scope,
+        persistedPreferences.savedConditions,
+        changes,
+      );
+      if (!result.applied) return;
+      journey.updateConditions(
+        scope,
+        scope === 'saved' ? { ...persistedPreferences.savedConditions, ...changes } : changes,
+      );
       onConditionsChange?.(scope, changes);
     },
-    [journey.updateConditions, onConditionsChange],
+    [
+      journey.updateConditions,
+      onConditionsChange,
+      persistedPreferences.applyConditionChange,
+      persistedPreferences.savedConditions,
+    ],
   );
   const openSourceLink = useCallback(
     (sourceLinkValue: string): void => {
@@ -466,8 +442,9 @@ function JourneyScreenStateOwner({
         onNewSearch={reset}
         onViewChange={journey.setDrawerView}
         conditions={journey.conditions}
-        savedConditions={journey.savedConditions}
+        savedConditions={persistedPreferences.savedConditions}
         conditionScope={journey.conditionScope}
+        conditionNotice={persistedPreferences.conditionNotice}
         onConditionScopeChange={journey.changeConditionScope}
         onConditionsChange={changeConditions}
         open={journey.drawerOpen}
