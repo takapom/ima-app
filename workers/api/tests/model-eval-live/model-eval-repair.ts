@@ -64,6 +64,8 @@ type RepairProjectedEvidence = {
   readonly field: string;
   readonly observationId: string;
   readonly status: string;
+  readonly reason?: string;
+  readonly freshUntil?: string | null;
 };
 
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -81,11 +83,22 @@ const projectedEvidenceFor = (
     const field = value.field;
     const observationId = value.observationId;
     const status = value.status;
+    const reason = value.reason;
+    const freshUntil = value.freshUntil;
     return typeof candidateId === 'string' &&
       typeof field === 'string' &&
       typeof observationId === 'string' &&
       typeof status === 'string'
-      ? [{ candidateId, field, observationId, status }]
+      ? [
+          {
+            candidateId,
+            field,
+            observationId,
+            status,
+            ...(typeof reason === 'string' ? { reason } : {}),
+            ...(freshUntil === null || typeof freshUntil === 'string' ? { freshUntil } : {}),
+          },
+        ]
       : [];
   });
   const toolEvidence = array(prompt).flatMap((message) => {
@@ -141,7 +154,12 @@ const openingEvidenceFor = (
     (evidence) =>
       evidence.candidateId === candidateId &&
       evidence.field === 'opening_hours' &&
-      evidence.status === status,
+      (evidence.status === status ||
+        (status === 'stale' &&
+          evidence.status === 'withheld' &&
+          evidence.reason === 'evidence retention window has ended' &&
+          typeof evidence.freshUntil === 'string' &&
+          Date.parse(evidence.freshUntil) <= Date.parse(MODEL_EVAL_REPAIR_TARGET_NOW))),
   );
 
 export const freshRepairEvidenceIdsFor = (

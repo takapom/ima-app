@@ -155,6 +155,34 @@ describe('model-eval live coordinator boundaries', () => {
     ).toEqual({ ok: false, code: 'PRELUDE_CARD_SET_UNAVAILABLE' });
   });
 
+  it.each(['specific-place', 'repair'] as const)(
+    'accepts one formal target card and rejects a missing target for %s',
+    (profile) => {
+      const evaluationCase = caseFor(profile);
+      const oneCard = {
+        cardSetId: 'card-set',
+        candidateOrder: ['runtime-a'],
+        selectedCandidateId: null,
+      } as const;
+      expect(
+        validateLivePreludeContext({
+          profile,
+          evaluationCase,
+          cardContext: oneCard,
+          mapping: candidateMapping,
+        }),
+      ).toEqual({ ok: true });
+      expect(
+        validateLivePreludeContext({
+          profile,
+          evaluationCase,
+          cardContext: { ...oneCard, candidateOrder: ['runtime-b'] },
+          mapping: candidateMapping,
+        }),
+      ).toEqual({ ok: false, code: 'PRELUDE_CARD_SET_UNAVAILABLE' });
+    },
+  );
+
   it('runs a validated two-turn response and records only the target trace', async () => {
     const evaluationCase = caseFor('reason');
     const targetText = evaluationCase.userTurns[0] ?? '';

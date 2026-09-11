@@ -11,7 +11,12 @@ export type LiveCardContextValidation =
     };
 
 const minimumCandidatesFor = (profile: LiveProbeProfile): number =>
-  profile === 'reason' || profile === 'decide-action' ? 1 : 2;
+  profile === 'reason' ||
+  profile === 'specific-place' ||
+  profile === 'decide-action' ||
+  profile === 'repair'
+    ? 1
+    : 2;
 
 /** Validates formal card state and translates dataset IDs only through captured identities. */
 export const validateLiveCardContext = (input: {

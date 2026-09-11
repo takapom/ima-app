@@ -9,6 +9,7 @@ import {
 import { projectModelEvidenceForLlmInput, type ModelEvidenceSource } from '@ima/core';
 import { MODEL_EVALUATION_SCENARIOS } from '../../tooling/model-eval/dataset';
 import { executionProfileFor } from '../../tooling/model-eval/execution-profile';
+import { liveEvaluationProfileFor } from '../../tooling/model-eval/live-plan';
 import {
   buildEvaluationTurnRequest,
   cardContextFromResponse,
@@ -295,12 +296,13 @@ describe('repair profile through one fixture DO', () => {
     expect(await prepared.stub.getModelEvalFixturePrivateUpstreamBodyExposed()).toBe(false);
   });
 
-  it('declares repair as keyless fixture-only execution', () => {
+  it('keeps repair fixture-ready while exposing an opt-in live profile', () => {
     const evaluationCase = repairCaseFor('repair:profile');
     expect(executionProfileFor(evaluationCase)).toEqual({
       status: 'fixture_ready',
       kind: 'card_context',
       requiresApiKey: false,
     });
+    expect(liveEvaluationProfileFor(evaluationCase)).toBe('repair');
   });
 });

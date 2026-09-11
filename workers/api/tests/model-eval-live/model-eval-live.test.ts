@@ -7,7 +7,10 @@ import {
   writeLiveProbeArtifact,
 } from '../../tooling/model-eval/live';
 import { buildEvaluationTurnRequest } from '../../tooling/model-eval/scenario-input';
-import { liveEvaluationProfileFor } from '../../tooling/model-eval/live-plan';
+import {
+  liveEvaluationProfileFor,
+  type LiveEvaluationTiming,
+} from '../../tooling/model-eval/live-plan';
 import type { EvaluationCase } from '../../tooling/model-eval/types';
 import type { EvaluationTurnSeed } from '../../tooling/model-eval/turn-plan';
 import {
@@ -20,6 +23,8 @@ import type {
 } from '../../src/thread-runtime/admission';
 import {
   MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,
+  MODEL_EVAL_CONTEXT_NOW,
+  MODEL_EVAL_NOW,
   fixedPlacesFetcher,
   type ModelEvalThreadDO,
 } from './model-eval-live-worker';
@@ -68,10 +73,13 @@ const portsForCase = (
     revision: 1,
   };
   const stub = workerEnv.MODEL_EVAL_THREADS.getByName(threadId);
+  const profile = liveEvaluationProfileFor(evaluationCase);
+  const temporalProfile = profile === 'specific-place' || profile === 'repair' ? profile : null;
   return {
     target,
     ports: {
       initialize: async () => {
+        await stub.configureModelEvalLiveProfile(temporalProfile);
         const initialized = await stub.initialize(target.ownerScopeRef, target.threadId);
         return { ok: initialized.ok === true };
       },
@@ -81,6 +89,13 @@ const portsForCase = (
       readProfile: () => stub.getModelEvalProfile(),
     },
   };
+};
+
+const timingForCase = (evaluationCase: EvaluationCase): LiveEvaluationTiming => {
+  const profile = liveEvaluationProfileFor(evaluationCase);
+  return profile === 'specific-place' || profile === 'repair'
+    ? { preludeClientNow: MODEL_EVAL_CONTEXT_NOW, targetClientNow: MODEL_EVAL_NOW }
+    : {};
 };
 
 describe('opt-in live model evaluation runner', () => {
@@ -135,6 +150,7 @@ describe('opt-in live model evaluation runner', () => {
     const artifacts = await runLiveEvaluationProfiles({
       scenarios,
       expectedIdentities: MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,
+      timingForCase,
       portsForCase: (evaluationCase) => portsForCase(workerEnv, evaluationCase),
     });
     let hasRuntimeFailure = false;
@@ -165,10 +181,12 @@ describe('opt-in live model evaluation runner', () => {
       'condition-change',
       'reason',
       'compare',
+      'specific-place',
       'decide-action',
       'clarify-ambiguity',
       'mixed-intent',
       'continuity',
+      'repair',
     ]);
     if (hasRuntimeFailure) throw new Error('M25_LIVE_RUNTIME_FAILED');
     expect(artifacts.every((artifact) => artifact.status === 'unverified')).toBe(true);

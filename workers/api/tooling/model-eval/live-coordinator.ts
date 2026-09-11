@@ -401,6 +401,10 @@ export const executeLiveEvaluationCase = async (input: {
 export const runLiveEvaluationProfiles = async (input: {
   readonly scenarios: readonly EvaluationScenario[];
   readonly expectedIdentities: readonly EvaluationCandidateIdentity[];
+  readonly timingForCase?: (evaluationCase: EvaluationCase) => {
+    readonly preludeClientNow?: string;
+    readonly targetClientNow?: string;
+  };
   readonly portsForCase: (evaluationCase: EvaluationCase) => LiveCoordinatorCasePorts;
 }): Promise<readonly ReturnType<typeof createLiveProbeArtifact>[]> => {
   const artifacts: ReturnType<typeof createLiveProbeArtifact>[] = [];
@@ -410,7 +414,10 @@ export const runLiveEvaluationProfiles = async (input: {
     const attempts: LiveProbeAttempt[] = [];
     const failures: LiveProbeFailure[] = [];
     for (const evaluationCase of cases) {
-      const planResult = createLiveEvaluationTurnPlan(evaluationCase);
+      const planResult = createLiveEvaluationTurnPlan(
+        evaluationCase,
+        input.timingForCase?.(evaluationCase),
+      );
       if (!planResult.ok) {
         const result = executionFailure({
           evaluationCase,

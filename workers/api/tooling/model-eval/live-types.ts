@@ -32,7 +32,9 @@ export type LiveProbeProfile =
   | 'continuity'
   | 'compare'
   | 'decide-action'
-  | 'clarify-ambiguity';
+  | 'clarify-ambiguity'
+  | 'specific-place'
+  | 'repair';
 
 export type LiveProbeAttemptStatus = 'evaluated' | 'unverified_mapping' | 'runtime_failed';
 

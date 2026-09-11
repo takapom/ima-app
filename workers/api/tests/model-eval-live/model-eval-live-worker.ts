@@ -1,6 +1,7 @@
 import type { CandidateRecord, ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
 import { ThreadDO as ProductionThreadDO } from '../../src/thread-do';
 import { createLiveOpenAIProvider } from '../../src/model/provider';
+import type { RuntimeModelGuardModel } from '../../src/runtime/runtime-model-guard';
 import { sessionExpiryAt } from '../../src/runtime/runtime-production-support';
 import {
   isThreadRuntimeTurnInput,
@@ -13,11 +14,18 @@ import {
   wrapModelForLiveEvaluation,
   type LiveTraceSnapshot,
 } from '../../tooling/model-eval/live';
+import {
+  fixtureModel,
+  type ModelEvalFixturePhase,
+  type ModelEvalFixtureStep,
+} from './model-eval-context-model';
+import type { ModelEvalFixtureEvidenceSnapshot } from './model-eval-context-output';
 import { fixedPlacesFetcher, MODEL_EVAL_NOW } from './model-eval-place-fixture';
 
 export {
   fixedPlacesFetcher,
   MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,
+  MODEL_EVAL_CONTEXT_NOW,
   MODEL_EVAL_NOW,
 } from './model-eval-place-fixture';
 export { ModelEvalFixtureThreadDO } from './model-eval-context-worker';
@@ -27,6 +35,8 @@ type ModelEvalEnv = Cloudflare.Env & {
   readonly OPENAI_API_KEY?: string;
   readonly MODEL_EVAL_LIVE?: string;
 };
+
+type ModelEvalTemporalProfile = 'specific-place' | 'repair';
 
 const retentionFor = (sessionExpiresAt: string): RetentionMetadata => ({
   retentionDecision: 'allow',
@@ -63,6 +73,8 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
   private readonly liveEnv: ModelEvalEnv;
   private readonly liveTrace = new LiveTraceRecorder();
   private liveModel = 'unknown';
+  private liveNow = MODEL_EVAL_NOW;
+  private liveTemporalProfile: ModelEvalTemporalProfile | null = null;
   private captureRuntimeInput = false;
   private capturedRuntimeInput: ThreadRuntimeTurnInput | null = null;
 
@@ -88,7 +100,15 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
     return this.capturedRuntimeInput === null ? null : structuredClone(this.capturedRuntimeInput);
   }
 
+  configureModelEvalLiveProfile(profile: ModelEvalTemporalProfile | null): void {
+    this.liveTemporalProfile = profile;
+    this.liveNow = MODEL_EVAL_NOW;
+  }
+
   override async runRuntimeTurn(value: unknown): Promise<ThreadRuntimeTurnResult> {
+    if (isThreadRuntimeTurnInput(value)) {
+      this.liveNow = value.input.clientNow ?? MODEL_EVAL_NOW;
+    }
     if (this.captureRuntimeInput) {
       if (isThreadRuntimeTurnInput(value)) {
         this.capturedRuntimeInput = structuredClone(value);
@@ -103,24 +123,46 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
     await super.startRuntimeLifecycle();
   }
 
+  protected createLiveModel(): {
+    readonly model: RuntimeModelGuardModel;
+    readonly modelName: string;
+  } {
+    const provider = createLiveOpenAIProvider(this.liveEnv);
+    return { model: provider.model, modelName: provider.profile.model };
+  }
+
   protected override createRuntimeProductionOverrides() {
     const base = super.createRuntimeProductionOverrides();
-    const provider = createLiveOpenAIProvider(this.liveEnv);
-    this.liveModel = provider.profile.model;
+    const liveModel = this.createLiveModel();
+    this.liveModel = liveModel.modelName;
     const sessionExpiresAt = sessionExpiryAt(base.threadCreatedAt ?? MODEL_EVAL_NOW);
-    const retention = retentionFor(sessionExpiresAt);
-    const policy = () => ({
-      freshUntil: retention.freshUntil ?? sessionExpiresAt,
-      expiresAt: retention.retentionUntil ?? sessionExpiresAt,
-      retention,
-    });
+    const retention = () => {
+      const baseRetention = retentionFor(sessionExpiresAt);
+      if (this.liveTemporalProfile === null) return baseRetention;
+      const freshUntil =
+        this.liveTemporalProfile === 'repair'
+          ? Date.parse(this.liveNow) < Date.parse(MODEL_EVAL_NOW)
+            ? MODEL_EVAL_NOW
+            : '2026-09-10T14:00:00.000Z'
+          : '2026-09-10T14:00:00.000Z';
+      return { ...baseRetention, freshUntil };
+    };
+    const policy = () => {
+      const currentRetention = retention();
+      return {
+        freshUntil: currentRetention.freshUntil ?? sessionExpiresAt,
+        expiresAt: currentRetention.retentionUntil ?? sessionExpiresAt,
+        retention: currentRetention,
+      };
+    };
     return {
       ...base,
-      modelForTurn: wrapModelForLiveEvaluation(provider.model, this.liveTrace),
+      modelForTurn: wrapModelForLiveEvaluation(liveModel.model, this.liveTrace),
       candidateIdentityObserver: (
         record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,
       ) => this.liveTrace.observeCandidateIdentity(record),
-      fetcher: fixedPlacesFetcher(this.liveTrace),
+      fetcher: (...args: Parameters<typeof fetch>) =>
+        fixedPlacesFetcher(this.liveTrace, this.liveNow)(...args),
       googlePlacesApiKey: 'model-eval-fixed-provider-key',
       placesCursorSecret: 'model-eval-fixed-cursor-secret',
       observationPolicy: policy,
@@ -128,9 +170,78 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
       modelContextFieldPolicy: modelPolicy,
       placesEnabled: true,
       retention,
-      clock: () => MODEL_EVAL_NOW,
+      clock: () => this.liveNow,
       monotonicNow: () => performance.now(),
-      epochNow: () => Date.parse(MODEL_EVAL_NOW),
+      epochNow: () => Date.parse(this.liveNow),
+    };
+  }
+}
+
+/** Uses the production host/factory with the existing fixed model for keyless timing tests. */
+export class ModelEvalFixtureLiveThreadDO extends ModelEvalThreadDO {
+  private fixturePhase: ModelEvalFixturePhase = 'cards';
+  private fixtureProfile: 'specific-place' | 'repair' = 'specific-place';
+  private readonly fixtureTrace = new LiveTraceRecorder();
+  private readonly fixtureSteps: ModelEvalFixtureStep[] = [];
+  private readonly fixtureDetailsRequests: string[][] = [];
+  private readonly fixtureEvidenceSnapshots: ModelEvalFixtureEvidenceSnapshot[] = [];
+
+  configureModelEvalLiveFixture(
+    phase: ModelEvalFixturePhase,
+    profile: 'specific-place' | 'repair',
+  ): void {
+    this.fixturePhase = phase;
+    this.fixtureProfile = profile;
+    this.fixtureSteps.length = 0;
+    this.fixtureDetailsRequests.length = 0;
+    this.fixtureEvidenceSnapshots.length = 0;
+    this.configureModelEvalLiveProfile(profile);
+  }
+
+  configureModelEvalLivePhase(phase: ModelEvalFixturePhase): void {
+    this.fixturePhase = phase;
+  }
+
+  getModelEvalFixtureSteps(): readonly ModelEvalFixtureStep[] {
+    return [...this.fixtureSteps];
+  }
+
+  getModelEvalFixtureDetailsRequests(): readonly (readonly string[])[] {
+    return this.fixtureDetailsRequests.map((candidateIds) => [...candidateIds]);
+  }
+
+  getModelEvalFixtureEvidenceSnapshots(): readonly ModelEvalFixtureEvidenceSnapshot[] {
+    return this.fixtureEvidenceSnapshots.map((snapshot) => ({
+      candidateId: snapshot.candidateId,
+      evidenceIds: [...snapshot.evidenceIds],
+      modelBudget: snapshot.modelBudget,
+      observations: snapshot.observations.map((observation) => ({ ...observation })),
+    }));
+  }
+
+  protected override createLiveModel(): {
+    readonly model: RuntimeModelGuardModel;
+    readonly modelName: string;
+  } {
+    return {
+      model: fixtureModel(
+        () => this.fixturePhase,
+        () => this.fixtureProfile,
+        this.fixtureTrace,
+        (step) => this.fixtureSteps.push(step),
+        (candidateIds) => this.fixtureDetailsRequests.push([...candidateIds]),
+        (snapshot) => this.fixtureEvidenceSnapshots.push(snapshot),
+        () => undefined,
+        () => undefined,
+        () => undefined,
+        () => 'clarify',
+        () => undefined,
+        () => undefined,
+        () => undefined,
+        () => undefined,
+        () => undefined,
+      ),
+      modelName: 'm25-model-eval-fixture-v1',
     };
   }
 }

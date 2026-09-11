@@ -281,13 +281,13 @@ describe('specific-place formal card resolution through one fixture DO', () => {
     );
   });
 
-  it('marks specific-place as keyless fixture-ready while live remains opt-in only', () => {
+  it('keeps specific-place fixture-ready while exposing an opt-in live profile', () => {
     const evaluationCase = evaluationCaseFor('specific-place:profile');
     expect(executionProfileFor(evaluationCase)).toEqual({
       status: 'fixture_ready',
       kind: 'card_context',
       requiresApiKey: false,
     });
-    expect(liveEvaluationProfileFor(evaluationCase)).toBeNull();
+    expect(liveEvaluationProfileFor(evaluationCase)).toBe('specific-place');
   });
 });

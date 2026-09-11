@@ -19,8 +19,10 @@ describe('model-eval live turn plans', () => {
     expect(liveEvaluationProfileFor(scenarioFor('reason'))).toBe('reason');
     expect(liveEvaluationProfileFor(scenarioFor('continuity'))).toBe('continuity');
     expect(liveEvaluationProfileFor(scenarioFor('compare'))).toBe('compare');
+    expect(liveEvaluationProfileFor(scenarioFor('specific-place'))).toBe('specific-place');
     expect(liveEvaluationProfileFor(scenarioFor('decide-action'))).toBe('decide-action');
     expect(liveEvaluationProfileFor(scenarioFor('clarify-ambiguity'))).toBe('clarify-ambiguity');
+    expect(liveEvaluationProfileFor(scenarioFor('repair'))).toBe('repair');
   });
 
   it('passes condition and mixed-intent turns directly to the live model', () => {
@@ -38,13 +40,36 @@ describe('model-eval live turn plans', () => {
   });
 
   it('uses one synthetic card prelude for each formal card-context profile', () => {
-    for (const id of ['compare', 'decide-action', 'clarify-ambiguity'] as const) {
+    for (const id of [
+      'compare',
+      'specific-place',
+      'decide-action',
+      'clarify-ambiguity',
+      'repair',
+    ] as const) {
       expect(createLiveEvaluationTurnPlan(scenarioFor(id))).toMatchObject({
         ok: true,
         plan: {
           profile: id,
           prelude: { source: 'synthetic' },
           targetTexts: [expect.any(String)],
+        },
+      });
+    }
+  });
+
+  it('keeps specific-place and repair clock transitions explicit', () => {
+    for (const id of ['specific-place', 'repair'] as const) {
+      const result = createLiveEvaluationTurnPlan(scenarioFor(id), {
+        preludeClientNow: '2026-09-10T10:00:00.000Z',
+        targetClientNow: '2026-09-10T12:00:00.000Z',
+      });
+      expect(result).toMatchObject({
+        ok: true,
+        plan: {
+          profile: id,
+          prelude: { source: 'synthetic', clientNow: '2026-09-10T10:00:00.000Z' },
+          targetClientNow: '2026-09-10T12:00:00.000Z',
         },
       });
     }
