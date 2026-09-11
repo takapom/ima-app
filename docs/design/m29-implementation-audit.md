@@ -1,6 +1,6 @@
 # M29 / #30 内部MVP監査
 
-この監査は実装・検証の証跡を対応付けるための作業中の記録である。表の未確認事項が残る間は #30 を完了扱いにしない。対象はユーザー指定の GitHub sub-issue #30 までであり、M30 / #31 のTestFlightリリースとは異なる。
+この監査は実装・検証の証跡を対応付けるための作業中の記録である。表の未確認事項が残る間は #30 を完了扱いにしない。当初の対象は GitHub sub-issue #30 までだったが、2026-09-11の追加指示で残る全sub-issueへ拡張した。M29 / #30の内部監査と、M30 / #31の実TestFlight配布は別の完了条件で判定する。
 
 ## 境界と完了判定
 
@@ -148,3 +148,12 @@ Expo位置情報・haptics・SQLite・SecureStoreの新規依存追加、およ�
 ## 地図接続の仕様上の未決事項
 
 #21はApple Mapsの徒歩URLを要求する一方、`provider-policy.md`はGoogle由来座標・経路のApple Maps転用をdenyとしている。公開契約には独立ソースの目的地座標がない。Apple Mapsを維持して独立ソースを用意するか、Google Maps遷移へ要件を変更するか、ユーザーへ確認中。回答までは既存policyを緩和せず、地図接続を完了扱いにしない。
+
+## 継続実装の検証記録
+
+- 2026-09-11 09:35–09:36 JST: #31の配布前チェックを`ab1b3b9`へ記録（724行）。親がrelease/environmentの2ファイル17テスト、root型チェック、対象lint/formatを確認。設定なしのCLIは`blocked`・終了1を返し、実配布や外部通信を行わない。内部・外部の前提を分け、設定だけで外部証跡や配布許可を合格にしない。実機・署名・API検収は未実施。
+- 2026-09-11 09:48–09:50 JST: 全workspace型が合格。#26の親専用suite17ファイル72テストが合格、実モデル1件skip。`91d2993`は168行。condition-change/mixed-intentをlive実行対象へ追加し、coordinatorから実評価DOへの正式入力をcapture-only境界で検証。対象lint/formatも合格。実モデル品質の実測ではない。
+- 2026-09-11 09:47–09:53 JST: #33の親HP suite4ファイル28テストと対象lint/formatが合格。`77ba78c`は1,923行。任意providerの入力送信許可、出力用途別policy、完全一致名称と距離による照合、bounded body・cancel・固定errorを検証。Core Details Portへの合成と実アカウント検収は後続。
+- 2026-09-11 09:51–09:53 JST: #16の親Production HTTP4ファイル17テスト、native14ファイル39テスト、factory1ファイル9テスト、対象lint/formatが合格。`ea1f6de`は220行。検証済み表示policyをHostから供給し、固定Providerで写真token発行から認証HTTPのbytesと帰属まで確認。通常Hostのpolicy未供給時は写真能力を有効化しない。初回Fixture時計不一致によるunknownを修正後に再検証した。
+- 2026-09-11 09:52 JST: 上記変更を含む親依存検査659 modules / 2,888 dependenciesと検出Fixture31件が合格。新規コミットはいずれもコミット前後の2,000行検査を通過し、現時点では未push。
+- 2026-09-11 09:54–09:56 JST: 親の全体lint（検出Fixture22件）と全体9suiteが合格。221ファイル1,196テスト（Node1,010、App Integrity HTTP1、Worker64、HTTP/mobile22、Think5、Think runtime24、native39、Production HTTP17、dev Fixture14）。対象HEADは`ea1f6de`。前記専用eval72件とは別集計で、実API・実モデル・実機の成功を含まない。
