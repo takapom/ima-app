@@ -125,9 +125,13 @@ export abstract class RuntimeProductionThinkHost<
     if (this.productionAnchorError !== undefined || threadCreatedAt === undefined) {
       throw this.productionAnchorError ?? new Error('RUNTIME_RETENTION_ANCHOR_INVALID');
     }
+    const photoDisplayPolicyFor = this.runtimeProductionPhotoDisplayPolicyFor();
     return {
       threadCreatedAt,
       contextPersistence: this.productionContextPersistence,
+      ...(photoDisplayPolicyFor === undefined
+        ? {}
+        : { photosEnabled: true, photoDisplayPolicyFor }),
       ...(this.productionModelTraceSink === undefined
         ? {}
         : { modelTraceSink: this.productionModelTraceSink }),
@@ -135,6 +139,15 @@ export abstract class RuntimeProductionThinkHost<
         ? {}
         : { providerTraceSink: this.productionProviderTraceSink }),
     };
+  }
+
+  /**
+   * Supplies an evaluated display policy for M15 photos. Production stays fail-closed until a
+   * host provides a verified policy; the factory still checks the token secret, DO RPC, device,
+   * capability, and per-observation retention bounds.
+   */
+  protected runtimeProductionPhotoDisplayPolicyFor(): RuntimeProductionOverrides['photoDisplayPolicyFor'] {
+    return undefined;
   }
 
   protected runtimeProductionNow(): string {

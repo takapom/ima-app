@@ -99,6 +99,79 @@ describe('production runtime factory', () => {
     composition.dispose();
   });
 
+  it('keeps production Photos closed until a verified display policy is supplied', async () => {
+    const report: RuntimeGateModelReport = { calls: 0, requests: [] };
+    const photoRpc = {
+      putPhotoReference: () => Promise.resolve({ ok: true as const }),
+      getPhotoReference: () => Promise.resolve({ ok: true as const, record: null }),
+    };
+    const env = {
+      ...FIXTURE_OPERATIONAL_ENV,
+      IMA_RUNTIME_MODE: 'live',
+      OPENAI_API_KEY: 'openai-test-key',
+      GOOGLE_PLACES_API_KEY: 'google-test-key',
+      PLACES_CURSOR_SECRET: 'cursor-test-secret-16',
+      THREADS: { getByName: () => photoRpc },
+    };
+    const base = {
+      modelForTurn: modelFor('search', report),
+      placesEnabled: true,
+      photoTokenSecret: 'photo-production-factory-secret',
+      photosEnabled: true,
+      clock: () => NOW,
+      monotonicNow: () => 0,
+      epochNow: () => 1_000,
+    } as const;
+    const withoutPolicy = createRuntimeProductionConnectionOptions({
+      env,
+      commit,
+      overrides: base,
+    });
+    if (withoutPolicy === undefined) throw new Error('production factory should be configured');
+    const closed = await withoutPolicy.buildTurn({
+      ...buildRequest,
+      deviceId: 'photo-device-production-factory',
+    });
+    expect(closed.turn.context.capabilities.detailFields).not.toContain('photos');
+    closed.dispose();
+
+    const livePolicy = () => ({
+      policy: {
+        llm_input: {
+          decision: 'deny' as const,
+          activation: 'live_verified' as const,
+          fieldStatus: 'known' as const,
+          policyStatus: 'available' as const,
+        },
+        display: {
+          decision: 'allow' as const,
+          activation: 'live_verified' as const,
+          fieldStatus: 'known' as const,
+          policyStatus: 'available' as const,
+        },
+        persistence: {
+          decision: 'deny' as const,
+          activation: 'live_verified' as const,
+          fieldStatus: 'known' as const,
+          policyStatus: 'available' as const,
+        },
+      },
+      mode: 'live' as const,
+    });
+    const withPolicy = createRuntimeProductionConnectionOptions({
+      env,
+      commit,
+      overrides: { ...base, photoDisplayPolicyFor: livePolicy },
+    });
+    if (withPolicy === undefined) throw new Error('production factory should be configured');
+    const open = await withPolicy.buildTurn({
+      ...buildRequest,
+      deviceId: 'photo-device-production-factory',
+    });
+    expect(open.turn.context.capabilities.detailFields).toContain('photos');
+    open.dispose();
+  });
+
   it('keeps search provenance for a later Details turn and gates capabilities on policy', async () => {
     const report: RuntimeGateModelReport = { calls: 0, requests: [] };
     const fetcher = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {

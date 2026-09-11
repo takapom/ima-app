@@ -10,6 +10,7 @@ export default defineConfig({
           APP_TOKEN: 'test-app-token',
           OPENAI_API_KEY: 'test-openai-key',
           GOOGLE_PLACES_API_KEY: 'test-google-key',
+          PHOTO_TOKEN_SECRET: 'm16-production-photo-token-secret',
           PLACES_CURSOR_SECRET: 'test-places-cursor-secret',
           IMA_RUNTIME_MODE: 'fixture',
           IMA_PROVIDER_OPENAI: 'true',

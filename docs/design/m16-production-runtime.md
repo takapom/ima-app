@@ -46,8 +46,12 @@ and `fixture_only` activation in live mode deny the requested use; the productio
 `unknown`/`disabled_m35`. The adapter maps only the `llm_input` decision into Core's model
 projection, where denied evidence is metadata-only and denied card names become `[withheld]`.
 Photo and public display adapters can use this API for their own decisions; their production
-connections remain to be implemented. Model input permission is not an implicit grant for either
-use. Generated policy fixtures are never a live allow profile.
+connections enter through `RuntimeProductionThinkHost.runtimeProductionPhotoDisplayPolicyFor()`.
+The default implementation returns no policy, so the production `ThreadDO` remains fail-closed;
+an overriding Host must provide a verified, use-scoped snapshot before the factory exposes the
+Photos capability. The factory independently requires `PHOTO_TOKEN_SECRET`, the ThreadDO photo
+RPC resolver, a request device ID, and each observation's retention bounds. Model input permission
+is not an implicit grant for either use. Generated policy fixtures are never a live allow profile.
 
 The production composition keeps search-area provenance in a connection-scoped map keyed by the
 server candidate ID, so a later Details refresh can reuse the area applied by the original search.

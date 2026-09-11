@@ -3,6 +3,7 @@ export const DENIED_FIELD_CANARY = 'M16_DENIED_FIELD_CANARY';
 
 export type ProductionScenario =
   | 'default'
+  | 'photo'
   | 'multiturn'
   | 'follow-up'
   | 'condition-change'
@@ -23,6 +24,7 @@ export const productionScenarioFor = (value: unknown): ProductionScenario => {
   const input = value.input;
   if (typeof input !== 'object' || input === null || !('text' in input)) return 'default';
   if (typeof input.text !== 'string') return 'default';
+  if (input.text.includes('[m16-photo]')) return 'photo';
   if (input.text.includes('[m24-zero-results]')) return 'zero-results';
   if (input.text.includes('[m24-two-results]')) return 'two-results';
   if (input.text.includes('[m16-exhausted-budget]')) return 'exhausted-budget';
@@ -73,6 +75,20 @@ const placeFor = (id: string, cid: string) => ({
   primaryType: 'cafe',
   businessStatus: 'OPERATIONAL',
   googleMapsUri: `https://maps.google.com/?cid=${cid}`,
+  photos: [
+    {
+      name: `places/${id}/photos/m16-production-photo`,
+      widthPx: 1_200,
+      heightPx: 900,
+      authorAttributions: [
+        {
+          displayName: 'Ima fixture photo author',
+          uri: 'https://fixture.example/photo-author',
+        },
+      ],
+      googleMapsUri: `https://maps.google.com/?cid=${cid}`,
+    },
+  ],
   currentOpeningHours: {
     periods: [
       {

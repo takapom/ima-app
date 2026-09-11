@@ -371,7 +371,7 @@ export const modelForProduction = (
       const twoCandidates =
         scenario() === 'two-results' ? uniqueCandidateIds.slice(-2) : ([] as string[]);
       const evidenceFor = (candidate: string): string[] =>
-        observationIdsForCandidateIn(prompt, candidate).slice(-2);
+        observationIdsForCandidateIn(prompt, candidate).slice(scenario() === 'photo' ? -3 : -2);
       const candidateId = twoCandidates.at(-1) ?? candidateIds.at(-1) ?? 'missing-candidate';
       const evidenceIds = evidenceFor(candidateId).length
         ? evidenceFor(candidateId)
@@ -385,11 +385,15 @@ export const modelForProduction = (
         input = searchInput;
       } else if (phase === 1) {
         toolName = 'get_place_details';
+        const detailFields =
+          scenario() === 'photo'
+            ? (['identity', 'opening_hours', 'photos'] as const)
+            : (['identity', 'opening_hours'] as const);
         input = {
           requests: (twoCandidates.length === 2 ? twoCandidates : [candidateId]).map(
             (requestedCandidateId) => ({
               candidateId: requestedCandidateId,
-              fields: ['identity', 'opening_hours'],
+              fields: detailFields,
             }),
           ),
           freshness: 'refresh',
