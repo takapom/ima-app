@@ -6,13 +6,6 @@ export type DecisionHapticsResult =
   | { readonly status: 'performed' }
   | { readonly status: 'failed'; readonly reason: 'haptics_unavailable' };
 
-/** Explicit unavailable service for hosts that intentionally disable native haptics. */
-export const createUnavailableDecisionHapticsService = (): DecisionHapticsService => ({
-  decision: () => {
-    throw new Error('haptics dependency is not installed');
-  },
-});
-
 export const triggerDecisionHaptics = async (
   service: DecisionHapticsService,
 ): Promise<DecisionHapticsResult> => {

@@ -183,6 +183,17 @@ describe('mobile journey runtime composition', () => {
     expect(readSnapshot).toHaveBeenCalledWith('thread-restore');
   });
 
+  it('reports unavailable local restore when no host port is injected', async () => {
+    const runtime = createMobileJourneyRuntime({ env: baseEnv });
+    if (runtime.binding === null) throw new Error('fixture binding should be available');
+
+    await expect(runtime.binding.controller.restoreLocal('thread-1')).resolves.toEqual({
+      status: 'unavailable',
+      reason: 'not_configured',
+    });
+    expect(runtime.binding.controller.getState().error?.kind).toBe('contract');
+  });
+
   it('keeps live restricted to HTTPS and allows injected credentials at the boundary', () => {
     const credentials = {
       appToken: 'injected-live-token',

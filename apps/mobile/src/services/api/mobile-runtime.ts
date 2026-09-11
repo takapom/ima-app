@@ -17,11 +17,11 @@ import type {
   JourneyApiTurnFactoryInput,
   JourneySavedPlacePreviewBinding,
 } from './journey-api-binding';
-import type {
-  JourneyApiControllerState,
-  JourneyLocalRestorePort,
-} from './journey-controller-types';
-import { createJourneyApiComposition } from './composition';
+import {
+  createJourneyApiController,
+  type JourneyApiControllerState,
+  type JourneyLocalRestorePort,
+} from './journey-controller';
 import { createJourneyApiClient } from './client';
 import { createJourneyPhotoClient } from './photo-client';
 import { createRuntimeId } from '../runtime-id';
@@ -410,8 +410,7 @@ export const createMobileJourneyRuntime = (
     ...(options.fetchImpl === undefined ? {} : { fetchImpl: options.fetchImpl }),
   } as const;
   const api = createJourneyApiClient(clientOptions);
-  const controller = createJourneyApiComposition({
-    ...clientOptions,
+  const controller = createJourneyApiController({
     api,
     clock: now,
     ...(options.localRestore === undefined ? {} : { localRestore: options.localRestore }),

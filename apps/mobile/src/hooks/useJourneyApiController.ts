@@ -56,7 +56,6 @@ export type JourneyApiHookResult = {
   readonly retry: () => Promise<ApiResult<CreateThreadResponse> | ApiResult<SearchResponse>>;
   readonly cancel: () => Promise<ApiResult<LifecycleResponse> | ApiResult<never>>;
   readonly selectHistory: (threadId: string) => Promise<void>;
-  readonly replay: (threadId: string) => Promise<void>;
   readonly reportUnexpected: () => void;
   readonly reset: () => void;
 };
@@ -437,18 +436,6 @@ export const useJourneyApiController = (
     [abortLocation, controller],
   );
 
-  const replay = useCallback(
-    async (threadId: string): Promise<void> => {
-      if (!controller) return;
-      ++operationGeneration.current;
-      abortLocation();
-      locationDraftRef.current = null;
-      setBoundaryError(null);
-      await controller.replayThread(threadId);
-    },
-    [abortLocation, controller],
-  );
-
   const reset = useCallback((): void => {
     ++operationGeneration.current;
     abortLocation();
@@ -470,7 +457,6 @@ export const useJourneyApiController = (
     retry,
     cancel,
     selectHistory,
-    replay,
     reportUnexpected,
     reset,
   };

@@ -10,7 +10,6 @@ export type {
   PhotoFetchOptions,
   PhotoResult,
 } from './photo-client';
-export { createJourneyApiComposition } from './composition';
 export {
   createJourneyApiRequestFactory,
   createMobileJourneyRuntime,
