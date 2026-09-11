@@ -38,3 +38,11 @@ chipは最大4件で、徒歩条件や終電条件の意味重複を抑止する
 ## 検証
 
 純粋な候補/chip/条件初期値、reducerの送信・取消・失敗・再送・解除意図をunit testで検証する。SDK import、位置許可、実機IME、実APIのpending/response接続は未実測であり、後続unit/実機ゲートへ引き継ぐ。
+
+## C2 foreground位置取得（2026-09-11）
+
+ユーザーによる依存導入後、`10fa370` でExpo Locationを検索操作へ接続した。`services/location`が権限・SDK I/O・座標と精度の検査を所有し、hookが取得の取消と送信世代を管理する。取得snapshotはHTTP request factoryへ渡す。初期表示だけでは位置を取得しない。
+
+直近位置は最大60秒、取得待機は既定5秒・上限8秒とし、精度100m以下かつOSが精密位置を許可した場合にavailableとする。これはアプリ側の既定値であり、SDKが保証する精度ではない。拒否後は再試行時に権限を読み直し、OS設定から戻った状態を反映する。timeout・reduced・unavailableを固定座標で補わない。駅名からcanonical stationRefへの解決は未接続。
+
+親側でmobile48ファイル294テスト・型・対象lint/formatを確認した。実機の権限ダイアログ・IME・設定復帰操作は未検証である。

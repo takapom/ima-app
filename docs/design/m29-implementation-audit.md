@@ -173,7 +173,7 @@ Expo位置情報・haptics・SQLite・SecureStoreの新規依存追加、およ�
 - 2026-09-11 12:15–12:16 JST: #15の本番dataset DO接続を`1296622`へ記録（443行）。親の関連5ファイル25テストと実DO管理1ファイル5テストが合格。固定名DOを遅延取得し、revision probeは1秒で打ち切る。origin評価を一度に揃え、設定不足ではprobeしない。空→import後1→rollback後3のrevisionを実DOで検証。駅・運行日resolverと検証済み実データの供給は未完了。
 - 2026-09-11 12:14–12:16 JST: 上記コードを含む親の全体9suiteが232ファイル1,259テストで合格（Node1,072、App Integrity HTTP1、Worker64、HTTP/mobile22、Think5、Think runtime24、native39、Production HTTP18、dev Fixture14）。全workspace型、全体lint（Fixture22件）、依存検査683 modules / 3,063 dependencies（Fixture31件）が合格。実モデルは無効化して実行。ローカルbuild・browserは前回の承認拒否を再試行せず、これら新規コミットのbuild/CIは未確認。コミットはmain上・各2,000行以内、未push。
 
-## 2026-09-11 継続実装後の未完了条件
+## 2026-09-11 12:17時点の未完了条件（端末SDK接続前）
 
 全sub-issue完了ではない。以下はテスト合格やFixtureで代替せず、未実装コードと外部検収を区別する。
 
@@ -188,3 +188,51 @@ Expo位置情報・haptics・SQLite・SecureStoreの新規依存追加、およ�
 | #30/#31/#35/#36 | preflight/設定は実装済み。実プロジェクト・API・署名環境の設定は未確認                                                                                      | 非本番実API、iPhone E2E、署名配布、利用許諾・削除・保持の検収 |
 
 依存導入・asset取得・ローカルbuild/browserの以前の承認拒否を、この監査や別経路から回避していない。新規コードはローカルmainにコミット済みで未push。ユーザー既存のmobile起動設定などの未コミット変更は保全した。
+
+## 2026-09-11 端末SDK接続の追加検証
+
+ユーザーがExpo依存の導入を実行した後、実装を再開した。依存の存在確認は端末上の動作確認とは区別する。
+
+| sub-issue | コミット  | 変更と親側検証                                                                                                                                                                                                           |
+| --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| #23       | `0396e48` | Location / Haptics / SQLite / SecureStoreの直接依存とlockfileを確認して記録（18行）                                                                                                                                      |
+| #22       | `b66a87c` | Expo SQLiteの同期接続、migration、transaction、close/reopen。関連4ファイル21テスト（460行）                                                                                                                              |
+| #23       | `edfe8c4` | 環境・API origin・owner scope単位のSecureStore保存。欠損・破損・SDK失敗を区別。専用13テスト、mobile型、対象lint/format（643行）                                                                                          |
+| #21       | `f99925c` | 決定操作からExpo Hapticsの成功通知へ接続。関連2ファイル12テスト、対象lint/format（131行）                                                                                                                                |
+| #19       | `10fa370` | submit時のforeground位置取得、拒否・reduced・期限切れ・timeout、取消と遅着拒否。HTTP送信前の取消draftは位置取得から再開し、HTTP失敗は同一snapshotを再送。mobile48ファイル294テスト、mobile型、対象lint/format（1,053行） |
+
+13:01–13:04 JSTの親全体回帰は9suite・239ファイル1,314テスト合格（Node1,127、App Integrity HTTP1、Worker64、HTTP/mobile22、Think5、Think runtime24、native39、Production HTTP18、dev Fixture14）。並行作業中のnative composition/local sessionも含む途中検証。全workspace型と依存検査707 modules / 3,142 dependencies・Fixture31件も合格。実モデルは無効化した。実機・実API・新規コミットのbuild/CIは未検証。
+
+- `729d547`（#23、1,111行）: Appの非同期native composition、環境/origin/owner別SQLite、共通初期化期限と取消、遅着adapterのinitialize抑止、disposeを接続。親の関連2ファイル14テスト・mobile型・対象lintを確認し、formatを修正した。
+- `ad68498`（#23、702行）: controllerのthread初観測時刻を固定し、応答参照と期限だけをSQLiteへ保存。サーバー作成時刻と区別し、公開session期限を上限にする。保存拒否を成功revisionとして記録しない。親の関連3ファイル22テスト・対象lint/formatを確認した。native factoryの自動保存・履歴一覧への接続は後続単位。
+- この追加作業中の親全体lintは行数検査・違反検出Fixture22件を含め合格。後続変更の最終回帰は別途記録する。
+
+- `3af2b9c`（#23、349行）: native runtimeへ同一DBのlocal restore/persistenceを接続。購読解除→controller→DBの順に破棄する。実controllerとNode SQLiteファイルDBで応答→参照保存→別runtime復元→期限拒否を確認。親の関連2ファイル12テスト、mobile型、対象lint/formatが合格。
+- `2b42b96`（#22、335行）: `listThreads`で期限内の履歴だけを降順取得し、未来作成時刻・逆転期限・破損行を除外。原文を保存せず「検索履歴」と初観測時刻へ投影。親の関連4ファイル20テスト、対象lint/formatが合格。
+
+- `4bccce4`（#22、249行）: schema v2へユーザー入力のstationLabelを追加。省略時の維持、明示消去、破損修復、v1の既存データ保全を親のSQLite4ファイル21テスト・対象lint/formatで確認した。型検査は当時並行preferences Fixtureの未更新があり、後続で解消した。
+- `78e8505`（#22、923行）: 予算・徒歩・駅名のsaved条件を設定画面へ接続。thread条件は永続化せず、保存失敗時の反映を抑止する。メモリのみの連続編集も保持し、source切替の旧設定を表示しない。親の関連2ファイル22テスト、mobile型、対象lint/formatが合格。駅名はlocal-onlyで、対応駅判定はunknownのまま。
+
+## 端末接続後の残件
+
+依存の導入だけで全sub-issueの完了とはしない。下記は実装と外部検収を区別した現時点の残件である。
+
+| 対象            | 実装・設定の残件                                                                               | 未実測の検収                                           |
+| --------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| #18             | font/splash接続、フォント資産・OFL                                                             | 実機の画面・アクセシビリティ                           |
+| #19             | 駅名からcanonical stationRefへの解決と対応駅判定。入力した駅名の端末保存は接続済み             | foreground権限、精度変更、設定復帰、実機IME            |
+| #21             | Apple Mapsと独立座標源を維持するか、Google Mapsへ要件変更するかの決定                          | 実機の地図・共有・触覚                                 |
+| #22/#23         | 端末SDK・保存復元サービスは接続済み。live起動にはhostからnativeAuthorityと正式資格の供給が必要 | キル/再起動、オフライン、実アプリHTTP/E2E              |
+| #28             | 実Apple App Attest verifierとnative clientが未実装。注入Port・合成canaryは代替しない           | Team/App ID、entitlement、署名、実iPhoneの証明とreplay |
+| #15/#34         | 駅waypoint、乗車駅、祝日/運行日resolver、検証済み時刻表の供給                                  | 正規出典と許諾、非本番import/rollback                  |
+| #26             | 14 profileの実行入口は実装済み                                                                 | 実モデル14×3反復、人手による品質・費用確認             |
+| #30/#31/#35/#36 | preflightは実装済み。実プロジェクト/API/署名設定と新規コミットのCI反映は未確認                 | 実API、iPhone E2E、署名配布、保持・削除・利用許諾      |
+
+今回の追加実装はmain上のsub-issue番号付きコミットに分割した。GitHubへのpush・Issueの完了記録とCloseは未実行。以前のasset取得・ローカルbuild/browserの自動承認拒否を再試行していない。実機・実API・実モデル成功をNode/Fixtureテストで置き換えない。
+
+## 今回の最終検証
+
+- `da61def`（#23、663行）でAppから同一SQLiteの設定・履歴サービスを画面へ供給した。controller更新・foreground復帰・最短履歴期限で読み直し、取得失敗と空履歴を区別する。StrictMode相当の再activateと旧購読/旧timerの隔離を検証した。通常runtimeで検証済みのstore所有権を前提とし、hostが任意のstoreを別scopeへ付け替える使い方は契約に含めない。
+- 親の全体回帰は9suite・245ファイル1,352テスト合格（Node1,165、App Integrity HTTP1、Worker64、HTTP/mobile22、Think5、Think runtime24、native39、Production HTTP18、dev Fixture14）。全workspace型、全体lint・違反検出Fixture22件、依存720 modules / 3,209 dependencies・Fixture31件も合格。
+- 上記全体検査後の購読世代修正は、親が13:48–49 JSTにmobile54ファイル333テスト、mobile型、対象lintで再検証し、対象formatも確認した。全体の件数と最終mobile再検証を合算してテスト件数にしない。
+- 実モデルは無効化。新規コードのbuild/CI・React mount・実Expo SDK/実機は未検証。コミットは各2,000行以内、実装はmain上で行い、GitHub未push。
