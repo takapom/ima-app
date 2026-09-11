@@ -9,7 +9,6 @@ const ignored = [
   '**/dist/**',
   '**/coverage/**',
   '**/worker-configuration.d.ts',
-  'workers/api/tests/runtime-gate/runtime-env.d.ts',
   'scripts/fixtures/**',
 ];
 
