@@ -2,7 +2,9 @@
 
 大切にしたい人と外出中に、次の行き先を決めるためのiPhoneアプリ。
 
-現在はHTMLモックと設計資料、MVP実装バックログの段階です。アプリ本体・バックエンド・実API連携は未実装です。
+アプリ本体・バックエンドを実装中です。ローカルでは固定データの検索経路を確認できます。実API連携・実機検収などの残件は[実装監査](./docs/design/m29-implementation-audit.md)を参照してください。
+
+ローカルWebの起動には、Expoと固定データ用Workerの両方が必要です。[設定・起動手順](./docs/design/m28-dev-fixture.md#ローカルwebの起動)に従ってください。
 
 - [UIモック](./index.html)
 - [設計決定（ADR）](./docs/adr/README.md)

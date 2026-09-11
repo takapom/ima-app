@@ -57,8 +57,13 @@ PATH=/Users/takagiyuuki/.nvm/versions/node/v24.11.1/bin:$PATH \
   bunx vitest run --config vitest.runtime-dev-fixture.config.ts
 ```
 
-ローカル Worker は専用 config と fixture 専用の `.dev.vars` で起動する。他環境の
-credential をコピーしない。
+## ローカルWebの起動
+
+Node 24 / Bun の依存導入済み環境で、リポジトリルートから操作する。
+Expoだけの起動では検索できない。以下のmobile設定と専用Workerが必要になる。
+
+ローカル Worker は専用 config 内の合成認証値で起動でき、`.dev.vars` の作成は不要。
+既存の `.dev.vars` がある場合は他環境のcredentialを混在させず、次のfixture値と整合させる。
 
 ```dotenv
 # workers/api/.dev.vars
@@ -69,11 +74,10 @@ IMA_KILL_SWITCH=false
 ```
 
 ```sh
-PATH=/Users/takagiyuuki/.nvm/versions/node/v24.11.1/bin:$PATH \
-  bunx wrangler dev --config workers/api/wrangler.runtime-dev-fixture-test.jsonc --local
+bun run dev:worker:fixture
 ```
 
-モバイル開発 client は `apps/mobile/.env` に次の fixture 値を明示し、別 terminal で
+モバイル開発 client は `apps/mobile/.env.local` に次の fixture 値を明示し、別 terminal で
 Expo を起動する。この localhost 設定は同一マシン上の Web / iOS Simulator 用であり、
 実機 iPhone では別途 HTTPS の開発用 endpoint が必要になる。client は LAN IP への
 平文 HTTP 接続を許可しない。
@@ -89,9 +93,22 @@ EXPO_PUBLIC_FIXTURE_OWNER_CREDENTIAL=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE
 ```
 
 ```sh
-cd apps/mobile
-PATH=/Users/takagiyuuki/.nvm/versions/node/v24.11.1/bin:$PATH bun run start
+bun run dev:web
 ```
+
+起動中のExpoがある場合は先に `Ctrl+C` で止め、設定を読み直す。terminalに表示された
+Web URLをブラウザで開き、まず新規検索で「カフェ」と入力する。終電はfixtureでは提供して
+いないため「終電まで」は成功確認の入力に含めない。徒歩上限は正確な現在地を取得できる
+場合にだけ追加して確認する。Webのカード表示は端末保存・履歴復元の検収を意味しない。
+
+専用fixture入口はHTTP/HTTPSのlocalhost・127.0.0.1・IPv6 loopbackからのブラウザ通信に
+CORSを付ける。OPTIONSの事前確認と、成功・エラー両方のHTTP応答を対象にする。
+本番入口はこの開発用CORSをimportしない。
+
+「検索を開始できません。アプリ設定を確認してください」はAPI modeや接続情報が
+未設定・不正なときの表示。`.env.local` の設定後も出る場合はExpoを再起動する。
+APIへの通信エラーは、別terminalのWorkerが8787番で起動しているかも確認する。
+公開fixture認証値は合成データ用であり、この `.env.local` を配布buildに使わない。
 
 cards の成功例では現在地を available にして `maxWalkMinutes: 15` を指定できる。表示される
 walking route は固定 fixture 値であり、実際の現在地からの距離・経路を測定した事実として扱わない。

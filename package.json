@@ -16,6 +16,8 @@
     "install:ci": "bun install --frozen-lockfile",
     "dev:mobile": "bun run --cwd apps/mobile start",
     "dev:worker": "bun run --cwd workers/api dev",
+    "dev:worker:fixture": "wrangler dev --config workers/api/wrangler.runtime-dev-fixture-test.jsonc --local --port 8787",
+    "dev:web": "bun run --cwd apps/mobile start --web --clear",
     "env:preflight": "bun scripts/environment-preflight.ts",
     "format": "prettier --check .",
     "lint": "eslint . && node scripts/check-file-lines.mjs && node scripts/check-lint-disables.mjs && node scripts/check-eslint-fixtures.mjs",
