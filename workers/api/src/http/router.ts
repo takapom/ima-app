@@ -17,7 +17,7 @@ import {
   IsoTimestampSchema,
   REQUEST_ID_HEADER,
 } from '@ima/contracts';
-import { HttpBoundaryError, toErrorResponse } from './errors';
+import { HttpBoundaryError, toErrorResponse, type BoundaryFailure } from './errors';
 import { authenticateRequest, type AuthConfig, type AuthenticatedContext } from './auth';
 import { isValidRequestId, parseJsonBodyWithRaw } from './input';
 import type {
@@ -26,12 +26,12 @@ import type {
   HandlerContext,
   HandlerDependencies,
 } from './handler';
-import type { BoundaryFailure } from './errors';
 import type { CancellationToken } from '@ima/core';
 import { matchRoute, type MatchedRoute } from './router-match';
 import type { AppIntegrityGate } from '../security/app-integrity';
 import { authorizeAppIntegrity } from '../security/app-integrity-http';
 import { handleAppIntegrityHttpRoute, isAppIntegrityHttpRoute } from './app-integrity-routes';
+import { handleOwnerHttpRoute, isOwnerHttpRoute } from './owner-routes';
 import { ensurePhotoResponse } from './photo-route';
 import { rateLimitedResponse } from './rate-limit-response';
 
@@ -70,10 +70,8 @@ const notFound = (): BoundaryFailure => ({ status: 404, code: 'NOT_FOUND' });
 const invalidArgument = (): BoundaryFailure => ({ status: 400, code: 'INVALID_ARGUMENT' });
 const internal = (): BoundaryFailure => ({ status: 500, code: 'INTERNAL' });
 const cancelled = (): BoundaryFailure => ({ status: 409, code: 'CANCELLED' });
-
 const isHttpBoundaryError = (value: unknown): value is HttpBoundaryError =>
   value instanceof HttpBoundaryError;
-
 const safeRequestId = (request: Request, config: HttpRouterConfig): string => {
   const supplied = request.headers.get(REQUEST_ID_HEADER);
   if (isValidRequestId(supplied)) return supplied;
@@ -98,10 +96,8 @@ const validatedServerNow = (config: HttpRouterConfig): string => {
   if (!parsed.success) throw new HttpBoundaryError(internal());
   return parsed.output;
 };
-
 const cancellationResponse = (requestId: string, request: Request): Response | null =>
   request.signal.aborted ? toErrorResponse(requestId, cancelled()) : null;
-
 const checkResource = async (
   ownerScopeRef: string,
   resource: ResourceReference,
@@ -121,12 +117,10 @@ const requestIdFromBody = (value: unknown): string | null => {
   const requestId = value.requestId;
   return typeof requestId === 'string' ? requestId : null;
 };
-
 const bodyRequestIdFailure = (value: unknown, requestId: string): BoundaryFailure | null => {
   const bodyRequestId = requestIdFromBody(value);
   return bodyRequestId === requestId ? null : invalidArgument();
 };
-
 const jsonResponse = (body: unknown, status: number): Response =>
   Response.json(body, {
     status,
@@ -203,9 +197,19 @@ const routeAuthorized = async (
       route,
       request,
       auth,
+      maxBodyBytes,
       gate: config.appIntegrity,
       serverNow: validatedServerNow(config),
+    });
+  }
+  if (isOwnerHttpRoute(route)) {
+    return handleOwnerHttpRoute({
+      route,
+      request,
+      auth,
+      serverNow,
       maxBodyBytes,
+      application: config.handlers.application,
     });
   }
   const checkIntegrity = (rawBody?: Uint8Array): Promise<Response | null> =>
@@ -218,7 +222,6 @@ const routeAuthorized = async (
       maxBodyBytes,
       rawBody,
     });
-
   if (route.kind === 'photos') {
     const photoContext = makeContext(request, auth, serverNow);
     if (config.handlers.photo.authorize !== undefined) {
@@ -297,7 +300,6 @@ const routeAuthorized = async (
     await config.handlers.events.accept(body.value, makeContext(request, auth, serverNow));
     return new Response(null, { status: 204 });
   }
-
   if (route.kind === 'create_thread') {
     const body = await bodyFailure(request, CreateThreadRequestSchema, maxBodyBytes, requestId);
     if (!body.ok) return body.response;
@@ -313,7 +315,6 @@ const routeAuthorized = async (
       config,
     );
   }
-
   if (route.kind === 'search') {
     const body = await bodyFailure(request, SearchRequestSchema, maxBodyBytes, requestId);
     if (!body.ok) return body.response;
@@ -337,7 +338,6 @@ const routeAuthorized = async (
       config,
     );
   }
-
   if (route.kind === 'saved_reference_create') {
     const threadScopeFailure = await checkResource(
       auth.ownerScopeRef,
@@ -366,7 +366,6 @@ const routeAuthorized = async (
       config,
     );
   }
-
   const threadFailure = await checkResource(
     auth.ownerScopeRef,
     { kind: 'thread', id: route.path.threadId },

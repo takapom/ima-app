@@ -28,7 +28,6 @@ import type {
   ThreadDeleteResult,
   ThreadOperationErrorCode,
   ThreadSnapshotResult,
-  ThreadSavedCandidateResult,
   ThreadDO,
   ThreadState,
 } from './thread-do';
@@ -44,12 +43,13 @@ import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetr
 import type { AppIntegrityGate } from './security/app-integrity';
 import { createThreadId } from './thread-id';
 import { createConfiguredPhoto } from './bootstrap-photo';
+import { createDurableOwnerStore } from './saved-references/durable-owner-store';
 import {
-  createOwnerSavedReferenceRpc,
-  type SavedReferenceNamespace,
-  type SavedReferenceRpcDeleteResult,
-  type SavedReferenceRpcRegistrationResult,
-} from './saved-references/saved-reference-rpc';
+  handleOwnerApplication,
+  isOwnerApplicationOperation,
+} from './saved-references/owner-application';
+import type { OwnerStore } from './saved-references/owner-store';
+import type { SavedReferenceNamespace } from './saved-references/saved-reference-rpc';
 import {
   createSavedReferenceRefreshForBootstrap,
   type SavedReferenceRefreshBootstrapOptions,
@@ -131,93 +131,6 @@ const threadFailureCode = (code: ThreadOperationErrorCode): HttpBoundaryError =>
         : { status: 409, code: 'CONFLICT' },
   );
 
-const savedReferenceFailure = (
-  code:
-    | Extract<SavedReferenceRpcRegistrationResult, { readonly ok: false }>['code']
-    | Extract<SavedReferenceRpcDeleteResult, { readonly ok: false }>['code']
-    | 'OWNER_CONFLICT',
-): HttpBoundaryError =>
-  new HttpBoundaryError(
-    code === 'INVALID_INPUT'
-      ? { status: 400, code: 'INVALID_ARGUMENT' }
-      : code === 'FORBIDDEN'
-        ? { status: 403, code: 'FORBIDDEN' }
-        : code === 'CORRUPT_ROW' || code === 'OWNER_NOT_INITIALIZED' || code === 'OWNER_CONFLICT'
-          ? { status: 500, code: 'INTERNAL' }
-          : { status: 409, code: 'CONFLICT' },
-  );
-
-const savedCandidateFailure = (
-  code: Extract<ThreadSavedCandidateResult, { readonly ok: false }>['code'],
-): HttpBoundaryError =>
-  new HttpBoundaryError(
-    code === 'INVALID_INPUT'
-      ? { status: 400, code: 'INVALID_ARGUMENT' }
-      : code === 'FORBIDDEN'
-        ? { status: 403, code: 'FORBIDDEN' }
-        : code === 'NOT_FOUND'
-          ? { status: 404, code: 'NOT_FOUND' }
-          : code === 'UNKNOWN_CANDIDATE'
-            ? { status: 404, code: 'UNKNOWN_CANDIDATE' }
-            : { status: 409, code: 'STALE_TURN' },
-  );
-
-const savedReferenceFingerprint = async (
-  threadId: string,
-  candidateId: string,
-  revision: number,
-): Promise<string> => {
-  const encoded = new TextEncoder().encode(
-    `saved-reference\u0000${threadId}\u0000${candidateId}\u0000${revision}`,
-  );
-  const digest = await crypto.subtle.digest('SHA-256', encoded);
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-};
-
-const requireSavedReferenceRpc = (
-  env: BootstrapEnv,
-  ownerScopeRef: string,
-): ReturnType<typeof createOwnerSavedReferenceRpc> => {
-  if (env.SAVED_REFERENCES === undefined) throw unavailable();
-  return createOwnerSavedReferenceRpc(env.SAVED_REFERENCES, ownerScopeRef);
-};
-
-const requireSavedReferenceOwner = async (
-  rpc: ReturnType<typeof createOwnerSavedReferenceRpc>,
-): Promise<void> => {
-  const initialized = await rpc.initialize();
-  if (!initialized.ok) throw savedReferenceFailure(initialized.code);
-};
-
-const requireSavedCandidate = async (
-  env: BootstrapEnv,
-  ownerScopeRef: string,
-  threadId: string,
-  candidateId: string,
-  revision: number,
-): Promise<{
-  readonly ok: true;
-  readonly candidateId: string;
-  readonly provider: string;
-  readonly recordRef: string;
-}> => {
-  const result: ThreadSavedCandidateResult = await threadCall(
-    async () =>
-      await threadStub(env, threadId).resolveCandidateForSavedReference(
-        ownerScopeRef,
-        candidateId,
-        revision,
-      ),
-  );
-  if (!result.ok) throw savedCandidateFailure(result.code);
-  return {
-    ok: true,
-    candidateId: result.candidateId,
-    provider: result.provider,
-    recordRef: result.recordRef,
-  };
-};
-
 const requireSnapshot = (result: ThreadSnapshotResult) => {
   if (result.ok) return result.snapshot;
   throw threadFailureCode(result.code);
@@ -260,9 +173,23 @@ const handleApplication = async (
   env: BootstrapEnv,
   runtime: ApplicationHandler,
   savedReferenceRefresh: ReturnType<typeof createSavedReferenceRefreshForBootstrap>,
+  ownerStore: OwnerStore | undefined,
   operation: ApplicationOperation,
   context: HandlerContext,
 ): Promise<ApplicationResult> => {
+  if (isOwnerApplicationOperation(operation)) {
+    return handleOwnerApplication(operation, context, {
+      ownerStore,
+      resolveSavedCandidate: (input) =>
+        threadCall(async () =>
+          threadStub(env, input.threadId).resolveCandidateForSavedReference(
+            input.ownerScopeRef,
+            input.candidateId,
+            input.revision,
+          ),
+        ),
+    });
+  }
   switch (operation.kind) {
     case 'create_thread': {
       const threadId = await createThreadId(context.ownerScopeRef, operation.input.idempotencyKey);
@@ -289,58 +216,6 @@ const handleApplication = async (
     case 'turn':
     case 'search':
       return runtime.handle(operation, context);
-    case 'saved_reference_create': {
-      const rpc = requireSavedReferenceRpc(env, context.ownerScopeRef);
-      await requireSavedReferenceOwner(rpc);
-      const fingerprint = await savedReferenceFingerprint(
-        operation.path.threadId,
-        operation.input.candidateId,
-        operation.input.revision,
-      );
-      const replay = await rpc.replay(operation.input.idempotencyKey, fingerprint);
-      if (!replay.ok) throw savedReferenceFailure(replay.code);
-      if (replay.found) {
-        return {
-          kind: 'saved_reference_create',
-          response: {
-            schemaVersion: 'v1',
-            requestId: operation.input.requestId,
-            candidateId: operation.input.candidateId,
-            savedPlaceRef: replay.reference.savedPlaceRef,
-          },
-        };
-      }
-      const candidate = await requireSavedCandidate(
-        env,
-        context.ownerScopeRef,
-        operation.path.threadId,
-        operation.input.candidateId,
-        operation.input.revision,
-      );
-      const saved = await rpc.register(
-        { provider: candidate.provider, recordRef: candidate.recordRef },
-        { idempotencyKey: operation.input.idempotencyKey, idempotencyFingerprint: fingerprint },
-      );
-      if (!saved.ok) throw savedReferenceFailure(saved.code);
-      return {
-        kind: 'saved_reference_create',
-        response: {
-          schemaVersion: 'v1',
-          requestId: operation.input.requestId,
-          candidateId: operation.input.candidateId,
-          savedPlaceRef: saved.reference.savedPlaceRef,
-        },
-      };
-    }
-    case 'saved_reference_delete': {
-      const rpc = requireSavedReferenceRpc(env, context.ownerScopeRef);
-      await requireSavedReferenceOwner(rpc);
-      const removed = await rpc.remove(operation.path.savedPlaceRef, {
-        idempotencyKey: operation.input.idempotencyKey,
-      });
-      if (!removed.ok) throw savedReferenceFailure(removed.code);
-      return { kind: 'saved_reference_delete', response: null };
-    }
     case 'lifecycle': {
       const snapshot = requireSnapshot(
         await threadCall(
@@ -394,9 +269,11 @@ const createApplication = (env: BootstrapEnv, options: BootstrapOptions): Applic
       : { onCancellationError: options.onCancellationError }),
   });
   const savedReferenceRefresh = createSavedReferenceRefreshForBootstrap(env, options);
+  const ownerStore =
+    env.SAVED_REFERENCES === undefined ? undefined : createDurableOwnerStore(env.SAVED_REFERENCES);
   return {
     handle(operation, context) {
-      return handleApplication(env, runtime, savedReferenceRefresh, operation, context);
+      return handleApplication(env, runtime, savedReferenceRefresh, ownerStore, operation, context);
     },
   };
 };

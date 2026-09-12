@@ -5,7 +5,11 @@ import {
   LifecycleCommandSchema,
   LifecycleResponseSchema,
   PhotoResponseDescriptorSchema,
+  PrefsReadResponseSchema,
+  PrefsWriteRequestSchema,
+  PrefsWriteResponseSchema,
   SavedReferenceCreateResponseSchema,
+  SavedReferenceListResponseSchema,
   SavedReferenceResponseSchema,
   SearchRequestSchema,
   SearchResponseSchema,
@@ -214,6 +218,32 @@ export const savedReferenceCreateResponse = parse(SavedReferenceCreateResponseSc
   savedPlaceRef,
 });
 
+export const prefsWriteInput = parse(PrefsWriteRequestSchema, {
+  schemaVersion: 'v1',
+  requestId,
+  expectedRevision: 0,
+  prefs: searchInput.prefs,
+});
+
+export const prefsReadResponse = parse(PrefsReadResponseSchema, {
+  schemaVersion: 'v1',
+  requestId,
+  revision: 0,
+  prefs: null,
+});
+
+export const prefsWriteResponse = parse(PrefsWriteResponseSchema, {
+  schemaVersion: 'v1',
+  requestId,
+  revision: 1,
+});
+
+export const savedReferenceListResponse = parse(SavedReferenceListResponseSchema, {
+  schemaVersion: 'v1',
+  requestId,
+  savedPlaceRefs: [savedPlaceRef],
+});
+
 export const photoDescriptor = parse(PhotoResponseDescriptorSchema, {
   schemaVersion: 'v1',
   requestId,
@@ -263,6 +293,12 @@ const applicationResult = (operation: ApplicationOperation): ApplicationResult =
       return { kind: operation.kind, response: null };
     case 'saved_reference_refresh':
       return { kind: operation.kind, response: savedReferenceResponse };
+    case 'prefs_read':
+      return { kind: operation.kind, response: prefsReadResponse };
+    case 'prefs_write':
+      return { kind: operation.kind, response: prefsWriteResponse };
+    case 'saved_reference_list':
+      return { kind: operation.kind, response: savedReferenceListResponse };
     case 'saved_reference_create':
       return { kind: operation.kind, response: savedReferenceCreateResponse };
     case 'saved_reference_delete':

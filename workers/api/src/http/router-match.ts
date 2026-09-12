@@ -1,9 +1,5 @@
 import * as v from 'valibot';
-import {
-  PhotoPathSchema,
-  SavedReferencePathSchema,
-  ThreadPathSchema,
-} from '@ima/contracts';
+import { PhotoPathSchema, SavedReferencePathSchema, ThreadPathSchema } from '@ima/contracts';
 import type { BoundaryFailure } from './errors';
 import type { PhotoPath, SavedReferencePath, ThreadPath } from './handler';
 
@@ -16,6 +12,9 @@ export type MatchedRoute =
   | { readonly kind: 'create_thread' }
   | { readonly kind: 'search' }
   | { readonly kind: 'photos'; readonly path: PhotoPath }
+  | { readonly kind: 'prefs_read' }
+  | { readonly kind: 'prefs_write' }
+  | { readonly kind: 'saved_reference_list' }
   | { readonly kind: 'saved_reference_refresh'; readonly path: SavedReferencePath }
   | { readonly kind: 'saved_reference_create'; readonly path: ThreadPath }
   | { readonly kind: 'saved_reference_delete'; readonly path: SavedReferencePath }
@@ -114,6 +113,20 @@ export const matchRoute = (request: Request): MatchResult => {
       : url.search.length === 0
         ? { ok: true, route: { kind: 'photos', path } }
         : { ok: false, failure: invalidArgument() };
+  }
+  if (
+    (request.method === 'GET' || request.method === 'PUT') &&
+    first === 'prefs' &&
+    segments.length === 2
+  ) {
+    return url.search.length === 0
+      ? { ok: true, route: { kind: request.method === 'GET' ? 'prefs_read' : 'prefs_write' } }
+      : { ok: false, failure: invalidArgument() };
+  }
+  if (request.method === 'GET' && first === 'saved' && segments.length === 2) {
+    return url.search.length === 0
+      ? { ok: true, route: { kind: 'saved_reference_list' } }
+      : { ok: false, failure: invalidArgument() };
   }
   if (
     request.method === 'GET' &&

@@ -290,6 +290,9 @@ export const createRuntimeApplicationHandler = (
       case 'lifecycle':
       case 'delete_thread':
       case 'saved_reference_refresh':
+      case 'prefs_read':
+      case 'prefs_write':
+      case 'saved_reference_list':
       case 'saved_reference_create':
       case 'saved_reference_delete':
         return Promise.reject(internal());

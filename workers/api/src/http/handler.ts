@@ -11,9 +11,13 @@ import type {
   LifecycleCommandSchema,
   LifecycleResponseSchema,
   PhotoPathSchema,
+  PrefsReadResponse,
+  PrefsWriteRequest,
+  PrefsWriteResponse,
   SavedReferenceCreateRequest,
   SavedReferenceCreateResponse,
   SavedReferenceDeleteRequest,
+  SavedReferenceListResponse,
   SavedReferencePathSchema,
   SavedReferenceResponseSchema,
   ThreadPathSchema,
@@ -64,6 +68,9 @@ export type ApplicationOperation =
       readonly input: LifecycleCommand;
     }
   | { readonly kind: 'saved_reference_refresh'; readonly path: SavedReferencePath }
+  | { readonly kind: 'prefs_read' }
+  | { readonly kind: 'prefs_write'; readonly input: PrefsWriteRequest }
+  | { readonly kind: 'saved_reference_list' }
   | {
       readonly kind: 'saved_reference_create';
       readonly path: ThreadPath;
@@ -84,6 +91,9 @@ export type ApplicationResult =
   | { readonly kind: 'lifecycle'; readonly response: LifecycleResponse }
   | { readonly kind: 'delete_thread'; readonly response: null }
   | { readonly kind: 'saved_reference_refresh'; readonly response: SavedReferenceResponse }
+  | { readonly kind: 'prefs_read'; readonly response: PrefsReadResponse }
+  | { readonly kind: 'prefs_write'; readonly response: PrefsWriteResponse }
+  | { readonly kind: 'saved_reference_list'; readonly response: SavedReferenceListResponse }
   | { readonly kind: 'saved_reference_create'; readonly response: SavedReferenceCreateOutput }
   | { readonly kind: 'saved_reference_delete'; readonly response: null };
 

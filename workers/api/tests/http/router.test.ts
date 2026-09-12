@@ -9,6 +9,7 @@ import {
   makeHarness,
   makeRequest,
   candidateId,
+  prefsWriteInput,
   requestId,
   searchInput,
   savedPlaceRef,
@@ -40,6 +41,28 @@ describe('HTTP router boundary', () => {
         method: 'GET',
         status: 200,
         expected: undefined,
+      },
+      {
+        name: 'prefs-read',
+        path: '/v1/prefs',
+        method: 'GET',
+        status: 200,
+        expected: { kind: 'prefs_read' },
+      },
+      {
+        name: 'prefs-write',
+        path: '/v1/prefs',
+        method: 'PUT',
+        json: prefsWriteInput,
+        status: 200,
+        expected: { kind: 'prefs_write', input: { requestId } },
+      },
+      {
+        name: 'saved-list',
+        path: '/v1/saved',
+        method: 'GET',
+        status: 200,
+        expected: { kind: 'saved_reference_list' },
       },
       {
         name: 'saved',
@@ -134,7 +157,7 @@ describe('HTTP router boundary', () => {
       },
     ];
 
-    expect(cases).toHaveLength(15);
+    expect(cases).toHaveLength(18);
     for (const testCase of cases) {
       const harness = makeHarness();
       const response = await routeRequest(
@@ -173,6 +196,9 @@ describe('HTTP router boundary', () => {
     const unsupportedQueries = [
       { path: '/v1/search?debug=true', method: 'POST', json: searchInput },
       { path: '/v1/photos/photo-token-1?debug=true' },
+      { path: '/v1/prefs?debug=true' },
+      { path: '/v1/prefs?debug=true', method: 'PUT', json: prefsWriteInput },
+      { path: '/v1/saved?debug=true' },
       { path: '/v1/saved/saved-1/refresh?debug=true' },
       { path: '/v1/events?debug=true', method: 'POST', json: eventsInput },
       {
@@ -284,6 +310,27 @@ describe('HTTP router boundary', () => {
     );
     expect(savedCreateResponse.status).toBe(403);
     expect(savedCreate.calls.application).toBe(0);
+
+    const prefsRead = makeHarness({ denyKind: 'thread' });
+    const prefsReadResponse = await routeRequest(makeRequest('/v1/prefs'), prefsRead.config);
+    expect(prefsReadResponse.status).toBe(200);
+    expect(prefsRead.calls.ownership).toEqual([]);
+    expect(prefsRead.calls.application).toBe(1);
+
+    const prefsWrite = makeHarness({ denyKind: 'saved_reference' });
+    const prefsWriteResponse = await routeRequest(
+      makeRequest('/v1/prefs', { method: 'PUT', json: prefsWriteInput }),
+      prefsWrite.config,
+    );
+    expect(prefsWriteResponse.status).toBe(200);
+    expect(prefsWrite.calls.ownership).toEqual([]);
+    expect(prefsWrite.calls.application).toBe(1);
+
+    const savedList = makeHarness({ denyKind: 'saved_reference' });
+    const savedListResponse = await routeRequest(makeRequest('/v1/saved'), savedList.config);
+    expect(savedListResponse.status).toBe(200);
+    expect(savedList.calls.ownership).toEqual([]);
+    expect(savedList.calls.application).toBe(1);
 
     const foreignSavedDelete = makeHarness({ denyKind: 'saved_reference' });
     const foreignSavedDeleteResponse = await routeRequest(

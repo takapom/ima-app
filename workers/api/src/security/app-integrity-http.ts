@@ -5,7 +5,15 @@ import type { AppIntegrityGate } from './app-integrity';
 
 type AuthorizedRoute = Exclude<
   MatchedRoute,
-  { readonly kind: 'attest_nonce' | 'attest_enroll' | 'attest_revoke' }
+  {
+    readonly kind:
+      | 'attest_nonce'
+      | 'attest_enroll'
+      | 'attest_revoke'
+      | 'prefs_read'
+      | 'prefs_write'
+      | 'saved_reference_list';
+  }
 >;
 
 const cancelled = (requestId: string): Response =>
