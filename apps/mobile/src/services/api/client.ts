@@ -6,6 +6,8 @@ import {
   parsePublicError,
   parseSearchResponse,
   parseSearchRequest,
+  parsePlaceDecideRequest,
+  parsePlaceDecideResponse,
   parseSavedReferenceCreateRequest,
   parseSavedReferenceCreateResponse,
   parseSavedReferenceDeleteRequest,
@@ -340,6 +342,37 @@ export const createJourneyApiClient = (options: ApiClientOptions): JourneyApiCli
           value === null
             ? { success: true, data: null }
             : { success: false, issues: ['expected empty response'] },
+        requestOptions,
+      );
+    },
+    decidePlace: (threadId, input, requestOptions) => {
+      const path = checkedThreadPath(threadId);
+      if (!path.ok) return Promise.resolve(path);
+      const parsed = parsePlaceDecideRequest(input);
+      if (!parsed.success) {
+        return Promise.resolve(
+          issueResult(CLIENT_REQUEST_ID, 'placeDecide', parsed.issues, null),
+        );
+      }
+      return request(
+        {
+          route: 'placeDecide',
+          method: 'POST',
+          path: `/v1/threads/${encodeURIComponent(path.data.threadId)}/decided`,
+          body: parsed.data,
+          expectedStatus: 201,
+          parseResponse: (value) => {
+            const response = parsePlaceDecideResponse(value);
+            if (!response.success || response.data.candidateId === parsed.data.candidateId) {
+              return response;
+            }
+            return {
+              success: false,
+              issues: ['response candidateId does not match the request'],
+            };
+          },
+          requestId: parsed.data.requestId,
+        },
         requestOptions,
       );
     },

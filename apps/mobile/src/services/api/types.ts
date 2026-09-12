@@ -4,6 +4,8 @@ import type {
   LifecycleCommand,
   SearchRequest,
   SearchResponse,
+  PlaceDecideRequest,
+  PlaceDecideResponse,
   SavedReferenceCreateRequest,
   SavedReferenceCreateResponse,
   SavedReferenceDeleteRequest,
@@ -120,6 +122,11 @@ export type JourneyApiClient = {
     input: SavedReferenceCreateRequest,
     options?: ApiRequestOptions,
   ) => Promise<ApiResult<SavedReferenceCreateResponse>>;
+  readonly decidePlace: (
+    threadId: string,
+    input: PlaceDecideRequest,
+    options?: ApiRequestOptions,
+  ) => Promise<ApiResult<PlaceDecideResponse>>;
   readonly deleteSavedReference: (
     savedPlaceRef: string,
     input: SavedReferenceDeleteRequest,

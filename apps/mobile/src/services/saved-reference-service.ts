@@ -70,9 +70,15 @@ export type SavedReferenceRefreshResult =
 export type SavedReferenceServiceOptions = {
   readonly api: Pick<
     JourneyApiClient,
-    'createSavedReference' | 'deleteSavedReference' | 'refreshSavedReference'
+    | 'createSavedReference'
+    | 'decidePlace'
+    | 'deleteSavedReference'
+    | 'refreshSavedReference'
   >;
-  readonly sqlite: Pick<SqliteStore, 'savePlace' | 'listSavedPlaces' | 'deleteSavedPlace'>;
+  readonly sqlite: Pick<
+    SqliteStore,
+    'savePlace' | 'listSavedPlaces' | 'deleteSavedPlace' | 'markDecided'
+  >;
   readonly requestIdFactory: () => string;
   /**
    * The host changes this scope when a new thread or revision becomes active and returns null
@@ -81,8 +87,18 @@ export type SavedReferenceServiceOptions = {
   readonly currentScope: () => SavedReferenceScope | null;
 };
 
+export type SavedReferenceDecideResult =
+  | {
+      readonly status: 'decided';
+      readonly localSavedEntryId: LocalSavedEntryId;
+      readonly serverSavedPlaceRef: ServerSavedPlaceRef;
+      readonly decidedAt: string;
+    }
+  | SavedReferenceFailure;
+
 export type SavedReferenceService = {
   readonly save: (input: SavedReferenceSaveInput) => Promise<SavedReferenceSaveResult>;
+  readonly decide: (input: SavedReferenceSaveInput) => Promise<SavedReferenceDecideResult>;
   readonly remove: (input: SavedReferenceDeleteInput) => Promise<SavedReferenceDeleteResult>;
   readonly refresh: (input: SavedReferenceRefreshInput) => Promise<SavedReferenceRefreshResult>;
 };
@@ -208,6 +224,72 @@ export const createSavedReferenceService = (
     };
   };
 
+  const decide = async (input: SavedReferenceSaveInput): Promise<SavedReferenceDecideResult> => {
+    if (!canPersistOwnerScopedReference(input.referenceRetention)) {
+      return failure('retention_denied');
+    }
+    const before = preflight(input.signal, input.scope, options.currentScope);
+    if (before !== null) return before;
+    const requestId = requestIdFor(options.requestIdFactory);
+    if (requestId === null) return failure('invalid_input');
+
+    let result: Awaited<ReturnType<SavedReferenceServiceOptions['api']['decidePlace']>>;
+    try {
+      result = await options.api.decidePlace(
+        input.scope.threadId,
+        {
+          schemaVersion: 'v1',
+          requestId,
+          candidateId: input.candidateId,
+          revision: input.scope.revision,
+          idempotencyKey: input.idempotencyKey,
+        },
+        apiOptions(input.signal),
+      );
+    } catch {
+      return failure('api');
+    }
+    if (!result.ok) return mapApiFailure(result.error);
+    if (
+      result.data.candidateId !== input.candidateId ||
+      !isServerSavedPlaceRef(result.data.savedPlaceRef)
+    ) {
+      return failure('invalid_input');
+    }
+    const after = preflight(input.signal, input.scope, options.currentScope);
+    if (after !== null) return after;
+
+    let stored: ReturnType<SavedReferenceServiceOptions['sqlite']['savePlace']>;
+    try {
+      stored = options.sqlite.savePlace({
+        serverSavedPlaceRef: result.data.savedPlaceRef,
+        referenceRetention: input.referenceRetention,
+        display: null,
+      });
+    } catch {
+      return failure('storage_unavailable');
+    }
+    if (stored.status === 'rejected') {
+      return failure(stored.reason === 'retention_denied' ? 'retention_denied' : 'invalid_input');
+    }
+    if (stored.place.serverSavedPlaceRef !== result.data.savedPlaceRef) {
+      return failure('invalid_input');
+    }
+    try {
+      if (!options.sqlite.markDecided(stored.place.localSavedEntryId, result.data.decidedAt)) {
+        return failure('storage_unavailable');
+      }
+    } catch {
+      return failure('storage_unavailable');
+    }
+    return {
+      status: 'decided',
+      localSavedEntryId: stored.place.localSavedEntryId,
+      serverSavedPlaceRef: result.data.savedPlaceRef,
+      decidedAt: result.data.decidedAt,
+    };
+  };
+
   const remove = async (input: SavedReferenceDeleteInput): Promise<SavedReferenceDeleteResult> => {
     if (!isServerSavedPlaceRef(input.savedPlaceRef)) return failure('invalid_input');
     const before = preflight(input.signal, input.scope, options.currentScope);
@@ -307,5 +389,5 @@ export const createSavedReferenceService = (
     };
   };
 
-  return { save, remove, refresh };
+  return { save, decide, remove, refresh };
 };

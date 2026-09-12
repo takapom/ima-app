@@ -69,6 +69,7 @@ const serviceFor = (
   save: (input: SavedReferenceSaveInput) => ReturnType<SavedReferenceService['save']>,
 ): SavedReferenceService => ({
   save,
+  decide: () => Promise.resolve({ status: 'failed' as const, reason: 'api' as const }),
   remove: () => Promise.resolve({ status: 'already_deleted' }),
   refresh: () => Promise.resolve({ status: 'failed' as const, reason: 'api' as const }),
 });

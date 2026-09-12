@@ -217,6 +217,7 @@ describe('journey action services', () => {
           serverSavedPlaceRef: null,
         });
       },
+      decideCandidate: () => Promise.resolve({ status: 'failed', reason: 'storage_unavailable' }),
     };
     const hapticCalls: string[] = [];
     const haptics: DecisionHapticsService = {
@@ -244,6 +245,7 @@ describe('journey action services', () => {
   it('reports unavailable storage and haptics without hiding the action result', async () => {
     const storage: JourneyStorageService = {
       saveCandidate: () => Promise.reject(new Error('sqlite not connected')),
+      decideCandidate: () => Promise.reject(new Error('sqlite not connected')),
     };
     const haptics: DecisionHapticsService = {
       decision: () => {

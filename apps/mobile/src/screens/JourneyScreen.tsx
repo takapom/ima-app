@@ -272,8 +272,9 @@ function JourneyScreenStateOwner({
   }, [actions.reset, journey.reset, onNewSearch, savedPlaceUi.reset]);
   const decide = useCallback(
     (candidateId: string): void => {
-      if (!actions.decide(candidateId)) return;
-      journey.decide();
+      void actions.decide(candidateId).then((ok) => {
+        if (ok) journey.decide();
+      });
     },
     [actions.decide, journey.decide],
   );

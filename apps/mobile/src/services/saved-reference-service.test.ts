@@ -106,7 +106,7 @@ const refreshResponseFor = (requestId: string): SavedReferenceRefreshResponse =>
 
 type ApiStub = Pick<
   JourneyApiClient,
-  'createSavedReference' | 'deleteSavedReference' | 'refreshSavedReference'
+  'createSavedReference' | 'decidePlace' | 'deleteSavedReference' | 'refreshSavedReference'
 >;
 
 const apiStub = (
@@ -119,7 +119,24 @@ const apiStub = (
       data: refreshResponseFor('refresh-request'),
       requestId: 'refresh-request',
     }),
-): ApiStub => ({ createSavedReference, deleteSavedReference, refreshSavedReference });
+  decidePlace: JourneyApiClient['decidePlace'] = (threadId, input) =>
+    Promise.resolve({
+      ok: true,
+      data: {
+        schemaVersion: 'v1',
+        requestId: input.requestId,
+        candidateId: input.candidateId,
+        savedPlaceRef: 'saved-ref-1',
+        decidedAt: '2026-09-12T12:00:00.000Z',
+      },
+      requestId: input.requestId,
+    }),
+): ApiStub => ({
+  createSavedReference,
+  decidePlace,
+  deleteSavedReference,
+  refreshSavedReference,
+});
 
 const asLocal = (value: string): LocalSavedEntryId => value as LocalSavedEntryId;
 const asServer = (value: string): ServerSavedPlaceRef => value as ServerSavedPlaceRef;

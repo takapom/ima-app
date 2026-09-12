@@ -111,6 +111,7 @@ const apiWith = (overrides: Partial<JourneyApiClient> = {}): JourneyApiClient =>
   lifecycle: unexpectedApiCall,
   deleteThread: unexpectedApiCall,
   createSavedReference: unexpectedApiCall,
+  decidePlace: unexpectedApiCall,
   deleteSavedReference: unexpectedApiCall,
   refreshSavedReference: unexpectedApiCall,
   ...overrides,

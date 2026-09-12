@@ -5,11 +5,7 @@ import {
   createNativeJourneyShareService,
   createNativeJourneySourceLinkService,
 } from '../services/journey-native';
-import {
-  triggerDecisionHaptics,
-  type DecisionHapticsResult,
-  type DecisionHapticsService,
-} from '../services/journey-haptics';
+import type { DecisionHapticsService } from '../services/journey-haptics';
 import { createNativeDecisionHapticsService } from '../services/journey-native-haptics';
 import type { JourneyMapOpenResult, JourneyMapService } from '../services/journey-map';
 import {
@@ -42,6 +38,7 @@ import {
   type JourneyOperationToken,
 } from '../state/journey-operation-gate';
 import { createJourneySaveOperationRegistry } from './journey-save-operation';
+import { persistJourneyDecision } from './persist-journey-decision';
 export type JourneyActionServices = {
   readonly map: JourneyMapService;
   readonly share: JourneyShareService;
@@ -71,7 +68,7 @@ export type JourneyActionsController = {
   readonly notice: JourneyActionNotice | null;
   readonly sourceLinkService: JourneySourceLinkService;
   readonly promote: (candidateId: string) => void;
-  readonly decide: (candidateId: string) => boolean;
+  readonly decide: (candidateId: string) => Promise<boolean>;
   readonly save: (card: PublicCard) => Promise<void>;
   readonly skipTonight: (candidateId: string) => void;
   readonly recover: (candidateId: string) => RecoverIntent | null;
@@ -93,10 +90,6 @@ const rejectionText = (reason: string): string => {
   if (reason === 'candidate_not_decided') return '決定した候補を確認してください。';
   return '検索語を確認してもう一度試してください。';
 };
-const hapticsText = (result: DecisionHapticsResult): JourneyActionNotice | null =>
-  result.status === 'performed'
-    ? null
-    : { tone: 'info', text: '決定しました。触覚フィードバックは利用できません。' };
 export const createDefaultJourneyActionServices = (
   resolveDestination: Parameters<typeof createNativeJourneyMapService>[0] = () => null,
 ): JourneyActionServices & { readonly sourceLink: JourneySourceLinkService } => ({
@@ -238,33 +231,44 @@ export const useJourneyActions = ({
     [applyPure, onPromote],
   );
   const decide = useCallback(
-    (candidateId: string): boolean => {
-      if (applyPure({ type: 'decide', candidateId }) === null) return false;
-      setNotice({ tone: 'success', text: 'この候補に決めました。' });
-      const generation = operationGeneration.current;
-      const token = currentOperationToken();
-      void triggerDecisionHaptics(services.haptics)
-        .then((result) => {
-          if (
-            !isCurrentOperation(generation) ||
-            !canCommitJourneyNotice(currentOperationToken(), token)
-          ) {
-            return;
-          }
-          const hapticNotice = hapticsText(result);
-          if (hapticNotice !== null) setNotice(hapticNotice);
-        })
-        .catch(() => {
-          if (
-            isCurrentOperation(generation) &&
-            canCommitJourneyNotice(currentOperationToken(), token)
-          ) {
-            setNotice({ tone: 'info', text: '決定しました。触覚フィードバックは利用できません。' });
-          }
-        });
-      return true;
+    async (candidateId: string): Promise<boolean> => {
+      const card =
+        responseCards === null
+          ? undefined
+          : responseCards.hero.candidateId === candidateId
+            ? responseCards.hero
+            : responseCards.alts.find((item) => item.candidateId === candidateId);
+      return persistJourneyDecision({
+        candidateId,
+        contextKey,
+        mounted: mounted.current,
+        activeContextKey: contextRef.current,
+        card,
+        saveOperations,
+        storage: services.storage,
+        haptics: services.haptics,
+        generation: operationGeneration.current,
+        isCurrentOperation,
+        currentOperationToken,
+        applyDecide: (id) => applyPure({ type: 'decide', candidateId: id }) !== null,
+        rejectMissing: () => reject('candidate_not_found'),
+        setNotice,
+        bumpNoticeToken: () => {
+          noticeToken.current += 1;
+        },
+      });
     },
-    [applyPure, currentOperationToken, isCurrentOperation, services.haptics],
+    [
+      contextKey,
+      currentOperationToken,
+      isCurrentOperation,
+      applyPure,
+      reject,
+      responseCards,
+      saveOperations,
+      services.haptics,
+      services.storage,
+    ],
   );
   const skipTonight = useCallback(
     (candidateId: string): void => {

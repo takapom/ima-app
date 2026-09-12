@@ -40,7 +40,9 @@ export type NativeJourneyPersistenceStorage = Pick<
   SqliteStore,
   'listThreads' | 'readPreferences' | 'savePreferences'
 > &
-  Partial<Pick<SqliteStore, 'listSavedPlaces' | 'savePlace' | 'deleteSavedPlace'>>;
+  Partial<
+    Pick<SqliteStore, 'listSavedPlaces' | 'savePlace' | 'deleteSavedPlace' | 'markDecided'>
+  >;
 
 export type NativeJourneyPersistenceSnapshot = {
   readonly scope: string | null;

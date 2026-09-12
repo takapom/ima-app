@@ -18,7 +18,9 @@ import type { SqliteStore } from './sqlite/types';
 import type { JourneyConditions } from '../state/journey-input';
 
 export type OwnerPrefsSqlite = Pick<SqliteStore, 'readPreferences' | 'savePreferences'> &
-  Partial<Pick<SqliteStore, 'listSavedPlaces' | 'savePlace' | 'deleteSavedPlace'>>;
+  Partial<
+    Pick<SqliteStore, 'listSavedPlaces' | 'savePlace' | 'deleteSavedPlace' | 'markDecided'>
+  >;
 
 export type OwnerPrefsHydrateResult = {
   readonly prefs: 'synced' | 'stale';
@@ -152,11 +154,12 @@ export const createOwnerPrefsProjection = (
   };
 
   const hydrateSaved = async (): Promise<'synced' | 'failed'> => {
-    const { listSavedPlaces, savePlace, deleteSavedPlace } = options.sqlite;
+    const { listSavedPlaces, savePlace, deleteSavedPlace, markDecided } = options.sqlite;
     if (
       listSavedPlaces === undefined ||
       savePlace === undefined ||
-      deleteSavedPlace === undefined
+      deleteSavedPlace === undefined ||
+      markDecided === undefined
     ) {
       return 'failed';
     }
@@ -189,6 +192,18 @@ export const createOwnerPrefsProjection = (
           referenceRetention: retention,
           display: null,
         });
+      }
+      const decided = listed.data.decided ?? [];
+      const byRef = new Map(
+        listSavedPlaces()
+          .filter((place) => place.serverSavedPlaceRef !== null)
+          .map((place) => [place.serverSavedPlaceRef, place.localSavedEntryId]),
+      );
+      for (const entry of decided) {
+        if (!isServerSavedPlaceRef(entry.savedPlaceRef)) continue;
+        const localId = byRef.get(entry.savedPlaceRef);
+        if (localId === undefined) continue;
+        markDecided(localId, entry.decidedAt);
       }
       return 'synced';
     } catch {

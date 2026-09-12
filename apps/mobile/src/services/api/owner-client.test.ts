@@ -81,6 +81,7 @@ describe('owner prefs API client', () => {
         schemaVersion: 'v1',
         requestId: 'generated-request',
         savedPlaceRefs: ['saved-1', 'saved-2'],
+        decided: [],
       },
     });
     await expect(
