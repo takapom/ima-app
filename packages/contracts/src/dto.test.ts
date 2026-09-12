@@ -78,7 +78,6 @@ const card = {
   facts: { identity },
   why: message,
 };
-
 const searchRequest = {
   schemaVersion: 'v1',
   requestId: 'request-1',
@@ -107,7 +106,6 @@ const searchRequest = {
   mode: 'search',
   idempotencyKey: 'idem-1',
 };
-
 describe('public display and HTTP DTOs', () => {
   it('requires renderable card facts and evidence', () => {
     expect(v.safeParse(CardsDataSchema, { hero: card, alts: [] }).success).toBe(true);
@@ -127,7 +125,6 @@ describe('public display and HTTP DTOs', () => {
       }).success,
     ).toBe(false);
   });
-
   it('keeps details and photos public-safe and strict', () => {
     expect(
       v.safeParse(PublicPlaceDetailsDataSchema, {
@@ -164,7 +161,6 @@ describe('public display and HTTP DTOs', () => {
       }).success,
     ).toBe(false);
   });
-
   it('rejects impossible dates, intervals, transfers, and non-finite measurements', () => {
     expect(
       v.safeParse(OpeningIntervalSchema, {
@@ -491,5 +487,14 @@ describe('public display and HTTP DTOs', () => {
     expect(RouteContracts.turn.path).toBe('/v1/threads/:threadId/turns');
     expect(RouteContracts.resume.path).toBe('/v1/threads/:threadId/resume');
     expect(RouteContracts.savedReferenceRefresh.path).toBe('/v1/saved/:savedPlaceRef/refresh');
+    expect(RouteContracts.prefsRead.path).toBe('/v1/prefs');
+    expect(RouteContracts.prefsRead.method).toBe('GET');
+    expect(RouteContracts.prefsRead.successStatus).toBe(200);
+    expect(RouteContracts.prefsWrite.path).toBe('/v1/prefs');
+    expect(RouteContracts.prefsWrite.method).toBe('PUT');
+    expect(RouteContracts.prefsWrite.successStatus).toBe(200);
+    expect(RouteContracts.savedReferenceList.path).toBe('/v1/saved');
+    expect(RouteContracts.savedReferenceList.method).toBe('GET');
+    expect(RouteContracts.savedReferenceList.successStatus).toBe(200);
   });
 });

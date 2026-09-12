@@ -28,6 +28,7 @@ import type { AssistantCardsResponse, AssistantMessageResponse, ParseResult } fr
 import type { CreateThreadResponse } from './preferences';
 import type { CreateThreadRequest, SearchRequest, ThreadTurnRequest } from './preferences';
 import type { RetentionMetadata } from './public';
+import { OwnerHttpRouteContracts } from './owner-http';
 import {
   SavedReferenceCreateRequestSchema,
   SavedReferenceCreateResponseSchema,
@@ -352,6 +353,7 @@ export const RouteContracts = {
     response: PhotoBinaryRouteResponseSchema,
     successStatus: 200,
   },
+  ...OwnerHttpRouteContracts,
   savedReferenceRefresh: {
     method: 'GET',
     path: '/v1/saved/:savedPlaceRef/refresh',
