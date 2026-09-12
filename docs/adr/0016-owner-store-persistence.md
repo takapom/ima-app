@@ -19,6 +19,7 @@ Port の操作:
 
 - prefs: `readPrefs` / `putPrefs`（revision CAS）
 - saved: `listSaved` / `register` / `read` / `remove` / `replay`（既存 saved 操作）
+- decide: `decide`（identity upsert + decidedAt。店の中身は置かない）
 
 正の置き場:
 

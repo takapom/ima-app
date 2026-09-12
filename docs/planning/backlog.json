@@ -1406,5 +1406,31 @@
     "deliverables": "apps/mobile services",
     "completion_rule": "各コミット追加＋削除2,000行以内。手書き500行。実機E2Eは完了条件にしない。",
     "package_ownership": "apps/mobile"
+  },
+  {
+    "key": "M39",
+    "title": "decideをOwnerDOに残し端末は投影にする",
+    "phase": "バックエンド",
+    "dependencies": ["M37"],
+    "why": "これに決めたが画面メモリだけだと決めた店の履歴が作れない。",
+    "scope": [
+      "OwnerStore.decide で identity upsert と decidedAt を残す。payload は置かない",
+      "POST /v1/threads/:threadId/decided。GET /v1/saved に decided を足す",
+      "mobile は API 成功後に SQLite markDecided。起動 hydrate で投影"
+    ],
+    "acceptance": [
+      "未保存の候補でも decide できる",
+      "eviction 後も decidedAt が残る",
+      "異 owner に漏れない",
+      "同じ冪等キーは replay",
+      "実機 E2E は完了条件にしない"
+    ],
+    "references": [
+      "docs/adr/0016-owner-store-persistence.md",
+      "https://github.com/takapom/ima-app/issues/40"
+    ],
+    "deliverables": "packages/contracts、workers/api OwnerStore、apps/mobile decide 経路",
+    "completion_rule": "各コミット追加＋削除2,000行以内。手書き500行。D1は置かない。",
+    "package_ownership": "packages/contracts・workers/api・apps/mobile"
   }
 ]

@@ -412,6 +412,15 @@
       "dependencies": [
         38
       ]
+    },
+    {
+      "key": "M39",
+      "number": 40,
+      "url": "https://github.com/takapom/ima-app/issues/40",
+      "title": "[M39] decideをOwnerDOに残し端末は投影にする",
+      "dependencies": [
+        38
+      ]
     }
   ]
 }

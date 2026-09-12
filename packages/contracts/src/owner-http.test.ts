@@ -5,6 +5,8 @@ import {
   parsePrefsReadResponse,
   parsePrefsWriteRequest,
   parsePrefsWriteResponse,
+  parsePlaceDecideRequest,
+  parsePlaceDecideResponse,
   parseSavedReferenceListRequest,
   parseSavedReferenceListResponse,
 } from './owner-http';
@@ -60,7 +62,28 @@ describe('owner HTTP contracts', () => {
     expect(parsePrefsWriteRequest(writeRequest)).toEqual({ success: true, data: writeRequest });
     expect(parsePrefsWriteResponse(writeResponse)).toEqual({ success: true, data: writeResponse });
     expect(parseSavedReferenceListRequest({})).toEqual({ success: true, data: {} });
-    expect(parseSavedReferenceListResponse(savedList)).toEqual({ success: true, data: savedList });
+    expect(parseSavedReferenceListResponse(savedList)).toEqual({
+      success: true,
+      data: { ...savedList, decided: [] },
+    });
+    expect(
+      parsePlaceDecideRequest({
+        schemaVersion: 'v1',
+        requestId: 'request-1',
+        candidateId: 'candidate-1',
+        revision: 1,
+        idempotencyKey: 'decide-1',
+      }).success,
+    ).toBe(true);
+    expect(
+      parsePlaceDecideResponse({
+        schemaVersion: 'v1',
+        requestId: 'request-1',
+        candidateId: 'candidate-1',
+        savedPlaceRef: 'saved-1',
+        decidedAt: '2026-09-12T12:00:00.000Z',
+      }).success,
+    ).toBe(true);
     expect(
       parseSavedReferenceListResponse({ ...savedList, savedPlaceRefs: refs(50) }).success,
     ).toBe(true);
@@ -120,5 +143,8 @@ describe('owner HTTP contracts', () => {
     expect(OwnerHttpRouteContracts.savedReferenceList.method).toBe('GET');
     expect(OwnerHttpRouteContracts.savedReferenceList.path).toBe('/v1/saved');
     expect(OwnerHttpRouteContracts.savedReferenceList.successStatus).toBe(200);
+    expect(OwnerHttpRouteContracts.placeDecide.method).toBe('POST');
+    expect(OwnerHttpRouteContracts.placeDecide.path).toBe('/v1/threads/:threadId/decided');
+    expect(OwnerHttpRouteContracts.placeDecide.successStatus).toBe(201);
   });
 });

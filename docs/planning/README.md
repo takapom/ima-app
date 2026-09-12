@@ -109,3 +109,4 @@ Cloudflare側へ実行管理を集約しThinkを先に検証、不適合ならAI
 | [M36 / #37](https://github.com/takapom/ima-app/issues/37) | 保守 | 製品経路の品質を残し重複試験・死コード・フロント層を刈る | [M29 / #30](https://github.com/takapom/ima-app/issues/30) |
 | [M37 / #38](https://github.com/takapom/ima-app/issues/38) | バックエンド | OwnerStore Portでprefs/savedの正をowner DOに集約する | [M16 / #17](https://github.com/takapom/ima-app/issues/17), [M31 / #32](https://github.com/takapom/ima-app/issues/32) |
 | [M38 / #39](https://github.com/takapom/ima-app/issues/39) | フロント | 端末SQLiteのprefs/savedをOwnerStoreの投影にする | [M37 / #38](https://github.com/takapom/ima-app/issues/38) |
+| [M39 / #40](https://github.com/takapom/ima-app/issues/40) | バックエンド | decideをOwnerDOに残し端末は投影にする | [M37 / #38](https://github.com/takapom/ima-app/issues/38) |

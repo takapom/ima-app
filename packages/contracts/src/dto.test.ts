@@ -496,5 +496,8 @@ describe('public display and HTTP DTOs', () => {
     expect(RouteContracts.savedReferenceList.path).toBe('/v1/saved');
     expect(RouteContracts.savedReferenceList.method).toBe('GET');
     expect(RouteContracts.savedReferenceList.successStatus).toBe(200);
+    expect(RouteContracts.placeDecide.path).toBe('/v1/threads/:threadId/decided');
+    expect(RouteContracts.placeDecide.method).toBe('POST');
+    expect(RouteContracts.placeDecide.successStatus).toBe(201);
   });
 });
