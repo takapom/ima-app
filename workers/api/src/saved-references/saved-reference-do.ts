@@ -1,6 +1,8 @@
 import { DurableObject } from 'cloudflare:workers';
 import * as v from 'valibot';
 import { OpaqueIdSchema, Text } from '@ima/core';
+import { createOwnerPrefsStore, type OwnerPrefsStore } from './prefs-store';
+import { listDurableSavedReferences } from './saved-reference-list';
 import {
   createDurableSavedReferenceStore,
   type DurableSavedReferenceStore,
@@ -10,6 +12,9 @@ import type {
   SavedReferenceOwnerInitResult,
   SavedReferenceOwnerOperationFailure,
   SavedReferenceRpcDeleteResult,
+  SavedReferenceRpcListResult,
+  SavedReferenceRpcPrefsPutResult,
+  SavedReferenceRpcPrefsReadResult,
   SavedReferenceRpcReadResult,
   SavedReferenceRpcRegistrationResult,
   SavedReferenceRpcReplayResult,
@@ -22,6 +27,9 @@ export type {
   SavedReferenceNamespace,
   SavedReferenceOwnerInitResult,
   SavedReferenceRpcDeleteResult,
+  SavedReferenceRpcListResult,
+  SavedReferenceRpcPrefsPutResult,
+  SavedReferenceRpcPrefsReadResult,
   SavedReferenceRpcReadResult,
   SavedReferenceRpcRegistrationResult,
   SavedReferenceRpcReplayResult,
@@ -40,6 +48,11 @@ type OwnerRow = {
   readonly owner_scope_ref: string;
 };
 
+type SavedReferenceStores = {
+  readonly identity: DurableSavedReferenceStore;
+  readonly prefs: OwnerPrefsStore;
+};
+
 const parseOwner = (value: unknown): string | undefined => {
   const parsed = v.safeParse(OpaqueIdSchema, value);
   return parsed.success ? parsed.output : undefined;
@@ -54,7 +67,7 @@ const createReferenceIds = () => ({
  * ThreadDO; deleting a thread must not delete this object's identity rows.
  */
 export class SavedReferenceDO extends DurableObject {
-  private readonly ready: Promise<DurableSavedReferenceStore>;
+  private readonly ready: Promise<SavedReferenceStores>;
 
   constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
     super(ctx, env);
@@ -66,7 +79,10 @@ export class SavedReferenceDO extends DurableObject {
             owner_scope_ref TEXT NOT NULL
           )
         `);
-        return createDurableSavedReferenceStore(ctx.storage, createReferenceIds());
+        return {
+          identity: createDurableSavedReferenceStore(ctx.storage, createReferenceIds()),
+          prefs: createOwnerPrefsStore(ctx.storage),
+        };
       }),
     );
   }
@@ -113,12 +129,12 @@ export class SavedReferenceDO extends DurableObject {
     input: unknown,
     options?: SavedReferenceOperationOptions,
   ): Promise<SavedReferenceRpcRegistrationResult> {
-    const store = await this.ready;
+    const { identity } = await this.ready;
     const owner = this.ownerForOperation(ownerScopeRef);
     if (typeof owner !== 'string') return owner;
     const parsed = v.safeParse(SavedReferenceIdentitySchema, input);
     if (!parsed.success) return { ok: false, code: 'INVALID_INPUT' };
-    return store.register({ ownerScopeRef: owner, ...parsed.output }, options);
+    return identity.register({ ownerScopeRef: owner, ...parsed.output }, options);
   }
 
   async replay(
@@ -126,17 +142,17 @@ export class SavedReferenceDO extends DurableObject {
     idempotencyKey: unknown,
     idempotencyFingerprint: unknown,
   ): Promise<SavedReferenceRpcReplayResult> {
-    const store = await this.ready;
+    const { identity } = await this.ready;
     const owner = this.ownerForOperation(ownerScopeRef);
     if (typeof owner !== 'string') return owner;
-    return store.replay(owner, idempotencyKey, idempotencyFingerprint);
+    return identity.replay(owner, idempotencyKey, idempotencyFingerprint);
   }
 
   async read(ownerScopeRef: unknown, savedPlaceRef: unknown): Promise<SavedReferenceRpcReadResult> {
-    const store = await this.ready;
+    const { identity } = await this.ready;
     const owner = this.ownerForOperation(ownerScopeRef);
     if (typeof owner !== 'string') return owner;
-    return store.read(owner, savedPlaceRef);
+    return identity.read(owner, savedPlaceRef);
   }
 
   async remove(
@@ -144,9 +160,30 @@ export class SavedReferenceDO extends DurableObject {
     savedPlaceRef: unknown,
     options?: SavedReferenceOperationOptions,
   ): Promise<SavedReferenceRpcDeleteResult> {
-    const store = await this.ready;
+    const { identity } = await this.ready;
     const owner = this.ownerForOperation(ownerScopeRef);
     if (typeof owner !== 'string') return owner;
-    return store.remove(owner, savedPlaceRef, options);
+    return identity.remove(owner, savedPlaceRef, options);
+  }
+
+  async readPrefs(ownerScopeRef: unknown): Promise<SavedReferenceRpcPrefsReadResult> {
+    const { prefs } = await this.ready;
+    const owner = this.ownerForOperation(ownerScopeRef);
+    if (typeof owner !== 'string') return owner;
+    return prefs.read();
+  }
+
+  async putPrefs(ownerScopeRef: unknown, input: unknown): Promise<SavedReferenceRpcPrefsPutResult> {
+    const { prefs } = await this.ready;
+    const owner = this.ownerForOperation(ownerScopeRef);
+    if (typeof owner !== 'string') return owner;
+    return prefs.put(input);
+  }
+
+  async listSaved(ownerScopeRef: unknown): Promise<SavedReferenceRpcListResult> {
+    await this.ready;
+    const owner = this.ownerForOperation(ownerScopeRef);
+    if (typeof owner !== 'string') return owner;
+    return { ok: true, references: listDurableSavedReferences(this.ctx.storage, owner) };
   }
 }

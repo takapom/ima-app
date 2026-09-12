@@ -1,6 +1,11 @@
 import { OpaqueIdSchema } from '@ima/core';
 import * as v from 'valibot';
 import type {
+  OwnerPrefsPutResult,
+  OwnerPrefsReadResult,
+  OwnerSavedListResult,
+} from './owner-store';
+import type {
   SavedReferenceDeleteResult,
   SavedReferenceOperationOptions,
   SavedReferenceReadResult,
@@ -27,6 +32,12 @@ export type SavedReferenceRpcDeleteResult =
   SavedReferenceDeleteResult | SavedReferenceOwnerOperationFailure;
 export type SavedReferenceRpcReplayResult =
   SavedReferenceReplayResult | SavedReferenceOwnerOperationFailure;
+export type SavedReferenceRpcPrefsReadResult =
+  OwnerPrefsReadResult | SavedReferenceOwnerOperationFailure;
+export type SavedReferenceRpcPrefsPutResult =
+  OwnerPrefsPutResult | SavedReferenceOwnerOperationFailure;
+export type SavedReferenceRpcListResult =
+  OwnerSavedListResult | SavedReferenceOwnerOperationFailure;
 
 /** RPC methods exposed by the saved-reference Durable Object stub. */
 export type SavedReferenceDOStub = DurableObjectStub & {
@@ -50,6 +61,12 @@ export type SavedReferenceDOStub = DurableObjectStub & {
     savedPlaceRef: unknown,
     options?: SavedReferenceOperationOptions,
   ) => Promise<SavedReferenceRpcDeleteResult>;
+  readonly readPrefs: (ownerScopeRef: unknown) => Promise<SavedReferenceRpcPrefsReadResult>;
+  readonly putPrefs: (
+    ownerScopeRef: unknown,
+    input: unknown,
+  ) => Promise<SavedReferenceRpcPrefsPutResult>;
+  readonly listSaved: (ownerScopeRef: unknown) => Promise<SavedReferenceRpcListResult>;
 };
 
 /** Structural binding type kept free of the Durable Object class module. */
