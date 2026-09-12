@@ -1354,5 +1354,57 @@
     "deliverables": "workers/api tests/support、packages/core、apps/mobile、ADR0012部分更新",
     "completion_rule": "各コミット追加＋削除2,000行以内。手書き500行。画面・E2Eは完了条件にしない。",
     "package_ownership": "workers/api・packages/core・packages/eval・apps/mobile・docs/adr"
+  },
+  {
+    "key": "M37",
+    "title": "OwnerStore Portでprefs/savedの正をowner DOに集約する",
+    "phase": "バックエンド",
+    "dependencies": ["M16", "M31"],
+    "why": "残す個人データの正が端末SQLiteとSavedReferenceDOに割れている。HTTPがDO stubに直結するとD1へ差し替えできない。",
+    "scope": [
+      "ADR0016: owner DOが残すデータの正。OwnerStore Portはworkers/api所有。Coreに置かない",
+      "メモリAdapterと既存SavedReferenceDO Adapter。D1 Adapterは置かない",
+      "prefs CASとsaved list/register/read/remove/replay。HTTP GET/PUT /v1/prefs と GET /v1/saved",
+      "検索bodyのprefsは今夜の上書き。initializeはAdapterが隠す",
+      "bootstrap/routerは500行を超えないよう切り出す"
+    ],
+    "acceptance": [
+      "HTTP/ApplicationがOwnerStoreだけを呼ぶ。namespace生成はbootstrapの1箇所",
+      "メモリでCAS・異owner・listを検証。DO eviction後にprefsとidentityが残る",
+      "GET/PUT prefsとGET savedの契約テスト。既存saved create/delete/refreshが同等",
+      "D1 bindingなし。class renameなし。本文を保存しない"
+    ],
+    "references": [
+      "docs/adr/0016-owner-store-persistence.md",
+      "https://github.com/takapom/ima-app/issues/38"
+    ],
+    "deliverables": "docs/adr、packages/contracts、workers/api OwnerStoreとHTTP",
+    "completion_rule": "各コミット追加＋削除2,000行以内。手書き500行。D1とmobile投影は完了条件にしない。",
+    "package_ownership": "docs/adr・packages/contracts・workers/api"
+  },
+  {
+    "key": "M38",
+    "title": "端末SQLiteのprefs/savedをOwnerStoreの投影にする",
+    "phase": "フロント",
+    "dependencies": ["M37"],
+    "why": "端末SQLiteが保存済み条件と一覧の正のままではADR0016と二重になる。",
+    "scope": [
+      "GET/PUT /v1/prefs と GET /v1/saved をmobile clientへ",
+      "保存はサーバー成功後にSQLite投影。起動時GETで上書き",
+      "今夜だけの条件編集はOwnerStoreを更新しない。station_labelは端末のみ"
+    ],
+    "acceptance": [
+      "保存後の再読込でサーバー値が勝つ",
+      "SQLiteだけ変えても次のGETでサーバーが勝つ",
+      "未保存の今夜編集はprefs PUTしない",
+      "既存create/deleteの端末反映を壊さない"
+    ],
+    "references": [
+      "docs/adr/0016-owner-store-persistence.md",
+      "https://github.com/takapom/ima-app/issues/39"
+    ],
+    "deliverables": "apps/mobile services",
+    "completion_rule": "各コミット追加＋削除2,000行以内。手書き500行。実機E2Eは完了条件にしない。",
+    "package_ownership": "apps/mobile"
   }
 ]

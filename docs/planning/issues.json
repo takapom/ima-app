@@ -393,6 +393,25 @@
       "dependencies": [
         30
       ]
+    },
+    {
+      "key": "M37",
+      "number": 38,
+      "url": "https://github.com/takapom/ima-app/issues/38",
+      "title": "[M37] OwnerStore Portでprefs/savedの正をowner DOに集約する",
+      "dependencies": [
+        17,
+        32
+      ]
+    },
+    {
+      "key": "M38",
+      "number": 39,
+      "url": "https://github.com/takapom/ima-app/issues/39",
+      "title": "[M38] 端末SQLiteのprefs/savedをOwnerStoreの投影にする",
+      "dependencies": [
+        38
+      ]
     }
   ]
 }

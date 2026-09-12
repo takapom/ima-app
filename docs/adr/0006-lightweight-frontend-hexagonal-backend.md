@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Superseded in part by:** [0012](./0012-package-dependency-boundaries.md)（Coreを独立packageへ、公開契約をcontractsへ配置。軽量フロント/ヘキサゴナルの責務は維持）
+- **Superseded in part by:** [0016](./0016-owner-store-persistence.md)（保存は出力Portを維持。実装を OwnerStore Port 経由にする）
 - **Date:** 2026-09-08
 - **Deciders:** プロダクトオーナー（本議論）
 - **Supersedes (in part):** [0004](./0004-modular-monolith.md) の内部の技術レイヤ構成、[0005](./0005-layer-responsibilities.md) の一律の上から下への依存規則

@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Superseded in part by:** [0006](./0006-lightweight-frontend-hexagonal-backend.md)（フロントの簡素化とバックエンドの依存方向。最新の責務は0006を参照）
+- **Superseded in part by:** [0016](./0016-owner-store-persistence.md)（リストと条件の正は端末。残すデータの正は owner 単位の Durable Object）
 - **Date:** 2026-09-07
 - **Deciders:** プロダクトオーナー（本議論）
 - **Tags:** architecture, coupling
