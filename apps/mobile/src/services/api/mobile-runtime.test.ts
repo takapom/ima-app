@@ -159,6 +159,8 @@ describe('mobile journey runtime composition', () => {
     expect(runtime.mode).toBe('fixture');
     expect(runtime.binding).not.toBeNull();
     expect(runtime.reason).toBeNull();
+    expect(runtime.ownerClient).toBeDefined();
+    expect(typeof runtime.requestIdFactory).toBe('function');
     expect(
       createMobileJourneyRuntime({ env: { ...baseEnv, EXPO_PUBLIC_ENVIRONMENT: 'production' } }),
     ).toMatchObject({ mode: 'unconfigured', reason: 'fixture_requires_dev' });

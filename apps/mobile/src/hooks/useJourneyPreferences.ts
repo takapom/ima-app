@@ -36,13 +36,15 @@ export type UseJourneyPreferencesResult = {
   /** The last attempted write, including a failure when persistence did not succeed. */
   readonly saveResult: JourneyPreferencesSaveResult | null;
   /** Persists only through the injected settings service; callers choose saved scope. */
-  readonly saveSavedConditions: (conditions: JourneyConditions) => JourneyPreferencesSaveResult;
+  readonly saveSavedConditions: (
+    conditions: JourneyConditions,
+  ) => Promise<JourneyPreferencesSaveResult>;
   /** Validates and persists a saved-scope edit before the caller updates its shell state. */
   readonly applyConditionChange: (
     scope: ConditionScope,
     currentSavedConditions: JourneyConditions,
     changes: Partial<JourneyConditions>,
-  ) => JourneyPreferencesChangeResult;
+  ) => Promise<JourneyPreferencesChangeResult>;
   readonly conditionNotice: string | null;
   /** Changes when the host-owned service or fallback changes, for shell remounting. */
   readonly sourceKey: string;
@@ -138,10 +140,11 @@ export const useJourneyPreferences = (
           },
     [initialBudget, initialMaxWalkMinutes, initialStationLabel, initialStationSupport],
   );
-  const readResult = useMemo(
-    () => readSafely(options.service, fallback),
-    [fallback, options.service],
-  );
+  const [hydrateGeneration, setHydrateGeneration] = useState(0);
+  const readResult = useMemo(() => {
+    const result = readSafely(options.service, fallback);
+    return hydrateGeneration >= 0 ? result : result;
+  }, [fallback, hydrateGeneration, options.service]);
   const sourceRef = useRef<{
     readonly service: JourneyPreferencesService | undefined;
     readonly fallback: JourneyConditions;
@@ -167,11 +170,27 @@ export const useJourneyPreferences = (
     setConditionNotice(null);
   }, [readResult]);
 
+  useEffect(() => {
+    const hydrate = options.service?.hydrate;
+    if (hydrate === undefined) return;
+    let cancelled = false;
+    void hydrate()
+      .then(() => {
+        if (!cancelled) setHydrateGeneration((current) => current + 1);
+      })
+      .catch(() => {
+        if (!cancelled) setHydrateGeneration((current) => current + 1);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [options.service]);
+
   const saveSavedConditions = useCallback(
-    (conditions: JourneyConditions): JourneyPreferencesSaveResult => {
+    async (conditions: JourneyConditions): Promise<JourneyPreferencesSaveResult> => {
       let result: JourneyPreferencesSaveResult;
       try {
-        result = options.service?.save(conditions) ?? saveFailure();
+        result = await Promise.resolve(options.service?.save(conditions) ?? saveFailure());
       } catch {
         result = saveFailure();
       }
@@ -191,27 +210,46 @@ export const useJourneyPreferences = (
   );
 
   const applyConditionChange = useCallback(
-    (
+    async (
       scope: ConditionScope,
       currentSavedConditions: JourneyConditions,
       changes: Partial<JourneyConditions>,
-    ): JourneyPreferencesChangeResult => {
-      const transition = journeyPreferenceTransitionFor(
-        scope,
-        currentSavedConditions,
-        changes,
-        options.service === undefined ? undefined : saveSavedConditions,
-      );
-      const result = transition.result;
-      if (scope === 'saved' && result.applied) {
+    ): Promise<JourneyPreferencesChangeResult> => {
+      const shouldPersist =
+        scope === 'saved' &&
+        options.service !== undefined &&
+        hasPersistedJourneyPreferenceChange(changes);
+      if (!shouldPersist) {
+        const transition = journeyPreferenceTransitionFor(
+          scope,
+          currentSavedConditions,
+          changes,
+          undefined,
+        );
+        if (scope === 'saved' && transition.result.applied) {
+          setState({
+            source: readResult,
+            savedConditions: transition.savedConditions,
+            saveResult: transition.result.saveResult,
+          });
+        }
+        setConditionNotice(transition.result.notice);
+        return transition.result;
+      }
+      const result = await saveSavedConditions({ ...currentSavedConditions, ...changes });
+      const change: JourneyPreferencesChangeResult =
+        result.status === 'failed'
+          ? { applied: false, saveResult: result, notice: saveFailureNotice }
+          : { applied: true, saveResult: result, notice: null };
+      if (change.applied) {
         setState({
           source: readResult,
-          savedConditions: transition.savedConditions,
-          saveResult: result.saveResult,
+          savedConditions: { ...currentSavedConditions, ...changes },
+          saveResult: change.saveResult,
         });
       }
-      setConditionNotice(result.notice);
-      return result;
+      setConditionNotice(change.notice);
+      return change;
     },
     [options.service, readResult, saveSavedConditions],
   );
@@ -224,6 +262,6 @@ export const useJourneyPreferences = (
     saveSavedConditions,
     applyConditionChange,
     conditionNotice: sourceChanged ? null : conditionNotice,
-    sourceKey: `preferences-${sourceVersion.current}`,
+    sourceKey: `preferences-${sourceVersion.current}-${hydrateGeneration}`,
   };
 };

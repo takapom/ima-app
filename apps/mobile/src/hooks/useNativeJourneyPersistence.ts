@@ -41,6 +41,8 @@ export const useNativeJourneyPersistence = (
   const controller = runtime?.binding?.controller;
   const scope = runtime?.storageScope ?? null;
   const subscribeForeground = options.subscribeForeground ?? subscribeNativeForeground;
+  const ownerClient = runtime?.ownerClient;
+  const requestIdFactory = runtime?.requestIdFactory;
   const persistence = useMemo(
     () =>
       createNativeJourneyPersistence({
@@ -49,9 +51,20 @@ export const useNativeJourneyPersistence = (
         ...(options.now === undefined ? {} : { now: options.now }),
         ...(subscribeForeground === undefined ? {} : { subscribeForeground }),
         ...(options.scheduler === undefined ? {} : { scheduler: options.scheduler }),
+        ...(ownerClient === undefined ? {} : { ownerClient }),
+        ...(requestIdFactory === undefined ? {} : { requestIdFactory }),
         scope,
       }),
-    [controller, options.now, options.scheduler, scope, sqlite, subscribeForeground],
+    [
+      controller,
+      options.now,
+      options.scheduler,
+      ownerClient,
+      requestIdFactory,
+      scope,
+      sqlite,
+      subscribeForeground,
+    ],
   );
   const snapshot = useSyncExternalStore(
     persistence.subscribe,

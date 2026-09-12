@@ -1,4 +1,6 @@
 export { createJourneyApiClient } from './client';
+export { createOwnerPrefsClient } from './owner-client';
+export type { OwnerPrefsClient } from './owner-client';
 export { parseSavedReferenceRefreshResponse } from './saved-reference-refresh';
 export type { SavedReferenceRefreshResponse } from './saved-reference-refresh';
 export { createJourneyPhotoClient } from './photo-client';

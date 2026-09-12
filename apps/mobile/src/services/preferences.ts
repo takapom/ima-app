@@ -13,6 +13,7 @@ export type JourneyPreferencesReadResult =
       readonly status: 'available';
       readonly source: 'stored' | 'default';
       readonly conditions: JourneyConditions;
+      readonly stale?: true;
     }
   | {
       readonly status: 'unavailable';
@@ -28,12 +29,20 @@ export type JourneyPreferencesSaveResult =
     }
   | {
       readonly status: 'failed';
-      readonly reason: 'storage_unavailable' | 'invalid_input';
+      readonly reason: 'storage_unavailable' | 'invalid_input' | 'api';
     };
+
+export type JourneyPreferencesLocalService = {
+  readonly read: (fallback?: JourneyConditions) => JourneyPreferencesReadResult;
+  readonly save: (conditions: JourneyConditions) => JourneyPreferencesSaveResult;
+};
 
 export type JourneyPreferencesService = {
   readonly read: (fallback?: JourneyConditions) => JourneyPreferencesReadResult;
-  readonly save: (conditions: JourneyConditions) => JourneyPreferencesSaveResult;
+  readonly save: (
+    conditions: JourneyConditions,
+  ) => JourneyPreferencesSaveResult | Promise<JourneyPreferencesSaveResult>;
+  readonly hydrate?: () => Promise<unknown>;
 };
 
 const emptyPreferences = (): Preferences => ({
@@ -92,7 +101,7 @@ const preferencesFor = (
   stationLabel: conditions.stationLabel,
 });
 
-const validConditions = (conditions: JourneyConditions): boolean =>
+export const isValidJourneyConditions = (conditions: JourneyConditions): boolean =>
   typeof conditions.stationLabel === 'string' &&
   conditions.stationLabel.length <= MAX_STATION_LABEL_LENGTH &&
   (conditions.maxWalkMinutes === null ||
@@ -122,7 +131,7 @@ const publicPreferencesFor = (preferences: StoredPreferences): Preferences => ({
 
 export const createJourneyPreferencesService = (
   storage?: JourneyPreferencesStorage,
-): JourneyPreferencesService => {
+): JourneyPreferencesLocalService => {
   const read = (fallback?: JourneyConditions): JourneyPreferencesReadResult => {
     const base = fallbackFor(fallback);
     if (storage === undefined) {
@@ -141,7 +150,7 @@ export const createJourneyPreferencesService = (
   };
 
   const save = (conditions: JourneyConditions): JourneyPreferencesSaveResult => {
-    if (!validConditions(conditions)) return { status: 'failed', reason: 'invalid_input' };
+    if (!isValidJourneyConditions(conditions)) return { status: 'failed', reason: 'invalid_input' };
     if (storage === undefined) return { status: 'failed', reason: 'storage_unavailable' };
     try {
       const persisted = storage.readPreferences();

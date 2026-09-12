@@ -6,9 +6,12 @@ import {
   type JourneyHistoryResult,
   type JourneyHistoryService,
 } from './journey-history';
-import { createJourneyPreferencesService, type JourneyPreferencesService } from './preferences';
-import type { SqliteStore } from './sqlite/types';
+import type { OwnerPrefsClient } from './api/owner-client';
 import type { JourneyApiController } from './api/journey-controller-types';
+import { createOwnerPrefsProjection } from './owner-prefs-projection';
+import { createJourneyPreferencesService, type JourneyPreferencesService } from './preferences';
+import { createRuntimeId } from './runtime-id';
+import type { SqliteStore } from './sqlite/types';
 
 export type NativeJourneyPersistenceScheduler = {
   readonly schedule: (callback: () => void, delayMilliseconds: number) => unknown;
@@ -28,12 +31,16 @@ export type NativeJourneyPersistenceOptions = {
   readonly scheduler?: NativeJourneyPersistenceScheduler;
   /** Opaque verified scope used to reject stale snapshots when a host switches owners. */
   readonly scope?: string | null;
+  /** OwnerStore HTTP client; when present, SQLite prefs/saved are a projection. */
+  readonly ownerClient?: OwnerPrefsClient;
+  readonly requestIdFactory?: () => string;
 };
 
 export type NativeJourneyPersistenceStorage = Pick<
   SqliteStore,
   'listThreads' | 'readPreferences' | 'savePreferences'
->;
+> &
+  Partial<Pick<SqliteStore, 'listSavedPlaces' | 'savePlace' | 'deleteSavedPlace'>>;
 
 export type NativeJourneyPersistenceSnapshot = {
   readonly scope: string | null;
@@ -149,7 +156,17 @@ export const createNativeJourneyPersistence = (
   const now = options.now ?? nativeNow;
   const scheduler = options.scheduler ?? nativeScheduler;
   const historyService = createJourneyHistoryService(sqlite === undefined ? {} : { sqlite });
-  const preferences = sqlite === undefined ? undefined : createJourneyPreferencesService(sqlite);
+  const preferences: JourneyPreferencesService | undefined =
+    sqlite === undefined
+      ? undefined
+      : options.ownerClient === undefined
+        ? createJourneyPreferencesService(sqlite)
+        : createOwnerPrefsProjection({
+            api: options.ownerClient,
+            sqlite,
+            requestIdFactory: options.requestIdFactory ?? (() => createRuntimeId('request')),
+            now,
+          });
   const listeners = new Set<() => void>();
   let snapshot = snapshotFor(scope, sqlite === undefined ? unavailableHistory() : null);
   let active = false;
@@ -236,6 +253,9 @@ export const createNativeJourneyPersistence = (
       if (active && activationGeneration === generation) refresh();
     };
     refresh();
+    if (preferences?.hydrate !== undefined) {
+      void preferences.hydrate().catch(() => undefined);
+    }
     if (sqlite !== undefined && options.controller !== undefined) {
       try {
         unsubscribeController = options.controller.subscribe(refreshForGeneration);

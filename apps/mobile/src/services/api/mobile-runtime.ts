@@ -23,6 +23,7 @@ import {
   type JourneyLocalRestorePort,
 } from './journey-controller';
 import { createJourneyApiClient } from './client';
+import { createOwnerPrefsClient, type OwnerPrefsClient } from './owner-client';
 import { createJourneyPhotoClient } from './photo-client';
 import { createRuntimeId } from '../runtime-id';
 import { createSavedReferenceJourneyStorage, type JourneyStorageService } from '../journey-storage';
@@ -49,6 +50,8 @@ export type MobileJourneyRuntime = {
   readonly mode: MobileJourneyRuntimeMode;
   readonly binding: JourneyApiControllerBinding | null;
   readonly reason: MobileJourneyRuntimeReason | null;
+  readonly ownerClient?: OwnerPrefsClient;
+  readonly requestIdFactory?: () => string;
 };
 
 export type MobileJourneySavedReferenceOptions = {
@@ -404,6 +407,7 @@ export const createMobileJourneyRuntime = (
     ...(options.fetchImpl === undefined ? {} : { fetchImpl: options.fetchImpl }),
   } as const;
   const api = createJourneyApiClient(clientOptions);
+  const ownerClient = createOwnerPrefsClient(clientOptions);
   const controller = createJourneyApiController({
     api,
     clock: now,
@@ -420,6 +424,8 @@ export const createMobileJourneyRuntime = (
   return {
     mode: selected.mode,
     reason: null,
+    ownerClient,
+    requestIdFactory,
     binding: {
       controller,
       photoClient,

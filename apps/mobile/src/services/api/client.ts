@@ -29,8 +29,8 @@ import { buildApiUrl, credentialHeaders, parseRetryAfter, timeoutFor } from './r
 import { issueResult, parserFor, readJson, type ResponseSpec } from './response';
 
 type ResponseParser<T> = (input: unknown) => ParseResult<T>;
-type RequestSpec<T> = ResponseSpec<T> & {
-  readonly method: 'GET' | 'POST' | 'DELETE';
+export type ApiRequestSpec<T> = ResponseSpec<T> & {
+  readonly method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   readonly path: string;
   readonly body?: unknown;
   readonly expectedStatus: number;
@@ -49,11 +49,11 @@ const invalidResult = <T>(error: ApiError): ApiResult<T> => ({
 const nextRevision = (revision: number): number =>
   revision >= Number.MAX_SAFE_INTEGER ? Number.MAX_SAFE_INTEGER : revision + 1;
 
-export const createJourneyApiClient = (options: ApiClientOptions): JourneyApiClient => {
+export const createApiRequester = (options: ApiClientOptions) => {
   const fetchImpl: ApiFetch = options.fetchImpl ?? fetch;
 
-  const request = async <T>(
-    spec: RequestSpec<T>,
+  return async <T>(
+    spec: ApiRequestSpec<T>,
     requestOptions: ApiRequestOptions = {},
   ): Promise<ApiResult<T>> => {
     const timeoutMs = timeoutFor(requestOptions.timeoutMs, options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
@@ -165,6 +165,10 @@ export const createJourneyApiClient = (options: ApiClientOptions): JourneyApiCli
     }
     return fetchOutcome.value;
   };
+};
+
+export const createJourneyApiClient = (options: ApiClientOptions): JourneyApiClient => {
+  const request = createApiRequester(options);
 
   const checkedThreadPath = (threadId: string): ApiResult<{ readonly threadId: string }> => {
     const parsed = parseThreadPath({ threadId });

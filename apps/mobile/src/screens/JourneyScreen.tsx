@@ -300,17 +300,18 @@ function JourneyScreenStateOwner({
   );
   const changeConditions = useCallback(
     (scope: ConditionScope, changes: Partial<JourneyConditions>): void => {
-      const result = persistedPreferences.applyConditionChange(
-        scope,
-        persistedPreferences.savedConditions,
-        changes,
-      );
-      if (!result.applied) return;
-      journey.updateConditions(
-        scope,
-        scope === 'saved' ? { ...persistedPreferences.savedConditions, ...changes } : changes,
-      );
-      onConditionsChange?.(scope, changes);
+      const savedConditions = persistedPreferences.savedConditions;
+      void persistedPreferences
+        .applyConditionChange(scope, savedConditions, changes)
+        .then((result) => {
+          if (!result.applied) return;
+          journey.updateConditions(
+            scope,
+            scope === 'saved' ? { ...savedConditions, ...changes } : changes,
+          );
+          onConditionsChange?.(scope, changes);
+        })
+        .catch(() => undefined);
     },
     [
       journey.updateConditions,
