@@ -18,6 +18,7 @@ export type MatchedRoute =
   | { readonly kind: 'saved_reference_refresh'; readonly path: SavedReferencePath }
   | { readonly kind: 'saved_reference_create'; readonly path: ThreadPath }
   | { readonly kind: 'saved_reference_delete'; readonly path: SavedReferencePath }
+  | { readonly kind: 'place_decide'; readonly path: ThreadPath }
   | { readonly kind: 'events' }
   | { readonly kind: 'turn'; readonly path: ThreadPath }
   | { readonly kind: 'read_thread'; readonly path: ThreadPath }
@@ -161,6 +162,11 @@ export const matchRoute = (request: Request): MatchResult => {
   if (request.method === 'POST' && third === 'saved' && segments.length === 4) {
     return url.search.length === 0
       ? { ok: true, route: { kind: 'saved_reference_create', path } }
+      : { ok: false, failure: invalidArgument() };
+  }
+  if (request.method === 'POST' && third === 'decided' && segments.length === 4) {
+    return url.search.length === 0
+      ? { ok: true, route: { kind: 'place_decide', path } }
       : { ok: false, failure: invalidArgument() };
   }
   if (request.method === 'GET' && segments.length === 3) {

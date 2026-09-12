@@ -1,6 +1,7 @@
 import { OpaqueIdSchema } from '@ima/core';
 import * as v from 'valibot';
 import type {
+  OwnerDecideResult,
   OwnerPrefsPutResult,
   OwnerPrefsReadResult,
   OwnerSavedListResult,
@@ -38,6 +39,7 @@ export type SavedReferenceRpcPrefsPutResult =
   OwnerPrefsPutResult | SavedReferenceOwnerOperationFailure;
 export type SavedReferenceRpcListResult =
   OwnerSavedListResult | SavedReferenceOwnerOperationFailure;
+export type SavedReferenceRpcDecideResult = OwnerDecideResult | SavedReferenceOwnerOperationFailure;
 
 /** RPC methods exposed by the saved-reference Durable Object stub. */
 export type SavedReferenceDOStub = DurableObjectStub & {
@@ -67,6 +69,11 @@ export type SavedReferenceDOStub = DurableObjectStub & {
     input: unknown,
   ) => Promise<SavedReferenceRpcPrefsPutResult>;
   readonly listSaved: (ownerScopeRef: unknown) => Promise<SavedReferenceRpcListResult>;
+  readonly decide: (
+    ownerScopeRef: unknown,
+    input: unknown,
+    options?: SavedReferenceOperationOptions,
+  ) => Promise<SavedReferenceRpcDecideResult>;
 };
 
 /** Structural binding type kept free of the Durable Object class module. */

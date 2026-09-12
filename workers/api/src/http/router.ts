@@ -6,8 +6,6 @@ import {
   EventsRequestSchema,
   LifecycleCommandSchema,
   LifecycleResponseSchema,
-  SavedReferenceCreateRequestSchema,
-  SavedReferenceCreateResponseSchema,
   SavedReferenceDeleteRequestSchema,
   SavedReferenceResponseSchema,
   SearchRequestSchema,
@@ -32,6 +30,7 @@ import type { AppIntegrityGate } from '../security/app-integrity';
 import { authorizeAppIntegrity } from '../security/app-integrity-http';
 import { handleAppIntegrityHttpRoute, isAppIntegrityHttpRoute } from './app-integrity-routes';
 import { handleOwnerHttpRoute, isOwnerHttpRoute } from './owner-routes';
+import { handleThreadPlaceWriteRoute, isThreadPlaceWriteRoute } from './thread-place-routes';
 import { ensurePhotoResponse } from './photo-route';
 import { rateLimitedResponse } from './rate-limit-response';
 
@@ -338,33 +337,18 @@ const routeAuthorized = async (
       config,
     );
   }
-  if (route.kind === 'saved_reference_create') {
-    const threadScopeFailure = await checkResource(
-      auth.ownerScopeRef,
-      { kind: 'thread', id: route.path.threadId },
-      config,
-    );
-    if (threadScopeFailure !== null) return toErrorResponse(requestId, threadScopeFailure);
-    const body = await bodyFailure(
+  if (isThreadPlaceWriteRoute(route)) {
+    return handleThreadPlaceWriteRoute({
+      route,
       request,
-      SavedReferenceCreateRequestSchema,
+      auth,
+      application: config.handlers.application,
+      serverNow,
       maxBodyBytes,
-      requestId,
-    );
-    if (!body.ok) return body.response;
-    const aborted = cancellationResponse(requestId, request);
-    if (aborted !== null) return aborted;
-    const integrityResponse = await checkIntegrity(body.rawBody);
-    if (integrityResponse !== null) return integrityResponse;
-    return ensureApplicationResponse(
-      { kind: 'saved_reference_create', path: route.path, input: body.value },
-      'saved_reference_create',
-      SavedReferenceCreateResponseSchema,
-      201,
-      requestId,
-      makeContext(request, auth, serverNow),
-      config,
-    );
+      checkResource: (ownerScopeRef, threadId) =>
+        checkResource(ownerScopeRef, { kind: 'thread', id: threadId }, config),
+      checkIntegrity,
+    });
   }
   const threadFailure = await checkResource(
     auth.ownerScopeRef,

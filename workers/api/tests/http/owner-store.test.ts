@@ -128,9 +128,9 @@ describe('memory owner store saved references', () => {
     const read = await store.read(OWNER_A, created.reference.savedPlaceRef);
 
     expect(created).toMatchObject({ ok: true, created: true });
-    expect(listed).toEqual({ ok: true, references: [created.reference] });
+    expect(listed).toEqual({ ok: true, references: [created.reference], decided: [] });
     expect(removed).toEqual({ ok: true, deleted: true });
-    expect(afterRemove).toEqual({ ok: true, references: [] });
+    expect(afterRemove).toEqual({ ok: true, references: [], decided: [] });
     expect(read).toEqual({ ok: true, reference: null });
   });
 
@@ -143,8 +143,8 @@ describe('memory owner store saved references', () => {
     const listB = await store.listSaved(OWNER_B);
     const crossRead = await store.read(OWNER_A, b.reference.savedPlaceRef);
 
-    expect(listA).toEqual({ ok: true, references: [a.reference] });
-    expect(listB).toEqual({ ok: true, references: [b.reference] });
+    expect(listA).toEqual({ ok: true, references: [a.reference], decided: [] });
+    expect(listB).toEqual({ ok: true, references: [b.reference], decided: [] });
     expect(crossRead).toEqual({ ok: true, reference: null });
   });
 
@@ -158,6 +158,7 @@ describe('memory owner store saved references', () => {
     expect(await store.listSaved(OWNER_A)).toEqual({
       ok: true,
       references: [first.reference],
+      decided: [],
     });
   });
 
@@ -194,5 +195,51 @@ describe('memory owner store saved references', () => {
     expect(listed.references[0]?.savedPlaceRef).toBe('saved-1');
     expect(listed.references[49]?.savedPlaceRef).toBe('saved-50');
     expect(overflow.reference?.savedPlaceRef).toBe('saved-51');
+  });
+
+  it('records a decision on identity and restores it on list', async () => {
+    const store = storeWithIds('saved-decided');
+    const decidedAt = '2026-09-12T12:00:00.000Z';
+    const decided = await store.decide(OWNER_A, {
+      ...identity('ChIJdecided'),
+      decidedAt,
+    });
+    const listed = await store.listSaved(OWNER_A);
+    const replayed = await store.decide(
+      OWNER_A,
+      { ...identity('ChIJdecided'), decidedAt: '2026-09-12T13:00:00.000Z' },
+      { idempotencyKey: 'decide-1', idempotencyFingerprint: 'fp-1' },
+    );
+    const sameKey = await store.decide(
+      OWNER_A,
+      { ...identity('ChIJdecided'), decidedAt: '2026-09-12T13:00:00.000Z' },
+      { idempotencyKey: 'decide-1', idempotencyFingerprint: 'fp-1' },
+    );
+    const conflict = await store.decide(
+      OWNER_A,
+      { ...identity('ChIJother'), decidedAt },
+      { idempotencyKey: 'decide-1', idempotencyFingerprint: 'fp-other' },
+    );
+
+    expect(decided).toMatchObject({
+      ok: true,
+      created: true,
+      replayed: false,
+      decidedAt,
+    });
+    expect(listed).toEqual({
+      ok: true,
+      references: decided.ok ? [decided.reference] : [],
+      decided: decided.ok
+        ? [{ savedPlaceRef: decided.reference.savedPlaceRef, decidedAt }]
+        : [],
+    });
+    expect(replayed).toMatchObject({ ok: true, created: false, replayed: false });
+    expect(sameKey).toMatchObject({
+      ok: true,
+      replayed: true,
+      decidedAt: '2026-09-12T13:00:00.000Z',
+    });
+    expect(conflict).toEqual({ ok: false, code: 'IDEMPOTENCY_CONFLICT' });
   });
 });

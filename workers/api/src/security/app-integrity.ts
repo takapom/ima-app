@@ -25,6 +25,7 @@ export type AppIntegrityRoute =
   | 'saved_reference_refresh'
   | 'saved_reference_create'
   | 'saved_reference_delete'
+  | 'place_decide'
   | 'turn'
   | 'create_thread'
   | 'read_thread'

@@ -35,9 +35,44 @@ export type OwnerPrefsPutResult =
   | { readonly ok: true; readonly revision: number; readonly replayed: boolean }
   | { readonly ok: false; readonly code: 'INVALID_INPUT' | 'REVISION_CONFLICT' };
 
+export type OwnerDecidedPlace = {
+  readonly savedPlaceRef: string;
+  readonly decidedAt: string;
+};
+
 export type OwnerSavedListResult =
-  | { readonly ok: true; readonly references: readonly SavedPlaceReference[] }
+  | {
+      readonly ok: true;
+      readonly references: readonly SavedPlaceReference[];
+      readonly decided: readonly OwnerDecidedPlace[];
+    }
   | { readonly ok: false; readonly code: 'INVALID_INPUT' };
+
+export type OwnerDecideInput = {
+  readonly provider: string;
+  readonly recordRef: string;
+  readonly decidedAt: string;
+};
+
+export type OwnerDecideResult =
+  | {
+      readonly ok: true;
+      readonly created: boolean;
+      readonly replayed: boolean;
+      readonly reference: SavedPlaceReference;
+      readonly decidedAt: string;
+    }
+  | {
+      readonly ok: false;
+      readonly code:
+        | 'INVALID_INPUT'
+        | 'IDEMPOTENCY_CONFLICT'
+        | 'REFERENCE_CONFLICT'
+        | 'CORRUPT_ROW'
+        | 'INVALID_GENERATED_ID'
+        | 'FORBIDDEN'
+        | 'OWNER_NOT_INITIALIZED';
+    };
 
 export type OwnerRegisterResult =
   | SavedReferenceRegistrationResult
@@ -54,6 +89,11 @@ export type OwnerStore = {
     input: OwnerPrefsPutInput,
   ) => Promise<OwnerPrefsPutResult>;
   readonly listSaved: (ownerScopeRef: string) => Promise<OwnerSavedListResult>;
+  readonly decide: (
+    ownerScopeRef: string,
+    input: OwnerDecideInput,
+    options?: SavedReferenceOperationOptions,
+  ) => Promise<OwnerDecideResult>;
   readonly register: (
     ownerScopeRef: string,
     input: { readonly provider: string; readonly recordRef: string },

@@ -104,8 +104,8 @@ describe('durable OwnerStore adapter', () => {
     const afterRemove = await cold.listSaved(ownerA);
 
     expect(created).toMatchObject({ ok: true, created: true });
-    expect(listedA).toEqual({ ok: true, references: [created.reference] });
-    expect(listedB).toEqual({ ok: true, references: [other.reference] });
+    expect(listedA).toEqual({ ok: true, references: [created.reference], decided: [] });
+    expect(listedB).toEqual({ ok: true, references: [other.reference], decided: [] });
     expect(created.reference).toEqual({
       savedPlaceRef: created.reference.savedPlaceRef,
       ownerScopeRef: ownerA,
@@ -113,8 +113,12 @@ describe('durable OwnerStore adapter', () => {
       recordRef: 'ChIJm37-list-a',
     });
     expect(removed).toEqual({ ok: true, deleted: true });
-    expect(afterRemove).toEqual({ ok: true, references: [] });
-    expect(await cold.listSaved(ownerB)).toEqual({ ok: true, references: [other.reference] });
+    expect(afterRemove).toEqual({ ok: true, references: [], decided: [] });
+    expect(await cold.listSaved(ownerB)).toEqual({
+      ok: true,
+      references: [other.reference],
+      decided: [],
+    });
   });
 
   it('returns an empty list for an uninitialized owner', async () => {
@@ -122,6 +126,7 @@ describe('durable OwnerStore adapter', () => {
     expect(await store.listSaved(ownerFor('list-empty'))).toEqual({
       ok: true,
       references: [],
+      decided: [],
     });
   });
 
@@ -134,5 +139,25 @@ describe('durable OwnerStore adapter', () => {
       code: 'INVALID_INPUT',
     });
     expect(await store.listSaved(invalidOwner)).toEqual({ ok: false, code: 'INVALID_INPUT' });
+  });
+
+  it('restores a decision after Durable Object eviction', async () => {
+    const owner = ownerFor('decide-evict');
+    const namespace = savedNamespace();
+    const store = createDurableOwnerStore(namespace);
+    const decidedAt = '2026-09-12T12:00:00.000Z';
+    const decided = await store.decide(owner, {
+      ...identity('ChIJm39-decide'),
+      decidedAt,
+    });
+    if (!decided.ok) throw new Error('expected decide to succeed');
+
+    await evictDurableObject(namespace.getByName(savedReferenceOwnerName(owner)));
+    const restored = await createDurableOwnerStore(namespace).listSaved(owner);
+    expect(restored).toEqual({
+      ok: true,
+      references: [decided.reference],
+      decided: [{ savedPlaceRef: decided.reference.savedPlaceRef, decidedAt }],
+    });
   });
 });

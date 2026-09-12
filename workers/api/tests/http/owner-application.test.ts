@@ -128,15 +128,73 @@ describe('owner application', () => {
 
     expect(empty).toEqual({
       kind: 'saved_reference_list',
-      response: { schemaVersion: 'v1', requestId: REQUEST_ID, savedPlaceRefs: [] },
+      response: { schemaVersion: 'v1', requestId: REQUEST_ID, savedPlaceRefs: [], decided: [] },
     });
     expect(registered).toMatchObject({ ok: true, created: true });
     expect(listed).toEqual({
       kind: 'saved_reference_list',
-      response: { schemaVersion: 'v1', requestId: REQUEST_ID, savedPlaceRefs: ['saved-1'] },
+      response: {
+        schemaVersion: 'v1',
+        requestId: REQUEST_ID,
+        savedPlaceRefs: ['saved-1'],
+        decided: [],
+      },
     });
     expect(JSON.stringify(listed)).not.toContain('google_places');
     expect(JSON.stringify(listed)).not.toContain('ChIJ-owner-app');
+  });
+
+  it('decides a candidate through OwnerStore using serverNow', async () => {
+    const store = createMemoryOwnerStore({
+      nextSavedPlaceRef: () => 'saved-decided',
+    });
+    const result = await handleOwnerApplication(
+      {
+        kind: 'place_decide',
+        path: { threadId: 'thread-1' },
+        input: {
+          schemaVersion: 'v1',
+          requestId: REQUEST_ID,
+          candidateId: 'candidate-1',
+          revision: 1,
+          idempotencyKey: 'decide-1',
+        },
+      },
+      contextFor(),
+      deps(store, () =>
+        Promise.resolve({
+          ok: true,
+          candidateId: 'candidate-1',
+          provider: 'google_places',
+          recordRef: 'ChIJ-decide',
+        }),
+      ),
+    );
+    const listed = await handleOwnerApplication(
+      { kind: 'saved_reference_list' },
+      contextFor(),
+      deps(store),
+    );
+
+    expect(result).toEqual({
+      kind: 'place_decide',
+      response: {
+        schemaVersion: 'v1',
+        requestId: REQUEST_ID,
+        candidateId: 'candidate-1',
+        savedPlaceRef: 'saved-decided',
+        decidedAt: '2026-09-12T12:00:00Z',
+      },
+    });
+    expect(listed).toEqual({
+      kind: 'saved_reference_list',
+      response: {
+        schemaVersion: 'v1',
+        requestId: REQUEST_ID,
+        savedPlaceRefs: ['saved-decided'],
+        decided: [{ savedPlaceRef: 'saved-decided', decidedAt: '2026-09-12T12:00:00Z' }],
+      },
+    });
   });
 
   it('returns provider unavailable when OwnerStore is missing', async () => {

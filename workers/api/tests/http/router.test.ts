@@ -114,6 +114,20 @@ describe('HTTP router boundary', () => {
         expected: { kind: 'saved_reference_create', path: { threadId }, input: { requestId } },
       },
       {
+        name: 'place-decide',
+        path: '/v1/threads/thread-1/decided',
+        method: 'POST',
+        json: {
+          schemaVersion: 'v1',
+          requestId,
+          candidateId,
+          revision: 1,
+          idempotencyKey: 'decide-1',
+        },
+        status: 201,
+        expected: { kind: 'place_decide', path: { threadId }, input: { requestId } },
+      },
+      {
         name: 'saved-delete',
         path: `/v1/saved/${savedPlaceRef}`,
         method: 'DELETE',
@@ -157,7 +171,7 @@ describe('HTTP router boundary', () => {
       },
     ];
 
-    expect(cases).toHaveLength(18);
+    expect(cases).toHaveLength(19);
     for (const testCase of cases) {
       const harness = makeHarness();
       const response = await routeRequest(

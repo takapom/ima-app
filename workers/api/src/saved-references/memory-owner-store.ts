@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import { PreferencesSchema, type Preferences } from '@ima/contracts';
 import {
+  IsoTimestampSchema,
   OpaqueIdSchema,
   SavedPlaceRefSchema,
   SavedPlaceRegistrationSchema,
@@ -8,6 +9,8 @@ import {
   type SavedPlaceReference,
 } from '@ima/core';
 import type {
+  OwnerDecideInput,
+  OwnerDecideResult,
   OwnerPrefsPutInput,
   OwnerPrefsPutResult,
   OwnerPrefsReadResult,
@@ -37,6 +40,15 @@ type OwnerBucket = {
   readonly references: Map<string, SavedPlaceReference>;
   readonly identity: Map<string, string>;
   readonly operations: Map<string, OperationRecord>;
+  readonly decided: Map<string, string>;
+  readonly decideOperations: Map<
+    string,
+    {
+      readonly fingerprint: string | null;
+      readonly savedPlaceRef: string;
+      readonly decidedAt: string;
+    }
+  >;
 };
 
 const parseOwner = (ownerScopeRef: string): string | undefined => {
@@ -113,6 +125,8 @@ export const createMemoryOwnerStore = (ids?: {
       references: new Map(),
       identity: new Map(),
       operations: new Map(),
+      decided: new Map(),
+      decideOperations: new Map(),
     };
     buckets.set(owner, created);
     return created;
@@ -164,8 +178,18 @@ export const createMemoryOwnerStore = (ids?: {
       const owner = parseOwner(ownerScopeRef);
       if (owner === undefined) return invalidInput;
       const bucket = buckets.get(owner);
-      if (bucket === undefined) return { ok: true, references: [] };
-      return { ok: true, references: [...bucket.references.values()].slice(0, MAX_SAVED_LIST) };
+      if (bucket === undefined) return { ok: true, references: [], decided: [] };
+      const references = [...bucket.references.values()].slice(0, MAX_SAVED_LIST);
+      return {
+        ok: true,
+        references,
+        decided: references.flatMap((reference) => {
+          const decidedAt = bucket.decided.get(reference.savedPlaceRef);
+          return decidedAt === undefined
+            ? []
+            : [{ savedPlaceRef: reference.savedPlaceRef, decidedAt }];
+        }),
+      };
     });
 
   const rememberOperation = (
@@ -353,6 +377,7 @@ export const createMemoryOwnerStore = (ids?: {
       }
       bucket.references.delete(parsed.savedPlaceRef);
       bucket.identity.delete(identityKey(reference.provider, reference.recordRef));
+      bucket.decided.delete(parsed.savedPlaceRef);
       scrubIdentity(bucket, parsed.savedPlaceRef);
       if (idempotencyKey !== null) {
         rememberOperation(bucket, {
@@ -368,5 +393,87 @@ export const createMemoryOwnerStore = (ids?: {
       return { ok: true, deleted: true };
     });
 
-  return { readPrefs, putPrefs, listSaved, register, replay, read, remove };
+  const decide = (
+    ownerScopeRef: string,
+    input: OwnerDecideInput,
+    options?: SavedReferenceOperationOptions,
+  ): Promise<OwnerDecideResult> =>
+    Promise.resolve().then(() => {
+      const owner = parseOwner(ownerScopeRef);
+      const decidedAt = v.safeParse(IsoTimestampSchema, input.decidedAt);
+      if (owner === undefined || !decidedAt.success) return invalidInput;
+      const parsed = v.safeParse(SavedPlaceRegistrationSchema, {
+        ownerScopeRef: owner,
+        provider: input.provider,
+        recordRef: input.recordRef,
+      });
+      if (!parsed.success) return invalidInput;
+      const idempotencyKey = parsedOperationKey(options);
+      if (idempotencyKey === undefined) return invalidInput;
+      const fingerprint = parsedFingerprint(options);
+      if (fingerprint === undefined) return invalidInput;
+      if (idempotencyKey === null && fingerprint !== null) return invalidInput;
+      const bucket = bucketFor(owner);
+      if (idempotencyKey !== null) {
+        const prior = bucket.decideOperations.get(idempotencyKey);
+        if (prior !== undefined) {
+          if (prior.fingerprint !== fingerprint) {
+            return { ok: false, code: 'IDEMPOTENCY_CONFLICT' };
+          }
+          const reference = bucket.references.get(prior.savedPlaceRef);
+          return reference === undefined
+            ? { ok: false, code: 'REFERENCE_CONFLICT' }
+            : {
+                ok: true,
+                created: false,
+                replayed: true,
+                reference,
+                decidedAt: prior.decidedAt,
+              };
+        }
+      }
+      const existingRef = bucket.identity.get(
+        identityKey(parsed.output.provider, parsed.output.recordRef),
+      );
+      let created = false;
+      let reference = existingRef === undefined ? undefined : bucket.references.get(existingRef);
+      if (reference === undefined) {
+        const savedPlaceRef = nextSavedPlaceRef();
+        if (
+          usedRefs.has(savedPlaceRef) ||
+          !v.safeParse(SavedPlaceRefSchema, savedPlaceRef).success
+        ) {
+          return { ok: false, code: 'INVALID_GENERATED_ID' };
+        }
+        const built = referenceFrom({
+          savedPlaceRef,
+          ownerScopeRef: owner,
+          provider: parsed.output.provider,
+          recordRef: parsed.output.recordRef,
+        });
+        if (built === undefined) return { ok: false, code: 'INVALID_GENERATED_ID' };
+        usedRefs.add(savedPlaceRef);
+        bucket.references.set(savedPlaceRef, built);
+        bucket.identity.set(identityKey(built.provider, built.recordRef), savedPlaceRef);
+        reference = built;
+        created = true;
+      }
+      bucket.decided.set(reference.savedPlaceRef, decidedAt.output);
+      if (idempotencyKey !== null) {
+        bucket.decideOperations.set(idempotencyKey, {
+          fingerprint,
+          savedPlaceRef: reference.savedPlaceRef,
+          decidedAt: decidedAt.output,
+        });
+      }
+      return {
+        ok: true,
+        created,
+        replayed: false,
+        reference,
+        decidedAt: decidedAt.output,
+      };
+    });
+
+  return { readPrefs, putPrefs, listSaved, decide, register, replay, read, remove };
 };

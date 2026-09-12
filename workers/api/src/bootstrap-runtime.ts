@@ -295,6 +295,7 @@ export const createRuntimeApplicationHandler = (
       case 'saved_reference_list':
       case 'saved_reference_create':
       case 'saved_reference_delete':
+      case 'place_decide':
         return Promise.reject(internal());
     }
   },

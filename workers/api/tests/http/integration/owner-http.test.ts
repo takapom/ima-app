@@ -119,6 +119,7 @@ describe('owner HTTP through Worker bootstrap', () => {
     expect(listedBody.data).toEqual({
       schemaVersion: 'v1',
       requestId: listId,
+      decided: [],
       savedPlaceRefs: [],
     });
     expect(listedBody.data).not.toHaveProperty('provider');

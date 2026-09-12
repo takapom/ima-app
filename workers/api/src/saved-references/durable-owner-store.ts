@@ -1,6 +1,8 @@
 import * as v from 'valibot';
 import { OpaqueIdSchema } from '@ima/core';
 import type {
+  OwnerDecideInput,
+  OwnerDecideResult,
   OwnerPrefsPutInput,
   OwnerPrefsPutResult,
   OwnerPrefsReadResult,
@@ -16,6 +18,7 @@ import {
   savedReferenceOwnerName,
   type SavedReferenceDOStub,
   type SavedReferenceNamespace,
+  type SavedReferenceRpcDecideResult,
   type SavedReferenceRpcDeleteResult,
   type SavedReferenceRpcListResult,
   type SavedReferenceRpcPrefsPutResult,
@@ -39,7 +42,7 @@ const unexpectedOwnerFailure = (code: string): never => {
 };
 
 const unreadPrefs = (): OwnerPrefsReadResult => ({ ok: true, revision: 0, prefs: null });
-const emptyList = (): OwnerSavedListResult => ({ ok: true, references: [] });
+const emptyList = (): OwnerSavedListResult => ({ ok: true, references: [], decided: [] });
 
 const bindOwner = async (
   stub: SavedReferenceDOStub,
@@ -130,6 +133,33 @@ export const createDurableOwnerStore = (namespace: SavedReferenceNamespace): Own
     return listFromRpc(await stubFor(owner).listSaved(owner));
   };
 
+  const decideFromRpc = (result: SavedReferenceRpcDecideResult): OwnerDecideResult => {
+    if (result.ok) return result;
+    if (result.code === 'INVALID_INPUT') return invalidInput;
+    if (
+      result.code === 'IDEMPOTENCY_CONFLICT' ||
+      result.code === 'REFERENCE_CONFLICT' ||
+      result.code === 'CORRUPT_ROW' ||
+      result.code === 'INVALID_GENERATED_ID'
+    ) {
+      return { ok: false, code: result.code };
+    }
+    return unexpectedOwnerFailure(result.code);
+  };
+
+  const decide = async (
+    ownerScopeRef: string,
+    input: OwnerDecideInput,
+    options?: SavedReferenceOperationOptions,
+  ): Promise<OwnerDecideResult> => {
+    const owner = parseOwner(ownerScopeRef);
+    if (owner === undefined) return invalidInput;
+    const stub = stubFor(owner);
+    const bound = await bindOwner(stub, owner);
+    if (!bound.ok) return bound;
+    return decideFromRpc(await stub.decide(owner, input, options));
+  };
+
   const register = async (
     ownerScopeRef: string,
     input: { readonly provider: string; readonly recordRef: string },
@@ -177,5 +207,5 @@ export const createDurableOwnerStore = (namespace: SavedReferenceNamespace): Own
     return removeFromRpc(await stub.remove(owner, savedPlaceRef, options));
   };
 
-  return { readPrefs, putPrefs, listSaved, register, replay, read, remove };
+  return { readPrefs, putPrefs, listSaved, decide, register, replay, read, remove };
 };

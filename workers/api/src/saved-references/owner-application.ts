@@ -1,6 +1,7 @@
 import type { ApplicationOperation, ApplicationResult, HandlerContext } from '../http/handler';
 import { HttpBoundaryError } from '../http/errors';
 import type {
+  OwnerDecideResult,
   OwnerRegisterResult,
   OwnerStore,
   SavedReferenceDeleteResult,
@@ -15,7 +16,8 @@ export type OwnerApplicationOperation = Extract<
       | 'prefs_write'
       | 'saved_reference_list'
       | 'saved_reference_create'
-      | 'saved_reference_delete';
+      | 'saved_reference_delete'
+      | 'place_decide';
   }
 >;
 
@@ -52,6 +54,7 @@ const ownerStoreFailure = (
     | Extract<OwnerRegisterResult, { readonly ok: false }>['code']
     | Extract<SavedReferenceReplayResult, { readonly ok: false }>['code']
     | Extract<SavedReferenceDeleteResult, { readonly ok: false }>['code']
+    | Extract<OwnerDecideResult, { readonly ok: false }>['code']
     | 'REVISION_CONFLICT',
 ): HttpBoundaryError =>
   new HttpBoundaryError(
@@ -103,7 +106,8 @@ export const isOwnerApplicationOperation = (
   operation.kind === 'prefs_write' ||
   operation.kind === 'saved_reference_list' ||
   operation.kind === 'saved_reference_create' ||
-  operation.kind === 'saved_reference_delete';
+  operation.kind === 'saved_reference_delete' ||
+  operation.kind === 'place_decide';
 
 /** Prefs and saved identity use OwnerStore only; candidate resolution stays a Thread port. */
 export const handleOwnerApplication = async (
@@ -150,6 +154,7 @@ export const handleOwnerApplication = async (
           schemaVersion: 'v1',
           requestId: context.requestId,
           savedPlaceRefs: result.references.map((reference) => reference.savedPlaceRef),
+          decided: [...result.decided],
         },
       };
     }
@@ -209,5 +214,54 @@ export const handleOwnerApplication = async (
       if (!removed.ok) throw ownerStoreFailure(removed.code);
       return { kind: 'saved_reference_delete', response: null };
     }
+    case 'place_decide': {
+      const fingerprint = await decideFingerprint(
+        operation.path.threadId,
+        operation.input.candidateId,
+        operation.input.revision,
+      );
+      const candidate = await dependencies.resolveSavedCandidate({
+        ownerScopeRef: context.ownerScopeRef,
+        threadId: operation.path.threadId,
+        candidateId: operation.input.candidateId,
+        revision: operation.input.revision,
+      });
+      if (!candidate.ok) throw savedCandidateFailure(candidate.code);
+      const decided = await store.decide(
+        context.ownerScopeRef,
+        {
+          provider: candidate.provider,
+          recordRef: candidate.recordRef,
+          decidedAt: context.serverNow,
+        },
+        {
+          idempotencyKey: operation.input.idempotencyKey,
+          idempotencyFingerprint: fingerprint,
+        },
+      );
+      if (!decided.ok) throw ownerStoreFailure(decided.code);
+      return {
+        kind: 'place_decide',
+        response: {
+          schemaVersion: 'v1',
+          requestId: operation.input.requestId,
+          candidateId: operation.input.candidateId,
+          savedPlaceRef: decided.reference.savedPlaceRef,
+          decidedAt: decided.decidedAt,
+        },
+      };
+    }
   }
+};
+
+const decideFingerprint = async (
+  threadId: string,
+  candidateId: string,
+  revision: number,
+): Promise<string> => {
+  const encoded = new TextEncoder().encode(
+    `place-decide\u0000${threadId}\u0000${candidateId}\u0000${revision}`,
+  );
+  const digest = await crypto.subtle.digest('SHA-256', encoded);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 };

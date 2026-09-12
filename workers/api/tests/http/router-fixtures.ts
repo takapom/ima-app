@@ -303,6 +303,17 @@ const applicationResult = (operation: ApplicationOperation): ApplicationResult =
       return { kind: operation.kind, response: savedReferenceCreateResponse };
     case 'saved_reference_delete':
       return { kind: operation.kind, response: null };
+    case 'place_decide':
+      return {
+        kind: operation.kind,
+        response: {
+          schemaVersion: 'v1',
+          requestId,
+          candidateId,
+          savedPlaceRef,
+          decidedAt: now,
+        },
+      };
   }
 };
 

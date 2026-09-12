@@ -14,6 +14,8 @@ import type {
   PrefsReadResponse,
   PrefsWriteRequest,
   PrefsWriteResponse,
+  PlaceDecideRequest,
+  PlaceDecideResponse,
   SavedReferenceCreateRequest,
   SavedReferenceCreateResponse,
   SavedReferenceDeleteRequest,
@@ -80,6 +82,11 @@ export type ApplicationOperation =
       readonly kind: 'saved_reference_delete';
       readonly path: SavedReferencePath;
       readonly input: SavedReferenceDeleteInput;
+    }
+  | {
+      readonly kind: 'place_decide';
+      readonly path: ThreadPath;
+      readonly input: PlaceDecideRequest;
     };
 
 export type ApplicationResult =
@@ -95,7 +102,8 @@ export type ApplicationResult =
   | { readonly kind: 'prefs_write'; readonly response: PrefsWriteResponse }
   | { readonly kind: 'saved_reference_list'; readonly response: SavedReferenceListResponse }
   | { readonly kind: 'saved_reference_create'; readonly response: SavedReferenceCreateOutput }
-  | { readonly kind: 'saved_reference_delete'; readonly response: null };
+  | { readonly kind: 'saved_reference_delete'; readonly response: null }
+  | { readonly kind: 'place_decide'; readonly response: PlaceDecideResponse };
 
 /** Worker-owned adapter boundary; HTTP/SDK/Env objects never cross into the application. */
 export interface ApplicationHandler {
