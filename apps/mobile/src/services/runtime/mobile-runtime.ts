@@ -16,22 +16,22 @@ import type {
   JourneyApiSearchFactoryInput,
   JourneyApiTurnFactoryInput,
   JourneySavedPlacePreviewBinding,
-} from './journey-api-binding';
+} from '../api/journey-api-binding';
 import {
   createJourneyApiController,
   type JourneyApiControllerState,
   type JourneyLocalRestorePort,
-} from './journey-controller';
-import { createJourneyApiClient } from './client';
-import { createOwnerPrefsClient, type OwnerPrefsClient } from './owner-client';
-import { createJourneyPhotoClient } from './photo-client';
+} from '../api/journey-controller';
+import { createJourneyApiClient } from '../api/client';
+import { createOwnerPrefsClient, type OwnerPrefsClient } from '../api/owner-client';
+import { createJourneyPhotoClient } from '../api/photo-client';
 import { createRuntimeId } from '../runtime-id';
 import { createSavedReferenceJourneyStorage, type JourneyStorageService } from '../journey-storage';
 import { createSavedPlaceListService } from '../saved-place-list';
 import { createSavedReferenceService, type SavedReferenceScope } from '../saved-reference-service';
 import type { SqliteStore } from '../sqlite/types';
 import type { LocationService } from '../location/types';
-import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from './api';
+import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from '../api/api';
 import { projectAssistantResponseState } from '../../state/assistant-response-projection';
 
 export type MobileRuntimeEnvironment = Readonly<Record<string, string | undefined>>;

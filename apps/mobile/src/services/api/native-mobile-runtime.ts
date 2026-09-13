@@ -25,7 +25,7 @@ import {
   type MobileJourneyRuntimeReason,
   type MobileRuntimeEnvironment,
   type MobileJourneySavedReferenceOptions,
-} from './mobile-runtime';
+} from '../runtime/mobile-runtime';
 import type { ApiCredentialProvider } from './api';
 import { waitFor, type WaitResult } from '../runtime/native-runtime-deferred';
 import {

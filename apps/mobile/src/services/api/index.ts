@@ -17,14 +17,14 @@ export {
   createMobileJourneyRuntime,
   JourneyApiRequestFactoryError,
   mobileJourneyRuntimeMessage,
-} from './mobile-runtime';
+} from '../runtime/mobile-runtime';
 export type {
   MobileJourneyRuntime,
   MobileJourneyRuntimeMode,
   MobileJourneyRuntimeOptions,
   MobileJourneyRuntimeReason,
   MobileRuntimeEnvironment,
-} from './mobile-runtime';
+} from '../runtime/mobile-runtime';
 export type {
   JourneyApiCancelFactoryInput,
   JourneyApiControllerBinding,

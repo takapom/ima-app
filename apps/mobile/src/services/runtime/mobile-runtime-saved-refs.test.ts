@@ -9,7 +9,7 @@ import type {
 } from '@ima/contracts';
 import type { JourneyApiSubmitContext } from '../api/journey-api-binding';
 import { createJourneyApiController } from '../api/journey-controller';
-import { createJourneyApiRequestFactory } from '../api/mobile-runtime';
+import { createJourneyApiRequestFactory } from './mobile-runtime';
 import type { ApiResult, JourneyApiClient } from '../api/api';
 
 const contextFor = (savedPlaceRefs: readonly string[]): JourneyApiSubmitContext => ({

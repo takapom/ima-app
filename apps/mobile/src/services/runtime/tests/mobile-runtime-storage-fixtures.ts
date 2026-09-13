@@ -5,7 +5,7 @@ import {
   createMobileJourneyRuntime,
   type MobileJourneySavedReferenceOptions,
   type MobileRuntimeEnvironment,
-} from '../../api/mobile-runtime';
+} from '../mobile-runtime';
 import type { ApiFetch } from '../../api/api';
 import { createSqliteStore } from '../../sqlite/store';
 import type { LocalSavedEntryId, SqliteConnection, SqliteValue } from '../../sqlite/types';

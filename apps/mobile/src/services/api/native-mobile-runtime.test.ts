@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { MobileJourneyRuntime } from './mobile-runtime';
+import type { MobileJourneyRuntime } from '../runtime/mobile-runtime';
 import type { JourneyApiControllerBinding } from './journey-api-binding';
 import type { JourneyApiController } from './journey-controller-types';
 import type { NativeSqliteAdapter, NativeSqliteAdapterOptions } from '../sqlite/native';
@@ -19,7 +19,7 @@ import {
 
 const runtimeMock = vi.hoisted(() => ({ create: vi.fn() }));
 
-vi.mock('./mobile-runtime', () => ({
+vi.mock('../runtime/mobile-runtime', () => ({
   createMobileJourneyRuntime: runtimeMock.create,
   mobileJourneyRuntimeMessage: () => null,
 }));
