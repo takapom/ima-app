@@ -10,7 +10,7 @@ description: ima-appのsub-issue実装をmain上で進め、2,000行以内のコ
 ## 着手と作業単位
 
 - main上で作業し、作業ブランチ・PRは作らない。既存変更を保全し、remote・HEAD・未コミット変更を確認する。
-- 対象sub-issue、親/依存Issue、参照ADRを読む。ローカルmanifestは索引とし、GitHubの最新本文・状態を確認する。
+- 対象sub-issue、親/依存Issueと、READMEから参照する現行仕様・アーキテクチャを読む。GitHubの最新本文・状態を確認し、旧資料の参照や古い完了条件は現在のユーザー決定・現行仕様と照合する。
 - 依存実装がmainへ反映され、必要な検証が合格していることを確認する。契約・Fixtureで独立できる部分だけは、未完了依存と境界を明記して進める。
 - 1 sub-issueに複数コミットを紐づけてよい。実装・sub agentへの割り当て前に、変更範囲・依存順・検証条件を決める。
 - sub agentは担当ファイルを分離して実装する。共有契約・ルート設定・lockfileを同時編集させず、主担当だけがstage・commit・pushを直列で行う。
@@ -41,4 +41,4 @@ description: ima-appのsub-issue実装をmain上で進め、2,000行以内のコ
 - 途中のコミットでは `Refs #N` または件名の `(#N)` を使い、`Closes/Fixes/Resolves` による自動Closeを避ける。
 - 全完了条件・必要な検証・GitHubへの反映を確認後、コミットSHA、変更内容、検証結果、別ゲートの未実測をIssueへ記録して閉じる。親#1は子Issueの部分完了で閉じない。
 - 報告はIssue・コミット・検証・未解決事項を簡潔に示す。未pushのコミットをGitHub反映済みとせず、実際のIssue状態を確認する。
-- Issue分割・依存・番号を変更した場合は `docs/planning/issues.json`、`backlog.json`、一覧、親子関係も整合させる。日常の進捗はGitHubで管理する。
+- Issue分割・依存・番号を変更した場合はGitHubの親子関係と依存を整合させる。未決案・進捗・完了状態はGitHubで管理し、ローカルのIssue一覧や進捗文書は作らない。仕様変更は該当する現行文書へ直接反映する。

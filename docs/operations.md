@@ -1,0 +1,101 @@
+# 環境・検証・配布・復旧
+
+## 設定の入口
+
+ローカルの固定データ起動は[開発](development.md#apiキー不要のローカル起動)を参照する。
+実環境の設定名と安全な初期値は[.dev.vars.example](../.dev.vars.example)、[.env.example](../.env.example)、[mobile環境例](../apps/mobile/.env.example)、[Wrangler設定](../workers/api/wrangler.jsonc)、[EAS設定](../apps/mobile/eas.json)で管理する。
+実secret、アカウントID、署名資格は追跡ファイルやコマンド引数へ書かない。Worker secretを端末の公開環境変数へ入れない。
+
+| 区分             | 必要な設定・確認                                                                                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Worker           | `IMA_ENV`、`IMA_RUNTIME_MODE`、`APP_TOKEN`、対象環境のDO binding/migration                                                                                      |
+| モデル           | `OPENAI_API_KEY`。モデル名とProvider optionsは[model設定](../workers/api/src/model/provider-config.ts)と[options](../workers/api/src/model/provider-options.ts) |
+| 店舗・経路・写真 | `GOOGLE_PLACES_API_KEY`、`GOOGLE_ROUTES_API_KEY`、`PLACES_CURSOR_SECRET`、`PHOTO_TOKEN_SECRET`                                                                  |
+| 端末・配布       | HTTPS endpoint、実bundle ID、EAS project、Apple署名、App Attest                                                                                                 |
+| 有効化           | Provider flags、用途別policy、実アカウント・API・課金・許諾の検収                                                                                               |
+
+キーやflagだけで利用可能と判定しない。runtime factoryには能力・用途別policy・写真参照などの注入条件がある。詳細は[アーキテクチャ](architecture.md)と[Providerポリシー](provider-policy.md)を参照する。
+
+## preflightと配布判定
+
+以下はローカル設定の形式を検査する例であり、Workerを起動しない。
+
+```sh
+IMA_ENV=dev IMA_RUNTIME_MODE=fixture APP_TOKEN=local-only-token \
+EXPO_PUBLIC_API_BASE_URL=http://localhost:8787 \
+bun run env:preflight -- --target dev
+```
+
+実環境の設定を秘密管理から渡したうえで、対象を明示する。
+
+```sh
+IMA_PREFLIGHT_BUILD=1 bun run env:preflight -- --target staging
+IMA_PREFLIGHT_DEPLOY=1 bun run env:preflight -- --target staging
+bun scripts/release-preflight.ts --track internal
+bun scripts/release-preflight.ts --track external
+```
+
+`IMA_ENV`も対象に一致させる。環境preflightの終了コードは`0=ready`、`1=blocked`、`2=partial/unverified`。`ready`は値の形式・存在を示すだけで、実アカウント・API・署名の成功ではない。
+[environment-preflight](../scripts/environment-preflight.ts)の`runtimeVerified`と[release-preflight](../scripts/release-preflight.ts)の`releaseAllowed`は現行コードでfalse。変数を設定するだけでは実行・配布の検収を完了できない。
+
+外部配布はApp Attest、実機、EAS成果物、署名、Provider利用条件、検証済み終電データ、プライバシー公開、限定品質範囲を別々に検収する。知人への招待も明示的な許可を必要とする。進捗・証跡は[配布Issue](https://github.com/takapom/ima-app/issues/31)へ記録する。
+
+## 実Provider検証
+
+API有効化・課金・用途別許諾を確認し、対象入力とsecretを環境から渡す。
+`IMA_PROVIDER_LIVE_CONFIRM`、`IMA_PROVIDER_BILLING_CONFIRM`、`IMA_PROVIDER_PERMISSION_CONFIRM`の3つが`YES`であることをrunnerが要求する。
+
+```sh
+bun run workers/api/tooling/provider-smoke/runner.ts --live --json
+```
+
+入力名は`GOOGLE_SMOKE_SEARCH_QUERY`、`GOOGLE_SMOKE_PLACE_ID`、`GOOGLE_SMOKE_PHOTO_REF`、`GOOGLE_SMOKE_ROUTE_ORIGIN_PLACE_ID`、`GOOGLE_SMOKE_ROUTE_DESTINATION_PLACE_ID`、`JOURNEY_DATASET_LIVE_REF`。
+正確な条件は[provider-smoke](../workers/api/tooling/provider-smoke)を参照する。
+終了コード0は実行したlive sourceの契約成功、1は実行失敗、2は不足・skip。経路なしや未設定datasetを合成結果で補わない。operatorの確認宣言は外部アカウントの検収結果とは区別する。
+
+実行日時、対象profile、モデル版、公開schemaの結果、費用、未測定項目を[実接続Issue](https://github.com/takapom/ima-app/issues/36)へ記録する。raw本文・座標・token・secretは証跡へ含めない。
+
+## 実モデル評価
+
+通常のテストとは別の専用poolを使う。`OPENAI_API_KEY`を秘密管理から渡し、有料実行を明示するときだけ次を実行する。
+
+```sh
+MODEL_EVAL_LIVE=1 bunx vitest run --config vitest.model-eval-live.config.ts
+```
+
+[評価runner](../workers/api/tests/model-eval-live)は実モデル＋固定Providerを使うため、実店舗APIの検収ではない。`MODEL_EVAL_LIVE=0`はProvider呼出し前に停止する検証経路であり、実モデル成功に数えない。
+profile・反復・候補identity対応・人手レビューのcoverageを確認する。候補対応の欠落、不正response、未計測費用は未評価または失敗として残し、0や成功で補わない。
+
+## 終電datasetの管理
+
+[JourneyDatasetDO](../workers/api/src/providers/last-train)が固定名`m14-last-train-v1`でactive revisionと履歴を所有する。
+管理入口`/internal/m14/last-train`は通常のowner認証と別の管理credentialを使い、`import`・`update`・`rollback`・`expire`をstrict schemaとrevision CASで実行する。通常のturnから更新しない。
+
+実時刻表を検証してから投入し、生成fixtureを本番seedにしない。期限切れや空datasetはdisabled。検証時刻から7日未満を条件とし、alarmと利用前検証の両方で期限を扱う。
+alarm同期失敗は適用済みrevision付き`alarm_failed`になり得るため、旧revisionを盲目的に再送せず、現在のrevisionを踏まえて再同期する。
+時刻計算・駅の連結・運行日の契約は[Core](../packages/core/src/domain)と[終電Adapter](../workers/api/src/providers/last-train)を参照する。
+
+## デプロイと復旧
+
+[config dry-run CI](../.github/workflows/config-dry-run.yml)は型生成・bundle・設定・migrationを検査する。Cloudflareへの反映や実リソースの検収は行わない。
+
+実デプロイ時は次の順序で進める。
+
+1. 対象account・Worker・route・DO migration・secretを確認し、preflightと実接続の不足を解消する。
+2. 対象環境を明示してWranglerの型生成・deploy dry-runを行い、差分をレビューする。
+3. stagingへ反映し、health、認証拒否、owner分離、Provider、保存期限を確認する。
+4. 実機・App Attest・利用条件・停止操作の証跡を確認してからproductionを扱う。
+
+EASはdevelopment（Simulator/Dev Client）、internal（staging）、external（production）のprofileを使う。build時のbundle ID・project ID・endpointが欠ければ拒否する。profileの存在を署名や実機成功の証明にしない。
+
+障害時は[flags](../workers/api/src/telemetry/flags.ts)の対象Providerを停止し、必要なら`IMA_KILL_SWITCH=true`を適用する。未指定・不正なProvider flagは停止側。不正なkill switchは停止側だが、未指定のkill switchはfalseという互換既定があるため、環境設定に明示する。
+停止後に実際の外部呼出し停止を確認し、fixtureへ暗黙に切り替えない。
+
+復旧では対象環境のWorker version履歴から既知の版へ戻し、health、認証、DO migration互換性、保存期限、Provider停止状態を再確認する。DOを手作業で削除して復旧扱いにせず、データ変更が必要なら後方互換migrationを検証する。
+EASは問題のbuild配布を停止し、利用可能なprofile/versionを記録する。復旧後はProviderを一つずつ再開する。
+
+## 観測と証拠の範囲
+
+TelemetryDOは固定イベント・集計を扱い、7日で期限処理する。記録失敗を検索処理の成功に偽装せず、テレメトリ障害とプロダクトの再試行を分ける。
+Cloudflareのplatform invocation logやAI Gatewayの本文ログは別の保存面。TelemetryDOの削除を根拠に全ログの削除を保証しない。
+SDKの未使用機能を有効化する場合は、SQL、公開KV、live cache、履歴、stream、compaction、ログの保存前制御を再検証する。保存後に本文が消えたことだけでは、書込み禁止の証明にならない。

@@ -1,17 +1,16 @@
 # ima.
 
 大切にしたい人と外出中に、次の行き先を決めるためのiPhoneアプリ。
+自由記述をもとに探索し、メッセージまたは主提案1件＋別案最大2件で応答します。
 
-アプリ本体・バックエンドを実装中です。ローカルでは固定データの検索経路を確認できます。実API連携・実機検収などの残件は[実装監査](./docs/design/m29-implementation-audit.md)を参照してください。
+React Native / ExpoとCloudflare Workerで構成しています。ローカルではAPIキー不要の固定データで検索・カード表示を確認できます。起動にはExpoとWorkerの両方が必要です。
 
-ローカルWebの起動には、Expoと固定データ用Workerの両方が必要です。[設定・起動手順](./docs/design/m28-dev-fixture.md#ローカルwebの起動)に従ってください。
+- [開発・ローカル起動](docs/development.md)
+- [製品仕様](docs/product.md)
+- [アーキテクチャ](docs/architecture.md)
+- [契約とデータの扱い](docs/contracts.md)
+- [Providerポリシー](docs/provider-policy.md)
+- [環境・検証・配布・復旧](docs/operations.md)
+- [作業規則](AGENTS.md)
 
-- [UIモック](./index.html)
-- [設計決定（ADR）](./docs/adr/README.md)
-- [MVPのタスク・要件対応表](./docs/planning/README.md)
-- [初期3操作の詳細設計](./docs/design/0005-tool-contracts-v1.md)
-- [Fixture検証設計](./docs/design/0006-fixture-runtime-validation.md)
-
-フロントはReact Native / ExpoのUI + hooks/state + services、バックエンドはCloudflareを使うヘキサゴナルアーキテクチャ。LLMがsearch_places / get_place_details / submit_cardsを自律的に選び、メッセージまたは候補UIとメッセージを返します。
-
-実装時は最新の決定・後続ADRを優先し、旧Draftの上書き済み仕様を復活させないでください。APIキー等の環境設定後に利用できることを目指します。SDK適合性、データ供給、実機・配布条件の検証はバックログで管理します。
+実API・実モデル・実機・外部配布の検収は、固定データでの動作と区別します。未実装事項、検証結果、依存関係、完了状態は[GitHub Issues](https://github.com/takapom/ima-app/issues)で管理します。

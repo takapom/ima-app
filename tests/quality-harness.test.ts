@@ -37,8 +37,8 @@ describe('file line quality gate', () => {
     ['bun.lock', 501, 0],
     ['repomix-output.xml', 501, 0],
     ['handwritten.xml', 501, 1],
-    ['index.html', 501, 0],
-    ['docs/adr/0001-ui.html', 501, 0],
+    ['index.html', 501, 1],
+    ['mock.html', 501, 1],
   ])('%s with %i lines returns status %i', (file, count, status) => {
     const root = temporaryRoot();
     const target = join(root, file);

@@ -5,34 +5,6 @@ dist
 coverage
 bun.lock
 workers/api/tests/runtime-gate/runtime-env.d.ts
-docs/adr/0001-ui.html
 *.png
 
-# Existing ADR, planning, and mock artefacts are retained as historical records.
 .agents/skills/ima-issue-delivery/agents/openai.yaml
-index.html
-docs/adr/README.md
-docs/adr/0001-in-the-moment-next-spot.md
-docs/adr/0002-cherished-person-lighter-load.md
-docs/adr/0003-plugins-and-dialogue.md
-docs/adr/0004-modular-monolith.md
-docs/adr/0005-layer-responsibilities.md
-docs/adr/0006-lightweight-frontend-hexagonal-backend.md
-docs/adr/0007-llm-led-tool-orchestration.md
-docs/adr/0008-initial-tool-catalog.md
-docs/adr/0009-contextual-response-presentation.md
-docs/adr/0010-sdk-based-agent-runtime.md
-docs/adr/0011-cloudflare-led-agent-runtime.md
-docs/adr/0012-package-dependency-boundaries.md
-docs/adr/0013-quality-harness-and-size-limits.md
-docs/planning/README.md
-docs/planning/backlog.json
-docs/planning/issues.json
-docs/planning/package-impact-2026-09-09.md
-docs/planning/review-2026-09-08.md
-docs/design/0001-iphone-next-spot.md
-docs/design/0002-next-decisions.md
-docs/design/0003-response-patterns.md
-docs/design/0004-autonomous-response-loop.md
-docs/design/0005-tool-contracts-v1.md
-docs/design/0006-fixture-runtime-validation.md

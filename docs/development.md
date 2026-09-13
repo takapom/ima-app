@@ -1,31 +1,76 @@
-# Development
+# 開発
 
-このリポジトリは Bun 1.3.8 の workspace と Node.js 24.11.1 を使用する。`.node-version` と `package.json` の `engines` を実行環境の基準にする。
+## 環境と依存導入
 
-## 起動
+Nodeは[.node-version](../.node-version)、Bunは[package.json](../package.json)の`packageManager`を使う。リポジトリルートで実行する。
 
-- `bun run dev:mobile`: Expo Dev Client を起動する。
-- `bun run dev:worker`: Wrangler のローカル Worker を起動する。
-- `bun install --frozen-lockfile`: `bun.lock` と manifest の一致を検査する。
+```sh
+bun install --frozen-lockfile
+```
 
-## 品質ゲート
+## APIキー不要のローカル起動
 
-- `bun run format`: Prettier の対象ファイルだけを検査する。履歴 ADR、計画資料、既存 HTML は `.prettierignore` に明示している。
-- `bun run lint`: ESLint、500 行制限、`eslint-disable` の理由、型付き規則の実違反フィクスチャを検査する。
-- `bun run architecture`: dependency-cruiser の解決済みグラフと workspace manifest の依存境界を検査し、許可・拒否フィクスチャを実行する。
-- `bun run typecheck`: 5 workspace と root のテスト・Vitest/Worker 設定を `tsc` で検査する。
-- `bun run test`: Vitest の unit suite と Cloudflare Workers runtime suite を別 pool で実行する。
-- `bun run build`: 各 workspace の build script を実行する。
-- `bun run env:preflight -- --target dev`: secret値を出力せず、環境変数とendpointの形式を検査する。設定がreadyでもWorker runtimeの接続証跡は別であり、詳細は[M28 runbook](design/m28-environment-runbook.md)を参照する。
+専用Workerは合成認証値で起動でき、`.dev.vars`は不要。
+既存の`workers/api/.dev.vars`がある場合は、live credentialやProvider停止設定を混在させない。開発fixtureはliveへフォールバックせず、live credentialが設定されている場合は拒否する。
 
-ローカル補助 hook を有効にする場合は `git config core.hooksPath .githooks` を一度実行する。hook は補助的な再確認であり、この環境では有効化しておらず、品質ゲートは手動コマンドで検証している。
+```sh
+bun run dev:worker:fixture
+```
 
-Worker の runtime suite は `@cloudflare/vitest-pool-workers` の `SELF` 経由で `/health` の成功、拒否メソッド、未知パスを検査する。HTTP、Cloudflare/LLM SDK、runtime、provider、storage、bootstrap は `workers/api` 内の責務別 adapter に限定し、`src/tool-bindings` は安定した tool 契約と provider adapter の変換を担って直接 provider SDK を呼ばない。Core と UI はそれぞれ port/service 経由の I/O を要求する。
+`apps/mobile/.env.local`へ以下の開発用値を設定する。
 
-実装・設定・テストの手書きファイルは 500 行以内、各 commit は `bun run commit-size` で 2,000 行以内にする。新しい例外は対象 rule と具体的な理由を同じ directive に書き、`max-lines` や全 rule の disable では回避しない。
+```dotenv
+EXPO_PUBLIC_API_MODE=fixture
+EXPO_PUBLIC_ENVIRONMENT=dev
+EXPO_PUBLIC_API_BASE_URL=http://localhost:8787
+EXPO_PUBLIC_APP_VERSION=m28-dev-fixture
+EXPO_PUBLIC_FIXTURE_APP_TOKEN=dev-fixture-app-token
+EXPO_PUBLIC_FIXTURE_DEVICE_ID=dev-fixture-device
+EXPO_PUBLIC_FIXTURE_OWNER_CREDENTIAL=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE
+```
 
-`.github/workflows/quality.yml` は main push 用の定義として検証する。GitHub 側の branch protection 設定と CI の実稼働状態は、この環境では未確認である。
+別terminalでExpoを起動する。
 
-今回の検証環境では通常の `bun install --ignore-scripts --no-progress` が approval policy により拒否されたため、fresh install と Core の新規 `valibot` manifest 変更後の lockfile 更新は未検証である。lockfile の手編集や別 installer による代替は行わない。
+```sh
+bun run dev:web
+```
 
-静的な import 境界検査は、解決済み graph・manifest・alias・type import・re-export を検査するが、実 provider SDK の挙動や外部 binding の runtime 契約までは証明しない。SDK と runtime の実契約は M04 の実 Worker/DO 契約試験で確認する。
+表示されたWeb URLを開き、新規検索で「カフェ」と入力する。設定変更後はExpoを再起動する。
+「アプリ設定を確認してください」が出る場合は`.env.local`、通信エラーならWorkerの8787番での起動を確認する。
+
+fixtureは合成店舗1件、固定の徒歩480秒・600m、合成PNGを返す。実際の現在地からの経路計算ではない。終電は提供しない。徒歩上限を付ける場合は精度・鮮度を満たした現在地が必要であり、位置不足を成功へ補正しない。
+
+Dev Clientは`bun run dev:mobile`で起動する。同一マシンのWeb/Simulatorはlocalhostを使えるが、実機はHTTPS endpointを必要とし、LAN IPへの平文HTTPは許可しない。fixture設定は配布buildへ使わない。
+実環境の設定は[運用](operations.md)を参照する。
+
+## 品質検査
+
+| コマンド               | 検証するもの                                               |
+| ---------------------- | ---------------------------------------------------------- |
+| `bun run format`       | Prettierによる整形                                         |
+| `bun run lint`         | 型付きESLint、Hooks、500行制限、disable理由、違反fixture   |
+| `bun run architecture` | 解決済み依存グラフ、manifest、公開exports、境界違反fixture |
+| `bun run typecheck`    | 4 workspace、rootと関連toolingのTypeScript                 |
+| `bun run test`         | 単体、Worker、App Integrity、実SDK/DO、開発fixture         |
+| `bun run build`        | 各workspaceのbuild。Workerはdeploy dry-run                 |
+| `bun run commit-size`  | 各コミットの追加＋削除行数                                 |
+
+変更に応じた関連検査を実行し、実行していない検査を合格としない。型・lintの正確な設定は[tsconfig.base.json](../tsconfig.base.json)、[ESLint設定](../eslint.config.mjs)、[Prettier設定](../.prettierrc.json)で管理する。
+独自lintは既存の規則で検出できない違反がある場合に限って追加する。
+
+手書きコード・テスト・設定は空行・コメント込み500行以内。Markdown、lockfile、明示した生成物はファイル行数制限から除外する。コミットの追加＋削除は文書・テスト・生成物も含め2,000行以内とし、必要な試験の切り離しや圧縮で回避しない。
+
+[quality CI](../.github/workflows/quality.yml)はmainへのpushで品質検査と各コミットの行数検査を実行する構成。[config dry-run CI](../.github/workflows/config-dry-run.yml)はdev/staging/productionの設定を検査する。定義の存在を、GitHub上での成功や保護設定の証明にしない。
+ローカルhookは補助であり、必要なら`git config core.hooksPath .githooks`で有効にする。
+
+## 検証の使い分け
+
+- Core/公開schemaの境界は単体試験、SDKの保存前制御・Tool限定・再送はWorker/DOの統合fixtureで検証する。
+- `bun run test:runtime-native`は本番構成・HTTP・開発fixtureを含むSDK検証。固定モデルやmock fetchの成功を実API成功に数えない。
+- 実モデル評価・Provider live smoke・実機・配布は[運用](operations.md)の別ゲート。キー未設定や未測定を0件の成功へ変換しない。
+
+## 文書の更新
+
+製品要件は[製品仕様](product.md)、責務と依存図は[アーキテクチャ](architecture.md)、作業規則は[AGENTS.md](../AGENTS.md)に置く。契約の形はschema、コマンドや設定の値はコードを参照し、同じ情報を複数文書で管理しない。
+仕様を変えたときに該当文書を直接更新する。未決案・残件・進捗・変更理由はGitHub Issueとコミットへ残し、文書の連番や採択・上書き履歴は管理しない。
+既存Issueの古い仕様や資料参照は現行文書と照合し、過去の本文が必要な場合だけGit履歴を読む。

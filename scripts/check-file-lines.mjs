@@ -12,18 +12,7 @@ const ignoredDirectories = new Set([
 ]);
 const ignoredExtensions = new Set(['.md']);
 const ignoredFiles = new Set([
-  'index.html',
-  'docs/adr/0001-ui.html',
-  'desktop.png',
-  'empty-desktop.png',
-  'empty-phone.png',
-  'phone.png',
-  'side-phone.png',
-  'suggest-phone.png',
-  'working-phone.png',
   'bun.lock',
-  'docs/planning/backlog.json',
-  'docs/planning/issues.json',
   'workers/api/worker-configuration.d.ts',
   'repomix-output.xml',
 ]);

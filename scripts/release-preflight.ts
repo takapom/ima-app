@@ -377,6 +377,6 @@ if (process.argv[1]?.endsWith('/scripts/release-preflight.ts') === true) {
     process.env,
     console.log,
     config,
-    existsSync(resolve(process.cwd(), 'docs/design/provider-policy.md')),
+    existsSync(resolve(process.cwd(), 'docs/provider-policy.md')),
   );
 }
