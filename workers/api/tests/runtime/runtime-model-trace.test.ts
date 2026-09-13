@@ -4,7 +4,7 @@ import {
   type RuntimeModelGuardGenerateResult,
   type RuntimeModelGuardModel,
   type RuntimeModelGuardStreamPart,
-} from '../../src/runtime/runtime-model-guard';
+} from '../../src/runtime/turn-execution/runtime-model-guard';
 import {
   createBestEffortRuntimeModelTraceSink,
   tokenCountForModelUsage,

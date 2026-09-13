@@ -1,9 +1,9 @@
 import type { StepConfig, ToolCallContext, ToolCallDecision } from '@cloudflare/think';
-import type { RuntimeBudget, RuntimeBudgetResult } from './runtime-budget';
+import type { RuntimeBudget, RuntimeBudgetResult } from '../runtime-budget';
 import type {
   RuntimeBeforeStepDelegate,
   RuntimeBeforeToolCallDelegate,
-} from './runtime-turn-factory';
+} from '../runtime-turn-factory';
 import type {
   RuntimeModelGuardAcceptance,
   RuntimeModelGuardCallOptions,

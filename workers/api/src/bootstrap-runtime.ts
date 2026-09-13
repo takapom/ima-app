@@ -17,7 +17,7 @@ import {
   dispatchRuntimeRequest,
   RuntimeDispatchError,
   type RuntimeDispatchTarget,
-} from './runtime/runtime-dispatch';
+} from './runtime/turn-execution/runtime-dispatch';
 import {
   type ThreadRuntimeCancelResult,
   type ThreadRuntimeFailureCode,

@@ -8,7 +8,7 @@ import {
   type RuntimeModelGuardModel,
   type RuntimeModelGuardStreamPart,
   wrapRuntimeModelGuard,
-} from '../../src/runtime/runtime-model-guard';
+} from '../../src/runtime/turn-execution/runtime-model-guard';
 
 const usage = {
   inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },

@@ -1,7 +1,7 @@
 import type { CandidateRecord, ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
 import { ThreadDO as ProductionThreadDO } from '../../src/thread-do';
 import { createLiveOpenAIProvider } from '../../src/model/provider';
-import type { RuntimeModelGuardModel } from '../../src/runtime/runtime-model-guard';
+import type { RuntimeModelGuardModel } from '../../src/runtime/turn-execution/runtime-model-guard';
 import { sessionExpiryAt } from '../../src/runtime/runtime-production-support';
 import {
   isThreadRuntimeTurnInput,

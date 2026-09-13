@@ -48,12 +48,12 @@ import {
   type RuntimeBeforeToolCallDelegate,
   type RuntimeTurnPortDependencies,
 } from './runtime-turn-factory';
-import { createRuntimeFinalResponseHooks } from './runtime-final-response';
+import { createRuntimeFinalResponseHooks } from './turn-execution/runtime-final-response';
 import type {
   RuntimeModelGuardAcceptance,
   RuntimeModelGuardCallOptions,
   RuntimeModelGuardModel,
-} from './runtime-model-guard';
+} from './turn-execution/runtime-model-guard';
 import type { RuntimeBudget } from './runtime-budget';
 import type { RuntimePublicResponseDependencies } from './runtime-response';
 import {
@@ -66,7 +66,7 @@ import {
   observationResultIsReusable,
   observedWindow,
   RuntimeTurnCompositionError,
-} from './runtime-turn-composition-support';
+} from './turn-execution/runtime-turn-composition-support';
 import { clearRuntimeCardSetId, registerRuntimeCardSetId } from '../thread-runtime/commit-port';
 import { projectRuntimeToolResultForModel } from './runtime-field-policy';
 import { configureRuntimeCompaction } from './runtime-session-config';
@@ -130,7 +130,7 @@ export type RuntimeTurnComposition<Response = CommittedResponse> =
     readonly configureSession: (session: Session) => Session;
   };
 
-export { RuntimeTurnCompositionError } from './runtime-turn-composition-support';
+export { RuntimeTurnCompositionError } from './turn-execution/runtime-turn-composition-support';
 
 const sameIdentity = (request: RuntimeCompositionTurnRequest, context: HarnessContext): boolean =>
   request.ownerScopeRef === context.ownerScopeRef &&

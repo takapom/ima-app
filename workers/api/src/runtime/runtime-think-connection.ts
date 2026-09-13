@@ -23,7 +23,7 @@ import {
   type RuntimeModelGuardCallOptions,
   type RuntimeModelGuardErrorCode,
   type RuntimeModelGuardOptions,
-} from './runtime-model-guard';
+} from './turn-execution/runtime-model-guard';
 import type { RuntimeBeforeToolCallDelegate, RuntimeTurnHandle } from './runtime-turn-factory';
 import type { RuntimeBudget } from './runtime-budget';
 

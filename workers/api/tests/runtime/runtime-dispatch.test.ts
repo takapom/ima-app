@@ -3,7 +3,7 @@ import {
   dispatchRuntimeRequest,
   RuntimeDispatchError,
   type RuntimeDispatchTarget,
-} from '../../src/runtime/runtime-dispatch';
+} from '../../src/runtime/turn-execution/runtime-dispatch';
 
 const target: RuntimeDispatchTarget = {
   ownerScopeRef: 'owner-dispatch',

@@ -26,7 +26,7 @@ import { createRuntimeTurnComposition } from '../../src/runtime/runtime-turn-com
 import type {
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from '../../src/runtime/runtime-model-guard';
+} from '../../src/runtime/turn-execution/runtime-model-guard';
 import { createToolRegistry, toolScope } from '../tools/registry-fixture';
 
 const NOW = '2026-09-10T00:00:00Z';

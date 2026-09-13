@@ -3,7 +3,7 @@ import type {
   RuntimeModelGuardCallOptions,
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from './runtime-model-guard';
+} from './turn-execution/runtime-model-guard';
 import { createPhotoBodyHandler } from '../providers/photo/http';
 import { PhotoProviderError, type PhotoMediaTransport } from '../providers/photo/media';
 import { createPhotoReferenceStoreResolver, type PhotoReferenceRpc } from '../providers/photo/rpc';

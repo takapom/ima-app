@@ -1,4 +1,4 @@
-import type { RuntimeModelGuardCallOptions } from '../../src/runtime/runtime-model-guard';
+import type { RuntimeModelGuardCallOptions } from '../../src/runtime/turn-execution/runtime-model-guard';
 import { createDevFixtureModel } from '../../src/runtime/runtime-dev-fixture';
 
 export const toolCallInput = async (

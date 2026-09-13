@@ -10,7 +10,7 @@ import {
   searchResult,
   RecordingCommit,
 } from './runtime-turn-composition-fixture';
-import { observedWindow } from '../../src/runtime/runtime-turn-composition-support';
+import { observedWindow } from '../../src/runtime/turn-execution/runtime-turn-composition-support';
 
 describe('createRuntimeTurnComposition', () => {
   it('keeps model input expiry independent from display and persistence windows', () => {

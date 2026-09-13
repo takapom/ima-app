@@ -14,8 +14,8 @@ import {
   type RuntimeModelGuardModel,
   type RuntimeModelGuardStreamPart,
   wrapRuntimeModelGuard,
-} from '../../src/runtime/runtime-model-guard';
-import type { RuntimeModelGuardError } from '../../src/runtime/runtime-model-guard';
+} from '../../src/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelGuardError } from '../../src/runtime/turn-execution/runtime-model-guard';
 
 type GenerateContent = RuntimeModelGuardGenerateResult['content'][number];
 

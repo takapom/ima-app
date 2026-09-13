@@ -3,7 +3,7 @@ import type {
   RuntimeModelGuardGenerateResult,
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from './runtime-model-guard';
+} from './turn-execution/runtime-model-guard';
 import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '../telemetry/schema';
 import { parseTraceRecord } from '../telemetry/trace';
 import {
