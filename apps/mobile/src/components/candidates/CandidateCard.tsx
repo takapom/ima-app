@@ -1,17 +1,17 @@
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
-import type { JourneyPhotoClient } from '../services/api/photo-client';
-import { collectAttributions } from '../presentation/attribution';
-import type { AttributionPresentation } from '../presentation/attribution';
+import type { JourneyPhotoClient } from '../../services/api/photo-client';
+import { collectAttributions } from '../../presentation/attribution';
+import type { AttributionPresentation } from '../../presentation/attribution';
 import {
   collectPhotoAttributions,
   presentCardFacts,
   presentEvidenceText,
   presentFact,
   type FactPresentation,
-} from './candidate-card-model';
+} from '../candidate-card-model';
 import { PhotoRegion } from './PhotoRegion';
-import { colors, radii, scaleForDynamicType, spacing, typography } from '../theme/tokens';
+import { colors, radii, scaleForDynamicType, spacing, typography } from '../../theme/tokens';
 
 type CandidateCardProps = {
   readonly card: PublicCard;

@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { AttributionList } from './CandidateCard';
+import { AttributionList } from './candidates/CandidateCard';
 import {
   savedPlacePreviewDisplayFor,
   savedPlacePreviewFailureTextFor,

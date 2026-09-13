@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { CardsData, PublicCard } from '@ima/contracts';
-import { CandidateCard } from './CandidateCard';
+import { CandidateCard } from './candidates/CandidateCard';
 import {
   buildMessageHistory,
   cardSetStatusLabel,
