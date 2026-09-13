@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { validateSubmitCards } from './submit-cards';
+import { validateSubmitCards } from '../submit-cards';
 import {
   addObservation,
   makeFixture,
   makeInput,
   makeSelection,
-} from './submission/tests/submit-cards-fixtures';
+} from './tests/submit-cards-fixtures';
 
 describe('submit-cards arrival and last-train validation', () => {
   it('checks last order independently from opening hours and validates last-train arithmetic', () => {

@@ -26,7 +26,7 @@ import {
   type ValidatedEvidenceText,
   type ValidatedMessageResponse,
 } from './submission/submit-cards-evidence';
-import { validateArrivalAndOpening, validateLastTrain } from './submit-cards-travel';
+import { validateArrivalAndOpening, validateLastTrain } from './submission/submit-cards-travel';
 
 export type { SubmitValidationContext } from './submission/submit-cards-evidence';
 
