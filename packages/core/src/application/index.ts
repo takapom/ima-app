@@ -1,4 +1,4 @@
-export * from './model-context';
+export * from './model-context/model-context';
 export * from './turn-constraints';
 export * from './candidate-registry/registry';
 export * from './journey-calculation';

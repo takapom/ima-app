@@ -23,7 +23,7 @@ import {
   OpaqueIdSchema,
   type DetailField,
 } from '../domain/primitives';
-import { ModelContextError } from './model-context-errors';
+import { ModelContextError } from './model-context/model-context-errors';
 
 export const ModelEvidenceSourceSchema = v.strictObject({
   ownerScopeRef: OpaqueIdSchema,

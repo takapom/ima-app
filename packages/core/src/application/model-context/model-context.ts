@@ -4,7 +4,7 @@ import {
   CardSetRecordSchema,
   type CandidateStatus,
   type CardSetRecord,
-} from '../domain';
+} from '../../domain';
 import {
   CandidateIdSchema,
   ObservationIdSchema,
@@ -12,16 +12,16 @@ import {
   SavedPlaceRefSchema,
   Text,
   TurnIdSchema,
-} from '../domain/primitives';
-import type { HarnessContext } from '../ports/context';
-import { HarnessContextSchema } from '../ports/context';
-import { TurnConditionValuesSchema, type TurnConditionValues } from './turn-constraints';
+} from '../../domain/primitives';
+import type { HarnessContext } from '../../ports/context';
+import { HarnessContextSchema } from '../../ports/context';
+import { TurnConditionValuesSchema, type TurnConditionValues } from '../turn-constraints';
 import { ModelContextError } from './model-context-errors';
 import {
   ModelEvidenceSourceSchema,
   projectModelEvidenceForLlmInput,
   type ModelEvidence,
-} from './model-evidence';
+} from '../model-evidence';
 import {
   denyModelContextFieldPolicy,
   ModelContextFieldPolicySchema,
@@ -36,13 +36,13 @@ export {
   ModelEvidenceSourceSchema,
   projectModelEvidence,
   projectModelEvidenceForLlmInput,
-} from './model-evidence';
+} from '../model-evidence';
 export type {
   ModelEvidenceAvailability,
   ModelEvidenceAvailabilityInput,
   ModelEvidence,
   ModelEvidenceSource,
-} from './model-evidence';
+} from '../model-evidence';
 export {
   denyModelContextFieldPolicy,
   ModelContextFieldDecisionSchema,

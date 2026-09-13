@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { projectModelContext } from './model-context';
+import { projectModelContext } from './model-context/model-context';
 import { projectModelEvidence, projectModelEvidenceForLlmInput } from './model-evidence';
 
 /** The field is denied for persistence/display, while this unit explicitly permits LLM input. */
