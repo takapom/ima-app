@@ -21,7 +21,7 @@ import {
   createJourneyApiController,
   type JourneyApiControllerState,
   type JourneyLocalRestorePort,
-} from '../api/journey-controller';
+} from '../thread-session/journey-controller';
 import { createJourneyApiClient } from '../api/client';
 import { createOwnerPrefsClient, type OwnerPrefsClient } from '../api/owner-client';
 import { createJourneyPhotoClient } from '../api/photo-client';

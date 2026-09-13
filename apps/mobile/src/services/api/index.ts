@@ -43,7 +43,7 @@ export {
   type JourneyLocalRestorePort,
   type JourneyLocalRestoreResult,
   type JourneyLocalSnapshot,
-} from './journey-controller';
+} from '../thread-session/journey-controller';
 export { createApiRequestGate } from './request-gate';
 export type {
   ApiClientOptions,

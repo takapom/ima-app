@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { CreateThreadResponse, LocationSnapshot, SearchResponse } from '@ima/contracts';
-import type { JourneyApiControllerState } from '../services/api/journey-controller';
+import type { JourneyApiControllerState } from '../services/thread-session/journey-controller';
 import type {
   JourneyApiControllerBinding,
   JourneyApiSubmitContext,

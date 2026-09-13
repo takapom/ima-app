@@ -2,7 +2,7 @@ import type { CreateThreadResponse, SearchResponse } from '@ima/contracts';
 import type {
   JourneyApiController,
   JourneyApiControllerState,
-} from '../services/api/journey-controller';
+} from '../services/thread-session/journey-controller';
 import type { ApiResult } from '../services/api/api';
 
 export type JourneyApiRetryResult = ApiResult<CreateThreadResponse> | ApiResult<SearchResponse>;

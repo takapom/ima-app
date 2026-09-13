@@ -1,6 +1,10 @@
 import { applyAssistantResponse } from '../../state/assistant-response';
 import { advanceAssistantRevision } from '../../state/assistant-response';
-import { createApiRequestGate, type ApiOperationToken, type ApiRequestGate } from './request-gate';
+import {
+  createApiRequestGate,
+  type ApiOperationToken,
+  type ApiRequestGate,
+} from '../api/request-gate';
 import type {
   CreateThreadRequest,
   CreateThreadResponse,
@@ -17,8 +21,8 @@ import type {
   LifecycleResult,
   ResponseOperation,
   RetryableResponseOperation,
-} from '../thread-session/journey-controller-types';
-import { createJourneyHistoryOperations } from '../thread-session/journey-controller-history';
+} from './journey-controller-types';
+import { createJourneyHistoryOperations } from './journey-controller-history';
 import {
   aborted,
   controllerError,
@@ -27,8 +31,8 @@ import {
   requestIdOf,
   stateForThread,
   validOpaqueId,
-} from '../thread-session/journey-controller-support';
-import type { ApiRequestOptions, ApiResult, LifecycleResponse } from './api';
+} from './journey-controller-support';
+import type { ApiRequestOptions, ApiResult, LifecycleResponse } from '../api/api';
 
 export type {
   JourneyApiController,
@@ -38,7 +42,7 @@ export type {
   JourneyLocalRestorePort,
   JourneyLocalRestoreResult,
   JourneyLocalSnapshot,
-} from '../thread-session/journey-controller-types';
+} from './journey-controller-types';
 
 export const createJourneyApiController = (
   options: JourneyApiControllerOptions,

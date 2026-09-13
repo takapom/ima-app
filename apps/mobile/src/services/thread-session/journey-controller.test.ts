@@ -13,7 +13,7 @@ import type {
   ThreadTurnRequest,
 } from '@ima/contracts';
 import { createJourneyApiController, type JourneyLocalSnapshot } from './journey-controller';
-import type { ApiRequestOptions, ApiResult, JourneyApiClient, LifecycleResponse } from './api';
+import type { ApiRequestOptions, ApiResult, JourneyApiClient, LifecycleResponse } from '../api/api';
 const message = {
   text: '候補を確認しました',
   evidenceIds: [],
