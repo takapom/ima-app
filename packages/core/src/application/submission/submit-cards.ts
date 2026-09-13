@@ -1,14 +1,18 @@
 import * as v from 'valibot';
-import { EvidenceTextSchema } from '../domain/evidence';
+import { EvidenceTextSchema } from '../../domain/evidence';
 import {
   OpeningHoursSchema,
   PlaceIdentitySchema,
   PhotoInfoSchema,
   PriceInfoSchema,
   WalkingRouteSchema,
-} from '../domain/place-values';
-import { SubmitCardsInputSchema, type CardSelection, type SubmitCardsInput } from '../ports/model';
-import type { CandidateObservationRegistryPort } from '../ports/registry';
+} from '../../domain/place-values';
+import {
+  SubmitCardsInputSchema,
+  type CardSelection,
+  type SubmitCardsInput,
+} from '../../ports/model';
+import type { CandidateObservationRegistryPort } from '../../ports/registry';
 import {
   SubmitValidationContextSchema,
   invalid,
@@ -25,10 +29,10 @@ import {
   type ValidatedCardsResponse,
   type ValidatedEvidenceText,
   type ValidatedMessageResponse,
-} from './submission/submit-cards-evidence';
-import { validateArrivalAndOpening, validateLastTrain } from './submission/submit-cards-travel';
+} from './submit-cards-evidence';
+import { validateArrivalAndOpening, validateLastTrain } from './submit-cards-travel';
 
-export type { SubmitValidationContext } from './submission/submit-cards-evidence';
+export type { SubmitValidationContext } from './submit-cards-evidence';
 
 const validateCandidate = (
   selection: CardSelection,

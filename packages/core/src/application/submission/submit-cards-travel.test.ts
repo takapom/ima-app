@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateSubmitCards } from '../submit-cards';
+import { validateSubmitCards } from './submit-cards';
 import {
   addObservation,
   makeFixture,

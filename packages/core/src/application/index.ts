@@ -4,7 +4,7 @@ export * from './candidate-registry/registry';
 export * from './journey-calculation';
 export * from './journey-validation';
 export * from './walking-route-policy';
-export { validateMessage, validateSubmitCards } from './submit-cards';
+export { validateMessage, validateSubmitCards } from './submission/submit-cards';
 export { SubmitValidationContextSchema } from './submission/submit-cards-evidence';
 export type {
   SubmitValidationContext,

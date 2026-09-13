@@ -22,7 +22,7 @@ import {
   type ValidatedMessageResponse,
   SubmitValidationContextSchema,
 } from './submit-cards-evidence';
-import { validateMessage, validateSubmitCards } from '../submit-cards';
+import { validateMessage, validateSubmitCards } from './submit-cards';
 
 const CommitExpectedRevisionSchema = v.pipe(
   NonNegativeSafeIntegerSchema,
