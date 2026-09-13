@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { MAX_CHIPS, uniqueTerms } from '../state/journey-input';
-import { colors, radii, spacing, typography } from '../theme/tokens';
+import { MAX_CHIPS, uniqueTerms } from '../../state/journey-input';
+import { colors, radii, spacing, typography } from '../../theme/tokens';
 
 type ConditionChipsProps = {
   readonly chips: readonly string[];

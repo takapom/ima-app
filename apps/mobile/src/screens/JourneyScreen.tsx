@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { AppBar } from '../components/AppBar';
 import { Canvas } from '../components/Canvas';
 import { Composer } from '../components/Composer';
-import { ConditionChips } from '../components/ConditionChips';
+import { ConditionChips } from '../components/conditions/ConditionChips';
 import { DecidedState } from '../components/DecidedState';
 import { Drawer } from '../components/Drawer';
 import { EmptyState } from '../components/EmptyState';

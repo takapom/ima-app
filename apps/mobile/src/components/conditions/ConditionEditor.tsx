@@ -6,8 +6,8 @@ import {
   type BudgetOption,
   type ConditionScope,
   type JourneyConditions,
-} from '../state/journey-input';
-import { colors, radii, spacing, typography } from '../theme/tokens';
+} from '../../state/journey-input';
+import { colors, radii, spacing, typography } from '../../theme/tokens';
 
 type ConditionEditorProps = {
   readonly conditions: JourneyConditions;

@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ConditionEditor } from './ConditionEditor';
+import { ConditionEditor } from './conditions/ConditionEditor';
 import { paddingWithSafeArea } from '../theme/safe-area';
 import { colors, radii, spacing, typography } from '../theme/tokens';
 import type { ConditionScope, JourneyConditions } from '../state/journey-input';
