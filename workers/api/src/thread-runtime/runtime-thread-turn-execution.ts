@@ -34,7 +34,7 @@ export const executeRuntimeThreadTurn = async (
         parts: [{ type: 'text' as const, text: input.input.input.text }],
       },
     ],
-    runtimeInput: input.input.input,
+    runtimeInput: { ...input.input.input, turnId: input.target.turnId },
     isStale: input.isStale,
   };
   const nativeResult = await input.run(request);

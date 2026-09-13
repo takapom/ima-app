@@ -17,6 +17,7 @@
     "dev:mobile": "bun run --cwd apps/mobile start",
     "dev:worker": "bun run --cwd workers/api dev",
     "dev:worker:fixture": "wrangler dev --config workers/api/wrangler.runtime-dev-fixture-test.jsonc --local --port 8787",
+    "dev:worker:llm": "bun run --cwd workers/api dev:llm",
     "dev:web": "bun run --cwd apps/mobile start --web --clear",
     "env:preflight": "bun scripts/environment-preflight.ts",
     "format": "prettier --check .",

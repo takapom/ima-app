@@ -43,6 +43,26 @@ fixtureは合成店舗1件、固定の徒歩480秒・600m、合成PNGを返す�
 Dev Clientは`bun run dev:mobile`で起動する。同一マシンのWeb/Simulatorはlocalhostを使えるが、実機はHTTPS endpointを必要とし、LAN IPへの平文HTTPは許可しない。fixture設定は配布buildへ使わない。
 実環境の設定は[運用](operations.md)を参照する。
 
+## 実LLMと合成店舗データでのローカル起動
+
+`workers/api/.dev.vars.llm`を作り、次のキーだけを設定する。このファイルはGitの追跡対象外で、既存の`.dev.vars`とは別に読み込む。
+
+```dotenv
+OPENAI_API_KEY=自分のOpenAI_APIキー
+```
+
+次のコマンドは実OpenAI APIを使用する。モデルは[既存のモデル設定](../workers/api/src/model/provider-config.ts)に従い、API利用料が発生する。
+
+```sh
+bun run dev:worker:llm
+```
+
+アプリは上記の開発用認証と`EXPO_PUBLIC_API_MODE=fixture`を使い、別terminalで`bun run dev:web`を実行する。端末側のモードは接続・認証の設定であり、モデルの選択はWorkerが行う。OpenAIキーは端末側へ設定しない。
+
+新しい会話で「恵比寿のカフェを探して」と入力し、カード表示後に条件変更や質問を試す。店舗情報は同じ合成店舗1件で、LLMが操作と応答を選ぶ。写真・徒歩経路・終電はこの構成では無効。GoogleのAPIキーは不要。実LLMの成功と実店舗APIの成功は区別する。
+
+キー不足・無効キー・API障害はエラーになり、固定モデルへ切り替わらない。キーなし起動へ戻す場合はWorkerを終了し、`bun run dev:worker:fixture`で起動する。
+
 ## 品質検査
 
 | コマンド               | 検証するもの                                               |

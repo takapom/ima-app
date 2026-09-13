@@ -6,6 +6,7 @@ import {
   REQUEST_ID_HEADER,
 } from '@ima/contracts';
 import { isKeylessDevFixtureEnvironment } from '../../src/runtime/composition/runtime-dev-fixture';
+import { isDevLiveModelEnvironment } from './runtime-dev-llm';
 
 const LOCAL_ORIGIN_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
 const LOCAL_ORIGIN_PROTOCOLS = new Set(['http:', 'https:']);
@@ -90,7 +91,7 @@ const forbiddenOrigin = (): Response => new Response(null, { status: 403 });
 export type DevFixtureCorsHandler = () => Response | Promise<Response>;
 
 /**
- * Adds browser CORS only at the keyless development fixture boundary.
+ * Adds browser CORS at the local fixture and live-model development boundary.
  * Unknown origins and unsupported preflight requests are rejected before routing.
  */
 export const withDevFixtureCors = async (
@@ -98,7 +99,7 @@ export const withDevFixtureCors = async (
   env: unknown,
   handler: DevFixtureCorsHandler,
 ): Promise<Response> => {
-  if (!isKeylessDevFixtureEnvironment(env)) return handler();
+  if (!isKeylessDevFixtureEnvironment(env) && !isDevLiveModelEnvironment(env)) return handler();
 
   const origin = normalizedOrigin(request.headers.get('Origin'));
   if (request.headers.has('Origin') && origin === null) return forbiddenOrigin();

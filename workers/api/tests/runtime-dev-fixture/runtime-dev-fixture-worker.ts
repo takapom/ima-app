@@ -1,5 +1,5 @@
 import production from '../../src/index';
-import { RateLimitDO, ThreadDO } from '../../src/thread-do';
+import { RateLimitDO } from '../../src/thread-do';
 import { TelemetryDO } from '../../src/telemetry/telemetry-do';
 import { withDevFixtureCors } from './runtime-dev-fixture-cors';
 
@@ -10,5 +10,6 @@ const fetch: ProductionFetch = (request, env, executionContext) => {
   return withDevFixtureCors(request, env, handler);
 };
 
-export { RateLimitDO, TelemetryDO, ThreadDO };
+export { ThreadDO } from './runtime-dev-llm';
+export { RateLimitDO, TelemetryDO };
 export default { fetch } satisfies { fetch: ProductionFetch };
