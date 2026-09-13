@@ -5,7 +5,7 @@ import {
   SourceRefSchema,
   type RegistryJsonValue,
   type RetentionMetadata,
-} from '../domain';
+} from '../../domain';
 import {
   ContactInfoSchema,
   FacilitiesInfoSchema,
@@ -15,15 +15,15 @@ import {
   PlaceIdentitySchema,
   PriceInfoSchema,
   WalkingRouteSchema,
-} from '../domain/place-values';
+} from '../../domain/place-values';
 import {
   CandidateIdSchema,
   IsoTimestampSchema,
   ObservationIdSchema,
   OpaqueIdSchema,
   type DetailField,
-} from '../domain/primitives';
-import { ModelContextError } from './model-context/model-context-errors';
+} from '../../domain/primitives';
+import { ModelContextError } from './model-context-errors';
 
 export const ModelEvidenceSourceSchema = v.strictObject({
   ownerScopeRef: OpaqueIdSchema,

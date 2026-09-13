@@ -21,7 +21,7 @@ import {
   ModelEvidenceSourceSchema,
   projectModelEvidenceForLlmInput,
   type ModelEvidence,
-} from '../model-evidence';
+} from './model-evidence';
 import {
   denyModelContextFieldPolicy,
   ModelContextFieldPolicySchema,
@@ -36,13 +36,13 @@ export {
   ModelEvidenceSourceSchema,
   projectModelEvidence,
   projectModelEvidenceForLlmInput,
-} from '../model-evidence';
+} from './model-evidence';
 export type {
   ModelEvidenceAvailability,
   ModelEvidenceAvailabilityInput,
   ModelEvidence,
   ModelEvidenceSource,
-} from '../model-evidence';
+} from './model-evidence';
 export {
   denyModelContextFieldPolicy,
   ModelContextFieldDecisionSchema,
