@@ -7,19 +7,19 @@ import {
   sanitizeTelemetryEvent,
   type TelemetryEventRecord,
   type TelemetryEventStore,
-} from '../../src/telemetry/events';
+} from '../../../src/telemetry/events';
 import {
   OPERATIONAL_FLAG_ENV,
   operationalCapabilityMode,
   operationalFlagEnabled,
   resolveOperationalFlags,
-} from '../../src/telemetry/flags';
+} from '../../../src/telemetry/flags';
 import {
   aggregateTelemetryTraces,
   filterTelemetryRetention,
   parseTraceRecord,
   type TraceRecord,
-} from '../../src/telemetry/trace';
+} from '../../../src/telemetry/trace';
 
 class FixtureTelemetryEventStore implements TelemetryEventStore {
   readonly records: TelemetryEventRecord[] = [];

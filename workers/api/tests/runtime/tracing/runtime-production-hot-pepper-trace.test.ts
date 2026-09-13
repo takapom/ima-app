@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { parseHotPepperResponse } from '../../src/providers/hot-pepper/wire';
+import { parseHotPepperResponse } from '../../../src/providers/hot-pepper/wire';
 import type {
   HotPepperField,
   HotPepperFieldPolicy,
   HotPepperPolicyUse,
   HotPepperProviderInputPolicy,
-} from '../../src/providers/hot-pepper/types';
-import type { PlacesDetailsObservationPolicy } from '../../src/providers/places-details/adapter-types';
-import type { RuntimeProviderTrace } from '../../src/providers/telemetry/runtime-provider-trace';
-import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
-import { invokePublicToolEnvelope } from '../../src/tools';
+} from '../../../src/providers/hot-pepper/types';
+import type { PlacesDetailsObservationPolicy } from '../../../src/providers/places-details/adapter-types';
+import type { RuntimeProviderTrace } from '../../../src/providers/telemetry/runtime-provider-trace';
+import { createRuntimeProductionConnectionOptions } from '../../../src/runtime/composition/runtime-production-factory';
+import { invokePublicToolEnvelope } from '../../../src/tools';
 import {
   ALLOW_MODEL_CONTEXT_FIELDS,
   ALLOW_RETENTION,
   NOW,
   buildRequest,
   readOnlyCommit,
-} from './composition/runtime-production-factory-fixtures';
-import { modelFor, type RuntimeGateModelReport } from '../support/runtime-model-fixture';
+} from '../composition/runtime-production-factory-fixtures';
+import { modelFor, type RuntimeGateModelReport } from '../../support/runtime-model-fixture';
 
 const hpFieldPolicy: HotPepperFieldPolicy = (field: HotPepperField, use: HotPepperPolicyUse) => ({
   decision:

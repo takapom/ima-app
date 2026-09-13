@@ -8,7 +8,7 @@ import { parseTraceRecord, type TelemetryTraceStore } from '../../telemetry/trac
 import {
   createBestEffortRuntimeTraceSink,
   type RuntimeTraceSinkFailure,
-} from '../../runtime/runtime-trace-sink';
+} from '../../runtime/tracing/runtime-trace-sink';
 import type {
   RuntimeProviderTransportCompletion,
   RuntimeProviderTransportObserver,

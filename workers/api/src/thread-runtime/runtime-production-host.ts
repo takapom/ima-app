@@ -17,8 +17,8 @@ import {
   runtimeTurnTraceOutcome,
   telemetryObjectNameForRuntimeTraceMode,
   type RuntimeTurnTraceSink,
-} from '../runtime/runtime-turn-trace';
-import type { RuntimeModelTraceSink } from '../runtime/runtime-model-trace';
+} from '../runtime/tracing/runtime-turn-trace';
+import type { RuntimeModelTraceSink } from '../runtime/tracing/runtime-model-trace';
 import type { RuntimeProviderTraceSink } from '../providers/telemetry/runtime-provider-trace';
 import { createDurableTelemetryStore, type TelemetryNamespace } from '../telemetry/telemetry-do';
 import { createRuntimeProductionTelemetrySinks } from './runtime-production-telemetry';

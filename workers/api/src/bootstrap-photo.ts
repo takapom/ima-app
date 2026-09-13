@@ -18,7 +18,7 @@ import {
 import {
   runtimeTraceModeFor,
   telemetryObjectNameForRuntimeTraceMode,
-} from './runtime/runtime-turn-trace';
+} from './runtime/tracing/runtime-turn-trace';
 import {
   createDevFixturePhotoBodyHandler,
   devFixtureEnvironmentFor,

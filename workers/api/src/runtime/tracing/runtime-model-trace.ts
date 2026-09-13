@@ -3,9 +3,9 @@ import type {
   RuntimeModelGuardGenerateResult,
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from './turn-execution/runtime-model-guard';
-import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '../telemetry/schema';
-import { parseTraceRecord } from '../telemetry/trace';
+} from '../turn-execution/runtime-model-guard';
+import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '../../telemetry/schema';
+import { parseTraceRecord } from '../../telemetry/trace';
 import {
   createBestEffortRuntimeTraceSink,
   type RuntimeTraceSinkFailure,

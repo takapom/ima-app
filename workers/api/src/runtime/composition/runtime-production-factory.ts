@@ -3,7 +3,7 @@ import type { createPlacesSearchContinuation } from '../../providers/places-sear
 import { createLiveOpenAIProvider } from '../../model/provider';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../model/provider-options';
 import { createRuntimeReadAttemptSignalBridge } from '../tool-reads/runtime-read-ports';
-import { wrapRuntimeModelTrace } from '../runtime-model-trace';
+import { wrapRuntimeModelTrace } from '../tracing/runtime-model-trace';
 import { createRuntimeProviderTransportObserver } from '../../providers/telemetry/runtime-provider-trace';
 import {
   createRuntimeTurnComposition,

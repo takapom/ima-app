@@ -1,5 +1,5 @@
-import type { TraceRecord } from '../telemetry/schema';
-import type { TelemetryTraceStore } from '../telemetry/trace';
+import type { TraceRecord } from '../../telemetry/schema';
+import type { TelemetryTraceStore } from '../../telemetry/trace';
 
 export type RuntimeTraceSinkFailure = 'write_failed';
 
