@@ -3,7 +3,7 @@ export * from './turn-constraints';
 export * from './candidate-registry/registry';
 export * from './travel/journey-calculation';
 export * from './travel/journey-validation';
-export * from './walking-route-policy';
+export * from './travel/walking-route-policy';
 export { validateMessage, validateSubmitCards } from './submission/submit-cards';
 export { SubmitValidationContextSchema } from './submission/submit-cards-evidence';
 export type {

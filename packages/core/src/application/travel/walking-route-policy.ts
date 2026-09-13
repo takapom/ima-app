@@ -1,9 +1,9 @@
 import * as v from 'valibot';
-import { LocationRevisionSchema, type LocationRevision } from '../domain/freshness';
-import type { Issue } from '../domain/issue';
-import { IsoTimestampSchema } from '../domain/primitives';
-import { LocationContextSchema, type LocationContext } from '../ports/context';
-import { WalkingCoordinatesSchema, type WalkingCoordinates } from '../ports/walking-route';
+import { LocationRevisionSchema, type LocationRevision } from '../../domain/freshness';
+import type { Issue } from '../../domain/issue';
+import { IsoTimestampSchema } from '../../domain/primitives';
+import { LocationContextSchema, type LocationContext } from '../../ports/context';
+import { WalkingCoordinatesSchema, type WalkingCoordinates } from '../../ports/walking-route';
 
 export const WALKING_LOCATION_MAX_AGE_MS = 120_000;
 export const WALKING_LOCATION_MAX_ACCURACY_METERS = 100;
