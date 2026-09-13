@@ -3,12 +3,12 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '../../src/runtime/budget/runtime-budget';
+} from '../../../src/runtime/budget/runtime-budget';
 import {
   RuntimeReadExecutor,
   RuntimeReadFailure,
   type RuntimeReadExecutionRequest,
-} from '../../src/runtime/tool-reads/runtime-read-executor';
+} from '../../../src/runtime/tool-reads/runtime-read-executor';
 
 const config = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudgetConfig => ({
   ...DEFAULT_RUNTIME_BUDGET,

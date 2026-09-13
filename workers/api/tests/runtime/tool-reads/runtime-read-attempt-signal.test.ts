@@ -13,13 +13,13 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '../../src/runtime/budget/runtime-budget';
+} from '../../../src/runtime/budget/runtime-budget';
 import {
   createRuntimeReadAttemptSignalBridge,
   createRuntimeReadPorts,
-} from '../../src/runtime/tool-reads/runtime-read-ports';
-import { createGoogleTextSearchTransport } from '../../src/providers/places-search/transport';
-import type { GoogleTextSearchRequest } from '../../src/providers/places-search/types';
+} from '../../../src/runtime/tool-reads/runtime-read-ports';
+import { createGoogleTextSearchTransport } from '../../../src/providers/places-search/transport';
+import type { GoogleTextSearchRequest } from '../../../src/providers/places-search/types';
 
 const context: HarnessContext = {
   threadId: 'thread-attempt-signal',
