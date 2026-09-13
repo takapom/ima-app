@@ -18,14 +18,14 @@ import {
   ModelHistoryEntrySchema,
   OriginalTurnSchema,
 } from '@ima/core';
-import type { RuntimeThinkComposition } from './turn-execution/runtime-think-connection';
+import type { RuntimeThinkComposition } from '../turn-execution/runtime-think-connection';
 import {
   referenceSnapshotFor,
   stateFromReference,
   type RuntimeProductionCandidateIdentityReference,
   type RuntimeProductionContextPersistence,
   type RuntimeProductionContextStateForReference,
-} from './context/runtime-production-context-reference';
+} from './runtime-production-context-reference';
 import {
   cardSetFor,
   cardSetForDisplayContext,

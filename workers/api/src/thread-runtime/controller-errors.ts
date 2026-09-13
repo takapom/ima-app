@@ -5,7 +5,7 @@ import {
 import {
   RuntimeProductionContextLimitError,
   RuntimeProductionDisplayContextError,
-} from '../runtime/runtime-production-display-context';
+} from '../runtime/context/runtime-production-display-context';
 import {
   runtimeFailure,
   type ThreadRuntimeFailureCode,

@@ -9,7 +9,7 @@ import {
   createRuntimeTurnComposition,
   type RuntimeTurnCompositionCoreOptions,
 } from '../turn-execution/runtime-turn-composition';
-import { wrapRuntimeProductionCommit } from '../runtime-production-context';
+import { wrapRuntimeProductionCommit } from '../context/runtime-production-context';
 import { createFactoryRuntimeContext } from '../context/runtime-production-context-factory';
 import { RuntimeBudget } from '../budget/runtime-budget';
 import {
