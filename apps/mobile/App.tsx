@@ -5,7 +5,7 @@ import { useNativeJourneyPersistence } from './src/hooks/useNativeJourneyPersist
 import {
   nativeMobileRuntimeMessage,
   type NativeMobileRuntimeOptions,
-} from './src/services/api/native-mobile-runtime';
+} from './src/services/runtime/native-mobile-runtime';
 import type { JourneyApiControllerBinding } from './src/services/api/journey-api-binding';
 
 export type AppProps = {

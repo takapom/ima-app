@@ -1,7 +1,7 @@
 import { AppState } from 'react-native';
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { ResponseResumeSubscription } from '../services/assistant-response-clock';
-import type { NativeMobileJourneyRuntime } from '../services/api/native-mobile-runtime';
+import type { NativeMobileJourneyRuntime } from '../services/runtime/native-mobile-runtime';
 import {
   createNativeJourneyPersistence,
   type NativeJourneyPersistenceScheduler,

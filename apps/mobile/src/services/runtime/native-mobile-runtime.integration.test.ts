@@ -20,7 +20,7 @@ import {
 import {
   createNativeMobileJourneyRuntime,
   type NativeMobileRuntimeOptions,
-} from '../api/native-mobile-runtime';
+} from './native-mobile-runtime';
 import type { ApiFetch } from '../api/api';
 import {
   createThreadResponse,

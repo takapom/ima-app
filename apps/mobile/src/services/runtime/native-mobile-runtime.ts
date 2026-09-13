@@ -16,7 +16,7 @@ import {
   type NativeCredentialProvider,
   type NativeCredentialScope,
   type NativeCredentialStoreClient,
-} from '../runtime/native-credentials';
+} from './native-credentials';
 import {
   createMobileJourneyRuntime,
   mobileJourneyRuntimeMessage,
@@ -25,14 +25,14 @@ import {
   type MobileJourneyRuntimeReason,
   type MobileRuntimeEnvironment,
   type MobileJourneySavedReferenceOptions,
-} from '../runtime/mobile-runtime';
-import type { ApiCredentialProvider } from './api';
-import { waitFor, type WaitResult } from '../runtime/native-runtime-deferred';
+} from './mobile-runtime';
+import type { ApiCredentialProvider } from '../api/api';
+import { waitFor, type WaitResult } from './native-runtime-deferred';
 import {
   createLocalSessionPersistence,
   createSqliteJourneyLocalRestore,
   type LocalSessionPersistence,
-} from './local-session-persistence';
+} from '../api/local-session-persistence';
 
 export const NATIVE_RUNTIME_INIT_TIMEOUT_MS = 5_000;
 const NATIVE_RUNTIME_TIMEOUT_CAP_MS = 15_000;

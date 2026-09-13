@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { MobileJourneyRuntime } from '../runtime/mobile-runtime';
-import type { JourneyApiControllerBinding } from './journey-api-binding';
-import type { JourneyApiController } from './journey-controller-types';
+import type { MobileJourneyRuntime } from './mobile-runtime';
+import type { JourneyApiControllerBinding } from '../api/journey-api-binding';
+import type { JourneyApiController } from '../api/journey-controller-types';
 import type { NativeSqliteAdapter, NativeSqliteAdapterOptions } from '../sqlite/native';
 import type { SqliteStore } from '../sqlite/types';
 import {
@@ -10,7 +10,7 @@ import {
   nativeCredentialStorageKeyFor,
   type NativeCredentialAuthority,
   type NativeCredentialStoreClient,
-} from '../runtime/native-credentials';
+} from './native-credentials';
 import {
   createNativeMobileJourneyRuntime,
   nativeCredentialScopeMatchesRuntime,
@@ -19,7 +19,7 @@ import {
 
 const runtimeMock = vi.hoisted(() => ({ create: vi.fn() }));
 
-vi.mock('../runtime/mobile-runtime', () => ({
+vi.mock('./mobile-runtime', () => ({
   createMobileJourneyRuntime: runtimeMock.create,
   mobileJourneyRuntimeMessage: () => null,
 }));

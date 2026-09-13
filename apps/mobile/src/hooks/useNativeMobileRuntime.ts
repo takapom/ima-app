@@ -5,7 +5,7 @@ import {
   type NativeMobileJourneyRuntime,
   type NativeMobileRuntimeOptions,
   type NativeMobileRuntimeReason,
-} from '../services/api/native-mobile-runtime';
+} from '../services/runtime/native-mobile-runtime';
 
 export type UseNativeMobileRuntimeOptions = {
   /** A host-composed binding bypasses every native SDK load. */
