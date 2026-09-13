@@ -7,7 +7,7 @@ import type {
   SearchResponse,
   ThreadReadResponse,
 } from '@ima/contracts';
-import type { JourneyApiSubmitContext } from '../api/journey-api-binding';
+import type { JourneyApiSubmitContext } from '../thread-session/journey-api-binding';
 import { createJourneyApiController } from '../api/journey-controller';
 import { createJourneyApiRequestFactory } from './mobile-runtime';
 import type { ApiResult, JourneyApiClient } from '../api/api';

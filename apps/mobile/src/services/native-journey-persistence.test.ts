@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Preferences } from '@ima/contracts';
-import type { JourneyApiController } from './api/journey-controller-types';
+import type { JourneyApiController } from './thread-session/journey-controller-types';
 import {
   createNativeJourneyPersistence,
   type NativeJourneyPersistenceScheduler,

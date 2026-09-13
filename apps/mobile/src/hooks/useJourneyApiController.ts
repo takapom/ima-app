@@ -4,7 +4,7 @@ import type { JourneyApiControllerState } from '../services/api/journey-controll
 import type {
   JourneyApiControllerBinding,
   JourneyApiSubmitContext,
-} from '../services/api/journey-api-binding';
+} from '../services/thread-session/journey-api-binding';
 import type { ApiError, ApiResult, LifecycleResponse } from '../services/api/api';
 import {
   awaitRetryIfCurrent,
@@ -28,7 +28,7 @@ export type {
   JourneyApiSubmitContext,
   JourneyApiTurnFactoryInput,
   JourneySavedPlacePreviewBinding,
-} from '../services/api/journey-api-binding';
+} from '../services/thread-session/journey-api-binding';
 
 export {
   awaitRetryIfCurrent,

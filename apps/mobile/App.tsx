@@ -6,7 +6,7 @@ import {
   nativeMobileRuntimeMessage,
   type NativeMobileRuntimeOptions,
 } from './src/services/runtime/native-mobile-runtime';
-import type { JourneyApiControllerBinding } from './src/services/api/journey-api-binding';
+import type { JourneyApiControllerBinding } from './src/services/thread-session/journey-api-binding';
 
 export type AppProps = {
   /** The host supplies fixture/live credentials and request fields at this boundary. */

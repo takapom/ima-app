@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import type { PublicCard, RetentionMetadata } from '@ima/contracts';
-import type { JourneyApiControllerBinding } from '../../api/journey-api-binding';
+import type { JourneyApiControllerBinding } from '../../thread-session/journey-api-binding';
 import {
   createMobileJourneyRuntime,
   type MobileJourneySavedReferenceOptions,

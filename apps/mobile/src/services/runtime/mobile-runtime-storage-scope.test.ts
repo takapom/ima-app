@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { JourneyApiControllerBinding } from '../api/journey-api-binding';
+import type { JourneyApiControllerBinding } from '../thread-session/journey-api-binding';
 import type { ApiFetch } from '../api/api';
 import {
   createThreadResponse,

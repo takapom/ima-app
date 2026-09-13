@@ -7,7 +7,7 @@ import {
   type JourneyHistoryService,
 } from './journey-history';
 import type { OwnerPrefsClient } from './api/owner-client';
-import type { JourneyApiController } from './api/journey-controller-types';
+import type { JourneyApiController } from './thread-session/journey-controller-types';
 import { createOwnerPrefsProjection } from './owner-prefs-projection';
 import { createJourneyPreferencesService, type JourneyPreferencesService } from './preferences';
 import { createRuntimeId } from './runtime-id';
@@ -40,9 +40,7 @@ export type NativeJourneyPersistenceStorage = Pick<
   SqliteStore,
   'listThreads' | 'readPreferences' | 'savePreferences'
 > &
-  Partial<
-    Pick<SqliteStore, 'listSavedPlaces' | 'savePlace' | 'deleteSavedPlace' | 'markDecided'>
-  >;
+  Partial<Pick<SqliteStore, 'listSavedPlaces' | 'savePlace' | 'deleteSavedPlace' | 'markDecided'>>;
 
 export type NativeJourneyPersistenceSnapshot = {
   readonly scope: string | null;

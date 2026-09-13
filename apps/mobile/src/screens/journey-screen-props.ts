@@ -3,7 +3,7 @@ import type {
   JourneyApiControllerBinding,
   JourneyApiSubmitContext,
   JourneySavedPlacePreviewBinding,
-} from '../services/api/journey-api-binding';
+} from '../services/thread-session/journey-api-binding';
 import type { JourneyPhotoClient } from '../services/api/photo-client';
 import type { JourneyActionServices } from '../hooks/useJourneyActions';
 import type { WalkingMapDestinationResolver } from '../services/journey-map';

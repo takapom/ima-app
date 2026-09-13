@@ -33,7 +33,7 @@ export type {
   JourneyApiSubmitContext,
   JourneyApiTurnFactoryInput,
   JourneySavedPlacePreviewBinding,
-} from './journey-api-binding';
+} from '../thread-session/journey-api-binding';
 export {
   createJourneyApiController,
   type JourneyApiController,

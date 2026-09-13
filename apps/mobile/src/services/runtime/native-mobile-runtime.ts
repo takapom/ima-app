@@ -32,7 +32,7 @@ import {
   createLocalSessionPersistence,
   createSqliteJourneyLocalRestore,
   type LocalSessionPersistence,
-} from '../api/local-session-persistence';
+} from '../thread-session/local-session-persistence';
 
 export const NATIVE_RUNTIME_INIT_TIMEOUT_MS = 5_000;
 const NATIVE_RUNTIME_TIMEOUT_CAP_MS = 15_000;

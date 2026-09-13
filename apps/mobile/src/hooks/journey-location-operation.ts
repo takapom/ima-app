@@ -1,5 +1,5 @@
 import type { LocationSnapshot } from '@ima/contracts';
-import type { JourneyApiSubmitContext } from '../services/api/journey-api-binding';
+import type { JourneyApiSubmitContext } from '../services/thread-session/journey-api-binding';
 import type { LocationService } from '../services/location/types';
 
 export type JourneyLocationPreparation =

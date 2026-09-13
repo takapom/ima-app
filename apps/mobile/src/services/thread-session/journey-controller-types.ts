@@ -14,8 +14,8 @@ import type {
   ApiResult,
   JourneyApiClient,
   LifecycleResponse,
-} from './api';
-import type { ApiOperationToken } from './request-gate';
+} from '../api/api';
+import type { ApiOperationToken } from '../api/request-gate';
 
 export type JourneyLocalSnapshot = {
   readonly threadId: string;

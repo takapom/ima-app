@@ -1,5 +1,5 @@
 import { applyThreadSnapshotJson } from '../assistant-response';
-import { type ApiRequestGate } from './request-gate';
+import { type ApiRequestGate } from '../api/request-gate';
 import type {
   JourneyApiControllerOptions,
   JourneyApiControllerState,
@@ -14,7 +14,7 @@ import {
   validLocalSnapshot,
   validOpaqueId,
 } from './journey-controller-support';
-import type { ApiRequestOptions, ApiResult } from './api';
+import type { ApiRequestOptions, ApiResult } from '../api/api';
 import type { ThreadReadResponse } from '@ima/contracts';
 
 type HistoryDependencies = {

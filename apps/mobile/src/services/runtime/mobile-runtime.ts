@@ -16,7 +16,7 @@ import type {
   JourneyApiSearchFactoryInput,
   JourneyApiTurnFactoryInput,
   JourneySavedPlacePreviewBinding,
-} from '../api/journey-api-binding';
+} from '../thread-session/journey-api-binding';
 import {
   createJourneyApiController,
   type JourneyApiControllerState,

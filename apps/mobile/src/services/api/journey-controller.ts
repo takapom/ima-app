@@ -17,8 +17,8 @@ import type {
   LifecycleResult,
   ResponseOperation,
   RetryableResponseOperation,
-} from './journey-controller-types';
-import { createJourneyHistoryOperations } from './journey-controller-history';
+} from '../thread-session/journey-controller-types';
+import { createJourneyHistoryOperations } from '../thread-session/journey-controller-history';
 import {
   aborted,
   controllerError,
@@ -27,7 +27,7 @@ import {
   requestIdOf,
   stateForThread,
   validOpaqueId,
-} from './journey-controller-support';
+} from '../thread-session/journey-controller-support';
 import type { ApiRequestOptions, ApiResult, LifecycleResponse } from './api';
 
 export type {
@@ -38,7 +38,7 @@ export type {
   JourneyLocalRestorePort,
   JourneyLocalRestoreResult,
   JourneyLocalSnapshot,
-} from './journey-controller-types';
+} from '../thread-session/journey-controller-types';
 
 export const createJourneyApiController = (
   options: JourneyApiControllerOptions,

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { JourneyApiControllerBinding } from '../services/api/journey-api-binding';
+import type { JourneyApiControllerBinding } from '../services/thread-session/journey-api-binding';
 import {
   createNativeMobileJourneyRuntime,
   type NativeMobileJourneyRuntime,

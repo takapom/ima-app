@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MobileJourneyRuntime } from './mobile-runtime';
-import type { JourneyApiControllerBinding } from '../api/journey-api-binding';
-import type { JourneyApiController } from '../api/journey-controller-types';
+import type { JourneyApiControllerBinding } from '../thread-session/journey-api-binding';
+import type { JourneyApiController } from '../thread-session/journey-controller-types';
 import type { NativeSqliteAdapter, NativeSqliteAdapterOptions } from '../sqlite/native';
 import type { SqliteStore } from '../sqlite/types';
 import {
