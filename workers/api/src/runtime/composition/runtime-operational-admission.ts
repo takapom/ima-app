@@ -3,7 +3,7 @@ import {
   placesCursorSecret,
   productionSecret,
 } from '../runtime-production-support';
-import { isConfiguredSecret } from '../runtime-production-provider-config';
+import { isConfiguredSecret } from './runtime-production-provider-config';
 import { resolveRuntimeOperationalGate } from './runtime-operational-gate';
 
 export type RuntimeOperationalAdmissionInput = {

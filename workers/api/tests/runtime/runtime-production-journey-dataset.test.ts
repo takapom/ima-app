@@ -4,7 +4,7 @@ import type { RuntimeJourneyDataset } from '../../src/providers/last-train/port'
 import {
   createRuntimeProductionConnectionOptions,
   type RuntimeProductionOverrides,
-} from '../../src/runtime/runtime-production-factory';
+} from '../../src/runtime/composition/runtime-production-factory';
 import {
   FIXTURE_OPERATIONAL_ENV,
   NOW,

@@ -1,17 +1,17 @@
 import { CandidateObservationRegistry } from '@ima/core';
-import type { createPlacesSearchContinuation } from '../providers/places-search/continuation';
-import { createLiveOpenAIProvider } from '../model/provider';
-import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../model/provider-options';
-import { createRuntimeReadAttemptSignalBridge } from './runtime-read-ports';
-import { wrapRuntimeModelTrace } from './runtime-model-trace';
-import { createRuntimeProviderTransportObserver } from '../providers/telemetry/runtime-provider-trace';
+import type { createPlacesSearchContinuation } from '../../providers/places-search/continuation';
+import { createLiveOpenAIProvider } from '../../model/provider';
+import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../model/provider-options';
+import { createRuntimeReadAttemptSignalBridge } from '../runtime-read-ports';
+import { wrapRuntimeModelTrace } from '../runtime-model-trace';
+import { createRuntimeProviderTransportObserver } from '../../providers/telemetry/runtime-provider-trace';
 import {
   createRuntimeTurnComposition,
   type RuntimeTurnCompositionCoreOptions,
-} from './turn-execution/runtime-turn-composition';
-import { wrapRuntimeProductionCommit } from './runtime-production-context';
-import { createFactoryRuntimeContext } from './runtime-production-context-factory';
-import { RuntimeBudget } from './budget/runtime-budget';
+} from '../turn-execution/runtime-turn-composition';
+import { wrapRuntimeProductionCommit } from '../runtime-production-context';
+import { createFactoryRuntimeContext } from '../runtime-production-context-factory';
+import { RuntimeBudget } from '../budget/runtime-budget';
 import {
   harnessContextFor,
   productionCapabilities,
@@ -24,11 +24,11 @@ import {
   ProductionIds,
   productionScopeFor,
   validationContextFor,
-} from './runtime-production-support';
+} from '../runtime-production-support';
 import {
   createRuntimeLastTrainRevisionState,
   readActiveJourneyRevision,
-} from './runtime-provider-composition';
+} from '../runtime-provider-composition';
 import {
   capabilitiesWithProviders,
   cardEvidenceResolver,
@@ -40,36 +40,36 @@ import {
   type RuntimeProductionProviderAvailability,
   type RuntimeProductionRouteReadiness,
 } from './runtime-production-provider-config';
-import { configureRuntimeProductionSession } from './runtime-production-session';
+import { configureRuntimeProductionSession } from '../runtime-production-session';
 import type {
   RuntimeThinkConnectionOptions,
   RuntimeThinkTurnBuildRequest,
-} from './turn-execution/runtime-think-connection';
-import { defaultRuntimeModelContextPolicy } from './runtime-field-policy';
-import { unavailableSubmit } from './composition/runtime-production-submit';
-import { resolveRuntimeProductionReadCost } from './runtime-production-read-cost';
-import { createRuntimeProductionPlacePorts } from './composition/runtime-production-place-ports';
-import { createFactoryContinuation } from './composition/runtime-production-continuation';
-import { resolveRuntimeOperationalAdmission } from './composition/runtime-operational-admission';
+} from '../turn-execution/runtime-think-connection';
+import { defaultRuntimeModelContextPolicy } from '../runtime-field-policy';
+import { unavailableSubmit } from './runtime-production-submit';
+import { resolveRuntimeProductionReadCost } from '../runtime-production-read-cost';
+import { createRuntimeProductionPlacePorts } from './runtime-production-place-ports';
+import { createFactoryContinuation } from './runtime-production-continuation';
+import { resolveRuntimeOperationalAdmission } from './runtime-operational-admission';
 import {
   devFixtureEnvironmentFor,
   devFixtureOverridesFor,
   isKeylessDevFixtureEnvironment,
-} from './composition/runtime-dev-fixture';
-import type { RuntimeRetentionContext } from './runtime-retention';
+} from './runtime-dev-fixture';
+import type { RuntimeRetentionContext } from '../runtime-retention';
 import type {
   ProductionBuildInput,
   RuntimeProductionConnectionOptions,
   RuntimeProductionOverrides,
   RuntimeProductionTurnPlan,
-} from './runtime-production-types';
+} from '../runtime-production-types';
 
 export type {
   ProductionBuildInput,
   RuntimeProductionConnectionOptions,
   RuntimeProductionOverrides,
   RuntimeProductionTurnPlan,
-} from './runtime-production-types';
+} from '../runtime-production-types';
 const defaultPlan = (
   input: ProductionBuildInput,
   env: unknown,

@@ -57,7 +57,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 - 保存禁止・不明な本文はSDK永続化とlive cacheの前に置換する。必要な原文・Tool結果は当該turnへの一時入力だけに使う。由来不明のcompaction summaryも保持しない。
 - 再起動後の再送は同じ確定IDと許可された参照だけで成立させ、保存禁止本文の完全復元を約束しない。
 
-設定・停止時にfixtureへ暗黙に切り替えない。Provider/model設定は[model](../workers/api/src/model)、組立ては[runtime-production-factory.ts](../workers/api/src/runtime/runtime-production-factory.ts)、保存前処理は[runtime-retention.ts](../workers/api/src/runtime/runtime-retention.ts)を参照する。
+設定・停止時にfixtureへ暗黙に切り替えない。Provider/model設定は[model](../workers/api/src/model)、組立ては[runtime-production-factory.ts](../workers/api/src/runtime/composition/runtime-production-factory.ts)、保存前処理は[runtime-retention.ts](../workers/api/src/runtime/runtime-retention.ts)を参照する。
 
 ## データの正と保存境界
 

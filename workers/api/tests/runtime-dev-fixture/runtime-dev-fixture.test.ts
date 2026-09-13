@@ -13,7 +13,7 @@ import { routeRequest } from '../../src/http/router';
 import { createPhotoReferenceStoreResolver } from '../../src/providers/photo/rpc';
 import { createPhotoTokenCodec } from '../../src/providers/photo/token';
 import type { RateLimitDO, ThreadDO } from '../../src/thread-do';
-import { createRuntimeProductionConnectionOptions } from '../../src/runtime/runtime-production-factory';
+import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
 import {
   createDevFixtureFetcher,
   devFixtureEnvironmentFor,

@@ -1,7 +1,7 @@
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type { CommitPort } from '@ima/core';
 import { describe, expect, it } from 'vitest';
-import { createRuntimeProductionConnectionOptions } from '../../src/runtime/runtime-production-factory';
+import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
 import { invokePublicToolEnvelope } from '../../src/tools';
 import { modelFor, type RuntimeGateModelReport } from '../support/runtime-model-fixture';
 import {

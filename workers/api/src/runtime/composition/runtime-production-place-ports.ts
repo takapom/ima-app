@@ -22,7 +22,7 @@ import {
   areaLabelFor,
   isConfiguredSecret,
   type RuntimeProductionProviderAvailability,
-} from '../runtime-production-provider-config';
+} from './runtime-production-provider-config';
 import {
   capProductionObservationPolicy,
   defaultProductionObservationPolicy,

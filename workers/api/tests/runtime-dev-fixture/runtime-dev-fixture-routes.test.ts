@@ -7,7 +7,7 @@ import {
 } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
 import * as v from 'valibot';
-import { createRuntimeProductionConnectionOptions } from '../../src/runtime/runtime-production-factory';
+import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
 import {
   createDevFixtureFetcher,
   DEV_FIXTURE_ORIGIN_REF,

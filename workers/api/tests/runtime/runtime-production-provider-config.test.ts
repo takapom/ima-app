@@ -4,7 +4,7 @@ import {
   photoDependenciesFor,
   runtimeProductionProviderAvailabilityFor,
   type RuntimeProductionAvailabilityConfiguration,
-} from '../../src/runtime/runtime-production-provider-config';
+} from '../../src/runtime/composition/runtime-production-provider-config';
 import { describe, expect, it } from 'vitest';
 import { context, makeFixture } from '../providers/places-details/adapter-fixtures';
 

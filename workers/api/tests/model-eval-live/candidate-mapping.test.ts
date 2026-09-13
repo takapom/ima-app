@@ -6,7 +6,7 @@ import {
 } from '@ima/core';
 import { describe, expect, it } from 'vitest';
 import { createPlacesSearchRegistration } from '../../src/providers/places-search/registration';
-import { createRuntimeProductionConnectionOptions } from '../../src/runtime/runtime-production-factory';
+import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
 import { invokePublicToolEnvelope } from '../../src/tools';
 import {
   createCandidateIdentityCapture,

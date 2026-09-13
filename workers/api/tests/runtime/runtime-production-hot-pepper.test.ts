@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { invokePublicToolEnvelope } from '../../src/tools';
-import { createRuntimeProductionConnectionOptions } from '../../src/runtime/runtime-production-factory';
-import { cardEvidenceResolver } from '../../src/runtime/runtime-production-provider-config';
+import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
+import { cardEvidenceResolver } from '../../src/runtime/composition/runtime-production-provider-config';
 import type {
   HotPepperField,
   HotPepperFieldPolicy,

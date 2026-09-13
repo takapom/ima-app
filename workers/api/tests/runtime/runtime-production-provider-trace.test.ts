@@ -1,6 +1,6 @@
 import type { ThreadTurnRequest } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import { createRuntimeProductionConnectionOptions } from '../../src/runtime/runtime-production-factory';
+import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
 import type { RuntimeProviderTrace } from '../../src/providers/telemetry/runtime-provider-trace';
 import { invokePublicToolEnvelope } from '../../src/tools';
 import { modelFor, type RuntimeGateModelReport } from '../support/runtime-model-fixture';

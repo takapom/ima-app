@@ -8,7 +8,7 @@ import type {
 } from '../../src/providers/hot-pepper/types';
 import type { PlacesDetailsObservationPolicy } from '../../src/providers/places-details/adapter-types';
 import type { RuntimeProviderTrace } from '../../src/providers/telemetry/runtime-provider-trace';
-import { createRuntimeProductionConnectionOptions } from '../../src/runtime/runtime-production-factory';
+import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
 import { invokePublicToolEnvelope } from '../../src/tools';
 import {
   ALLOW_MODEL_CONTEXT_FIELDS,

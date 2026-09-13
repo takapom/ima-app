@@ -7,37 +7,37 @@ import type {
   PlaceDetailsPort,
   ToolExecutionContext,
 } from '@ima/core';
-import type { PhotoReferenceRpc } from '../providers/photo/rpc';
-import { createPhotoReferenceStoreResolver } from '../providers/photo/rpc';
-import { createPhotoTokenCodec } from '../providers/photo/token';
-import type { PhotoTokenPreparerDependencies } from '../providers/photo/issuance';
-import type { PhotoReferenceStoreResolver } from '../providers/photo/types';
-import type { RuntimePublicResponseDependencies } from './turn-execution/runtime-turn-composition';
-import { productionScopeFor, productionSecret } from './runtime-production-support';
-import { createRuntimeRouteBudgetBoundary } from '../providers/routes/budget';
-import type { WalkingRouteObservationPolicy } from '../providers/routes/registration';
-import type { RouteWaypointResolver } from '../providers/routes/resolver';
-import type { RuntimeProviderTransportObserver } from '../providers/telemetry/runtime-provider-trace-contract';
-import type { JourneyServiceDateContextBuilder } from '../providers/last-train/port';
-import type { LastTrainObservationPolicy } from '../providers/last-train/registration';
-import { operationalCapabilityMode, resolveOperationalFlags } from '../telemetry/flags';
-import type { RuntimeProductionHotPepperConfiguration } from '../providers/hot-pepper/composition';
+import type { PhotoReferenceRpc } from '../../providers/photo/rpc';
+import { createPhotoReferenceStoreResolver } from '../../providers/photo/rpc';
+import { createPhotoTokenCodec } from '../../providers/photo/token';
+import type { PhotoTokenPreparerDependencies } from '../../providers/photo/issuance';
+import type { PhotoReferenceStoreResolver } from '../../providers/photo/types';
+import type { RuntimePublicResponseDependencies } from '../turn-execution/runtime-turn-composition';
+import { productionScopeFor, productionSecret } from '../runtime-production-support';
+import { createRuntimeRouteBudgetBoundary } from '../../providers/routes/budget';
+import type { WalkingRouteObservationPolicy } from '../../providers/routes/registration';
+import type { RouteWaypointResolver } from '../../providers/routes/resolver';
+import type { RuntimeProviderTransportObserver } from '../../providers/telemetry/runtime-provider-trace-contract';
+import type { JourneyServiceDateContextBuilder } from '../../providers/last-train/port';
+import type { LastTrainObservationPolicy } from '../../providers/last-train/registration';
+import { operationalCapabilityMode, resolveOperationalFlags } from '../../telemetry/flags';
+import type { RuntimeProductionHotPepperConfiguration } from '../../providers/hot-pepper/composition';
 import {
   denyHotPepperFieldPolicy,
   type HotPepperFieldPolicy,
   type HotPepperRuntimeMode,
-} from '../providers/hot-pepper/types';
-import { reprojectHotPepperObservationRetention } from '../providers/hot-pepper/policy-projection';
+} from '../../providers/hot-pepper/types';
+import { reprojectHotPepperObservationRetention } from '../../providers/hot-pepper/policy-projection';
 import type {
   RuntimeJourneyDataset,
   RuntimeLastTrainCompositionOptions,
   RuntimeLastTrainRevisionState,
-} from './runtime-provider-composition';
+} from '../runtime-provider-composition';
 import {
   createRuntimeProductionProviderComposition,
   type RuntimeProductionProviderComposition,
-} from './runtime-production-providers';
-import type { RuntimeBudget } from './budget/runtime-budget';
+} from '../runtime-production-providers';
+import type { RuntimeBudget } from '../budget/runtime-budget';
 
 export type RuntimeProductionProviderAvailability = {
   readonly activeJourneyRevision: number | null | undefined;
