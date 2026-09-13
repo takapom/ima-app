@@ -19,7 +19,7 @@ import {
   buildRequest,
   readOnlyCommit,
 } from './runtime-production-factory-fixtures';
-import { sessionExpiryAt } from '../../src/runtime/runtime-production-support';
+import { sessionExpiryAt } from '../../src/runtime/composition/runtime-production-support';
 
 const hpFieldPolicy: HotPepperFieldPolicy = (field: HotPepperField, use: HotPepperPolicyUse) => ({
   decision:

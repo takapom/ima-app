@@ -2,7 +2,7 @@ import type { CandidateRecord, ModelContextFieldPolicy, RetentionMetadata } from
 import { ThreadDO as ProductionThreadDO } from '../../src/thread-do';
 import { createLiveOpenAIProvider } from '../../src/model/provider';
 import type { RuntimeModelGuardModel } from '../../src/runtime/turn-execution/runtime-model-guard';
-import { sessionExpiryAt } from '../../src/runtime/runtime-production-support';
+import { sessionExpiryAt } from '../../src/runtime/composition/runtime-production-support';
 import {
   isThreadRuntimeTurnInput,
   runtimeFailure,

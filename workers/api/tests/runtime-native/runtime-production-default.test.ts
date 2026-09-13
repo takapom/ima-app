@@ -3,7 +3,7 @@ import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { AssistantResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../src/model/provider-options';
-import { sessionExpiryAt } from '../../src/runtime/runtime-production-support';
+import { sessionExpiryAt } from '../../src/runtime/composition/runtime-production-support';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,

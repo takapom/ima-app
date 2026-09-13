@@ -14,26 +14,26 @@ import {
   WalkingRouteSchema,
 } from '@ima/core';
 import * as v from 'valibot';
-import { createGoogleWalkingRouteAdapter } from '../providers/routes/adapter';
-import { createRegisteredWalkingRoutePort } from '../providers/routes/composition';
-import type { RouteBudgetBoundary } from '../providers/routes/budget';
+import { createGoogleWalkingRouteAdapter } from '../../providers/routes/adapter';
+import { createRegisteredWalkingRoutePort } from '../../providers/routes/composition';
+import type { RouteBudgetBoundary } from '../../providers/routes/budget';
 import {
   createWalkingRouteRegistration,
   type WalkingRouteObservationPolicy,
-} from '../providers/routes/registration';
+} from '../../providers/routes/registration';
 import {
   createRegistryRouteWaypointResolver,
   unavailableStationWaypoint,
   type RouteWaypointResolver,
-} from '../providers/routes/resolver';
-import { createGoogleRouteMatrixTransport } from '../providers/routes/transport';
-import type { RuntimeProviderTransportObserver } from '../providers/telemetry/runtime-provider-trace-contract';
+} from '../../providers/routes/resolver';
+import { createGoogleRouteMatrixTransport } from '../../providers/routes/transport';
+import type { RuntimeProviderTransportObserver } from '../../providers/telemetry/runtime-provider-trace-contract';
 import {
   createRuntimeProviderComposition,
   type RuntimeLastTrainCompositionOptions,
   type RuntimeProviderComposition,
-} from './runtime-provider-composition';
-import type { RuntimePhotoTokenPreparer } from './runtime-response';
+} from '../runtime-provider-composition';
+import type { RuntimePhotoTokenPreparer } from '../runtime-response';
 
 export type RuntimeProductionRouteOptions = {
   readonly apiKey: string;

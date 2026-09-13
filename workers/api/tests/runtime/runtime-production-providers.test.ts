@@ -9,7 +9,7 @@ import {
   policy,
 } from '../providers/places-details/adapter-fixtures';
 import { RuntimeBudget } from '../../src/runtime/budget/runtime-budget';
-import { createRuntimeProductionProviderComposition } from '../../src/runtime/runtime-production-providers';
+import { createRuntimeProductionProviderComposition } from '../../src/runtime/composition/runtime-production-providers';
 
 const routeInput = (candidateId: string): GetPlaceDetailsInput => ({
   requests: [{ candidateId, fields: ['walking_route'] }],

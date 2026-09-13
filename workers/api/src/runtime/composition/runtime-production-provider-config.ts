@@ -13,7 +13,7 @@ import { createPhotoTokenCodec } from '../../providers/photo/token';
 import type { PhotoTokenPreparerDependencies } from '../../providers/photo/issuance';
 import type { PhotoReferenceStoreResolver } from '../../providers/photo/types';
 import type { RuntimePublicResponseDependencies } from '../turn-execution/runtime-turn-composition';
-import { productionScopeFor, productionSecret } from '../runtime-production-support';
+import { productionScopeFor, productionSecret } from './runtime-production-support';
 import { createRuntimeRouteBudgetBoundary } from '../../providers/routes/budget';
 import type { WalkingRouteObservationPolicy } from '../../providers/routes/registration';
 import type { RouteWaypointResolver } from '../../providers/routes/resolver';
@@ -36,7 +36,7 @@ import type {
 import {
   createRuntimeProductionProviderComposition,
   type RuntimeProductionProviderComposition,
-} from '../runtime-production-providers';
+} from './runtime-production-providers';
 import type { RuntimeBudget } from '../budget/runtime-budget';
 
 export type RuntimeProductionProviderAvailability = {

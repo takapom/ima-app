@@ -12,35 +12,35 @@ import type {
   PlaceDetailsPort,
   PlaceSearchPort,
 } from '@ima/core';
-import type { JourneyServiceDateContextBuilder } from '../providers/last-train/port';
-import type { LastTrainObservationPolicy } from '../providers/last-train/registration';
-import type { PhotoTokenPreparerDependencies } from '../providers/photo/issuance';
-import type { PhotoReferenceStoreResolver } from '../providers/photo/types';
-import type { PlacesDetailsObservationPolicy } from '../providers/places-details/adapter-types';
-import type { PlacesSearchObservationPolicy } from '../providers/places-search/registration';
-import type { WalkingRouteObservationPolicy } from '../providers/routes/registration';
-import type { RouteWaypointResolver } from '../providers/routes/resolver';
-import type { RuntimeReadAttemptSignalBridge } from './runtime-read-ports';
+import type { JourneyServiceDateContextBuilder } from '../../providers/last-train/port';
+import type { LastTrainObservationPolicy } from '../../providers/last-train/registration';
+import type { PhotoTokenPreparerDependencies } from '../../providers/photo/issuance';
+import type { PhotoReferenceStoreResolver } from '../../providers/photo/types';
+import type { PlacesDetailsObservationPolicy } from '../../providers/places-details/adapter-types';
+import type { PlacesSearchObservationPolicy } from '../../providers/places-search/registration';
+import type { WalkingRouteObservationPolicy } from '../../providers/routes/registration';
+import type { RouteWaypointResolver } from '../../providers/routes/resolver';
+import type { RuntimeReadAttemptSignalBridge } from '../runtime-read-ports';
 import type {
   RuntimeCompositionModelContext,
   RuntimeCompositionValidationContext,
   RuntimePublicResponseDependencies,
-} from './turn-execution/runtime-turn-composition';
-import type { RuntimeProductionContextPersistence } from './runtime-production-context-reference';
+} from '../turn-execution/runtime-turn-composition';
+import type { RuntimeProductionContextPersistence } from '../runtime-production-context-reference';
 import type { ProductionRetentionSource } from './runtime-production-support';
 import type {
   RuntimeJourneyDataset,
   RuntimeLastTrainCompositionOptions,
-} from './runtime-provider-composition';
+} from '../runtime-provider-composition';
 import type { RuntimeProductionProviderComposition } from './runtime-production-providers';
-import type { RuntimeRetentionContext } from './runtime-retention';
-import type { RuntimeModelGuardModel } from './turn-execution/runtime-model-guard';
-import type { RuntimeModelTraceSink } from './runtime-model-trace';
-import type { RuntimeThinkTurnBuildRequest } from './turn-execution/runtime-think-connection';
-import type { RuntimeProviderTraceSink } from '../providers/telemetry/runtime-provider-trace';
-import type { SavedReferenceDetailsHandoff } from '../providers/places-details/handoff';
-import type { SavedPlaceReferenceResolver } from '../tools/types';
-import type { RuntimeProductionHotPepperConfiguration } from '../providers/hot-pepper/composition';
+import type { RuntimeRetentionContext } from '../runtime-retention';
+import type { RuntimeModelGuardModel } from '../turn-execution/runtime-model-guard';
+import type { RuntimeModelTraceSink } from '../runtime-model-trace';
+import type { RuntimeThinkTurnBuildRequest } from '../turn-execution/runtime-think-connection';
+import type { RuntimeProviderTraceSink } from '../../providers/telemetry/runtime-provider-trace';
+import type { SavedReferenceDetailsHandoff } from '../../providers/places-details/handoff';
+import type { SavedPlaceReferenceResolver } from '../../tools/types';
+import type { RuntimeProductionHotPepperConfiguration } from '../../providers/hot-pepper/composition';
 
 export type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;

@@ -11,7 +11,10 @@ import { createRuntimeProductionTelemetrySinks } from './thread-runtime/runtime-
 import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetry/telemetry-do';
 import type { ThreadDO } from './thread-do';
 import { resolveRuntimeOperationalGate } from './runtime/composition/runtime-operational-gate';
-import { productionClock, productionMonotonicNow } from './runtime/runtime-production-support';
+import {
+  productionClock,
+  productionMonotonicNow,
+} from './runtime/composition/runtime-production-support';
 import {
   runtimeTraceModeFor,
   telemetryObjectNameForRuntimeTraceMode,

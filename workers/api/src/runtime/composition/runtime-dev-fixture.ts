@@ -23,8 +23,8 @@ import {
   sessionExpiryAt,
   type ProductionObservationPolicyInput,
   type ProductionRetentionSource,
-} from '../runtime-production-support';
-import type { RuntimeProductionOverrides } from '../runtime-production-types';
+} from './runtime-production-support';
+import type { RuntimeProductionOverrides } from './runtime-production-types';
 
 export const DEV_FIXTURE_PLACES_KEY = 'dev-fixture-places-key';
 export const DEV_FIXTURE_CURSOR_SECRET = 'dev-fixture-cursor-secret';

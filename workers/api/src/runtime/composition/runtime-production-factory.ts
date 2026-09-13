@@ -24,7 +24,7 @@ import {
   ProductionIds,
   productionScopeFor,
   validationContextFor,
-} from '../runtime-production-support';
+} from './runtime-production-support';
 import {
   createRuntimeLastTrainRevisionState,
   readActiveJourneyRevision,
@@ -47,7 +47,7 @@ import type {
 } from '../turn-execution/runtime-think-connection';
 import { defaultRuntimeModelContextPolicy } from '../runtime-field-policy';
 import { unavailableSubmit } from './runtime-production-submit';
-import { resolveRuntimeProductionReadCost } from '../runtime-production-read-cost';
+import { resolveRuntimeProductionReadCost } from './runtime-production-read-cost';
 import { createRuntimeProductionPlacePorts } from './runtime-production-place-ports';
 import { createFactoryContinuation } from './runtime-production-continuation';
 import { resolveRuntimeOperationalAdmission } from './runtime-operational-admission';
@@ -62,14 +62,14 @@ import type {
   RuntimeProductionConnectionOptions,
   RuntimeProductionOverrides,
   RuntimeProductionTurnPlan,
-} from '../runtime-production-types';
+} from './runtime-production-types';
 
 export type {
   ProductionBuildInput,
   RuntimeProductionConnectionOptions,
   RuntimeProductionOverrides,
   RuntimeProductionTurnPlan,
-} from '../runtime-production-types';
+} from './runtime-production-types';
 const defaultPlan = (
   input: ProductionBuildInput,
   env: unknown,

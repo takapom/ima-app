@@ -5,7 +5,7 @@ import {
 } from '../../src/bootstrap';
 import type { RuntimeFieldUsePolicy } from '../../src/runtime/runtime-field-policy';
 import type { PhotoDisplayPolicySnapshot } from '../../src/providers/photo/issuance';
-import type { RuntimeProductionOverrides } from '../../src/runtime/runtime-production-types';
+import type { RuntimeProductionOverrides } from '../../src/runtime/composition/runtime-production-types';
 import { routeRequest } from '../../src/http/router';
 import { RateLimitDO } from '../../src/thread-do';
 import { TelemetryDO } from '../../src/telemetry/telemetry-do';

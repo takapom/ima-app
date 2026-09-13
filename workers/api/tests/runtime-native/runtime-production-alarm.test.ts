@@ -8,7 +8,7 @@ import {
   createRuntimeRetentionAlarmCapability,
   RUNTIME_RETENTION_ALARM_TABLE,
 } from '../../src/thread-runtime/runtime-retention-alarm';
-import { sessionExpiryAt } from '../../src/runtime/runtime-production-support';
+import { sessionExpiryAt } from '../../src/runtime/composition/runtime-production-support';
 import type { ProductionThreadDO } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {

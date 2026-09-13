@@ -6,10 +6,10 @@ import type {
 import {
   isSupportedField,
   observationContextFor,
-} from '../providers/places-details/adapter-support';
-import type { SavedReferenceDetailsHandoff } from '../providers/places-details/handoff';
+} from '../../providers/places-details/adapter-support';
+import type { SavedReferenceDetailsHandoff } from '../../providers/places-details/handoff';
 import { productionScopeFor } from './runtime-production-support';
-import type { RuntimeReadCost, RuntimeReadCostRequest } from './runtime-read-ports';
+import type { RuntimeReadCost, RuntimeReadCostRequest } from '../runtime-read-ports';
 
 const detailsProviderCost = (
   input: GetPlaceDetailsInput,

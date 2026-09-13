@@ -2,7 +2,7 @@ import {
   googlePlacesApiKey,
   placesCursorSecret,
   productionSecret,
-} from '../runtime-production-support';
+} from './runtime-production-support';
 import { isConfiguredSecret } from './runtime-production-provider-config';
 import { resolveRuntimeOperationalGate } from './runtime-operational-gate';
 

@@ -27,14 +27,14 @@ import {
   capProductionObservationPolicy,
   defaultProductionObservationPolicy,
   productionClockPort,
-} from '../runtime-production-support';
+} from './runtime-production-support';
 import {
   createRuntimeSavedReferenceComposition,
   runtimeSavedReferenceNamespaceFor,
   type RuntimeSavedReferenceComposition,
 } from '../runtime-saved-reference-production';
-import type { ProductionBuildInput, RuntimeProductionOverrides } from '../runtime-production-types';
-import type { ProductionIds } from '../runtime-production-support';
+import type { ProductionBuildInput, RuntimeProductionOverrides } from './runtime-production-types';
+import type { ProductionIds } from './runtime-production-support';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

@@ -1,5 +1,5 @@
 import type { CandidateObservationRegistryPort } from '@ima/core';
-import { sessionExpiryAt } from './runtime-production-support';
+import { sessionExpiryAt } from './composition/runtime-production-support';
 import {
   createRuntimeProductionContextStore,
   type RuntimeProductionContextStore,

@@ -20,7 +20,10 @@ import { providerIdFrom, sourceInfo } from '../providers/places-details/adapter-
 import { responseMatches } from '../providers/places-details/adapter-support';
 import { normalizeGoogleIdentity } from '../providers/places/identity';
 import { parseGooglePlaceWireField } from '../providers/places/wire';
-import { boundProductionRetention, sessionExpiryAt } from '../runtime/runtime-production-support';
+import {
+  boundProductionRetention,
+  sessionExpiryAt,
+} from '../runtime/composition/runtime-production-support';
 import type {
   SavedReferenceRefreshIdInput,
   SavedReferenceRefreshProjectionDependencies,
