@@ -13,7 +13,7 @@ export default defineConfig({
       'workers/api/tests/model-eval/*.test.ts',
       'workers/api/tests/model-eval-live/live-contract.test.ts',
       'workers/api/tests/providers/**/*.test.ts',
-      'workers/api/tests/runtime/*.test.ts',
+      'workers/api/tests/runtime/**/*.test.ts',
     ],
     exclude: ['tests/worker.test.ts'],
   },
