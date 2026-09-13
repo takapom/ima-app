@@ -16,22 +16,22 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '../../src/runtime/runtime-budget';
+} from '../../../src/runtime/runtime-budget';
 import {
   createRuntimeThinkConnection,
   RuntimeThinkConnectionError,
   type RuntimeThinkComposition,
   type RuntimeThinkPersistMessages,
-} from '../../src/runtime/turn-execution/runtime-think-connection';
-import { createRuntimeTurnFactory } from '../../src/runtime/turn-execution/runtime-turn-factory';
+} from '../../../src/runtime/turn-execution/runtime-think-connection';
+import { createRuntimeTurnFactory } from '../../../src/runtime/turn-execution/runtime-turn-factory';
 import {
   RUNTIME_RETENTION_WITHHELD,
   redactedRuntimeToolInput,
   type RuntimeRetentionContext,
-} from '../../src/runtime/runtime-retention';
-import { createRuntimeRetentionTransform } from '../../src/runtime/runtime-retention-transform';
-import { createToolRegistry } from '../tools/registry-fixture';
-import { modelFor } from '../support/runtime-model-fixture';
+} from '../../../src/runtime/runtime-retention';
+import { createRuntimeRetentionTransform } from '../../../src/runtime/runtime-retention-transform';
+import { createToolRegistry } from '../../tools/registry-fixture';
+import { modelFor } from '../../support/runtime-model-fixture';
 
 const NOW = '2026-09-10T00:00:00Z';
 

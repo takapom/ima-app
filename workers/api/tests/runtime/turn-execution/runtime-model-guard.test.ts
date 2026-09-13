@@ -5,7 +5,7 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '../../src/runtime/runtime-budget';
+} from '../../../src/runtime/runtime-budget';
 import {
   RUNTIME_MODEL_MAX_RETRIES,
   type RuntimeModelGuardAcceptance,
@@ -14,8 +14,8 @@ import {
   type RuntimeModelGuardModel,
   type RuntimeModelGuardStreamPart,
   wrapRuntimeModelGuard,
-} from '../../src/runtime/turn-execution/runtime-model-guard';
-import type { RuntimeModelGuardError } from '../../src/runtime/turn-execution/runtime-model-guard';
+} from '../../../src/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelGuardError } from '../../../src/runtime/turn-execution/runtime-model-guard';
 
 type GenerateContent = RuntimeModelGuardGenerateResult['content'][number];
 
