@@ -5,7 +5,7 @@ import {
   OWNER_CREDENTIAL_HEADER,
   REQUEST_ID_HEADER,
 } from '@ima/contracts';
-import { isKeylessDevFixtureEnvironment } from '../../src/runtime/runtime-dev-fixture';
+import { isKeylessDevFixtureEnvironment } from '../../src/runtime/composition/runtime-dev-fixture';
 
 const LOCAL_ORIGIN_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
 const LOCAL_ORIGIN_PROTOCOLS = new Set(['http:', 'https:']);

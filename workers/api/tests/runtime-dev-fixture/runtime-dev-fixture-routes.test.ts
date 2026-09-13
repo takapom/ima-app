@@ -13,7 +13,7 @@ import {
   DEV_FIXTURE_ORIGIN_REF,
   DEV_FIXTURE_ROUTE_DISTANCE_METERS,
   DEV_FIXTURE_ROUTE_DURATION_SECONDS,
-} from '../../src/runtime/runtime-dev-fixture';
+} from '../../src/runtime/composition/runtime-dev-fixture';
 import { readOnlyCommit, buildRequest } from '../runtime/runtime-production-factory-fixtures';
 
 const OWNER_CREDENTIAL = `${'A'.repeat(42)}E`;

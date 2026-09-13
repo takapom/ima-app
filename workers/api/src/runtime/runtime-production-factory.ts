@@ -46,16 +46,16 @@ import type {
   RuntimeThinkTurnBuildRequest,
 } from './turn-execution/runtime-think-connection';
 import { defaultRuntimeModelContextPolicy } from './runtime-field-policy';
-import { unavailableSubmit } from './runtime-production-submit';
+import { unavailableSubmit } from './composition/runtime-production-submit';
 import { resolveRuntimeProductionReadCost } from './runtime-production-read-cost';
-import { createRuntimeProductionPlacePorts } from './runtime-production-place-ports';
-import { createFactoryContinuation } from './runtime-production-continuation';
-import { resolveRuntimeOperationalAdmission } from './runtime-operational-admission';
+import { createRuntimeProductionPlacePorts } from './composition/runtime-production-place-ports';
+import { createFactoryContinuation } from './composition/runtime-production-continuation';
+import { resolveRuntimeOperationalAdmission } from './composition/runtime-operational-admission';
 import {
   devFixtureEnvironmentFor,
   devFixtureOverridesFor,
   isKeylessDevFixtureEnvironment,
-} from './runtime-dev-fixture';
+} from './composition/runtime-dev-fixture';
 import type { RuntimeRetentionContext } from './runtime-retention';
 import type {
   ProductionBuildInput,

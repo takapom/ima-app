@@ -10,7 +10,7 @@ import { createRuntimeProviderTransportObserver } from './providers/telemetry/ru
 import { createRuntimeProductionTelemetrySinks } from './thread-runtime/runtime-production-telemetry';
 import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetry/telemetry-do';
 import type { ThreadDO } from './thread-do';
-import { resolveRuntimeOperationalGate } from './runtime/runtime-operational-gate';
+import { resolveRuntimeOperationalGate } from './runtime/composition/runtime-operational-gate';
 import { productionClock, productionMonotonicNow } from './runtime/runtime-production-support';
 import {
   runtimeTraceModeFor,
@@ -20,7 +20,7 @@ import {
   createDevFixturePhotoBodyHandler,
   devFixtureEnvironmentFor,
   isKeylessDevFixtureEnvironment,
-} from './runtime/runtime-dev-fixture';
+} from './runtime/composition/runtime-dev-fixture';
 
 type PhotoBootstrapEnv = {
   readonly GOOGLE_PLACES_API_KEY?: string;

@@ -2,39 +2,39 @@ import type { CandidateObservationRegistry, PlaceDetailsPort, PlaceSearchPort } 
 import {
   createConfiguredHotPepperAdapter,
   type HotPepperEnvironment,
-} from '../providers/hot-pepper/adapter';
+} from '../../providers/hot-pepper/adapter';
 import {
   createHotPepperDetailsOverlay,
   createHotPepperReuseFilter,
-} from '../providers/hot-pepper/composition';
-import { denyHotPepperFieldPolicy } from '../providers/hot-pepper/types';
-import { normalizeGoogleOpeningHours } from '../providers/places/hours';
-import { createPlacesDetailsAdapter } from '../providers/places-details/adapter';
-import { createGooglePlaceDetailsTransport } from '../providers/places-details/transport';
-import type { RuntimeProviderTransportObserver } from '../providers/telemetry/runtime-provider-trace-contract';
-import { createPlacesSearchAdapter } from '../providers/places-search/adapter';
-import type { createPlacesSearchContinuation } from '../providers/places-search/continuation';
-import { createPlacesSearchRegistration } from '../providers/places-search/registration';
-import { createGoogleTextSearchTransport } from '../providers/places-search/transport';
-import type { RuntimeBudget } from './budget/runtime-budget';
+} from '../../providers/hot-pepper/composition';
+import { denyHotPepperFieldPolicy } from '../../providers/hot-pepper/types';
+import { normalizeGoogleOpeningHours } from '../../providers/places/hours';
+import { createPlacesDetailsAdapter } from '../../providers/places-details/adapter';
+import { createGooglePlaceDetailsTransport } from '../../providers/places-details/transport';
+import type { RuntimeProviderTransportObserver } from '../../providers/telemetry/runtime-provider-trace-contract';
+import { createPlacesSearchAdapter } from '../../providers/places-search/adapter';
+import type { createPlacesSearchContinuation } from '../../providers/places-search/continuation';
+import { createPlacesSearchRegistration } from '../../providers/places-search/registration';
+import { createGoogleTextSearchTransport } from '../../providers/places-search/transport';
+import type { RuntimeBudget } from '../budget/runtime-budget';
 import { disabledDetailsPort, disabledSearchPort } from './runtime-disabled-provider-ports';
 import {
   areaLabelFor,
   isConfiguredSecret,
   type RuntimeProductionProviderAvailability,
-} from './runtime-production-provider-config';
+} from '../runtime-production-provider-config';
 import {
   capProductionObservationPolicy,
   defaultProductionObservationPolicy,
   productionClockPort,
-} from './runtime-production-support';
+} from '../runtime-production-support';
 import {
   createRuntimeSavedReferenceComposition,
   runtimeSavedReferenceNamespaceFor,
   type RuntimeSavedReferenceComposition,
-} from './runtime-saved-reference-production';
-import type { ProductionBuildInput, RuntimeProductionOverrides } from './runtime-production-types';
-import type { ProductionIds } from './runtime-production-support';
+} from '../runtime-saved-reference-production';
+import type { ProductionBuildInput, RuntimeProductionOverrides } from '../runtime-production-types';
+import type { ProductionIds } from '../runtime-production-support';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

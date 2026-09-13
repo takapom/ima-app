@@ -21,7 +21,7 @@ import {
   DEV_FIXTURE_PHOTO_TOKEN_SECRET,
   DEV_FIXTURE_PLACE_ID,
   isKeylessDevFixtureEnvironment,
-} from '../../src/runtime/runtime-dev-fixture';
+} from '../../src/runtime/composition/runtime-dev-fixture';
 import { readOnlyCommit } from '../runtime/runtime-production-factory-fixtures';
 import { toolCallInput } from './runtime-dev-fixture-test-support';
 

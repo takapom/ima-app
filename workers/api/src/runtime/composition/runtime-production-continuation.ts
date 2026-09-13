@@ -1,8 +1,8 @@
 import {
   createPlacesSearchContinuation,
   type PlacesSearchContinuation,
-} from '../providers/places-search/continuation';
-import { createPlacesSearchCursorStore } from '../providers/places-search/cursor';
+} from '../../providers/places-search/continuation';
+import { createPlacesSearchCursorStore } from '../../providers/places-search/cursor';
 
 export const createFactoryContinuation = (input: {
   readonly secret: string | undefined;
