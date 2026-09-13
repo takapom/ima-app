@@ -10,7 +10,7 @@ import {
   nativeCredentialStorageKeyFor,
   type NativeCredentialAuthority,
   type NativeCredentialStoreClient,
-} from './native-credentials';
+} from '../runtime/native-credentials';
 import {
   createNativeMobileJourneyRuntime,
   nativeCredentialScopeMatchesRuntime,

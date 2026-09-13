@@ -8,7 +8,7 @@ import {
   type NativeCredentialAuthority,
   type NativeCredentialProvider,
   type NativeCredentialStoreClient,
-} from '../api/native-credentials';
+} from './native-credentials';
 
 const authority: NativeCredentialAuthority = {
   environment: 'production',

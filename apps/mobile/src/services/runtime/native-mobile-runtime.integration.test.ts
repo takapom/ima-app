@@ -20,8 +20,8 @@ import {
 import {
   createNativeMobileJourneyRuntime,
   type NativeMobileRuntimeOptions,
-} from './native-mobile-runtime';
-import type { ApiFetch } from './api';
+} from '../api/native-mobile-runtime';
+import type { ApiFetch } from '../api/api';
 import {
   createThreadResponse,
   json,
@@ -29,7 +29,7 @@ import {
   searchRequestFor,
   searchResponse,
   stringField,
-} from '../runtime/tests/mobile-runtime-storage-fixtures';
+} from './tests/mobile-runtime-storage-fixtures';
 
 vi.mock('expo-sqlite', () => ({
   openDatabaseSync: () => {

@@ -16,7 +16,7 @@ import {
   type NativeCredentialProvider,
   type NativeCredentialScope,
   type NativeCredentialStoreClient,
-} from './native-credentials';
+} from '../runtime/native-credentials';
 import {
   createMobileJourneyRuntime,
   mobileJourneyRuntimeMessage,
