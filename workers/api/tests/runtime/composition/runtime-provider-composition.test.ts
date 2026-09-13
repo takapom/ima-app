@@ -8,13 +8,13 @@ import type {
   RetentionMetadata,
   ToolExecutionContext,
 } from '@ima/core';
-import type { JourneyReadResult } from '../../src/providers/last-train/reader';
-import type { LastTrainRoutePorts } from '../../src/providers/last-train/port';
+import type { JourneyReadResult } from '../../../src/providers/last-train/reader';
+import type { LastTrainRoutePorts } from '../../../src/providers/last-train/port';
 import {
   createRuntimeLastTrainRevisionState,
   createRuntimeProviderComposition,
   type RuntimeJourneyDataset,
-} from '../../src/runtime/composition/runtime-provider-composition';
+} from '../../../src/runtime/composition/runtime-provider-composition';
 import { describe, expect, it, vi } from 'vitest';
 import {
   context as placesContext,
@@ -23,7 +23,7 @@ import {
   NOW,
   retention,
   SCOPE,
-} from '../providers/places-details/adapter-fixtures';
+} from '../../providers/places-details/adapter-fixtures';
 
 const detailsContext = (serverNow = NOW): HarnessContext => ({
   ...placesContext,
