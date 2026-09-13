@@ -36,7 +36,7 @@ import type { RuntimeProductionProviderComposition } from './runtime-production-
 import type { RuntimeRetentionContext } from './runtime-retention';
 import type { RuntimeModelGuardModel } from './turn-execution/runtime-model-guard';
 import type { RuntimeModelTraceSink } from './runtime-model-trace';
-import type { RuntimeThinkTurnBuildRequest } from './runtime-think-connection';
+import type { RuntimeThinkTurnBuildRequest } from './turn-execution/runtime-think-connection';
 import type { RuntimeProviderTraceSink } from '../providers/telemetry/runtime-provider-trace';
 import type { SavedReferenceDetailsHandoff } from '../providers/places-details/handoff';
 import type { SavedPlaceReferenceResolver } from '../tools/types';

@@ -15,7 +15,7 @@ import {
   sanitizeRuntimeMessagesForPersistence,
   type RuntimeRetentionContext,
   type RuntimeRetentionMessage,
-} from './runtime-retention';
+} from '../runtime-retention';
 import {
   wrapRuntimeModelGuard,
   type RuntimeModelGuardAcceptance,
@@ -23,9 +23,9 @@ import {
   type RuntimeModelGuardCallOptions,
   type RuntimeModelGuardErrorCode,
   type RuntimeModelGuardOptions,
-} from './turn-execution/runtime-model-guard';
+} from './runtime-model-guard';
 import type { RuntimeBeforeToolCallDelegate, RuntimeTurnHandle } from './runtime-turn-factory';
-import type { RuntimeBudget } from './runtime-budget';
+import type { RuntimeBudget } from '../runtime-budget';
 
 export type RuntimeThinkMessageInput =
   UIMessage[] | ((currentMessages: UIMessage[]) => UIMessage[] | Promise<UIMessage[]>);

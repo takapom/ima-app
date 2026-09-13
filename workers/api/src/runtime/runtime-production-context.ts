@@ -18,7 +18,7 @@ import {
   ModelHistoryEntrySchema,
   OriginalTurnSchema,
 } from '@ima/core';
-import type { RuntimeThinkComposition } from './runtime-think-connection';
+import type { RuntimeThinkComposition } from './turn-execution/runtime-think-connection';
 import {
   referenceSnapshotFor,
   stateFromReference,

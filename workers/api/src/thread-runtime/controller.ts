@@ -1,4 +1,4 @@
-import { type RuntimeThinkConnection } from '../runtime/runtime-think-connection';
+import { type RuntimeThinkConnection } from '../runtime/turn-execution/runtime-think-connection';
 import {
   cancelledRuntimeResult,
   isThreadRuntimeTarget,

@@ -1,7 +1,7 @@
 import {
   isRuntimeThinkConnectionError,
   type RuntimeThinkConnectionError,
-} from '../runtime/runtime-think-connection';
+} from '../runtime/turn-execution/runtime-think-connection';
 import {
   RuntimeProductionContextLimitError,
   RuntimeProductionDisplayContextError,

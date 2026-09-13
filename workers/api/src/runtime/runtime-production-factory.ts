@@ -44,7 +44,7 @@ import { configureRuntimeProductionSession } from './runtime-production-session'
 import type {
   RuntimeThinkConnectionOptions,
   RuntimeThinkTurnBuildRequest,
-} from './runtime-think-connection';
+} from './turn-execution/runtime-think-connection';
 import { defaultRuntimeModelContextPolicy } from './runtime-field-policy';
 import { unavailableSubmit } from './runtime-production-submit';
 import { resolveRuntimeProductionReadCost } from './runtime-production-read-cost';

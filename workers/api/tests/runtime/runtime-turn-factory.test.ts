@@ -24,7 +24,7 @@ import {
   RuntimeTurnFactoryError,
   type RuntimeTurnFactoryOptions,
   type RuntimeTurnPortDependencies,
-} from '../../src/runtime/runtime-turn-factory';
+} from '../../src/runtime/turn-execution/runtime-turn-factory';
 import { invokePublicToolEnvelope } from '../../src/tools';
 import { createToolRegistry } from '../tools/registry-fixture';
 import { modelFor } from '../support/runtime-model-fixture';

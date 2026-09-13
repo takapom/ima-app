@@ -22,7 +22,7 @@ import type {
   RuntimeThinkComposition,
   RuntimeThinkPersistMessages,
   RuntimeThinkTurnBuildRequest,
-} from './runtime-think-connection';
+} from './turn-execution/runtime-think-connection';
 import {
   projectRuntimeCurrentTurnMessages,
   type RuntimeRetentionModelProjectionOptions,
@@ -47,7 +47,7 @@ import {
   createRuntimeTurnFactory,
   type RuntimeBeforeToolCallDelegate,
   type RuntimeTurnPortDependencies,
-} from './runtime-turn-factory';
+} from './turn-execution/runtime-turn-factory';
 import { createRuntimeFinalResponseHooks } from './turn-execution/runtime-final-response';
 import type {
   RuntimeModelGuardAcceptance,

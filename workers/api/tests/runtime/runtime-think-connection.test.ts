@@ -22,8 +22,8 @@ import {
   RuntimeThinkConnectionError,
   type RuntimeThinkComposition,
   type RuntimeThinkPersistMessages,
-} from '../../src/runtime/runtime-think-connection';
-import { createRuntimeTurnFactory } from '../../src/runtime/runtime-turn-factory';
+} from '../../src/runtime/turn-execution/runtime-think-connection';
+import { createRuntimeTurnFactory } from '../../src/runtime/turn-execution/runtime-turn-factory';
 import {
   RUNTIME_RETENTION_WITHHELD,
   redactedRuntimeToolInput,

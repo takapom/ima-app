@@ -14,7 +14,7 @@ import {
   createRuntimeTurnComposition,
   type RuntimePublicResponseDependencies,
 } from '../../src/runtime/runtime-turn-composition';
-import type { RuntimeThinkConnectionOptions } from '../../src/runtime/runtime-think-connection';
+import type { RuntimeThinkConnectionOptions } from '../../src/runtime/turn-execution/runtime-think-connection';
 import type { ValidatedEvidenceText } from '@ima/core';
 import {
   isRuntimeNativeScenario,

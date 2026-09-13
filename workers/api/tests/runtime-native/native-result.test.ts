@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RuntimeThinkTurnResult } from '../../src/runtime/runtime-think-connection';
+import type { RuntimeThinkTurnResult } from '../../src/runtime/turn-execution/runtime-think-connection';
 import { threadRuntimeResultFromNative } from '../../src/thread-runtime/native-result';
 
 const nativeError = (

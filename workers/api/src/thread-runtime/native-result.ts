@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { AssistantResponseSchema } from '@ima/contracts';
-import type { RuntimeThinkTurnResult as NativeRuntimeTurnResult } from '../runtime/runtime-think-connection';
+import type { RuntimeThinkTurnResult as NativeRuntimeTurnResult } from '../runtime/turn-execution/runtime-think-connection';
 import { runtimeFailure, type ThreadRuntimeTurnResult } from './admission';
 
 /** Converts the private Think result into the public DO result at one boundary. */

@@ -18,7 +18,7 @@ import {
   type RuntimeThinkConnection,
   type RuntimeThinkConnectionOptions,
   type RuntimeThinkMessageInput,
-} from '../runtime/runtime-think-connection';
+} from '../runtime/turn-execution/runtime-think-connection';
 
 /** Think-backed host shared by the production ThreadDO and its injected Worker fixtures. */
 export class RuntimeThinkHost<Env extends Cloudflare.Env = Cloudflare.Env> extends Think<Env> {
