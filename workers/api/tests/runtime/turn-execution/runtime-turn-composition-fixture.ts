@@ -30,7 +30,7 @@ import {
   type RuntimeTurnCompositionCoreOptions,
   type RuntimeTurnCompositionPublicOptions,
 } from '../../../src/runtime/turn-execution/runtime-turn-composition';
-import type { RuntimeRetentionContext } from '../../../src/runtime/runtime-retention';
+import type { RuntimeRetentionContext } from '../../../src/runtime/retention/runtime-retention';
 import type { RuntimeTurnPortDependencies } from '../../../src/runtime/turn-execution/runtime-turn-factory';
 
 export const NOW = '2026-09-10T00:00:00Z';

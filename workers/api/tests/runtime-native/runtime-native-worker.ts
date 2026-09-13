@@ -3,7 +3,7 @@ import production from '../../src/index';
 import { RateLimitDO, ThreadDO as ProductionThreadDO } from '../../src/thread-do';
 import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../src/runtime/budget/runtime-budget';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../src/model/provider-options';
-import { sanitizeRuntimeCompactionSummary } from '../../src/runtime/runtime-retention';
+import { sanitizeRuntimeCompactionSummary } from '../../src/runtime/retention/runtime-retention';
 import {
   GoogleRouteMatrixError,
   type GoogleRouteMatrixRequest,

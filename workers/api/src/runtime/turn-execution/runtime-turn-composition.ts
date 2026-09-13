@@ -35,7 +35,7 @@ import {
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
   type RuntimeRetentionScopeIdentity,
-} from '../runtime-retention';
+} from '../retention/runtime-retention';
 import { createRuntimeRetentionTransform } from '../retention/runtime-retention-transform';
 import {
   createRuntimeReadPorts,

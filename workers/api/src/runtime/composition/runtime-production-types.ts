@@ -33,7 +33,7 @@ import type {
   RuntimeLastTrainCompositionOptions,
 } from './runtime-provider-composition';
 import type { RuntimeProductionProviderComposition } from './runtime-production-providers';
-import type { RuntimeRetentionContext } from '../runtime-retention';
+import type { RuntimeRetentionContext } from '../retention/runtime-retention';
 import type { RuntimeModelGuardModel } from '../turn-execution/runtime-model-guard';
 import type { RuntimeModelTraceSink } from '../runtime-model-trace';
 import type { RuntimeThinkTurnBuildRequest } from '../turn-execution/runtime-think-connection';

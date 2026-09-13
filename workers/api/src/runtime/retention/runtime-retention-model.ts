@@ -19,7 +19,7 @@ import {
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
   type RuntimeRetentionScopeIdentity,
-} from '../runtime-retention';
+} from './runtime-retention';
 import { runtimeEphemeralModelInputIsUsable } from './runtime-retention-model-window';
 
 export type RuntimeRetentionModelProjectionOptions = {

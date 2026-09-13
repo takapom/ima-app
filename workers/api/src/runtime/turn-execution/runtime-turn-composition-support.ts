@@ -3,7 +3,7 @@ import type {
   HarnessContext,
   ObservationContext,
 } from '@ima/core';
-import type { RuntimeRetentionContext } from '../runtime-retention';
+import type { RuntimeRetentionContext } from '../retention/runtime-retention';
 import type { RuntimeBudget } from '../budget/runtime-budget';
 
 export type RuntimeTurnCompositionErrorCode =

@@ -28,7 +28,7 @@ import {
   RUNTIME_RETENTION_WITHHELD,
   redactedRuntimeToolInput,
   type RuntimeRetentionContext,
-} from '../../../src/runtime/runtime-retention';
+} from '../../../src/runtime/retention/runtime-retention';
 import { createRuntimeRetentionTransform } from '../../../src/runtime/retention/runtime-retention-transform';
 import { createToolRegistry } from '../../tools/registry-fixture';
 import { modelFor } from '../../support/runtime-model-fixture';

@@ -17,7 +17,7 @@ import {
   type RuntimeRetentionContext,
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
-} from '../../src/runtime/runtime-retention';
+} from '../../src/runtime/retention/runtime-retention';
 import { projectRuntimeCurrentTurnMessages } from '../../src/runtime/retention/runtime-retention-model';
 
 const NOW = '2026-09-10T00:00:00Z';

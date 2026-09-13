@@ -56,7 +56,7 @@ import {
   devFixtureOverridesFor,
   isKeylessDevFixtureEnvironment,
 } from './runtime-dev-fixture';
-import type { RuntimeRetentionContext } from '../runtime-retention';
+import type { RuntimeRetentionContext } from '../retention/runtime-retention';
 import type {
   ProductionBuildInput,
   RuntimeProductionConnectionOptions,

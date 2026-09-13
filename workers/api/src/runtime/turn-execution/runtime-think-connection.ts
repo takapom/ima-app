@@ -15,7 +15,7 @@ import {
   sanitizeRuntimeMessagesForPersistence,
   type RuntimeRetentionContext,
   type RuntimeRetentionMessage,
-} from '../runtime-retention';
+} from '../retention/runtime-retention';
 import {
   wrapRuntimeModelGuard,
   type RuntimeModelGuardAcceptance,

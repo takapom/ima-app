@@ -8,9 +8,9 @@ import {
   ThreadIdSchema,
   TurnIdSchema,
 } from '@ima/core';
-import { cloneRuntimeJsonValue, isRuntimeJsonValue } from './retention/runtime-retention-json';
+import { cloneRuntimeJsonValue, isRuntimeJsonValue } from './runtime-retention-json';
 
-export { cloneRuntimeJsonValue, isRuntimeJsonValue } from './retention/runtime-retention-json';
+export { cloneRuntimeJsonValue, isRuntimeJsonValue } from './runtime-retention-json';
 
 export const RUNTIME_RETENTION_WITHHELD = '[withheld]' as const;
 
