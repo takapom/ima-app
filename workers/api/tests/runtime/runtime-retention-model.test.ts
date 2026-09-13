@@ -9,7 +9,7 @@ import {
   captureRuntimeEphemeralToolResult,
   type RuntimeRetentionContext,
 } from '../../src/runtime/runtime-retention';
-import { projectRuntimeCurrentTurnMessages } from '../../src/runtime/runtime-retention-model';
+import { projectRuntimeCurrentTurnMessages } from '../../src/runtime/retention/runtime-retention-model';
 
 const NOW = '2026-09-10T00:00:00Z';
 const CANARY = 'M16_MODEL_INPUT_CANARY';

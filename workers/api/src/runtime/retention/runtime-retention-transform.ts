@@ -18,7 +18,7 @@ import {
   isRuntimeRetentionToolName,
   redactedRuntimeToolInput,
   type RuntimeRetentionToolName,
-} from './runtime-retention';
+} from '../runtime-retention';
 
 export type RuntimeRetentionTransformReport = {
   inputParts: number;

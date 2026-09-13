@@ -26,7 +26,7 @@ import type {
 import {
   projectRuntimeCurrentTurnMessages,
   type RuntimeRetentionModelProjectionOptions,
-} from '../runtime-retention-model';
+} from '../retention/runtime-retention-model';
 import {
   captureRuntimeEphemeralToolCall,
   captureRuntimeEphemeralToolResult,
@@ -36,7 +36,7 @@ import {
   type RuntimeRetentionEphemeralToolResult,
   type RuntimeRetentionScopeIdentity,
 } from '../runtime-retention';
-import { createRuntimeRetentionTransform } from '../runtime-retention-transform';
+import { createRuntimeRetentionTransform } from '../retention/runtime-retention-transform';
 import {
   createRuntimeReadPorts,
   type RuntimeReadAttemptSignalBridge,
@@ -69,7 +69,7 @@ import {
 } from './runtime-turn-composition-support';
 import { clearRuntimeCardSetId, registerRuntimeCardSetId } from '../../thread-runtime/commit-port';
 import { projectRuntimeToolResultForModel } from '../context/runtime-field-policy';
-import { configureRuntimeCompaction } from '../runtime-session-config';
+import { configureRuntimeCompaction } from '../retention/runtime-session-config';
 
 export type { RuntimePublicResponseDependencies } from '../response/runtime-response';
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;

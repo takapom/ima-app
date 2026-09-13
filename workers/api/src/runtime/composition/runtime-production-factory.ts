@@ -40,7 +40,7 @@ import {
   type RuntimeProductionProviderAvailability,
   type RuntimeProductionRouteReadiness,
 } from './runtime-production-provider-config';
-import { configureRuntimeProductionSession } from '../runtime-production-session';
+import { configureRuntimeProductionSession } from '../retention/runtime-production-session';
 import type {
   RuntimeThinkConnectionOptions,
   RuntimeThinkTurnBuildRequest,
