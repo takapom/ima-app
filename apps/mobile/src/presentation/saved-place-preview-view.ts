@@ -1,6 +1,6 @@
-import type { SavedPlaceListResult } from './saved-place-list';
+import type { SavedPlaceListResult } from '../services/saved-place-list';
 import type { SavedPlaceItem } from '../state/journey-shell';
-import { collectAttributions, type AttributionPresentation } from '../presentation/attribution';
+import { collectAttributions, type AttributionPresentation } from './attribution';
 import type {
   SavedPlacePreviewFailure,
   SavedPlacePreviewState,

@@ -3,7 +3,7 @@ import { AttributionList } from '../candidates/CandidateCard';
 import {
   savedPlacePreviewDisplayFor,
   savedPlacePreviewFailureTextFor,
-} from '../../services/saved-place-preview-view';
+} from '../../presentation/saved-place-preview-view';
 import type { SavedPlacePreviewState } from '../../state/saved-place-preview';
 import { colors, radii, spacing, typography } from '../../theme/tokens';
 

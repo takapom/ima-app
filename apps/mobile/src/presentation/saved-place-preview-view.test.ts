@@ -6,12 +6,12 @@ import {
   savedPlacePreviewDisplayFor,
   savedPlacePreviewFailureTextFor,
 } from './saved-place-preview-view';
-import type { SavedPlaceListItem, SavedPlaceListResult } from './saved-place-list';
+import type { SavedPlaceListItem, SavedPlaceListResult } from '../services/saved-place-list';
 import {
   createSavedPlacePreviewState,
   type SavedPlacePreviewState,
 } from '../state/saved-place-preview';
-import type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
+import type { LocalSavedEntryId, ServerSavedPlaceRef } from '../services/saved-place-types';
 
 const retention: RetentionMetadata = {
   retentionDecision: 'allow',

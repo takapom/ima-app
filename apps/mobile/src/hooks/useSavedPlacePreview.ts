@@ -6,7 +6,7 @@ import { createSavedPlacePreviewController } from '../services/saved-place-previ
 import {
   savedPlaceConsultationRefFor,
   savedPlaceItemsFor,
-} from '../services/saved-place-preview-view';
+} from '../presentation/saved-place-preview-view';
 import type { SavedPlaceItem } from '../state/journey-shell';
 import type { SavedPlacePreviewState } from '../state/saved-place-preview';
 
