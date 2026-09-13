@@ -3,11 +3,11 @@ import {
   type PublicPlaceDetailsData,
   type RetentionMetadata,
 } from '@ima/contracts';
-import { canPersistOwnerScopedReference } from './sqlite/retention';
-import type { SqliteStore } from './sqlite/types';
-import type { ApiError, ApiRequestOptions, JourneyApiClient } from './api/api';
-import { parseSavedReferenceRefreshResponse } from './api/saved-reference-refresh';
-import type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-places/saved-place-types';
+import { canPersistOwnerScopedReference } from '../sqlite/retention';
+import type { SqliteStore } from '../sqlite/types';
+import type { ApiError, ApiRequestOptions, JourneyApiClient } from '../api/api';
+import { parseSavedReferenceRefreshResponse } from '../api/saved-reference-refresh';
+import type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
 
 export type SavedReferenceScope = {
   readonly threadId: string;

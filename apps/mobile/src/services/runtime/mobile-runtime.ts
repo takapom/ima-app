@@ -31,7 +31,10 @@ import {
   type JourneyStorageService,
 } from '../saved-places/journey-storage';
 import { createSavedPlaceListService } from '../saved-places/saved-place-list';
-import { createSavedReferenceService, type SavedReferenceScope } from '../saved-reference-service';
+import {
+  createSavedReferenceService,
+  type SavedReferenceScope,
+} from '../saved-places/saved-reference-service';
 import type { SqliteStore } from '../sqlite/types';
 import type { LocationService } from '../location/types';
 import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from '../api/api';

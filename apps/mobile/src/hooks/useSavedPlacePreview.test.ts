@@ -14,7 +14,7 @@ import type {
   SavedReferenceRefreshInput,
   SavedReferenceRefreshResult,
   SavedReferenceService,
-} from '../services/saved-reference-service';
+} from '../services/saved-places/saved-reference-service';
 
 vi.mock('react-native', () => ({
   AppState: {

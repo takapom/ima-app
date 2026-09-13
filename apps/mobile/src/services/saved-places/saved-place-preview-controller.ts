@@ -1,8 +1,5 @@
 import { parseSavedReferencePath } from '@ima/contracts';
-import type {
-  SavedReferenceRefreshResult,
-  SavedReferenceService,
-} from '../saved-reference-service';
+import type { SavedReferenceRefreshResult, SavedReferenceService } from './saved-reference-service';
 import type { SavedPlaceListService } from './saved-place-list';
 import { createMonotonicAssistantResponseClock } from '../assistant-response-clock';
 import {

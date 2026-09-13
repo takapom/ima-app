@@ -6,7 +6,7 @@ import type {
   SavedReferenceCreateRequest,
   SavedReferenceCreateResponse,
 } from '@ima/contracts';
-import { createSavedReferenceService, type SavedReferenceScope } from '../saved-reference-service';
+import { createSavedReferenceService, type SavedReferenceScope } from './saved-reference-service';
 import type { SavedReferenceRefreshResponse } from '../api/saved-reference-refresh';
 import { createSqliteStore } from '../sqlite/store';
 import type {

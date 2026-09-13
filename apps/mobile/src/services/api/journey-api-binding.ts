@@ -11,7 +11,7 @@ import type { JourneyApiController } from './journey-controller-types';
 import type { JourneyPhotoClient } from './photo-client';
 import type { JourneyStorageService } from '../saved-places/journey-storage';
 import type { SavedPlaceListService } from '../saved-places/saved-place-list';
-import type { SavedReferenceService } from '../saved-reference-service';
+import type { SavedReferenceService } from '../saved-places/saved-reference-service';
 
 export type JourneySavedPlacePreviewBinding = {
   /** The same owner-scoped SQLite projection used by the runtime save adapter. */
