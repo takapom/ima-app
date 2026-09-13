@@ -20,7 +20,7 @@ import {
 import {
   mapCommittedResponseToPublic,
   RuntimePublicResponseError,
-} from '../../../src/runtime/runtime-response';
+} from '../../../src/runtime/response/runtime-response';
 
 const now = '2026-09-10T12:00:00Z';
 const scope = { ownerScopeRef: 'owner-final', threadId: 'thread-final' };

@@ -3,7 +3,7 @@ import type { ValidatedMessageResponse } from '@ima/core';
 import {
   prepareRuntimePhotoResolver,
   type RuntimePublicResponseDependencies,
-} from '../../src/runtime/runtime-response';
+} from '../../../src/runtime/response/runtime-response';
 
 const response: ValidatedMessageResponse = {
   presentation: 'keep',

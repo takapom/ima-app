@@ -55,12 +55,12 @@ import type {
   RuntimeModelGuardModel,
 } from './runtime-model-guard';
 import type { RuntimeBudget } from '../budget/runtime-budget';
-import type { RuntimePublicResponseDependencies } from '../runtime-response';
+import type { RuntimePublicResponseDependencies } from '../response/runtime-response';
 import {
   createRuntimePhotoPreparationState,
   prepareAndMapRuntimeResponse,
   resetRuntimePhotoPreparationState,
-} from '../runtime-public-response';
+} from '../response/runtime-public-response';
 import {
   currentBudget,
   observationResultIsReusable,
@@ -71,7 +71,7 @@ import { clearRuntimeCardSetId, registerRuntimeCardSetId } from '../../thread-ru
 import { projectRuntimeToolResultForModel } from '../context/runtime-field-policy';
 import { configureRuntimeCompaction } from '../runtime-session-config';
 
-export type { RuntimePublicResponseDependencies } from '../runtime-response';
+export type { RuntimePublicResponseDependencies } from '../response/runtime-response';
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;
 
 export type RuntimeCompositionModelContext = Omit<ModelContextSource, 'harness' | 'conditions'>;

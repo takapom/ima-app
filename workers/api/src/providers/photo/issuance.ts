@@ -7,7 +7,7 @@ import {
   type ReadonlyStoredObservation,
   type RegistryScope,
 } from '@ima/core';
-import type { RuntimePhotoTokenPreparer } from '../../runtime/runtime-response';
+import type { RuntimePhotoTokenPreparer } from '../../runtime/response/runtime-response';
 import {
   runtimePolicyAllows,
   type RuntimeFieldUsePolicy,

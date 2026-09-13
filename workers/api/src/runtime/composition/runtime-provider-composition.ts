@@ -36,7 +36,7 @@ import {
   createPhotoTokenPreparer,
   type PhotoTokenPreparerDependencies,
 } from '../../providers/photo/issuance';
-import type { RuntimePhotoTokenPreparer } from '../runtime-response';
+import type { RuntimePhotoTokenPreparer } from '../response/runtime-response';
 
 /** Kept at this runtime export for callers while the protocol type lives with last-train ports. */
 export type { RuntimeJourneyDataset } from '../../providers/last-train/port';

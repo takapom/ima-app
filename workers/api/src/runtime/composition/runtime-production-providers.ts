@@ -33,7 +33,7 @@ import {
   type RuntimeLastTrainCompositionOptions,
   type RuntimeProviderComposition,
 } from './runtime-provider-composition';
-import type { RuntimePhotoTokenPreparer } from '../runtime-response';
+import type { RuntimePhotoTokenPreparer } from '../response/runtime-response';
 
 export type RuntimeProductionRouteOptions = {
   readonly apiKey: string;
