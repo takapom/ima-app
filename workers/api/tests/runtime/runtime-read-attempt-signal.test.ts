@@ -17,7 +17,7 @@ import {
 import {
   createRuntimeReadAttemptSignalBridge,
   createRuntimeReadPorts,
-} from '../../src/runtime/runtime-read-ports';
+} from '../../src/runtime/tool-reads/runtime-read-ports';
 import { createGoogleTextSearchTransport } from '../../src/providers/places-search/transport';
 import type { GoogleTextSearchRequest } from '../../src/providers/places-search/types';
 

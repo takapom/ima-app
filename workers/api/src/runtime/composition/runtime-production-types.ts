@@ -20,7 +20,7 @@ import type { PlacesDetailsObservationPolicy } from '../../providers/places-deta
 import type { PlacesSearchObservationPolicy } from '../../providers/places-search/registration';
 import type { WalkingRouteObservationPolicy } from '../../providers/routes/registration';
 import type { RouteWaypointResolver } from '../../providers/routes/resolver';
-import type { RuntimeReadAttemptSignalBridge } from '../runtime-read-ports';
+import type { RuntimeReadAttemptSignalBridge } from '../tool-reads/runtime-read-ports';
 import type {
   RuntimeCompositionModelContext,
   RuntimeCompositionValidationContext,

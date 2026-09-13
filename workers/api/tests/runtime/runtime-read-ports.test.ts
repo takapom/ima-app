@@ -22,7 +22,7 @@ import {
   createRuntimeReadPorts,
   type RuntimeReadCostRequest,
   type RuntimeReadPortOptions,
-} from '../../src/runtime/runtime-read-ports';
+} from '../../src/runtime/tool-reads/runtime-read-ports';
 import { runtimeFor } from '../../src/tools/validation';
 
 const budgetConfig = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudgetConfig => ({

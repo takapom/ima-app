@@ -18,7 +18,7 @@ import {
   type RuntimeReadExecutionResult,
   type RuntimeReadFailureKind,
 } from './runtime-read-executor';
-import type { RuntimeBudget, RuntimeBudgetDenial } from './budget/runtime-budget';
+import type { RuntimeBudget, RuntimeBudgetDenial } from '../budget/runtime-budget';
 import { RuntimeSingleFlightError } from './runtime-singleflight';
 
 export type RuntimeReadCost = {

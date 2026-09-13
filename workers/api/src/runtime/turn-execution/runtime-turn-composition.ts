@@ -41,7 +41,7 @@ import {
   createRuntimeReadPorts,
   type RuntimeReadAttemptSignalBridge,
   type RuntimeReadCostResolver,
-} from '../runtime-read-ports';
+} from '../tool-reads/runtime-read-ports';
 import { parseRuntimeFinalMessage, type RuntimeFinalMessage } from './runtime-final-message';
 import {
   createRuntimeTurnFactory,
