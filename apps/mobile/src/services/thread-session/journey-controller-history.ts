@@ -1,5 +1,5 @@
 import { applyThreadSnapshotJson } from '../assistant-response';
-import { type ApiRequestGate } from '../api/request-gate';
+import { type ApiRequestGate } from './request-gate';
 import type {
   JourneyApiControllerOptions,
   JourneyApiControllerState,

@@ -44,7 +44,7 @@ export {
   type JourneyLocalRestoreResult,
   type JourneyLocalSnapshot,
 } from '../thread-session/journey-controller';
-export { createApiRequestGate } from './request-gate';
+export { createApiRequestGate } from '../thread-session/request-gate';
 export type {
   ApiClientOptions,
   ApiCredentials,
@@ -63,4 +63,4 @@ export type {
   ApiOperationToken,
   ApiRequestGate,
   ApiResponseEnvelope,
-} from './request-gate';
+} from '../thread-session/request-gate';

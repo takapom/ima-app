@@ -6,7 +6,7 @@ import { createAssistantResponseState } from '../../state/assistant-response';
 import {
   createLocalSessionPersistence,
   createSqliteJourneyLocalRestore,
-} from '../thread-session/local-session-persistence';
+} from './local-session-persistence';
 import { createSqliteStore } from '../sqlite/store';
 import type {
   LocalSavedEntryId,

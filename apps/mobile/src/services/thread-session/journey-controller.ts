@@ -1,10 +1,6 @@
 import { applyAssistantResponse } from '../../state/assistant-response';
 import { advanceAssistantRevision } from '../../state/assistant-response';
-import {
-  createApiRequestGate,
-  type ApiOperationToken,
-  type ApiRequestGate,
-} from '../api/request-gate';
+import { createApiRequestGate, type ApiOperationToken, type ApiRequestGate } from './request-gate';
 import type {
   CreateThreadRequest,
   CreateThreadResponse,
