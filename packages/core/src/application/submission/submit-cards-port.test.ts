@@ -8,10 +8,10 @@ import type {
   CommitRequest,
   IdPort,
   ToolExecutionContext,
-} from '../ports';
-import { CommitAdapterError, SubmitApplication } from './submission/submit-application';
+} from '../../ports';
+import { CommitAdapterError, SubmitApplication } from './submit-application';
 import { createSubmitCardsPort } from './submit-cards-port';
-import { makeFixture, makeInput, makeSelection } from './submit-cards-fixtures';
+import { makeFixture, makeInput, makeSelection } from './tests/submit-cards-fixtures';
 
 class FixedResponseIds implements Pick<IdPort, 'nextResponseId'> {
   private count = 0;

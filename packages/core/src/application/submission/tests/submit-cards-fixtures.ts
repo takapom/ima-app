@@ -1,11 +1,11 @@
-import { CandidateObservationRegistry } from './candidate-registry/registry';
-import type { ClockPort, RegistryIdPort } from '../ports/context';
-import type { CardSelection, SubmitCardsInput } from '../ports/model';
-import type { CandidateId, IsoTimestamp } from '../domain/primitives';
-import type { ObservationContext, RegistryScope } from '../domain/freshness';
-import type { ObservationRegistration, RegistryJsonValue } from '../domain/registry';
-import type { RetentionMetadata } from '../domain/retention';
-import type { SubmitValidationContext } from './submit-cards';
+import { CandidateObservationRegistry } from '../../candidate-registry/registry';
+import type { ClockPort, RegistryIdPort } from '../../../ports/context';
+import type { CardSelection, SubmitCardsInput } from '../../../ports/model';
+import type { CandidateId, IsoTimestamp } from '../../../domain/primitives';
+import type { ObservationContext, RegistryScope } from '../../../domain/freshness';
+import type { ObservationRegistration, RegistryJsonValue } from '../../../domain/registry';
+import type { RetentionMetadata } from '../../../domain/retention';
+import type { SubmitValidationContext } from '../../submit-cards';
 
 export const now = '2026-09-10T12:00:00Z';
 export const scope: RegistryScope = { ownerScopeRef: 'owner-1', threadId: 'thread-1' };

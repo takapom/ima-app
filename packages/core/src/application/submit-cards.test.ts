@@ -7,7 +7,7 @@ import {
   makeSelection,
   now,
   type EvidenceIds,
-} from './submit-cards-fixtures';
+} from './submission/tests/submit-cards-fixtures';
 
 const idsFor = (
   fixture: ReturnType<typeof makeFixture>,

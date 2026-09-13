@@ -1,23 +1,20 @@
 import * as v from 'valibot';
-import type { RegistryScope } from '../domain/freshness';
+import type { RegistryScope } from '../../domain/freshness';
 import type {
   CommittedResponse,
   SubmitApplication,
   CommitApplicationResult,
-} from './submission/submit-application';
-import type { CandidateObservationRegistryPort } from '../ports/registry';
-import type { CancellationToken, ToolExecutionContext } from '../ports/context';
+} from './submit-application';
+import type { CandidateObservationRegistryPort } from '../../ports/registry';
+import type { CancellationToken, ToolExecutionContext } from '../../ports/context';
 import {
   SubmitCardsPortInputSchema,
   type SubmitCardsPort,
   type SubmitCardsPortInput,
   type SubmitCardsPortResult,
   type SubmitIssue,
-} from '../ports/submission';
-import type {
-  SubmitValidationContext,
-  SubmitValidationIssue,
-} from './submission/submit-cards-evidence';
+} from '../../ports/submission';
+import type { SubmitValidationContext, SubmitValidationIssue } from './submit-cards-evidence';
 
 export type SubmitCardsPortFactoryOptions = {
   application: SubmitApplication;
