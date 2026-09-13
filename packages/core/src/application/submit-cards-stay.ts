@@ -5,7 +5,7 @@ import {
   type KnownObservationField,
   type ResolvedObservation,
   type SubmitValidationIssue,
-} from './submit-cards-evidence';
+} from './submission/submit-cards-evidence';
 
 /** Round elapsed milliseconds down so sub-second input never overstates available stay. */
 export const elapsedSecondsFloor = (endMilliseconds: number, startMilliseconds: number): number =>

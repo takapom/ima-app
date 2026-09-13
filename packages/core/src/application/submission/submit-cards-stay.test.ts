@@ -1,8 +1,8 @@
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { OpeningHoursSchema } from '../domain/place-values';
-import { makeFixture, now } from './submit-cards-fixtures';
-import { minimumStayIssue, openIntervalAt } from './submit-cards-stay';
+import { OpeningHoursSchema } from '../../domain/place-values';
+import { makeFixture, now } from '../submit-cards-fixtures';
+import { minimumStayIssue, openIntervalAt } from '../submit-cards-stay';
 import { resolveObservation } from './submit-cards-evidence';
 
 const openEndedHours = {

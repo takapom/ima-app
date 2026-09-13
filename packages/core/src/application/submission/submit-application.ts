@@ -1,8 +1,12 @@
 import * as v from 'valibot';
-import { RegistryScopeSchema, type RegistryScope } from '../domain/freshness';
-import { NonNegativeSafeIntegerSchema, OpaqueIdSchema, TurnIdSchema } from '../domain/primitives';
-import type { CandidateObservationRegistryPort } from '../ports/registry';
-import type { IdPort } from '../ports/context';
+import { RegistryScopeSchema, type RegistryScope } from '../../domain/freshness';
+import {
+  NonNegativeSafeIntegerSchema,
+  OpaqueIdSchema,
+  TurnIdSchema,
+} from '../../domain/primitives';
+import type { CandidateObservationRegistryPort } from '../../ports/registry';
+import type { IdPort } from '../../ports/context';
 import {
   CommitPortResultSchema,
   type CommitConflict,
@@ -11,14 +15,14 @@ import {
   type CommitReceipt,
   type CommitReferences,
   CommitRecordSchema,
-} from '../ports/commit';
+} from '../../ports/commit';
 import {
   type SubmitValidationIssue,
   type ValidatedCardsResponse,
   type ValidatedMessageResponse,
   SubmitValidationContextSchema,
 } from './submit-cards-evidence';
-import { validateMessage, validateSubmitCards } from './submit-cards';
+import { validateMessage, validateSubmitCards } from '../submit-cards';
 
 const CommitExpectedRevisionSchema = v.pipe(
   NonNegativeSafeIntegerSchema,

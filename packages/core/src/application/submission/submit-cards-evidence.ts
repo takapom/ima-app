@@ -1,12 +1,12 @@
 import * as v from 'valibot';
-import { type EvidenceBasis, type SourceRef } from '../domain/evidence';
+import { type EvidenceBasis, type SourceRef } from '../../domain/evidence';
 import {
   contextKeyForObservation,
   matchesObservationContext,
   observationFreshness,
   ObservationContextSchema,
   RegistryScopeSchema,
-} from '../domain/freshness';
+} from '../../domain/freshness';
 import {
   ContactInfoSchema,
   FacilitiesInfoSchema,
@@ -21,18 +21,18 @@ import {
   type PlaceIdentity,
   type PriceInfo,
   type WalkingRoute,
-} from '../domain/place-values';
+} from '../../domain/place-values';
 import {
   CalendarDateSchema,
   CandidateIdSchema,
   IsoTimestampSchema,
   OpaqueIdSchema,
   SafeIntegerSchema,
-} from '../domain/primitives';
-import type { RetentionMetadata } from '../domain/retention';
-import type { CandidateObservationRegistryPort } from '../ports/registry';
-import type { SubmitIssue } from '../ports/submission';
-import type { ReadonlyStoredObservation } from '../domain/registry';
+} from '../../domain/primitives';
+import type { RetentionMetadata } from '../../domain/retention';
+import type { CandidateObservationRegistryPort } from '../../ports/registry';
+import type { SubmitIssue } from '../../ports/submission';
+import type { ReadonlyStoredObservation } from '../../domain/registry';
 
 const PositiveMinutesSchema = v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(180));
 type PhotoInfo = v.InferOutput<typeof PhotoInfoSchema>;

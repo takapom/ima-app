@@ -4,7 +4,7 @@ import type {
   CommittedResponse,
   SubmitApplication,
   CommitApplicationResult,
-} from './submit-application';
+} from './submission/submit-application';
 import type { CandidateObservationRegistryPort } from '../ports/registry';
 import type { CancellationToken, ToolExecutionContext } from '../ports/context';
 import {
@@ -14,7 +14,10 @@ import {
   type SubmitCardsPortResult,
   type SubmitIssue,
 } from '../ports/submission';
-import type { SubmitValidationContext, SubmitValidationIssue } from './submit-cards-evidence';
+import type {
+  SubmitValidationContext,
+  SubmitValidationIssue,
+} from './submission/submit-cards-evidence';
 
 export type SubmitCardsPortFactoryOptions = {
   application: SubmitApplication;

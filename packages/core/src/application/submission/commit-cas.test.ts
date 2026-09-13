@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import type { RegistryScope } from '../domain';
+import type { RegistryScope } from '../../domain';
 import type {
   CommitHashPort,
   CommitPort,
   CommitPortResult,
   CommitRecord,
   CommitRequest,
-} from '../ports';
+} from '../../ports';
 import { SubmitApplication } from './submit-application';
-import { makeFixture } from './submit-cards-fixtures';
+import { makeFixture } from '../submit-cards-fixtures';
 
 const turnKey = (scope: RegistryScope, turnId: string): string =>
   `${scope.ownerScopeRef}\u0000${scope.threadId}\u0000${turnId}`;

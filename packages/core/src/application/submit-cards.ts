@@ -25,10 +25,10 @@ import {
   type ValidatedCardsResponse,
   type ValidatedEvidenceText,
   type ValidatedMessageResponse,
-} from './submit-cards-evidence';
+} from './submission/submit-cards-evidence';
 import { validateArrivalAndOpening, validateLastTrain } from './submit-cards-travel';
 
-export type { SubmitValidationContext } from './submit-cards-evidence';
+export type { SubmitValidationContext } from './submission/submit-cards-evidence';
 
 const validateCandidate = (
   selection: CardSelection,

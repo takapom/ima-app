@@ -9,7 +9,7 @@ import type {
   IdPort,
   ToolExecutionContext,
 } from '../ports';
-import { CommitAdapterError, SubmitApplication } from './submit-application';
+import { CommitAdapterError, SubmitApplication } from './submission/submit-application';
 import { createSubmitCardsPort } from './submit-cards-port';
 import { makeFixture, makeInput, makeSelection } from './submit-cards-fixtures';
 

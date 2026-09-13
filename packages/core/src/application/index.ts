@@ -5,7 +5,7 @@ export * from './journey-calculation';
 export * from './journey-validation';
 export * from './walking-route-policy';
 export { validateMessage, validateSubmitCards } from './submit-cards';
-export { SubmitValidationContextSchema } from './submit-cards-evidence';
+export { SubmitValidationContextSchema } from './submission/submit-cards-evidence';
 export type {
   SubmitValidationContext,
   SubmitValidationIssue,
@@ -14,6 +14,6 @@ export type {
   ValidatedCardsResponse,
   ValidatedEvidenceText,
   ValidatedMessageResponse,
-} from './submit-cards-evidence';
-export * from './submit-application';
+} from './submission/submit-cards-evidence';
+export * from './submission/submit-application';
 export * from './submit-cards-port';

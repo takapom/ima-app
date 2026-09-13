@@ -12,7 +12,7 @@ import {
   type ResolvedObservation,
   type SubmitValidationContext,
   type SubmitValidationIssue,
-} from './submit-cards-evidence';
+} from './submission/submit-cards-evidence';
 import { minimumStayIssue, openIntervalAt } from './submit-cards-stay';
 import { recalculateLastTrainAtArrival } from './last-train-recalculation';
 
