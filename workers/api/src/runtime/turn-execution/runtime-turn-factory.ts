@@ -25,7 +25,7 @@ import {
   type ToolRuntimeFactory,
   type PublicToolName,
 } from '../../tools';
-import type { RuntimeBudget } from '../runtime-budget';
+import type { RuntimeBudget } from '../budget/runtime-budget';
 
 const RUNTIME_MAX_RETRIES = 0;
 

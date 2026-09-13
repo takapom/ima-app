@@ -5,7 +5,7 @@ import {
   createRuntimeRouteBudgetBoundary,
 } from '../../../src/providers/routes/adapter';
 import { createGoogleRouteMatrixTransport } from '../../../src/providers/routes/transport';
-import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../../src/runtime/runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../../src/runtime/budget/runtime-budget';
 
 const now = '2026-09-10T09:00:00.000Z';
 const currentCoordinates = { lat: 35.6595, lng: 139.7005 };

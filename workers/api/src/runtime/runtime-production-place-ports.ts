@@ -16,7 +16,7 @@ import { createPlacesSearchAdapter } from '../providers/places-search/adapter';
 import type { createPlacesSearchContinuation } from '../providers/places-search/continuation';
 import { createPlacesSearchRegistration } from '../providers/places-search/registration';
 import { createGoogleTextSearchTransport } from '../providers/places-search/transport';
-import type { RuntimeBudget } from './runtime-budget';
+import type { RuntimeBudget } from './budget/runtime-budget';
 import { disabledDetailsPort, disabledSearchPort } from './runtime-disabled-provider-ports';
 import {
   areaLabelFor,

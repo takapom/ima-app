@@ -1,7 +1,7 @@
 import { stepCountIs, streamText, tool } from 'ai';
 import { z } from 'zod';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../../src/runtime/runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../../src/runtime/budget/runtime-budget';
 import {
   RUNTIME_MODEL_MAX_RETRIES,
   type RuntimeModelGuardCallOptions,

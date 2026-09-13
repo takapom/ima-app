@@ -13,7 +13,7 @@ import type {
   SubmitValidationContext,
 } from '@ima/core';
 import { IsoTimestampSchema, RetentionMetadataSchema } from '@ima/core';
-import { DEFAULT_RUNTIME_BUDGET } from './runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET } from './budget/runtime-budget';
 import type { RuntimeRetentionContext } from './runtime-retention';
 
 const GOOGLE_API_KEY = 'GOOGLE_PLACES_API_KEY';

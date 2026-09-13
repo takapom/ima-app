@@ -20,7 +20,7 @@ import {
   routeElementCount,
 } from './types';
 import { normalizeGoogleRouteMatrix, type DirectedRouteMatrixResult } from './normalize';
-import type { RuntimeBudgetDenial } from '../../runtime/runtime-budget';
+import type { RuntimeBudgetDenial } from '../../runtime/budget/runtime-budget';
 import type { RouteBudgetBoundary, RouteBudgetLease, RouteReadCost } from './budget';
 import { createWalkingRoutePortBridge } from './legacy-adapter';
 import { buildMatrixGroup, matrixPairKey, type MatrixGroup, type MatrixPreflight } from './matrix';

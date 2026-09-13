@@ -25,7 +25,7 @@ import {
   type RuntimeModelGuardOptions,
 } from './runtime-model-guard';
 import type { RuntimeBeforeToolCallDelegate, RuntimeTurnHandle } from './runtime-turn-factory';
-import type { RuntimeBudget } from '../runtime-budget';
+import type { RuntimeBudget } from '../budget/runtime-budget';
 
 export type RuntimeThinkMessageInput =
   UIMessage[] | ((currentMessages: UIMessage[]) => UIMessage[] | Promise<UIMessage[]>);

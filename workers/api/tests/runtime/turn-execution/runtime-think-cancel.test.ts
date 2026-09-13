@@ -16,7 +16,7 @@ import type {
 } from '@ima/core';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../../src/runtime/runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../../src/runtime/budget/runtime-budget';
 import {
   createRuntimeThinkConnection,
   type RuntimeThinkConnection,

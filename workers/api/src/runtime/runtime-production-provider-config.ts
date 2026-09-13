@@ -37,7 +37,7 @@ import {
   createRuntimeProductionProviderComposition,
   type RuntimeProductionProviderComposition,
 } from './runtime-production-providers';
-import type { RuntimeBudget } from './runtime-budget';
+import type { RuntimeBudget } from './budget/runtime-budget';
 
 export type RuntimeProductionProviderAvailability = {
   readonly activeJourneyRevision: number | null | undefined;

@@ -4,7 +4,7 @@ import type {
   ObservationContext,
 } from '@ima/core';
 import type { RuntimeRetentionContext } from '../runtime-retention';
-import type { RuntimeBudget } from '../runtime-budget';
+import type { RuntimeBudget } from '../budget/runtime-budget';
 
 export type RuntimeTurnCompositionErrorCode =
   'CONTEXT_MISMATCH' | 'RETENTION_MISMATCH' | 'FINAL_COMMIT_INVALID';

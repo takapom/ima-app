@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HarnessContext, ToolExecutionContext } from '@ima/core';
-import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../../src/runtime/runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../../src/runtime/budget/runtime-budget';
 import {
   createGoogleWalkingRouteAdapter,
   createRuntimeRouteBudgetBoundary,

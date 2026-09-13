@@ -5,7 +5,7 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '../../../src/runtime/runtime-budget';
+} from '../../../src/runtime/budget/runtime-budget';
 import {
   RUNTIME_MODEL_MAX_RETRIES,
   type RuntimeModelGuardAcceptance,

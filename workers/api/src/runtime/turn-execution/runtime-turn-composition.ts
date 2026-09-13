@@ -54,7 +54,7 @@ import type {
   RuntimeModelGuardCallOptions,
   RuntimeModelGuardModel,
 } from './runtime-model-guard';
-import type { RuntimeBudget } from '../runtime-budget';
+import type { RuntimeBudget } from '../budget/runtime-budget';
 import type { RuntimePublicResponseDependencies } from '../runtime-response';
 import {
   createRuntimePhotoPreparationState,

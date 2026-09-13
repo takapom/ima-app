@@ -1,5 +1,5 @@
 import type { StepConfig, ToolCallContext, ToolCallDecision } from '@cloudflare/think';
-import type { RuntimeBudget, RuntimeBudgetResult } from '../runtime-budget';
+import type { RuntimeBudget, RuntimeBudgetResult } from '../budget/runtime-budget';
 import type {
   RuntimeBeforeStepDelegate,
   RuntimeBeforeToolCallDelegate,

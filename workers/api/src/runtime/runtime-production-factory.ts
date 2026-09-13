@@ -11,7 +11,7 @@ import {
 } from './turn-execution/runtime-turn-composition';
 import { wrapRuntimeProductionCommit } from './runtime-production-context';
 import { createFactoryRuntimeContext } from './runtime-production-context-factory';
-import { RuntimeBudget } from './runtime-budget';
+import { RuntimeBudget } from './budget/runtime-budget';
 import {
   harnessContextFor,
   productionCapabilities,

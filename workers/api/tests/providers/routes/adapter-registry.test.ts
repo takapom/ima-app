@@ -5,7 +5,7 @@ import {
   type RegistryIdPort,
   type ToolExecutionContext,
 } from '@ima/core';
-import { RuntimeBudget, DEFAULT_RUNTIME_BUDGET } from '../../../src/runtime/runtime-budget';
+import { RuntimeBudget, DEFAULT_RUNTIME_BUDGET } from '../../../src/runtime/budget/runtime-budget';
 import { createGoogleRouteMatrixTransport } from '../../../src/providers/routes/transport';
 import {
   createGoogleWalkingRouteAdapter,
