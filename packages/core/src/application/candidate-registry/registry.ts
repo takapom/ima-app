@@ -4,7 +4,7 @@ import {
   matchesObservationContext,
   observationFreshness,
   type RegistryScope,
-} from '../domain/freshness';
+} from '../../domain/freshness';
 import {
   CandidateRegistrationSchema,
   RegistryError,
@@ -15,10 +15,13 @@ import {
   type ObservationReuseResult,
   type ReadonlyStoredObservation,
   type StoredObservation,
-} from '../domain/registry';
-import { CandidateIdSchema, IsoTimestampSchema, type CandidateId } from '../domain/primitives';
-import type { CandidateObservationRegistryPort, ObservationReplacement } from '../ports/registry';
-import type { ClockPort, RegistryIdPort } from '../ports/context';
+} from '../../domain/registry';
+import { CandidateIdSchema, IsoTimestampSchema, type CandidateId } from '../../domain/primitives';
+import type {
+  CandidateObservationRegistryPort,
+  ObservationReplacement,
+} from '../../ports/registry';
+import type { ClockPort, RegistryIdPort } from '../../ports/context';
 import {
   assertOpaqueId,
   assertScope,
@@ -26,7 +29,7 @@ import {
   scopeError,
   validateReplacement as validateObservationReplacement,
   valueKey,
-} from './candidate-registry/registry-observation';
+} from './registry-observation';
 
 function identityKey(ownerScopeRef: string, provider: string, recordRef: string): string {
   return JSON.stringify([ownerScopeRef, provider, recordRef]);

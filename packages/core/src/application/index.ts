@@ -1,6 +1,6 @@
 export * from './model-context';
 export * from './turn-constraints';
-export * from './registry';
+export * from './candidate-registry/registry';
 export * from './journey-calculation';
 export * from './journey-validation';
 export * from './walking-route-policy';
