@@ -42,7 +42,7 @@ import {
   type RuntimeReadAttemptSignalBridge,
   type RuntimeReadCostResolver,
 } from '../runtime-read-ports';
-import { parseRuntimeFinalMessage, type RuntimeFinalMessage } from '../runtime-final-message';
+import { parseRuntimeFinalMessage, type RuntimeFinalMessage } from './runtime-final-message';
 import {
   createRuntimeTurnFactory,
   type RuntimeBeforeToolCallDelegate,

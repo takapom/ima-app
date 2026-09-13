@@ -16,18 +16,18 @@ import type {
 } from '@ima/core';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../src/runtime/runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../../src/runtime/runtime-budget';
 import {
   createRuntimeThinkConnection,
   type RuntimeThinkConnection,
   type RuntimeThinkPersistMessages,
-} from '../../src/runtime/turn-execution/runtime-think-connection';
-import { createRuntimeTurnComposition } from '../../src/runtime/turn-execution/runtime-turn-composition';
+} from '../../../src/runtime/turn-execution/runtime-think-connection';
+import { createRuntimeTurnComposition } from '../../../src/runtime/turn-execution/runtime-turn-composition';
 import type {
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from '../../src/runtime/turn-execution/runtime-model-guard';
-import { createToolRegistry, toolScope } from '../tools/registry-fixture';
+} from '../../../src/runtime/turn-execution/runtime-model-guard';
+import { createToolRegistry, toolScope } from '../../tools/registry-fixture';
 
 const NOW = '2026-09-10T00:00:00Z';
 const TURN_ID = 'runtime-cancel-turn';
