@@ -29,7 +29,7 @@ import {
   searchRequestFor,
   searchResponse,
   stringField,
-} from './mobile-runtime-storage-fixtures';
+} from '../runtime/tests/mobile-runtime-storage-fixtures';
 
 vi.mock('expo-sqlite', () => ({
   openDatabaseSync: () => {

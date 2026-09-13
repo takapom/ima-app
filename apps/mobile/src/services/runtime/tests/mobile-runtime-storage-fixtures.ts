@@ -1,14 +1,14 @@
 import { DatabaseSync } from 'node:sqlite';
 import type { PublicCard, RetentionMetadata } from '@ima/contracts';
-import type { JourneyApiControllerBinding } from './journey-api-binding';
+import type { JourneyApiControllerBinding } from '../../api/journey-api-binding';
 import {
   createMobileJourneyRuntime,
   type MobileJourneySavedReferenceOptions,
   type MobileRuntimeEnvironment,
-} from './mobile-runtime';
-import type { ApiFetch } from './api';
-import { createSqliteStore } from '../sqlite/store';
-import type { LocalSavedEntryId, SqliteConnection, SqliteValue } from '../sqlite/types';
+} from '../../api/mobile-runtime';
+import type { ApiFetch } from '../../api/api';
+import { createSqliteStore } from '../../sqlite/store';
+import type { LocalSavedEntryId, SqliteConnection, SqliteValue } from '../../sqlite/types';
 
 export const environment: MobileRuntimeEnvironment = {
   EXPO_PUBLIC_API_MODE: 'fixture',

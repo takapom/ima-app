@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ApiFetch } from './api';
+import type { ApiFetch } from '../api/api';
 import {
   candidate,
   createThreadResponse,
@@ -14,7 +14,7 @@ import {
   searchResponse,
   stringField,
   visibleCandidate,
-} from './mobile-runtime-storage-fixtures';
+} from './tests/mobile-runtime-storage-fixtures';
 
 describe('mobile runtime saved-reference composition', () => {
   const databases: DatabaseSync[] = [];
