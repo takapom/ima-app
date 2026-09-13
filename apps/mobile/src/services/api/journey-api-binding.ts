@@ -9,8 +9,8 @@ import type { JourneyConditions } from '../../state/journey-input';
 import type { LocationService } from '../location/types';
 import type { JourneyApiController } from './journey-controller-types';
 import type { JourneyPhotoClient } from './photo-client';
-import type { JourneyStorageService } from '../journey-storage';
-import type { SavedPlaceListService } from '../saved-place-list';
+import type { JourneyStorageService } from '../saved-places/journey-storage';
+import type { SavedPlaceListService } from '../saved-places/saved-place-list';
 import type { SavedReferenceService } from '../saved-reference-service';
 
 export type JourneySavedPlacePreviewBinding = {

@@ -12,7 +12,7 @@ import {
   type JourneyPreferencesReadResult,
   type JourneyPreferencesSaveResult,
 } from './preferences';
-import type { ServerSavedPlaceRef } from './saved-place-types';
+import type { ServerSavedPlaceRef } from './saved-places/saved-place-types';
 import { sessionExpiryAt } from './sqlite/retention';
 import type { SqliteStore } from './sqlite/types';
 import type { JourneyConditions } from '../state/journey-input';

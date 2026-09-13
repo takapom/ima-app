@@ -1,6 +1,6 @@
 import type { PublicCard, RetentionMetadata } from '@ima/contracts';
 import { createRuntimeId } from '../runtime-id';
-import type { LocalSavedEntryId } from '../saved-place-types';
+import type { LocalSavedEntryId } from '../saved-places/saved-place-types';
 import type { LocationService, LocationServiceOptions } from '../location/types';
 import type {
   NativeSqliteAdapter,

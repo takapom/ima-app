@@ -7,9 +7,9 @@ import {
   shareJourneyCandidate,
   type JourneyShareService,
 } from './journey-share';
-import { saveJourneyCandidate, type JourneyStorageService } from './journey-storage';
+import { saveJourneyCandidate, type JourneyStorageService } from './saved-places/journey-storage';
 import { journeyShareInputFor } from './journey-share-input';
-import type { LocalSavedEntryId } from './saved-place-types';
+import type { LocalSavedEntryId } from './saved-places/saved-place-types';
 
 const retention = {
   retentionDecision: 'deny' as const,

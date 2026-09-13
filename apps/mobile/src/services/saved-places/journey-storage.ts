@@ -5,7 +5,7 @@ import type {
   SavedReferenceScope,
   SavedReferenceSaveResult,
   SavedReferenceService,
-} from './saved-reference-service';
+} from '../saved-reference-service';
 
 export type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
 

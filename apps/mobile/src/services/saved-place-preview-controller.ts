@@ -1,13 +1,13 @@
 import { parseSavedReferencePath } from '@ima/contracts';
 import type { SavedReferenceRefreshResult, SavedReferenceService } from './saved-reference-service';
-import type { SavedPlaceListService } from './saved-place-list';
+import type { SavedPlaceListService } from './saved-places/saved-place-list';
 import { createMonotonicAssistantResponseClock } from './assistant-response-clock';
 import {
   savedPlacePayloadDeadlinesFor,
   savedPlacePayloadDisplayPolicyBlocked,
   savedPlacePreviewExpiryFor,
   savedPlacePreviewTimerDelay,
-} from './saved-place-preview-expiry';
+} from './saved-places/saved-place-preview-expiry';
 import {
   createSavedPlacePreviewState,
   savedPlacePreviewReducer,
@@ -15,7 +15,7 @@ import {
   type SavedPlacePreviewPayload,
   type SavedPlacePreviewState,
 } from '../state/saved-place-preview';
-import type { ServerSavedPlaceRef } from './saved-place-types';
+import type { ServerSavedPlaceRef } from './saved-places/saved-place-types';
 
 export type SavedPlacePreviewOptions = {
   /** Omit the list service when SQLite is not available; the hook then stays unavailable. */

@@ -26,8 +26,11 @@ import { createJourneyApiClient } from '../api/client';
 import { createOwnerPrefsClient, type OwnerPrefsClient } from '../api/owner-client';
 import { createJourneyPhotoClient } from '../api/photo-client';
 import { createRuntimeId } from '../runtime-id';
-import { createSavedReferenceJourneyStorage, type JourneyStorageService } from '../journey-storage';
-import { createSavedPlaceListService } from '../saved-place-list';
+import {
+  createSavedReferenceJourneyStorage,
+  type JourneyStorageService,
+} from '../saved-places/journey-storage';
+import { createSavedPlaceListService } from '../saved-places/saved-place-list';
 import { createSavedReferenceService, type SavedReferenceScope } from '../saved-reference-service';
 import type { SqliteStore } from '../sqlite/types';
 import type { LocationService } from '../location/types';

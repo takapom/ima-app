@@ -1,6 +1,6 @@
-import type { SavedPlacePreviewPayload } from '../state/saved-place-preview';
+import type { SavedPlacePreviewPayload } from '../../state/saved-place-preview';
 import type { SavedPlaceListItem } from './saved-place-list';
-import { retentionDisplayExpired } from './sqlite/retention';
+import { retentionDisplayExpired } from '../sqlite/retention';
 
 export type SavedPlacePreviewExpiry =
   | {

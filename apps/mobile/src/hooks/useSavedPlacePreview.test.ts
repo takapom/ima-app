@@ -4,9 +4,12 @@ import {
   createSavedPlacePreviewController,
   type SavedPlacePreviewController,
 } from '../services/saved-place-preview-controller';
-import { createSavedPlaceListService } from '../services/saved-place-list';
+import { createSavedPlaceListService } from '../services/saved-places/saved-place-list';
 import type { SavedPlaceRecord } from '../services/sqlite/types';
-import type { LocalSavedEntryId, ServerSavedPlaceRef } from '../services/saved-place-types';
+import type {
+  LocalSavedEntryId,
+  ServerSavedPlaceRef,
+} from '../services/saved-places/saved-place-types';
 import type {
   SavedReferenceRefreshInput,
   SavedReferenceRefreshResult,

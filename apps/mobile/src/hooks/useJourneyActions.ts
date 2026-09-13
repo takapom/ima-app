@@ -12,7 +12,7 @@ import {
   createUnavailableJourneyStorageService,
   saveJourneyCandidate,
   type JourneyStorageService,
-} from '../services/journey-storage';
+} from '../services/saved-places/journey-storage';
 import {
   prepareJourneyShare,
   shareJourneyCandidate,

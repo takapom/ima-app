@@ -1,6 +1,6 @@
 import type { PublicCard } from '@ima/contracts';
 import { triggerDecisionHaptics, type DecisionHapticsService } from '../services/journey-haptics';
-import type { JourneyStorageService } from '../services/journey-storage';
+import type { JourneyStorageService } from '../services/saved-places/journey-storage';
 import {
   canCommitJourneyNotice,
   type JourneyOperationToken,

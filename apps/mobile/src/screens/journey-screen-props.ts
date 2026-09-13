@@ -8,7 +8,7 @@ import type { JourneyPhotoClient } from '../services/api/photo-client';
 import type { JourneyActionServices } from '../hooks/useJourneyActions';
 import type { WalkingMapDestinationResolver } from '../services/journey-map';
 import type { JourneyPreferencesService } from '../services/preferences';
-import type { JourneyStorageService } from '../services/journey-storage';
+import type { JourneyStorageService } from '../services/saved-places/journey-storage';
 import type { JourneySourceLinkService } from '../services/journey-source-link';
 import type { AssistantResponseState } from '../state/assistant-response';
 import type { ConditionScope, JourneyConditions } from '../state/journey-input';

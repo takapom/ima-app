@@ -1,4 +1,4 @@
-import type { SavedPlaceListResult } from '../services/saved-place-list';
+import type { SavedPlaceListResult } from '../services/saved-places/saved-place-list';
 import type { SavedPlaceItem } from '../state/journey-shell';
 import { collectAttributions, type AttributionPresentation } from './attribution';
 import type {

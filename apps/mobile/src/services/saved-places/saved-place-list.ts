@@ -1,6 +1,6 @@
 import { parseSavedReferencePath } from '@ima/contracts';
-import { createMonotonicAssistantResponseClock } from './assistant-response-clock';
-import type { SavedPlaceRecord, SqliteStore } from './sqlite/types';
+import { createMonotonicAssistantResponseClock } from '../assistant-response-clock';
+import type { SavedPlaceRecord, SqliteStore } from '../sqlite/types';
 import type { ServerSavedPlaceRef } from './saved-place-types';
 
 export type SavedPlaceListItem = {

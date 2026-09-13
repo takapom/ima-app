@@ -5,7 +5,7 @@ import {
   createUnavailableJourneyStorageService,
   type JourneyStorageSaveOptions,
 } from './journey-storage';
-import type { SavedReferenceSaveInput, SavedReferenceService } from './saved-reference-service';
+import type { SavedReferenceSaveInput, SavedReferenceService } from '../saved-reference-service';
 import type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
 
 const referenceRetention: RetentionMetadata = {
