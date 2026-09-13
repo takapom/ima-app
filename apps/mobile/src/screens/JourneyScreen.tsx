@@ -9,7 +9,7 @@ import { Drawer } from '../components/Drawer';
 import { EmptyState } from '../components/response/EmptyState';
 import { ErrorState } from '../components/response/ErrorState';
 import { ResultsState } from '../components/response/ResultsState';
-import { SavedPlacePreviewSurface } from '../components/SavedPlacePreviewSurface';
+import { SavedPlacePreviewSurface } from '../components/saved-places/SavedPlacePreviewSurface';
 import { WorkingState } from '../components/response/WorkingState';
 import { useAssistantResponseProjection } from '../hooks/useAssistantResponseProjection';
 import { useJourneyActions } from '../hooks/useJourneyActions';

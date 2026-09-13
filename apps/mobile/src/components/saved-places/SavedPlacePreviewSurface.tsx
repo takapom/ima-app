@@ -1,6 +1,6 @@
 import { SavedPlaceConsultationBanner } from './SavedPlaceConsultationBanner';
 import { SavedPlacePreviewPanel } from './SavedPlacePreviewPanel';
-import type { SavedPlacePreviewUi } from '../hooks/useSavedPlacePreview';
+import type { SavedPlacePreviewUi } from '../../hooks/useSavedPlacePreview';
 
 type SavedPlacePreviewSurfaceProps = {
   readonly controller: SavedPlacePreviewUi;
