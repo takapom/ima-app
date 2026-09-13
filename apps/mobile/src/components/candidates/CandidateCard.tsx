@@ -9,7 +9,7 @@ import {
   presentEvidenceText,
   presentFact,
   type FactPresentation,
-} from '../candidate-card-model';
+} from './candidate-card-model';
 import { PhotoRegion } from './PhotoRegion';
 import { colors, radii, scaleForDynamicType, spacing, typography } from '../../theme/tokens';
 

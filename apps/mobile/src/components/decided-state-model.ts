@@ -1,5 +1,5 @@
 import type { PublicCard } from '@ima/contracts';
-import { presentFact } from './candidate-card-model';
+import { presentFact } from './candidates/candidate-card-model';
 
 export const presentDecidedIdentity = (card: PublicCard | null) => {
   if (card === null || card.facts.identity.status !== 'known') return null;

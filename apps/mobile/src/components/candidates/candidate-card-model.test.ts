@@ -7,7 +7,7 @@ import {
   presentCardFacts,
   presentEvidenceText,
   presentFact,
-} from '../candidate-card-model';
+} from './candidate-card-model';
 
 const retention = {
   retentionDecision: 'deny' as const,

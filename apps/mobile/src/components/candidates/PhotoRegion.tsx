@@ -8,7 +8,7 @@ import {
   type PhotoImageIdentity,
   type PhotoImageState,
 } from '../../state/photo-image-state';
-import { presentFact } from '../candidate-card-model';
+import { presentFact } from './candidate-card-model';
 import { colors, radii, spacing, typography } from '../../theme/tokens';
 
 type PhotoRegionProps = {
