@@ -10,7 +10,7 @@ import {
   NOW,
   buildRequest,
   readOnlyCommit as commit,
-} from './runtime-production-factory-fixtures';
+} from './composition/runtime-production-factory-fixtures';
 import { modelFor } from '../support/runtime-model-fixture';
 
 const baseEnvironment = {

@@ -12,7 +12,7 @@ import {
   buildRequest,
   readOnlyCommit,
   requestInput,
-} from './runtime-production-factory-fixtures';
+} from './composition/runtime-production-factory-fixtures';
 
 const routeRequest: ThreadTurnRequest = {
   ...requestInput,

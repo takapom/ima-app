@@ -32,7 +32,7 @@ import {
   createRuntimeProviderComposition,
   type RuntimeLastTrainCompositionOptions,
   type RuntimeProviderComposition,
-} from '../runtime-provider-composition';
+} from './runtime-provider-composition';
 import type { RuntimePhotoTokenPreparer } from '../runtime-response';
 
 export type RuntimeProductionRouteOptions = {

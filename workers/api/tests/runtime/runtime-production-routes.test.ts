@@ -11,7 +11,7 @@ import {
   NOW,
   buildRequest,
   requestInput,
-} from './runtime-production-factory-fixtures';
+} from './composition/runtime-production-factory-fixtures';
 
 describe('production runtime Routes wiring', () => {
   it('submits current-location walking evidence without a station dataset', async () => {

@@ -32,7 +32,7 @@ import type {
   RuntimeJourneyDataset,
   RuntimeLastTrainCompositionOptions,
   RuntimeLastTrainRevisionState,
-} from '../runtime-provider-composition';
+} from './runtime-provider-composition';
 import {
   createRuntimeProductionProviderComposition,
   type RuntimeProductionProviderComposition,

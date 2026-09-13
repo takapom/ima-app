@@ -14,7 +14,7 @@ import {
   createRuntimeLastTrainRevisionState,
   createRuntimeProviderComposition,
   type RuntimeJourneyDataset,
-} from '../../src/runtime/runtime-provider-composition';
+} from '../../src/runtime/composition/runtime-provider-composition';
 import { describe, expect, it, vi } from 'vitest';
 import {
   context as placesContext,

@@ -31,7 +31,7 @@ import type { ProductionRetentionSource } from './runtime-production-support';
 import type {
   RuntimeJourneyDataset,
   RuntimeLastTrainCompositionOptions,
-} from '../runtime-provider-composition';
+} from './runtime-provider-composition';
 import type { RuntimeProductionProviderComposition } from './runtime-production-providers';
 import type { RuntimeRetentionContext } from '../runtime-retention';
 import type { RuntimeModelGuardModel } from '../turn-execution/runtime-model-guard';

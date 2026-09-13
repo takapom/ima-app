@@ -18,7 +18,7 @@ import {
   NOW,
   buildRequest,
   readOnlyCommit,
-} from './runtime-production-factory-fixtures';
+} from './composition/runtime-production-factory-fixtures';
 import { sessionExpiryAt } from '../../src/runtime/composition/runtime-production-support';
 
 const hpFieldPolicy: HotPepperFieldPolicy = (field: HotPepperField, use: HotPepperPolicyUse) => ({

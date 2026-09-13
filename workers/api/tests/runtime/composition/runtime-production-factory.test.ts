@@ -1,9 +1,9 @@
 import type { RetentionMetadata } from '@ima/core';
 import { describe, expect, it } from 'vitest';
-import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../src/model/provider-options';
-import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
-import { invokePublicToolEnvelope } from '../../src/tools';
-import { modelFor, type RuntimeGateModelReport } from '../support/runtime-model-fixture';
+import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../../src/model/provider-options';
+import { createRuntimeProductionConnectionOptions } from '../../../src/runtime/composition/runtime-production-factory';
+import { invokePublicToolEnvelope } from '../../../src/tools';
+import { modelFor, type RuntimeGateModelReport } from '../../support/runtime-model-fixture';
 import {
   ALLOW_MODEL_CONTEXT_FIELDS,
   ALLOW_RETENTION,

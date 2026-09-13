@@ -28,7 +28,7 @@ import {
 import {
   createRuntimeLastTrainRevisionState,
   readActiveJourneyRevision,
-} from '../runtime-provider-composition';
+} from './runtime-provider-composition';
 import {
   capabilitiesWithProviders,
   cardEvidenceResolver,

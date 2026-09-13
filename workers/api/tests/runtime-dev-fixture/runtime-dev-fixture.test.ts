@@ -22,7 +22,7 @@ import {
   DEV_FIXTURE_PLACE_ID,
   isKeylessDevFixtureEnvironment,
 } from '../../src/runtime/composition/runtime-dev-fixture';
-import { readOnlyCommit } from '../runtime/runtime-production-factory-fixtures';
+import { readOnlyCommit } from '../runtime/composition/runtime-production-factory-fixtures';
 import { toolCallInput } from './runtime-dev-fixture-test-support';
 
 const OWNER_CREDENTIAL = `${'A'.repeat(42)}E`;
