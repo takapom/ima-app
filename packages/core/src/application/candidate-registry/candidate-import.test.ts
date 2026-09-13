@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CandidateObservationRegistry } from './registry';
-import type { ClockPort, RegistryIdPort } from '../ports/context';
-import type { ObservationContext, RegistryScope } from '../domain/freshness';
+import { CandidateObservationRegistry } from '../registry';
+import type { ClockPort, RegistryIdPort } from '../../ports/context';
+import type { ObservationContext, RegistryScope } from '../../domain/freshness';
 import type {
   CandidateRegistration,
   ObservationRegistration,
   RegistryJsonValue,
-} from '../domain/registry';
+} from '../../domain/registry';
 
 class FixedClock implements ClockPort {
   now(): string {
