@@ -7,7 +7,7 @@ import {
   type PhotoDisplayPolicySnapshot,
 } from '../../../src/providers/photo/issuance';
 import { PhotoTokenError, type PhotoTokenCodec } from '../../../src/providers/photo/types';
-import type { RuntimePolicyRecord } from '../../../src/runtime/runtime-field-policy';
+import type { RuntimePolicyRecord } from '../../../src/runtime/context/runtime-field-policy';
 
 const CONTEXT = {
   ownerScopeRef: 'owner-photo',

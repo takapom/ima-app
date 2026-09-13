@@ -7,7 +7,7 @@ import {
 } from '@ima/core';
 import { describe, expect, it } from 'vitest';
 import { createRuntimeProductionContextStore } from '../../src/runtime/runtime-production-context';
-import type { RuntimeProductionContextReference } from '../../src/runtime/runtime-production-context-reference';
+import type { RuntimeProductionContextReference } from '../../src/runtime/context/runtime-production-context-reference';
 import {
   RuntimeProductionContextLimitError,
   RuntimeProductionDisplayContextError,

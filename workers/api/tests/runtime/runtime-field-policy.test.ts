@@ -10,7 +10,7 @@ import {
   type RuntimeFieldUsePolicy,
   type RuntimePolicyRecord,
   type RuntimeModelProjectionPolicyInput,
-} from '../../src/runtime/runtime-field-policy';
+} from '../../src/runtime/context/runtime-field-policy';
 
 const record = (overrides: Partial<RuntimePolicyRecord> = {}): RuntimePolicyRecord => ({
   decision: 'allow',

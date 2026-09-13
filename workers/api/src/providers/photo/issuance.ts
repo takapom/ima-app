@@ -12,7 +12,7 @@ import {
   runtimePolicyAllows,
   type RuntimeFieldUsePolicy,
   type RuntimePolicyMode,
-} from '../../runtime/runtime-field-policy';
+} from '../../runtime/context/runtime-field-policy';
 import * as v from 'valibot';
 
 export type PhotoTokenObservation = {

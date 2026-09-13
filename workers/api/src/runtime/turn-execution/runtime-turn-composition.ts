@@ -68,7 +68,7 @@ import {
   RuntimeTurnCompositionError,
 } from './runtime-turn-composition-support';
 import { clearRuntimeCardSetId, registerRuntimeCardSetId } from '../../thread-runtime/commit-port';
-import { projectRuntimeToolResultForModel } from '../runtime-field-policy';
+import { projectRuntimeToolResultForModel } from '../context/runtime-field-policy';
 import { configureRuntimeCompaction } from '../runtime-session-config';
 
 export type { RuntimePublicResponseDependencies } from '../runtime-response';

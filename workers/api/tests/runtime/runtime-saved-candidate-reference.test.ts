@@ -5,7 +5,7 @@ import {
   parseRuntimeProductionContextReference,
   referenceSnapshotFor,
   type RuntimeProductionContextReference,
-} from '../../src/runtime/runtime-production-context-reference';
+} from '../../src/runtime/context/runtime-production-context-reference';
 import {
   resolveRuntimeSavedCandidate,
   type RuntimeSavedCandidateResult,

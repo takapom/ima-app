@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   defaultRuntimeModelContextPolicy,
   projectRuntimeToolResultForModel,
-} from '../../src/runtime/runtime-field-policy';
+} from '../../src/runtime/context/runtime-field-policy';
 import {
   captureRuntimeEphemeralToolCall,
   captureRuntimeEphemeralToolResult,

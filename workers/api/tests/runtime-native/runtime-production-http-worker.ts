@@ -3,7 +3,7 @@ import {
   createThreadScopeAuthorizer,
   type BootstrapEnv,
 } from '../../src/bootstrap';
-import type { RuntimeFieldUsePolicy } from '../../src/runtime/runtime-field-policy';
+import type { RuntimeFieldUsePolicy } from '../../src/runtime/context/runtime-field-policy';
 import type { PhotoDisplayPolicySnapshot } from '../../src/providers/photo/issuance';
 import type { RuntimeProductionOverrides } from '../../src/runtime/composition/runtime-production-types';
 import { routeRequest } from '../../src/http/router';

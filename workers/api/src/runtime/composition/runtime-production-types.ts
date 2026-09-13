@@ -26,7 +26,7 @@ import type {
   RuntimeCompositionValidationContext,
   RuntimePublicResponseDependencies,
 } from '../turn-execution/runtime-turn-composition';
-import type { RuntimeProductionContextPersistence } from '../runtime-production-context-reference';
+import type { RuntimeProductionContextPersistence } from '../context/runtime-production-context-reference';
 import type { ProductionRetentionSource } from './runtime-production-support';
 import type {
   RuntimeJourneyDataset,

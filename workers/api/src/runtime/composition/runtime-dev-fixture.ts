@@ -18,7 +18,7 @@ import {
   DEV_FIXTURE_PLACE_ID,
   fixturePlace,
 } from './runtime-dev-fixture-place';
-import type { RuntimeFieldUsePolicy } from '../runtime-field-policy';
+import type { RuntimeFieldUsePolicy } from '../context/runtime-field-policy';
 import {
   sessionExpiryAt,
   type ProductionObservationPolicyInput,

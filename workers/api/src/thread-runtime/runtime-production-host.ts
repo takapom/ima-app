@@ -8,7 +8,7 @@ import {
 } from '../runtime/composition/runtime-production-factory';
 import { sessionExpiryAt } from '../runtime/composition/runtime-production-support';
 import { createDurableRuntimeContextPersistence } from './runtime-context-persistence';
-import type { RuntimeProductionContextReference } from '../runtime/runtime-production-context-reference';
+import type { RuntimeProductionContextReference } from '../runtime/context/runtime-production-context-reference';
 import { createRuntimeRetentionAlarmCapability } from './runtime-retention-alarm';
 import type { RuntimeThinkConnectionOptions } from '../runtime/turn-execution/runtime-think-connection';
 import {
