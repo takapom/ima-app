@@ -1,12 +1,12 @@
-import type { PhotoReferenceRpc } from '../../src/providers/photo/rpc';
-import { unavailableStationWaypoint } from '../../src/providers/routes/resolver';
+import type { PhotoReferenceRpc } from '../../../src/providers/photo/rpc';
+import { unavailableStationWaypoint } from '../../../src/providers/routes/resolver';
 import {
   photoDependenciesFor,
   runtimeProductionProviderAvailabilityFor,
   type RuntimeProductionAvailabilityConfiguration,
-} from '../../src/runtime/composition/runtime-production-provider-config';
+} from '../../../src/runtime/composition/runtime-production-provider-config';
 import { describe, expect, it } from 'vitest';
-import { context, makeFixture } from '../providers/places-details/adapter-fixtures';
+import { context, makeFixture } from '../../providers/places-details/adapter-fixtures';
 
 const routeConfiguration = {
   routesEnabled: true,

@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { unavailableStationWaypoint } from '../../src/providers/routes/resolver';
-import type { RuntimeJourneyDataset } from '../../src/providers/last-train/port';
+import { unavailableStationWaypoint } from '../../../src/providers/routes/resolver';
+import type { RuntimeJourneyDataset } from '../../../src/providers/last-train/port';
 import {
   createRuntimeProductionConnectionOptions,
   type RuntimeProductionOverrides,
-} from '../../src/runtime/composition/runtime-production-factory';
+} from '../../../src/runtime/composition/runtime-production-factory';
 import {
   FIXTURE_OPERATIONAL_ENV,
   NOW,
   buildRequest,
   readOnlyCommit as commit,
-} from './composition/runtime-production-factory-fixtures';
-import { modelFor } from '../support/runtime-model-fixture';
+} from './runtime-production-factory-fixtures';
+import { modelFor } from '../../support/runtime-model-fixture';
 
 const baseEnvironment = {
   ...FIXTURE_OPERATIONAL_ENV,

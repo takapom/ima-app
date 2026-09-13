@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { invokePublicToolEnvelope } from '../../src/tools';
-import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
-import { cardEvidenceResolver } from '../../src/runtime/composition/runtime-production-provider-config';
+import { invokePublicToolEnvelope } from '../../../src/tools';
+import { createRuntimeProductionConnectionOptions } from '../../../src/runtime/composition/runtime-production-factory';
+import { cardEvidenceResolver } from '../../../src/runtime/composition/runtime-production-provider-config';
 import type {
   HotPepperField,
   HotPepperFieldPolicy,
   HotPepperPolicyUse,
   HotPepperProviderInputPolicy,
-} from '../../src/providers/hot-pepper/types';
-import type { HotPepperTransport } from '../../src/providers/hot-pepper/transport';
-import { parseHotPepperResponse } from '../../src/providers/hot-pepper/wire';
-import type { PlacesDetailsObservationPolicy } from '../../src/providers/places-details/adapter-types';
+} from '../../../src/providers/hot-pepper/types';
+import type { HotPepperTransport } from '../../../src/providers/hot-pepper/transport';
+import { parseHotPepperResponse } from '../../../src/providers/hot-pepper/wire';
+import type { PlacesDetailsObservationPolicy } from '../../../src/providers/places-details/adapter-types';
 import {
   ALLOW_MODEL_CONTEXT_FIELDS,
   ALLOW_RETENTION,
@@ -18,8 +18,8 @@ import {
   NOW,
   buildRequest,
   readOnlyCommit,
-} from './composition/runtime-production-factory-fixtures';
-import { sessionExpiryAt } from '../../src/runtime/composition/runtime-production-support';
+} from './runtime-production-factory-fixtures';
+import { sessionExpiryAt } from '../../../src/runtime/composition/runtime-production-support';
 
 const hpFieldPolicy: HotPepperFieldPolicy = (field: HotPepperField, use: HotPepperPolicyUse) => ({
   decision:

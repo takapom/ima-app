@@ -1,15 +1,15 @@
 import type { GetPlaceDetailsInput, HarnessContext, ToolExecutionContext } from '@ima/core';
 import { describe, expect, it } from 'vitest';
-import { createRuntimeRouteBudgetBoundary } from '../../src/providers/routes/budget';
+import { createRuntimeRouteBudgetBoundary } from '../../../src/providers/routes/budget';
 import {
   context as fixtureContext,
   execution as fixtureExecution,
   makeFixture,
   NOW,
   policy,
-} from '../providers/places-details/adapter-fixtures';
-import { RuntimeBudget } from '../../src/runtime/budget/runtime-budget';
-import { createRuntimeProductionProviderComposition } from '../../src/runtime/composition/runtime-production-providers';
+} from '../../providers/places-details/adapter-fixtures';
+import { RuntimeBudget } from '../../../src/runtime/budget/runtime-budget';
+import { createRuntimeProductionProviderComposition } from '../../../src/runtime/composition/runtime-production-providers';
 
 const routeInput = (candidateId: string): GetPlaceDetailsInput => ({
   requests: [{ candidateId, fields: ['walking_route'] }],
