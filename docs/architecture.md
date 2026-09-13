@@ -24,6 +24,19 @@ package外からは公開exportsを使う。相対パス、alias、型import、�
 Core内部はApplication→Ports/Domain、Ports→Domainの方向を守る。SDK、直接I/O、環境変数、直接の時計・乱数をCoreへ持ち込まず、必要な値やPortを注入する。
 UIはservices経由でI/Oを行い、stateへネイティブI/Oを混ぜない。
 
+## コードの配置
+
+レイヤ内は変更対象で分け、フォルダ名は小文字のkebab-caseとする。ファイル名はエディタのタブでも対象が分かる名前を維持し、単独で責務が明確なファイルは直下に置ける。
+
+| 配置                 | 探す対象                                                                                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core `application/`  | `model-context`はモデル入力、`candidate-registry`は候補・観測の登録、`submission`は検証・確定、`travel`は移動計算。今回の条件変更は直下の`turn-constraints.ts`    |
+| Worker `runtime/`    | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`composition`は環境・具象実装の組み立て。予算・文脈・保持・公開応答・保存参照・計測は各フォルダ |
+| Mobile `services/`   | `api`はHTTPとその契約、`thread-session`は会話操作・復元、`runtime`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`                 |
+| Mobile `components/` | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI。表示文言・表示用変換は`presentation`                      |
+
+単体テストは対象実装の近くに置き、Workerは`tests/runtime/`にも対応する分類を使う。テスト専用fixtureを公開exportsへ追加しない。配置変更だけで既存の公開入口や責務・依存方向を変更しない。
+
 ## 実行とデータの流れ
 
 ```mermaid
