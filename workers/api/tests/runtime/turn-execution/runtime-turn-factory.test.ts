@@ -18,16 +18,16 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '../../src/runtime/runtime-budget';
+} from '../../../src/runtime/runtime-budget';
 import {
   createRuntimeTurnFactory,
   RuntimeTurnFactoryError,
   type RuntimeTurnFactoryOptions,
   type RuntimeTurnPortDependencies,
-} from '../../src/runtime/turn-execution/runtime-turn-factory';
-import { invokePublicToolEnvelope } from '../../src/tools';
-import { createToolRegistry } from '../tools/registry-fixture';
-import { modelFor } from '../support/runtime-model-fixture';
+} from '../../../src/runtime/turn-execution/runtime-turn-factory';
+import { invokePublicToolEnvelope } from '../../../src/tools';
+import { createToolRegistry } from '../../tools/registry-fixture';
+import { modelFor } from '../../support/runtime-model-fixture';
 
 const context: HarnessContext = {
   threadId: 'thread-tools',
