@@ -10,7 +10,7 @@ import type {
 import type { JourneyApiSubmitContext } from './journey-api-binding';
 import { createJourneyApiController } from './journey-controller';
 import { createJourneyApiRequestFactory } from './mobile-runtime';
-import type { ApiResult, JourneyApiClient } from './types';
+import type { ApiResult, JourneyApiClient } from './api';
 
 const contextFor = (savedPlaceRefs: readonly string[]): JourneyApiSubmitContext => ({
   conditions: {

@@ -3,7 +3,7 @@ import type {
   JourneyApiController,
   JourneyApiControllerState,
 } from '../services/api/journey-controller';
-import type { ApiResult } from '../services/api/types';
+import type { ApiResult } from '../services/api/api';
 
 export type JourneyApiRetryResult = ApiResult<CreateThreadResponse> | ApiResult<SearchResponse>;
 

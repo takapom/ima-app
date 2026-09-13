@@ -16,7 +16,7 @@ import type {
   SqliteStore,
   SqliteValue,
 } from './sqlite/types';
-import type { JourneyApiClient } from './api/types';
+import type { JourneyApiClient } from './api/api';
 
 const identifierRetention: RetentionMetadata = {
   retentionDecision: 'allow',

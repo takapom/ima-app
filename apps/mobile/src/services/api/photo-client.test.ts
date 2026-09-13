@@ -6,7 +6,7 @@ import {
   REQUEST_ID_HEADER,
 } from '@ima/contracts';
 import { createJourneyPhotoClient } from './photo-client';
-import type { ApiClientOptions, ApiFetch } from './types';
+import type { ApiClientOptions, ApiFetch } from './api';
 
 const now = '2026-09-10T12:00:00.000Z';
 const ownerCredential = `${'A'.repeat(42)}A`;

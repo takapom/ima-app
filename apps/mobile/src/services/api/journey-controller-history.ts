@@ -14,7 +14,7 @@ import {
   validLocalSnapshot,
   validOpaqueId,
 } from './journey-controller-support';
-import type { ApiRequestOptions, ApiResult } from './types';
+import type { ApiRequestOptions, ApiResult } from './api';
 import type { ThreadReadResponse } from '@ima/contracts';
 
 type HistoryDependencies = {

@@ -1,5 +1,5 @@
 import type { PublicPlaceDetailsData } from '@ima/contracts';
-import type { ApiError } from '../services/api/types';
+import type { ApiError } from '../services/api/api';
 import type { SavedPlaceListItem, SavedPlaceListResult } from '../services/saved-place-list';
 import type { ServerSavedPlaceRef } from '../services/saved-place-types';
 

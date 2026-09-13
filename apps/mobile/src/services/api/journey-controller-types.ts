@@ -14,7 +14,7 @@ import type {
   ApiResult,
   JourneyApiClient,
   LifecycleResponse,
-} from './types';
+} from './api';
 import type { ApiOperationToken } from './request-gate';
 
 export type JourneyLocalSnapshot = {

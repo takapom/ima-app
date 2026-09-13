@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ApiFetch } from './types';
+import type { ApiFetch } from './api';
 import {
   candidate,
   createThreadResponse,

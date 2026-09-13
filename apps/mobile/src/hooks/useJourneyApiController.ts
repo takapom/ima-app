@@ -5,7 +5,7 @@ import type {
   JourneyApiControllerBinding,
   JourneyApiSubmitContext,
 } from '../services/api/journey-api-binding';
-import type { ApiError, ApiResult, LifecycleResponse } from '../services/api/types';
+import type { ApiError, ApiResult, LifecycleResponse } from '../services/api/api';
 import {
   awaitRetryIfCurrent,
   retryCreatedThreadThenSearchIfCurrent,

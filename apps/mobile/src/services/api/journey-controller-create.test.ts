@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CreateThreadRequest, CreateThreadResponse } from '@ima/contracts';
 import { createJourneyApiController } from './journey-controller';
-import type { ApiResult, JourneyApiClient } from './types';
+import type { ApiResult, JourneyApiClient } from './api';
 
 const createInput = (idempotencyKey: string): CreateThreadRequest => ({
   schemaVersion: 'v1',

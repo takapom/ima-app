@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { REQUEST_ID_HEADER } from '@ima/contracts';
 import { createOwnerPrefsClient } from './owner-client';
-import type { ApiClientOptions, ApiFetch } from './types';
+import type { ApiClientOptions, ApiFetch } from './api';
 
 const ownerCredential = `${'A'.repeat(42)}A`;
 const prefs = {

@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Preferences, PrefsReadResponse, PrefsWriteResponse } from '@ima/contracts';
 import type { OwnerPrefsClient } from './api/owner-client';
-import type { ApiResult } from './api/types';
+import type { ApiResult } from './api/api';
 import { createOwnerPrefsProjection } from './owner-prefs-projection';
 import { createSqliteStore } from './sqlite/store';
 import type {

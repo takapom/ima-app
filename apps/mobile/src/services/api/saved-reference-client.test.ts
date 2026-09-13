@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SavedReferenceCreateRequest, SavedReferenceDeleteRequest } from '@ima/contracts';
 import { REQUEST_ID_HEADER } from '@ima/contracts';
 import { createJourneyApiClient } from './client';
-import type { ApiClientOptions, ApiFetch } from './types';
+import type { ApiClientOptions, ApiFetch } from './api';
 
 const ownerCredential = `${'A'.repeat(42)}A`;
 const createInput: SavedReferenceCreateRequest = {

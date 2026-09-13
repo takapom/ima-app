@@ -25,7 +25,7 @@ import type {
   ApiRequestOptions,
   ApiResult,
   JourneyApiClient,
-} from './types';
+} from './api';
 import { runWithinDeadline } from './deadline';
 import { buildApiUrl, credentialHeaders, parseRetryAfter, timeoutFor } from './request-helpers';
 import { issueResult, parserFor, readJson, type ResponseSpec } from './response';
@@ -350,9 +350,7 @@ export const createJourneyApiClient = (options: ApiClientOptions): JourneyApiCli
       if (!path.ok) return Promise.resolve(path);
       const parsed = parsePlaceDecideRequest(input);
       if (!parsed.success) {
-        return Promise.resolve(
-          issueResult(CLIENT_REQUEST_ID, 'placeDecide', parsed.issues, null),
-        );
+        return Promise.resolve(issueResult(CLIENT_REQUEST_ID, 'placeDecide', parsed.issues, null));
       }
       return request(
         {

@@ -9,7 +9,7 @@ import {
 } from '@ima/contracts';
 import { createApiRequester } from './client';
 import { issueResult } from './response';
-import type { ApiClientOptions, ApiRequestOptions, ApiResult } from './types';
+import type { ApiClientOptions, ApiRequestOptions, ApiResult } from './api';
 
 const CLIENT_REQUEST_ID = 'client-invalid';
 

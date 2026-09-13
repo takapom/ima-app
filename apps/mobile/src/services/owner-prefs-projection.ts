@@ -5,7 +5,7 @@ import {
   type RetentionMetadata,
 } from '@ima/contracts';
 import type { OwnerPrefsClient } from './api/owner-client';
-import type { ApiError, ApiResult } from './api/types';
+import type { ApiError, ApiResult } from './api/api';
 import {
   createJourneyPreferencesService,
   isValidJourneyConditions,
@@ -18,9 +18,7 @@ import type { SqliteStore } from './sqlite/types';
 import type { JourneyConditions } from '../state/journey-input';
 
 export type OwnerPrefsSqlite = Pick<SqliteStore, 'readPreferences' | 'savePreferences'> &
-  Partial<
-    Pick<SqliteStore, 'listSavedPlaces' | 'savePlace' | 'deleteSavedPlace' | 'markDecided'>
-  >;
+  Partial<Pick<SqliteStore, 'listSavedPlaces' | 'savePlace' | 'deleteSavedPlace' | 'markDecided'>>;
 
 export type OwnerPrefsHydrateResult = {
   readonly prefs: 'synced' | 'stale';

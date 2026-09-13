@@ -6,7 +6,7 @@ import {
   parseSavedReferenceRefreshResponse,
   type SavedReferenceRefreshResponse,
 } from './saved-reference-refresh';
-import type { ApiClientOptions, ApiFetch } from './types';
+import type { ApiClientOptions, ApiFetch } from './api';
 
 const ownerCredential = `${'A'.repeat(42)}A`;
 const savedPlaceRef = 'saved-ref-1';

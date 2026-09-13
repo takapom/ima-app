@@ -26,7 +26,7 @@ import {
   type MobileRuntimeEnvironment,
   type MobileJourneySavedReferenceOptions,
 } from './mobile-runtime';
-import type { ApiCredentialProvider } from './types';
+import type { ApiCredentialProvider } from './api';
 import { waitFor, type WaitResult } from './native-runtime-deferred';
 import {
   createLocalSessionPersistence,

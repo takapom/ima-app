@@ -31,7 +31,7 @@ import { createSavedPlaceListService } from '../saved-place-list';
 import { createSavedReferenceService, type SavedReferenceScope } from '../saved-reference-service';
 import type { SqliteStore } from '../sqlite/types';
 import type { LocationService } from '../location/types';
-import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from './types';
+import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from './api';
 import { projectAssistantResponseState } from '../../state/assistant-response-projection';
 
 export type MobileRuntimeEnvironment = Readonly<Record<string, string | undefined>>;

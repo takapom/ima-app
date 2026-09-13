@@ -56,7 +56,7 @@ export type {
   ApiResult,
   ApiSuccess,
   JourneyApiClient,
-} from './types';
+} from './api';
 export type {
   ApiGateDecision,
   ApiOperationInput,

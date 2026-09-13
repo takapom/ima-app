@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ApiCredentialProvider, ApiCredentials } from './types';
+import type { ApiCredentialProvider, ApiCredentials } from './api';
 import {
   createSecureStoreCredentialStore,
   NATIVE_CREDENTIALS_KEY_PREFIX,

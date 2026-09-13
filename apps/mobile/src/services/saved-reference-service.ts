@@ -5,7 +5,7 @@ import {
 } from '@ima/contracts';
 import { canPersistOwnerScopedReference } from './sqlite/retention';
 import type { SqliteStore } from './sqlite/types';
-import type { ApiError, ApiRequestOptions, JourneyApiClient } from './api/types';
+import type { ApiError, ApiRequestOptions, JourneyApiClient } from './api/api';
 import { parseSavedReferenceRefreshResponse } from './api/saved-reference-refresh';
 import type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
 
@@ -70,10 +70,7 @@ export type SavedReferenceRefreshResult =
 export type SavedReferenceServiceOptions = {
   readonly api: Pick<
     JourneyApiClient,
-    | 'createSavedReference'
-    | 'decidePlace'
-    | 'deleteSavedReference'
-    | 'refreshSavedReference'
+    'createSavedReference' | 'decidePlace' | 'deleteSavedReference' | 'refreshSavedReference'
   >;
   readonly sqlite: Pick<
     SqliteStore,

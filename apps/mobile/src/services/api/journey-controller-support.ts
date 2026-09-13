@@ -3,7 +3,7 @@ import {
   advanceAssistantRevision,
   createAssistantResponseState,
 } from '../../state/assistant-response';
-import type { ApiError, ApiResult } from './types';
+import type { ApiError, ApiResult } from './api';
 import type { JourneyLocalSnapshot } from './journey-controller-types';
 
 export const failure = <T>(requestId: string, route: string, issue: string): ApiResult<T> => ({

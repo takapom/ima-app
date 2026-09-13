@@ -21,7 +21,7 @@ import {
   createNativeMobileJourneyRuntime,
   type NativeMobileRuntimeOptions,
 } from './native-mobile-runtime';
-import type { ApiFetch } from './types';
+import type { ApiFetch } from './api';
 import {
   createThreadResponse,
   json,

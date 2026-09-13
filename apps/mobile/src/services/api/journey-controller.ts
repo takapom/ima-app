@@ -28,7 +28,7 @@ import {
   stateForThread,
   validOpaqueId,
 } from './journey-controller-support';
-import type { ApiRequestOptions, ApiResult, LifecycleResponse } from './types';
+import type { ApiRequestOptions, ApiResult, LifecycleResponse } from './api';
 
 export type {
   JourneyApiController,
