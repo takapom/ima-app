@@ -3,7 +3,7 @@ import type { PublicPlaceDetailsData, RetentionMetadata } from '@ima/contracts';
 import {
   createSavedPlacePreviewController,
   type SavedPlacePreviewController,
-} from '../services/saved-place-preview-controller';
+} from '../services/saved-places/saved-place-preview-controller';
 import { createSavedPlaceListService } from '../services/saved-places/saved-place-list';
 import type { SavedPlaceRecord } from '../services/sqlite/types';
 import type {

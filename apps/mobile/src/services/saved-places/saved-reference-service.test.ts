@@ -6,17 +6,17 @@ import type {
   SavedReferenceCreateRequest,
   SavedReferenceCreateResponse,
 } from '@ima/contracts';
-import { createSavedReferenceService, type SavedReferenceScope } from './saved-reference-service';
-import type { SavedReferenceRefreshResponse } from './api/saved-reference-refresh';
-import { createSqliteStore } from './sqlite/store';
+import { createSavedReferenceService, type SavedReferenceScope } from '../saved-reference-service';
+import type { SavedReferenceRefreshResponse } from '../api/saved-reference-refresh';
+import { createSqliteStore } from '../sqlite/store';
 import type {
   LocalSavedEntryId,
   ServerSavedPlaceRef,
   SqliteConnection,
   SqliteStore,
   SqliteValue,
-} from './sqlite/types';
-import type { JourneyApiClient } from './api/api';
+} from '../sqlite/types';
+import type { JourneyApiClient } from '../api/api';
 
 const identifierRetention: RetentionMetadata = {
   retentionDecision: 'allow',

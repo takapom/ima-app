@@ -2,7 +2,7 @@ import { AppState } from 'react-native';
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { JourneySavedPlacePreviewBinding } from '../services/api/journey-api-binding';
 import { subscribeToAssistantResponseResume } from '../services/assistant-response-clock';
-import { createSavedPlacePreviewController } from '../services/saved-place-preview-controller';
+import { createSavedPlacePreviewController } from '../services/saved-places/saved-place-preview-controller';
 import {
   savedPlaceConsultationRefFor,
   savedPlaceItemsFor,
