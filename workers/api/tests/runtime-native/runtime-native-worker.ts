@@ -13,7 +13,7 @@ import type { DurableCommitPort } from '../../src/thread-runtime/commit-port';
 import {
   createRuntimeTurnComposition,
   type RuntimePublicResponseDependencies,
-} from '../../src/runtime/runtime-turn-composition';
+} from '../../src/runtime/turn-execution/runtime-turn-composition';
 import type { RuntimeThinkConnectionOptions } from '../../src/runtime/turn-execution/runtime-think-connection';
 import type { ValidatedEvidenceText } from '@ima/core';
 import {

@@ -1,14 +1,14 @@
 import { stepCountIs, streamText, tool } from 'ai';
 import { z } from 'zod';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../src/runtime/runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../../src/runtime/runtime-budget';
 import {
   RUNTIME_MODEL_MAX_RETRIES,
   type RuntimeModelGuardCallOptions,
   type RuntimeModelGuardModel,
   type RuntimeModelGuardStreamPart,
   wrapRuntimeModelGuard,
-} from '../../src/runtime/turn-execution/runtime-model-guard';
+} from '../../../src/runtime/turn-execution/runtime-model-guard';
 
 const usage = {
   inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },

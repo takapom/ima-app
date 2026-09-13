@@ -17,16 +17,16 @@ import type {
   TurnConditionValues,
 } from '@ima/core';
 import { projectModelContext, SubmitApplication, createSubmitCardsPort } from '@ima/core';
-import { encodeModelContext } from '../model/encoding';
+import { encodeModelContext } from '../../model/encoding';
 import type {
   RuntimeThinkComposition,
   RuntimeThinkPersistMessages,
   RuntimeThinkTurnBuildRequest,
-} from './turn-execution/runtime-think-connection';
+} from './runtime-think-connection';
 import {
   projectRuntimeCurrentTurnMessages,
   type RuntimeRetentionModelProjectionOptions,
-} from './runtime-retention-model';
+} from '../runtime-retention-model';
 import {
   captureRuntimeEphemeralToolCall,
   captureRuntimeEphemeralToolResult,
@@ -35,43 +35,43 @@ import {
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
   type RuntimeRetentionScopeIdentity,
-} from './runtime-retention';
-import { createRuntimeRetentionTransform } from './runtime-retention-transform';
+} from '../runtime-retention';
+import { createRuntimeRetentionTransform } from '../runtime-retention-transform';
 import {
   createRuntimeReadPorts,
   type RuntimeReadAttemptSignalBridge,
   type RuntimeReadCostResolver,
-} from './runtime-read-ports';
-import { parseRuntimeFinalMessage, type RuntimeFinalMessage } from './runtime-final-message';
+} from '../runtime-read-ports';
+import { parseRuntimeFinalMessage, type RuntimeFinalMessage } from '../runtime-final-message';
 import {
   createRuntimeTurnFactory,
   type RuntimeBeforeToolCallDelegate,
   type RuntimeTurnPortDependencies,
-} from './turn-execution/runtime-turn-factory';
-import { createRuntimeFinalResponseHooks } from './turn-execution/runtime-final-response';
+} from './runtime-turn-factory';
+import { createRuntimeFinalResponseHooks } from './runtime-final-response';
 import type {
   RuntimeModelGuardAcceptance,
   RuntimeModelGuardCallOptions,
   RuntimeModelGuardModel,
-} from './turn-execution/runtime-model-guard';
-import type { RuntimeBudget } from './runtime-budget';
-import type { RuntimePublicResponseDependencies } from './runtime-response';
+} from './runtime-model-guard';
+import type { RuntimeBudget } from '../runtime-budget';
+import type { RuntimePublicResponseDependencies } from '../runtime-response';
 import {
   createRuntimePhotoPreparationState,
   prepareAndMapRuntimeResponse,
   resetRuntimePhotoPreparationState,
-} from './runtime-public-response';
+} from '../runtime-public-response';
 import {
   currentBudget,
   observationResultIsReusable,
   observedWindow,
   RuntimeTurnCompositionError,
-} from './turn-execution/runtime-turn-composition-support';
-import { clearRuntimeCardSetId, registerRuntimeCardSetId } from '../thread-runtime/commit-port';
-import { projectRuntimeToolResultForModel } from './runtime-field-policy';
-import { configureRuntimeCompaction } from './runtime-session-config';
+} from './runtime-turn-composition-support';
+import { clearRuntimeCardSetId, registerRuntimeCardSetId } from '../../thread-runtime/commit-port';
+import { projectRuntimeToolResultForModel } from '../runtime-field-policy';
+import { configureRuntimeCompaction } from '../runtime-session-config';
 
-export type { RuntimePublicResponseDependencies } from './runtime-response';
+export type { RuntimePublicResponseDependencies } from '../runtime-response';
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;
 
 export type RuntimeCompositionModelContext = Omit<ModelContextSource, 'harness' | 'conditions'>;
@@ -130,7 +130,7 @@ export type RuntimeTurnComposition<Response = CommittedResponse> =
     readonly configureSession: (session: Session) => Session;
   };
 
-export { RuntimeTurnCompositionError } from './turn-execution/runtime-turn-composition-support';
+export { RuntimeTurnCompositionError } from './runtime-turn-composition-support';
 
 const sameIdentity = (request: RuntimeCompositionTurnRequest, context: HarnessContext): boolean =>
   request.ownerScopeRef === context.ownerScopeRef &&

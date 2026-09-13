@@ -22,7 +22,7 @@ import {
   type RuntimeThinkConnection,
   type RuntimeThinkPersistMessages,
 } from '../../src/runtime/turn-execution/runtime-think-connection';
-import { createRuntimeTurnComposition } from '../../src/runtime/runtime-turn-composition';
+import { createRuntimeTurnComposition } from '../../src/runtime/turn-execution/runtime-turn-composition';
 import type {
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,

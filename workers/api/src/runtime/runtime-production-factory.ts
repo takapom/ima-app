@@ -8,7 +8,7 @@ import { createRuntimeProviderTransportObserver } from '../providers/telemetry/r
 import {
   createRuntimeTurnComposition,
   type RuntimeTurnCompositionCoreOptions,
-} from './runtime-turn-composition';
+} from './turn-execution/runtime-turn-composition';
 import { wrapRuntimeProductionCommit } from './runtime-production-context';
 import { createFactoryRuntimeContext } from './runtime-production-context-factory';
 import { RuntimeBudget } from './runtime-budget';
