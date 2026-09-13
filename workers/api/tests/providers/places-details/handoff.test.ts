@@ -9,8 +9,8 @@ import {
   createSavedReferenceDetailsHandoff,
   createSavedReferenceGoogleProvider,
   createHandoffCandidateRegistry,
-} from '../../../src/runtime/runtime-saved-reference-handoff';
-import type { SavedReferenceProviderRefreshRequest } from '../../../src/runtime/runtime-saved-reference-resolver';
+} from '../../../src/runtime/saved-references/runtime-saved-reference-handoff';
+import type { SavedReferenceProviderRefreshRequest } from '../../../src/runtime/saved-references/runtime-saved-reference-resolver';
 import {
   context,
   execution,

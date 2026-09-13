@@ -7,16 +7,16 @@ import {
   type SavedPlaceRef,
   type ToolExecutionContext,
 } from '@ima/core';
-import { normalizeGoogleIdentity } from '../providers/places/identity';
-import { parseGooglePlaceWireField } from '../providers/places/wire';
-import { providerIdFrom } from '../providers/places-details/adapter-normalization';
+import { normalizeGoogleIdentity } from '../../providers/places/identity';
+import { parseGooglePlaceWireField } from '../../providers/places/wire';
+import { providerIdFrom } from '../../providers/places-details/adapter-normalization';
 import {
   GooglePlaceDetailsError,
   type GooglePlaceDetailsField,
   type GooglePlaceDetailsResponse,
   type GooglePlaceDetailsTransport,
-} from '../providers/places-details/types';
-import { providerIssue } from '../providers/places-details/adapter-result';
+} from '../../providers/places-details/types';
+import { providerIssue } from '../../providers/places-details/adapter-result';
 import {
   googleFieldsFor,
   type SavedReferenceCandidateRegistry,
@@ -25,8 +25,8 @@ import {
   type SavedReferenceHandoffTakeInput,
   type SavedReferenceProviderRefreshRequest,
   type SavedReferenceProviderRefresher,
-} from '../providers/places-details/handoff';
-import type { SavedPlaceReferenceResolver } from '../tools/types';
+} from '../../providers/places-details/handoff';
+import type { SavedPlaceReferenceResolver } from '../../tools/types';
 
 type HandoffEntry = {
   readonly savedPlaceRef: SavedPlaceRef;

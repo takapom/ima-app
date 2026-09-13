@@ -18,17 +18,17 @@ import {
   type SavedPlaceReference,
   type SavedPlaceRef,
 } from '@ima/core';
-import type { SavedPlaceReferenceResolver } from '../tools/types';
+import type { SavedPlaceReferenceResolver } from '../../tools/types';
 import type {
   SavedReferenceCandidateRegistry,
   SavedReferenceHandoffBinding,
   SavedReferenceProviderRefresher,
-} from '../providers/places-details/handoff';
+} from '../../providers/places-details/handoff';
 
 export type {
   SavedReferenceProviderRefreshRequest,
   SavedReferenceProviderRefresher,
-} from '../providers/places-details/handoff';
+} from '../../providers/places-details/handoff';
 
 const OwnerReadResultSchema = v.union([
   v.strictObject({

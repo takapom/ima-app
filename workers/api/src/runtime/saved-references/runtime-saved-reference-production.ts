@@ -2,12 +2,12 @@ import type { HarnessContext, ToolExecutionContext } from '@ima/core';
 import {
   createOwnerSavedReferenceRpc,
   type SavedReferenceNamespace,
-} from '../saved-references/saved-reference-rpc';
+} from '../../saved-references/saved-reference-rpc';
 import type {
   SavedReferenceCandidateRegistry,
   SavedReferenceDetailsHandoff,
-} from '../providers/places-details/handoff';
-import type { GooglePlaceDetailsTransport } from '../providers/places-details/types';
+} from '../../providers/places-details/handoff';
+import type { GooglePlaceDetailsTransport } from '../../providers/places-details/types';
 import {
   createHandoffAwareSavedResolver,
   createHandoffCandidateRegistry,
@@ -18,7 +18,7 @@ import {
   createSavedPlaceReferenceResolver,
   type SavedReferenceResolverDependencies,
 } from './runtime-saved-reference-resolver';
-import type { SavedPlaceReferenceResolver } from '../tools/types';
+import type { SavedPlaceReferenceResolver } from '../../tools/types';
 
 export type RuntimeSavedReferenceComposition = {
   readonly resolver: SavedPlaceReferenceResolver;

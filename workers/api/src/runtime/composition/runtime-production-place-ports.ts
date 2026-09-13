@@ -32,7 +32,7 @@ import {
   createRuntimeSavedReferenceComposition,
   runtimeSavedReferenceNamespaceFor,
   type RuntimeSavedReferenceComposition,
-} from '../runtime-saved-reference-production';
+} from '../saved-references/runtime-saved-reference-production';
 import type { ProductionBuildInput, RuntimeProductionOverrides } from './runtime-production-types';
 import type { ProductionIds } from './runtime-production-support';
 
