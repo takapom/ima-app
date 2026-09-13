@@ -1,8 +1,8 @@
 export * from './model-context/model-context';
 export * from './turn-constraints';
 export * from './candidate-registry/registry';
-export * from './journey-calculation';
-export * from './journey-validation';
+export * from './travel/journey-calculation';
+export * from './travel/journey-validation';
 export * from './walking-route-policy';
 export { validateMessage, validateSubmitCards } from './submission/submit-cards';
 export { SubmitValidationContextSchema } from './submission/submit-cards-evidence';

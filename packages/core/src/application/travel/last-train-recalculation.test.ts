@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { LastTrainInfo } from '../domain/place-values';
+import type { LastTrainInfo } from '../../domain/place-values';
 import { recalculateLastTrainAtArrival } from './last-train-recalculation';
 
 const info: LastTrainInfo = {

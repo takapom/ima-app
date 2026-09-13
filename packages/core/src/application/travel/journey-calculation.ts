@@ -3,14 +3,14 @@ import {
   JOURNEY_EXIT_BUFFER_SECONDS,
   JourneyRecordSchema,
   type JourneyRecord,
-} from '../domain/journey';
+} from '../../domain/journey';
 import {
   IsoTimestampSchema,
   NonNegativeSafeIntegerSchema,
   SafeIntegerSchema,
-} from '../domain/primitives';
-import type { Issue } from '../domain/issue';
-import type { Result } from '../domain/result';
+} from '../../domain/primitives';
+import type { Issue } from '../../domain/issue';
+import type { Result } from '../../domain/result';
 
 const MAX_DATE_MILLISECONDS = 8_640_000_000_000_000;
 

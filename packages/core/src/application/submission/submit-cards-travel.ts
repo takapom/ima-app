@@ -14,7 +14,7 @@ import {
   type SubmitValidationIssue,
 } from './submit-cards-evidence';
 import { minimumStayIssue, openIntervalAt } from './submit-cards-stay';
-import { recalculateLastTrainAtArrival } from '../last-train-recalculation';
+import { recalculateLastTrainAtArrival } from '../travel/last-train-recalculation';
 
 const MAX_DATE_MILLISECONDS = 8_640_000_000_000_000;
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { JourneyRecord } from '../domain/journey';
+import type { JourneyRecord } from '../../domain/journey';
 import { calculateJourneyTiming } from './journey-calculation';
 
 const journey: JourneyRecord = {

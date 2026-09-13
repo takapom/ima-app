@@ -6,9 +6,9 @@ import {
   weekdayForCalendarDate,
   type JourneyRecord,
   type JourneyServiceDateContext,
-} from '../domain/journey';
-import { IsoTimestampSchema } from '../domain/primitives';
-import type { Issue } from '../domain/issue';
+} from '../../domain/journey';
+import { IsoTimestampSchema } from '../../domain/primitives';
+import type { Issue } from '../../domain/issue';
 
 export type JourneyValidationResult =
   | { readonly status: 'valid'; readonly journey: JourneyRecord }
