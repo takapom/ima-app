@@ -10,7 +10,7 @@ import {
   RecordingCommit,
   retention,
   validationContext,
-} from '../runtime-turn-composition-fixture';
+} from './runtime-turn-composition-fixture';
 
 describe('Runtime turn composition retention boundaries', () => {
   it('keeps current-turn tool data across steps, then withholds it after expiry or invalidation', async () => {

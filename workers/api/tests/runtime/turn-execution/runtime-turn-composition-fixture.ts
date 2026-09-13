@@ -14,13 +14,13 @@ import type {
   SubmitValidationContext,
 } from '@ima/core';
 import type { JSONValue, TextStreamPart, ToolResultPart, ToolSet } from 'ai';
-import { createToolRegistry } from '../tools/registry-fixture';
-import { modelFor } from '../support/runtime-model-fixture';
+import { createToolRegistry } from '../../tools/registry-fixture';
+import { modelFor } from '../../support/runtime-model-fixture';
 import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '../../src/runtime/runtime-budget';
+} from '../../../src/runtime/runtime-budget';
 import {
   createRuntimeTurnComposition,
   type RuntimeCompositionModelContext,
@@ -29,9 +29,9 @@ import {
   type RuntimePublicResponseDependencies,
   type RuntimeTurnCompositionCoreOptions,
   type RuntimeTurnCompositionPublicOptions,
-} from '../../src/runtime/turn-execution/runtime-turn-composition';
-import type { RuntimeRetentionContext } from '../../src/runtime/runtime-retention';
-import type { RuntimeTurnPortDependencies } from '../../src/runtime/turn-execution/runtime-turn-factory';
+} from '../../../src/runtime/turn-execution/runtime-turn-composition';
+import type { RuntimeRetentionContext } from '../../../src/runtime/runtime-retention';
+import type { RuntimeTurnPortDependencies } from '../../../src/runtime/turn-execution/runtime-turn-factory';
 
 export const NOW = '2026-09-10T00:00:00Z';
 export const SCOPE = { ownerScopeRef: 'owner-tools', threadId: 'thread-tools' };
