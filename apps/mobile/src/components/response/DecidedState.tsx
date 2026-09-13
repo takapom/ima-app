@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
 import { presentDecidedIdentity } from './decided-state-model';
-import { colors, radii, spacing, typography } from '../theme/tokens';
+import { colors, radii, spacing, typography } from '../../theme/tokens';
 
 type DecidedStateProps = {
   readonly card: PublicCard | null;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AssistantMessageRecord, CardSetDisplayState } from '../state/assistant-response';
+import type { AssistantMessageRecord, CardSetDisplayState } from '../../state/assistant-response';
 import { buildMessageHistory, cardSetStatusLabel } from './results-state-model';
 
 const message = (text: string) => ({

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { EvidenceRef, PublicCard, PublicMessage, RetentionMetadata } from '@ima/contracts';
 import { presentFact } from '../components/candidates/candidate-card-model';
-import { presentDecidedIdentity } from '../components/decided-state-model';
+import { presentDecidedIdentity } from '../components/response/decided-state-model';
 import { createAssistantResponseState } from './assistant-response';
 import {
   nextAssistantResponseExpiryAt,

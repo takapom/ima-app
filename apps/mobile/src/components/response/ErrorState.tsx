@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radii, spacing, typography } from '../theme/tokens';
+import { colors, radii, spacing, typography } from '../../theme/tokens';
 
 type ErrorStateProps = {
   readonly message: string;
