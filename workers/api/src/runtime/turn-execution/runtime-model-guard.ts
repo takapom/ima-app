@@ -74,9 +74,10 @@ export type RuntimeModelGuardOptions = {
   readonly onFailure?: (error: RuntimeModelGuardError) => void;
 };
 
-const DEFAULT_MAX_BUFFER_MS = 10_000;
+const DEFAULT_MAX_BUFFER_MS = 30_000;
 const DEFAULT_MAX_PARTS = 4096;
-const DEFAULT_MAX_BYTES = 64 * 1024;
+// The buffered size includes IDs and metadata repeated on every streaming chunk.
+const DEFAULT_MAX_BYTES = 256 * 1024;
 const STREAM_PART_TYPES = new Set([
   'stream-start',
   'response-metadata',

@@ -41,6 +41,8 @@ export type ApiRequestSpec<T> = ResponseSpec<T> & {
 
 const CLIENT_REQUEST_ID = 'client-invalid';
 const DEFAULT_TIMEOUT_MS = 15_000;
+// Allow the Worker's 60-second turn budget plus time to receive its response.
+const TURN_TIMEOUT_MS = 65_000;
 
 const invalidResult = <T>(error: ApiError): ApiResult<T> => ({
   ok: false,
@@ -58,7 +60,10 @@ export const createApiRequester = (options: ApiClientOptions) => {
     spec: ApiRequestSpec<T>,
     requestOptions: ApiRequestOptions = {},
   ): Promise<ApiResult<T>> => {
-    const timeoutMs = timeoutFor(requestOptions.timeoutMs, options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+    const fallbackTimeoutMs =
+      options.timeoutMs ??
+      (spec.route === 'search' || spec.route === 'turn' ? TURN_TIMEOUT_MS : DEFAULT_TIMEOUT_MS);
+    const timeoutMs = timeoutFor(requestOptions.timeoutMs, fallbackTimeoutMs);
     if (timeoutMs === null)
       return invalidResult({ kind: 'configuration', reason: 'invalid_timeout' });
     const url = buildApiUrl(options.baseUrl, spec.path, options.mode);

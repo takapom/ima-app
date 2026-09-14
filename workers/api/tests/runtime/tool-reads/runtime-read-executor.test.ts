@@ -160,7 +160,7 @@ it('does not start a retry after the final reserve begins while waiting', async 
 
     await vi.advanceTimersByTimeAsync(0);
     expect(calls).toBe(1);
-    now = 10_001;
+    now = DEFAULT_RUNTIME_BUDGET.wholeTurnMs - DEFAULT_RUNTIME_BUDGET.finalReserveMs + 1;
     await vi.advanceTimersByTimeAsync(100);
     await expect(pending).resolves.toMatchObject({
       ok: false,

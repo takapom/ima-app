@@ -18,8 +18,8 @@ import {
   createRuntimeReadAttemptSignalBridge,
   createRuntimeReadPorts,
 } from '../../../src/runtime/tool-reads/runtime-read-ports';
-import { createGoogleTextSearchTransport } from '../../../src/providers/places-search/transport';
-import type { GoogleTextSearchRequest } from '../../../src/providers/places-search/types';
+import { createHotPepperTransport } from '../../../src/providers/hot-pepper/transport';
+import type { HotPepperSearchRequest } from '../../../src/providers/hot-pepper/types';
 
 const context: HarnessContext = {
   threadId: 'thread-attempt-signal',
@@ -280,12 +280,11 @@ describe('runtime read attempt signal bridge', () => {
           });
         });
       };
-      const request: GoogleTextSearchRequest = {
-        textQuery: 'signal transport test',
-        openNow: true,
-        pageSize: 1,
+      const request: HotPepperSearchRequest = {
+        keyword: 'signal transport test',
+        count: 1,
       };
-      const transport = createGoogleTextSearchTransport({
+      const transport = createHotPepperTransport({
         apiKey: 'test-key',
         timeoutMs: 100,
         fetcher,

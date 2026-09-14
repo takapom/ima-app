@@ -262,6 +262,8 @@ describe('wrapRuntimeModelGuard', () => {
     const script = modelScript(undefined, { generateResult: textResult });
     const model = guarded(script, { maxParts: 1, maxBytes: 1 });
     await expectGuardCode(model.doGenerate({ prompt: [] }), 'MODEL_STREAM_LIMIT');
+    const oversized = modelScript([...textParts('a'.repeat(256 * 1024)), finish('stop')]);
+    await expectGuardCode(streamCall(guarded(oversized)), 'MODEL_STREAM_LIMIT');
 
     const sourceResult = {
       ...textResult,
@@ -472,10 +474,10 @@ describe('wrapRuntimeModelGuard', () => {
 
     const fineGrained = modelScript([
       { type: 'stream-start', warnings: [] },
-      ...Array.from({ length: 200 }, (_, index) => ({
+      ...Array.from({ length: 1000 }, (_, index) => ({
         type: 'text-delta' as const,
-        id: 'text-fine',
-        delta: index === 199 ? '!' : 'a',
+        id: `msg_${'a'.repeat(60)}`,
+        delta: index === 999 ? '!' : 'a',
       })),
       finish('stop'),
     ]);

@@ -33,14 +33,14 @@ describe('RuntimeBudget', () => {
       denial: { code: 'BUDGET_EXCEEDED' },
     });
 
-    now = 10_000;
+    now = DEFAULT_RUNTIME_BUDGET.wholeTurnMs - DEFAULT_RUNTIME_BUDGET.finalReserveMs;
     const reserveBlocked = new RuntimeBudget({ startedAtMs: 0, now: () => now });
     expect(reserveBlocked.reserveModelStep()).toMatchObject({
       ok: false,
       denial: { code: 'FINAL_RESERVE' },
     });
     expect(reserveBlocked.reserveModelStep(true).ok).toBe(true);
-    now = 12_000;
+    now = DEFAULT_RUNTIME_BUDGET.wholeTurnMs;
     expect(reserveBlocked.reserveModelStep(true)).toMatchObject({
       ok: false,
       denial: { code: 'DEADLINE' },
@@ -157,7 +157,7 @@ describe('RuntimeBudget', () => {
       denial: { code: 'RETRY_NOT_ALLOWED' },
     });
 
-    now = 9_999;
+    now = DEFAULT_RUNTIME_BUDGET.wholeTurnMs - DEFAULT_RUNTIME_BUDGET.finalReserveMs - 1;
     const late = new RuntimeBudget({
       config: config({ maxReadRetries: 1 }),
       startedAtMs: 0,

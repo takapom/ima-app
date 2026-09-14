@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type {
   CreateThreadRequest,
   LifecycleCommand,
@@ -297,6 +297,43 @@ describe('Journey API transport', () => {
       error: { kind: 'http', status: 429, retryAfterSeconds: 12 },
     });
   });
+
+  it.each([
+    ['search', 65_000],
+    ['turn', 65_000],
+    ['readThread', 15_000],
+  ] as const)(
+    'waits for the %s deadline and then cancels the request',
+    async (route, deadlineMs) => {
+      vi.useFakeTimers();
+      try {
+        let signal: AbortSignal | null | undefined;
+        const client = createJourneyApiClient(
+          optionsFor((_url, init) => {
+            signal = init?.signal;
+            return new Promise<Response>(() => undefined);
+          }),
+        );
+        const pending =
+          route === 'search'
+            ? client.search(searchInput)
+            : route === 'turn'
+              ? client.turn('thread-1', turnInput)
+              : client.readThread('thread-1');
+        const settled = vi.fn();
+        const observed = pending.then(settled);
+        await vi.advanceTimersByTimeAsync(deadlineMs - 1);
+        expect(settled).not.toHaveBeenCalled();
+        expect(signal?.aborted).toBe(false);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(await pending).toMatchObject({ ok: false, error: { kind: 'timeout' } });
+        await observed;
+        expect(signal?.aborted).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
 
   it('bounds credentials, body reading, offline fetches, and external aborts', async () => {
     const never = new Promise<Response>(() => undefined);

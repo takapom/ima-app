@@ -34,8 +34,8 @@ export type {
 
 /** Initial M10 limits. Provider-specific prices are injected through the request costs. */
 export const DEFAULT_RUNTIME_BUDGET: RuntimeBudgetConfig = Object.freeze({
-  wholeTurnMs: 12_000,
-  finalReserveMs: 2_000,
+  wholeTurnMs: 60_000,
+  finalReserveMs: 10_000,
   maxModelSteps: 6,
   maxReadCalls: 8,
   maxParallelReads: 2,
