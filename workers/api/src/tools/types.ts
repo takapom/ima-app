@@ -16,6 +16,7 @@ import type {
   SearchPlacesInput,
   SearchPlacesOutput,
   SubmitCardsInput,
+  SubmitCardsInvalid,
   SubmitCardsPort,
   SubmitCardsPortResult,
   ToolExecutionContext,
@@ -96,6 +97,8 @@ export type ToolBindingDependencies = {
   readonly search: PlaceSearchPort;
   readonly details: PlaceDetailsPort;
   readonly submit: SubmitCardsPort;
+  /** Charges and reports submit failures rejected before the Application Port is reached. */
+  readonly rejectSubmitInput?: (result: SubmitCardsInvalid) => SubmitCardsInvalid;
   readonly readAdmission?: ToolReadAdmission;
   /** Optional Worker-owned boundary for one model-selected saved reference. */
   readonly savedPlaceReferenceResolver?: SavedPlaceReferenceResolver;

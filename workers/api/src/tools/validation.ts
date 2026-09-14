@@ -23,6 +23,7 @@ import {
   type SearchPlacesInput,
   type SearchPlacesOutput,
   type SubmitCardsInput,
+  type SubmitCardsInvalid,
   type SubmitIssueSchema,
   type SubmitCardsPortResult,
   type ToolExecutionContext,
@@ -77,7 +78,7 @@ export const submitInvalid = (
   path: string | null,
   message: string,
   remainingRepairs: number,
-): SubmitCardsPortResult => {
+): SubmitCardsInvalid => {
   const terminal = code === 'CANCELLED' || code === 'BUDGET_EXCEEDED';
   const boundedRepairs = Math.max(0, Math.min(2, remainingRepairs));
   return {
@@ -154,7 +155,11 @@ export const runtimeFor = (
     if (error instanceof TurnConstraintError) {
       return {
         ok: false,
-        error: issue('INVALID_ARGUMENT', 'metadata', 'model action metadata is invalid'),
+        error: issue(
+          'INVALID_ARGUMENT',
+          'metadata.turnConstraints',
+          `${error.code}: use the current thread turnId and an exact user quote; omit changes the user did not request`,
+        ),
       };
     }
     return {

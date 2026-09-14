@@ -62,7 +62,8 @@ import {
   resetRuntimePhotoPreparationState,
 } from '../response/runtime-public-response';
 import {
-  currentBudget,
+  modelSource,
+  hasUnresolvedReadFailure,
   observationResultIsReusable,
   observedWindow,
   RuntimeTurnCompositionError,
@@ -166,24 +167,6 @@ const narrowRepairs = (budget: RuntimeBudget): 0 | 1 | 2 => {
   return 0;
 };
 
-const modelSource = (
-  context: HarnessContext,
-  source: RuntimeCompositionModelContext,
-  conditions: TurnConditionValues,
-  serverNow: string,
-  budget: RuntimeBudget,
-): ModelContextSource => ({
-  harness: { ...context, serverNow, budget: currentBudget(budget) },
-  userText: source.userText,
-  history: source.history,
-  cardSet: source.cardSet,
-  conditions,
-  evidence: source.evidence,
-  savedReferences: source.savedReferences ?? [],
-  ...(source.stationDirectory === undefined ? {} : { stationDirectory: source.stationDirectory }),
-  ...(source.fieldPolicy === undefined ? {} : { fieldPolicy: source.fieldPolicy }),
-});
-
 const validationAt = (
   value: RuntimeCompositionValidationContext,
   now: string,
@@ -267,7 +250,6 @@ export function createRuntimeTurnComposition(
   };
 
   const transform = createRuntimeRetentionTransform<ToolSet>({
-    namespace: `runtime-${options.request.turnId}`,
     projectToolInput: (_toolName, input) => cloneRuntimeJsonValue(input),
     projectToolOutput: (_toolName, output) => {
       const current = scope();
@@ -408,7 +390,12 @@ export function createRuntimeTurnComposition(
 
   const onAccepted = (acceptance: RuntimeModelGuardAcceptance): void => {
     if (acceptance.finalText === null || acceptance.terminal !== 'message') return;
-    if (acceptedFinal !== undefined || responseId !== undefined) {
+    if (
+      acceptedFinal !== undefined ||
+      responseId !== undefined ||
+      turn.hasUnresolvedSubmitFailure() ||
+      hasUnresolvedReadFailure(results.values())
+    ) {
       throw new RuntimeTurnCompositionError('FINAL_COMMIT_INVALID');
     }
     acceptedFinal = parseRuntimeFinalMessage(acceptance.finalText, options.constraintContext);

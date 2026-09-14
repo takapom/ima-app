@@ -1,9 +1,14 @@
 import type {
   CandidateObservationRegistryPort,
   HarnessContext,
+  ModelContextSource,
+  TurnConditionValues,
   ObservationContext,
 } from '@ima/core';
-import type { RuntimeRetentionContext } from '../retention/runtime-retention';
+import type {
+  RuntimeRetentionContext,
+  RuntimeRetentionEphemeralToolResult,
+} from '../retention/runtime-retention';
 import type { RuntimeBudget } from '../budget/runtime-budget';
 
 export type RuntimeTurnCompositionErrorCode =
@@ -51,6 +56,34 @@ type ObservationExpiry = {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** A later successful retry clears that operation's failure; a missing search is not zero results. */
+export const hasUnresolvedReadFailure = (
+  results: Iterable<RuntimeRetentionEphemeralToolResult>,
+): boolean => {
+  const failed = new Map<string, boolean>();
+  for (const { toolName, output: raw } of results) {
+    if (toolName === 'submit_cards') continue;
+    const output = isRecord(raw) && raw.type === 'json' ? raw.value : raw;
+    failed.set(
+      toolName,
+      isRecord(output) &&
+        output.status === 'error' &&
+        isRecord(output.error) &&
+        typeof output.error.code === 'string' &&
+        [
+          'INVALID_ARGUMENT',
+          'MISSING_CONTEXT',
+          'TIMEOUT',
+          'RATE_LIMITED',
+          'UPSTREAM_UNAVAILABLE',
+          'BUDGET_EXCEEDED',
+          'SCHEMA_MISMATCH',
+        ].includes(output.error.code),
+    );
+  }
+  return [...failed.values()].some(Boolean);
+};
 
 const findObservationExpiries = (value: unknown): ObservationExpiry[] => {
   if (Array.isArray(value)) return value.flatMap(findObservationExpiries);
@@ -145,3 +178,21 @@ export const currentBudget = (budget: RuntimeBudget): HarnessContext['budget'] =
     retriesRemaining: Math.max(0, budget.limits.maxReadRetries - snapshot.readRetries),
   };
 };
+
+export const modelSource = (
+  context: HarnessContext,
+  source: Omit<ModelContextSource, 'harness' | 'conditions'>,
+  conditions: TurnConditionValues,
+  serverNow: string,
+  budget: RuntimeBudget,
+): ModelContextSource => ({
+  harness: { ...context, serverNow, budget: currentBudget(budget) },
+  userText: source.userText,
+  history: source.history,
+  cardSet: source.cardSet,
+  conditions,
+  evidence: source.evidence,
+  savedReferences: source.savedReferences ?? [],
+  ...(source.stationDirectory === undefined ? {} : { stationDirectory: source.stationDirectory }),
+  ...(source.fieldPolicy === undefined ? {} : { fieldPolicy: source.fieldPolicy }),
+});

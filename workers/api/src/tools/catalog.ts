@@ -262,16 +262,18 @@ const submitCards = async (
 ): Promise<SubmitToolResult> => {
   const checked = runtimeFor(dependencies.runtime, 'submit_cards', invocation, metadata);
   if (!checked.ok) {
-    return submitInvalid('INVALID_ARGUMENT', null, 'submit execution context is invalid', 0);
+    const result = submitInvalid('INVALID_ARGUMENT', checked.error.path, checked.error.message, 0);
+    return dependencies.rejectSubmitInput?.(result) ?? result;
   }
   const parsedInput = parseSubmitInput(input);
   if (!parsedInput.ok) {
-    return submitInvalid(
+    const result = submitInvalid(
       'INVALID_ARGUMENT',
       'input',
       'submit_cards input is invalid',
       checked.runtime.remainingRepairs,
     );
+    return dependencies.rejectSubmitInput?.(result) ?? result;
   }
   const cancelled = submitCancellationError(checked.runtime);
   if (cancelled !== undefined) return cancelled;
@@ -353,9 +355,8 @@ export function invokePublicToolEnvelope(
   const parsed = parseEnvelope(envelope);
   if (parsed === undefined) {
     if (name === 'submit_cards') {
-      return Promise.resolve(
-        submitInvalid('INVALID_ARGUMENT', null, 'tool action envelope is invalid', 0),
-      );
+      const result = submitInvalid('INVALID_ARGUMENT', null, 'tool action envelope is invalid', 0);
+      return Promise.resolve(dependencies.rejectSubmitInput?.(result) ?? result);
     }
     const error = issue('INVALID_ARGUMENT', null, 'tool action envelope is invalid');
     return name === 'search_places'

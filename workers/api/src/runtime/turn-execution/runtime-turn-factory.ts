@@ -12,10 +12,16 @@ import type {
   HarnessContext,
   IdPort,
   ModelActionMetadata,
+  SubmitCardsInvalid,
   SubmitCardsPort,
-  SubmitCardsPortResult,
   TurnConditionValues,
 } from '@ima/core';
+import {
+  observeRuntimeSubmitRejection,
+  observeRuntimeTurnOutcome,
+  type RuntimeSubmitRejectionWriter,
+  type RuntimeTurnOutcomeWriter,
+} from './runtime-submit-diagnostic';
 import {
   createPublicToolSet,
   isPublicToolName,
@@ -51,6 +57,10 @@ export type RuntimeTurnFactoryOptions = {
   readonly constraintContext: ConstraintValidationContext;
   /** M07 applies validated metadata and the resulting effective conditions to this turn. */
   readonly applyMetadata: (metadata: ModelActionMetadata, conditions: TurnConditionValues) => void;
+  /** Observes rejected submits; the default writer logs the structural diagnostic. */
+  readonly onSubmitRejected?: RuntimeSubmitRejectionWriter;
+  /** Observes the turn's operation shape at dispose; the default writer logs it. */
+  readonly onTurnOutcome?: RuntimeTurnOutcomeWriter;
   readonly signal?: AbortSignal;
   readonly isStale?: () => boolean;
   readonly beforeTurn?: RuntimeBeforeTurnDelegate;
@@ -85,6 +95,7 @@ export type RuntimeTurnHandle = {
   readonly baseContext: HarnessContext;
   readonly context: HarnessContext;
   readonly getConditions: () => TurnConditionValues;
+  readonly hasUnresolvedSubmitFailure: () => boolean;
   /** Applies one already parsed metadata envelope through the same turn update path as Tools. */
   readonly applyMetadata: (metadata: ModelActionMetadata) => ModelActionMetadata;
   readonly budget: RuntimeBudget;
@@ -132,6 +143,22 @@ const conditionsFromContext = (context: HarnessContext): TurnConditionValues => 
   minimumStayMinutes: context.preferences.minimumStayMinutes,
 });
 
+/**
+ * Keeps a model proposal from adopting a constraint no connected provider can
+ * evidence. Such a constraint cannot be satisfied by any candidate, so accepting it
+ * only spends the repair budget and commits nothing. The user's own stored settings
+ * are never touched here: the rejected value is the model's suggestion for this turn.
+ */
+const supportedConditions = (
+  capabilities: HarnessContext['capabilities'],
+  current: TurnConditionValues,
+  proposed: TurnConditionValues,
+): TurnConditionValues => ({
+  maxWalkMinutes: capabilities.walkingRoute ? proposed.maxWalkMinutes : current.maxWalkMinutes,
+  homeStationRef: capabilities.lastTrain ? proposed.homeStationRef : current.homeStationRef,
+  minimumStayMinutes: proposed.minimumStayMinutes,
+});
+
 const contextWithConditions = (
   base: HarnessContext,
   conditions: TurnConditionValues,
@@ -155,7 +182,7 @@ const budgetRepairCount = (budget: RuntimeBudget): 0 | 1 | 2 => {
 const submitDenial = (denial: {
   readonly code: string;
   readonly message: string;
-}): SubmitCardsPortResult => {
+}): SubmitCardsInvalid => {
   const code =
     denial.code === 'CANCELLED'
       ? ('CANCELLED' as const)
@@ -173,15 +200,24 @@ const submitDenial = (denial: {
 const budgetedSubmit = (
   currentPort: () => SubmitCardsPort,
   budget: RuntimeBudget,
+  observeRejection: (result: SubmitCardsInvalid) => void,
+  onCommitted: () => void,
 ): SubmitCardsPort => ({
   async submit(input, execution, cancellation) {
     const reservation = budget.reserveSubmit();
-    if (!reservation.ok) return submitDenial(reservation.denial);
+    if (!reservation.ok) {
+      const result = submitDenial(reservation.denial);
+      observeRejection(result);
+      return result;
+    }
     if (cancellation.isCancelled()) {
       return submitDenial({ code: 'CANCELLED', message: 'submit was cancelled' });
     }
     const result = await currentPort().submit(input, execution, cancellation);
-    if (result.status === 'committed') budget.markCommitted();
+    if (result.status === 'committed') {
+      budget.markCommitted();
+      onCommitted();
+    } else observeRejection(result);
     return result;
   },
 });
@@ -226,6 +262,15 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     }
   >();
   const metadataByCall = new Map<string, string>();
+  const operationCounts = new Map<PublicToolName, number>();
+  let committed = false;
+  let unresolvedSubmitFailure = false;
+  const reportSubmitRejection = (result: SubmitCardsInvalid): void => {
+    unresolvedSubmitFailure = result.issues.some((issue) =>
+      ['INVALID_ARGUMENT', 'SCHEMA_MISMATCH', 'BUDGET_EXCEEDED'].includes(issue.code),
+    );
+    observeRuntimeSubmitRejection(result, options.onSubmitRejected);
+  };
 
   const onParentAbort = (): void => {
     disposeController.abort();
@@ -251,10 +296,14 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     const validatedMetadata = validateModelActionMetadata(metadata, options.constraintContext);
     let nextConditions = conditions;
     if (validatedMetadata.turnConstraints !== undefined) {
-      nextConditions = applyTurnConstraintsForTurn(
+      nextConditions = supportedConditions(
+        baseContext.capabilities,
         conditions,
-        validatedMetadata.turnConstraints,
-        options.constraintContext,
+        applyTurnConstraintsForTurn(
+          conditions,
+          validatedMetadata.turnConstraints,
+          options.constraintContext,
+        ),
       );
     }
     options.applyMetadata(validatedMetadata, nextConditions);
@@ -267,6 +316,7 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     if (isCancelled(invocation.abortSignal)) {
       throw new RuntimeTurnFactoryError(factoryErrorCode(disposed, options.isStale));
     }
+    operationCounts.set(operation, (operationCounts.get(operation) ?? 0) + 1);
     const metadataJson = JSON.stringify(metadata);
     const prior = serverCalls.get(invocation.toolCallId);
     if (prior !== undefined) {
@@ -322,11 +372,28 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
         conditions: { ...conditions },
       }) ?? options.ports.submit,
     options.budget,
+    reportSubmitRejection,
+    () => {
+      committed = true;
+      unresolvedSubmitFailure = false;
+    },
   );
   const dependencies: ToolBindingDependencies = Object.freeze({
     ...options.ports,
     submit,
     runtime,
+    rejectSubmitInput: (result: SubmitCardsInvalid): SubmitCardsInvalid => {
+      const reservation = options.budget.reserveSubmit();
+      const rejected = reservation.ok
+        ? {
+            ...result,
+            repairable: reservation.value.remainingRepairs > 0,
+            remainingRepairs: reservation.value.remainingRepairs,
+          }
+        : submitDenial(reservation.denial);
+      reportSubmitRejection(rejected);
+      return rejected;
+    },
   });
   const tools = createPublicToolSet(dependencies);
 
@@ -380,6 +447,7 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
       return cloneContext(context);
     },
     getConditions: () => ({ ...conditions }),
+    hasUnresolvedSubmitFailure: () => unresolvedSubmitFailure,
     applyMetadata: applyMetadataToTurn,
     budget: options.budget,
     signal: disposeController.signal,
@@ -390,10 +458,17 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     dispose: () => {
       if (disposed) return;
       disposed = true;
+      const outcome = {
+        committed,
+        operations: Object.fromEntries(operationCounts),
+      };
+      if (options.onTurnOutcome === undefined) observeRuntimeTurnOutcome(outcome);
+      else observeRuntimeTurnOutcome(outcome, options.onTurnOutcome);
       disposeController.abort();
       options.signal?.removeEventListener('abort', onParentAbort);
       serverCalls.clear();
       metadataByCall.clear();
+      operationCounts.clear();
       options.budget.cancel();
       options.ports.onTurnDispose?.();
     },

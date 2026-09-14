@@ -1,212 +1,29 @@
 import type { TurnContext } from '@cloudflare/think';
 import { TurnConstraintError } from '@ima/core';
-import type {
-  GetPlaceDetailsInput,
-  GetPlaceDetailsOutput,
-  HarnessContext,
-  PlaceDetailsPort,
-  PlaceSearchPort,
-  SearchPlacesInput,
-  SearchPlacesOutput,
-  SubmitCardsInput,
-  SubmitCardsPort,
-  SubmitCardsPortResult,
-  ToolExecutionContext,
-} from '@ima/core';
+import type { SubmitCardsPort } from '@ima/core';
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_RUNTIME_BUDGET,
-  RuntimeBudget,
-  type RuntimeBudgetConfig,
-} from '../../../src/runtime/budget/runtime-budget';
-import {
-  createRuntimeTurnFactory,
-  RuntimeTurnFactoryError,
-  type RuntimeTurnFactoryOptions,
-  type RuntimeTurnPortDependencies,
-} from '../../../src/runtime/turn-execution/runtime-turn-factory';
+import { RuntimeTurnFactoryError } from '../../../src/runtime/turn-execution/runtime-turn-factory';
+import type {
+  RuntimeSubmitRejection,
+  RuntimeTurnOutcome,
+} from '../../../src/runtime/turn-execution/runtime-submit-diagnostic';
 import { invokePublicToolEnvelope } from '../../../src/tools';
-import { createToolRegistry } from '../../tools/registry-fixture';
 import { modelFor } from '../../support/runtime-model-fixture';
-
-const context: HarnessContext = {
-  threadId: 'thread-tools',
-  turnId: 'turn-tools',
-  revision: 1,
-  serverNow: '2026-09-10T00:00:00Z',
-  ownerScopeRef: 'owner-tools',
-  location: {
-    status: 'unavailable',
-    coordinates: null,
-    accuracyMeters: null,
-    precise: false,
-    capturedAt: null,
-    revision: 1,
-  },
-  preferences: {
-    homeStationRef: 'station-tools',
-    maxWalkMinutes: 15,
-    minimumStayMinutes: 20,
-    areaText: '渋谷',
-    budget: 'normal',
-  },
-  budget: {
-    wallClockMs: 12_000,
-    finalReserveMs: 2_000,
-    modelCallsRemaining: 6,
-    readCallsRemaining: 8,
-    providerHttpRequestsRemaining: 20,
-    retriesRemaining: 1,
-  },
-  capabilities: {
-    version: 'runtime-turn-factory-v1',
-    detailFields: ['identity'],
-    walkingRoute: false,
-    lastTrain: false,
-    supportedScopes: ['runtime-fixture'],
-  },
-};
-
-const searchInput: SearchPlacesInput = {
-  mode: 'search',
-  query: '静かなカフェ',
-  area: { kind: 'named_area', name: '渋谷' },
-  openNow: true,
-  limit: 2,
-  excludeCandidateIds: [],
-};
-
-const detailsInput: GetPlaceDetailsInput = {
-  requests: [{ candidateId: 'candidate-1', fields: ['identity'] }],
-  freshness: 'reuse_valid',
-};
-
-const submitInput: SubmitCardsInput = {
-  message: [{ text: '候補です', evidenceIds: [], basis: 'conversational' }],
-  hero: {
-    candidateId: 'candidate-1',
-    evidenceIds: [],
-    why: { text: '候補です', evidenceIds: [], basis: 'conversational' },
-  },
-  alts: [],
-};
-
-const searchResult = {
-  status: 'ok' as const,
-  data: {
-    searchId: 'search-1',
-    candidates: [],
-    applied: { areaDescription: '渋谷', openNow: true, excludedCount: 0 },
-    nextCursor: null,
-    coverage: 'provider_results' as const,
-  },
-  warnings: [],
-} satisfies { status: 'ok'; data: SearchPlacesOutput; warnings: never[] };
-
-const detailsResult = {
-  status: 'ok' as const,
-  data: {
-    items: [
-      {
-        candidateId: 'candidate-1',
-        fields: { identity: { status: 'unknown' as const, reason: 'fixture has no identity' } },
-      },
-    ],
-  },
-  warnings: [],
-} satisfies { status: 'ok'; data: GetPlaceDetailsOutput; warnings: never[] };
-
-const committedResult: SubmitCardsPortResult = {
-  status: 'committed',
-  responseId: 'response-1',
-  revision: 1,
-  presentation: 'replace',
-  cards: submitInput,
-};
-
-type PortCalls = {
-  readonly searches: HarnessContext[];
-  readonly searchExecutions: ToolExecutionContext[];
-  readonly details: HarnessContext[];
-  readonly submits: ToolExecutionContext[];
-};
-
-const createPorts = (
-  calls: PortCalls,
-  clock: () => string = () => context.serverNow,
-): RuntimeTurnPortDependencies => {
-  const registry = createToolRegistry().registry;
-  const search: PlaceSearchPort = {
-    search: (_input, receivedContext, execution) => {
-      calls.searches.push(receivedContext);
-      calls.searchExecutions.push(execution);
-      return Promise.resolve(searchResult);
-    },
-  };
-  const details: PlaceDetailsPort = {
-    read: (_input, receivedContext) => {
-      calls.details.push(receivedContext);
-      return Promise.resolve(detailsResult);
-    },
-  };
-  const submit: SubmitCardsPort = {
-    submit: (_input, execution) => {
-      calls.submits.push(execution);
-      return Promise.resolve(committedResult);
-    },
-  };
-  return { registry, clock, search, details, submit };
-};
-
-const createBudget = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudget =>
-  new RuntimeBudget({
-    config: { ...DEFAULT_RUNTIME_BUDGET, ...overrides },
-    startedAtMs: 0,
-    now: () => 1,
-  });
-
-const createFactory = (
-  calls: PortCalls,
-  overrides: Partial<RuntimeTurnFactoryOptions> = {},
-  clock: () => string = () => context.serverNow,
-) => {
-  let call = 0;
-  const applied: Array<{ readonly maxWalkMinutes: number | null }> = [];
-  const stopWhen: NonNullable<RuntimeTurnFactoryOptions['stopWhen']> = () => true;
-  const factory = createRuntimeTurnFactory({
-    context,
-    budget: createBudget(),
-    ids: { nextCallId: () => `server-call-${++call}` },
-    ports: createPorts(calls, clock),
-    constraintContext: {
-      threadId: context.threadId,
-      originalTurns: [
-        {
-          threadId: context.threadId,
-          turnId: 'turn-source',
-          text: '最大徒歩を20分に変更する',
-        },
-      ],
-    },
-    applyMetadata: (_metadata, conditions) => {
-      applied.push({ maxWalkMinutes: conditions.maxWalkMinutes });
-    },
-    stopWhen,
-    ...overrides,
-  });
-  return { factory, applied, stopWhen };
-};
-
-const envelope = (metadata: object = {}) => ({ input: searchInput, metadata });
+import {
+  committedResult,
+  context,
+  createFactory,
+  detailsInput,
+  emptyPortCalls,
+  envelope,
+  submitInput,
+  withWalkingRoute,
+  type PortCalls,
+} from '../../support/runtime-turn-factory-fixture';
 
 describe('createRuntimeTurnFactory', () => {
   it('keeps the exact public tool set and requires the injected stop condition', async () => {
-    const calls: PortCalls = {
-      searches: [],
-      searchExecutions: [],
-      details: [],
-      submits: [],
-    };
+    const calls: PortCalls = emptyPortCalls();
     const { factory, stopWhen } = createFactory(calls);
     expect(Object.keys(factory.tools).sort()).toEqual([
       'get_place_details',
@@ -253,13 +70,9 @@ describe('createRuntimeTurnFactory', () => {
   });
 
   it('applies validated turn conditions while preserving the base context and call snapshots', async () => {
-    const calls: PortCalls = {
-      searches: [],
-      searchExecutions: [],
-      details: [],
-      submits: [],
-    };
-    const { factory, applied } = createFactory(calls);
+    const calls: PortCalls = emptyPortCalls();
+    // A walking constraint is only adoptable where walking-route evidence exists.
+    const { factory, applied } = createFactory(calls, withWalkingRoute());
     const constraint = {
       turnConstraints: {
         changes: [
@@ -305,13 +118,113 @@ describe('createRuntimeTurnFactory', () => {
     expect(factory.context.preferences.maxWalkMinutes).toBe(30);
   });
 
-  it('uses a stable server call ID and rejects reuse for another operation or metadata', async () => {
-    const calls: PortCalls = {
-      searches: [],
-      searchExecutions: [],
-      details: [],
-      submits: [],
+  it('drops a proposed constraint the connected providers cannot evidence', async () => {
+    const calls: PortCalls = emptyPortCalls();
+    // The fixture context reports walkingRoute: false and lastTrain: false.
+    const { factory, applied } = createFactory(calls);
+    const result = await invokePublicToolEnvelope(
+      'search_places',
+      envelope({
+        turnConstraints: {
+          changes: [
+            { maxWalkMinutes: 20, sourceTurnId: 'turn-source', quote: '最大徒歩を20分に変更する' },
+          ],
+        },
+      }),
+      factory.dependencies,
+      { toolCallId: 'sdk-search-denied' },
+    );
+
+    // The call still succeeds; only the unsatisfiable condition is left unchanged,
+    // so the turn cannot spend its repair budget failing every submit.
+    expect(result.status).toBe('ok');
+    expect(calls.searches[0]?.preferences.maxWalkMinutes).toBe(15);
+    expect(factory.context.preferences.maxWalkMinutes).toBe(15);
+    expect(applied).toEqual([{ maxWalkMinutes: 15 }]);
+  });
+
+  it('keeps a proposed minimum stay, which opening hours alone can evidence', async () => {
+    const calls: PortCalls = emptyPortCalls();
+    const { factory } = createFactory(calls);
+    const result = await invokePublicToolEnvelope(
+      'search_places',
+      envelope({
+        turnConstraints: {
+          changes: [
+            {
+              minimumStayMinutes: 45,
+              sourceTurnId: 'turn-source',
+              quote: '最大徒歩を20分に変更する',
+            },
+          ],
+        },
+      }),
+      factory.dependencies,
+      { toolCallId: 'sdk-search-stay' },
+    );
+
+    expect(result.status).toBe('ok');
+    expect(calls.searches[0]?.preferences.minimumStayMinutes).toBe(45);
+  });
+
+  it('records why a submit was refused instead of leaving it invisible', async () => {
+    const calls: PortCalls = emptyPortCalls();
+    const rejections: RuntimeSubmitRejection[] = [];
+    const refusing: SubmitCardsPort = {
+      submit: () =>
+        Promise.resolve({
+          status: 'invalid',
+          repairable: true,
+          remainingRepairs: 2,
+          issues: [
+            {
+              code: 'MISSING_EVIDENCE',
+              path: 'hero.evidenceIds',
+              candidateId: 'candidate-1',
+              message: 'opening-hours evidence is required',
+              missingFields: ['opening_hours'],
+            },
+          ],
+        }),
     };
+    const { factory } = createFactory(calls, {
+      buildSubmitPort: () => refusing,
+      onSubmitRejected: (rejection) => rejections.push(rejection),
+    });
+
+    await invokePublicToolEnvelope(
+      'submit_cards',
+      { input: submitInput, metadata: {} },
+      factory.dependencies,
+      { toolCallId: 'sdk-submit-refused' },
+    );
+
+    expect(rejections).toHaveLength(1);
+    expect(rejections[0]).toMatchObject({
+      repairable: true,
+      candidates: 1,
+      issues: [{ code: 'MISSING_EVIDENCE', missingFields: ['opening_hours'] }],
+    });
+  });
+
+  it('records the operation shape of a turn that never reached a commit', async () => {
+    const calls: PortCalls = emptyPortCalls();
+    const outcomes: RuntimeTurnOutcome[] = [];
+    const { factory } = createFactory(calls, {
+      onTurnOutcome: (outcome) => outcomes.push(outcome),
+    });
+
+    await invokePublicToolEnvelope('search_places', envelope(), factory.dependencies, {
+      toolCallId: 'sdk-search-only',
+    });
+    factory.dispose();
+
+    // The distinction the screen cannot show: the model searched but never submitted.
+    expect(outcomes).toEqual([{ committed: false, operations: { search_places: 1 } }]);
+  });
+
+  it('uses a stable server call ID and rejects reuse for another operation or metadata', async () => {
+    const calls: PortCalls = emptyPortCalls();
     const { factory } = createFactory(calls);
     await invokePublicToolEnvelope('search_places', envelope(), factory.dependencies, {
       toolCallId: 'sdk-call-1',
@@ -356,12 +269,7 @@ describe('createRuntimeTurnFactory', () => {
   });
 
   it('rejects a quoted constraint before applying conditions or invoking a Port', () => {
-    const calls: PortCalls = {
-      searches: [],
-      searchExecutions: [],
-      details: [],
-      submits: [],
-    };
+    const calls: PortCalls = emptyPortCalls();
     const { factory, applied } = createFactory(calls);
     expect(() =>
       factory.dependencies.runtime(
@@ -390,12 +298,7 @@ describe('createRuntimeTurnFactory', () => {
   });
 
   it('reserves and commits submit through the shared RuntimeBudget', async () => {
-    const calls: PortCalls = {
-      searches: [],
-      searchExecutions: [],
-      details: [],
-      submits: [],
-    };
+    const calls: PortCalls = emptyPortCalls();
     const { factory } = createFactory(calls);
     const first = await invokePublicToolEnvelope(
       'submit_cards',
@@ -420,7 +323,7 @@ describe('createRuntimeTurnFactory', () => {
   });
 
   it('builds the submit adapter with the latest clock and turn conditions', async () => {
-    const calls: PortCalls = { searches: [], searchExecutions: [], details: [], submits: [] };
+    const calls: PortCalls = emptyPortCalls();
     let now = context.serverNow;
     const built: Array<{ now: string; maxWalkMinutes: number | null }> = [];
     const dynamicSubmit: SubmitCardsPort = {
@@ -429,6 +332,7 @@ describe('createRuntimeTurnFactory', () => {
     const { factory } = createFactory(
       calls,
       {
+        ...withWalkingRoute(),
         buildSubmitPort: ({ now: sampledNow, conditions }) => {
           built.push({ now: sampledNow, maxWalkMinutes: conditions.maxWalkMinutes });
           return dynamicSubmit;
@@ -460,12 +364,7 @@ describe('createRuntimeTurnFactory', () => {
   });
 
   it('propagates caller abort and dispose to the factory signal before a Port call', async () => {
-    const calls: PortCalls = {
-      searches: [],
-      searchExecutions: [],
-      details: [],
-      submits: [],
-    };
+    const calls: PortCalls = emptyPortCalls();
     const controller = new AbortController();
     const { factory } = createFactory(calls, { signal: controller.signal });
     controller.abort();
