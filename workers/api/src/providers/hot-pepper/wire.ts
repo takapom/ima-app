@@ -62,6 +62,21 @@ export const HotPepperShopWireSchema = v.object({
   budget: v.optional(HotPepperBudgetWireSchema),
   genre: v.optional(HotPepperGenreWireSchema),
   urls: v.optional(HotPepperUrlsWireSchema),
+  photo: v.optional(
+    v.nullable(
+      v.object({
+        pc: v.optional(
+          v.nullable(
+            v.object({
+              l: optionalProviderText(2_048),
+              m: optionalProviderText(2_048),
+              s: optionalProviderText(2_048),
+            }),
+          ),
+        ),
+      }),
+    ),
+  ),
   catch: optionalProviderText(500),
   access: optionalProviderText(500),
   wifi: optionalProviderScalar,

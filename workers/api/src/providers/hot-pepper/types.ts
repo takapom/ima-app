@@ -21,15 +21,25 @@ const nonBlankText = (maximum: number) =>
     v.check((value) => value.trim().length > 0, 'text must not be blank'),
   );
 
-export const HotPepperSearchRequestSchema = v.strictObject({
-  keyword: nonBlankText(200),
-  lat: finiteCoordinate(-90, 90),
-  lng: finiteCoordinate(-180, 180),
-  range: v.optional(
-    v.union([v.literal(1), v.literal(2), v.literal(3), v.literal(4), v.literal(5)]),
+export const HotPepperSearchRequestSchema = v.pipe(
+  v.strictObject({
+    keyword: v.optional(nonBlankText(400)),
+    id: v.optional(v.pipe(v.array(nonBlankText(128)), v.minLength(1), v.maxLength(20))),
+    lat: v.optional(finiteCoordinate(-90, 90)),
+    lng: v.optional(finiteCoordinate(-180, 180)),
+    range: v.optional(
+      v.union([v.literal(1), v.literal(2), v.literal(3), v.literal(4), v.literal(5)]),
+    ),
+    count: v.optional(v.pipe(v.number(), v.safeInteger(), v.minValue(1), v.maxValue(20))),
+    start: v.optional(v.pipe(v.number(), v.safeInteger(), v.minValue(1))),
+  }),
+  v.check(
+    (request) =>
+      (request.keyword !== undefined || request.id !== undefined || request.lat !== undefined) &&
+      (request.lat === undefined) === (request.lng === undefined),
+    'a search condition and paired coordinates are required',
   ),
-  count: v.optional(v.pipe(v.number(), v.safeInteger(), v.minValue(1), v.maxValue(20))),
-});
+);
 export type HotPepperSearchRequest = v.InferOutput<typeof HotPepperSearchRequestSchema>;
 
 export const HotPepperCandidateReferenceSchema = v.strictObject({

@@ -142,10 +142,14 @@ const requestUrlFor = (request: HotPepperSearchRequest, apiKey: string): string 
   const url = new URL(HOT_PEPPER_GOURMET_ENDPOINT);
   url.searchParams.set('key', apiKey);
   url.searchParams.set('format', 'json');
-  url.searchParams.set('keyword', request.keyword);
-  url.searchParams.set('lat', String(request.lat));
-  url.searchParams.set('lng', String(request.lng));
-  url.searchParams.set('range', String(request.range ?? 1));
+  if (request.id !== undefined) url.searchParams.set('id', request.id.join(','));
+  if (request.keyword !== undefined) url.searchParams.set('keyword', request.keyword);
+  if (request.lat !== undefined && request.lng !== undefined) {
+    url.searchParams.set('lat', String(request.lat));
+    url.searchParams.set('lng', String(request.lng));
+    url.searchParams.set('range', String(request.range ?? 1));
+  }
+  if (request.start !== undefined) url.searchParams.set('start', String(request.start));
   url.searchParams.set('count', String(request.count ?? 10));
   return url.toString();
 };
@@ -220,7 +224,7 @@ const searchWith = async (
 export const createHotPepperTransport = (
   inputOptions: HotPepperTransportOptions,
 ): HotPepperTransport => {
-  const options = { ...inputOptions, timeoutMs: inputOptions.timeoutMs ?? 800 };
+  const options = { ...inputOptions, timeoutMs: inputOptions.timeoutMs ?? 3_000 };
   if (!isFiniteTimeout(options.timeoutMs)) throw new HotPepperError('INVALID_REQUEST');
   return { search: (request, signal) => searchWith(options, request, signal) };
 };

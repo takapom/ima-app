@@ -1,14 +1,18 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@ima/contracts';
+import { HotPepperPhotoUrlSchema } from '../hot-pepper/photo-url';
 
 export const PHOTO_TOKEN_TTL_SECONDS = 30 * 60;
 
-export const PhotoResourceNameSchema = v.pipe(
-  v.string(),
-  v.minLength(1),
-  v.maxLength(512),
-  v.regex(/^places\/[A-Za-z0-9_-]+\/photos\/[A-Za-z0-9_-]+$/u),
-);
+export const PhotoResourceNameSchema = v.union([
+  HotPepperPhotoUrlSchema,
+  v.pipe(
+    v.string(),
+    v.minLength(1),
+    v.maxLength(512),
+    v.regex(/^places\/[A-Za-z0-9_-]+\/photos\/[A-Za-z0-9_-]+$/u),
+  ),
+]);
 
 export const PhotoTokenInputSchema = v.strictObject({
   ownerScopeRef: v.pipe(v.string(), v.minLength(1), v.maxLength(160)),
