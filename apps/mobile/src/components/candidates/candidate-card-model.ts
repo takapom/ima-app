@@ -191,6 +191,11 @@ export const presentCardFacts = (card: PublicCard) => ({
   lastTrain: presentFact(card.facts.last_train, formatLastTrain),
 });
 
+export const shouldShowPhotoRegion = (card: PublicCard): boolean => {
+  const photos = card.facts.photos;
+  return photos?.status === 'known' ? photos.value.photos.length > 0 : photos?.status === 'error';
+};
+
 export const collectPhotoAttributions = (card: PublicCard): readonly AttributionPresentation[] => {
   const fact = card.facts.photos;
   const presentation = presentFact(fact, (value) => String(value.photos.length));

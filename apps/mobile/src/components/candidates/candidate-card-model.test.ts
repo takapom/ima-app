@@ -7,6 +7,7 @@ import {
   presentCardFacts,
   presentEvidenceText,
   presentFact,
+  shouldShowPhotoRegion,
 } from './candidate-card-model';
 
 const retention = {
@@ -66,6 +67,41 @@ const card = (overrides: Partial<PublicCard['facts']> = {}): PublicCard => ({
 });
 
 describe('candidate card model', () => {
+  it('omits the photo region when no photo has been provided', () => {
+    for (const photos of [
+      undefined,
+      { status: 'unknown', reason: 'Hot Pepper did not supply this field' },
+      { status: 'unsupported', reason: '写真未対応' },
+      { status: 'not_applicable', reason: '写真対象外' },
+      { status: 'known', value: { photos: [] }, evidence: [] },
+    ] satisfies PublicCard['facts']['photos'][]) {
+      expect(shouldShowPhotoRegion(card(photos === undefined ? {} : { photos }))).toBe(false);
+    }
+  });
+
+  it('keeps photo loading and failure states separate from missing photos', () => {
+    expect(
+      shouldShowPhotoRegion(
+        card({
+          photos: {
+            status: 'known',
+            value: {
+              photos: [{ photoToken: 'server-photo-token', attributions: [], sourceUrl: null }],
+            },
+            evidence: [evidence('photo-1', '写真情報')],
+          },
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      shouldShowPhotoRegion(
+        card({
+          photos: { status: 'error', code: 'PROVIDER_UNAVAILABLE', reason: '取得失敗' },
+        }),
+      ),
+    ).toBe(true);
+  });
+
   it('keeps unknown, unsupported, error, and missing facts distinct', () => {
     expect(presentFact(undefined, String)).toMatchObject({ status: 'missing', label: '未提供' });
     expect(presentFact({ status: 'unknown', reason: '情報なし' }, String)).toMatchObject({

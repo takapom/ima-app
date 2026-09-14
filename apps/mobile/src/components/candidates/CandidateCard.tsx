@@ -8,6 +8,7 @@ import {
   presentCardFacts,
   presentEvidenceText,
   presentFact,
+  shouldShowPhotoRegion,
   type FactPresentation,
 } from './candidate-card-model';
 import { PhotoRegion } from './PhotoRegion';
@@ -64,6 +65,7 @@ export function CandidateCard({
   const identity = cardIdentity(card);
   const name = identity?.name ?? '候補';
   const facts = presentCardFacts(card);
+  const showPhotoRegion = shouldShowPhotoRegion(card);
   const why = presentEvidenceText(card.why);
   const diff = card.diff === undefined ? null : presentEvidenceText(card.diff);
   const identityEvidence = presentFact(card.facts.identity, (value) => value.name).evidence;
@@ -94,21 +96,23 @@ export function CandidateCard({
         onPress={choose}
         style={({ pressed }) => [styles.alternative, pressed && styles.pressed]}
       >
-        <View
-          style={[
-            styles.thumbnail,
-            {
-              minHeight: scaleForDynamicType(56, fontScale),
-              minWidth: scaleForDynamicType(56, fontScale),
-            },
-          ]}
-        >
-          <PhotoRegion
-            card={card}
-            compact
-            {...(photoClient === undefined ? {} : { client: photoClient })}
-          />
-        </View>
+        {showPhotoRegion ? (
+          <View
+            style={[
+              styles.thumbnail,
+              {
+                minHeight: scaleForDynamicType(56, fontScale),
+                minWidth: scaleForDynamicType(56, fontScale),
+              },
+            ]}
+          >
+            <PhotoRegion
+              card={card}
+              compact
+              {...(photoClient === undefined ? {} : { client: photoClient })}
+            />
+          </View>
+        ) : null}
         <View style={styles.alternativeBody}>
           <Text numberOfLines={1} style={styles.name}>
             {name}
@@ -129,8 +133,19 @@ export function CandidateCard({
 
   return (
     <View style={styles.hero}>
-      <View style={[styles.heroVisual, { minHeight: scaleForDynamicType(168, fontScale) }]}>
-        <PhotoRegion card={card} {...(photoClient === undefined ? {} : { client: photoClient })} />
+      <View
+        style={
+          showPhotoRegion
+            ? [styles.heroVisual, { minHeight: scaleForDynamicType(168, fontScale) }]
+            : styles.heroHeader
+        }
+      >
+        {showPhotoRegion ? (
+          <PhotoRegion
+            card={card}
+            {...(photoClient === undefined ? {} : { client: photoClient })}
+          />
+        ) : null}
         <View style={styles.heroOverlay}>
           <Text numberOfLines={1} style={styles.heroName}>
             {name}
@@ -256,6 +271,10 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     padding: spacing.section,
     position: 'relative',
+  },
+  heroHeader: {
+    paddingHorizontal: spacing.section,
+    paddingTop: spacing.section,
   },
   heroOverlay: {
     alignItems: 'flex-end',
