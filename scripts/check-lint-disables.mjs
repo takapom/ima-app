@@ -3,13 +3,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import * as typescript from 'typescript';
 
 export function parseSourceFileList(output) {
-  return (
-    output
-      .split('\0')
-      .filter(Boolean)
-      .filter((file) => existsSync(file))
-      .filter((file) => file !== 'scripts/check-lint-disables.mjs')
-  );
+  return output
+    .split('\0')
+    .filter(Boolean)
+    .filter((file) => existsSync(file))
+    .filter((file) => file !== 'scripts/check-lint-disables.mjs');
 }
 
 export function findUndocumentedDisables(files, readFile = (file) => readFileSync(file, 'utf8')) {

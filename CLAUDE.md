@@ -1,0 +1,1 @@
+AGENTS.mdを参照

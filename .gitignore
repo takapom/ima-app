@@ -12,3 +12,7 @@ coverage/
 !.env.example
 *.log
 /repomix-output.xml
+/.code-review-graph/
+/.grok/
+/.serena/
+/.claude/

@@ -8,3 +8,5 @@ workers/api/tests/runtime-gate/runtime-env.d.ts
 *.png
 
 .agents/skills/ima-issue-delivery/agents/openai.yaml
+
+.claude/

@@ -2,9 +2,14 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { join, relative, resolve } from 'node:path';
 
+// Local tool state, never source: agent memory and generated code-graph databases.
 const ignoredDirectories = new Set([
+  '.claude',
+  '.code-review-graph',
   '.git',
   '.expo',
+  '.grok',
+  '.serena',
   '.wrangler',
   'coverage',
   'dist',

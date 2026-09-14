@@ -1,0 +1,6 @@
+interface:
+  display_name: "ima. Issue実装・コミット規則"
+  short_description: "ima-appのIssueをmain上で依存確認からコミット・検証まで一貫して進める"
+  default_prompt: "$ima-issue-delivery を使い、指定されたima-appのsub-issueを規則に沿って実装してください。"
+policy:
+  allow_implicit_invocation: true
