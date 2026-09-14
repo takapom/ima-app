@@ -12,7 +12,23 @@ import {
 } from '../../../src/providers/last-train/dataset-do';
 
 const ADMIN_TOKEN = 'm14-admin-fixture-token';
-const NOW = '2026-09-10T12:00:00Z';
+// Keep the original relative dates while placing expiry alarms after the real test clock.
+const fixtureOffset = Date.parse(new Date().toISOString().slice(0, 10)) - Date.parse('2026-09-10');
+const fixtureDate = (value: string): string => {
+  const shifted = new Date(Date.parse(value) + fixtureOffset).toISOString();
+  return value.length === 10 ? shifted.slice(0, 10) : shifted;
+};
+const weekdays = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+] as const;
+const weekday = weekdays[new Date().getUTCDay()] ?? 'thursday';
+const NOW = fixtureDate('2026-09-10T12:00:00Z');
 
 type TestEnv = Cloudflare.Env & {
   JOURNEY_DATASETS: DurableObjectNamespace<JourneyDatasetDO>;
@@ -31,17 +47,20 @@ const testEnv = (value: typeof env): TestEnv => {
   return value;
 };
 
-const journey = (journeyRef: string, verifiedAt = '2026-09-05T12:00:00Z'): JourneyRecord => ({
+const journey = (
+  journeyRef: string,
+  verifiedAt = fixtureDate('2026-09-05T12:00:00Z'),
+): JourneyRecord => ({
   journeyRef,
   fromStationRef: 'station-a',
   homeStationRef: 'station-b',
-  serviceDate: '2026-09-10',
-  servicePattern: { weekdays: ['thursday'], holidayPolicy: 'allowed' },
-  lastDepartureAt: '2026-09-10T23:50:00+09:00',
-  arrivesHomeAt: '2026-09-11T00:30:00+09:00',
+  serviceDate: fixtureDate('2026-09-10'),
+  servicePattern: { weekdays: [weekday], holidayPolicy: 'allowed' },
+  lastDepartureAt: fixtureDate('2026-09-10T23:50:00+09:00'),
+  arrivesHomeAt: fixtureDate('2026-09-11T00:30:00+09:00'),
   transfers: [],
-  validFrom: '2026-09-01',
-  validThrough: '2026-09-30',
+  validFrom: fixtureDate('2026-09-01'),
+  validThrough: fixtureDate('2026-09-30'),
   verifiedAt,
   source: {
     provider: 'fixture',
@@ -52,8 +71,8 @@ const journey = (journeyRef: string, verifiedAt = '2026-09-05T12:00:00Z'): Journ
 });
 
 const context: JourneyServiceDateContext = {
-  serviceDate: '2026-09-10',
-  weekday: 'thursday',
+  serviceDate: fixtureDate('2026-09-10'),
+  weekday,
   isHoliday: false,
   now: NOW,
   fromStationRef: 'station-a',
@@ -94,7 +113,7 @@ describe('M14 shared journey dataset management boundary', () => {
 
     const imported = await call({
       kind: 'import',
-      records: [journey('journey-one', '2026-09-04T12:00:00Z')],
+      records: [journey('journey-one', fixtureDate('2026-09-04T12:00:00Z'))],
       expectedRevision: null,
     });
     expect(imported.status).toBe(200);
@@ -105,7 +124,7 @@ describe('M14 shared journey dataset management boundary', () => {
     await expect(firstStub.readRevision()).resolves.toBe(1);
     await expect(
       runInDurableObject(firstStub, async (_instance, state) => state.storage.getAlarm()),
-    ).resolves.toBe(Date.parse('2026-09-11T12:00:00Z'));
+    ).resolves.toBe(Date.parse(fixtureDate('2026-09-11T12:00:00Z')));
 
     const updated = await call({
       kind: 'update',
@@ -116,7 +135,7 @@ describe('M14 shared journey dataset management boundary', () => {
     expect((await json(updated)).result).toMatchObject({ status: 'imported', revision: 2 });
     await expect(
       runInDurableObject(firstStub, async (_instance, state) => state.storage.getAlarm()),
-    ).resolves.toBe(Date.parse('2026-09-12T12:00:00Z'));
+    ).resolves.toBe(Date.parse(fixtureDate('2026-09-12T12:00:00Z')));
 
     const stale = await call({
       kind: 'update',
@@ -141,7 +160,7 @@ describe('M14 shared journey dataset management boundary', () => {
     const stub = testEnv(env).JOURNEY_DATASETS.getByName(JOURNEY_DATASET_DO_NAME);
     await expect(
       runInDurableObject(stub, async (_instance, state) => state.storage.getAlarm()),
-    ).resolves.toBe(Date.parse('2026-09-11T12:00:00Z'));
+    ).resolves.toBe(Date.parse(fixtureDate('2026-09-11T12:00:00Z')));
 
     const alarmFailure = await runInDurableObject(stub, async (instance) => {
       Object.defineProperty(instance, 'synchronizeAlarm', {
@@ -175,13 +194,13 @@ describe('M14 shared journey dataset management boundary', () => {
     const alarmResult = await runInDurableObject(stub, async (instance, state) => {
       Object.defineProperty(instance, 'serverNow', {
         configurable: true,
-        value: () => '2026-09-12T12:00:00Z',
+        value: () => fixtureDate('2026-09-12T12:00:00Z'),
       });
       try {
         await instance.alarm();
         return {
           current: await state.storage.getAlarm(),
-          read: await instance.read({ ...context, now: '2026-09-12T12:00:00Z' }),
+          read: await instance.read({ ...context, now: fixtureDate('2026-09-12T12:00:00Z') }),
         };
       } finally {
         delete (instance as unknown as { serverNow?: () => string }).serverNow;
@@ -218,7 +237,10 @@ describe('M14 shared journey dataset management boundary', () => {
 
   it('keeps an inclusive validThrough cross-midnight journey in the Core service-date read', async () => {
     const stub = testEnv(env).JOURNEY_DATASETS.getByName(JOURNEY_DATASET_DO_NAME);
-    const crossMidnight = { ...journey('journey-cross-midnight'), validThrough: '2026-09-10' };
+    const crossMidnight = {
+      ...journey('journey-cross-midnight'),
+      validThrough: fixtureDate('2026-09-10'),
+    };
     const current = await stub.read(context);
     const expectedRevision = current.status === 'error' ? null : current.revision;
     const imported = await call({
@@ -235,12 +257,16 @@ describe('M14 shared journey dataset management boundary', () => {
     const revision = typeof expectedRevision === 'number' ? expectedRevision + 1 : 1;
     await expect(
       runInDurableObject(stub, async (_instance, state) => state.storage.getAlarm()),
-    ).resolves.toBe(Date.parse('2026-09-12T12:00:00Z'));
-    await expect(stub.read({ ...context, now: '2026-09-10T15:29:59Z' })).resolves.toMatchObject({
+    ).resolves.toBe(Date.parse(fixtureDate('2026-09-12T12:00:00Z')));
+    await expect(
+      stub.read({ ...context, now: fixtureDate('2026-09-10T15:29:59Z') }),
+    ).resolves.toMatchObject({
       status: 'known',
       revision,
     });
-    await expect(stub.read({ ...context, now: '2026-09-10T15:30:01Z' })).resolves.toMatchObject({
+    await expect(
+      stub.read({ ...context, now: fixtureDate('2026-09-10T15:30:01Z') }),
+    ).resolves.toMatchObject({
       status: 'known',
       revision,
     });
