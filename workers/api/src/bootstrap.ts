@@ -50,18 +50,13 @@ import {
 } from './saved-references/owner-application';
 import type { OwnerStore } from './saved-references/owner-store';
 import type { SavedReferenceNamespace } from './saved-references/saved-reference-rpc';
-import {
-  createSavedReferenceRefreshForBootstrap,
-  type SavedReferenceRefreshBootstrapOptions,
-} from './saved-references/saved-reference-refresh-bootstrap';
 
 export { createApplicationScopeAuthorizer } from './saved-references/saved-reference-refresh';
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;
-  readonly GOOGLE_PLACES_API_KEY?: string;
-  readonly PHOTO_TOKEN_SECRET?: string;
   readonly HOTPEPPER_API_KEY?: string;
+  readonly PHOTO_TOKEN_SECRET?: string;
   readonly PLACES_CURSOR_SECRET?: string;
   readonly IMA_RUNTIME_MODE?: string;
   readonly IMA_ENV?: string;
@@ -108,7 +103,7 @@ export type BootstrapOptions = {
   readonly appIntegrity?: AppIntegrityGate;
   /** Native verifier injection; absent means the default gate remains fail-closed. */
   readonly appIntegrityVerifier?: AppIntegrityVerifier;
-} & Omit<SavedReferenceRefreshBootstrapOptions, 'clock'>;
+};
 
 const unavailable = (): HttpBoundaryError =>
   new HttpBoundaryError({ status: 502, code: 'PROVIDER_UNAVAILABLE' });
@@ -172,7 +167,6 @@ const threadStub = (env: BootstrapEnv, threadId: string) => env.THREADS.getByNam
 const handleApplication = async (
   env: BootstrapEnv,
   runtime: ApplicationHandler,
-  savedReferenceRefresh: ReturnType<typeof createSavedReferenceRefreshForBootstrap>,
   ownerStore: OwnerStore | undefined,
   operation: ApplicationOperation,
   context: HandlerContext,
@@ -255,8 +249,7 @@ const handleApplication = async (
       );
       return { kind: 'delete_thread', response: null };
     case 'saved_reference_refresh':
-      if (savedReferenceRefresh === undefined) throw unavailable();
-      return savedReferenceRefresh.handle(operation, context);
+      throw unavailable();
   }
 };
 
@@ -268,12 +261,11 @@ const createApplication = (env: BootstrapEnv, options: BootstrapOptions): Applic
       ? {}
       : { onCancellationError: options.onCancellationError }),
   });
-  const savedReferenceRefresh = createSavedReferenceRefreshForBootstrap(env, options);
   const ownerStore =
     env.SAVED_REFERENCES === undefined ? undefined : createDurableOwnerStore(env.SAVED_REFERENCES);
   return {
     handle(operation, context) {
-      return handleApplication(env, runtime, savedReferenceRefresh, ownerStore, operation, context);
+      return handleApplication(env, runtime, ownerStore, operation, context);
     },
   };
 };

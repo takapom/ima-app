@@ -230,9 +230,7 @@ describe('memory owner store saved references', () => {
     expect(listed).toEqual({
       ok: true,
       references: decided.ok ? [decided.reference] : [],
-      decided: decided.ok
-        ? [{ savedPlaceRef: decided.reference.savedPlaceRef, decidedAt }]
-        : [],
+      decided: decided.ok ? [{ savedPlaceRef: decided.reference.savedPlaceRef, decidedAt }] : [],
     });
     expect(replayed).toMatchObject({ ok: true, created: false, replayed: false });
     expect(sameKey).toMatchObject({

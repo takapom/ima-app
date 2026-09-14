@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { call, createThread, productionEnv, turnBody } from './runtime-production-http-support';
 
 describe('production saved-reference HTTP composition', () => {
-  it('resolves a selected saved reference through the production DO provider handoff', async () => {
+  it('preserves saving but does not fetch a saved reference through the removed provider handoff', async () => {
     const sourceThreadId = await createThread();
     const searchRequestId = `runtime-production-http-saved-turn-search-${crypto.randomUUID()}`;
     const searchResponse = await call(`/v1/threads/${sourceThreadId}/turns`, searchRequestId, {
@@ -47,19 +47,10 @@ describe('production saved-reference HTTP composition', () => {
         ]),
       ),
     });
-    expect(turnResponse.status).toBe(200);
-    const turnParsed = v.safeParse(SearchResponseSchema, await turnResponse.json());
-    expect(turnParsed.success).toBe(true);
-    if (!turnParsed.success) throw new Error('saved handoff turn response was invalid');
-    expect(turnParsed.output.response.kind).toBe('message');
-
+    expect(turnResponse.status).toBe(502);
     const after = await stub.getRuntimeProductionReport();
     expect(after).not.toBeNull();
-    expect(after?.toolNames.slice(before?.toolNames.length ?? 0)).toContain('get_place_details');
-    expect((after?.fetchUrls.length ?? 0) - (before?.fetchUrls.length ?? 0)).toBe(1);
-    expect(after?.savedReferenceCandidateIds).toHaveLength(1);
-    expect(after?.savedReferenceCandidateIds[0]).toBeTypeOf('string');
-    expect(after?.savedReferenceCandidateIds[0]).not.toBe(candidateId);
-    expect(JSON.stringify(turnParsed.output)).not.toContain('M16_LLM_INPUT_CANARY');
+    expect((after?.fetchUrls.length ?? 0) - (before?.fetchUrls.length ?? 0)).toBe(0);
+    expect(after?.savedReferenceCandidateIds).toHaveLength(0);
   });
 });
