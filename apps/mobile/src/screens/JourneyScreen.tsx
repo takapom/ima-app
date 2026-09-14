@@ -20,7 +20,7 @@ import {
 } from '../hooks/useJourneyPreferences';
 import { useJourneySourceLink } from '../hooks/useJourneySourceLink';
 import { useSavedPlacePreview } from '../hooks/useSavedPlacePreview';
-import { selectedCardFor } from './journey-screen-model';
+import { selectedCardFor, submitContextFor } from './journey-screen-model';
 import { useJourneyApiController } from '../hooks/useJourneyApiController';
 import { selectJourneyNoticeText } from '../services/journey-source-link';
 import {
@@ -35,7 +35,7 @@ import {
   suggestionsFor,
 } from '../state/journey-input';
 import { resolveJourneyPhase } from '../state/journey-phase';
-import type { JourneyScreenProps, JourneySubmitContext } from './journey-screen-props';
+import type { JourneyScreenProps } from './journey-screen-props';
 
 export type { JourneyScreenProps, JourneySubmitContext } from './journey-screen-props';
 export type { JourneyRequestStatus } from '../state/journey-phase';
@@ -195,28 +195,26 @@ function JourneyScreenStateOwner({
   const renderedMessageRecords = selectAssistantMessageRecords(renderedResponse);
 
   const submit = useCallback(
-    (value: string): void => {
+    (value: string, actionState = actions.state): void => {
       const query = value.trim();
       if (query.length === 0 || onSubmit === undefined) return;
-      const context: JourneySubmitContext = {
-        conditions: journey.conditions,
-        removedChipLabels: journey.removedChipLabels,
-        cardSetId: renderedResponse.cardSetId,
-        promotedCandidateId: actions.state.promotedCandidateId,
-        selectedCandidateId: actions.state.decidedCandidateId,
-        candidateOrder: actions.candidateOrder,
-        savedPlaceRefs: savedPlaceUi.pendingRefs,
-        excludeCandidateIds: actions.state.tonightExcludedCandidateIds,
-      };
+      const context = submitContextFor(
+        {
+          conditions: journey.conditions,
+          removedChipLabels: journey.removedChipLabels,
+          cardSetId: renderedResponse.cardSetId,
+          savedPlaceRefs: savedPlaceUi.pendingRefs,
+        },
+        actionState,
+        actions.candidateOrder,
+      );
       setRequestStartRevision(renderedResponse.revision);
       journey.beginRequest(value);
       onSubmit(value, context);
     },
     [
       actions.candidateOrder,
-      actions.state.decidedCandidateId,
-      actions.state.promotedCandidateId,
-      actions.state.tonightExcludedCandidateIds,
+      actions.state,
       savedPlaceUi.pendingRefs,
       journey.beginRequest,
       journey.conditions,
@@ -230,16 +228,16 @@ function JourneyScreenStateOwner({
     const query = journey.query.trim();
     const retryHandler = onRetry ?? onSubmit;
     if (query.length === 0 || retryHandler === undefined) return;
-    const context: JourneySubmitContext = {
-      conditions: journey.conditions,
-      removedChipLabels: journey.removedChipLabels,
-      cardSetId: renderedResponse.cardSetId,
-      promotedCandidateId: actions.state.promotedCandidateId,
-      selectedCandidateId: actions.state.decidedCandidateId,
-      candidateOrder: actions.candidateOrder,
-      savedPlaceRefs: savedPlaceUi.pendingRefs,
-      excludeCandidateIds: actions.state.tonightExcludedCandidateIds,
-    };
+    const context = submitContextFor(
+      {
+        conditions: journey.conditions,
+        removedChipLabels: journey.removedChipLabels,
+        cardSetId: renderedResponse.cardSetId,
+        savedPlaceRefs: savedPlaceUi.pendingRefs,
+      },
+      actions.state,
+      actions.candidateOrder,
+    );
     setRequestStartRevision(renderedResponse.revision);
     journey.beginRequest(journey.query);
     retryHandler(journey.query, context);
@@ -253,9 +251,7 @@ function JourneyScreenStateOwner({
     onRetry,
     onSubmit,
     actions.candidateOrder,
-    actions.state.decidedCandidateId,
-    actions.state.promotedCandidateId,
-    actions.state.tonightExcludedCandidateIds,
+    actions.state,
     savedPlaceUi.pendingRefs,
   ]);
   const cancel = useCallback((): void => {
@@ -382,7 +378,11 @@ function JourneyScreenStateOwner({
               onSave={(card) => {
                 void actions.save(card).then(savedPlaceUi.reload).catch(actions.reportFailure);
               }}
-              onSkip={actions.skipTonight}
+              onSkip={(candidateId) => {
+                if (requestStatus === 'pending') return;
+                const next = actions.skipTonight(candidateId);
+                if (next !== null) submit('この候補はちがう。', next);
+              }}
               onSourcePress={openSourceLink}
               {...(photoClient === undefined ? {} : { photoClient })}
               onChoose={actions.promote}

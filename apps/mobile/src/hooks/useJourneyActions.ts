@@ -70,7 +70,7 @@ export type JourneyActionsController = {
   readonly promote: (candidateId: string) => void;
   readonly decide: (candidateId: string) => Promise<boolean>;
   readonly save: (card: PublicCard) => Promise<void>;
-  readonly skipTonight: (candidateId: string) => void;
+  readonly skipTonight: (candidateId: string) => JourneyActionState | null;
   readonly recover: (candidateId: string) => RecoverIntent | null;
   readonly openMap: (card: PublicCard) => Promise<void>;
   readonly share: (card: PublicCard) => Promise<void>;
@@ -271,9 +271,11 @@ export const useJourneyActions = ({
     ],
   );
   const skipTonight = useCallback(
-    (candidateId: string): void => {
-      if (applyPure({ type: 'skipTonight', candidateId }) === null) return;
+    (candidateId: string): JourneyActionState | null => {
+      const result = applyPure({ type: 'skipTonight', candidateId });
+      if (result === null) return null;
       setNotice({ tone: 'info', text: '今夜の候補から外しました。' });
+      return result.state;
     },
     [applyPure],
   );

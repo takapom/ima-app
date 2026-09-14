@@ -33,10 +33,13 @@ export const buildMessageHistory = (
     displayPolicyStatus: record.message.retention.displayPolicyStatus,
   }));
 
-export const cardSetStatusLabel = (display: CardSetDisplayState): string | null => {
+export const cardSetStatusLabel = (
+  display: CardSetDisplayState,
+  hasMessage = false,
+): string | null => {
   if (display.kind === 'kept') return '前の候補を表示中';
   if (display.kind !== 'empty') return null;
-  if (display.reason === 'no_cards') return '候補はまだ提示されていません。';
+  if (display.reason === 'no_cards') return hasMessage ? null : '候補はまだ提示されていません。';
   if (display.reason === 'reference_only') return '過去の候補を復元できませんでした。';
   if (display.reason === 'unavailable') return '過去の候補は現在表示できません。';
   return null;

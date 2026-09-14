@@ -1,5 +1,27 @@
 import type { PublicCard } from '@ima/contracts';
 import type { AssistantResponseState } from '../state/assistant-response';
+import { selectJourneyCandidateOrder, type JourneyActionState } from '../state/journey-actions';
+import type { JourneySubmitContext } from './journey-screen-props';
+
+/** Build the displayed context from the action result, including a just-skipped candidate. */
+export const submitContextFor = (
+  input: Pick<
+    JourneySubmitContext,
+    'conditions' | 'removedChipLabels' | 'cardSetId' | 'savedPlaceRefs'
+  >,
+  state: JourneyActionState,
+  candidateIds: readonly string[],
+): JourneySubmitContext => ({
+  ...input,
+  promotedCandidateId: state.promotedCandidateId,
+  selectedCandidateId: state.decidedCandidateId,
+  candidateOrder: selectJourneyCandidateOrder(
+    candidateIds,
+    state.promotedCandidateId,
+    state.tonightExcludedCandidateIds,
+  ),
+  excludeCandidateIds: [...state.tonightExcludedCandidateIds],
+});
 
 export const selectedCardFor = (
   responseState: AssistantResponseState,

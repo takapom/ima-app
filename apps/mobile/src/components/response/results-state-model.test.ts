@@ -37,6 +37,14 @@ const record = (
 });
 
 describe('results state model', () => {
+  it('shows a clarification message without a misleading empty-card label', () => {
+    expect(
+      cardSetStatusLabel({ kind: 'empty', reason: 'no_cards', responseId: 'question' }, true),
+    ).toBeNull();
+    expect(
+      cardSetStatusLabel({ kind: 'empty', reason: 'reference_only', responseId: 'question' }, true),
+    ).toBe('過去の候補を復元できませんでした。');
+  });
   it('keeps message order and marks current, past, and cardless relations', () => {
     const items = buildMessageHistory(
       [

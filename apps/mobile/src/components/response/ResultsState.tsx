@@ -53,7 +53,7 @@ export function ResultsState({
 }: ResultsStateProps): React.JSX.Element {
   const displayCards = cards === null ? [] : orderedCards(cards, candidateOrder);
   const messageHistory = buildMessageHistory(messageRecords, cardSetId, displayCards.length > 0);
-  const statusLabel = cardSetStatusLabel(cardSetDisplay);
+  const statusLabel = cardSetStatusLabel(cardSetDisplay, messageHistory.length > 0);
   if (displayCards.length === 0) {
     return (
       <View style={styles.messageOnly}>
@@ -124,13 +124,11 @@ function MessageHistory({ items, fallback }: MessageHistoryProps): React.JSX.Ele
                 ? 'このメッセージは表示期限を過ぎています。'
                 : 'このメッセージは現在表示できません。')}
           </Text>
-          <Text style={styles.messageRelation}>
-            {item.relation === 'current'
-              ? '表示中の候補'
-              : item.relation === 'past'
-                ? '過去の候補'
-                : '候補なし'}
-          </Text>
+          {item.relation !== 'none' ? (
+            <Text style={styles.messageRelation}>
+              {item.relation === 'current' ? '表示中の候補' : '過去の候補'}
+            </Text>
+          ) : null}
         </View>
       ))}
     </View>
