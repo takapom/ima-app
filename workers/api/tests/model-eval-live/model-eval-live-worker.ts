@@ -193,7 +193,7 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
           'normal',
           this.livePlacePayloadMode,
         )(...args),
-      googlePlacesApiKey: 'model-eval-fixed-provider-key',
+      hotPepperApiKey: 'model-eval-fixed-provider-key',
       placesCursorSecret: 'model-eval-fixed-cursor-secret',
       observationPolicy: policy,
       detailsObservationPolicy: policy,

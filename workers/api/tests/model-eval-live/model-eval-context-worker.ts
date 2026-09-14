@@ -251,7 +251,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
           this.fixturePlacePayloadMode,
         )(input, init),
       ...repairOverridesFor(this.fixtureProfile, () => this.fixturePhase),
-      googlePlacesApiKey: 'model-eval-fixed-provider-key',
+      hotPepperApiKey: 'model-eval-fixed-provider-key',
       placesCursorSecret: 'model-eval-fixed-cursor-secret',
       placesEnabled: true,
       clock: () => this.fixtureNow,

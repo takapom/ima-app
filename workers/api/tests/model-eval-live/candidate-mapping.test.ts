@@ -217,7 +217,7 @@ describe('model-eval candidate identity mapping', () => {
       commit: fixtureCommit,
       overrides: {
         modelForTurn: modelFor('search', report),
-        googlePlacesApiKey: 'fixture-places-key',
+        hotPepperApiKey: 'fixture-places-key',
         placesCursorSecret: 'fixture-cursor-secret-16',
         placesEnabled: true,
         candidateIdentityObserver: (record) => observed.push(record),

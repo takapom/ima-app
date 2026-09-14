@@ -27,54 +27,30 @@ const fixturePlaces: readonly FixturePlace[] = [
 
 /** The evaluator joins these provider record identities to dataset IDs exactly. */
 export const MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES = [
-  { provider: 'google_places', recordRef: 'eval-place-a', evaluationCandidateId: 'candidate-a' },
-  { provider: 'google_places', recordRef: 'eval-place-b', evaluationCandidateId: 'candidate-b' },
-  { provider: 'google_places', recordRef: 'eval-place-c', evaluationCandidateId: 'candidate-c' },
+  { provider: 'hotpepper', recordRef: 'eval-place-a', evaluationCandidateId: 'candidate-a' },
+  { provider: 'hotpepper', recordRef: 'eval-place-b', evaluationCandidateId: 'candidate-b' },
+  { provider: 'hotpepper', recordRef: 'eval-place-c', evaluationCandidateId: 'candidate-c' },
 ] as const;
-
-const localHourFor = (now: string): number => {
-  const hour = Number(
-    new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Asia/Tokyo',
-      hour: '2-digit',
-      hourCycle: 'h23',
-    }).format(new Date(now)),
-  );
-  return Number.isInteger(hour) ? hour : 0;
-};
 
 const placeBody = (
   place: FixturePlace,
-  now: string,
+  _now: string,
   displayName = place.name,
   payloadMode: ModelEvalPlacePayloadMode = 'normal',
 ): Record<string, unknown> => ({
   id: place.id,
-  displayName: { text: displayName },
-  formattedAddress:
+  name: displayName,
+  lat: 35.6595,
+  lng: 139.7005,
+  address:
     payloadMode === 'store-instruction' && place.id === 'eval-place-b'
       ? `東京都渋谷区（${MODEL_EVAL_STORE_INSTRUCTION_TEXT}）`
       : '東京都渋谷区',
-  primaryType: 'cafe',
-  businessStatus: 'OPERATIONAL',
-  googleMapsUri: `https://maps.google.com/?cid=${place.id}`,
-  currentOpeningHours: {
-    periods: [
-      {
-        open: { date: { year: 2026, month: 9, day: 10 }, hour: 9, minute: 0 },
-        close: {
-          date: { year: 2026, month: 9, day: 10 },
-          hour: place.closeHour,
-          minute: 0,
-        },
-      },
-    ],
-    weekdayDescriptions: [`毎日 9:00–${place.closeHour}:00`],
-    openNow: place.closeHour > localHourFor(now),
-  },
-  timeZone: { id: 'Asia/Tokyo' },
-  attributions: [{ provider: 'Google Maps', providerUri: 'https://maps.google.com' }],
-  priceLevel: place.priceLevel,
+  genre: { name: 'カフェ' },
+  open: `毎日 9:00–${place.closeHour}:00`,
+  close: '無休',
+  budget: { average: place.priceLevel === 'PRICE_LEVEL_INEXPENSIVE' ? '1000円' : '2000円' },
+  urls: { pc: `https://www.hotpepper.jp/str${place.id}/` },
 });
 
 export const fixedPlacesFetcher =
@@ -86,103 +62,42 @@ export const fixedPlacesFetcher =
     displayNameMode: ModelEvalPlaceDisplayNameMode = 'normal',
     payloadMode: ModelEvalPlacePayloadMode = 'normal',
   ): typeof fetch =>
-  async (input, init) => {
+  (input, init) => {
     trace.upstreamCall();
-    const request = new Request(input, init);
-    if (request.url.endsWith('/v1/places:searchText')) {
-      if (observeSearchQuery !== undefined) {
-        const body: unknown = await request
-          .clone()
-          .json()
-          .catch(() => null);
-        if (
-          typeof body === 'object' &&
-          body !== null &&
-          'textQuery' in body &&
-          typeof body.textQuery === 'string'
-        ) {
-          observeSearchQuery(body.textQuery);
-        }
-      }
-      if (responseMode === 'upstream-failure') {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              error: {
-                code: 'UPSTREAM_UNAVAILABLE',
-                message: MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL,
-              },
-            }),
-            {
-              status: 503,
-              headers: { 'content-type': 'application/json' },
-            },
-          ),
-        );
-      }
-      if (responseMode === 'schema-failure') {
-        return Promise.resolve(
-          new Response(JSON.stringify({ places: 'M25_FIXTURE_INVALID_PLACES' }), {
-            status: 200,
-            headers: { 'content-type': 'application/json' },
-          }),
-        );
-      }
+    const url = new URL(new Request(input, init).url);
+    if (
+      url.origin !== 'https://webservice.recruit.co.jp' ||
+      url.pathname !== '/hotpepper/gourmet/v1/'
+    ) {
+      return Promise.resolve(new Response(null, { status: 404 }));
+    }
+    const id = url.searchParams.get('id');
+    if (id === null) observeSearchQuery?.(url.searchParams.get('keyword') ?? '');
+    if (responseMode === 'upstream-failure')
       return Promise.resolve(
-        new Response(
-          JSON.stringify({
-            places:
-              responseMode === 'empty'
-                ? []
-                : fixturePlaces.map((place) =>
-                    placeBody(
-                      place,
-                      now,
-                      displayNameMode === 'duplicate' && place.id === 'eval-place-b'
-                        ? fixturePlaces[0]?.name
-                        : place.name,
-                      payloadMode,
-                    ),
-                  ),
-          }),
-          {
-            status: 200,
-            headers: { 'content-type': 'application/json' },
-          },
-        ),
+        Response.json({ error: MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL }, { status: 503 }),
       );
-    }
-    const id = decodeURIComponent(new URL(request.url).pathname.split('/').at(-1) ?? '');
-    const place = fixturePlaces.find((candidate) => candidate.id === id);
-    if (responseMode === 'upstream-failure') {
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: 'UPSTREAM_UNAVAILABLE',
-            message: MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL,
-          },
-        }),
-        { status: 503, headers: { 'content-type': 'application/json' } },
-      );
-    }
+    if (responseMode === 'schema-failure')
+      return Promise.resolve(Response.json({ results: { shop: 'invalid' } }));
+    const places =
+      responseMode === 'empty'
+        ? []
+        : fixturePlaces.filter((place) => id === null || place.id === id);
     return Promise.resolve(
-      place === undefined
-        ? new Response(JSON.stringify({ error: 'not found' }), { status: 404 })
-        : new Response(
-            JSON.stringify(
-              placeBody(
-                place,
-                now,
-                displayNameMode === 'duplicate' && place.id === 'eval-place-b'
-                  ? fixturePlaces[0]?.name
-                  : place.name,
-                payloadMode,
-              ),
+      Response.json({
+        results: {
+          results_available: places.length,
+          shop: places.map((place) =>
+            placeBody(
+              place,
+              now,
+              displayNameMode === 'duplicate' && place.id === 'eval-place-b'
+                ? fixturePlaces[0]?.name
+                : place.name,
+              payloadMode,
             ),
-            {
-              status: 200,
-              headers: { 'content-type': 'application/json' },
-            },
           ),
+        },
+      }),
     );
   };
