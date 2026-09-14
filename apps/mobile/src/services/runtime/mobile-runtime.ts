@@ -157,7 +157,10 @@ const preferencesFor = (input: JourneyApiSearchFactoryInput): Preferences => ({
   // A free-form station label is not a server station reference. Keep it out
   // of the request until the station resolver contract is connected.
   homeStationRef: null,
-  maxWalkMinutes: input.context.conditions.maxWalkMinutes,
+  // A walking limit needs walking-route evidence to be validated. Sending one
+  // while that provider is disconnected can only produce an unsatisfiable turn,
+  // so a value left in stored prefs is not revived here.
+  maxWalkMinutes: null,
   minimumStayMinutes: null,
   areaText: null,
   budget: input.context.conditions.budget,

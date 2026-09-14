@@ -73,6 +73,11 @@ const saveFailure = (): JourneyPreferencesSaveResult => ({
   reason: 'storage_unavailable',
 });
 
+/**
+ * Dormant while no editor writes a station label. It stays because the branch must
+ * return with the station resolver rather than be rediscovered, and it is still
+ * reachable through this module's own contract.
+ */
 const stationNotice = '駅名は端末に保存されません。';
 const sessionOnlyNotice = '条件は端末に保存されません。';
 const saveFailureNotice = '条件を保存できませんでした。もう一度試してください。';

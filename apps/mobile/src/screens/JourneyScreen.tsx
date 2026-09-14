@@ -31,6 +31,7 @@ import {
   DEFAULT_SUGGESTIONS,
   type ConditionScope,
   type JourneyConditions,
+  preferenceChipLabels,
   suggestionsFor,
 } from '../state/journey-input';
 import { resolveJourneyPhase } from '../state/journey-phase';
@@ -272,11 +273,14 @@ function JourneyScreenStateOwner({
   }, [actions.reset, journey.reset, onNewSearch, savedPlaceUi.reset]);
   const decide = useCallback(
     (candidateId: string): void => {
-      void actions.decide(candidateId).then((ok) => {
-        if (ok) journey.decide();
-      });
+      void actions
+        .decide(candidateId)
+        .then((ok) => {
+          if (ok) journey.decide();
+        })
+        .catch(actions.reportFailure);
     },
-    [actions.decide, journey.decide],
+    [actions.decide, actions.reportFailure, journey.decide],
   );
   const recover = useCallback((): void => {
     if (actions.state.decidedCandidateId !== null) {
@@ -357,7 +361,11 @@ function JourneyScreenStateOwner({
           {phase === 'empty' ? <EmptyState onExample={journey.updateDraft} /> : null}
           {phase === 'working' ? <WorkingState query={journey.query} /> : null}
           {phase === 'results' ? (
-            <ConditionChips chips={journey.chips} onRemove={removeChip} />
+            <ConditionChips
+              chips={journey.chips}
+              removableChips={preferenceChipLabels(journey.conditions)}
+              onRemove={removeChip}
+            />
           ) : null}
           {phase === 'results' ? (
             <ResultsState

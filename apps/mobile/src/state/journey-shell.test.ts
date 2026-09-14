@@ -55,6 +55,8 @@ describe('journey shell state', () => {
       type: 'requestFailed',
       message: 'timeout',
     });
+    // '徒歩10分' is no longer produced as a chip; it stands in for an arbitrary label
+    // here to show suppression survives a retry, not that walking chips exist.
     const removed = journeyShellReducer(failed, { type: 'chipRemoved', label: '徒歩10分' });
     const retried = journeyShellReducer(removed, {
       type: 'beginRequest',
@@ -104,24 +106,24 @@ describe('journey shell state', () => {
     const withConditions = journeyShellReducer(createJourneyShellState(), {
       type: 'conditionChanged',
       scope: 'thread',
-      changes: { maxWalkMinutes: 10 },
+      changes: { budget: 'normal' },
     });
     const searching = journeyShellReducer(withConditions, {
       type: 'beginRequest',
       query: '静か',
     });
-    const removed = journeyShellReducer(searching, { type: 'chipRemoved', label: '徒歩10分' });
+    const removed = journeyShellReducer(searching, { type: 'chipRemoved', label: '普通' });
 
-    expect(removed.conditions.maxWalkMinutes).toBeNull();
-    expect(removed.chips).not.toContain('徒歩10分');
-    expect(removed.removedChipLabels).toContain('徒歩10分');
+    expect(removed.conditions.budget).toBe('any');
+    expect(removed.chips).not.toContain('普通');
+    expect(removed.removedChipLabels).toContain('普通');
     const restored = journeyShellReducer(removed, {
       type: 'conditionChanged',
       scope: 'thread',
-      changes: { maxWalkMinutes: 10 },
+      changes: { budget: 'normal' },
     });
-    expect(restored.chips).toContain('徒歩10分');
-    expect(restored.removedChipLabels).not.toContain('徒歩10分');
+    expect(restored.chips).toContain('普通');
+    expect(restored.removedChipLabels).not.toContain('普通');
   });
 
   it('records a local decided phase without copying response payload', () => {

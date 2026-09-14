@@ -94,7 +94,10 @@ const preferencesFor = (
   conditions: JourneyConditions,
 ): StoredPreferences & { readonly stationLabel: string } => ({
   homeStationRef: current.homeStationRef,
-  maxWalkMinutes: conditions.maxWalkMinutes,
+  // No editor writes a walking limit while walking-route evidence is unavailable.
+  // Persisting the projected value would keep a limit the user can neither see nor
+  // clear, so every save clears it instead. Restore this when that provider returns.
+  maxWalkMinutes: null,
   minimumStayMinutes: current.minimumStayMinutes,
   areaText: current.areaText,
   budget: conditions.budget,

@@ -5,10 +5,11 @@ type EmptyStateProps = {
   readonly onExample: (query: string) => void;
 };
 
+/** Walking and last-train conditions are omitted until those providers are connected. */
 const EXAMPLES = [
-  '恵比寿、ご飯終わり。静かめで甘いもの。徒歩10分。終電まで。',
+  '恵比寿、ご飯終わり。静かめで甘いもの。',
   '雨だから屋内。まだ話していたい。高すぎない二軒目。',
-  '少し疲れた。座れて、すぐ着く。甘いものはもういらない。',
+  '少し疲れた。座れるところ。甘いものはもういらない。',
 ] as const;
 
 export function EmptyState({ onExample }: EmptyStateProps): React.JSX.Element {

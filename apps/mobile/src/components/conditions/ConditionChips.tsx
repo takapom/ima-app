@@ -4,19 +4,30 @@ import { colors, radii, spacing, typography } from '../../theme/tokens';
 
 type ConditionChipsProps = {
   readonly chips: readonly string[];
+  /**
+   * Labels backed by an editable condition. A chip outside this set only reports what
+   * the request text said, so it gets no remove control: removing it would hide the
+   * chip while the wording still reaches the model.
+   */
+  readonly removableChips?: readonly string[];
   readonly onRemove?: (label: string) => void;
 };
 
-export function ConditionChips({ chips, onRemove }: ConditionChipsProps): React.JSX.Element | null {
+export function ConditionChips({
+  chips,
+  removableChips,
+  onRemove,
+}: ConditionChipsProps): React.JSX.Element | null {
   const visibleChips = uniqueTerms(chips, MAX_CHIPS);
   if (visibleChips.length === 0) return null;
+  const removable = new Set(removableChips ?? visibleChips);
 
   return (
     <View accessibilityLabel="検索条件" style={styles.container}>
       {visibleChips.map((chip) => (
         <View key={chip} style={styles.chip}>
           <Text style={styles.label}>{chip}</Text>
-          {onRemove ? (
+          {onRemove && removable.has(chip) ? (
             <Pressable
               accessibilityLabel={`${chip}を外す`}
               accessibilityRole="button"

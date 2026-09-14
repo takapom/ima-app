@@ -322,7 +322,9 @@ describe('owner prefs projection', () => {
       status: 'saved',
       preferences: {
         homeStationRef: 'station-ebisu',
-        maxWalkMinutes: 10,
+        // A walking limit no editor can reach is never written back to the owner
+        // record, otherwise it survives outside the user's control.
+        maxWalkMinutes: null,
         minimumStayMinutes: 30,
         areaText: '恵比寿',
         budget: 'normal',
@@ -335,7 +337,7 @@ describe('owner prefs projection', () => {
         expectedRevision: 2,
         prefs: {
           homeStationRef: 'station-ebisu',
-          maxWalkMinutes: 10,
+          maxWalkMinutes: null,
           minimumStayMinutes: 30,
           areaText: '恵比寿',
           budget: 'normal',
@@ -343,17 +345,40 @@ describe('owner prefs projection', () => {
       },
     ]);
     expect(opened.store.readPreferences()).toMatchObject({
-      maxWalkMinutes: 10,
+      maxWalkMinutes: null,
       budget: 'normal',
       stationLabel: '新宿',
     });
+  });
+
+  it('clears a stored walking limit through the owner record on the next save', async () => {
+    const opened = openStore();
+    opened.store.savePreferences({ ...prefs, maxWalkMinutes: 10, stationLabel: '渋谷' });
+    let puts = 0;
+    const put = { schemaVersion: 'v1' as const, requestId: 'request-put', revision: 4 };
+    const projection = createOwnerPrefsProjection({
+      api: apiFor({
+        putPrefs: () => {
+          puts += 1;
+          return Promise.resolve(success('request-put', put));
+        },
+      }),
+      sqlite: opened.store,
+      requestIdFactory: () => 'request-put',
+    });
+    await expect(projection.save({ ...conditions, stationLabel: '渋谷' })).resolves.toMatchObject({
+      preferences: { maxWalkMinutes: null },
+    });
+    expect(puts).toBe(1);
+    expect(opened.store.readPreferences()).toMatchObject({ maxWalkMinutes: null });
   });
 
   it('skips PUT when only the device station label changed', async () => {
     const opened = openStore();
     opened.store.savePreferences({
       ...prefs,
-      maxWalkMinutes: 15,
+      // Already cleared; only the device-only station label differs below.
+      maxWalkMinutes: null,
       budget: 'normal',
       stationLabel: '渋谷',
     });

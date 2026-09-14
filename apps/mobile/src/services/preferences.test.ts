@@ -137,7 +137,9 @@ describe('journey preferences service', () => {
       status: 'saved',
       preferences: {
         homeStationRef: 'station-ebisu',
-        maxWalkMinutes: 10,
+        // No editor writes a walking limit while walking-route evidence is absent,
+        // so a save clears it rather than persisting an unreachable condition.
+        maxWalkMinutes: null,
         minimumStayMinutes: 30,
         areaText: '恵比寿',
         budget: 'normal',
@@ -148,9 +150,28 @@ describe('journey preferences service', () => {
     );
   });
 
-  it('does not write when persisted values are unchanged', () => {
+  it('clears a stored walking limit the editor can no longer reach', () => {
     const storage = storageFor(
       stored({ maxWalkMinutes: 15, budget: 'normal', stationLabel: fallback.stationLabel }),
+    );
+    const service = createJourneyPreferencesService(storage);
+
+    expect(service.save(fallback)).toEqual({
+      status: 'saved',
+      preferences: {
+        homeStationRef: 'station-ebisu',
+        maxWalkMinutes: null,
+        minimumStayMinutes: 30,
+        areaText: '恵比寿',
+        budget: 'normal',
+      },
+    });
+    expect(storage.saved()).toMatchObject({ maxWalkMinutes: null });
+  });
+
+  it('does not write when persisted values are unchanged', () => {
+    const storage = storageFor(
+      stored({ maxWalkMinutes: null, budget: 'normal', stationLabel: fallback.stationLabel }),
     );
     const service = createJourneyPreferencesService(storage);
 
@@ -158,7 +179,7 @@ describe('journey preferences service', () => {
       status: 'unchanged',
       preferences: {
         homeStationRef: 'station-ebisu',
-        maxWalkMinutes: 15,
+        maxWalkMinutes: null,
         minimumStayMinutes: 30,
         areaText: '恵比寿',
         budget: 'normal',

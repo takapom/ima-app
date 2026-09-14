@@ -2,12 +2,20 @@ export const MAX_QUERY_LENGTH = 500 as const;
 export const MAX_STATION_LABEL_LENGTH = 160 as const;
 export const MAX_CHIPS = 4 as const;
 
-export const DEFAULT_SUGGESTIONS = ['食後', '静か', '徒歩10分', '終電まで'] as const;
+/** Walking and last-train terms stay out until those providers are connected. */
+export const DEFAULT_SUGGESTIONS = ['食後', '静か', '屋内', '甘いもの'] as const;
 
+/** Only `unknown` is produced while no station resolver is connected. */
 export type StationSupport = 'supported' | 'unsupported' | 'unknown';
 export type BudgetOption = 'cheap' | 'normal' | 'any';
 export type ConditionScope = 'thread' | 'saved';
 
+/**
+ * `stationLabel`, `stationSupport` and `maxWalkMinutes` are kept as the shape of the
+ * stored settings contract, not as editable conditions: no editor writes them and the
+ * request boundary clears them while last-train and walking-route evidence is absent.
+ * Reconnecting those providers restores the editors rather than reshaping storage.
+ */
 export type JourneyConditions = {
   readonly stationLabel: string;
   readonly stationSupport: StationSupport;
@@ -62,58 +70,32 @@ export const suggestionsFor = (
   return uniqueTerms([...matches, ...candidates], MAX_CHIPS);
 };
 
+/**
+ * Walking and last-train phrases are not turned into chips: the connected providers
+ * cannot evidence them, so a chip would imply a filter that is never applied.
+ */
 const queryChipCandidates = (query: string): string[] => {
   const candidates: string[] = [];
-  const walk = query.match(/徒歩\s*(\d+)\s*分/);
-  if (walk) candidates.push(`徒歩${walk[1]}分`);
-  if (/終電/.test(query)) candidates.push('終電まで');
   if (/食後|ご飯|食べ/.test(query)) candidates.push('食後');
   if (/静か/.test(query)) candidates.push('静か');
   if (/雨|屋内/.test(query)) candidates.push('屋内');
   if (/甘い|スイーツ|チョコ/.test(query)) candidates.push('甘いもの');
   if (/座れ/.test(query)) candidates.push('座れる');
-  if (/近い|すぐ/.test(query)) candidates.push('近い');
   return candidates;
 };
 
-export const preferenceChipLabels = (conditions: JourneyConditions): string[] => {
-  const labels: string[] = [];
-  if (conditions.stationLabel.trim().length > 0) {
-    labels.push(`終電 ${conditions.stationLabel.trim()}`);
-  }
-  if (conditions.maxWalkMinutes !== null) {
-    labels.push(`徒歩${conditions.maxWalkMinutes}分`);
-  }
-  if (conditions.budget !== 'any') {
-    labels.push(budgetLabel(conditions.budget));
-  }
-  return labels;
-};
+/** Only conditions the connected providers can actually apply become chips. */
+export const preferenceChipLabels = (conditions: JourneyConditions): string[] =>
+  conditions.budget === 'any' ? [] : [budgetLabel(conditions.budget)];
 
 export const conditionChangesForChip = (
   conditions: JourneyConditions,
   label: string,
-): Partial<JourneyConditions> => {
-  const stationLabel = conditions.stationLabel.trim();
-  if (stationLabel.length > 0 && label === `終電 ${stationLabel}`) {
-    return { stationLabel: '', stationSupport: 'unknown' };
-  }
-  if (conditions.maxWalkMinutes !== null && label === `徒歩${conditions.maxWalkMinutes}分`) {
-    return { maxWalkMinutes: null };
-  }
-  if (conditions.budget !== 'any' && label === budgetLabel(conditions.budget)) {
-    return { budget: 'any' };
-  }
-  return {};
-};
+): Partial<JourneyConditions> =>
+  conditions.budget !== 'any' && label === budgetLabel(conditions.budget) ? { budget: 'any' } : {};
 
 const duplicateChip = (label: string, existing: readonly string[]): boolean =>
-  existing.some(
-    (item) =>
-      item === label ||
-      (label.startsWith('徒歩') && item.startsWith('徒歩')) ||
-      (label === '終電まで' && item.startsWith('終電 ')),
-  );
+  existing.some((item) => item === label);
 
 export const mergeChipLabels = (
   preferenceLabels: readonly string[],
@@ -136,10 +118,4 @@ export const budgetLabel = (budget: BudgetOption): string => {
   if (budget === 'cheap') return '安め';
   if (budget === 'normal') return '普通';
   return '予算指定なし';
-};
-
-export const stationSupportLabel = (support: StationSupport): string => {
-  if (support === 'supported') return '対応駅';
-  if (support === 'unsupported') return '未対応';
-  return '対応確認待ち';
 };

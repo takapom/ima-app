@@ -4,8 +4,8 @@ import {
   conditionChangesForChip,
   createDefaultJourneyConditions,
   mergeChipLabels,
+  preferenceChipLabels,
   suggestionsFor,
-  stationSupportLabel,
   uniqueTerms,
 } from './journey-input';
 
@@ -34,13 +34,19 @@ describe('journey input helpers', () => {
   });
 
   it('deduplicates preference and query chips by meaning', () => {
-    expect(mergeChipLabels(['終電 渋谷', '徒歩10分', '普通'], '静か。徒歩10分。終電まで')).toEqual([
-      '終電 渋谷',
-      '徒歩10分',
-      '普通',
-      '静か',
-    ]);
+    expect(mergeChipLabels(['普通'], '静か。甘いもの')).toEqual(['普通', '静か', '甘いもの']);
     expect(mergeChipLabels([], '歩いて行きたい')).toEqual([]);
+  });
+
+  it('never chips a walking or last-train phrase the providers cannot apply', () => {
+    expect(mergeChipLabels([], '静か。徒歩10分。終電まで')).toEqual(['静か']);
+    expect(
+      preferenceChipLabels({
+        ...createDefaultJourneyConditions(),
+        stationLabel: '渋谷',
+        maxWalkMinutes: 10,
+      }),
+    ).toEqual([]);
   });
 
   it('does not invent a location while creating editable conditions', () => {
@@ -50,9 +56,6 @@ describe('journey input helpers', () => {
       maxWalkMinutes: null,
       budget: 'any',
     });
-    expect(stationSupportLabel('supported')).toBe('対応駅');
-    expect(stationSupportLabel('unsupported')).toBe('未対応');
-    expect(stationSupportLabel('unknown')).toBe('対応確認待ち');
   });
 
   it('turns a removed preference chip into an effective condition change', () => {
@@ -63,11 +66,8 @@ describe('journey input helpers', () => {
       budget: 'normal' as const,
     };
 
-    expect(conditionChangesForChip(conditions, '終電 渋谷')).toEqual({
-      stationLabel: '',
-      stationSupport: 'unknown',
-    });
-    expect(conditionChangesForChip(conditions, '徒歩10分')).toEqual({ maxWalkMinutes: null });
     expect(conditionChangesForChip(conditions, '普通')).toEqual({ budget: 'any' });
+    expect(conditionChangesForChip(conditions, '徒歩10分')).toEqual({});
+    expect(conditionChangesForChip(conditions, '終電 渋谷')).toEqual({});
   });
 });

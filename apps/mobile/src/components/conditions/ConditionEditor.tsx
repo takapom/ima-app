@@ -1,8 +1,6 @@
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   budgetLabel,
-  stationSupportLabel,
-  MAX_STATION_LABEL_LENGTH,
   type BudgetOption,
   type ConditionScope,
   type JourneyConditions,
@@ -17,7 +15,6 @@ type ConditionEditorProps = {
   readonly notice?: string | null;
 };
 
-const walkOptions: readonly (number | null)[] = [null, 5, 10, 15];
 const budgetOptions: readonly BudgetOption[] = ['cheap', 'normal', 'any'];
 
 const nextValue = <T,>(values: readonly T[], current: T): T => {
@@ -36,7 +33,7 @@ export function ConditionEditor({
     <View style={styles.container}>
       <Text style={styles.title}>条件</Text>
       <Text style={styles.description}>
-        この検索だけの条件と、次回も使う設定を分けて編集できます。
+        この検索だけの条件と、次回も使う設定を分けて編集できます。徒歩時間と終電はまだ対応していません。
       </Text>
       {scope === 'saved' && notice !== null ? <Text style={styles.notice}>{notice}</Text> : null}
       <View accessibilityRole="tablist" style={styles.scopeTabs}>
@@ -52,32 +49,6 @@ export function ConditionEditor({
         />
       </View>
 
-      <ConditionRow label="帰宅駅">
-        <TextInput
-          accessibilityLabel="帰宅駅"
-          maxLength={MAX_STATION_LABEL_LENGTH}
-          onChangeText={(stationLabel) => onChange({ stationLabel, stationSupport: 'unknown' })}
-          placeholder="駅名を入力"
-          placeholderTextColor={colors.faint}
-          style={styles.stationInput}
-          value={conditions.stationLabel}
-        />
-        <Text style={styles.support}>{stationSupportLabel(conditions.stationSupport)}</Text>
-      </ConditionRow>
-      <ConditionRow label="徒歩">
-        <Pressable
-          accessibilityLabel="徒歩上限を変更"
-          accessibilityRole="button"
-          onPress={() =>
-            onChange({ maxWalkMinutes: nextValue(walkOptions, conditions.maxWalkMinutes) })
-          }
-          style={({ pressed }) => [styles.valueButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.valueText}>
-            {conditions.maxWalkMinutes === null ? '指定なし' : `${conditions.maxWalkMinutes}分まで`}
-          </Text>
-        </Pressable>
-      </ConditionRow>
       <ConditionRow label="予算">
         <Pressable
           accessibilityLabel="予算を変更"
@@ -187,19 +158,6 @@ const styles = StyleSheet.create({
   rowValue: {
     alignItems: 'flex-end',
     flex: 1,
-  },
-  stationInput: {
-    color: colors.text,
-    fontSize: typography.body,
-    minHeight: 36,
-    minWidth: 120,
-    paddingHorizontal: spacing.compact,
-    paddingVertical: 4,
-    textAlign: 'right',
-  },
-  support: {
-    color: colors.faint,
-    fontSize: typography.label,
   },
   notice: {
     color: colors.cream,

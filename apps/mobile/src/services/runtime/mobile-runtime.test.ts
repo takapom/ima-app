@@ -44,7 +44,10 @@ describe('mobile journey runtime composition', () => {
     });
 
     expect(request.text).toBe('駅の近くで静かな店');
-    expect(request.prefs).toMatchObject({ maxWalkMinutes: 12, budget: 'normal' });
+    expect(request.prefs).toMatchObject({ budget: 'normal' });
+    // Walking and last-train constraints cannot be evidenced by the connected
+    // providers, so the request never carries one even if a condition holds it.
+    expect(request.prefs.maxWalkMinutes).toBeNull();
     expect(request.prefs.homeStationRef).toBeNull();
     expect(request.cardSetId).toBe('card-set-1');
     expect(request.promotedCandidateId).toBe('candidate-2');

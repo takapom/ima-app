@@ -87,7 +87,10 @@ const publicPreferencesFrom = (
   conditions: JourneyConditions,
 ): Preferences => ({
   homeStationRef: stored?.homeStationRef ?? null,
-  maxWalkMinutes: conditions.maxWalkMinutes,
+  // Mirrors the device save: a walking limit the editor cannot show must not be
+  // written back to the owner record, otherwise it survives out of the user's reach
+  // and reappears when walking-route evidence is reconnected.
+  maxWalkMinutes: null,
   minimumStayMinutes: stored?.minimumStayMinutes ?? null,
   areaText: stored?.areaText ?? null,
   budget: conditions.budget,
