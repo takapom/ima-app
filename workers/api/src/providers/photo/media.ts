@@ -1,8 +1,6 @@
 import * as v from 'valibot';
 import type { RuntimeProviderTransportObserver } from '../telemetry/runtime-provider-trace-contract';
 
-export const GOOGLE_PHOTO_MEDIA_ORIGIN = 'https://places.googleapis.com';
-export const GOOGLE_PHOTO_REDIRECT_HOSTS = ['lh3.googleusercontent.com'] as const;
 export const DEFAULT_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
 export const DEFAULT_PHOTO_METADATA_MAX_BYTES = 64 * 1024;
 export const DEFAULT_PHOTO_TIMEOUT_MS = 10_000;

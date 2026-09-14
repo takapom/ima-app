@@ -61,6 +61,8 @@ export type BootstrapEnv = {
   readonly APP_TOKEN?: string;
   readonly GOOGLE_PLACES_API_KEY?: string;
   readonly PHOTO_TOKEN_SECRET?: string;
+  readonly HOTPEPPER_API_KEY?: string;
+  readonly PLACES_CURSOR_SECRET?: string;
   readonly IMA_RUNTIME_MODE?: string;
   readonly IMA_ENV?: string;
   /** Enforcement mode: disabled/internal/required. */
@@ -96,8 +98,6 @@ export type BootstrapOptions = {
   readonly events?: EventsSink;
   /** Production composition injects the authenticated, token-bound photo adapter. */
   readonly photo?: PhotoBodyHandler;
-  /** Test/runtime composition may provide the already-scoped upstream fetcher. */
-  readonly photoFetcher?: typeof fetch;
   readonly clock?: () => string;
   readonly requestIdFactory?: () => string;
   readonly maxBodyBytes?: number;
@@ -346,7 +346,7 @@ export const createHttpRouterConfig = (
 ): HttpRouterConfig => {
   const handlers: HandlerDependencies = {
     application: createApplication(env, options),
-    photo: options.photo ?? createConfiguredPhoto(env, options),
+    photo: options.photo ?? createConfiguredPhoto(env),
     events: createBestEffortEventsSink(
       options.events ??
         (env.TELEMETRY === undefined

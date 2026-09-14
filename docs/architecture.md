@@ -60,6 +60,8 @@ flowchart TD
 Bootstrapが具象Adapterを構成する。公開DTOとCore内部型の変換はWorkerが所有する。
 ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Portと同一の層にしない。
 
+店舗写真は詳細Adapterが`photo.pc`のURLを観測として登録し、確定カードの写真根拠からWorkerがowner・端末・期限に紐づくtokenを発行する。既存の`GET /v1/photos/:token`が認証・期限検証後にHot Pepperの画像CDNから取得し、Mobileの写真表示部品へ渡す。画像本体をLLMや永続ストレージへ渡さない。
+
 ## ランタイムの制約
 
 - Thinkのnative loopを使い、汎用ループや二重の実行管理を追加しない。採用SDKと固定版は[Worker manifest](../workers/api/package.json)とlockfileで管理する。
