@@ -4,10 +4,9 @@ import type {
   HarnessContext,
 } from '@ima/core';
 import {
-  isSupportedField,
-  observationContextFor,
-} from '../../providers/places-details/adapter-support';
-import type { SavedReferenceDetailsHandoff } from '../../providers/places-details/handoff';
+  isHotPepperDetailField,
+  hotPepperObservationContext,
+} from '../../providers/hot-pepper/place-observations';
 import { productionScopeFor } from './runtime-production-support';
 import type { RuntimeReadCost, RuntimeReadCostRequest } from '../tool-reads/runtime-read-ports';
 
@@ -15,29 +14,19 @@ const detailsProviderCost = (
   input: GetPlaceDetailsInput,
   context: HarnessContext,
   registry: CandidateObservationRegistryPort,
-  originRefFor?: (context: HarnessContext) => string | undefined,
-  savedReferenceHandoff?: Pick<SavedReferenceDetailsHandoff, 'coverageForCandidate'>,
 ): number => {
   let requests = 0;
   const scope = productionScopeFor(context);
-  const observationContext = observationContextFor(context, originRefFor?.(context) ?? null);
+  const observationContext = hotPepperObservationContext(context);
   for (const request of input.requests) {
     let needsProvider = false;
     try {
       const candidate = registry.readCandidate(scope, request.candidateId);
-      if (candidate === undefined || candidate.excluded || candidate.provider !== 'google_places') {
+      if (candidate === undefined || candidate.excluded || candidate.provider !== 'hotpepper') {
         continue;
       }
-      const savedCoverage = savedReferenceHandoff?.coverageForCandidate({
-        candidateId: request.candidateId,
-        scope,
-        turnId: context.turnId,
-        revision: context.revision,
-        fields: request.fields.filter(isSupportedField),
-      });
-      if (savedCoverage === 'covered') continue;
       for (const field of request.fields) {
-        if (!isSupportedField(field)) continue;
+        if (!isHotPepperDetailField(field)) continue;
         if (input.freshness === 'reuse_valid') {
           const reused = registry.evaluateObservationReuse({
             scope,
@@ -62,19 +51,11 @@ const detailsProviderCost = (
 export const resolveRuntimeProductionReadCost = (
   request: RuntimeReadCostRequest,
   registry: CandidateObservationRegistryPort,
-  originRefFor?: (context: HarnessContext) => string | undefined,
-  savedReferenceHandoff?: Pick<SavedReferenceDetailsHandoff, 'coverageForCandidate'>,
 ): RuntimeReadCost => {
   const providerRequests =
     request.operation === 'search_places'
       ? 1
-      : detailsProviderCost(
-          request.input,
-          request.context,
-          registry,
-          originRefFor,
-          savedReferenceHandoff,
-        );
+      : detailsProviderCost(request.input, request.context, registry);
   return {
     costUnits: providerRequests,
     providerHttpRequests: providerRequests,

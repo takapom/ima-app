@@ -16,7 +16,6 @@ import { IsoTimestampSchema, RetentionMetadataSchema } from '@ima/core';
 import { DEFAULT_RUNTIME_BUDGET } from '../budget/runtime-budget';
 import type { RuntimeRetentionContext } from '../retention/runtime-retention';
 
-const GOOGLE_API_KEY = 'GOOGLE_PLACES_API_KEY';
 const CURSOR_SECRET = 'PLACES_CURSOR_SECRET';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -26,9 +25,6 @@ export const productionSecret = (env: unknown, name: string): string | undefined
   const value = isRecord(env) ? env[name] : undefined;
   return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
 };
-
-export const googlePlacesApiKey = (env: unknown): string | undefined =>
-  productionSecret(env, GOOGLE_API_KEY);
 
 export const placesCursorSecret = (env: unknown): string | undefined =>
   productionSecret(env, CURSOR_SECRET);

@@ -1,8 +1,4 @@
-import {
-  googlePlacesApiKey,
-  placesCursorSecret,
-  productionSecret,
-} from './runtime-production-support';
+import { placesCursorSecret, productionSecret } from './runtime-production-support';
 import { isConfiguredSecret } from './runtime-production-provider-config';
 import { resolveRuntimeOperationalGate } from './runtime-operational-gate';
 
@@ -12,21 +8,14 @@ export type RuntimeOperationalAdmissionInput = {
   readonly hasModelOverride: boolean;
   readonly hasFetcher: boolean;
   readonly placesRequested: boolean;
-  readonly routesRequested: boolean;
-  readonly photosRequested: boolean;
-  readonly googlePlacesApiKeyOverride?: string;
+  readonly hotPepperApiKeyOverride?: string;
   readonly placesCursorSecretOverride?: string;
-  readonly googleRoutesApiKeyOverride?: string;
 };
 
 export type RuntimeOperationalAdmission = {
   readonly placesEnabled: boolean;
-  readonly routesEnabled: boolean;
-  readonly lastTrainEnabled: boolean;
-  readonly photosEnabled: boolean;
-  readonly googlePlacesApiKey?: string;
+  readonly hotPepperApiKey?: string;
   readonly placesCursorSecret?: string;
-  readonly googleRoutesApiKey?: string;
 };
 
 /**
@@ -43,20 +32,16 @@ export const resolveRuntimeOperationalAdmission = (
     operational.mode === 'fixture' &&
     !input.hasPrepareTurn &&
     !input.hasFetcher &&
-    ((operational.enabled('places') && input.placesRequested) ||
-      (operational.enabled('routes') && input.routesRequested))
+    operational.enabled('hotpepper') &&
+    input.placesRequested
   ) {
     return undefined;
   }
 
-  const placesKey = input.googlePlacesApiKeyOverride ?? googlePlacesApiKey(input.env);
+  const placesKey =
+    input.hotPepperApiKeyOverride ?? productionSecret(input.env, 'HOTPEPPER_API_KEY');
   const cursorSecret = input.placesCursorSecretOverride ?? placesCursorSecret(input.env);
-  const routesKey =
-    input.googleRoutesApiKeyOverride ?? productionSecret(input.env, 'GOOGLE_ROUTES_API_KEY');
-  const placesEnabled = operational.enabled('places') && input.placesRequested;
-  const routesEnabled = operational.enabled('routes') && input.routesRequested;
-  const lastTrainEnabled = operational.enabled('lastTrain');
-  const photosEnabled = operational.enabled('places') && input.photosRequested;
+  const placesEnabled = operational.enabled('hotpepper') && input.placesRequested;
   const openAiKey = isConfiguredSecret(productionSecret(input.env, 'OPENAI_API_KEY'));
   const modelReady = openAiKey || (operational.mode === 'fixture' && input.hasModelOverride);
   const portsReady =
@@ -67,11 +52,7 @@ export const resolveRuntimeOperationalAdmission = (
 
   return {
     placesEnabled,
-    routesEnabled,
-    lastTrainEnabled,
-    photosEnabled,
-    ...(isConfiguredSecret(placesKey) ? { googlePlacesApiKey: placesKey } : {}),
+    ...(isConfiguredSecret(placesKey) ? { hotPepperApiKey: placesKey } : {}),
     ...(isConfiguredSecret(cursorSecret) ? { placesCursorSecret: cursorSecret } : {}),
-    ...(isConfiguredSecret(routesKey) ? { googleRoutesApiKey: routesKey } : {}),
   };
 };

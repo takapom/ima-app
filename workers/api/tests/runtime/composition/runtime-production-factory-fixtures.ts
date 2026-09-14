@@ -7,10 +7,10 @@ export const NOW = '2026-09-10T00:00:00.000Z';
 export const FIXTURE_OPERATIONAL_ENV = {
   IMA_RUNTIME_MODE: 'fixture',
   IMA_PROVIDER_OPENAI: 'true',
-  IMA_PROVIDER_PLACES: 'true',
-  IMA_PROVIDER_ROUTES: 'true',
-  IMA_PROVIDER_LAST_TRAIN: 'true',
-  IMA_PROVIDER_HOTPEPPER: 'false',
+  IMA_PROVIDER_PLACES: 'false',
+  IMA_PROVIDER_ROUTES: 'false',
+  IMA_PROVIDER_LAST_TRAIN: 'false',
+  IMA_PROVIDER_HOTPEPPER: 'true',
   IMA_KILL_SWITCH: 'false',
 } as const;
 

@@ -26,20 +26,13 @@ import {
   validationContextFor,
 } from './runtime-production-support';
 import {
-  createRuntimeLastTrainRevisionState,
-  readActiveJourneyRevision,
-} from './runtime-provider-composition';
-import {
   capabilitiesWithProviders,
   cardEvidenceResolver,
-  createRuntimeProductionProviders,
-  hotPepperRuntimeModeFor,
-  runtimeProductionLastTrainReadinessFor,
-  runtimeProductionProviderAvailabilityFor,
-  runtimeProductionRouteReadinessFor,
   type RuntimeProductionProviderAvailability,
-  type RuntimeProductionRouteReadiness,
 } from './runtime-production-provider-config';
+import { hotPepperRuntimePolicy, hotPepperPhotoDisplayPolicy } from './runtime-hot-pepper-policy';
+import { configuredPhotoTokenCodec } from '../../providers/photo/configuration';
+import { createPhotoTokenPreparer } from '../../providers/photo/issuance';
 import { configureRuntimeProductionSession } from '../retention/runtime-production-session';
 import type {
   RuntimeThinkConnectionOptions,
@@ -85,8 +78,6 @@ const defaultPlan = (
   fixedSessionExpiresAt: string,
   budget: RuntimeBudget,
   providerAvailability: RuntimeProductionProviderAvailability,
-  routeReadiness: RuntimeProductionRouteReadiness,
-  lastTrainRevisionState: ReturnType<typeof createRuntimeLastTrainRevisionState>,
 ): RuntimeProductionTurnPlan => {
   const providerTraceObserver =
     overrides.providerTraceSink === undefined
@@ -115,7 +106,6 @@ const defaultPlan = (
     ...(providerTraceObserver === undefined ? {} : { providerTraceObserver }),
   });
   const { search, details } = places;
-  const savedReference = places.savedReference;
   const retention: RuntimeRetentionContext = {
     ownerScopeRef: input.context.ownerScopeRef,
     threadId: input.context.threadId,
@@ -129,85 +119,43 @@ const defaultPlan = (
     productionScopeFor(input.context),
     fieldPolicy,
   );
-  const provider = createRuntimeProductionProviders({
-    availability: providerAvailability,
-    activeJourneyRevision: providerAvailability.activeJourneyRevision,
-    baseDetails: details,
-    registry,
-    context: input.context,
-    clock,
-    budget,
-    signalFor: input.attemptSignalBridge.signalFor,
-    ...(providerTraceObserver === undefined ? {} : { providerTraceObserver }),
-    ...(input.request.signal === undefined ? {} : { requestSignal: input.request.signal }),
-    ...(overrides.fetcher === undefined ? {} : { fetcher: overrides.fetcher }),
-    ...(overrides.googleRoutesApiKey === undefined
-      ? {}
-      : { googleRoutesApiKey: overrides.googleRoutesApiKey }),
-    ...(overrides.routeObservationPolicy === undefined
-      ? {}
-      : { routeObservationPolicy: overrides.routeObservationPolicy }),
-    ...(overrides.resolveStationWaypoint === undefined
-      ? {}
-      : { resolveStationWaypoint: overrides.resolveStationWaypoint }),
-    ...(overrides.currentOriginRefFor === undefined
-      ? {}
-      : { currentOriginRefFor: overrides.currentOriginRefFor }),
-    currentOriginRef: routeReadiness.currentOriginRef,
-    ...(overrides.journeyDataset === undefined ? {} : { journeyDataset: overrides.journeyDataset }),
-    ...(overrides.buildServiceDateContext === undefined
-      ? {}
-      : { buildServiceDateContext: overrides.buildServiceDateContext }),
-    ...(overrides.lastTrainObservationPolicy === undefined
-      ? {}
-      : { lastTrainObservationPolicy: overrides.lastTrainObservationPolicy }),
-    ...(overrides.fromStationRefFor === undefined
-      ? {}
-      : { fromStationRefFor: overrides.fromStationRefFor }),
-    revisionState: lastTrainRevisionState,
-    photoConfiguration: overrides,
-    env,
-    ...(input.request.deviceId === undefined ? {} : { deviceId: input.request.deviceId }),
-  });
   const modelFromConfiguredProvider = overrides.modelForTurn === undefined;
-  const cardEvidence = cardEvidenceResolver(
-    registry,
-    input.context,
-    providerAvailability.hotPepperEnabled && overrides.hotPepperFieldPolicy !== undefined
-      ? {
-          hotPepperFieldPolicy: overrides.hotPepperFieldPolicy,
-          hotPepperMode: hotPepperRuntimeModeFor(env) ?? 'live',
-        }
-      : {},
-  );
+  const cardEvidence = cardEvidenceResolver(registry, input.context);
+  const photoCodec = configuredPhotoTokenCodec(env);
+  const preparePhotoTokens =
+    photoCodec === undefined || input.request.deviceId === undefined
+      ? undefined
+      : createPhotoTokenPreparer({
+          codec: photoCodec,
+          registry,
+          scope: productionScopeFor(input.context),
+          deviceId: input.request.deviceId,
+          sourceTurnId: input.request.turnId,
+          sourceRevision: input.request.revision,
+          photosEnabled: providerAvailability.placesEnabled,
+          displayPolicyFor: hotPepperPhotoDisplayPolicy,
+        });
   return {
     model: overrides.modelForTurn ?? createLiveOpenAIProvider(env).model,
     ...(modelFromConfiguredProvider ? { modelTraceProvider: 'openai' as const } : {}),
     providerOptions: OPENAI_PROVIDER_REQUEST_OPTIONS,
     registry,
     search,
-    details: provider.details,
+    details,
     retention,
     modelContext: context.modelContext,
-    validationContext: (at) =>
-      validationContextFor(input.context, at.now, routeReadiness.currentOriginRef ?? undefined),
+    validationContext: (at) => ({
+      ...validationContextFor(input.context, at.now),
+      allowUnknownOpening: true,
+    }),
     ids,
     hashes: productionHash,
     publicResponse: {
       textRetention: turnRetention,
       cardSetId,
       resolveCardEvidence: cardEvidence,
-      ...(provider.preparePhotoTokens === undefined
-        ? {}
-        : { preparePhotoTokens: provider.preparePhotoTokens }),
+      ...(preparePhotoTokens === undefined ? {} : { preparePhotoTokens }),
     },
-    provider,
-    ...(savedReference === undefined
-      ? {}
-      : {
-          savedPlaceReferenceResolver: savedReference.resolver,
-          savedReferenceHandoff: savedReference.handoff,
-        }),
     constraintContext: context.constraintContext,
     onCommitted: (response) => contextStore.commitTurn(input.runtimeInput, response),
   };
@@ -222,7 +170,6 @@ const makeOptions = (
   monotonicNow: () => number,
 ) => {
   const areaByCandidate = new Map<string, string>();
-  const lastTrainRevisionState = createRuntimeLastTrainRevisionState();
   const contextSetup = createFactoryRuntimeContext({
     registry,
     ...(overrides.threadCreatedAt === undefined
@@ -233,7 +180,7 @@ const makeOptions = (
       : { persistence: overrides.contextPersistence }),
     clock,
   });
-  const buildTurn = async (request: RuntimeThinkTurnBuildRequest) => {
+  const buildTurn = (request: RuntimeThinkTurnBuildRequest) => {
     if (request.runtimeInput === undefined) throw new Error('RUNTIME_INPUT_MISSING');
     const runtimeInput = { ...request.runtimeInput, turnId: request.turnId };
     const fixedSessionExpiresAt = contextSetup.ensureSessionExpiry(request.serverNow);
@@ -246,31 +193,7 @@ const makeOptions = (
       prepareTurn: overrides.prepareTurn,
       ...(overrides.placesEnabled === undefined ? {} : { placesEnabled: overrides.placesEnabled }),
     });
-    const baseContext = harnessContextFor(request, runtimeInput, request.serverNow, {
-      capabilities: productionCapabilities({ placesEnabled }),
-    });
-    const routeReadiness = runtimeProductionRouteReadinessFor(overrides, baseContext);
-    const journeyReadiness = runtimeProductionLastTrainReadinessFor(
-      overrides,
-      baseContext,
-      routeReadiness,
-    );
-    const activeJourneyRevision =
-      overrides.activeJourneyRevision !== undefined
-        ? overrides.activeJourneyRevision
-        : journeyReadiness === undefined
-          ? undefined
-          : await readActiveJourneyRevision(journeyReadiness.dataset);
-    const providerAvailability: RuntimeProductionProviderAvailability =
-      runtimeProductionProviderAvailabilityFor({
-        env: input.env,
-        context: baseContext,
-        placesEnabled,
-        activeJourneyRevision,
-        configuration: overrides,
-        routeReadiness,
-        ...(request.deviceId === undefined ? {} : { deviceId: request.deviceId }),
-      });
+    const providerAvailability = { placesEnabled };
     const context = harnessContextFor(request, runtimeInput, request.serverNow, {
       capabilities: capabilitiesWithProviders(
         productionCapabilities({ placesEnabled }),
@@ -312,8 +235,6 @@ const makeOptions = (
             fixedSessionExpiresAt,
             budget,
             providerAvailability,
-            routeReadiness,
-            lastTrainRevisionState,
           ));
     const model =
       overrides.modelTraceSink === undefined
@@ -349,22 +270,13 @@ const makeOptions = (
         ...(plan.savedPlaceReferenceResolver === undefined
           ? {}
           : { savedPlaceReferenceResolver: plan.savedPlaceReferenceResolver }),
-        ...(plan.savedReferenceHandoff === undefined
-          ? {}
-          : { onTurnDispose: plan.savedReferenceHandoff.clear }),
         ...(plan.modelContext.fieldPolicy === undefined
           ? {}
           : { modelContextFieldPolicy: plan.modelContext.fieldPolicy }),
       },
       attemptSignalBridge: bridge,
       commit: input.commit,
-      resolveReadCost: (read) =>
-        resolveRuntimeProductionReadCost(
-          read,
-          plan.registry,
-          overrides.currentOriginRefFor,
-          plan.savedReferenceHandoff,
-        ),
+      resolveReadCost: (read) => resolveRuntimeProductionReadCost(read, plan.registry),
       validationContext: plan.validationContext,
       constraintContext:
         prepared === undefined
@@ -394,7 +306,10 @@ export const createRuntimeProductionConnectionOptions = (
 ): RuntimeThinkConnectionOptions<unknown> | undefined => {
   const devFixture = isKeylessDevFixtureEnvironment(input.env);
   const effectiveEnv = devFixture ? devFixtureEnvironmentFor(input.env) : input.env;
-  const configuredOverrides = input.overrides ?? {};
+  const configuredOverrides = {
+    ...hotPepperRuntimePolicy(input.overrides?.clock ?? productionClock),
+    ...input.overrides,
+  };
   const overrides = devFixture ? devFixtureOverridesFor(configuredOverrides) : configuredOverrides;
   const clock = overrides.clock ?? productionClock;
   const monotonicNow = overrides.monotonicNow ?? productionMonotonicNow;
@@ -407,17 +322,12 @@ export const createRuntimeProductionConnectionOptions = (
       prepareTurn: overrides.prepareTurn,
       placesEnabled: overrides.placesEnabled ?? true,
     }),
-    routesRequested: overrides.routesEnabled === true,
-    photosRequested: overrides.photosEnabled === true,
-    ...(overrides.googlePlacesApiKey === undefined
+    ...(overrides.hotPepperApiKey === undefined
       ? {}
-      : { googlePlacesApiKeyOverride: overrides.googlePlacesApiKey }),
+      : { hotPepperApiKeyOverride: overrides.hotPepperApiKey }),
     ...(overrides.placesCursorSecret === undefined
       ? {}
       : { placesCursorSecretOverride: overrides.placesCursorSecret }),
-    ...(overrides.googleRoutesApiKey === undefined
-      ? {}
-      : { googleRoutesApiKeyOverride: overrides.googleRoutesApiKey }),
   });
   if (admission === undefined) return undefined;
   const ids = new ProductionIds();
@@ -432,18 +342,12 @@ export const createRuntimeProductionConnectionOptions = (
   const resolvedOverrides: RuntimeProductionOverrides = {
     ...overrides,
     placesEnabled: admission.placesEnabled,
-    routesEnabled: admission.routesEnabled,
-    lastTrainEnabled: admission.lastTrainEnabled,
-    photosEnabled: admission.photosEnabled,
-    ...(admission.googlePlacesApiKey === undefined
+    ...(admission.hotPepperApiKey === undefined
       ? {}
-      : { googlePlacesApiKey: admission.googlePlacesApiKey }),
+      : { hotPepperApiKey: admission.hotPepperApiKey }),
     ...(admission.placesCursorSecret === undefined
       ? {}
       : { placesCursorSecret: admission.placesCursorSecret }),
-    ...(admission.googleRoutesApiKey === undefined
-      ? {}
-      : { googleRoutesApiKey: admission.googleRoutesApiKey }),
   };
   return makeOptions(
     devFixture ? { ...input, env: effectiveEnv } : input,
