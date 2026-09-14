@@ -127,8 +127,8 @@ describe('production factory through a real Think Durable Object', () => {
     if (report === null) return;
     expect(report.calls).toBe(3);
     expect(report.fetchUrls).toEqual([
-      'https://places.googleapis.com/v1/places:searchText',
-      'https://places.googleapis.com/v1/places/m16-production-place',
+      'https://webservice.recruit.co.jp/hotpepper/gourmet/v1/',
+      'https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?id=m16-production-place',
     ]);
     expect(report.providerOptionsSeen).toEqual([
       OPENAI_PROVIDER_REQUEST_OPTIONS,

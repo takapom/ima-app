@@ -68,40 +68,16 @@ export const observationIdsForCandidateIn = (prompt: string, candidateId: string
   return [...ids];
 };
 
-const placeFor = (id: string, cid: string) => ({
+const placeFor = (id: string) => ({
   id,
-  displayName: { text: LLM_INPUT_CANARY },
-  formattedAddress: '東京都渋谷区',
-  primaryType: 'cafe',
-  businessStatus: 'OPERATIONAL',
-  googleMapsUri: `https://maps.google.com/?cid=${cid}`,
-  photos: [
-    {
-      name: `places/${id}/photos/m16-production-photo`,
-      widthPx: 1_200,
-      heightPx: 900,
-      authorAttributions: [
-        {
-          displayName: 'Ima fixture photo author',
-          uri: 'https://fixture.example/photo-author',
-        },
-      ],
-      googleMapsUri: `https://maps.google.com/?cid=${cid}`,
-    },
-  ],
-  currentOpeningHours: {
-    periods: [
-      {
-        open: { date: { year: 2026, month: 9, day: 10 }, hour: 9, minute: 0 },
-        close: { date: { year: 2026, month: 9, day: 10 }, hour: 23, minute: 0 },
-      },
-    ],
-    weekdayDescriptions: [DENIED_FIELD_CANARY],
-    nextCloseTime: '2026-09-10T14:00:00.000Z',
-    openNow: true,
-  },
-  timeZone: { id: 'Asia/Tokyo' },
-  attributions: [{ provider: 'Google Maps', providerUri: 'https://maps.google.com' }],
+  name: LLM_INPUT_CANARY,
+  address: '東京都渋谷区',
+  lat: 35.6595,
+  lng: 139.7005,
+  genre: { name: 'カフェ' },
+  open: DENIED_FIELD_CANARY,
+  close: '無休',
+  urls: { pc: `https://www.hotpepper.jp/str${id}/` },
 });
 
 export const fetcherForProduction =
@@ -109,58 +85,29 @@ export const fetcherForProduction =
   (input, init) => {
     const request = new Request(input, init);
     const url = new URL(request.url);
-    report.fetchUrls.push(request.url);
-    if (
-      request.method === 'POST' &&
-      url.origin === 'https://places.googleapis.com' &&
-      url.pathname === '/v1/places:searchText' &&
-      url.search === ''
-    ) {
-      const places =
-        scenario() === 'zero-results'
-          ? []
-          : scenario() === 'two-results'
-            ? [
-                placeFor('m16-production-place-1', 'm16-production-1'),
-                placeFor('m16-production-place-2', 'm16-production-2'),
-              ]
-            : [placeFor('m16-production-place', 'm16-production')];
-      report.searchResultCounts.push(places.length);
-      return Promise.resolve(
-        new Response(JSON.stringify({ places }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        }),
-      );
-    }
-    const id = decodeURIComponent(url.pathname.split('/').at(-1) ?? '');
-    const allowedIds = new Set([
-      'm16-production-place',
-      'm16-production-place-1',
-      'm16-production-place-2',
-    ]);
+    report.fetchUrls.push(
+      `${url.origin}${url.pathname}${url.searchParams.has('id') ? `?id=${url.searchParams.get('id')}` : ''}`,
+    );
     if (
       request.method !== 'GET' ||
-      url.origin !== 'https://places.googleapis.com' ||
-      url.search !== '' ||
-      !/^\/v1\/places\/[^/]+$/u.test(url.pathname) ||
-      !allowedIds.has(id)
+      url.origin !== 'https://webservice.recruit.co.jp' ||
+      url.pathname !== '/hotpepper/gourmet/v1/'
     ) {
-      return Promise.resolve(
-        new Response(JSON.stringify({ error: 'FIXTURE_ENDPOINT_NOT_FOUND' }), {
-          status: 404,
-          headers: { 'content-type': 'application/json' },
-        }),
-      );
+      return Promise.resolve(new Response(null, { status: 404 }));
     }
-    const cid =
-      id === 'm16-production-place'
-        ? 'm16-production'
-        : id.replace('m16-production-place-', 'm16-production-');
+    const id = url.searchParams.get('id');
+    const shops =
+      id !== null
+        ? [placeFor(id)]
+        : scenario() === 'zero-results'
+          ? []
+          : scenario() === 'two-results'
+            ? [placeFor('m16-production-place-1'), placeFor('m16-production-place-2')]
+            : [placeFor('m16-production-place')];
+    if (id === null) report.searchResultCounts.push(shops.length);
     return Promise.resolve(
-      new Response(JSON.stringify(placeFor(id, cid)), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
+      Response.json({
+        results: { shop: shops, results_available: shops.length, results_start: 1 },
       }),
     );
   };

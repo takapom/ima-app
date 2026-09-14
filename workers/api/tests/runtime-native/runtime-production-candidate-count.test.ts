@@ -79,7 +79,7 @@ describe('production candidate cardinality through the real Think Durable Object
       toolNames: ['search_places', 'final_message'],
       searchResultCounts: [0],
       modelCandidateCounts: [0, 0],
-      fetchUrls: ['https://places.googleapis.com/v1/places:searchText'],
+      fetchUrls: ['https://webservice.recruit.co.jp/hotpepper/gourmet/v1/'],
     });
   });
 
@@ -113,9 +113,9 @@ describe('production candidate cardinality through the real Think Durable Object
     expect(report.searchResultCounts).toEqual([2]);
     expect(Math.max(...report.modelCandidateCounts)).toBe(2);
     expect(report.fetchUrls).toEqual([
-      'https://places.googleapis.com/v1/places:searchText',
-      'https://places.googleapis.com/v1/places/m16-production-place-1',
-      'https://places.googleapis.com/v1/places/m16-production-place-2',
+      'https://webservice.recruit.co.jp/hotpepper/gourmet/v1/',
+      'https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?id=m16-production-place-1',
+      'https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?id=m16-production-place-2',
     ]);
   });
 });

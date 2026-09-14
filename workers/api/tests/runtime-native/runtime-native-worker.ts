@@ -4,11 +4,8 @@ import { RateLimitDO, ThreadDO as ProductionThreadDO } from '../../src/thread-do
 import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '../../src/runtime/budget/runtime-budget';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../src/model/provider-options';
 import { sanitizeRuntimeCompactionSummary } from '../../src/runtime/retention/runtime-retention';
-import {
-  GoogleRouteMatrixError,
-  type GoogleRouteMatrixRequest,
-} from '../../src/providers/routes/types';
-import { createGoogleRouteMatrixTransport } from '../../src/providers/routes/transport';
+import { HotPepperError, type HotPepperSearchRequest } from '../../src/providers/hot-pepper/types';
+import { createHotPepperTransport } from '../../src/providers/hot-pepper/transport';
 import type { DurableCommitPort } from '../../src/thread-runtime/commit-port';
 import {
   createRuntimeTurnComposition,
@@ -69,14 +66,14 @@ const cardEvidenceResolver =
     };
   };
 
-const ROUTE_REDIRECT_PROBE_REQUEST = {
-  origins: [{ ref: 'origin', coordinates: { lat: 35.6595, lng: 139.7005 } }],
-  destinations: [{ ref: 'destination', coordinates: { lat: 35.658, lng: 139.7016 } }],
-} satisfies GoogleRouteMatrixRequest;
+const HOT_PEPPER_REDIRECT_PROBE_REQUEST = {
+  keyword: 'カフェ',
+  count: 1,
+} satisfies HotPepperSearchRequest;
 
-const routeRedirectProbe = async (): Promise<Response> => {
+const hotPepperRedirectProbe = async (): Promise<Response> => {
   let observedRedirect: RequestRedirect | null = null;
-  const transport = createGoogleRouteMatrixTransport({
+  const transport = createHotPepperTransport({
     apiKey: 'runtime-native-route-probe-key',
     fetcher: (input, init) => {
       observedRedirect = new Request(input, init).redirect;
@@ -89,10 +86,10 @@ const routeRedirectProbe = async (): Promise<Response> => {
     },
   });
   try {
-    await transport.compute(ROUTE_REDIRECT_PROBE_REQUEST);
+    await transport.search(HOT_PEPPER_REDIRECT_PROBE_REQUEST);
     return Response.json({ code: 'UNEXPECTED_SUCCESS', redirect: observedRedirect, status: null });
   } catch (error: unknown) {
-    if (!(error instanceof GoogleRouteMatrixError)) {
+    if (!(error instanceof HotPepperError)) {
       return Response.json(
         { code: 'UNEXPECTED_ERROR', redirect: observedRedirect, status: null },
         { status: 500 },
@@ -267,8 +264,8 @@ const runtimeNativeHandler = {
     executionContext: RuntimeNativeExecutionContext,
   ): Promise<Response> {
     const { pathname } = new URL(request.url);
-    if (request.method === 'GET' && pathname === '/__runtime-native/routes-redirect-probe') {
-      return routeRedirectProbe();
+    if (request.method === 'GET' && pathname === '/__runtime-native/hot-pepper-redirect-probe') {
+      return hotPepperRedirectProbe();
     }
     return production.fetch(request, env, executionContext);
   },

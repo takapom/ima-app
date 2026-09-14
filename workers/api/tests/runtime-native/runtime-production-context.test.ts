@@ -125,7 +125,7 @@ describe('M16 durable runtime context boundary', () => {
     });
   });
 
-  it('restores only reference context after DO eviction', async () => {
+  it('restores permitted conversation text and candidate references after DO eviction', async () => {
     const threadId = `m16-context-restore-${crypto.randomUUID()}`;
     const ownerScopeRef = `m16-context-owner-${crypto.randomUUID()}`;
     const namespace = productionEnv().PRODUCTION_THREADS;
@@ -160,7 +160,7 @@ describe('M16 durable runtime context boundary', () => {
     ).resolves.toEqual({
       ok: true,
       candidateId: excludedCandidateId,
-      provider: 'google_places',
+      provider: 'hotpepper',
       recordRef: 'm16-production-place',
     });
     await expect(
@@ -178,6 +178,7 @@ describe('M16 durable runtime context boundary', () => {
     expect(payload).toContain('"candidateIdentities"');
     expect(payload).toContain('"recordRef":"m16-production-place"');
     expect(payload).toContain('"history"');
+    expect(payload).toContain('[m16-multiturn] 静かなカフェを探して');
     expect(payload).toContain('"cardSet"');
 
     await evictDurableObject(stub);
@@ -191,7 +192,7 @@ describe('M16 durable runtime context boundary', () => {
     ).resolves.toEqual({
       ok: true,
       candidateId: excludedCandidateId,
-      provider: 'google_places',
+      provider: 'hotpepper',
       recordRef: 'm16-production-place',
     });
     const second: ThreadRuntimeTarget = {
@@ -224,6 +225,7 @@ describe('M16 durable runtime context boundary', () => {
     expect(restoredReference.output.cardSet?.excludedCandidateIds).toContain(excludedCandidateId);
     await expect(reopened.getRuntimeProductionReport()).resolves.toMatchObject({
       modelHistorySeen: true,
+      modelHistoryTextSeen: true,
       modelCardSetSeen: true,
     });
   });

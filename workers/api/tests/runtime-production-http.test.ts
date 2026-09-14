@@ -31,40 +31,10 @@ const cardSetSnapshotMatching = (
   );
 
 describe('production runtime HTTP composition', () => {
-  it('issues a host-gated photo token and serves it through the authenticated HTTP route', async () => {
-    const threadId = await createThread();
-    const requestId = `runtime-production-http-photo-${crypto.randomUUID()}`;
-    const response = await call(`/v1/threads/${threadId}/turns`, requestId, {
-      method: 'POST',
-      body: JSON.stringify(turnBody(requestId, 1, '[m16-photo] 写真付き候補を探して')),
-    });
-    expect(response.status).toBe(200);
-    const parsed = v.safeParse(SearchResponseSchema, await response.json());
-    expect(parsed.success).toBe(true);
-    if (!parsed.success || parsed.output.response.kind !== 'cards') {
-      throw new Error('photo production HTTP response did not contain cards');
-    }
-    const photos = parsed.output.response.cards.hero.facts.photos;
-    expect(photos?.status).toBe('known');
-    if (photos?.status !== 'known')
-      throw new Error('photo fixture did not produce public metadata');
-    const photo = photos.value.photos[0];
-    if (photo === undefined) throw new Error('photo fixture did not produce a token');
-
-    const photoRequestId = `runtime-production-http-photo-read-${crypto.randomUUID()}`;
-    const photoResponse = await call(
-      `/v1/photos/${encodeURIComponent(photo.photoToken)}`,
-      photoRequestId,
-      { method: 'GET' },
-    );
-    expect(photoResponse.status).toBe(200);
-    expect(photoResponse.headers.get('content-type')).toBe('image/jpeg');
-    expect(photoResponse.headers.get('cache-control')).toBe('private, no-store');
-    expect([...new Uint8Array(await photoResponse.arrayBuffer())]).toEqual([
-      0xff, 0xd8, 0xff, 0xd9,
-    ]);
-    expect(photo.attributions[0]?.displayName).toBe('Ima fixture photo author');
-    expect(photo.sourceUrl).toBe('https://maps.google.com/?cid=m16-production');
+  it('leaves the removed photo provider unavailable', async () => {
+    const requestId = `photo-disabled-${crypto.randomUUID()}`;
+    const response = await call('/v1/photos/removed-provider-token', requestId, { method: 'GET' });
+    expect(response.status).toBe(404);
   });
 
   it('carries display context through HTTP, rejects stale cards, and restores inherited exclusion after eviction', async () => {

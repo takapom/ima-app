@@ -28,6 +28,7 @@ export type RuntimeProductionReport = {
   readonly llmInputCanarySeen: boolean;
   readonly deniedFieldCanarySeen: boolean;
   readonly modelHistorySeen: boolean;
+  readonly modelHistoryTextSeen: boolean;
   readonly modelCardSetSeen: boolean;
   readonly modelCardSetSnapshots: readonly RuntimeProductionCardSetSnapshot[];
   readonly savedReferenceCandidateIds: readonly string[];
@@ -56,6 +57,7 @@ export type MutableRuntimeProductionReport = ProductionProviderFixtureReport & {
   llmInputCanarySeen: boolean;
   deniedFieldCanarySeen: boolean;
   modelHistorySeen: boolean;
+  modelHistoryTextSeen: boolean;
   modelCardSetSeen: boolean;
   modelCardSetSnapshots: RuntimeProductionCardSetSnapshot[];
   savedReferenceCandidateIds: string[];
@@ -73,7 +75,7 @@ const searchInput = {
   mode: 'search' as const,
   query: '静かなカフェ',
   area: { kind: 'named_area' as const, name: '渋谷' },
-  openNow: true,
+  openNow: false,
   limit: 2,
   excludeCandidateIds: [],
 };
@@ -292,6 +294,7 @@ export const modelForProduction = (
       report.llmInputCanarySeen ||= prompt.includes(LLM_INPUT_CANARY);
       report.deniedFieldCanarySeen ||= prompt.includes(DENIED_FIELD_CANARY);
       report.modelHistorySeen ||= prompt.includes('history\\":[{');
+      report.modelHistoryTextSeen ||= prompt.includes('[m16-multiturn] 静かなカフェを探して');
       report.modelCardSetSeen ||= prompt.includes('cardSet\\":{');
       report.modelCardSetSnapshots.push(...modelCardSetSnapshotsIn(prompt));
       const finalOnly =

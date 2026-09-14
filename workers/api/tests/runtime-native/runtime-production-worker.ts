@@ -1,4 +1,5 @@
 import type { ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
+import { DEFAULT_RUNTIME_BUDGET } from '../../src/runtime/budget/runtime-budget';
 import { ThreadDO as ProductionThreadDOBase } from '../../src/thread-do';
 import {
   modelForProduction,
@@ -146,6 +147,7 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
       llmInputCanarySeen: false,
       deniedFieldCanarySeen: false,
       modelHistorySeen: false,
+      modelHistoryTextSeen: false,
       modelCardSetSeen: false,
       modelCardSetSnapshots: [],
       savedReferenceCandidateIds: [],
@@ -192,9 +194,16 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
           this.productionScenario === 'late-tool' ||
           this.productionScenario === 'late-submit'
         ) {
-          return budgetStart + 10_500;
+          return (
+            budgetStart +
+            DEFAULT_RUNTIME_BUDGET.wholeTurnMs -
+            DEFAULT_RUNTIME_BUDGET.finalReserveMs +
+            500
+          );
         }
-        if (this.productionScenario === 'exhausted-budget') return budgetStart + 12_100;
+        if (this.productionScenario === 'exhausted-budget') {
+          return budgetStart + DEFAULT_RUNTIME_BUDGET.wholeTurnMs + 100;
+        }
         return performance.now();
       },
       epochNow: () => 1_000,

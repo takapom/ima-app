@@ -88,7 +88,7 @@ describe('production turn telemetry', () => {
     expect(calls.length).toBeGreaterThan(0);
     expect(providers).toHaveLength(report.fetchUrls.length);
     expect(providers).toHaveLength(2);
-    expect(providers.map((record) => record.provider)).toEqual(['places', 'places']);
+    expect(providers.map((record) => record.provider)).toEqual(['hotpepper', 'hotpepper']);
     expect(providers.every((record) => record.status === 'ok' && record.resultCode === 'OK')).toBe(
       true,
     );

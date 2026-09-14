@@ -115,12 +115,12 @@ describe('model-eval mapping through the native production DO', () => {
     const identities = await stub.getRuntimeProductionCandidateIdentities();
     expect(identities).toHaveLength(1);
     expect(identities[0]).toMatchObject({
-      provider: 'google_places',
+      provider: 'hotpepper',
       recordRef: 'm16-production-place',
     });
     const mapping = resolveCandidateIdentityMapping(identities, [
       {
-        provider: 'google_places',
+        provider: 'hotpepper',
         recordRef: 'm16-production-place',
         evaluationCandidateId: 'candidate-a',
       },
