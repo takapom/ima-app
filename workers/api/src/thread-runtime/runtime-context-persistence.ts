@@ -12,7 +12,7 @@ const keyFor = (scope: RegistryScope): readonly [string, string] => [
   scope.threadId,
 ];
 
-/** Persists only validated IDs, expiry metadata, and reference-only state; never raw content. */
+/** Stores the bounded context snapshot; conversation bodies carry their own retention policy. */
 export const createDurableRuntimeContextPersistence = (
   storage: DurableObjectStorage,
 ): RuntimeProductionContextPersistence => {

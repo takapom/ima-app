@@ -102,6 +102,8 @@ flowchart TD
 
 ### 保存・復元・別thread
 
+- 許可された質問・回答はThreadDOの既存コンテキストに本文と保持条件を残す。会話としての復元は表示・保持・削除・session期限までとし、引用された店舗の事実は別途`freshUntil`と根拠の有効性を検証する。
+
 - `place_id`を無期限に残せるのはproviderの許諾上限であり、今夜のthread/candidate参照は `sessionExpiresAt` までとする。明示的な保存リストへ登録された `savedPlaceRef` だけがsessionと独立して残り、ユーザーの削除まで保持する。
 - 明示的な「保存」は、`place_id`または内部opaque `savedPlaceRef`だけを登録する。名称・住所・座標・写真・経路・provider由来生成文を保存店レコードへ埋め込まない。
 - 次threadで使うときは、同一owner scopeの保存参照を明示的に登録してから新しいcandidateIdを発行し、現行policyで再取得する。前threadのcandidateId・観測・freshUntilを自動移送しない。

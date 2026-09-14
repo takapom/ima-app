@@ -15,7 +15,6 @@ import {
   CardSetRecordSchema,
   DetailFieldSchema,
   ModelEvidenceSourceSchema,
-  ModelHistoryEntrySchema,
   OriginalTurnSchema,
 } from '@ima/core';
 import type { RuntimeThinkComposition } from '../turn-execution/runtime-think-connection';
@@ -34,6 +33,14 @@ import {
   RuntimeProductionContextLimitError,
 } from './runtime-production-display-context';
 
+import {
+  originalTurnFor,
+  userHistoryFor,
+  responseHistory,
+  projectConversationHistory,
+  type RetainedHistoryEntry,
+} from './runtime-conversation-history';
+
 type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 
 export type RuntimeProductionModelContext = Pick<
@@ -42,7 +49,7 @@ export type RuntimeProductionModelContext = Pick<
 >;
 
 type ProductionContextState = {
-  readonly history: readonly ModelHistoryEntry[];
+  readonly history: readonly RetainedHistoryEntry[];
   readonly originalTurns: readonly OriginalTurn[];
   readonly cardSet: CardSetSource | null;
   readonly cardSetReferenceOnly: boolean;
@@ -179,19 +186,6 @@ const responseEvidenceIds = (response: AssistantResponse): readonly string[] => 
   return unique(ids);
 };
 
-const responseHistory = (response: AssistantResponse): readonly ModelHistoryEntry[] =>
-  response.message.flatMap((message) => {
-    const parsed = v.safeParse(ModelHistoryEntrySchema, {
-      threadId: response.threadId,
-      turnId: response.turnId,
-      role: 'assistant',
-      text: message.text,
-      evidenceIds: message.evidenceIds,
-      basis: message.basis,
-    });
-    return parsed.success ? [parsed.output] : [];
-  });
-
 const evidenceSourceFor = (
   registry: CandidateObservationRegistryPort,
   scope: RegistryScope,
@@ -244,37 +238,7 @@ const cardSetFromResponse = (
   return cardSetFor(registry, scope, parsed.output);
 };
 
-const userHistoryFor = (
-  input: ThreadTurnRequest,
-  scope: RegistryScope,
-): ModelHistoryEntry | undefined => {
-  const parsed = v.safeParse(ModelHistoryEntrySchema, {
-    threadId: scope.threadId,
-    turnId: input.turnId ?? input.requestId,
-    role: 'user',
-    text: input.text,
-    evidenceIds: [],
-    basis: 'conversational',
-  });
-  return parsed.success ? parsed.output : undefined;
-};
-
-const originalTurnFor = (
-  input: ThreadTurnRequest,
-  scope: RegistryScope,
-): OriginalTurn | undefined => {
-  const parsed = v.safeParse(OriginalTurnSchema, {
-    threadId: scope.threadId,
-    turnId: input.turnId ?? input.requestId,
-    text: input.text,
-  });
-  return parsed.success ? parsed.output : undefined;
-};
-
-const replaceByTurn = (
-  turns: readonly OriginalTurn[],
-  next: OriginalTurn,
-): readonly OriginalTurn[] =>
+const replaceByTurn = (turns: readonly OriginalTurn[], next: OriginalTurn): OriginalTurn[] =>
   [
     ...turns.filter((turn) => !(turn.threadId === next.threadId && turn.turnId === next.turnId)),
     next,
@@ -315,7 +279,8 @@ export const createRuntimeProductionContextStore = (input: {
     ) {
       return;
     }
-    state = stateFromReference(snapshot);
+    state = stateFromReference(snapshot, new Date(now).toISOString());
+    persistState(scope);
   };
 
   const persistState = (scope: RegistryScope): void => {
@@ -324,6 +289,7 @@ export const createRuntimeProductionContextStore = (input: {
     const referenceState: RuntimeProductionContextStateForReference = state;
     input.persistence.save(
       referenceSnapshotFor({
+        now: input.now?.() ?? new Date().toISOString(),
         scope,
         sessionExpiresAt,
         state: referenceState,
@@ -346,6 +312,10 @@ export const createRuntimeProductionContextStore = (input: {
     }
     boundScope ??= safeScope;
     restoreForScope(safeScope);
+    const history = projectConversationHistory(
+      state.history,
+      input.now?.() ?? new Date().toISOString(),
+    );
     // Reject an over-bound exclusion history before any model/provider work is started.
     nextExcludedCandidateIds(state.excludedCandidateIds, request.excludeCandidateIds);
     const explicitDisplayContext = hasDisplayContext(request);
@@ -378,7 +348,7 @@ export const createRuntimeProductionContextStore = (input: {
     return {
       modelContext: {
         userText: request.text,
-        history: [...structuredClone(state.history)],
+        history,
         cardSet,
         evidence: [...structuredClone(state.evidence)],
         savedReferences: request.savedPlaceRefs.map((savedPlaceRef) => ({ savedPlaceRef })),
@@ -386,7 +356,19 @@ export const createRuntimeProductionContextStore = (input: {
       },
       constraintContext: {
         threadId: safeScope.threadId,
-        originalTurns: [...structuredClone(state.originalTurns)],
+        originalTurns: replaceByTurn(
+          state.originalTurns.map((turn) => ({
+            ...turn,
+            text:
+              history.find((entry) => entry.role === 'user' && entry.turnId === turn.turnId)
+                ?.text ?? '[withheld]',
+          })),
+          v.parse(OriginalTurnSchema, {
+            threadId: safeScope.threadId,
+            turnId: request.turnId ?? request.requestId,
+            text: request.text,
+          }),
+        ),
       },
     };
   };
@@ -466,7 +448,11 @@ export const createRuntimeProductionContextStore = (input: {
       return;
     }
     state = {
-      history: appendBounded(active.base.history, [userHistory, ...assistantHistory], 32),
+      history: appendBounded(
+        active.base.history,
+        [{ ...userHistory, retention: parsed.output.message[0]?.retention }, ...assistantHistory],
+        32,
+      ),
       originalTurns: replaceByTurn(active.base.originalTurns, originalTurn),
       cardSet: nextCardSet,
       cardSetReferenceOnly:

@@ -3,7 +3,6 @@ import type {
   CardSetRecord,
   ModelContextSource,
   ModelEvidenceSource,
-  ModelHistoryEntry,
   OriginalTurn,
   RegistryScope,
 } from '@ima/core';
@@ -18,6 +17,10 @@ import {
   Text,
   TurnIdSchema,
 } from '@ima/core';
+import {
+  conversationBodyIsUsable,
+  type RetainedHistoryEntry,
+} from './runtime-conversation-history';
 
 type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 
@@ -26,6 +29,13 @@ const HistoryReferenceSchema = v.strictObject({
   turnId: TurnIdSchema,
   role: v.picklist(['user', 'assistant']),
   basis: v.picklist(['grounded', 'inference', 'conversational']),
+  content: v.optional(
+    v.strictObject({
+      text: Text(500),
+      evidenceIds: v.pipe(v.array(ObservationIdSchema), v.maxLength(32)),
+      retention: RetentionMetadataSchema,
+    }),
+  ),
 });
 type HistoryReference = v.InferOutput<typeof HistoryReferenceSchema>;
 
@@ -80,7 +90,7 @@ export type RuntimeProductionContextPersistence = {
 };
 
 export type RuntimeProductionContextStateForReference = {
-  readonly history: readonly ModelHistoryEntry[];
+  readonly history: readonly RetainedHistoryEntry[];
   readonly originalTurns: readonly OriginalTurn[];
   readonly cardSet: CardSetSource | null;
   readonly evidence: readonly ModelEvidenceSource[];
@@ -93,6 +103,7 @@ export const referenceSnapshotFor = (input: {
   readonly scope: RegistryScope;
   readonly sessionExpiresAt: string;
   readonly state: RuntimeProductionContextStateForReference;
+  readonly now?: string;
 }): RuntimeProductionContextReference => {
   const cardSet = input.state.cardSet?.record ?? null;
   const cardCandidateIds = new Set(cardSet?.entries.map((entry) => entry.candidateId) ?? []);
@@ -102,12 +113,19 @@ export const referenceSnapshotFor = (input: {
     sessionExpiresAt: input.sessionExpiresAt,
     savedPlaceRefs: [...input.state.savedPlaceRefs],
     excludedCandidateIds: [...input.state.excludedCandidateIds],
-    history: input.state.history.map(({ threadId, turnId, role, basis }) => ({
-      threadId,
-      turnId,
-      role,
-      basis,
-    })),
+    history: input.state.history.map(
+      ({ threadId, turnId, role, basis, text, evidenceIds, retention }) => ({
+        threadId,
+        turnId,
+        role,
+        basis,
+        ...(retention?.restoreMode === 'full' &&
+        input.now !== undefined &&
+        conversationBodyIsUsable(retention, input.now)
+          ? { content: { text, evidenceIds: [...evidenceIds], retention } }
+          : {}),
+      }),
+    ),
     originalTurns: input.state.originalTurns.map(({ threadId, turnId }) => ({
       threadId,
       turnId,
@@ -130,12 +148,13 @@ export const referenceSnapshotFor = (input: {
   };
 };
 
-const withheldHistory = (reference: HistoryReference): ModelHistoryEntry => ({
-  ...reference,
-  basis: reference.basis === 'grounded' ? 'conversational' : reference.basis,
-  text: '[withheld]',
-  evidenceIds: [],
-});
+const restoredHistory = (
+  { content, ...reference }: HistoryReference,
+  now: string,
+): RetainedHistoryEntry =>
+  content?.retention.restoreMode === 'full' && conversationBodyIsUsable(content.retention, now)
+    ? { ...reference, ...content }
+    : { ...reference, basis: 'conversational', text: '[withheld]', evidenceIds: [] };
 
 const withheldOriginalTurn = (reference: OriginalTurnReference): OriginalTurn => ({
   ...reference,
@@ -158,16 +177,28 @@ const withheldCardSet = (record: CardSetRecord): CardSetSource => ({
   })),
 });
 
-export const stateFromReference = (snapshot: RuntimeProductionContextReference) => ({
-  history: snapshot.history.map(withheldHistory),
-  originalTurns: snapshot.originalTurns.map(withheldOriginalTurn),
-  cardSet: snapshot.cardSet === null ? null : withheldCardSet(snapshot.cardSet),
-  evidence: [],
-  savedPlaceRefs: [...snapshot.savedPlaceRefs],
-  excludedCandidateIds: [...(snapshot.excludedCandidateIds ?? [])],
-  candidateIdentities: [...(snapshot.candidateIdentities ?? [])],
-  cardSetReferenceOnly: snapshot.cardSet !== null,
-});
+export const stateFromReference = (snapshot: RuntimeProductionContextReference, now: string) => {
+  const history = snapshot.history.map((entry) => restoredHistory(entry, now));
+  return {
+    history,
+    originalTurns: snapshot.originalTurns.map((reference) => ({
+      ...withheldOriginalTurn(reference),
+      text:
+        history.find(
+          (entry) =>
+            entry.role === 'user' &&
+            entry.threadId === reference.threadId &&
+            entry.turnId === reference.turnId,
+        )?.text ?? '[withheld]',
+    })),
+    cardSet: snapshot.cardSet === null ? null : withheldCardSet(snapshot.cardSet),
+    evidence: [],
+    savedPlaceRefs: [...snapshot.savedPlaceRefs],
+    excludedCandidateIds: [...(snapshot.excludedCandidateIds ?? [])],
+    candidateIdentities: [...(snapshot.candidateIdentities ?? [])],
+    cardSetReferenceOnly: snapshot.cardSet !== null,
+  };
+};
 
 export const candidateIdentityForReference = (input: {
   readonly snapshot: RuntimeProductionContextReference | undefined;

@@ -234,8 +234,8 @@ const makeOptions = (
     clock,
   });
   const buildTurn = async (request: RuntimeThinkTurnBuildRequest) => {
-    const runtimeInput = request.runtimeInput;
-    if (runtimeInput === undefined) throw new Error('RUNTIME_INPUT_MISSING');
+    if (request.runtimeInput === undefined) throw new Error('RUNTIME_INPUT_MISSING');
+    const runtimeInput = { ...request.runtimeInput, turnId: request.turnId };
     const fixedSessionExpiresAt = contextSetup.ensureSessionExpiry(request.serverNow);
     const turnRetention = productionRetentionFor(
       overrides.retention,

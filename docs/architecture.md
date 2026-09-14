@@ -67,7 +67,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 - モデルのstep全体を副作用前に検査し、read＋submit、複数submit、final＋Toolを拒否する。読み取りだけの複数操作は表現できる。
 - 根拠・鮮度・必須条件・revisionを検証し、確定は1回だけ行う。`committed`で停止し、成功後の追加生成を要求しない。invalidは上限内で修正する。
 - 予算、キャンセル、古いrevision、冪等再送を制御する。残り予算に応じた最終応答stepではToolを無効にする。
-- 保存禁止・不明な本文はSDK永続化とlive cacheの前に置換する。必要な原文・Tool結果は当該turnへの一時入力だけに使う。由来不明のcompaction summaryも保持しない。
+- 保存禁止・不明な本文はSDK永続化とlive cacheの前に置換する。Tool結果は当該turnへの一時入力に使う。許可された会話本文は既存のThreadDOコンテキストへ期限付きで保持し、各turnと再起動後に期限を検証してモデル文脈へ戻す。由来不明のcompaction summaryは保持しない。
 - 再起動後の再送は同じ確定IDと許可された参照だけで成立させ、保存禁止本文の完全復元を約束しない。
 
 設定・停止時にfixtureへ暗黙に切り替えない。Provider/model設定は[model](../workers/api/src/model)、組立ては[runtime-production-factory.ts](../workers/api/src/runtime/composition/runtime-production-factory.ts)、保存前処理は[runtime-retention.ts](../workers/api/src/runtime/retention/runtime-retention.ts)を参照する。
