@@ -24,17 +24,14 @@ const stagingLive: EnvironmentValues = {
   APP_ATTEST_ENVIRONMENT: 'production',
   IMA_RUNTIME_FLAGS_CONNECTED: '1',
   IMA_PROVIDER_OPENAI: 'true',
-  IMA_PROVIDER_PLACES: 'true',
-  IMA_PROVIDER_ROUTES: 'true',
+  IMA_PROVIDER_HOTPEPPER: 'true',
   IMA_PROVIDER_LAST_TRAIN: 'true',
   IMA_SHARE_LINE_SCHEME: 'true',
-  PHOTO_TOKEN_SECRET: 'photo-secret-not-logged',
   IMA_PROVIDER_LIVE_CONFIRM: 'YES',
   IMA_PROVIDER_BILLING_CONFIRM: 'YES',
   IMA_PROVIDER_PERMISSION_CONFIRM: 'YES',
   OPENAI_API_KEY: 'openai-key-not-logged',
-  GOOGLE_PLACES_API_KEY: 'places-key-not-logged',
-  GOOGLE_ROUTES_API_KEY: 'routes-key-not-logged',
+  HOTPEPPER_API_KEY: 'hotpepper-key-not-logged',
   PLACES_CURSOR_SECRET: 'cursor-secret-not-logged',
   IMA_TESTFLIGHT_INVITE_CONFIRM: 'YES',
   IMA_RELEASE_QUALITY_SCOPE: 'ebisu-daikanyama',
@@ -86,8 +83,7 @@ describe('release preflight', () => {
         APP_TOKEN: 'fixture-token',
         EXPO_PUBLIC_API_BASE_URL: 'https://staging.example.invalid',
         IMA_PROVIDER_OPENAI: 'false',
-        IMA_PROVIDER_PLACES: 'false',
-        IMA_PROVIDER_ROUTES: 'false',
+        IMA_PROVIDER_HOTPEPPER: 'false',
       },
       mobile,
     );
@@ -95,7 +91,7 @@ describe('release preflight', () => {
     expect(report.status).toBe('blocked');
     expect(check(report, 'LIVE_PROVIDER_EVIDENCE')).toMatchObject({ status: 'blocked' });
     expect(check(report, 'IMA_PROVIDER_OPENAI')).toMatchObject({ status: 'blocked' });
-    expect(check(report, 'PHOTO_CAPABILITY')).toMatchObject({ status: 'blocked' });
+    expect(check(report, 'IMA_PROVIDER_HOTPEPPER')).toMatchObject({ status: 'blocked' });
   });
 
   it('requires a secure privacy URL and never echoes it or secrets', () => {
@@ -110,7 +106,7 @@ describe('release preflight', () => {
 
     expect(code).toBe(2);
     expect(output.join('\n')).not.toContain('openai-key-not-logged');
-    expect(output.join('\n')).not.toContain('places-key-not-logged');
+    expect(output.join('\n')).not.toContain('hotpepper-key-not-logged');
     expect(output.join('\n')).not.toContain('cloudflare-token-not-logged');
     const report = JSON.parse(output[0] ?? '') as ReturnType<typeof preflightRelease>;
     expect(check(report, 'PRIVACY_POLICY_HOSTING')).toMatchObject({
@@ -180,13 +176,12 @@ describe('release preflight', () => {
     ).toMatchObject({ status: 'blocked' });
   });
 
-  it('requires explicit invite consent and does not make optional HP a release gate', () => {
+  it('requires explicit invite consent', () => {
     const report = preflightRelease(
       'internal',
       {
         ...stagingLive,
         IMA_TESTFLIGHT_INVITE_CONFIRM: 'NO',
-        IMA_PROVIDER_HOTPEPPER: 'false',
         IMA_SHARE_LINE_SCHEME: 'false',
       },
       mobile,
@@ -194,7 +189,6 @@ describe('release preflight', () => {
 
     expect(check(report, 'INVITE_CONSENT')).toMatchObject({ status: 'invalid' });
     expect(check(report, 'SHARE_EVENT_PATH')).toMatchObject({ status: 'unverified' });
-    expect(report.checks.some(({ name }) => name.includes('HOTPEPPER'))).toBe(false);
   });
 
   it('rejects an external track when its environment is not production', () => {

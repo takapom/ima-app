@@ -31,13 +31,7 @@ const LIVE_CONFIRMATIONS = [
   'IMA_PROVIDER_BILLING_CONFIRM',
   'IMA_PROVIDER_PERMISSION_CONFIRM',
 ] as const;
-const LIVE_SECRETS = [
-  'OPENAI_API_KEY',
-  'GOOGLE_PLACES_API_KEY',
-  'GOOGLE_ROUTES_API_KEY',
-  'PLACES_CURSOR_SECRET',
-  'PHOTO_TOKEN_SECRET',
-] as const;
+const LIVE_SECRETS = ['OPENAI_API_KEY', 'HOTPEPPER_API_KEY', 'PLACES_CURSOR_SECRET'] as const;
 
 const valueFor = (env: EnvironmentValues, name: string): string | undefined => {
   const value = env[name]?.trim();

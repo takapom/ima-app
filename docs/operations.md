@@ -6,15 +6,15 @@
 実環境の設定名と安全な初期値は[.dev.vars.example](../.dev.vars.example)、[.env.example](../.env.example)、[mobile環境例](../apps/mobile/.env.example)、[Wrangler設定](../workers/api/wrangler.jsonc)、[EAS設定](../apps/mobile/eas.json)で管理する。
 実secret、アカウントID、署名資格は追跡ファイルやコマンド引数へ書かない。Worker secretを端末の公開環境変数へ入れない。
 
-| 区分             | 必要な設定・確認                                                                                                                                                |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Worker           | `IMA_ENV`、`IMA_RUNTIME_MODE`、`APP_TOKEN`、対象環境のDO binding/migration                                                                                      |
-| モデル           | `OPENAI_API_KEY`。モデル名とProvider optionsは[model設定](../workers/api/src/model/provider-config.ts)と[options](../workers/api/src/model/provider-options.ts) |
-| 店舗・経路・写真 | `GOOGLE_PLACES_API_KEY`、`GOOGLE_ROUTES_API_KEY`、`PLACES_CURSOR_SECRET`、`PHOTO_TOKEN_SECRET`                                                                  |
-| 端末・配布       | HTTPS endpoint、実bundle ID、EAS project、Apple署名、App Attest                                                                                                 |
-| 有効化           | Provider flags、用途別policy、実アカウント・API・課金・許諾の検収                                                                                               |
+| 区分           | 必要な設定・確認                                                                                                                                                |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Worker         | `IMA_ENV`、`IMA_RUNTIME_MODE`、`APP_TOKEN`、対象環境のDO binding/migration                                                                                      |
+| モデル         | `OPENAI_API_KEY`。モデル名とProvider optionsは[model設定](../workers/api/src/model/provider-config.ts)と[options](../workers/api/src/model/provider-options.ts) |
+| 店舗検索・詳細 | `HOTPEPPER_API_KEY`、`PLACES_CURSOR_SECRET`                                                                                                                     |
+| 端末・配布     | HTTPS endpoint、実bundle ID、EAS project、Apple署名、App Attest                                                                                                 |
+| 有効化         | Provider flags、用途別policy、実アカウント・API・課金・許諾の検収                                                                                               |
 
-キーやflagだけで利用可能と判定しない。runtime factoryには能力・用途別policy・写真参照などの注入条件がある。詳細は[アーキテクチャ](architecture.md)と[Providerポリシー](provider-policy.md)を参照する。
+キーやflagだけで利用可能と判定しない。runtime factoryはモデル・ホットペッパーの停止flagとsecret、用途別policyを確認する。詳細は[アーキテクチャ](architecture.md)と[Providerポリシー](provider-policy.md)を参照する。
 
 ## preflightと配布判定
 
@@ -42,16 +42,7 @@ bun scripts/release-preflight.ts --track external
 
 ## 実Provider検証
 
-API有効化・課金・用途別許諾を確認し、対象入力とsecretを環境から渡す。
-`IMA_PROVIDER_LIVE_CONFIRM`、`IMA_PROVIDER_BILLING_CONFIRM`、`IMA_PROVIDER_PERMISSION_CONFIRM`の3つが`YES`であることをrunnerが要求する。
-
-```sh
-bun run workers/api/tooling/provider-smoke/runner.ts --live --json
-```
-
-入力名は`GOOGLE_SMOKE_SEARCH_QUERY`、`GOOGLE_SMOKE_PLACE_ID`、`GOOGLE_SMOKE_PHOTO_REF`、`GOOGLE_SMOKE_ROUTE_ORIGIN_PLACE_ID`、`GOOGLE_SMOKE_ROUTE_DESTINATION_PLACE_ID`、`JOURNEY_DATASET_LIVE_REF`。
-正確な条件は[provider-smoke](../workers/api/tooling/provider-smoke)を参照する。
-終了コード0は実行したlive sourceの契約成功、1は実行失敗、2は不足・skip。経路なしや未設定datasetを合成結果で補わない。operatorの確認宣言は外部アカウントの検収結果とは区別する。
+[実LLMとホットペッパーのローカル起動](development.md#実llmとホットペッパーでのローカル起動)で新しい会話を作り、検索・カード表示・条件変更を実行する。APIの認証失敗・0件・タイムアウトを成功へ補正しない。外部接続はOpenAIとホットペッパーであり、写真・経路・終電は無効。旧Google用のlive smoke runnerは削除済み。
 
 実行日時、対象profile、モデル版、公開schemaの結果、費用、未測定項目を[実接続Issue](https://github.com/takapom/ima-app/issues/36)へ記録する。raw本文・座標・token・secretは証跡へ含めない。
 

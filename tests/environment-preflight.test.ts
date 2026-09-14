@@ -21,10 +21,8 @@ const liveValues: EnvironmentValues = {
   IMA_PROVIDER_BILLING_CONFIRM: 'YES',
   IMA_PROVIDER_PERMISSION_CONFIRM: 'YES',
   OPENAI_API_KEY: 'openai-key-not-logged',
-  GOOGLE_PLACES_API_KEY: 'places-key-not-logged',
-  GOOGLE_ROUTES_API_KEY: 'routes-key-not-logged',
+  HOTPEPPER_API_KEY: 'hotpepper-key-not-logged',
   PLACES_CURSOR_SECRET: 'cursor-secret-not-logged',
-  PHOTO_TOKEN_SECRET: 'photo-secret-not-logged',
 };
 
 describe('environment preflight', () => {
@@ -86,7 +84,7 @@ describe('environment preflight', () => {
     expect(report.checks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'OPENAI_API_KEY', status: 'missing' }),
-        expect.objectContaining({ name: 'PHOTO_TOKEN_SECRET', status: 'missing' }),
+        expect.objectContaining({ name: 'HOTPEPPER_API_KEY', status: 'missing' }),
       ]),
     );
   });

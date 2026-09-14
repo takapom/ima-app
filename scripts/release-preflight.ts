@@ -139,11 +139,7 @@ const addExternalEvidence = (
   );
 
   const liveMode = valueFor(env, 'IMA_RUNTIME_MODE') === 'live';
-  for (const name of [
-    'IMA_PROVIDER_OPENAI',
-    'IMA_PROVIDER_PLACES',
-    'IMA_PROVIDER_ROUTES',
-  ] as const) {
+  for (const name of ['IMA_PROVIDER_OPENAI', 'IMA_PROVIDER_HOTPEPPER'] as const) {
     addCheck(
       checks,
       name,
@@ -153,18 +149,6 @@ const addExternalEvidence = (
         : 'required TestFlight capability flag is disabled or missing',
     );
   }
-  addCheck(
-    checks,
-    'PHOTO_CAPABILITY',
-    configuredBoolean(env, 'IMA_PROVIDER_PLACES') &&
-      valueFor(env, 'PHOTO_TOKEN_SECRET') !== undefined
-      ? 'unverified'
-      : 'blocked',
-    configuredBoolean(env, 'IMA_PROVIDER_PLACES') &&
-      valueFor(env, 'PHOTO_TOKEN_SECRET') !== undefined
-      ? 'photo admission is configured; rendered attribution and live provider evidence are still required'
-      : 'photo delivery requires Places admission and PHOTO_TOKEN_SECRET',
-  );
   addCheck(
     checks,
     'LIVE_PROVIDER_EVIDENCE',
