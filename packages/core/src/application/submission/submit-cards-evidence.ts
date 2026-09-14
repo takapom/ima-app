@@ -67,6 +67,7 @@ export const SubmitValidationContextSchema = v.pipe(
       ),
     ),
     requireLastOrderAtArrival: v.boolean(),
+    allowUnknownOpening: v.optional(v.boolean()),
   }),
   v.check((context) => {
     const expected = context.expectedObservationContext;

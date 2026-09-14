@@ -172,7 +172,8 @@ export const validateArrivalAndOpening = (
         ),
       );
     } else {
-      if (hours.listedOpenAtEvaluation !== true) {
+      const checkOpening = hours.listedOpenAtEvaluation !== null || !context.allowUnknownOpening;
+      if (checkOpening && hours.listedOpenAtEvaluation !== true) {
         issues.push(
           issue(
             'CONSTRAINT_VIOLATION',
@@ -184,7 +185,7 @@ export const validateArrivalAndOpening = (
           ),
         );
       }
-      if (openIntervalAt(hours, context.serverNow) === undefined) {
+      if (checkOpening && openIntervalAt(hours, context.serverNow) === undefined) {
         issues.push(
           issue(
             'CONSTRAINT_VIOLATION',
@@ -196,7 +197,11 @@ export const validateArrivalAndOpening = (
           ),
         );
       }
-      if (arrivalAt !== undefined && openIntervalAt(hours, arrivalAt) === undefined) {
+      if (
+        checkOpening &&
+        arrivalAt !== undefined &&
+        openIntervalAt(hours, arrivalAt) === undefined
+      ) {
         issues.push(
           issue(
             'CONSTRAINT_VIOLATION',
