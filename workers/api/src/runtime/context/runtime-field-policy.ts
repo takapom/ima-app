@@ -22,7 +22,8 @@ import {
 export type RuntimePolicyMode = 'fixture' | 'live';
 export type RuntimeFieldUse = 'llm_input' | 'display' | 'persistence';
 export type RuntimePolicyDecision = 'allow' | 'deny' | 'unknown';
-export type RuntimePolicyActivation = 'fixture_only' | 'disabled_until_m35' | 'live_verified';
+export type RuntimePolicyActivation =
+  'fixture_only' | 'disabled_until_m35' | 'live_verified' | 'app_configured';
 export type RuntimeFieldStatus = 'known' | 'unknown' | 'unsupported' | 'error';
 export type RuntimePolicyStatus =
   | 'available'
@@ -65,7 +66,7 @@ export const runtimePolicyAllows = (
   if (record.policyStatus !== 'available') return false;
   if (record.activation === 'disabled_until_m35') return false;
   if (record.activation === 'fixture_only') return mode === 'fixture';
-  return record.activation === 'live_verified';
+  return record.activation === 'live_verified' || record.activation === 'app_configured';
 };
 
 const modelDecision = (

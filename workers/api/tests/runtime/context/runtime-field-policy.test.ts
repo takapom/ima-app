@@ -39,6 +39,13 @@ const allFields = (policy: RuntimeFieldUsePolicy): Record<DetailField, RuntimeFi
 });
 
 describe('runtime field policy', () => {
+  it('allows an explicitly configured display use without enabling other uses', () => {
+    const policy = uses({ display: record({ activation: 'app_configured' }) });
+    expect(runtimePolicyAllows(policy, 'display', 'live')).toBe(true);
+    expect(runtimePolicyAllows(policy, 'llm_input', 'live')).toBe(false);
+    expect(runtimePolicyAllows(policy, 'persistence', 'live')).toBe(false);
+  });
+
   it('requires a known, available policy and the matching activation profile', () => {
     const policy = uses({
       llm_input: record({ activation: 'fixture_only' }),
