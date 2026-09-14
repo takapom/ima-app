@@ -29,13 +29,13 @@ export function DecidedState({
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       <View style={styles.actionRow}>
         <Pressable
-          accessibilityLabel="徒歩地図を開く"
+          accessibilityLabel="行き先を開く"
           accessibilityRole="button"
           disabled={onOpenMap === undefined || card === null}
           onPress={onOpenMap}
           style={({ pressed }) => [styles.action, pressed && styles.pressed]}
         >
-          <Text style={styles.actionText}>地図を開く</Text>
+          <Text style={styles.actionText}>行き先を開く</Text>
         </Pressable>
         <Pressable
           accessibilityLabel="共有シートを開く"

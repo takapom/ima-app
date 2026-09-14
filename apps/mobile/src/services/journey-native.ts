@@ -1,7 +1,7 @@
 import { Linking, Share } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
 import {
-  buildAppleWalkingMapUrl,
+  resolveJourneyMapTarget,
   type JourneyMapOpenResult,
   type JourneyMapService,
   type WalkingMapDestinationResolver,
@@ -18,14 +18,14 @@ export const createNativeJourneyMapService = (
   resolveDestination: WalkingMapDestinationResolver,
 ): JourneyMapService => ({
   openWalkingMap: async (card: PublicCard): Promise<JourneyMapOpenResult> => {
-    const map = buildAppleWalkingMapUrl(resolveDestination(card));
-    if (map.status !== 'ready') return map;
+    const resolved = resolveJourneyMapTarget(resolveDestination(card), card);
+    if (resolved.status !== 'ready') return resolved;
     try {
-      if (!(await Linking.canOpenURL(map.url))) {
+      if (!(await Linking.canOpenURL(resolved.url))) {
         return { status: 'unavailable', reason: 'link_unavailable' };
       }
-      await Linking.openURL(map.url);
-      return { status: 'opened' };
+      await Linking.openURL(resolved.url);
+      return { status: 'opened', target: resolved.target };
     } catch {
       return { status: 'failed', reason: 'native_unavailable' };
     }

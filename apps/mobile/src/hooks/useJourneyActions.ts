@@ -369,7 +369,7 @@ export const useJourneyActions = ({
       const generation = operationGeneration.current;
       noticeToken.current += 1;
       const token = currentOperationToken();
-      setNotice({ tone: 'info', text: '地図を開いています…' });
+      setNotice({ tone: 'info', text: '行き先を開いています…' });
       let result: JourneyMapOpenResult;
       try {
         result = await services.map.openWalkingMap(card);
@@ -384,11 +384,12 @@ export const useJourneyActions = ({
         return;
       }
       if (result.status === 'opened') {
-        setNotice({ tone: 'success', text: '地図を開きました。' });
+        const opened = result.target === 'map' ? '地図' : '店舗ページ';
+        setNotice({ tone: 'success', text: `${opened}を開きました。` });
       } else if (result.status === 'unavailable') {
-        setNotice({ tone: 'error', text: '徒歩地図を開ける情報がありません。' });
+        setNotice({ tone: 'error', text: '開ける行き先がありません。' });
       } else {
-        setNotice({ tone: 'error', text: '地図を開けませんでした。' });
+        setNotice({ tone: 'error', text: '行き先を開けませんでした。' });
       }
     },
     [contextKey, currentOperationToken, isCurrentOperation, services.map],
@@ -422,7 +423,7 @@ export const useJourneyActions = ({
       const prepared = prepareJourneyShare(shareInput);
       if (prepared.status !== 'ready') {
         inFlight.current.delete(operationKey);
-        setNotice({ tone: 'error', text: '共有に必要な地図リンクがありません。' });
+        setNotice({ tone: 'error', text: '共有に必要なリンクがありません。' });
         return;
       }
       setNotice({ tone: 'info', text: '共有シートを開いています…' });

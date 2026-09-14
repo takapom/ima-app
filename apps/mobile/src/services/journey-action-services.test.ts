@@ -179,6 +179,70 @@ describe('journey action services', () => {
     });
   });
 
+  it('shares the identity place page when the provider withholds contact', () => {
+    const identity = saveCard.facts.identity;
+    if (identity.status !== 'known') throw new Error('identity fact is required');
+    const input = journeyShareInputFor({
+      ...saveCard,
+      facts: {
+        ...saveCard.facts,
+        identity: {
+          ...identity,
+          value: { ...identity.value, sourceUrl: 'https://example.com/shop/1' },
+        },
+      },
+    });
+
+    expect(input.mapUrl).toBe('https://example.com/shop/1');
+    expect(prepareJourneyShare(input)).toEqual({
+      status: 'ready',
+      message: '夜カフェ\nhttps://example.com/shop/1',
+    });
+  });
+
+  it('keeps every SourceRef credit in the shared text, not just the retention one', () => {
+    const identity = saveCard.facts.identity;
+    if (identity.status !== 'known') throw new Error('identity fact is required');
+    const evidence = identity.evidence[0];
+    if (evidence === undefined) throw new Error('identity evidence is required');
+    const input = journeyShareInputFor({
+      ...saveCard,
+      facts: {
+        ...saveCard.facts,
+        identity: {
+          ...identity,
+          value: { ...identity.value, sourceUrl: 'https://example.com/shop/1' },
+          evidence: [
+            {
+              ...evidence,
+              attribution: {
+                label: 'Powered by 出典元',
+                sourceLink: 'https://example.com/service',
+              },
+              attributions: [
+                { label: '店舗ページ', sourceLink: 'https://example.com/shop/1' },
+                { label: 'Powered by 出典元', sourceLink: 'https://example.com/service' },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    expect(input.attributions).toEqual([
+      { label: '店舗ページ', sourceLink: 'https://example.com/shop/1' },
+      { label: 'Powered by 出典元', sourceLink: 'https://example.com/service' },
+    ]);
+  });
+
+  it('still refuses to share when neither contact nor place page is available', () => {
+    expect(journeyShareInputFor(saveCard).mapUrl).toBeNull();
+    expect(prepareJourneyShare(journeyShareInputFor(saveCard))).toEqual({
+      status: 'unavailable',
+      reason: 'map_link_missing',
+    });
+  });
+
   it('projects only currently displayable attribution into the share boundary', () => {
     const identity = saveCard.facts.identity;
     if (identity.status !== 'known') throw new Error('identity fact is required');

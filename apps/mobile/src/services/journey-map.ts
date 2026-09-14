@@ -1,4 +1,5 @@
 import type { PublicCard } from '@ima/contracts';
+import { prepareSourceLink } from './journey-source-link';
 
 export type WalkingMapDestination = {
   readonly latitude: number;
@@ -15,14 +16,21 @@ export type AppleWalkingMapResult =
       readonly reason: 'destination_missing' | 'destination_invalid' | 'policy_denied';
     };
 
+/** `place_page` means the provider's own page was opened instead of a walking map. */
+export type JourneyMapTarget = 'map' | 'place_page';
+
 export type JourneyMapOpenResult =
-  | { readonly status: 'opened' }
+  | { readonly status: 'opened'; readonly target: JourneyMapTarget }
   | {
       readonly status: 'unavailable';
       readonly reason:
         'destination_missing' | 'destination_invalid' | 'policy_denied' | 'link_unavailable';
     }
   | { readonly status: 'failed'; readonly reason: 'native_unavailable' };
+
+export type JourneyMapTargetResult =
+  | { readonly status: 'ready'; readonly url: string; readonly target: JourneyMapTarget }
+  | Extract<AppleWalkingMapResult, { readonly status: 'unavailable' }>;
 
 export type JourneyMapService = {
   readonly openWalkingMap: (card: PublicCard) => Promise<JourneyMapOpenResult>;
@@ -64,4 +72,38 @@ export const buildAppleWalkingMapUrl = (
     status: 'ready',
     url: `https://maps.apple.com/?daddr=${encodeURIComponent(daddr)}&dirflg=w`,
   };
+};
+
+/**
+ * The provider's own place page, taken from identity evidence so retention and
+ * attribution travel with the link. This module never geocodes a name or address.
+ * The URL passes the same preparation as any other source link: the public schema
+ * accepts an https URL that still carries userinfo, and this value is both opened
+ * natively and shared outside the app.
+ */
+export const placePageUrlFor = (card: PublicCard): string | null => {
+  const field = card.facts.identity;
+  if (field.status !== 'known' || field.value.sourceUrl === null) return null;
+  if (!field.evidence.every((item) => item.retention.displayPolicyStatus === 'available')) {
+    return null;
+  }
+  const prepared = prepareSourceLink(field.value.sourceUrl);
+  return prepared.status === 'ready' ? prepared.url : null;
+};
+
+/**
+ * Prefers a walking map built from trusted coordinates and falls back to the place
+ * page, so a provider that withholds coordinates still leaves a usable destination.
+ * An invalid coordinate is a resolver defect rather than a missing capability, so it
+ * is reported instead of being hidden behind the fallback.
+ */
+export const resolveJourneyMapTarget = (
+  destination: WalkingMapDestination | null,
+  card: PublicCard,
+): JourneyMapTargetResult => {
+  const map = buildAppleWalkingMapUrl(destination);
+  if (map.status === 'ready') return { status: 'ready', url: map.url, target: 'map' };
+  if (map.reason === 'destination_invalid') return map;
+  const placePage = placePageUrlFor(card);
+  return placePage === null ? map : { status: 'ready', url: placePage, target: 'place_page' };
 };
