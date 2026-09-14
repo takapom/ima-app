@@ -97,6 +97,67 @@ const providerResult: JSONValue = {
 };
 
 describe('runtime model-input projection', () => {
+  it.each([
+    ['error-text', CANARY, 'Tool call failed. Check the tool arguments before retrying.'],
+    ['error-json', CANARY, 'Tool call failed. Check the tool arguments before retrying.'],
+    [
+      'error-text',
+      'Tool input validation failed. Invalid fields: metadata',
+      'Tool input validation failed. Invalid fields: metadata',
+    ],
+  ] as const)(
+    'preserves a current-turn %s failure without returning its raw error to the model',
+    (type, value, expected) => {
+      const messages: ModelMessage[] = [
+        {
+          role: 'tool',
+          content: [
+            {
+              type: 'tool-result',
+              toolName: 'search_places',
+              toolCallId: 'failed-call',
+              output: { type, value },
+            },
+          ],
+        },
+      ];
+      const options = {
+        currentScope: scope,
+        now: NOW,
+        toolCalls: new Map(),
+        toolResults: new Map(),
+      };
+      const current = projectRuntimeCurrentTurnMessages(messages, {
+        ...options,
+        currentTurnStart: 0,
+      });
+      expect(current).toEqual([
+        {
+          role: 'tool',
+          content: [
+            {
+              type: 'tool-result',
+              toolName: 'search_places',
+              toolCallId: 'failed-call',
+              output: {
+                type: 'error-text',
+                value: expected,
+              },
+            },
+          ],
+        },
+      ]);
+      expect(JSON.stringify(current)).not.toContain(CANARY);
+      const history = projectRuntimeCurrentTurnMessages(messages, {
+        ...options,
+        currentTurnStart: 1,
+      });
+      expect(JSON.stringify(history)).toContain('withheld');
+      expect(JSON.stringify(history)).not.toContain(CANARY);
+      expect(JSON.stringify(history)).not.toContain('Invalid fields');
+    },
+  );
+
   it('keeps raw tool input withheld while allowing only the explicit llm_input result', () => {
     const call = captureRuntimeEphemeralToolCall(context, {
       toolCallId: 'call-model-input',

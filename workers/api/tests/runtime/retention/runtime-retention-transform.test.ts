@@ -1,6 +1,7 @@
-import { jsonSchema } from 'ai';
+import { APICallError, InvalidToolInputError, jsonSchema } from 'ai';
 import type { JSONValue, LanguageModelUsage, TextStreamPart, Tool } from 'ai';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { RuntimeModelGuardError } from '../../../src/runtime/turn-execution/runtime-model-guard';
 import {
   createRuntimeRetentionTransform,
   type RuntimeRetentionTransformOptions,
@@ -82,6 +83,110 @@ function outputProjector(
 }
 
 describe('runtime retention AI SDK stream transform', () => {
+  it.each([false, true])(
+    'reports safe failures with secrets redacted (SDK string error: %s)',
+    async (serialized) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      try {
+        const error = new APICallError({
+          message: CANARY,
+          url: `https://example.com/${CANARY}`,
+          requestBodyValues: { secret: CANARY },
+          statusCode: 400,
+          responseBody: CANARY,
+          data: {
+            error: { code: 'string_above_max_length', param: 'input[2].call_id', message: CANARY },
+          },
+        });
+        const output = await runTransform(
+          [
+            { type: 'error', error },
+            { type: 'error', error: new RuntimeModelGuardError('MODEL_STREAM_TIMEOUT', CANARY) },
+            {
+              type: 'tool-error',
+              toolName: 'search_places',
+              toolCallId: 'invalid-envelope',
+              input: {},
+              error: `Invalid input for tool search_places: ${CANARY}. Tool input validation failed. Invalid fields: metadata`,
+            },
+            {
+              type: 'error',
+              error: new APICallError({
+                message: CANARY,
+                url: CANARY,
+                requestBodyValues: {},
+                statusCode: 401,
+                data: { error: { code: CANARY, param: CANARY } },
+              }),
+            },
+            {
+              type: 'tool-error',
+              toolName: 'search_places',
+              toolCallId: CANARY,
+              input: {},
+              error: serialized
+                ? `Invalid input for tool search_places: ${CANARY}`
+                : new InvalidToolInputError({
+                    toolName: 'search_places',
+                    toolInput: CANARY,
+                    cause: CANARY,
+                  }),
+            },
+          ],
+          {
+            namespace: 'diagnostic-test',
+            projectToolInput: inputProjector,
+            projectToolOutput: outputProjector,
+          },
+        );
+        expect(warn.mock.calls.map(([line]): unknown => JSON.parse(String(line)))).toEqual([
+          {
+            event: 'runtime_upstream_failure',
+            stage: 'model',
+            kind: 'execution_error',
+            status: 400,
+            code: 'string_above_max_length',
+            param: 'input[].call_id',
+          },
+          {
+            event: 'runtime_upstream_failure',
+            stage: 'model',
+            kind: 'timeout',
+            code: 'MODEL_STREAM_TIMEOUT',
+          },
+          {
+            event: 'runtime_upstream_failure',
+            stage: 'tool',
+            tool: 'search_places',
+            fields: ['metadata'],
+            kind: 'invalid_tool_input',
+          },
+          {
+            event: 'runtime_upstream_failure',
+            stage: 'model',
+            kind: 'execution_error',
+            status: 401,
+          },
+          {
+            event: 'runtime_upstream_failure',
+            stage: 'tool',
+            tool: 'search_places',
+            kind: 'invalid_tool_input',
+          },
+        ]);
+        expect(JSON.stringify(warn.mock.calls)).not.toContain(CANARY);
+        expect(JSON.stringify(output)).not.toContain(CANARY);
+        expect(output[0]).toEqual({ type: 'error', error: 'UPSTREAM_UNAVAILABLE' });
+        expect(output[2]).toMatchObject({
+          type: 'tool-error',
+          error: 'Tool input validation failed. Invalid fields: metadata',
+        });
+      } finally {
+        warn.mockRestore();
+      }
+    },
+  );
+
   it('captures projected ephemeral tool data and rebuilds every persisted part', async () => {
     const report: RuntimeRetentionTransformReport = {
       inputParts: 0,

@@ -21,6 +21,7 @@ import {
   type RuntimeRetentionScopeIdentity,
 } from './runtime-retention';
 import { runtimeEphemeralModelInputIsUsable } from './runtime-retention-model-window';
+import { safeToolInputValidationMessage } from '../../tools/input-validation-error';
 
 export type RuntimeRetentionModelProjectionOptions = {
   readonly currentTurnStart: number;
@@ -117,7 +118,15 @@ function normalizeToolResult(
     type: 'tool-result',
     toolCallId: part.toolCallId,
     toolName: part.toolName,
-    output: usableToolOutput(part.toolCallId, part.toolName, options, currentTurn),
+    output:
+      currentTurn && (part.output.type === 'error-text' || part.output.type === 'error-json')
+        ? {
+            type: 'error-text',
+            value:
+              safeToolInputValidationMessage(part.output.value) ??
+              'Tool call failed. Check the tool arguments before retrying.',
+          }
+        : usableToolOutput(part.toolCallId, part.toolName, options, currentTurn),
   };
 }
 

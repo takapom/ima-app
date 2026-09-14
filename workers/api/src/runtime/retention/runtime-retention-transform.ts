@@ -10,8 +10,14 @@ import type {
   TypedToolResult,
   ToolSet,
 } from 'ai';
+import { APICallError, InvalidToolInputError } from 'ai';
+import { isRuntimeModelGuardError } from '../turn-execution/runtime-model-guard';
 import * as v from 'valibot';
 import { IsoTimestampSchema } from '@ima/core';
+import {
+  safeToolInputValidationMessage,
+  toolInputInvalidFields,
+} from '../../tools/input-validation-error';
 import {
   cloneRuntimeJsonValue,
   isRuntimeJsonValue,
@@ -92,6 +98,63 @@ const FINISH_REASONS = new Set<FinishReason>([
   'error',
   'other',
 ]);
+
+const UPSTREAM_CODES = new Set([
+  'invalid_api_key',
+  'insufficient_quota',
+  'credit_balance_exhausted',
+  'rate_limit_exceeded',
+  'model_not_found',
+  'invalid_request_error',
+  'invalid_value',
+  'invalid_function_parameters',
+  'unsupported_parameter',
+  'string_above_max_length',
+]);
+
+/** Keep diagnostic categories before redaction; never log SDK errors, inputs or response bodies. */
+function reportFailure(error: unknown, toolName?: RuntimeRetentionToolName): void {
+  const apiError = APICallError.isInstance(error) ? error : undefined;
+  const guardError = isRuntimeModelGuardError(error) ? error : undefined;
+  const fields = toolName === undefined ? undefined : toolInputInvalidFields(error);
+  const data = v.safeParse(
+    v.object({ error: v.object({ code: v.nullish(v.string()), param: v.nullish(v.string()) }) }),
+    apiError?.data,
+  );
+  const code = data.success ? data.output.error.code : undefined;
+  const param = data.success ? data.output.error.param : undefined;
+  // AI SDK emits validation errors as strings on the tool-error stream path.
+  const invalidToolInput =
+    InvalidToolInputError.isInstance(error) ||
+    (toolName !== undefined &&
+      typeof error === 'string' &&
+      error.startsWith(`Invalid input for tool ${toolName}:`));
+  try {
+    console.warn(
+      JSON.stringify({
+        event: 'runtime_upstream_failure',
+        stage: toolName === undefined ? 'model' : 'tool',
+        ...(toolName === undefined ? {} : { tool: toolName }),
+        ...(fields === undefined ? {} : { fields }),
+        kind:
+          guardError?.code === 'MODEL_STREAM_TIMEOUT'
+            ? 'timeout'
+            : invalidToolInput
+              ? 'invalid_tool_input'
+              : 'execution_error',
+        ...(apiError?.statusCode === undefined ? {} : { status: apiError.statusCode }),
+        ...(typeof code === 'string' && UPSTREAM_CODES.has(code) ? { code } : {}),
+        ...(guardError === undefined ? {} : { code: guardError.code }),
+        ...(typeof param === 'string' &&
+        /^(model|reasoning\.effort|input\[\d+\]\.call_id|tools\[\d+\]\.parameters)$/.test(param)
+          ? { param: param.replace(/\[\d+\]/g, '[]') }
+          : {}),
+      }),
+    );
+  } catch {
+    // Logging must not alter the original failure or its persistence redaction.
+  }
+}
 
 function safeFinishReason(value: FinishReason): FinishReason {
   return FINISH_REASONS.has(value) ? value : 'other';
@@ -247,12 +310,13 @@ function safeToolError<TOOLS extends ToolSet>(
   state: SafeIdState,
 ): ToolErrorStreamPart<TOOLS> {
   const toolName = safeToolName(part.toolName);
+  reportFailure(part.error, toolName);
   return {
     type: 'tool-error',
     toolCallId: safeId(part.toolCallId, 'tool', state),
     toolName: part.toolName,
     input: redactedRuntimeToolInput(toolName),
-    error: 'UPSTREAM_UNAVAILABLE',
+    error: safeToolInputValidationMessage(part.error) ?? 'UPSTREAM_UNAVAILABLE',
     ...dynamicFlag(part.dynamic),
   } as ToolErrorStreamPart<TOOLS>;
 }
@@ -336,6 +400,7 @@ function rewritePart<TOOLS extends ToolSet>(
     case 'abort':
       return { type: 'abort', reason: 'CANCELLED' };
     case 'error':
+      reportFailure(part.error);
       return { type: 'error', error: 'UPSTREAM_UNAVAILABLE' };
     case 'source':
     case 'file':

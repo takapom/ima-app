@@ -7,6 +7,7 @@ import {
   SubmitCardsInputSchema,
 } from '@ima/core';
 import type { PublicToolEnvelope } from './types';
+import { toolInputValidationError } from './input-validation-error';
 
 type JsonSchema = Parameters<typeof jsonSchema>[0];
 type WireSchema = Exclude<JsonSchema, PromiseLike<unknown> | (() => unknown)>;
@@ -29,8 +30,15 @@ const detailFields: string[] = [
   'last_train',
 ];
 
+/**
+ * Only constraints the connected providers can evidence are offered to the model.
+ * `maxWalkMinutes` and `homeStationRef` need walking-route and last-train evidence,
+ * so declaring them here would invite a proposal that every submit must then reject.
+ */
 const metadataJsonSchema: WireSchema = {
   type: 'object',
+  description:
+    'Use {} unless the user explicitly changes minimumStayMinutes. Walking limits and home stations are not supported conditions. Do not omit metadata or use null. Area and query belong in input.',
   properties: {
     turnConstraints: {
       type: 'object',
@@ -42,13 +50,11 @@ const metadataJsonSchema: WireSchema = {
           items: {
             type: 'object',
             properties: {
-              maxWalkMinutes: { type: 'integer', minimum: 1, maximum: 180 },
-              homeStationRef: opaqueId,
               minimumStayMinutes: { type: 'integer', minimum: 1, maximum: 180 },
               sourceTurnId: opaqueId,
               quote: { type: 'string', minLength: 1, maxLength: 300 },
             },
-            required: ['sourceTurnId', 'quote'],
+            required: ['sourceTurnId', 'quote', 'minimumStayMinutes'],
             additionalProperties: false,
           },
         },
@@ -219,7 +225,7 @@ const standardSchema = <T>(
       const parsed = v.safeParse(schema, value);
       return parsed.success
         ? { success: true, value: parsed.output }
-        : { success: false, error: new Error('tool input validation failed') };
+        : { success: false, error: toolInputValidationError(parsed.issues) };
     },
   });
 
