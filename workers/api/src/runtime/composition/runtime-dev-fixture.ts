@@ -4,21 +4,8 @@ import type {
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
 } from '../turn-execution/runtime-model-guard';
-import { createPhotoBodyHandler } from '../../providers/photo/http';
-import { PhotoProviderError, type PhotoMediaTransport } from '../../providers/photo/media';
-import {
-  createPhotoReferenceStoreResolver,
-  type PhotoReferenceRpc,
-} from '../../providers/photo/rpc';
-import { createPhotoTokenCodec } from '../../providers/photo/token';
-import { GOOGLE_ROUTE_MATRIX_ENDPOINT } from '../../providers/routes/types';
-import type { PhotoBodyHandler } from '../../http/handler';
-import {
-  DEV_FIXTURE_PHOTO_REF,
-  DEV_FIXTURE_PLACE_ID,
-  fixturePlace,
-} from './runtime-dev-fixture-place';
-import type { RuntimeFieldUsePolicy } from '../context/runtime-field-policy';
+import { HOT_PEPPER_GOURMET_ENDPOINT } from '../../providers/hot-pepper/types';
+import { fixturePlace } from './runtime-dev-fixture-place';
 import {
   sessionExpiryAt,
   type ProductionObservationPolicyInput,
@@ -28,17 +15,7 @@ import type { RuntimeProductionOverrides } from './runtime-production-types';
 
 export const DEV_FIXTURE_PLACES_KEY = 'dev-fixture-places-key';
 export const DEV_FIXTURE_CURSOR_SECRET = 'dev-fixture-cursor-secret';
-export { DEV_FIXTURE_PHOTO_REF, DEV_FIXTURE_PLACE_ID } from './runtime-dev-fixture-place';
-export const DEV_FIXTURE_ROUTES_KEY = 'dev-fixture-routes-key';
-export const DEV_FIXTURE_ORIGIN_REF = 'dev-fixture-current-location';
-export const DEV_FIXTURE_ROUTE_DURATION_SECONDS = 480;
-export const DEV_FIXTURE_ROUTE_DISTANCE_METERS = 600;
-/** Used only by the exact keyless development fixture graph; never read from live env. */
-export const DEV_FIXTURE_PHOTO_TOKEN_SECRET = 'dev-fixture-photo-token-secret-v1';
-
-const DEV_FIXTURE_PNG_BASE64 =
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
-
+export { DEV_FIXTURE_PLACE_ID } from './runtime-dev-fixture-place';
 const configured = (value: unknown): boolean =>
   typeof value === 'string' && value.trim().length > 0;
 
@@ -61,13 +38,9 @@ export const isKeylessDevFixtureEnvironment = (env: unknown): boolean => {
   ) {
     return false;
   }
-  return [
-    'OPENAI_API_KEY',
-    'GOOGLE_PLACES_API_KEY',
-    'PLACES_CURSOR_SECRET',
-    'GOOGLE_ROUTES_API_KEY',
-    'PHOTO_TOKEN_SECRET',
-  ].every((name) => !configured(env[name]));
+  return ['OPENAI_API_KEY', 'HOTPEPPER_API_KEY', 'PLACES_CURSOR_SECRET'].every(
+    (name) => !configured(env[name]),
+  );
 };
 
 /** Enables only the fixture capabilities; no live provider setting is copied into this graph. */
@@ -76,10 +49,10 @@ export const devFixtureEnvironmentFor = (env: unknown): Record<string, unknown> 
   return {
     ...env,
     ...(env.IMA_PROVIDER_OPENAI === undefined ? { IMA_PROVIDER_OPENAI: 'true' } : {}),
-    ...(env.IMA_PROVIDER_PLACES === undefined ? { IMA_PROVIDER_PLACES: 'true' } : {}),
-    ...(env.IMA_PROVIDER_ROUTES === undefined ? { IMA_PROVIDER_ROUTES: 'true' } : {}),
+    ...(env.IMA_PROVIDER_PLACES === undefined ? { IMA_PROVIDER_PLACES: 'false' } : {}),
+    ...(env.IMA_PROVIDER_ROUTES === undefined ? { IMA_PROVIDER_ROUTES: 'false' } : {}),
     ...(env.IMA_PROVIDER_LAST_TRAIN === undefined ? { IMA_PROVIDER_LAST_TRAIN: 'false' } : {}),
-    ...(env.IMA_PROVIDER_HOTPEPPER === undefined ? { IMA_PROVIDER_HOTPEPPER: 'false' } : {}),
+    ...(env.IMA_PROVIDER_HOTPEPPER === undefined ? { IMA_PROVIDER_HOTPEPPER: 'true' } : {}),
   };
 };
 
@@ -114,35 +87,16 @@ const modelContextFieldPolicy: ModelContextFieldPolicy = {
     identity: 'allow',
     opening_hours: 'allow',
     price: 'allow',
-    photos: 'allow',
+    photos: 'deny',
     contact: 'deny',
     facilities: 'deny',
-    walking_route: 'allow',
+    walking_route: 'deny',
     last_train: 'deny',
   },
   history: 'deny',
   cardSet: 'deny',
   displayName: 'deny',
 };
-
-const fixturePhotoPolicyRecord: RuntimeFieldUsePolicy['display'] = {
-  decision: 'allow',
-  activation: 'fixture_only',
-  fieldStatus: 'known',
-  policyStatus: 'available',
-};
-
-const fixturePhotoDisplayPolicy = (): {
-  readonly policy: RuntimeFieldUsePolicy;
-  readonly mode: 'fixture';
-} => ({
-  policy: {
-    llm_input: fixturePhotoPolicyRecord,
-    display: fixturePhotoPolicyRecord,
-    persistence: fixturePhotoPolicyRecord,
-  },
-  mode: 'fixture',
-});
 
 const usage = {
   inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
@@ -288,7 +242,7 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
         mode: 'search',
         query: 'カフェ',
         area: { kind: 'named_area', name: '恵比寿' },
-        openNow: true,
+        openNow: false,
         limit: 1,
         excludeCandidateIds: [],
       },
@@ -307,7 +261,7 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
         requests: [
           {
             candidateId,
-            fields: ['identity', 'opening_hours', 'price', 'photos', 'walking_route'],
+            fields: ['identity', 'opening_hours', 'price', 'photos'],
           },
         ],
         freshness: 'refresh',
@@ -319,7 +273,7 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
     input: {
       message: [
         {
-          text: '恵比寿の24時間営業のお店です。価格帯は1,200〜2,400円です。',
+          text: '掲載営業時間は24時間、予算目安は1,200〜2,400円です。現在の営業状況は未確認です。',
           evidenceIds: observations,
           basis: 'grounded',
         },
@@ -328,7 +282,7 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
         candidateId,
         evidenceIds: observations,
         why: {
-          text: '営業時間を気にせず立ち寄れる、恵比寿の一軒です。',
+          text: '恵比寿のカフェ候補です。営業状況は店舗で確認してください。',
           evidenceIds: observations,
           basis: 'grounded',
         },
@@ -354,82 +308,17 @@ export const createDevFixtureModel = (): RuntimeModelGuardModel => {
   };
 };
 
-const fixturePng = (): Uint8Array => {
-  const binary = atob(DEV_FIXTURE_PNG_BASE64);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
-};
-
-const fixturePhotoTransport: PhotoMediaTransport = {
-  read(photoRef, signal) {
-    if (signal?.aborted === true) {
-      return Promise.reject(new PhotoProviderError('CANCELLED'));
-    }
-    if (photoRef !== DEV_FIXTURE_PHOTO_REF) {
-      return Promise.reject(new PhotoProviderError('UPSTREAM_UNAVAILABLE'));
-    }
-    const body = fixturePng();
-    return Promise.resolve({
-      body: new ReadableStream<Uint8Array>({
-        start(controller) {
-          controller.enqueue(body);
-          controller.close();
-        },
-      }),
-      contentType: 'image/png' as const,
-      contentLength: body.byteLength,
-    });
-  },
-};
-
-/**
- * Synthetic photo serving is available only when bootstrap has already proven the exact
- * keyless dev fixture environment. It still uses the production token/reference boundary.
- */
-export const createDevFixturePhotoBodyHandler = (
-  resolveThread: (id: string) => PhotoReferenceRpc,
-): PhotoBodyHandler =>
-  createPhotoBodyHandler({
-    tokenCodec: createPhotoTokenCodec({
-      secret: DEV_FIXTURE_PHOTO_TOKEN_SECRET,
-      referenceResolver: createPhotoReferenceStoreResolver(resolveThread),
-    }),
-    transport: fixturePhotoTransport,
-  });
-
 export const createDevFixtureFetcher =
   (clock: () => string = () => new Date().toISOString()): typeof fetch =>
   (input, init) => {
     if (init?.signal?.aborted === true) return Promise.reject(new Error('DEV_FIXTURE_ABORTED'));
     const request = new Request(input, init);
     const url = new URL(request.url);
-    if (
-      request.method === 'POST' &&
-      url.origin === 'https://places.googleapis.com' &&
-      url.pathname === '/v1/places:searchText' &&
-      url.search === ''
-    ) {
-      return Promise.resolve(Response.json({ places: [fixturePlace(clock)] }));
-    }
-    if (
-      request.method === 'GET' &&
-      url.origin === 'https://places.googleapis.com' &&
-      url.pathname === `/v1/places/${DEV_FIXTURE_PLACE_ID}` &&
-      url.search === ''
-    ) {
-      return Promise.resolve(Response.json(fixturePlace(clock)));
-    }
-    if (request.method === 'POST' && request.url === GOOGLE_ROUTE_MATRIX_ENDPOINT) {
+    if (request.method === 'GET' && url.origin + url.pathname === HOT_PEPPER_GOURMET_ENDPOINT) {
       return Promise.resolve(
-        Response.json([
-          {
-            originIndex: 0,
-            destinationIndex: 0,
-            status: {},
-            condition: 'ROUTE_EXISTS',
-            distanceMeters: DEV_FIXTURE_ROUTE_DISTANCE_METERS,
-            duration: `${DEV_FIXTURE_ROUTE_DURATION_SECONDS}s`,
-          },
-        ]),
+        Response.json({
+          results: { results_available: 1, results_start: 1, shop: [fixturePlace(clock)] },
+        }),
       );
     }
     return Promise.resolve(
@@ -445,17 +334,9 @@ export const devFixtureOverridesFor = (
     ...overrides,
     modelForTurn: overrides.modelForTurn ?? createDevFixtureModel(),
     fetcher: overrides.fetcher ?? createDevFixtureFetcher(clock),
-    googlePlacesApiKey: overrides.googlePlacesApiKey ?? DEV_FIXTURE_PLACES_KEY,
+    hotPepperApiKey: overrides.hotPepperApiKey ?? DEV_FIXTURE_PLACES_KEY,
     placesCursorSecret: overrides.placesCursorSecret ?? DEV_FIXTURE_CURSOR_SECRET,
     placesEnabled: overrides.placesEnabled ?? true,
-    googleRoutesApiKey: overrides.googleRoutesApiKey ?? DEV_FIXTURE_ROUTES_KEY,
-    routesEnabled: overrides.routesEnabled ?? true,
-    routeObservationPolicy: overrides.routeObservationPolicy ?? observationPolicy,
-    currentOriginRefFor: overrides.currentOriginRefFor ?? (() => DEV_FIXTURE_ORIGIN_REF),
-    lastTrainEnabled: overrides.lastTrainEnabled ?? false,
-    photosEnabled: overrides.photosEnabled ?? true,
-    photoTokenSecret: overrides.photoTokenSecret ?? DEV_FIXTURE_PHOTO_TOKEN_SECRET,
-    photoDisplayPolicyFor: overrides.photoDisplayPolicyFor ?? fixturePhotoDisplayPolicy,
     observationPolicy: overrides.observationPolicy ?? observationPolicy,
     detailsObservationPolicy: overrides.detailsObservationPolicy ?? observationPolicy,
     retention:

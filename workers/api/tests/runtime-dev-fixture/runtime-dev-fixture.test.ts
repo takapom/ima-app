@@ -1,4 +1,4 @@
-import { env, SELF } from 'cloudflare:test';
+import { SELF } from 'cloudflare:test';
 import {
   CreateThreadResponseSchema,
   ErrorResponseSchema,
@@ -7,18 +7,10 @@ import {
 } from '@ima/contracts';
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { createHttpRouterConfig, createThreadScopeAuthorizer } from '../../src/bootstrap';
-import { deriveOwnerScopeRef } from '../../src/http/auth';
-import { routeRequest } from '../../src/http/router';
-import { createPhotoReferenceStoreResolver } from '../../src/providers/photo/rpc';
-import { createPhotoTokenCodec } from '../../src/providers/photo/token';
-import type { RateLimitDO, ThreadDO } from '../../src/thread-do';
 import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
 import {
   createDevFixtureFetcher,
   devFixtureEnvironmentFor,
-  DEV_FIXTURE_PHOTO_REF,
-  DEV_FIXTURE_PHOTO_TOKEN_SECRET,
   DEV_FIXTURE_PLACE_ID,
   isKeylessDevFixtureEnvironment,
 } from '../../src/runtime/composition/runtime-dev-fixture';
@@ -28,10 +20,6 @@ import { toolCallInput } from './runtime-dev-fixture-test-support';
 const OWNER_CREDENTIAL = `${'A'.repeat(42)}E`;
 const NOW = '2026-09-11T03:00:00.000Z';
 const PHOTO_DEVICE_ID = 'dev-fixture-device';
-const fixtureBindings = env as unknown as {
-  readonly THREADS: DurableObjectNamespace<ThreadDO>;
-  readonly RATE_LIMITS: DurableObjectNamespace<RateLimitDO>;
-};
 const headers = (
   requestId: string,
   options: { readonly ownerCredential?: string; readonly deviceId?: string } = {},
@@ -53,47 +41,6 @@ const call = async (
   const requestHeaders = new Headers(headers(requestId, options));
   new Headers(init.headers).forEach((value, key) => requestHeaders.set(key, value));
   return SELF.fetch(`https://ima.dev${path}`, { ...init, headers: requestHeaders });
-};
-
-const createFixtureThread = async (suffix: string): Promise<string> => {
-  const requestId = `dev-fixture-photo-create-${suffix}-${crypto.randomUUID()}`;
-  const response = await call('/v1/threads', requestId, {
-    method: 'POST',
-    body: JSON.stringify({
-      schemaVersion: 'v1',
-      requestId,
-      idempotencyKey: `dev-fixture-photo-create-${suffix}-${crypto.randomUUID()}`,
-    }),
-  });
-  expect(response.status).toBe(201);
-  const parsed = v.safeParse(CreateThreadResponseSchema, await response.json());
-  expect(parsed.success).toBe(true);
-  if (!parsed.success) throw new Error('dev fixture photo thread response was invalid');
-  return parsed.output.threadId;
-};
-
-const routePhotoWithEnv = async (
-  token: string,
-  requestId: string,
-  variables: Record<string, string>,
-): Promise<Response> => {
-  const request = new Request(`https://ima.dev/v1/photos/${encodeURIComponent(token)}`, {
-    method: 'GET',
-    headers: headers(requestId),
-  });
-  return routeRequest(
-    request,
-    createHttpRouterConfig(
-      {
-        ...fixtureBindings,
-        APP_TOKEN: 'dev-fixture-app-token',
-        IMA_ENV: 'dev',
-        IMA_RUNTIME_MODE: 'fixture',
-        ...variables,
-      },
-      { ownership: createThreadScopeAuthorizer(fixtureBindings.THREADS) },
-    ),
-  );
 };
 
 const turnInput = (requestId: string): ThreadTurnRequest => ({
@@ -152,7 +99,7 @@ describe('keyless dev fixture graph', () => {
       IMA_RUNTIME_MODE: 'fixture',
     });
     expect(defaults.IMA_PROVIDER_OPENAI).toBe('true');
-    expect(defaults.IMA_PROVIDER_PLACES).toBe('true');
+    expect(defaults.IMA_PROVIDER_HOTPEPPER).toBe('true');
     expect(
       devFixtureEnvironmentFor({
         IMA_ENV: 'dev',
@@ -194,30 +141,16 @@ describe('keyless dev fixture graph', () => {
     ).toBeUndefined();
   });
 
-  it('serves only fixed fixture endpoints with coherent all-day hours', async () => {
+  it('serves only the Hot Pepper fixture endpoint', async () => {
     const fetcher = createDevFixtureFetcher(() => NOW);
-    const search = await fetcher('https://places.googleapis.com/v1/places:searchText', {
-      method: 'POST',
-    });
-    expect(search.status).toBe(200);
-    const body: { places?: Array<Record<string, unknown>> } = await search.json();
-    expect(body.places?.[0]?.id).toBe(DEV_FIXTURE_PLACE_ID);
-    expect(body.places?.[0]?.currentOpeningHours).toMatchObject({ openNow: true });
-    expect((body.places?.[0]?.currentOpeningHours as { periods?: unknown[] }).periods).toEqual([
-      { open: { day: 0, hour: 0, minute: 0 } },
-    ]);
-
-    const details = await fetcher(
-      `https://places.googleapis.com/v1/places/${DEV_FIXTURE_PLACE_ID}`,
-      { method: 'GET' },
+    const result = await fetcher(
+      'https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?keyword=カフェ',
     );
-    expect(details.status).toBe(200);
-    await expect(
-      fetcher('https://evil.example/v1/places/dev-fixture-place', { method: 'GET' }),
-    ).resolves.toHaveProperty('status', 404);
-    await expect(
-      fetcher('https://places.googleapis.com/v1/places:searchText', { method: 'GET' }),
-    ).resolves.toHaveProperty('status', 404);
+    expect(result.status).toBe(200);
+    expect(await result.json()).toMatchObject({
+      results: { shop: [{ id: DEV_FIXTURE_PLACE_ID, open: '24時間営業' }] },
+    });
+    expect((await fetcher('https://evil.example/')).status).toBe(404);
   });
 
   it('chooses details and submit from structured tool result envelopes', async () => {
@@ -245,7 +178,7 @@ describe('keyless dev fixture graph', () => {
       requests: [
         {
           candidateId: 'candidate-from-result',
-          fields: ['identity', 'opening_hours', 'price', 'photos', 'walking_route'],
+          fields: ['identity', 'opening_hours', 'price', 'photos'],
         },
       ],
     });
@@ -319,7 +252,7 @@ describe('keyless dev fixture graph', () => {
       requests: [
         {
           candidateId: 'candidate-from-search',
-          fields: ['identity', 'opening_hours', 'price', 'photos', 'walking_route'],
+          fields: ['identity', 'opening_hours', 'price', 'photos'],
         },
       ],
     });
@@ -363,11 +296,8 @@ describe('keyless dev fixture graph', () => {
     });
     expect(hero.facts.price?.status).toBe('known');
     if (hero.facts.price?.status !== 'known') throw new Error('fixture price was not returned');
-    expect(hero.facts.price.value.range).toMatchObject({
-      currency: 'JPY',
-      min: 1200,
-      max: 2400,
-    });
+    expect(hero.facts.price.value.range).toBeNull();
+    expect(hero.facts.price.value.rawLabel).toBe('1,200〜2,400円');
     const customerText = [
       ...response.output.response.message.map((item) => item.text),
       hero.why.text,
@@ -375,94 +305,6 @@ describe('keyless dev fixture graph', () => {
     expect(customerText.join(' ')).not.toMatch(/Fixture|provider|開発用/u);
   });
 
-  it('serves a token-bound fixture photo over the default HTTP entry', async () => {
-    const threadId = await createFixtureThread('photo');
-    const turnRequestId = `dev-fixture-photo-turn-${crypto.randomUUID()}`;
-    const turn = await call(`/v1/threads/${threadId}/turns`, turnRequestId, {
-      method: 'POST',
-      body: JSON.stringify(turnInput(turnRequestId)),
-    });
-    expect(turn.status).toBe(200);
-    const parsed = v.safeParse(SearchResponseSchema, await turn.json());
-    expect(parsed.success).toBe(true);
-    if (!parsed.success || parsed.output.response.kind !== 'cards') {
-      throw new Error('dev fixture photo cards response was invalid');
-    }
-    const photoFact = parsed.output.response.cards.hero.facts.photos;
-    expect(photoFact?.status).toBe('known');
-    if (photoFact?.status !== 'known') throw new Error('dev fixture photo metadata was withheld');
-    const photo = photoFact.value.photos[0];
-    if (photo === undefined) throw new Error('dev fixture photo token was missing');
-    expect(photo.attributions).toEqual([{ displayName: 'Ima dev fixture', uri: null }]);
-    expect(photo.sourceUrl).toBe('https://maps.google.com/?cid=dev-fixture&photo=1');
-
-    const photoRequestId = `dev-fixture-photo-read-${crypto.randomUUID()}`;
-    const image = await call(`/v1/photos/${encodeURIComponent(photo.photoToken)}`, photoRequestId, {
-      method: 'GET',
-    });
-    expect(image.status).toBe(200);
-    expect(image.headers.get('content-type')).toBe('image/png');
-    expect(image.headers.get('x-ima-request-id')).toBe(photoRequestId);
-    expect([...new Uint8Array(await image.arrayBuffer()).slice(0, 8)]).toEqual([
-      137, 80, 78, 71, 13, 10, 26, 10,
-    ]);
-
-    const wrongOwner = await call(
-      `/v1/photos/${encodeURIComponent(photo.photoToken)}`,
-      `dev-fixture-photo-wrong-owner-${crypto.randomUUID()}`,
-      { method: 'GET' },
-      { ownerCredential: `${'B'.repeat(42)}E` },
-    );
-    expect(wrongOwner.status).toBe(403);
-
-    const placesDisabled = await routePhotoWithEnv(
-      photo.photoToken,
-      `dev-fixture-photo-places-disabled-${crypto.randomUUID()}`,
-      { IMA_PROVIDER_PLACES: 'false', IMA_KILL_SWITCH: 'false' },
-    );
-    expect(placesDisabled.status).toBe(404);
-    const killed = await routePhotoWithEnv(
-      photo.photoToken,
-      `dev-fixture-photo-killed-${crypto.randomUUID()}`,
-      { IMA_KILL_SWITCH: 'true' },
-    );
-    expect(killed.status).toBe(404);
-  });
-  it('returns EXPIRED for a short-lived keyless fixture token after its deadline', async () => {
-    const threadId = await createFixtureThread('photo-expiry');
-    const ownerScopeRef = await deriveOwnerScopeRef(OWNER_CREDENTIAL);
-    if (ownerScopeRef === null) throw new Error('owner scope fixture was invalid');
-    const codec = createPhotoTokenCodec({
-      secret: DEV_FIXTURE_PHOTO_TOKEN_SECRET,
-      ttlSeconds: 2,
-      referenceResolver: createPhotoReferenceStoreResolver((id) =>
-        fixtureBindings.THREADS.getByName(id),
-      ),
-    });
-    const issueNow = new Date(Math.floor(Date.now() / 1_000) * 1_000).toISOString();
-    const token = await codec.issue(
-      {
-        ownerScopeRef,
-        threadId,
-        turnId: 'dev-fixture-photo-turn',
-        revision: 1,
-        deviceId: PHOTO_DEVICE_ID,
-        photoRef: DEV_FIXTURE_PHOTO_REF,
-      },
-      issueNow,
-    );
-    await new Promise((resolve) => setTimeout(resolve, 2_100));
-    const response = await call(
-      `/v1/photos/${encodeURIComponent(token)}`,
-      `dev-fixture-photo-expired-${crypto.randomUUID()}`,
-      { method: 'GET' },
-    );
-    expect(response.status).toBe(410);
-    const error = v.safeParse(ErrorResponseSchema, await response.json());
-    expect(error.success).toBe(true);
-    if (!error.success) throw new Error('expired photo response was invalid');
-    expect(error.output.code).toBe('EXPIRED');
-  });
   it('does not drop a hard walking constraint when no current location is available', async () => {
     const createRequestId = `dev-fixture-constraint-create-${crypto.randomUUID()}`;
     const create = await call('/v1/threads', createRequestId, {
