@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeHotPepperOpeningHours } from '../../../src/providers/hot-pepper/normalize';
+import {
+  normalizeHotPepperPrice,
+  normalizeHotPepperFacilities,
+  hotPepperSourceFor,
+} from '../../../src/providers/hot-pepper/normalize';
 import {
   parseHotPepperResponse,
   type HotPepperShopWire,
@@ -26,25 +30,28 @@ const shopFor = (open: string): HotPepperShopWire => {
   return shop;
 };
 
-describe('Hot Pepper opening-hours normalization', () => {
-  it('withholds same-clock LO values with different day qualifiers', () => {
+describe('Hot Pepper normalized facts', () => {
+  it('preserves budget text without inferring a currency or unit', () => {
     expect(
-      normalizeHotPepperOpeningHours(
-        shopFor('17:00〜翌0:00（料理 L.O. 23:00 ドリンク L.O. 翌23:00）'),
-      ),
+      normalizeHotPepperPrice({
+        ...shopFor('不明'),
+        budget: { name: '昼の目安', average: '1000〜2000円' },
+      }),
     ).toEqual({
-      status: 'unknown',
-      reason: 'Hot Pepper last-order text is not unambiguous',
+      status: 'known',
+      value: { budgetLabel: '昼の目安', averageLabel: '1000〜2000円', unit: 'unknown' },
     });
   });
-
-  it.each([
-    '17:00〜翌0:00（料理 L.O. 23:00 ドリンク L.O. 23:00）',
-    '17:00〜翌0:00（料理 L.O. 翌23:00 ドリンク L.O. 翌23:00）',
-  ])('keeps repeated equivalent LO qualifiers: %s', (open) => {
-    expect(normalizeHotPepperOpeningHours(shopFor(open))).toMatchObject({
-      status: 'known',
-      value: { lastOrderAt: null },
-    });
+  it('normalizes an official HTTP source link to HTTPS', () => {
+    expect(
+      hotPepperSourceFor({
+        ...shopFor('不明'),
+        urls: { pc: 'http://www.hotpepper.jp/strJ000000001/' },
+      }).publicUrl,
+    ).toBe('https://www.hotpepper.jp/strJ000000001/');
+  });
+  it('keeps unspecified budget and facilities unknown', () => {
+    expect(normalizeHotPepperPrice(shopFor('不明')).status).toBe('unknown');
+    expect(normalizeHotPepperFacilities(shopFor('不明')).status).toBe('unknown');
   });
 });

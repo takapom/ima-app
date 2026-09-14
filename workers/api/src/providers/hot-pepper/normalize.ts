@@ -3,7 +3,6 @@ import {
   type HotPepperFacilitiesSupplement,
   type HotPepperFacilityValue,
   type HotPepperFieldResult,
-  type HotPepperOpeningHoursSupplement,
   type HotPepperPriceSupplement,
 } from './types';
 import type { HotPepperShopWire } from './wire';
@@ -19,57 +18,6 @@ const errorValue = <T>(
 const boundedText = (value: string | null | undefined, maxLength: number): string | null => {
   if (value === undefined || value === null || value.trim().length === 0) return null;
   return value.length <= maxLength ? value : null;
-};
-
-const markerForLastOrder = /(?:L(?:[.．]\s*)?O(?:[.．])?|ラストオーダー)/iu;
-const lastOrderTime =
-  /(?:(?:料理|ドリンク)\s*)?(?:L(?:[.．]\s*)?O(?:[.．])?|ラストオーダー)\s*[:：]?\s*(?:翌\s*)?\d{1,2}[:：]\d{2}/giu;
-const clockTime = /(?:(翌)\s*)?(\d{1,2})[:：](\d{2})/u;
-type InvalidLastOrder = { readonly kind: 'invalid' };
-const invalidLastOrder: InvalidLastOrder = { kind: 'invalid' };
-
-const lastOrderFor = (source: string | null): string | null | InvalidLastOrder => {
-  if (source === null) return null;
-  if (!markerForLastOrder.test(source)) return null;
-  const matches = [...source.matchAll(lastOrderTime)].map((match) => match[0]);
-  if (matches.length === 0) return invalidLastOrder;
-  const times = matches.map((match) => clockTime.exec(match));
-  if (times.some((match) => match === null || Number(match[2]) > 29 || Number(match[3]) > 59)) {
-    return invalidLastOrder;
-  }
-  const distinct = new Set(
-    times.map((match) =>
-      match === null
-        ? ''
-        : `${match[1] === undefined ? 'same-day' : 'next-day'}:${match[2]}:${match[3]}`,
-    ),
-  );
-  return distinct.size === 1 ? (matches[0] ?? invalidLastOrder) : invalidLastOrder;
-};
-
-/** Normalizes only explicit LO markers; HP `close` is a regular-holiday field. */
-export const normalizeHotPepperOpeningHours = (
-  shop: HotPepperShopWire,
-): Normalized<HotPepperOpeningHoursSupplement> => {
-  const openText = boundedText(shop.open, 300);
-  const regularHolidayText = boundedText(shop.close, 300);
-  const orderSource = boundedText(shop.last_order, 160) ?? boundedText(shop.open, 2_000);
-  const lastOrder = lastOrderFor(orderSource);
-  if (lastOrder === invalidLastOrder) {
-    return unknownValue('Hot Pepper last-order text is not unambiguous');
-  }
-  if (openText === null && regularHolidayText === null && lastOrder === null) {
-    return unknownValue('Hot Pepper opening or last-order data is missing');
-  }
-  return {
-    status: 'known',
-    value: {
-      openText,
-      regularHolidayText,
-      lastOrderRaw: typeof lastOrder === 'string' ? lastOrder : null,
-      lastOrderAt: null,
-    },
-  };
 };
 
 export const normalizeHotPepperPrice = (
@@ -131,13 +79,14 @@ const officialHotPepperUrl = (shop: HotPepperShopWire): string | null => {
   try {
     const url = new URL(raw);
     if (
-      url.protocol !== 'https:' ||
+      (url.protocol !== 'https:' && url.protocol !== 'http:') ||
       url.username.length > 0 ||
       url.password.length > 0 ||
       (url.hostname !== 'hotpepper.jp' && !url.hostname.endsWith('.hotpepper.jp'))
     ) {
       return null;
     }
+    url.protocol = 'https:';
     return url.href;
   } catch {
     return null;
