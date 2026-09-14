@@ -1,7 +1,7 @@
 import type { LastTrainInfo } from '@ima/core';
 import { describe, expect, it } from 'vitest';
 import { createLastTrainObservationRegistrar } from '../../../src/providers/last-train/registration';
-import { context, makeFixture, retention, SCOPE } from '../places-details/adapter-fixtures';
+import { context, makeFixture, retention, SCOPE } from '../hot-pepper/adapter-fixtures';
 
 const value: LastTrainInfo = {
   serviceDate: '2026-09-10',

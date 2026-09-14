@@ -19,7 +19,6 @@ import {
 } from '../../../src/providers/last-train/port';
 import { createLastTrainObservationRegistrar } from '../../../src/providers/last-train/registration';
 import type { JourneyReadResult } from '../../../src/providers/last-train/reader';
-import { googlePlaceDetailsFieldMask } from '../../../src/providers/places-details/types';
 import {
   context as placesContext,
   execution as placesExecution,
@@ -27,8 +26,7 @@ import {
   NOW,
   retention,
   SCOPE,
-} from '../places-details/adapter-fixtures';
-
+} from '../hot-pepper/adapter-fixtures';
 const journey = (fromStationRef: string, homeStationRef: string): JourneyRecord => ({
   journeyRef: 'journey-details-1',
   fromStationRef,
@@ -48,7 +46,6 @@ const journey = (fromStationRef: string, homeStationRef: string): JourneyRecord 
     publicUrl: 'https://example.com/timetable-details-1',
   },
 });
-
 const known = (record: JourneyRecord): JourneyReadResult => ({
   status: 'known',
   revision: 1,
@@ -264,7 +261,6 @@ describe('M14 last-train details composition', () => {
       ],
     });
     expect(fixture.calls).toHaveLength(1);
-    expect(fixture.calls[0]?.mask).toBe(googlePlaceDetailsFieldMask(['identity']));
     expect(routeCalls).toEqual({ current: 1, station: 1 });
     expect(datasetCalls.count).toBe(2);
   });
@@ -468,7 +464,13 @@ describe('M14 last-train details composition', () => {
 
   it('keeps a valid base field when last-train provider data is partial', async () => {
     const fixture = makeFixture();
-    fixture.setBody((id) => ({ id, displayName: { text: `店 ${id}` }, priceLevel: 123 }));
+    fixture.setBody((id) => ({
+      id,
+      name: `店 ${id}`,
+      lat: null,
+      lng: null,
+      budget: { average: 123 },
+    }));
     const routeCalls = { current: 0, station: 0 };
     const datasetCalls = { count: 0 };
     const candidateId = fixture.candidateIds[0] ?? '';

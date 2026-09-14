@@ -23,7 +23,7 @@ import {
   NOW,
   retention,
   SCOPE,
-} from '../../providers/places-details/adapter-fixtures';
+} from '../../providers/hot-pepper/adapter-fixtures';
 
 const detailsContext = (serverNow = NOW): HarnessContext => ({
   ...placesContext,

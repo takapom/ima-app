@@ -27,7 +27,7 @@ type CandidateLookup =
   | { readonly ok: false; readonly field: FieldResult<unknown> };
 
 export type LastTrainDetailsDispatcherOptions = {
-  /** Google and other existing detail providers remain responsible for their own fields. */
+  /** Existing detail providers remain responsible for their own fields. */
   readonly base: PlaceDetailsPort;
   readonly journey: LastTrainJourneyPort;
   readonly registry: CandidateObservationRegistryPort;
@@ -103,7 +103,7 @@ const candidateFor = (
       field: fieldError(issue('EXCLUDED_CANDIDATE', 'last_train', 'candidate is excluded')),
     };
   }
-  if (candidate.provider !== 'google_places') {
+  if (candidate.provider !== 'hotpepper') {
     return {
       ok: false,
       field: fieldError(
