@@ -1,15 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createGooglePlaceDetailsTransport } from '../../../src/providers/places-details/transport';
-import type { GooglePlaceDetailsRequest } from '../../../src/providers/places-details/types';
-import { createGoogleTextSearchTransport } from '../../../src/providers/places-search/transport';
-import type { GoogleTextSearchRequest } from '../../../src/providers/places-search/types';
-import { createGoogleRouteMatrixTransport } from '../../../src/providers/routes/transport';
+import { createHotPepperTransport } from '../../../src/providers/hot-pepper/transport';
+import type { HotPepperSearchRequest } from '../../../src/providers/hot-pepper/types';
 import { PhotoProviderError } from '../../../src/providers/photo/media';
 import { HotPepperError } from '../../../src/providers/hot-pepper/types';
-import {
-  routeElementCount,
-  type GoogleRouteMatrixRequest,
-} from '../../../src/providers/routes/types';
 import {
   createBestEffortRuntimeProviderTraceSink,
   createRuntimeProviderTransportObserver,
@@ -19,27 +12,9 @@ import {
 } from '../../../src/providers/telemetry/runtime-provider-trace';
 import type { RuntimeProviderTransportObserver } from '../../../src/providers/telemetry/runtime-provider-trace-contract';
 
-const searchRequest: GoogleTextSearchRequest = {
-  textQuery: 'PROVIDER_REQUEST_CANARY quiet cafe',
-  openNow: true,
-  pageSize: 2,
-};
-
-const detailsRequest: GooglePlaceDetailsRequest = {
-  placeId: 'provider-place-canary',
-  fields: ['identity'],
-};
-
-const routeRequest: GoogleRouteMatrixRequest = {
-  origins: [
-    { ref: 'origin-1', coordinates: { lat: 35.6595, lng: 139.7005 } },
-    { ref: 'origin-2', coordinates: { lat: 35.658, lng: 139.7016 } },
-  ],
-  destinations: [
-    { ref: 'destination-1', coordinates: { lat: 35.6467, lng: 139.71 } },
-    { ref: 'destination-2', coordinates: { lat: 35.647, lng: 139.711 } },
-    { ref: 'destination-3', coordinates: { lat: 35.648, lng: 139.712 } },
-  ],
+const searchRequest: HotPepperSearchRequest = {
+  keyword: 'PROVIDER_REQUEST_CANARY quiet cafe',
+  count: 2,
 };
 
 const jsonResponse = (body: unknown, status = 200): Response =>
@@ -59,92 +34,7 @@ const baseTraceOptions = (
   ...overrides,
 });
 
-const fetcherFor =
-  (): typeof fetch =>
-  (url: RequestInfo | URL): Promise<Response> => {
-    const value = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
-    if (value.endsWith(':searchText')) return Promise.resolve(jsonResponse({ places: [] }));
-    if (value.includes('/v1/places/')) {
-      return Promise.resolve(jsonResponse({ id: detailsRequest.placeId }));
-    }
-    if (value.endsWith('distanceMatrix/v2:computeRouteMatrix')) {
-      return Promise.resolve(jsonResponse([]));
-    }
-    return Promise.resolve(jsonResponse({}, 404));
-  };
-
 describe('runtime provider transport trace', () => {
-  it('records one trace at each real Search, Details, and Routes transport boundary', async () => {
-    const traces: RuntimeProviderTrace[] = [];
-    const options = baseTraceOptions((trace) => {
-      traces.push(trace);
-    });
-    const observer = createRuntimeProviderTransportObserver(options);
-    const fetcher = fetcherFor();
-    const search = createGoogleTextSearchTransport({
-      apiKey: 'provider-key-canary',
-      fetcher,
-      observer,
-    });
-    const details = createGooglePlaceDetailsTransport({
-      apiKey: 'provider-key-canary',
-      fetcher,
-      observer,
-    });
-    const routes = createGoogleRouteMatrixTransport({
-      apiKey: 'provider-key-canary',
-      fetcher,
-      observer,
-    });
-
-    await search.search(searchRequest);
-    await details.read(detailsRequest);
-    await routes.compute(routeRequest);
-
-    expect(traces).toHaveLength(3);
-    expect(traces.map((trace) => trace.provider)).toEqual(['places', 'places', 'routes']);
-    expect(traces.every((trace) => trace.status === 'ok' && trace.resultCode === 'OK')).toBe(true);
-    expect(traces.find((trace) => trace.provider === 'routes')).toMatchObject({
-      apiElementCount: 6,
-    });
-    expect(JSON.stringify(traces)).not.toContain('PROVIDER_REQUEST_CANARY');
-    expect(JSON.stringify(traces)).not.toContain('provider-place-canary');
-    expect(JSON.stringify(traces)).not.toContain('provider-key-canary');
-  });
-
-  it('counts route elements only after the transport request schema has passed', async () => {
-    const traces: RuntimeProviderTrace[] = [];
-    const observer = createRuntimeProviderTransportObserver(
-      baseTraceOptions((trace) => {
-        traces.push(trace);
-      }),
-    );
-    const fetcher = vi.fn(() => Promise.resolve(jsonResponse([])));
-    const routes = createGoogleRouteMatrixTransport({
-      apiKey: 'provider-key-canary',
-      fetcher,
-      observer,
-    });
-    const missingKeyRoutes = createGoogleRouteMatrixTransport({
-      fetcher,
-      observer,
-    });
-
-    await expect(missingKeyRoutes.compute(routeRequest)).rejects.toMatchObject({
-      code: 'MISSING_API_KEY',
-    });
-    expect(fetcher).not.toHaveBeenCalled();
-    expect(traces).toHaveLength(0);
-    await routes.compute(routeRequest);
-    await expect(routes.compute({ origins: [], destinations: [] })).rejects.toMatchObject({
-      code: 'INVALID_REQUEST',
-    });
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(traces).toHaveLength(1);
-    expect(traces[0]).toMatchObject({ apiElementCount: 6 });
-    expect(routeElementCount(routeRequest)).toBe(6);
-  });
-
   it('classifies typed timeout, cancellation, and rate-limit failures without changing errors', async () => {
     vi.useFakeTimers();
     try {
@@ -153,7 +43,7 @@ describe('runtime provider transport trace', () => {
         traces.push(trace);
       });
       const observer = createRuntimeProviderTransportObserver(options);
-      const timeoutTransport = createGoogleTextSearchTransport({
+      const timeoutTransport = createHotPepperTransport({
         apiKey: 'provider-key-canary',
         timeoutMs: 10,
         observer,
@@ -170,8 +60,8 @@ describe('runtime provider transport trace', () => {
 
       const controller = new AbortController();
       controller.abort();
-      const fetcher = vi.fn(() => Promise.resolve(jsonResponse({ places: [] })));
-      const cancelledTransport = createGoogleTextSearchTransport({
+      const fetcher = vi.fn(() => Promise.resolve(jsonResponse({ results: { shop: [] } })));
+      const cancelledTransport = createHotPepperTransport({
         apiKey: 'provider-key-canary',
         fetcher,
         observer,
@@ -182,7 +72,7 @@ describe('runtime provider transport trace', () => {
       expect(fetcher).not.toHaveBeenCalled();
       expect(traces).toHaveLength(1);
 
-      const rateLimitedTransport = createGoogleTextSearchTransport({
+      const rateLimitedTransport = createHotPepperTransport({
         apiKey: 'provider-key-canary',
         observer,
         fetcher: () => Promise.resolve(jsonResponse({ error: 'PROVIDER_BODY_CANARY' }, 429)),
@@ -218,16 +108,17 @@ describe('runtime provider transport trace', () => {
         throw new Error('BEGIN_OBSERVER_CANARY');
       },
     };
-    const successFetcher = vi.fn(() => Promise.resolve(jsonResponse({ places: [] })));
-    const successTransport = createGoogleTextSearchTransport({
+    const successFetcher = vi.fn(() => Promise.resolve(jsonResponse({ results: { shop: [] } })));
+    const successTransport = createHotPepperTransport({
       apiKey: 'provider-key-canary',
       fetcher: successFetcher,
       observer: beginFailureObserver,
     });
 
     await expect(successTransport.search(searchRequest)).resolves.toEqual({
-      places: [],
-      nextPageToken: null,
+      shops: [],
+      resultsAvailable: null,
+      resultsStart: null,
     });
     expect(successFetcher).toHaveBeenCalledTimes(1);
 
@@ -239,7 +130,7 @@ describe('runtime provider transport trace', () => {
       }),
     };
     const rateFetcher = vi.fn(() => Promise.resolve(jsonResponse({}, 429)));
-    const rateTransport = createGoogleTextSearchTransport({
+    const rateTransport = createHotPepperTransport({
       apiKey: 'provider-key-canary',
       fetcher: rateFetcher,
       observer: completeFailureObserver,
@@ -260,7 +151,7 @@ describe('runtime provider transport trace', () => {
         traces.push(trace);
       }),
     );
-    const transport = createGoogleTextSearchTransport({
+    const transport = createHotPepperTransport({
       apiKey: 'provider-key-canary',
       // Exercise a provider that violates the Promise rejection contract at runtime.
       fetcher: () => {
@@ -284,9 +175,9 @@ describe('runtime provider transport trace', () => {
         traces.push(trace);
       }),
     );
-    const search = createGoogleTextSearchTransport({
+    const search = createHotPepperTransport({
       apiKey: 'provider-key-canary',
-      fetcher: () => Promise.resolve(jsonResponse({ places: [] })),
+      fetcher: () => Promise.resolve(jsonResponse({ results: { shop: [] } })),
       observer,
     });
 
@@ -362,22 +253,21 @@ describe('runtime provider transport trace', () => {
       ...baseTraceOptions(() => undefined),
       sink,
     });
-    const transport = createGoogleRouteMatrixTransport({
+    const transport = createHotPepperTransport({
       apiKey: 'provider-key-canary',
-      fetcher: () => Promise.resolve(jsonResponse([])),
+      fetcher: () => Promise.resolve(jsonResponse({ results: { shop: [] } })),
       observer,
     });
-    const result = await transport.compute(routeRequest);
+    const result = await transport.search(searchRequest);
 
-    expect(result).toEqual([]);
+    expect(result.shops).toEqual([]);
     expect(scheduled).toHaveLength(1);
     await Promise.all(scheduled);
     expect(writes).toHaveLength(1);
     expect(writes[0]).toMatchObject({ ownerScopeRef: 'owner-provider-trace' });
     expect(writes[0]?.record).toMatchObject({
       operation: 'provider',
-      provider: 'routes',
-      apiElementCount: 6,
+      provider: 'hotpepper',
     });
   });
 });

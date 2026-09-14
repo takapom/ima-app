@@ -1,6 +1,3 @@
-import { GooglePlaceDetailsError } from '../places-details/types';
-import { GoogleTextSearchError } from '../places-search/types';
-import { GoogleRouteMatrixError } from '../routes/types';
 import { PhotoProviderError } from '../photo/media';
 import { HotPepperError } from '../hot-pepper/types';
 import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '../../telemetry/schema';
@@ -45,12 +42,7 @@ export type RuntimeProviderTraceOptions = {
   readonly sink: RuntimeProviderTraceSink;
 };
 
-type ProviderError =
-  | GoogleTextSearchError
-  | GooglePlaceDetailsError
-  | GoogleRouteMatrixError
-  | PhotoProviderError
-  | HotPepperError;
+type ProviderError = PhotoProviderError | HotPepperError;
 
 type CallState = {
   readonly callId: string;
@@ -141,11 +133,7 @@ export const createBestEffortRuntimeProviderTraceSink = (
   createBestEffortRuntimeTraceSink(store, traceRecordForRuntimeProvider, schedule, onFailure);
 
 const isProviderError = (error: unknown): error is ProviderError =>
-  error instanceof GoogleTextSearchError ||
-  error instanceof GooglePlaceDetailsError ||
-  error instanceof GoogleRouteMatrixError ||
-  error instanceof PhotoProviderError ||
-  error instanceof HotPepperError;
+  error instanceof PhotoProviderError || error instanceof HotPepperError;
 
 const outcomeForError = (
   error: unknown,
