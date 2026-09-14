@@ -35,77 +35,8 @@ import {
   WalkingRouteSchema,
 } from './values';
 
-const timestamp = '2026-09-09T12:00:00Z';
-const retention = {
-  retentionDecision: 'allow',
-  retentionMode: 'provider_limited',
-  sessionExpiresAt: '2026-09-10T05:00:00+09:00',
-  freshUntil: timestamp,
-  displayUntil: '2026-09-09T13:00:00Z',
-  retentionUntil: '2026-09-10T05:00:00+09:00',
-  deletionScheduledAt: '2026-09-10T05:00:00+09:00',
-  attribution: { label: 'Example source', sourceLink: 'https://example.com/source' },
-  restoreMode: 'full',
-  policyStatus: 'available',
-  displayPolicyStatus: 'available',
-};
-const evidence = {
-  evidenceId: 'obs-1',
-  attribution: { label: 'Example source', sourceLink: 'https://example.com/source' },
-  retention,
-};
-const message = {
-  text: '徒歩で行きやすい候補です',
-  evidenceIds: ['obs-1'],
-  evidence: [evidence],
-  basis: 'grounded',
-  retention,
-};
-const identity = {
-  status: 'known',
-  value: {
-    name: 'Melt',
-    area: '恵比寿',
-    address: null,
-    category: 'cafe',
-    businessStatus: 'operational',
-    sourceUrl: 'https://example.com/place',
-  },
-  evidence: [evidence],
-};
-const card = {
-  candidateId: 'candidate-1',
-  facts: { identity },
-  why: message,
-};
-const searchRequest = {
-  schemaVersion: 'v1',
-  requestId: 'request-1',
-  threadId: 'thread-1',
-  turnId: null,
-  revision: 1,
-  text: '静かで甘いもの',
-  clientNow: timestamp,
-  location: {
-    status: 'unavailable',
-    lat: null,
-    lng: null,
-    accuracyMeters: null,
-    precise: false,
-    capturedAt: null,
-  },
-  prefs: {
-    homeStationRef: 'station-shibuya',
-    maxWalkMinutes: 15,
-    minimumStayMinutes: null,
-    areaText: '恵比寿',
-    budget: 'normal',
-  },
-  savedPlaceRefs: [],
-  excludeCandidateIds: [],
-  mode: 'search',
-  idempotencyKey: 'idem-1',
-};
+import { card, identity, message, searchRequest, timestamp } from './tests/dto-fixtures';
+
 describe('public display and HTTP DTOs', () => {
   it('requires renderable card facts and evidence', () => {
     expect(v.safeParse(CardsDataSchema, { hero: card, alts: [] }).success).toBe(true);
