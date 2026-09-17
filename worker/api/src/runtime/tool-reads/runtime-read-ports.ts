@@ -17,9 +17,9 @@ import {
   type RuntimeReadExecutionRequest,
   type RuntimeReadExecutionResult,
   type RuntimeReadFailureKind,
-} from './runtime-read-executor';
-import type { RuntimeBudget, RuntimeBudgetDenial } from '../budget/runtime-budget';
-import { RuntimeSingleFlightError } from './runtime-singleflight';
+} from '@api/runtime/tool-reads/runtime-read-executor';
+import type { RuntimeBudget, RuntimeBudgetDenial } from '@api/runtime/budget/runtime-budget';
+import { RuntimeSingleFlightError } from '@api/runtime/tool-reads/runtime-singleflight';
 
 export type RuntimeReadCost = {
   readonly costUnits: number;

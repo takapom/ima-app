@@ -6,16 +6,16 @@ import {
   SavedReferenceListResponseSchema,
 } from '@ima/contracts';
 import type { CancellationToken } from '@ima/core';
-import type { AuthenticatedContext } from './auth';
-import { toErrorResponse } from './errors';
+import type { AuthenticatedContext } from '@api/http/auth';
+import { toErrorResponse } from '@api/http/errors';
 import type {
   ApplicationHandler,
   ApplicationOperation,
   ApplicationResult,
   HandlerContext,
-} from './handler';
-import { parseJsonBodyWithRaw } from './input';
-import type { MatchedRoute } from './router-match';
+} from '@api/http/handler';
+import { parseJsonBodyWithRaw } from '@api/http/input';
+import type { MatchedRoute } from '@api/http/router-match';
 
 export type OwnerHttpRoute = Extract<
   MatchedRoute,

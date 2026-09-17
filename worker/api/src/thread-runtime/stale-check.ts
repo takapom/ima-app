@@ -1,4 +1,4 @@
-import type { ThreadRuntimeTarget } from './admission';
+import type { ThreadRuntimeTarget } from '@api/thread-runtime/admission';
 
 type RuntimeStaleBinding = {
   readonly revision: number;

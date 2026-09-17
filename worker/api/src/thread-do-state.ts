@@ -1,4 +1,4 @@
-import type { ThreadSnapshot, ThreadState } from './thread-types';
+import type { ThreadSnapshot, ThreadState } from '@api/thread-types';
 
 export type ThreadRow = {
   readonly thread_id: string;

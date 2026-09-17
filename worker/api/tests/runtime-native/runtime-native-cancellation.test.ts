@@ -5,10 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type { ThreadDO } from './runtime-native-worker';
 import type { RuntimeNativeScenario } from './runtime-native-provider';
 import { RUNTIME_NATIVE_OWNER } from './runtime-native-ports';
-import type {
-  ThreadRuntimeTarget,
-  ThreadRuntimeTurnInput,
-} from '../../src/thread-runtime/admission';
+import type { ThreadRuntimeTarget, ThreadRuntimeTurnInput } from '@api/thread-runtime/admission';
 
 type NativeTestEnv = Cloudflare.Env & {
   THREADS: DurableObjectNamespace<ThreadDO>;

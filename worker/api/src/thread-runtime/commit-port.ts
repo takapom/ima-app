@@ -7,7 +7,7 @@ import {
   type CommitRecord,
   type CommitRequest,
 } from '@ima/core';
-import type { ThreadRuntimeTarget } from './admission';
+import type { ThreadRuntimeTarget } from '@api/thread-runtime/admission';
 
 type ThreadStateRow = {
   readonly thread_id: string;

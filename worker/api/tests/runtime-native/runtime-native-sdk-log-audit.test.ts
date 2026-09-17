@@ -1,10 +1,7 @@
 import { env, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it, vi } from 'vitest';
 import type { ThreadDO } from './runtime-native-worker';
-import type {
-  ThreadRuntimeTarget,
-  ThreadRuntimeTurnInput,
-} from '../../src/thread-runtime/admission';
+import type { ThreadRuntimeTarget, ThreadRuntimeTurnInput } from '@api/thread-runtime/admission';
 
 type NativeTestEnv = Cloudflare.Env & {
   readonly THREADS: DurableObjectNamespace<ThreadDO>;

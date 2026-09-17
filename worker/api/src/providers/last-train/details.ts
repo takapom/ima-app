@@ -19,7 +19,7 @@ import {
   type Result,
   type ToolExecutionContext,
 } from '@ima/core';
-import { type LastTrainObservationRegistrar } from './registration';
+import { type LastTrainObservationRegistrar } from '@api/providers/last-train/registration';
 
 type DetailsRequest = GetPlaceDetailsInput['requests'][number];
 type CandidateLookup =

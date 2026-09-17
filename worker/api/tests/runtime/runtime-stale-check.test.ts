@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isRuntimeTargetStale } from '../../src/thread-runtime/stale-check';
+import { isRuntimeTargetStale } from '@api/thread-runtime/stale-check';
 
 const target = {
   ownerScopeRef: 'owner-stale-check',

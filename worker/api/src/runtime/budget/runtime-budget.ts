@@ -1,5 +1,8 @@
-import { consumeRuntimePendingRead, createRuntimeReadReservation } from './runtime-budget-read';
-import { createRuntimeRouteReservation } from './runtime-budget-route';
+import {
+  consumeRuntimePendingRead,
+  createRuntimeReadReservation,
+} from '@api/runtime/budget/runtime-budget-read';
+import { createRuntimeRouteReservation } from '@api/runtime/budget/runtime-budget-route';
 import type {
   RuntimeBudgetConfig,
   RuntimeBudgetDenial,
@@ -12,7 +15,7 @@ import type {
   RuntimeRouteReservation,
   RuntimeRouteReservationRequest,
   RuntimeSubmitReservation,
-} from './runtime-budget-types';
+} from '@api/runtime/budget/runtime-budget-types';
 export type {
   RuntimeBudgetConfig,
   RuntimeBudgetDenial,
@@ -30,7 +33,7 @@ export type {
   RuntimeRouteReservation,
   RuntimeRouteReservationRequest,
   RuntimeSubmitReservation,
-} from './runtime-budget-types';
+} from '@api/runtime/budget/runtime-budget-types';
 
 /** Initial M10 limits. Provider-specific prices are injected through the request costs. */
 export const DEFAULT_RUNTIME_BUDGET: RuntimeBudgetConfig = Object.freeze({

@@ -2,11 +2,11 @@ import {
   createHttpRouterConfig,
   createThreadScopeAuthorizer,
   type BootstrapEnv,
-} from '../../src/bootstrap';
-import { routeRequest } from '../../src/http/router';
-import { RateLimitDO } from '../../src/thread-do';
-import { TelemetryDO } from '../../src/telemetry/telemetry-do';
-import { SavedReferenceDO } from '../../src/saved-references/saved-reference-do';
+} from '@api/bootstrap';
+import { routeRequest } from '@api/http/router';
+import { RateLimitDO } from '@api/thread-do';
+import { TelemetryDO } from '@api/telemetry/telemetry-do';
+import { SavedReferenceDO } from '@api/saved-references/saved-reference-do';
 import { ProductionThreadDO, RUNTIME_PRODUCTION_NOW } from './runtime-production-worker';
 
 export class ProductionHttpThreadDO extends ProductionThreadDO {

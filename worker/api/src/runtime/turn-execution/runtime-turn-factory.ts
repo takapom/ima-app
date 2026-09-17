@@ -21,7 +21,7 @@ import {
   observeRuntimeTurnOutcome,
   type RuntimeSubmitRejectionWriter,
   type RuntimeTurnOutcomeWriter,
-} from './runtime-submit-diagnostic';
+} from '@api/runtime/turn-execution/runtime-submit-diagnostic';
 import {
   createPublicToolSet,
   isPublicToolName,
@@ -30,8 +30,8 @@ import {
   type ToolBindingDependencies,
   type ToolRuntimeFactory,
   type PublicToolName,
-} from '../../tools';
-import type { RuntimeBudget } from '../budget/runtime-budget';
+} from '@api/tools';
+import type { RuntimeBudget } from '@api/runtime/budget/runtime-budget';
 
 const RUNTIME_MAX_RETRIES = 0;
 

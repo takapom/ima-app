@@ -1,8 +1,12 @@
 import * as v from 'valibot';
-import { isWithinTelemetryRetention } from './retention';
-import { telemetryAggregationSchema, type TelemetryAggregation, type TraceRecord } from './schema';
-export { parseTraceRecord } from './schema';
-export type { TelemetryAggregation, TraceRecord } from './schema';
+import { isWithinTelemetryRetention } from '@api/telemetry/retention';
+import {
+  telemetryAggregationSchema,
+  type TelemetryAggregation,
+  type TraceRecord,
+} from '@api/telemetry/schema';
+export { parseTraceRecord } from '@api/telemetry/schema';
+export type { TelemetryAggregation, TraceRecord } from '@api/telemetry/schema';
 
 export interface TelemetryTraceStore {
   write(record: TraceRecord, ownerScopeRef: string): Promise<void>;

@@ -3,19 +3,19 @@ import type {
   RuntimeModelGuardCallOptions,
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from '../turn-execution/runtime-model-guard';
-import { HOT_PEPPER_GOURMET_ENDPOINT } from '../../providers/hot-pepper/types';
-import { fixturePlace } from './runtime-dev-fixture-place';
+} from '@api/runtime/turn-execution/runtime-model-guard';
+import { HOT_PEPPER_GOURMET_ENDPOINT } from '@api/providers/hot-pepper/types';
+import { fixturePlace } from '@api/runtime/composition/runtime-dev-fixture-place';
 import {
   sessionExpiryAt,
   type ProductionObservationPolicyInput,
   type ProductionRetentionSource,
-} from './runtime-production-support';
-import type { RuntimeProductionOverrides } from './runtime-production-types';
+} from '@api/runtime/composition/runtime-production-support';
+import type { RuntimeProductionOverrides } from '@api/runtime/composition/runtime-production-types';
 
 export const DEV_FIXTURE_PLACES_KEY = 'dev-fixture-places-key';
 export const DEV_FIXTURE_CURSOR_SECRET = 'dev-fixture-cursor-secret';
-export { DEV_FIXTURE_PLACE_ID } from './runtime-dev-fixture-place';
+export { DEV_FIXTURE_PLACE_ID } from '@api/runtime/composition/runtime-dev-fixture-place';
 const configured = (value: unknown): boolean =>
   typeof value === 'string' && value.trim().length > 0;
 

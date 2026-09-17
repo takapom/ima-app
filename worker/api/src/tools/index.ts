@@ -5,15 +5,15 @@ export {
   invokePublicToolByName,
   invokePublicToolEnvelope,
   isPublicToolName,
-} from './catalog';
-export { projectDetailsResult, projectSearchResult } from './projection';
-export { PUBLIC_TOOL_NAMES } from './types';
+} from '@api/tools/catalog';
+export { projectDetailsResult, projectSearchResult } from '@api/tools/projection';
+export { PUBLIC_TOOL_NAMES } from '@api/tools/types';
 export {
   detailsResultForSavedFailures,
   mergeSavedDetailsFailures,
   resolveModelDetailsInput,
-} from './saved-reference-details';
-export type { SavedDetailsFailure, ResolvedModelDetails } from './saved-reference-details';
+} from '@api/tools/saved-reference-details';
+export type { SavedDetailsFailure, ResolvedModelDetails } from '@api/tools/saved-reference-details';
 export type {
   DetailsToolResult,
   DetailsToolEnvelope,
@@ -39,4 +39,4 @@ export type {
   SavedPlaceReferenceResolution,
   SavedPlaceReferenceResolutionRequest,
   SavedPlaceReferenceResolver,
-} from './types';
+} from '@api/tools/types';

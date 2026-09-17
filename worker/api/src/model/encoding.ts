@@ -1,6 +1,6 @@
 import type { ModelMessage } from 'ai';
 import type { ProjectedModelContext } from '@ima/core';
-import { MODEL_SYSTEM_PROMPT } from './system-prompt';
+import { MODEL_SYSTEM_PROMPT } from '@api/model/system-prompt';
 
 /** ModelMessage is the public AI SDK prompt type consumed by generateText/streamText. */
 export type ModelInputMessage = ModelMessage;

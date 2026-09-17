@@ -1,6 +1,9 @@
-import { placesCursorSecret, productionSecret } from './runtime-production-support';
-import { isConfiguredSecret } from './runtime-production-provider-config';
-import { resolveRuntimeOperationalGate } from './runtime-operational-gate';
+import {
+  placesCursorSecret,
+  productionSecret,
+} from '@api/runtime/composition/runtime-production-support';
+import { isConfiguredSecret } from '@api/runtime/composition/runtime-production-provider-config';
+import { resolveRuntimeOperationalGate } from '@api/runtime/composition/runtime-operational-gate';
 
 export type RuntimeOperationalAdmissionInput = {
   readonly env: unknown;

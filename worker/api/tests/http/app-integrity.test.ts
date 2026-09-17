@@ -13,8 +13,8 @@ import {
   type AppIntegrityKeyStore,
   type AppIntegrityNonce,
   type AppIntegrityVerifier,
-} from '../../src/security/app-integrity';
-import { routeRequest } from '../../src/http/router';
+} from '@api/security/app-integrity';
+import { routeRequest } from '@api/http/router';
 import { makeHarness, makeRequest, requestId, searchInput } from './router-fixtures';
 
 const NOW = '2026-09-10T00:00:00.000Z';

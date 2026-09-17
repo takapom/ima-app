@@ -6,11 +6,11 @@ import {
   AppAttestRevokeRequestSchema,
   AppAttestRevokeResponseSchema,
 } from '@ima/contracts';
-import type { AuthenticatedContext } from './auth';
-import { toErrorResponse } from './errors';
-import { parseJsonBodyWithRaw } from './input';
-import type { MatchedRoute } from './router-match';
-import type { AppIntegrityGate } from '../security/app-integrity';
+import type { AuthenticatedContext } from '@api/http/auth';
+import { toErrorResponse } from '@api/http/errors';
+import { parseJsonBodyWithRaw } from '@api/http/input';
+import type { MatchedRoute } from '@api/http/router-match';
+import type { AppIntegrityGate } from '@api/security/app-integrity';
 
 export type AppIntegrityHttpRoute = Extract<
   MatchedRoute,

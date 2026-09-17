@@ -1,6 +1,6 @@
-import production from '../../src/index';
-import { RateLimitDO } from '../../src/thread-do';
-import { TelemetryDO } from '../../src/telemetry/telemetry-do';
+import production from '@api/index';
+import { RateLimitDO } from '@api/thread-do';
+import { TelemetryDO } from '@api/telemetry/telemetry-do';
 import { withDevFixtureCors } from './runtime-dev-fixture-cors';
 
 type ProductionFetch = NonNullable<typeof production.fetch>;

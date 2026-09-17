@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   OPENAI_PROVIDER_REQUEST_OPTIONS,
   type OpenAIProviderRequestOptions,
-} from '../../src/model/provider-options';
-import { OPENAI_MODEL_NAME, OPENAI_REASONING_EFFORT } from '../../src/model/provider-config';
+} from '@api/model/provider-options';
+import { OPENAI_MODEL_NAME, OPENAI_REASONING_EFFORT } from '@api/model/provider-config';
 
 describe('OpenAI Responses request profile', () => {
   it('keeps the fixed model options independent of the live SDK', () => {

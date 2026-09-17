@@ -3,8 +3,8 @@ import type {
   CapabilitySnapshot,
   HarnessContext,
 } from '@ima/core';
-import type { RuntimePublicResponseDependencies } from '../turn-execution/runtime-turn-composition';
-import { productionScopeFor } from './runtime-production-support';
+import type { RuntimePublicResponseDependencies } from '@api/runtime/turn-execution/runtime-turn-composition';
+import { productionScopeFor } from '@api/runtime/composition/runtime-production-support';
 
 export const isConfiguredSecret = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;

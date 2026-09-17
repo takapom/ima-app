@@ -1,7 +1,7 @@
 import { PhotoBinaryRouteResponseSchema } from '@ima/contracts';
 import * as v from 'valibot';
-import type { HandlerContext, PhotoBodyHandler, PhotoPath } from './handler';
-import { toErrorResponse } from './errors';
+import type { HandlerContext, PhotoBodyHandler, PhotoPath } from '@api/http/handler';
+import { toErrorResponse } from '@api/http/errors';
 
 const internal = (requestId: string): Response =>
   toErrorResponse(requestId, { status: 500, code: 'INTERNAL' });

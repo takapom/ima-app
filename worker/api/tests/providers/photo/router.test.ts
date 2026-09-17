@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { deriveOwnerScopeRef } from '../../../src/http/auth';
-import { routeRequest } from '../../../src/http/router';
-import { createPhotoBodyHandler } from '../../../src/providers/photo/http';
-import { createMemoryPhotoReferenceStore } from '../../../src/providers/photo/reference-store';
-import { createPhotoTokenCodec } from '../../../src/providers/photo/token';
+import { deriveOwnerScopeRef } from '@api/http/auth';
+import { routeRequest } from '@api/http/router';
+import { createPhotoBodyHandler } from '@api/providers/photo/http';
+import { createMemoryPhotoReferenceStore } from '@api/providers/photo/reference-store';
+import { createPhotoTokenCodec } from '@api/providers/photo/token';
 import { makeHarness, makeRequest, ownerCredential } from '../../http/router-fixtures';
 
 const NOW = '2026-09-10T12:00:00.000Z';

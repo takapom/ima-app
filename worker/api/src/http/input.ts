@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { RequestIdSchema } from '@ima/contracts';
-import type { BoundaryFailure } from './errors';
+import type { BoundaryFailure } from '@api/http/errors';
 
 export type JsonBodyResult<T> =
   | { readonly ok: true; readonly value: T }

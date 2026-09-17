@@ -1,4 +1,8 @@
-import { PhotoTokenError, PhotoTokenInputSchema, type PhotoTokenCodec } from './types';
+import {
+  PhotoTokenError,
+  PhotoTokenInputSchema,
+  type PhotoTokenCodec,
+} from '@api/providers/photo/types';
 import { IsoTimestampSchema, OpaqueIdSchema } from '@ima/contracts';
 import {
   PhotoInfoSchema,
@@ -7,12 +11,12 @@ import {
   type ReadonlyStoredObservation,
   type RegistryScope,
 } from '@ima/core';
-import type { RuntimePhotoTokenPreparer } from '../../runtime/response/runtime-response';
+import type { RuntimePhotoTokenPreparer } from '@api/runtime/response/runtime-response';
 import {
   runtimePolicyAllows,
   type RuntimeFieldUsePolicy,
   type RuntimePolicyMode,
-} from '../../runtime/context/runtime-field-policy';
+} from '@api/runtime/context/runtime-field-policy';
 import * as v from 'valibot';
 
 export type PhotoTokenObservation = {

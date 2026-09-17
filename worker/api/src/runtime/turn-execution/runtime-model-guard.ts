@@ -5,12 +5,12 @@ import {
   type RuntimeBatchAction,
   type RuntimeBatchIssueCode,
   type RuntimeBatchResult,
-} from './runtime-batch';
+} from '@api/runtime/turn-execution/runtime-batch';
 import type {
   RuntimeBudget,
   RuntimeBudgetDenial,
   RuntimeBudgetResult,
-} from '../budget/runtime-budget';
+} from '@api/runtime/budget/runtime-budget';
 
 /** AI SDK's public model middleware currently accepts V3 models. */
 export type RuntimeModelGuardModel = Extract<LanguageModel, { specificationVersion: 'v3' }>;

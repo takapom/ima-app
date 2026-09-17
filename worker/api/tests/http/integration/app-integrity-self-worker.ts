@@ -2,11 +2,11 @@ import {
   createHttpRouterConfig,
   createThreadScopeAuthorizer,
   type BootstrapEnv,
-} from '../../../src/bootstrap';
-import { routeRequest } from '../../../src/http/router';
-import { AppIntegrityDO, type AppIntegrityNamespace } from '../../../src/security/app-integrity-do';
-import type { AppIntegrityVerifier } from '../../../src/security/app-integrity';
-import { RateLimitDO, ThreadDO } from '../../../src/thread-do';
+} from '@api/bootstrap';
+import { routeRequest } from '@api/http/router';
+import { AppIntegrityDO, type AppIntegrityNamespace } from '@api/security/app-integrity-do';
+import type { AppIntegrityVerifier } from '@api/security/app-integrity';
+import { RateLimitDO, ThreadDO } from '@api/thread-do';
 
 export { AppIntegrityDO, RateLimitDO, ThreadDO };
 

@@ -4,16 +4,16 @@ import {
   HotPepperError,
   HotPepperSearchRequestSchema,
   type HotPepperSearchRequest,
-} from './types';
-import { parseHotPepperResponse, type HotPepperSearchPage } from './wire';
+} from '@api/providers/hot-pepper/types';
+import { parseHotPepperResponse, type HotPepperSearchPage } from '@api/providers/hot-pepper/wire';
 import {
   beginRuntimeProviderTransportCall,
   completeRuntimeProviderTransportCall,
-} from '../telemetry/runtime-provider-trace-contract';
+} from '@api/providers/telemetry/runtime-provider-trace-contract';
 import type {
   RuntimeProviderTransportCall,
   RuntimeProviderTransportObserver,
-} from '../telemetry/runtime-provider-trace-contract';
+} from '@api/providers/telemetry/runtime-provider-trace-contract';
 
 export type HotPepperTransportOptions = {
   /** The composition owner reads this from the Worker secret binding. */

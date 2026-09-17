@@ -3,14 +3,14 @@ import {
   JOURNEY_DATASET_SCHEMA_VERSION,
   JourneyDatasetEnvelopeSchema,
   type JourneyDatasetEnvelope,
-} from '../../../src/providers/last-train/types';
+} from '@api/providers/last-train/types';
 import {
   createLastTrainJourneyPort,
   type JourneyDatasetReadPort,
   type LastTrainRoutePorts,
-} from '../../../src/providers/last-train/port';
-import type { JourneyReadResult } from '../../../src/providers/last-train/reader';
-import type { JourneyDatasetReader } from '../../../src/providers/last-train/store';
+} from '@api/providers/last-train/port';
+import type { JourneyReadResult } from '@api/providers/last-train/reader';
+import type { JourneyDatasetReader } from '@api/providers/last-train/store';
 import type {
   HarnessContext,
   JourneyServiceDateContext,

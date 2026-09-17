@@ -8,13 +8,13 @@ import type {
   RetentionMetadata,
   ToolExecutionContext,
 } from '@ima/core';
-import type { JourneyReadResult } from '../../../src/providers/last-train/reader';
-import type { LastTrainRoutePorts } from '../../../src/providers/last-train/port';
+import type { JourneyReadResult } from '@api/providers/last-train/reader';
+import type { LastTrainRoutePorts } from '@api/providers/last-train/port';
 import {
   createRuntimeLastTrainRevisionState,
   createRuntimeProviderComposition,
   type RuntimeJourneyDataset,
-} from '../../../src/runtime/composition/runtime-provider-composition';
+} from '@api/runtime/composition/runtime-provider-composition';
 import { describe, expect, it, vi } from 'vitest';
 import {
   context as placesContext,

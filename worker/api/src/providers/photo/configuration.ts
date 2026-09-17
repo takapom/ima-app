@@ -1,5 +1,8 @@
-import { createPhotoTokenCodec } from './token';
-import { createPhotoReferenceStoreResolver, type PhotoReferenceRpc } from './rpc';
+import { createPhotoTokenCodec } from '@api/providers/photo/token';
+import {
+  createPhotoReferenceStoreResolver,
+  type PhotoReferenceRpc,
+} from '@api/providers/photo/rpc';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

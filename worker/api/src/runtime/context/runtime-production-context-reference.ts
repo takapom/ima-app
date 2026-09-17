@@ -20,7 +20,7 @@ import {
 import {
   conversationBodyIsUsable,
   type RetainedHistoryEntry,
-} from './runtime-conversation-history';
+} from '@api/runtime/context/runtime-conversation-history';
 
 type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 

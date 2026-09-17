@@ -1,26 +1,26 @@
-import { RuntimeProductionThinkHost } from './thread-runtime/runtime-production-host';
+import { RuntimeProductionThinkHost } from '@api/thread-runtime/runtime-production-host';
 import {
   createRuntimeSavedCandidateResolver,
   runtimeSavedCandidateBindingFor,
   type RuntimeSavedCandidateResult,
-} from './thread-runtime/runtime-saved-candidate-rpc';
-import { ThreadRuntimeController } from './thread-runtime/controller';
-import { runtimeThreadBindingFor } from './thread-runtime/runtime-thread-binding';
+} from '@api/thread-runtime/runtime-saved-candidate-rpc';
+import { ThreadRuntimeController } from '@api/thread-runtime/controller';
+import { runtimeThreadBindingFor } from '@api/thread-runtime/runtime-thread-binding';
 import {
   createDurableCommitPort,
   initializeDurableCommitTable,
   type DurableCommitPort,
-} from './thread-runtime/commit-port';
+} from '@api/thread-runtime/commit-port';
 import {
   runtimeFailure,
   type ThreadRuntimeCancelResult,
   type ThreadRuntimeReplayResult,
   type ThreadRuntimeResponseMetadata,
   type ThreadRuntimeTurnResult,
-} from './thread-runtime/admission';
-import { executeRuntimeThreadTurn } from './thread-runtime/runtime-thread-turn-execution';
-import { createRuntimeSessionExpiryGate } from './thread-runtime/session-expiry';
-import { cleanupRuntimeResources } from './thread-runtime/thread-cleanup';
+} from '@api/thread-runtime/admission';
+import { executeRuntimeThreadTurn } from '@api/thread-runtime/runtime-thread-turn-execution';
+import { createRuntimeSessionExpiryGate } from '@api/thread-runtime/session-expiry';
+import { cleanupRuntimeResources } from '@api/thread-runtime/thread-cleanup';
 import {
   isThreadConflictError,
   isThreadStateError,
@@ -30,30 +30,34 @@ import {
   type ThreadDeleteResult,
   type ThreadSnapshot,
   type ThreadSnapshotResult,
-} from './thread-types';
+} from '@api/thread-types';
 
-import { createThreadPhotoReferences } from './providers/photo/thread-references';
-import type { PhotoReferenceRecord } from './providers/photo/types';
+import { createThreadPhotoReferences } from '@api/providers/photo/thread-references';
+import type { PhotoReferenceRecord } from '@api/providers/photo/types';
 import type {
   PhotoReferenceGetResult,
   PhotoReferencePutResult,
   PhotoReferenceRpc,
-} from './providers/photo/rpc';
+} from '@api/providers/photo/rpc';
 import {
   stateOf,
   snapshotFromOperation,
   type ThreadAction,
   type ThreadOperationRow,
   type ThreadRow,
-} from './thread-do-state';
-export { RateLimitDO } from './rate-limit-do';
-export type { RateLimitCheckInput, RateLimitCheckResult, RateLimitConfig } from './rate-limit-do';
+} from '@api/thread-do-state';
+export { RateLimitDO } from '@api/rate-limit-do';
+export type {
+  RateLimitCheckInput,
+  RateLimitCheckResult,
+  RateLimitConfig,
+} from '@api/rate-limit-do';
 export {
   isThreadConflictError,
   isThreadStateError,
   ThreadConflictError,
   ThreadStateError,
-} from './thread-types';
+} from '@api/thread-types';
 export type {
   ThreadAuthorization,
   ThreadConflictErrorCode,
@@ -63,7 +67,7 @@ export type {
   ThreadSnapshotResult,
   ThreadState,
   ThreadStateErrorCode,
-} from './thread-types';
+} from '@api/thread-types';
 
 export type ThreadSavedCandidateResult = RuntimeSavedCandidateResult;
 

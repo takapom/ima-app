@@ -6,8 +6,8 @@ import {
   SearchPlacesInputSchema,
   SubmitCardsInputSchema,
 } from '@ima/core';
-import type { PublicToolEnvelope } from './types';
-import { toolInputValidationError } from './input-validation-error';
+import type { PublicToolEnvelope } from '@api/tools/types';
+import { toolInputValidationError } from '@api/tools/input-validation-error';
 
 type JsonSchema = Parameters<typeof jsonSchema>[0];
 type WireSchema = Exclude<JsonSchema, PromiseLike<unknown> | (() => unknown)>;

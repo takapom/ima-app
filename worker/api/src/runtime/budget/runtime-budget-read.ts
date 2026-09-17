@@ -5,7 +5,7 @@ import type {
   RuntimeReadReservationRequest,
   RuntimeRetryFailure,
   RuntimeRetryResult,
-} from './runtime-budget-types';
+} from '@api/runtime/budget/runtime-budget-types';
 
 type ReadAccounting = {
   readonly request: RuntimeReadReservationRequest;

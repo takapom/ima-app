@@ -17,16 +17,16 @@ import type {
   TurnConditionValues,
 } from '@ima/core';
 import { projectModelContext, SubmitApplication, createSubmitCardsPort } from '@ima/core';
-import { encodeModelContext } from '../../model/encoding';
+import { encodeModelContext } from '@api/model/encoding';
 import type {
   RuntimeThinkComposition,
   RuntimeThinkPersistMessages,
   RuntimeThinkTurnBuildRequest,
-} from './runtime-think-connection';
+} from '@api/runtime/turn-execution/runtime-think-connection';
 import {
   projectRuntimeCurrentTurnMessages,
   type RuntimeRetentionModelProjectionOptions,
-} from '../retention/runtime-retention-model';
+} from '@api/runtime/retention/runtime-retention-model';
 import {
   captureRuntimeEphemeralToolCall,
   captureRuntimeEphemeralToolResult,
@@ -35,44 +35,47 @@ import {
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
   type RuntimeRetentionScopeIdentity,
-} from '../retention/runtime-retention';
-import { createRuntimeRetentionTransform } from '../retention/runtime-retention-transform';
+} from '@api/runtime/retention/runtime-retention';
+import { createRuntimeRetentionTransform } from '@api/runtime/retention/runtime-retention-transform';
 import {
   createRuntimeReadPorts,
   type RuntimeReadAttemptSignalBridge,
   type RuntimeReadCostResolver,
-} from '../tool-reads/runtime-read-ports';
-import { parseRuntimeFinalMessage, type RuntimeFinalMessage } from './runtime-final-message';
+} from '@api/runtime/tool-reads/runtime-read-ports';
+import {
+  parseRuntimeFinalMessage,
+  type RuntimeFinalMessage,
+} from '@api/runtime/turn-execution/runtime-final-message';
 import {
   createRuntimeTurnFactory,
   type RuntimeBeforeToolCallDelegate,
   type RuntimeTurnPortDependencies,
-} from './runtime-turn-factory';
-import { createRuntimeFinalResponseHooks } from './runtime-final-response';
+} from '@api/runtime/turn-execution/runtime-turn-factory';
+import { createRuntimeFinalResponseHooks } from '@api/runtime/turn-execution/runtime-final-response';
 import type {
   RuntimeModelGuardAcceptance,
   RuntimeModelGuardCallOptions,
   RuntimeModelGuardModel,
-} from './runtime-model-guard';
-import type { RuntimeBudget } from '../budget/runtime-budget';
-import type { RuntimePublicResponseDependencies } from '../response/runtime-response';
+} from '@api/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeBudget } from '@api/runtime/budget/runtime-budget';
+import type { RuntimePublicResponseDependencies } from '@api/runtime/response/runtime-response';
 import {
   createRuntimePhotoPreparationState,
   prepareAndMapRuntimeResponse,
   resetRuntimePhotoPreparationState,
-} from '../response/runtime-public-response';
+} from '@api/runtime/response/runtime-public-response';
 import {
   modelSource,
   hasUnresolvedReadFailure,
   observationResultIsReusable,
   observedWindow,
   RuntimeTurnCompositionError,
-} from './runtime-turn-composition-support';
-import { clearRuntimeCardSetId, registerRuntimeCardSetId } from '../../thread-runtime/commit-port';
-import { projectRuntimeToolResultForModel } from '../context/runtime-field-policy';
-import { configureRuntimeCompaction } from '../retention/runtime-session-config';
+} from '@api/runtime/turn-execution/runtime-turn-composition-support';
+import { clearRuntimeCardSetId, registerRuntimeCardSetId } from '@api/thread-runtime/commit-port';
+import { projectRuntimeToolResultForModel } from '@api/runtime/context/runtime-field-policy';
+import { configureRuntimeCompaction } from '@api/runtime/retention/runtime-session-config';
 
-export type { RuntimePublicResponseDependencies } from '../response/runtime-response';
+export type { RuntimePublicResponseDependencies } from '@api/runtime/response/runtime-response';
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;
 
 export type RuntimeCompositionModelContext = Omit<ModelContextSource, 'harness' | 'conditions'>;
@@ -131,7 +134,7 @@ export type RuntimeTurnComposition<Response = CommittedResponse> =
     readonly configureSession: (session: Session) => Session;
   };
 
-export { RuntimeTurnCompositionError } from './runtime-turn-composition-support';
+export { RuntimeTurnCompositionError } from '@api/runtime/turn-execution/runtime-turn-composition-support';
 
 const sameIdentity = (request: RuntimeCompositionTurnRequest, context: HarnessContext): boolean =>
   request.ownerScopeRef === context.ownerScopeRef &&

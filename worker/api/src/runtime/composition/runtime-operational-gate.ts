@@ -4,7 +4,7 @@ import {
   type OperationalFlagName,
   type OperationalFlags,
   type OperationalMode,
-} from '../../telemetry/flags';
+} from '@api/telemetry/flags';
 
 /** Provider capabilities which can initiate an external or paid operation. */
 export type RuntimeProviderCapability = Exclude<

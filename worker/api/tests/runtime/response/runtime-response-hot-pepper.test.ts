@@ -3,7 +3,7 @@ import type { ValidatedMessageResponse, RetentionMetadata } from '@ima/core';
 import {
   mapCommittedResponseToPublic,
   RuntimePublicResponseError,
-} from '../../../src/runtime/response/runtime-response';
+} from '@api/runtime/response/runtime-response';
 
 const availableRetention: RetentionMetadata = {
   retentionDecision: 'allow',

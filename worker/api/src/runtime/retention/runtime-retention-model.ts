@@ -19,9 +19,9 @@ import {
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
   type RuntimeRetentionScopeIdentity,
-} from './runtime-retention';
-import { runtimeEphemeralModelInputIsUsable } from './runtime-retention-model-window';
-import { safeToolInputValidationMessage } from '../../tools/input-validation-error';
+} from '@api/runtime/retention/runtime-retention';
+import { runtimeEphemeralModelInputIsUsable } from '@api/runtime/retention/runtime-retention-model-window';
+import { safeToolInputValidationMessage } from '@api/tools/input-validation-error';
 
 export type RuntimeRetentionModelProjectionOptions = {
   readonly currentTurnStart: number;

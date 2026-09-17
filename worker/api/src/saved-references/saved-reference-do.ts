@@ -1,14 +1,17 @@
 import { DurableObject } from 'cloudflare:workers';
 import * as v from 'valibot';
 import { IsoTimestampSchema, OpaqueIdSchema, Text } from '@ima/core';
-import { decideDurableSavedReference, initializeOwnerDecideStore } from './decide-store';
-import { createOwnerPrefsStore, type OwnerPrefsStore } from './prefs-store';
-import { listDurableSavedReferences } from './saved-reference-list';
+import {
+  decideDurableSavedReference,
+  initializeOwnerDecideStore,
+} from '@api/saved-references/decide-store';
+import { createOwnerPrefsStore, type OwnerPrefsStore } from '@api/saved-references/prefs-store';
+import { listDurableSavedReferences } from '@api/saved-references/saved-reference-list';
 import {
   createDurableSavedReferenceStore,
   type DurableSavedReferenceStore,
   type SavedReferenceOperationOptions,
-} from './store';
+} from '@api/saved-references/store';
 import type {
   SavedReferenceOwnerInitResult,
   SavedReferenceOwnerOperationFailure,
@@ -20,9 +23,9 @@ import type {
   SavedReferenceRpcReadResult,
   SavedReferenceRpcRegistrationResult,
   SavedReferenceRpcReplayResult,
-} from './saved-reference-rpc';
-export { createOwnerSavedReferenceRpc } from './saved-reference-rpc';
-export { savedReferenceOwnerName } from './saved-reference-rpc';
+} from '@api/saved-references/saved-reference-rpc';
+export { createOwnerSavedReferenceRpc } from '@api/saved-references/saved-reference-rpc';
+export { savedReferenceOwnerName } from '@api/saved-references/saved-reference-rpc';
 export type {
   OwnerSavedReferenceRpc,
   SavedReferenceDOStub,
@@ -35,7 +38,7 @@ export type {
   SavedReferenceRpcReadResult,
   SavedReferenceRpcRegistrationResult,
   SavedReferenceRpcReplayResult,
-} from './saved-reference-rpc';
+} from '@api/saved-references/saved-reference-rpc';
 
 const OWNER_TABLE_NAME = 'm16_saved_reference_owner';
 const OWNER_ROW_ID = 1;

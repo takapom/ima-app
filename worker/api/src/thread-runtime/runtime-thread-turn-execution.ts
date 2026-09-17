@@ -3,12 +3,12 @@ import type {
   ThreadRuntimeTurnInput,
   ThreadRuntimeTarget,
   ThreadRuntimeTurnResult,
-} from './admission';
-import { threadRuntimeResultFromNative } from './native-result';
+} from '@api/thread-runtime/admission';
+import { threadRuntimeResultFromNative } from '@api/thread-runtime/native-result';
 import type {
   RuntimeThinkTurnRequest,
   RuntimeThinkTurnResult,
-} from '../runtime/turn-execution/runtime-think-connection';
+} from '@api/runtime/turn-execution/runtime-think-connection';
 
 type RuntimeTurnExecutionInput = {
   readonly input: ThreadRuntimeTurnInput;

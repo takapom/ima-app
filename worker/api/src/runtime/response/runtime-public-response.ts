@@ -6,7 +6,7 @@ import {
   type RuntimePhotoTokenResolver,
   type RuntimePublicResponseDependencies,
   type RuntimePublicResponseMetadata,
-} from './runtime-response';
+} from '@api/runtime/response/runtime-response';
 
 export type RuntimePhotoPreparationState = {
   resolver: RuntimePhotoTokenResolver | undefined;

@@ -2,14 +2,11 @@ import * as v from 'valibot';
 import { env } from 'cloudflare:test';
 import { AssistantResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '../../src/model/provider-options';
+import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@api/model/provider-options';
 import type { ThreadDO } from './runtime-native-worker';
 import { RUNTIME_NATIVE_OWNER } from './runtime-native-ports';
 import type { RuntimeNativeScenario } from './runtime-native-provider';
-import type {
-  ThreadRuntimeTarget,
-  ThreadRuntimeTurnInput,
-} from '../../src/thread-runtime/admission';
+import type { ThreadRuntimeTarget, ThreadRuntimeTurnInput } from '@api/thread-runtime/admission';
 
 type NativeTestEnv = Cloudflare.Env & {
   THREADS: DurableObjectNamespace<ThreadDO>;

@@ -3,8 +3,8 @@ import type {
   RuntimeBudgetDenial,
   RuntimeReadOperation,
   RuntimeRetryFailure,
-} from '../budget/runtime-budget';
-import { RuntimeSingleFlight } from './runtime-singleflight';
+} from '@api/runtime/budget/runtime-budget';
+import { RuntimeSingleFlight } from '@api/runtime/tool-reads/runtime-singleflight';
 
 export type RuntimeReadFailureKind =
   'timeout' | 'transport' | 'server' | 'rate_limited' | 'argument' | 'reference';

@@ -8,8 +8,8 @@ import type {
   SubmitCardsPort,
   ToolExecutionContext,
 } from '@ima/core';
-import { invokePublicTool } from '../../src/tools';
-import type { ToolBindingDependencies, ToolRuntime } from '../../src/tools';
+import { invokePublicTool } from '@api/tools';
+import type { ToolBindingDependencies, ToolRuntime } from '@api/tools';
 import { createToolRegistry } from './registry-fixture';
 
 const context: HarnessContext = {

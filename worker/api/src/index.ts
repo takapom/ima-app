@@ -3,16 +3,16 @@ import {
   createHttpRouterConfig,
   createThreadScopeAuthorizer,
   type BootstrapEnv,
-} from './bootstrap';
-import { routeRequest } from './http/router';
+} from '@api/bootstrap';
+import { routeRequest } from '@api/http/router';
 import {
   handleJourneyDatasetManagement,
   type JourneyDatasetNamespace,
-} from './providers/last-train/management';
-import { JourneyDatasetDO } from './providers/last-train/dataset-do';
-import { RateLimitDO, ThreadDO } from './thread-do';
-import { TelemetryDO } from './telemetry/telemetry-do';
-import { AppIntegrityDO } from './security/app-integrity-do';
+} from '@api/providers/last-train/management';
+import { JourneyDatasetDO } from '@api/providers/last-train/dataset-do';
+import { RateLimitDO, ThreadDO } from '@api/thread-do';
+import { TelemetryDO } from '@api/telemetry/telemetry-do';
+import { AppIntegrityDO } from '@api/security/app-integrity-do';
 
 type IndexEnv = BootstrapEnv & {
   readonly JOURNEY_DATASETS?: JourneyDatasetNamespace;
@@ -56,4 +56,4 @@ export default {
 } satisfies ExportedHandler<IndexEnv>;
 
 export { AppIntegrityDO, JourneyDatasetDO, RateLimitDO, TelemetryDO, ThreadDO };
-export { SavedReferenceDO } from './saved-references/saved-reference-do';
+export { SavedReferenceDO } from '@api/saved-references/saved-reference-do';

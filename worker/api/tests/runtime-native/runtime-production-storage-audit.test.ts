@@ -3,10 +3,7 @@ import { ThreadTurnRequestSchema, type ThreadTurnRequest } from '@ima/contracts'
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
 import { observeForbiddenValue } from '../support/retention-audit';
-import type {
-  ThreadRuntimeTarget,
-  ThreadRuntimeTurnInput,
-} from '../../src/thread-runtime/admission';
+import type { ThreadRuntimeTarget, ThreadRuntimeTurnInput } from '@api/thread-runtime/admission';
 import type { ProductionThreadDO } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {

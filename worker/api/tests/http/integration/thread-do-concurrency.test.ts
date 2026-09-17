@@ -1,6 +1,6 @@
 import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import type { ThreadDO } from '../../../src/thread-do';
+import type { ThreadDO } from '@api/thread-do';
 
 const OWNER_A = 'A'.repeat(42) + 'E';
 const OWNER_B = 'B'.repeat(42) + 'E';

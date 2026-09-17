@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { capabilitiesWithProviders } from '../../../src/runtime/composition/runtime-production-provider-config';
-import { harnessContextFor } from '../../../src/runtime/composition/runtime-production-support';
+import { capabilitiesWithProviders } from '@api/runtime/composition/runtime-production-provider-config';
+import { harnessContextFor } from '@api/runtime/composition/runtime-production-support';
 import { buildRequest } from './runtime-production-factory-fixtures';
 
 const context = harnessContextFor(buildRequest, buildRequest.runtimeInput, buildRequest.serverNow);

@@ -1,11 +1,11 @@
 import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import type { ThreadDO } from '../../../src/thread-do';
+import type { ThreadDO } from '@api/thread-do';
 import {
   createDurableSavedReferenceStore,
   type DurableSavedReferenceStore,
   type SavedReferenceIdFactory,
-} from '../../../src/saved-references/store';
+} from '@api/saved-references/store';
 
 const OWNER_A = `m16-owner-a-${'a'.repeat(20)}`;
 const OWNER_B = `m16-owner-b-${'b'.repeat(20)}`;

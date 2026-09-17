@@ -1,5 +1,8 @@
 import * as v from 'valibot';
-import { JourneyDatasetEnvelopeSchema, type JourneyDatasetEnvelope } from './types';
+import {
+  JourneyDatasetEnvelopeSchema,
+  type JourneyDatasetEnvelope,
+} from '@api/providers/last-train/types';
 
 export type JourneyDatasetReader = {
   readonly readCurrent: () => Promise<unknown>;

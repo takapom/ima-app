@@ -17,14 +17,11 @@ import {
   runLiveEvaluationProfiles,
   type LiveCoordinatorCasePorts,
 } from '../../tooling/model-eval/live-coordinator';
-import type {
-  ThreadRuntimeTarget,
-  ThreadRuntimeTurnInput,
-} from '../../src/thread-runtime/admission';
+import type { ThreadRuntimeTarget, ThreadRuntimeTurnInput } from '@api/thread-runtime/admission';
 import {
   createOwnerSavedReferenceRpc,
   type SavedReferenceNamespace,
-} from '../../src/saved-references/saved-reference-do';
+} from '@api/saved-references/saved-reference-do';
 import type { LiveSavedReferenceBinding } from '../../tooling/model-eval/saved-reference-live';
 import {
   MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,

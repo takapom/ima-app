@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   validateRuntimeBatch,
   type RuntimeBatchAction,
-} from '../../../src/runtime/turn-execution/runtime-batch';
+} from '@api/runtime/turn-execution/runtime-batch';
 
 describe('validateRuntimeBatch', () => {
   it('accepts reads as a non-terminal batch and a single submit as terminal', () => {

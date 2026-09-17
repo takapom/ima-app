@@ -1,12 +1,12 @@
-import type { ApplicationOperation, ApplicationResult, HandlerContext } from '../http/handler';
-import { HttpBoundaryError } from '../http/errors';
+import type { ApplicationOperation, ApplicationResult, HandlerContext } from '@api/http/handler';
+import { HttpBoundaryError } from '@api/http/errors';
 import type {
   OwnerDecideResult,
   OwnerRegisterResult,
   OwnerStore,
   SavedReferenceDeleteResult,
   SavedReferenceReplayResult,
-} from './owner-store';
+} from '@api/saved-references/owner-store';
 
 export type OwnerApplicationOperation = Extract<
   ApplicationOperation,

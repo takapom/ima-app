@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createRuntimeProductionConnectionOptions } from '../../../src/runtime/composition/runtime-production-factory';
-import { createDevFixtureModel } from '../../../src/runtime/composition/runtime-dev-fixture';
+import { createRuntimeProductionConnectionOptions } from '@api/runtime/composition/runtime-production-factory';
+import { createDevFixtureModel } from '@api/runtime/composition/runtime-dev-fixture';
 import { readOnlyCommit, NOW } from './runtime-production-factory-fixtures';
 
 const live = {

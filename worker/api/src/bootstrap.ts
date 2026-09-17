@@ -7,20 +7,20 @@ import type {
   HandlerDependencies,
   PhotoBodyHandler,
   RateLimiter,
-} from './http/handler';
-import { HttpBoundaryError, type BoundaryFailure } from './http/errors';
+} from '@api/http/handler';
+import { HttpBoundaryError, type BoundaryFailure } from '@api/http/errors';
 import {
   DEFAULT_JSON_BODY_LIMIT_BYTES,
   type HttpRouterConfig,
   type ResourceScopeAuthorizer,
   type ResourceScopeDecision,
-} from './http/router';
+} from '@api/http/router';
 import {
   isThreadConflictError,
   isThreadStateError,
   type ThreadConflictError,
   type ThreadStateError,
-} from './thread-do';
+} from '@api/thread-do';
 import type {
   RateLimitCheckResult,
   RateLimitConfig,
@@ -30,28 +30,28 @@ import type {
   ThreadSnapshotResult,
   ThreadDO,
   ThreadState,
-} from './thread-do';
+} from '@api/thread-do';
 import {
   createRuntimeApplicationHandler,
   type RuntimeCancellationClassification,
-} from './bootstrap-runtime';
-import type { AppIntegrityNamespace } from './security/app-integrity-do';
-import { createBootstrapAppIntegrityGate } from './security/app-integrity-bootstrap';
-import type { AppIntegrityVerifier } from './security/app-integrity';
-import { createBestEffortEventsSink, createTelemetryEventsSink } from './telemetry/events';
-import { createDurableTelemetryStore, type TelemetryNamespace } from './telemetry/telemetry-do';
-import type { AppIntegrityGate } from './security/app-integrity';
-import { createThreadId } from './thread-id';
-import { createConfiguredPhoto } from './bootstrap-photo';
-import { createDurableOwnerStore } from './saved-references/durable-owner-store';
+} from '@api/bootstrap-runtime';
+import type { AppIntegrityNamespace } from '@api/security/app-integrity-do';
+import { createBootstrapAppIntegrityGate } from '@api/security/app-integrity-bootstrap';
+import type { AppIntegrityVerifier } from '@api/security/app-integrity';
+import { createBestEffortEventsSink, createTelemetryEventsSink } from '@api/telemetry/events';
+import { createDurableTelemetryStore, type TelemetryNamespace } from '@api/telemetry/telemetry-do';
+import type { AppIntegrityGate } from '@api/security/app-integrity';
+import { createThreadId } from '@api/thread-id';
+import { createConfiguredPhoto } from '@api/bootstrap-photo';
+import { createDurableOwnerStore } from '@api/saved-references/durable-owner-store';
 import {
   handleOwnerApplication,
   isOwnerApplicationOperation,
-} from './saved-references/owner-application';
-import type { OwnerStore } from './saved-references/owner-store';
-import type { SavedReferenceNamespace } from './saved-references/saved-reference-rpc';
+} from '@api/saved-references/owner-application';
+import type { OwnerStore } from '@api/saved-references/owner-store';
+import type { SavedReferenceNamespace } from '@api/saved-references/saved-reference-rpc';
 
-export { createApplicationScopeAuthorizer } from './saved-references/saved-reference-refresh';
+export { createApplicationScopeAuthorizer } from '@api/saved-references/saved-reference-refresh';
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;

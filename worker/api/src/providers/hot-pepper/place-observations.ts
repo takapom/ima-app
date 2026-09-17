@@ -10,15 +10,15 @@ import {
   type Issue,
   type ObservationContext,
 } from '@ima/core';
-import type { PlacesSearchRegistration } from '../places-search/registration';
+import type { PlacesSearchRegistration } from '@api/providers/places-search/registration';
 import {
   hotPepperSourceFor,
   normalizeHotPepperFacilities,
   normalizeHotPepperPrice,
-} from './normalize';
-import { HotPepperError } from './types';
-import type { HotPepperShopWire } from './wire';
-import { HotPepperPhotoUrlSchema } from './photo-url';
+} from '@api/providers/hot-pepper/normalize';
+import { HotPepperError } from '@api/providers/hot-pepper/types';
+import type { HotPepperShopWire } from '@api/providers/hot-pepper/wire';
+import { HotPepperPhotoUrlSchema } from '@api/providers/hot-pepper/photo-url';
 
 export const hotPepperFieldSchemas = {
   identity: PlaceIdentitySchema,

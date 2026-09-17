@@ -1,16 +1,16 @@
 import type { ThreadTurnRequest } from '@ima/contracts';
 import { describe, expect, it, vi } from 'vitest';
-import { invokePublicToolEnvelope } from '../../../src/tools';
-import { createRuntimeProductionConnectionOptions } from '../../../src/runtime/composition/runtime-production-factory';
-import { createDevFixtureModel } from '../../../src/runtime/composition/runtime-dev-fixture';
-import { fixturePlace } from '../../../src/runtime/composition/runtime-dev-fixture-place';
+import { invokePublicToolEnvelope } from '@api/tools';
+import { createRuntimeProductionConnectionOptions } from '@api/runtime/composition/runtime-production-factory';
+import { createDevFixtureModel } from '@api/runtime/composition/runtime-dev-fixture';
+import { fixturePlace } from '@api/runtime/composition/runtime-dev-fixture-place';
 import {
   NOW,
   buildRequest,
   readOnlyCommit,
   FIXTURE_OPERATIONAL_ENV,
 } from './runtime-production-factory-fixtures';
-import type { RuntimeProviderTrace } from '../../../src/providers/telemetry/runtime-provider-trace';
+import type { RuntimeProviderTrace } from '@api/providers/telemetry/runtime-provider-trace';
 
 const searchInput = {
   mode: 'search',

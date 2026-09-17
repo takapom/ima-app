@@ -1,14 +1,14 @@
 import { env, runInDurableObject } from 'cloudflare:test';
 import type { AssistantResponse } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import type { ThreadDO } from '../../../src/thread-do';
+import type { ThreadDO } from '@api/thread-do';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
   ThreadRuntimeTurnResult,
-} from '../../../src/thread-runtime/admission';
-import { runtimeFailure } from '../../../src/thread-runtime/admission';
-import { persistRuntimeResult } from '../../../src/thread-runtime/result-persistence';
+} from '@api/thread-runtime/admission';
+import { runtimeFailure } from '@api/thread-runtime/admission';
+import { persistRuntimeResult } from '@api/thread-runtime/result-persistence';
 
 const OWNER_A = 'A'.repeat(42) + 'E';
 const OWNER_B = 'B'.repeat(42) + 'E';

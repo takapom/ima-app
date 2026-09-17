@@ -25,9 +25,9 @@ import type {
   PhotoBodyHandler,
   RateLimiter,
   RateLimitResult,
-} from '../../src/http/handler';
-import { type HttpRouterConfig, type ResourceKind } from '../../src/http/router';
-import { HttpBoundaryError, type BoundaryFailure } from '../../src/http/errors';
+} from '@api/http/handler';
+import { type HttpRouterConfig, type ResourceKind } from '@api/http/router';
+import { HttpBoundaryError, type BoundaryFailure } from '@api/http/errors';
 
 export const requestId = 'request-1';
 export const appToken = 'test-app-token';

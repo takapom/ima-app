@@ -1,11 +1,11 @@
-import type { RuntimeProviderTraceSink } from '../providers/telemetry/runtime-provider-trace';
-import { createBestEffortRuntimeProviderTraceSink } from '../providers/telemetry/runtime-provider-trace';
-import type { RuntimeModelTraceSink } from '../runtime/tracing/runtime-model-trace';
-import { createBestEffortRuntimeModelTraceSink } from '../runtime/tracing/runtime-model-trace';
-import type { RuntimeTurnTraceSink } from '../runtime/tracing/runtime-turn-trace';
-import { createBestEffortRuntimeTurnTraceSink } from '../runtime/tracing/runtime-turn-trace';
-import type { RuntimeTraceSinkFailure } from '../runtime/tracing/runtime-trace-sink';
-import type { TelemetryTraceStore } from '../telemetry/trace';
+import type { RuntimeProviderTraceSink } from '@api/providers/telemetry/runtime-provider-trace';
+import { createBestEffortRuntimeProviderTraceSink } from '@api/providers/telemetry/runtime-provider-trace';
+import type { RuntimeModelTraceSink } from '@api/runtime/tracing/runtime-model-trace';
+import { createBestEffortRuntimeModelTraceSink } from '@api/runtime/tracing/runtime-model-trace';
+import type { RuntimeTurnTraceSink } from '@api/runtime/tracing/runtime-turn-trace';
+import { createBestEffortRuntimeTurnTraceSink } from '@api/runtime/tracing/runtime-turn-trace';
+import type { RuntimeTraceSinkFailure } from '@api/runtime/tracing/runtime-trace-sink';
+import type { TelemetryTraceStore } from '@api/telemetry/trace';
 
 export type RuntimeTelemetryDiagnosticOperation = 'turn' | 'model' | 'provider';
 export type RuntimeTelemetryDiagnosticFailure = RuntimeTraceSinkFailure;

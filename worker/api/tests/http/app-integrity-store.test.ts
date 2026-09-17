@@ -6,7 +6,7 @@ import {
   type AppIntegrityKeyStore,
   type AppIntegrityNonce,
   type AppIntegrityVerifier,
-} from '../../src/security/app-integrity';
+} from '@api/security/app-integrity';
 
 const NOW = '2026-09-10T00:00:00.000Z';
 const OWNER = 'owner-a';

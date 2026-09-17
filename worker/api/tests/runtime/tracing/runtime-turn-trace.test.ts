@@ -7,7 +7,7 @@ import {
   traceRecordForRuntimeTurn,
   telemetryObjectNameForRuntimeTraceMode,
   type RuntimeTurnTrace,
-} from '../../../src/runtime/tracing/runtime-turn-trace';
+} from '@api/runtime/tracing/runtime-turn-trace';
 
 const trace: RuntimeTurnTrace = {
   ownerScopeRef: 'owner-runtime-trace',

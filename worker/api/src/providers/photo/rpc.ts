@@ -6,7 +6,7 @@ import {
   type PhotoReferenceRecord,
   type PhotoReferenceStore,
   type PhotoReferenceStoreResolver,
-} from './types';
+} from '@api/providers/photo/types';
 
 export type PhotoReferencePutResult =
   | { readonly ok: true }

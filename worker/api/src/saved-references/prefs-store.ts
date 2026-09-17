@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { PreferencesSchema, type Preferences } from '@ima/contracts';
-import type { OwnerPrefsPutResult, OwnerPrefsReadResult } from './owner-store';
+import type { OwnerPrefsPutResult, OwnerPrefsReadResult } from '@api/saved-references/owner-store';
 
 const TABLE_NAME = 'owner_prefs';
 const PREFS_SINGLETON = 1;

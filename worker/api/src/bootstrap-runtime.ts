@@ -11,13 +11,13 @@ import type {
   ApplicationOperation,
   ApplicationResult,
   HandlerContext,
-} from './http/handler';
-import { HttpBoundaryError } from './http/errors';
+} from '@api/http/handler';
+import { HttpBoundaryError } from '@api/http/errors';
 import {
   dispatchRuntimeRequest,
   RuntimeDispatchError,
   type RuntimeDispatchTarget,
-} from './runtime/turn-execution/runtime-dispatch';
+} from '@api/runtime/turn-execution/runtime-dispatch';
 import {
   type ThreadRuntimeCancelResult,
   type ThreadRuntimeFailureCode,
@@ -25,8 +25,8 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-} from './thread-runtime/admission';
-import type { ThreadSnapshotResult } from './thread-types';
+} from '@api/thread-runtime/admission';
+import type { ThreadSnapshotResult } from '@api/thread-types';
 
 /** Structural RPC surface keeps this adapter independent of the concrete DO implementation. */
 export type RuntimeThreadStub = {

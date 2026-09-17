@@ -7,7 +7,7 @@ import type {
   AppIntegrityKeyStore,
   AppIntegrityNonce,
   AppAttestEnvironment,
-} from './app-integrity';
+} from '@api/security/app-integrity';
 
 const MAX_NONCE_TTL_MS = 5 * 60 * 1_000;
 const MAX_CLOCK_SKEW_MS = 5 * 1_000;

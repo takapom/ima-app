@@ -6,7 +6,7 @@ import {
   type PhotoReferenceRecord,
   type PhotoReferenceLookupScope,
   type PhotoReferenceStoreWithClear,
-} from './types';
+} from '@api/providers/photo/types';
 
 const DEFAULT_MAX_ENTRIES = 256;
 

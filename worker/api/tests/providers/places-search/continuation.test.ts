@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createPlacesSearchContinuation } from '../../../src/providers/places-search/continuation';
+import { createPlacesSearchContinuation } from '@api/providers/places-search/continuation';
 import {
   createPlacesSearchCursorStore,
   PLACES_SEARCH_CURSOR_TTL_MS,
   type PlacesSearchCursorStore,
-} from '../../../src/providers/places-search/cursor';
+} from '@api/providers/places-search/cursor';
 import type {
   PlacesSearchCursorBinding,
   PlacesSearchCursorState,
-} from '../../../src/providers/places-search/types';
+} from '@api/providers/places-search/types';
 
 const binding = (): PlacesSearchCursorBinding => ({
   ownerScopeRef: 'owner-continuation',

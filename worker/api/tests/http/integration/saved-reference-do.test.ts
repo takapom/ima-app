@@ -1,11 +1,11 @@
 import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import type { ThreadDO } from '../../../src/thread-do';
+import type { ThreadDO } from '@api/thread-do';
 import {
   createOwnerSavedReferenceRpc,
   savedReferenceOwnerName,
   type SavedReferenceNamespace,
-} from '../../../src/saved-references/saved-reference-do';
+} from '@api/saved-references/saved-reference-do';
 
 type TestEnv = Cloudflare.Env & {
   readonly SAVED_REFERENCES: SavedReferenceNamespace;

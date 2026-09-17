@@ -1,3 +1,9 @@
+import { RuntimeThinkConnectionError } from '@api/runtime/turn-execution/runtime-think-connection-errors';
+export {
+  RuntimeThinkConnectionError,
+  isRuntimeThinkConnectionError,
+  type RuntimeThinkConnectionErrorCode,
+} from '@api/runtime/turn-execution/runtime-think-connection-errors';
 import type {
   PrepareStepContext,
   SaveMessagesOptions,
@@ -15,7 +21,7 @@ import {
   sanitizeRuntimeMessagesForPersistence,
   type RuntimeRetentionContext,
   type RuntimeRetentionMessage,
-} from '../retention/runtime-retention';
+} from '@api/runtime/retention/runtime-retention';
 import {
   wrapRuntimeModelGuard,
   type RuntimeModelGuardAcceptance,
@@ -23,9 +29,12 @@ import {
   type RuntimeModelGuardCallOptions,
   type RuntimeModelGuardErrorCode,
   type RuntimeModelGuardOptions,
-} from './runtime-model-guard';
-import type { RuntimeBeforeToolCallDelegate, RuntimeTurnHandle } from './runtime-turn-factory';
-import type { RuntimeBudget } from '../budget/runtime-budget';
+} from '@api/runtime/turn-execution/runtime-model-guard';
+import type {
+  RuntimeBeforeToolCallDelegate,
+  RuntimeTurnHandle,
+} from '@api/runtime/turn-execution/runtime-turn-factory';
+import type { RuntimeBudget } from '@api/runtime/budget/runtime-budget';
 
 export type RuntimeThinkMessageInput =
   UIMessage[] | ((currentMessages: UIMessage[]) => UIMessage[] | Promise<UIMessage[]>);
@@ -115,31 +124,6 @@ export type RuntimeThinkTurnResult<Response = unknown> = SaveMessagesResult & {
   /** Internal typed guard denial; Think's SaveMessagesResult only exposes a string. */
   readonly runtimeGuardFailureCode?: RuntimeModelGuardErrorCode;
 };
-export type RuntimeThinkConnectionErrorCode =
-  | 'TURN_ALREADY_ACTIVE'
-  | 'TURN_NOT_ACTIVE'
-  | 'RUNTIME_UNCONFIGURED'
-  | 'COMPOSITION_INVALID'
-  | 'CANCELLED'
-  | 'STALE_TURN';
-const connectionErrors = new WeakSet<object>();
-
-export class RuntimeThinkConnectionError extends Error {
-  readonly code: RuntimeThinkConnectionErrorCode;
-
-  constructor(code: RuntimeThinkConnectionErrorCode) {
-    super(`runtime Think connection denied: ${code}`);
-    this.name = 'RuntimeThinkConnectionError';
-    this.code = code;
-    connectionErrors.add(this);
-  }
-}
-
-export const isRuntimeThinkConnectionError = (
-  value: unknown,
-): value is RuntimeThinkConnectionError =>
-  typeof value === 'object' && value !== null && connectionErrors.has(value);
-
 type StartingTurn = {
   readonly controller: AbortController;
 };

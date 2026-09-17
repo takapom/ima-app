@@ -5,8 +5,8 @@ import {
 } from '@ima/contracts';
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { routeRequest } from '../../src/http/router';
-import type { AppIntegrityGate } from '../../src/security/app-integrity';
+import { routeRequest } from '@api/http/router';
+import type { AppIntegrityGate } from '@api/security/app-integrity';
 import { makeHarness, makeRequest, requestId } from './router-fixtures';
 
 const NOW = '2026-09-10T00:00:00.000Z';

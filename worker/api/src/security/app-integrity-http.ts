@@ -1,7 +1,7 @@
-import { toErrorResponse } from '../http/errors';
-import type { AuthenticatedContext } from '../http/auth';
-import type { MatchedRoute } from '../http/router-match';
-import type { AppIntegrityGate } from './app-integrity';
+import { toErrorResponse } from '@api/http/errors';
+import type { AuthenticatedContext } from '@api/http/auth';
+import type { MatchedRoute } from '@api/http/router-match';
+import type { AppIntegrityGate } from '@api/security/app-integrity';
 
 type AuthorizedRoute = Exclude<
   MatchedRoute,

@@ -9,9 +9,9 @@ import {
   RequestHeadersSchema,
   REQUEST_ID_HEADER,
 } from '@ima/contracts';
-import type { BoundaryFailure } from './errors';
-import { isValidRequestId } from './input';
-import type { HandlerContext } from './handler';
+import type { BoundaryFailure } from '@api/http/errors';
+import { isValidRequestId } from '@api/http/input';
+import type { HandlerContext } from '@api/http/handler';
 
 export type AuthenticatedContext = Pick<
   HandlerContext,

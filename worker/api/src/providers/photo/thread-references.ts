@@ -1,13 +1,13 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema, OpaqueIdSchema } from '@ima/contracts';
-import { createMemoryPhotoReferenceStore } from './reference-store';
-import type { PhotoReferenceGetResult, PhotoReferencePutResult } from './rpc';
+import { createMemoryPhotoReferenceStore } from '@api/providers/photo/reference-store';
+import type { PhotoReferenceGetResult, PhotoReferencePutResult } from '@api/providers/photo/rpc';
 import {
   PhotoReferenceRecordSchema,
   PhotoTokenError,
   type PhotoReferenceRecord,
   type PhotoReferenceStoreWithClear,
-} from './types';
+} from '@api/providers/photo/types';
 
 const MAX_TTL_MILLISECONDS = 30 * 60 * 1_000;
 const HandleSchema = v.pipe(v.string(), v.length(22));

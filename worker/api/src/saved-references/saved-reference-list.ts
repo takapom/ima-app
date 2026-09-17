@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema, SavedPlaceReferenceSchema, type SavedPlaceReference } from '@ima/core';
-import type { OwnerDecidedPlace } from './owner-store';
-import { initializeOwnerDecideStore } from './decide-store';
+import type { OwnerDecidedPlace } from '@api/saved-references/owner-store';
+import { initializeOwnerDecideStore } from '@api/saved-references/decide-store';
 
 const TABLE_NAME = 'm16_saved_place_reference';
 const MAX_SAVED_LIST = 50;

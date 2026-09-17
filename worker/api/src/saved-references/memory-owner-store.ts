@@ -21,7 +21,7 @@ import type {
   SavedReferenceOperationOptions,
   SavedReferenceReadResult,
   SavedReferenceReplayResult,
-} from './owner-store';
+} from '@api/saved-references/owner-store';
 
 const MAX_SAVED_LIST = 50;
 const ExpectedRevisionSchema = v.pipe(v.number(), v.safeInteger(), v.minValue(0));

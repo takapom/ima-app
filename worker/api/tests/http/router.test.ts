@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as v from 'valibot';
 import { PublicErrorSchema } from '@ima/contracts';
-import type { BoundaryFailure } from '../../src/http/errors';
-import { routeRequest } from '../../src/http/router';
+import type { BoundaryFailure } from '@api/http/errors';
+import { routeRequest } from '@api/http/router';
 import {
   eventsInput,
   lifecycleInput,

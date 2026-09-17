@@ -6,7 +6,7 @@ import type {
   SavedReferenceReadResult,
   SavedReferenceRegistrationResult,
   SavedReferenceReplayResult,
-} from './store';
+} from '@api/saved-references/store';
 
 export type {
   SavedReferenceDeleteResult,

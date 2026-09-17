@@ -8,8 +8,8 @@ import type {
 import type {
   RuntimeRetentionContext,
   RuntimeRetentionEphemeralToolResult,
-} from '../retention/runtime-retention';
-import type { RuntimeBudget } from '../budget/runtime-budget';
+} from '@api/runtime/retention/runtime-retention';
+import type { RuntimeBudget } from '@api/runtime/budget/runtime-budget';
 
 export type RuntimeTurnCompositionErrorCode =
   'CONTEXT_MISMATCH' | 'RETENTION_MISMATCH' | 'FINAL_COMMIT_INVALID';

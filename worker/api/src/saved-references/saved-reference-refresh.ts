@@ -1,9 +1,9 @@
-import type { ResourceScopeAuthorizer, ResourceScopeDecision } from '../http/router';
+import type { ResourceScopeAuthorizer, ResourceScopeDecision } from '@api/http/router';
 import {
   createOwnerSavedReferenceRpc,
   type OwnerSavedReferenceRpc,
   type SavedReferenceNamespace,
-} from './saved-reference-rpc';
+} from '@api/saved-references/saved-reference-rpc';
 const AUTHORIZATION_TIMEOUT = new Error('saved-reference-authorization-timeout');
 const AUTHORIZATION_ABORTED = new Error('saved-reference-authorization-aborted');
 const awaitAuthorization = async <T>(

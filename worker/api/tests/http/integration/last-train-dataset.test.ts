@@ -6,19 +6,19 @@ import {
   expireJourneyDataset,
   importJourneyDataset,
   rollbackJourneyDataset,
-} from '../../../src/providers/last-train/importer';
-import { createJourneyReader } from '../../../src/providers/last-train/reader';
+} from '@api/providers/last-train/importer';
+import { createJourneyReader } from '@api/providers/last-train/reader';
 import {
   createDurableJourneyDatasetStore,
   type JourneyDatasetMutationStore,
-} from '../../../src/providers/last-train/store';
+} from '@api/providers/last-train/store';
 import {
   JOURNEY_DATASET_SCHEMA_VERSION,
   JourneyDatasetEnvelopeSchema,
   parseJourneyDataset,
   type JourneyDatasetEnvelope,
-} from '../../../src/providers/last-train/types';
-import type { ThreadDO } from '../../../src/thread-do';
+} from '@api/providers/last-train/types';
+import type { ThreadDO } from '@api/thread-do';
 
 type TestEnv = Cloudflare.Env & { THREADS: DurableObjectNamespace<ThreadDO> };
 

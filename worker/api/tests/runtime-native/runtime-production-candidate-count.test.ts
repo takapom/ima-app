@@ -3,10 +3,7 @@ import { env } from 'cloudflare:test';
 import { AssistantResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
 import type { ProductionThreadDO } from './runtime-production-worker';
-import type {
-  ThreadRuntimeTarget,
-  ThreadRuntimeTurnInput,
-} from '../../src/thread-runtime/admission';
+import type { ThreadRuntimeTarget, ThreadRuntimeTurnInput } from '@api/thread-runtime/admission';
 
 type ProductionTestEnv = Cloudflare.Env & {
   PRODUCTION_THREADS: DurableObjectNamespace<ProductionThreadDO>;

@@ -5,12 +5,12 @@ import {
   PhotoContentTypeSchema,
   PhotoProviderError,
   type PhotoMediaTransport,
-} from '../photo/media';
-import { HotPepperPhotoUrlSchema } from './photo-url';
+} from '@api/providers/photo/media';
+import { HotPepperPhotoUrlSchema } from '@api/providers/hot-pepper/photo-url';
 import {
   beginRuntimeProviderTransportCall,
   completeRuntimeProviderTransportCall,
-} from '../telemetry/runtime-provider-trace-contract';
+} from '@api/providers/telemetry/runtime-provider-trace-contract';
 
 const readImage = async (response: Response, maxBytes: number): Promise<Uint8Array> => {
   const length = Number(response.headers.get('content-length'));

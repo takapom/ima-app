@@ -1,4 +1,4 @@
-import type { RuntimeThreadBinding } from './controller';
+import type { RuntimeThreadBinding } from '@api/thread-runtime/controller';
 
 type RuntimeThreadBindingRow = {
   readonly thread_id: string;

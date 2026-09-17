@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { HotPepperError, type HotPepperFailureCode } from './types';
+import { HotPepperError, type HotPepperFailureCode } from '@api/providers/hot-pepper/types';
 
 const providerText = (maxLength: number) => v.nullable(v.pipe(v.string(), v.maxLength(maxLength)));
 const optionalProviderText = (maxLength: number) => v.optional(providerText(maxLength));

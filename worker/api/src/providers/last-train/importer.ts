@@ -5,14 +5,17 @@ import {
   type Issue,
   type JourneyRecord,
 } from '@ima/core';
-import { JourneyDatasetStorageError, type JourneyDatasetMutationStore } from './store';
+import {
+  JourneyDatasetStorageError,
+  type JourneyDatasetMutationStore,
+} from '@api/providers/last-train/store';
 import {
   JOURNEY_DATASET_SCHEMA_VERSION,
   JourneyDatasetEnvelopeSchema,
   JourneyImportInputSchema,
   parseJourneyDataset,
   type JourneyDatasetEnvelope,
-} from './types';
+} from '@api/providers/last-train/types';
 
 export type JourneyImportResult =
   | { readonly status: 'imported'; readonly revision: number; readonly recordCount: number }

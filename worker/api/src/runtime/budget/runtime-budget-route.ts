@@ -4,7 +4,7 @@ import type {
   RuntimeReadReservation,
   RuntimeRouteReservation,
   RuntimeRouteReservationRequest,
-} from './runtime-budget-types';
+} from '@api/runtime/budget/runtime-budget-types';
 
 const denial = (code: RuntimeBudgetDenial['code'], message: string): RuntimeBudgetDenial => ({
   code,

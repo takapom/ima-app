@@ -5,7 +5,7 @@ import {
   responseReference,
   runtimeInputDigest,
   type ThreadRuntimeTarget,
-} from '../../src/thread-runtime/admission';
+} from '@api/thread-runtime/admission';
 
 const target: ThreadRuntimeTarget = {
   ownerScopeRef: 'owner-runtime-admission',

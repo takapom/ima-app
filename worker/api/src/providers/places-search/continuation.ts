@@ -1,5 +1,11 @@
-import { PLACES_SEARCH_CURSOR_TTL_MS, type PlacesSearchCursorStore } from './cursor';
-import type { PlacesSearchCursorBinding, PlacesSearchCursorState } from './types';
+import {
+  PLACES_SEARCH_CURSOR_TTL_MS,
+  type PlacesSearchCursorStore,
+} from '@api/providers/places-search/cursor';
+import type {
+  PlacesSearchCursorBinding,
+  PlacesSearchCursorState,
+} from '@api/providers/places-search/types';
 
 export type PlacesSearchContinuationResolution =
   | {

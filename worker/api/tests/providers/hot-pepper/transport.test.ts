@@ -3,16 +3,16 @@ import {
   HOT_PEPPER_GOURMET_ENDPOINT,
   HotPepperError,
   type HotPepperSearchRequest,
-} from '../../../src/providers/hot-pepper/types';
+} from '@api/providers/hot-pepper/types';
 import {
   HOT_PEPPER_MAX_RESPONSE_BYTES,
   createHotPepperTransport,
   type HotPepperTransportOptions,
-} from '../../../src/providers/hot-pepper/transport';
+} from '@api/providers/hot-pepper/transport';
 import type {
   RuntimeProviderTransportCompletion,
   RuntimeProviderTransportObserver,
-} from '../../../src/providers/telemetry/runtime-provider-trace-contract';
+} from '@api/providers/telemetry/runtime-provider-trace-contract';
 
 const request: HotPepperSearchRequest = {
   keyword: '静かなカフェ 恵比寿',

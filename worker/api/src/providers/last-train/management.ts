@@ -1,8 +1,11 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema, type Issue } from '@ima/core';
-import { JOURNEY_DATASET_DO_NAME, JourneyDatasetRpcCommandSchema } from './dataset-do';
-import type { JourneyDatasetDO } from './dataset-do';
-import { parseJsonBody } from '../../http/input';
+import {
+  JOURNEY_DATASET_DO_NAME,
+  JourneyDatasetRpcCommandSchema,
+} from '@api/providers/last-train/dataset-do';
+import type { JourneyDatasetDO } from '@api/providers/last-train/dataset-do';
+import { parseJsonBody } from '@api/http/input';
 
 export const JOURNEY_DATASET_MANAGEMENT_PATH = '/internal/m14/last-train' as const;
 export const JOURNEY_DATASET_ADMIN_HEADER = 'X-Ima-Journey-Dataset-Admin' as const;

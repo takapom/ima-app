@@ -3,12 +3,12 @@ import { IsoTimestampSchema } from '@ima/core';
 import {
   RuntimeRetentionEphemeralScopeSchema,
   RuntimeRetentionScopeIdentitySchema,
-} from './runtime-retention';
+} from '@api/runtime/retention/runtime-retention';
 import type {
   RuntimeRetentionEphemeralToolCall,
   RuntimeRetentionEphemeralToolResult,
   RuntimeRetentionScopeIdentity,
-} from './runtime-retention';
+} from '@api/runtime/retention/runtime-retention';
 
 /**
  * Checks only the model-input lifetime and scope. Display and persistence policy are evaluated

@@ -12,10 +12,7 @@ import {
 } from '../../tooling/model-eval/dataset';
 import { resolveCandidateIdentityMapping } from '../../tooling/model-eval/candidate-mapping';
 import type { EvaluationCase } from '../../tooling/model-eval/types';
-import type {
-  ThreadRuntimeTarget,
-  ThreadRuntimeTurnInput,
-} from '../../src/thread-runtime/admission';
+import type { ThreadRuntimeTarget, ThreadRuntimeTurnInput } from '@api/thread-runtime/admission';
 import type {
   ProductionThreadDO,
   RuntimeProductionCandidateIdentity,

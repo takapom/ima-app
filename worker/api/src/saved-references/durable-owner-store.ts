@@ -13,7 +13,7 @@ import type {
   SavedReferenceOperationOptions,
   SavedReferenceReadResult,
   SavedReferenceReplayResult,
-} from './owner-store';
+} from '@api/saved-references/owner-store';
 import {
   savedReferenceOwnerName,
   type SavedReferenceDOStub,
@@ -25,7 +25,7 @@ import {
   type SavedReferenceRpcPrefsReadResult,
   type SavedReferenceRpcReadResult,
   type SavedReferenceRpcReplayResult,
-} from './saved-reference-rpc';
+} from '@api/saved-references/saved-reference-rpc';
 
 const invalidInput: { readonly ok: false; readonly code: 'INVALID_INPUT' } = {
   ok: false,

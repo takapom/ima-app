@@ -6,9 +6,12 @@ import type {
 import {
   isHotPepperDetailField,
   hotPepperObservationContext,
-} from '../../providers/hot-pepper/place-observations';
-import { productionScopeFor } from './runtime-production-support';
-import type { RuntimeReadCost, RuntimeReadCostRequest } from '../tool-reads/runtime-read-ports';
+} from '@api/providers/hot-pepper/place-observations';
+import { productionScopeFor } from '@api/runtime/composition/runtime-production-support';
+import type {
+  RuntimeReadCost,
+  RuntimeReadCostRequest,
+} from '@api/runtime/tool-reads/runtime-read-ports';
 
 const detailsProviderCost = (
   input: GetPlaceDetailsInput,

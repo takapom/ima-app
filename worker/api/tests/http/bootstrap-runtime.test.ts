@@ -9,8 +9,8 @@ import {
   createRuntimeApplicationHandler,
   serverTurnId,
   type RuntimeThreadStub,
-} from '../../src/bootstrap-runtime';
-import type { HandlerContext } from '../../src/http/handler';
+} from '@api/bootstrap-runtime';
+import type { HandlerContext } from '@api/http/handler';
 import {
   isThreadRuntimeTarget,
   isThreadRuntimeTurnInput,
@@ -19,7 +19,7 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-} from '../../src/thread-runtime/admission';
+} from '@api/thread-runtime/admission';
 import { searchInput, searchResponse } from './router-fixtures';
 
 const ownerScopeRef = 'owner-bootstrap-runtime';

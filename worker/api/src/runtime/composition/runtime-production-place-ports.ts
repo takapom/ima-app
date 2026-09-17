@@ -1,21 +1,27 @@
 import type { CandidateObservationRegistry, PlaceDetailsPort, PlaceSearchPort } from '@ima/core';
-import { createHotPepperTransport } from '../../providers/hot-pepper/transport';
-import { createHotPepperSearchAdapter } from '../../providers/hot-pepper/search-adapter';
-import { createHotPepperDetailsAdapter } from '../../providers/hot-pepper/details-adapter';
-import { createPlacesSearchRegistration } from '../../providers/places-search/registration';
-import type { createPlacesSearchContinuation } from '../../providers/places-search/continuation';
-import type { RuntimeProviderTransportObserver } from '../../providers/telemetry/runtime-provider-trace-contract';
-import type { RuntimeBudget } from '../budget/runtime-budget';
-import { disabledDetailsPort, disabledSearchPort } from './runtime-disabled-provider-ports';
+import { createHotPepperTransport } from '@api/providers/hot-pepper/transport';
+import { createHotPepperSearchAdapter } from '@api/providers/hot-pepper/search-adapter';
+import { createHotPepperDetailsAdapter } from '@api/providers/hot-pepper/details-adapter';
+import { createPlacesSearchRegistration } from '@api/providers/places-search/registration';
+import type { createPlacesSearchContinuation } from '@api/providers/places-search/continuation';
+import type { RuntimeProviderTransportObserver } from '@api/providers/telemetry/runtime-provider-trace-contract';
+import type { RuntimeBudget } from '@api/runtime/budget/runtime-budget';
+import {
+  disabledDetailsPort,
+  disabledSearchPort,
+} from '@api/runtime/composition/runtime-disabled-provider-ports';
 import {
   capProductionObservationPolicy,
   defaultProductionObservationPolicy,
   productionClockPort,
   productionSecret,
-} from './runtime-production-support';
-import type { ProductionIds } from './runtime-production-support';
-import type { RuntimeProductionProviderAvailability } from './runtime-production-provider-config';
-import type { ProductionBuildInput, RuntimeProductionOverrides } from './runtime-production-types';
+} from '@api/runtime/composition/runtime-production-support';
+import type { ProductionIds } from '@api/runtime/composition/runtime-production-support';
+import type { RuntimeProductionProviderAvailability } from '@api/runtime/composition/runtime-production-provider-config';
+import type {
+  ProductionBuildInput,
+  RuntimeProductionOverrides,
+} from '@api/runtime/composition/runtime-production-types';
 
 export type RuntimeProductionPlacePorts = {
   readonly search: PlaceSearchPort;

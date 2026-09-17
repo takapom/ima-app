@@ -1,5 +1,5 @@
-import type { RuntimeThinkConnection } from '../runtime/turn-execution/runtime-think-connection';
-import type { ThreadRuntimeTarget } from './admission';
+import type { RuntimeThinkConnection } from '@api/runtime/turn-execution/runtime-think-connection';
+import type { ThreadRuntimeTarget } from '@api/thread-runtime/admission';
 
 type LifecycleRuntimeRow = Pick<
   ThreadRuntimeTarget,

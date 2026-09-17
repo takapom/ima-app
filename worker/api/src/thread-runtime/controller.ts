@@ -1,4 +1,4 @@
-import { type RuntimeThinkConnection } from '../runtime/turn-execution/runtime-think-connection';
+import { type RuntimeThinkConnection } from '@api/runtime/turn-execution/runtime-think-connection';
 import {
   cancelledRuntimeResult,
   isThreadRuntimeTarget,
@@ -12,11 +12,11 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-} from './admission';
-import { runtimeResultForError } from './controller-errors';
-import { persistRuntimeResult } from './result-persistence';
-import { cancelRuntimeForLifecycle as cancelRuntimeForLifecycleRows } from './lifecycle-cancel';
-import { isRuntimeTargetStale } from './stale-check';
+} from '@api/thread-runtime/admission';
+import { runtimeResultForError } from '@api/thread-runtime/controller-errors';
+import { persistRuntimeResult } from '@api/thread-runtime/result-persistence';
+import { cancelRuntimeForLifecycle as cancelRuntimeForLifecycleRows } from '@api/thread-runtime/lifecycle-cancel';
+import { isRuntimeTargetStale } from '@api/thread-runtime/stale-check';
 type RuntimeTurnRow = {
   readonly turn_id: string;
   readonly owner_scope_ref: string;

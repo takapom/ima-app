@@ -1,16 +1,16 @@
-import { PhotoProviderError } from '../photo/media';
-import { HotPepperError } from '../hot-pepper/types';
-import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '../../telemetry/schema';
-import { parseTraceRecord, type TelemetryTraceStore } from '../../telemetry/trace';
+import { PhotoProviderError } from '@api/providers/photo/media';
+import { HotPepperError } from '@api/providers/hot-pepper/types';
+import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '@api/telemetry/schema';
+import { parseTraceRecord, type TelemetryTraceStore } from '@api/telemetry/trace';
 import {
   createBestEffortRuntimeTraceSink,
   type RuntimeTraceSinkFailure,
-} from '../../runtime/tracing/runtime-trace-sink';
+} from '@api/runtime/tracing/runtime-trace-sink';
 import type {
   RuntimeProviderTransportCompletion,
   RuntimeProviderTransportObserver,
   RuntimeProviderTransportProvider,
-} from './runtime-provider-trace-contract';
+} from '@api/providers/telemetry/runtime-provider-trace-contract';
 
 export type RuntimeProviderTraceProvider = RuntimeProviderTransportProvider;
 

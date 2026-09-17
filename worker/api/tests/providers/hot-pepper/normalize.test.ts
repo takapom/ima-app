@@ -3,11 +3,8 @@ import {
   normalizeHotPepperPrice,
   normalizeHotPepperFacilities,
   hotPepperSourceFor,
-} from '../../../src/providers/hot-pepper/normalize';
-import {
-  parseHotPepperResponse,
-  type HotPepperShopWire,
-} from '../../../src/providers/hot-pepper/wire';
+} from '@api/providers/hot-pepper/normalize';
+import { parseHotPepperResponse, type HotPepperShopWire } from '@api/providers/hot-pepper/wire';
 
 const shopFor = (open: string): HotPepperShopWire => {
   const parsed = parseHotPepperResponse({

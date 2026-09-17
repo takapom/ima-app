@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { invokePublicToolEnvelope } from '../../../src/tools';
+import { invokePublicToolEnvelope } from '@api/tools';
 import {
   createFactory,
   emptyPortCalls,

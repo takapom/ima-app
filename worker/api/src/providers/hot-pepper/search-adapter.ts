@@ -5,17 +5,17 @@ import {
   type PlaceSearchPort,
   type HarnessContext,
 } from '@ima/core';
-import type { PlacesSearchContinuation } from '../places-search/continuation';
-import type { PlacesSearchCursorBinding } from '../places-search/types';
-import type { PlacesSearchRegistration } from '../places-search/registration';
-import type { HotPepperTransport } from './transport';
-import { HotPepperError, type HotPepperSearchRequest } from './types';
-import type { HotPepperShopWire } from './wire';
+import type { PlacesSearchContinuation } from '@api/providers/places-search/continuation';
+import type { PlacesSearchCursorBinding } from '@api/providers/places-search/types';
+import type { PlacesSearchRegistration } from '@api/providers/places-search/registration';
+import type { HotPepperTransport } from '@api/providers/hot-pepper/transport';
+import { HotPepperError, type HotPepperSearchRequest } from '@api/providers/hot-pepper/types';
+import type { HotPepperShopWire } from '@api/providers/hot-pepper/wire';
 import {
   hotPepperIssue,
   hotPepperProviderIssue,
   registerHotPepperField,
-} from './place-observations';
+} from '@api/providers/hot-pepper/place-observations';
 import type { ToolExecutionContext } from '@ima/core';
 
 type SearchOptions = {

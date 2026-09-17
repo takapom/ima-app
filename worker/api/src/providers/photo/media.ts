@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import type { RuntimeProviderTransportObserver } from '../telemetry/runtime-provider-trace-contract';
+import type { RuntimeProviderTransportObserver } from '@api/providers/telemetry/runtime-provider-trace-contract';
 
 export const DEFAULT_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
 export const DEFAULT_PHOTO_METADATA_MAX_BYTES = 64 * 1024;

@@ -1,15 +1,15 @@
 import { IsoTimestampSchema, OpaqueIdSchema } from '@ima/contracts';
 import { DurableObject } from 'cloudflare:workers';
 import * as v from 'valibot';
-import { TELEMETRY_RETENTION_MS } from './retention';
+import { TELEMETRY_RETENTION_MS } from '@api/telemetry/retention';
 import {
   telemetryEventRecordSchema,
   traceRecordSchema,
   type TelemetryEventRecord,
   type TraceRecord,
-} from './schema';
-import type { TelemetryEventStore } from './events';
-import type { TelemetryTraceStore } from './trace';
+} from '@api/telemetry/schema';
+import type { TelemetryEventStore } from '@api/telemetry/events';
+import type { TelemetryTraceStore } from '@api/telemetry/trace';
 
 const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1_000;
 

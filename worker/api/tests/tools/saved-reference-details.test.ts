@@ -14,7 +14,7 @@ import {
   resolveModelDetailsInput,
   type ToolBindingDependencies,
   type ToolRuntime,
-} from '../../src/tools';
+} from '@api/tools';
 import { createToolRegistry, toolScope } from './registry-fixture';
 
 const context: HarnessContext = {

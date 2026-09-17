@@ -9,7 +9,7 @@ import {
   type RegistryScope,
   type RetentionMetadata,
 } from '@ima/core';
-import { isRuntimeRetentionWindowOpen } from '../retention/runtime-retention';
+import { isRuntimeRetentionWindowOpen } from '@api/runtime/retention/runtime-retention';
 
 export type RetainedHistoryEntry = ModelHistoryEntry & {
   readonly retention?: RetentionMetadata | undefined;

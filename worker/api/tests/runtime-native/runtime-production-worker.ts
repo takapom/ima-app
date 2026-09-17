@@ -1,6 +1,6 @@
 import type { ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
-import { DEFAULT_RUNTIME_BUDGET } from '../../src/runtime/budget/runtime-budget';
-import { ThreadDO as ProductionThreadDOBase } from '../../src/thread-do';
+import { DEFAULT_RUNTIME_BUDGET } from '@api/runtime/budget/runtime-budget';
+import { ThreadDO as ProductionThreadDOBase } from '@api/thread-do';
 import {
   modelForProduction,
   runtimeTurnUsesLlmOnlyPolicy,

@@ -1,9 +1,9 @@
-import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '../../telemetry/schema';
-import { parseTraceRecord, type TelemetryTraceStore } from '../../telemetry/trace';
+import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '@api/telemetry/schema';
+import { parseTraceRecord, type TelemetryTraceStore } from '@api/telemetry/trace';
 import {
   createBestEffortRuntimeTraceSink,
   type RuntimeTraceSinkFailure,
-} from './runtime-trace-sink';
+} from '@api/runtime/tracing/runtime-trace-sink';
 
 export type RuntimeTurnTrace = {
   readonly ownerScopeRef: string;

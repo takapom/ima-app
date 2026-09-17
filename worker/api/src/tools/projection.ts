@@ -18,8 +18,8 @@ import type {
   SafePlaceFields,
   SafeSearchPlacesOutput,
   SearchToolResult,
-} from './types';
-import { safeObservation, type ProjectionRegistry } from './projection-evidence';
+} from '@api/tools/types';
+import { safeObservation, type ProjectionRegistry } from '@api/tools/projection-evidence';
 
 const safePortIssue = (error: Issue): Issue => ({
   code: error.code,

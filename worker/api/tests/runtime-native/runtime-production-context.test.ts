@@ -2,13 +2,10 @@ import * as v from 'valibot';
 import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { AssistantResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import type {
-  ThreadRuntimeTarget,
-  ThreadRuntimeTurnInput,
-} from '../../src/thread-runtime/admission';
-import { RuntimeProductionContextReferenceSchema } from '../../src/runtime/context/runtime-production-context-reference';
+import type { ThreadRuntimeTarget, ThreadRuntimeTurnInput } from '@api/thread-runtime/admission';
+import { RuntimeProductionContextReferenceSchema } from '@api/runtime/context/runtime-production-context-reference';
 import type { ProductionThreadDO } from './runtime-production-worker';
-import { createRuntimeSessionExpiryGate } from '../../src/thread-runtime/session-expiry';
+import { createRuntimeSessionExpiryGate } from '@api/thread-runtime/session-expiry';
 
 type ProductionTestEnv = Cloudflare.Env & {
   readonly PRODUCTION_THREADS: DurableObjectNamespace<ProductionThreadDO>;

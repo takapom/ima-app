@@ -2,7 +2,7 @@ import type {
   RuntimeBudget,
   RuntimeBudgetResult,
   RuntimeRouteReservation,
-} from '../../runtime/budget/runtime-budget';
+} from '@api/runtime/budget/runtime-budget';
 
 export type RouteReadCost = {
   readonly costUnits: number;

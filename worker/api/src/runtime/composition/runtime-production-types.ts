@@ -1,4 +1,4 @@
-import type { HotPepperTransport } from '../../providers/hot-pepper/transport';
+import type { HotPepperTransport } from '@api/providers/hot-pepper/transport';
 import type { TurnConfig } from '@cloudflare/think';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type {
@@ -13,21 +13,21 @@ import type {
   PlaceDetailsPort,
   PlaceSearchPort,
 } from '@ima/core';
-import type { PlacesSearchObservationPolicy } from '../../providers/places-search/registration';
-import type { RuntimeReadAttemptSignalBridge } from '../tool-reads/runtime-read-ports';
+import type { PlacesSearchObservationPolicy } from '@api/providers/places-search/registration';
+import type { RuntimeReadAttemptSignalBridge } from '@api/runtime/tool-reads/runtime-read-ports';
 import type {
   RuntimeCompositionModelContext,
   RuntimeCompositionValidationContext,
   RuntimePublicResponseDependencies,
-} from '../turn-execution/runtime-turn-composition';
-import type { RuntimeProductionContextPersistence } from '../context/runtime-production-context-reference';
-import type { ProductionRetentionSource } from './runtime-production-support';
-import type { RuntimeRetentionContext } from '../retention/runtime-retention';
-import type { RuntimeModelGuardModel } from '../turn-execution/runtime-model-guard';
-import type { RuntimeModelTraceSink } from '../tracing/runtime-model-trace';
-import type { RuntimeThinkTurnBuildRequest } from '../turn-execution/runtime-think-connection';
-import type { RuntimeProviderTraceSink } from '../../providers/telemetry/runtime-provider-trace';
-import type { SavedPlaceReferenceResolver } from '../../tools/types';
+} from '@api/runtime/turn-execution/runtime-turn-composition';
+import type { RuntimeProductionContextPersistence } from '@api/runtime/context/runtime-production-context-reference';
+import type { ProductionRetentionSource } from '@api/runtime/composition/runtime-production-support';
+import type { RuntimeRetentionContext } from '@api/runtime/retention/runtime-retention';
+import type { RuntimeModelGuardModel } from '@api/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelTraceSink } from '@api/runtime/tracing/runtime-model-trace';
+import type { RuntimeThinkTurnBuildRequest } from '@api/runtime/turn-execution/runtime-think-connection';
+import type { RuntimeProviderTraceSink } from '@api/providers/telemetry/runtime-provider-trace';
+import type { SavedPlaceReferenceResolver } from '@api/tools/types';
 
 export type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;

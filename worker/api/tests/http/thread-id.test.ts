@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
 import { OpaqueIdSchema } from '@ima/contracts';
-import { createThreadId } from '../../src/thread-id';
+import { createThreadId } from '@api/thread-id';
 
 describe('create thread idempotency identity', () => {
   it('derives a stable opaque ID from owner and key', async () => {

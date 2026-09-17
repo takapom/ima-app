@@ -1,6 +1,6 @@
 import type { LastTrainInfo } from '@ima/core';
 import { describe, expect, it } from 'vitest';
-import { createLastTrainObservationRegistrar } from '../../../src/providers/last-train/registration';
+import { createLastTrainObservationRegistrar } from '@api/providers/last-train/registration';
 import { context, makeFixture, retention, SCOPE } from '../hot-pepper/adapter-fixtures';
 
 const value: LastTrainInfo = {

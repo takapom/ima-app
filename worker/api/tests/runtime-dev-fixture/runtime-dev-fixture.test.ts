@@ -7,13 +7,13 @@ import {
 } from '@ima/contracts';
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { createRuntimeProductionConnectionOptions } from '../../src/runtime/composition/runtime-production-factory';
+import { createRuntimeProductionConnectionOptions } from '@api/runtime/composition/runtime-production-factory';
 import {
   createDevFixtureFetcher,
   devFixtureEnvironmentFor,
   DEV_FIXTURE_PLACE_ID,
   isKeylessDevFixtureEnvironment,
-} from '../../src/runtime/composition/runtime-dev-fixture';
+} from '@api/runtime/composition/runtime-dev-fixture';
 import { readOnlyCommit } from '../runtime/composition/runtime-production-factory-fixtures';
 import { toolCallInput } from './runtime-dev-fixture-test-support';
 

@@ -5,7 +5,7 @@ import {
   type ThreadRuntimeFailureCode,
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnResult,
-} from './admission';
+} from '@api/thread-runtime/admission';
 
 type RuntimeTurnStorageStatus =
   'running' | 'cancel_requested' | 'cancelled' | 'stale' | 'completed' | 'failed';

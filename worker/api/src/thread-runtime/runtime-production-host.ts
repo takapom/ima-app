@@ -5,26 +5,26 @@ import { IsoTimestampSchema } from '@ima/core';
 import {
   createRuntimeProductionConnectionOptions,
   type RuntimeProductionOverrides,
-} from '../runtime/composition/runtime-production-factory';
-import { sessionExpiryAt } from '../runtime/composition/runtime-production-support';
-import { createDurableRuntimeContextPersistence } from './runtime-context-persistence';
-import type { RuntimeProductionContextReference } from '../runtime/context/runtime-production-context-reference';
-import { createRuntimeRetentionAlarmCapability } from './runtime-retention-alarm';
-import type { RuntimeThinkConnectionOptions } from '../runtime/turn-execution/runtime-think-connection';
+} from '@api/runtime/composition/runtime-production-factory';
+import { sessionExpiryAt } from '@api/runtime/composition/runtime-production-support';
+import { createDurableRuntimeContextPersistence } from '@api/thread-runtime/runtime-context-persistence';
+import type { RuntimeProductionContextReference } from '@api/runtime/context/runtime-production-context-reference';
+import { createRuntimeRetentionAlarmCapability } from '@api/thread-runtime/runtime-retention-alarm';
+import type { RuntimeThinkConnectionOptions } from '@api/runtime/turn-execution/runtime-think-connection';
 import {
   emitRuntimeTurnTrace,
   runtimeTraceModeFor,
   runtimeTurnTraceOutcome,
   telemetryObjectNameForRuntimeTraceMode,
   type RuntimeTurnTraceSink,
-} from '../runtime/tracing/runtime-turn-trace';
-import type { RuntimeModelTraceSink } from '../runtime/tracing/runtime-model-trace';
-import type { RuntimeProviderTraceSink } from '../providers/telemetry/runtime-provider-trace';
-import { createDurableTelemetryStore, type TelemetryNamespace } from '../telemetry/telemetry-do';
-import { createRuntimeProductionTelemetrySinks } from './runtime-production-telemetry';
-import { RuntimeThinkHost } from './runtime-host';
-import type { ThreadRuntimeTarget, ThreadRuntimeTurnResult } from './admission';
-import { type JourneyDatasetRuntimeNamespace } from '../providers/last-train/runtime-binding';
+} from '@api/runtime/tracing/runtime-turn-trace';
+import type { RuntimeModelTraceSink } from '@api/runtime/tracing/runtime-model-trace';
+import type { RuntimeProviderTraceSink } from '@api/providers/telemetry/runtime-provider-trace';
+import { createDurableTelemetryStore, type TelemetryNamespace } from '@api/telemetry/telemetry-do';
+import { createRuntimeProductionTelemetrySinks } from '@api/thread-runtime/runtime-production-telemetry';
+import { RuntimeThinkHost } from '@api/thread-runtime/runtime-host';
+import type { ThreadRuntimeTarget, ThreadRuntimeTurnResult } from '@api/thread-runtime/admission';
+import { type JourneyDatasetRuntimeNamespace } from '@api/providers/last-train/runtime-binding';
 
 type RuntimeRetentionAnchorRow = { readonly thread_created_at: string };
 type RuntimeTelemetryEnv = {

@@ -23,8 +23,8 @@ import {
   type ToolExecutionContext,
   type WalkingRoutePort,
 } from '@ima/core';
-import { createJourneyReader, type JourneyReadResult } from './reader';
-import type { JourneyDatasetReader } from './store';
+import { createJourneyReader, type JourneyReadResult } from '@api/providers/last-train/reader';
+import type { JourneyDatasetReader } from '@api/providers/last-train/store';
 
 /** The named JourneyDatasetDO exposes the same validated read result over RPC. */
 export type JourneyDatasetReadPort = {

@@ -1,10 +1,10 @@
 import type { CandidateObservationRegistryPort } from '@ima/core';
-import { sessionExpiryAt } from '../composition/runtime-production-support';
+import { sessionExpiryAt } from '@api/runtime/composition/runtime-production-support';
 import {
   createRuntimeProductionContextStore,
   type RuntimeProductionContextStore,
-} from './runtime-production-context';
-import type { RuntimeProductionContextPersistence } from './runtime-production-context-reference';
+} from '@api/runtime/context/runtime-production-context';
+import type { RuntimeProductionContextPersistence } from '@api/runtime/context/runtime-production-context-reference';
 
 export const createFactoryRuntimeContext = (input: {
   readonly registry: CandidateObservationRegistryPort;

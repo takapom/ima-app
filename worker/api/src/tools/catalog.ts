@@ -20,7 +20,7 @@ import type {
   SubmitToolEnvelope,
   SubmitToolResult,
   ToolBindingDependencies,
-} from './types';
+} from '@api/tools/types';
 import {
   cancellationError,
   invalidOutput,
@@ -40,18 +40,18 @@ import {
   submitInvalid,
   unsupportedDetailField,
   upstreamError,
-} from './validation';
+} from '@api/tools/validation';
 import {
   getPlaceDetailsToolSchema,
   searchPlacesToolSchema,
   submitCardsToolSchema,
-} from './schemas';
-import { projectDetailsResult, projectSearchResult } from './projection';
+} from '@api/tools/schemas';
+import { projectDetailsResult, projectSearchResult } from '@api/tools/projection';
 import {
   detailsResultForSavedFailures,
   mergeSavedDetailsFailures,
   resolveModelDetailsInput,
-} from './saved-reference-details';
+} from '@api/tools/saved-reference-details';
 
 const invocationOf = (options: ToolExecutionOptions): PublicToolInvocation => ({
   toolCallId: options.toolCallId,

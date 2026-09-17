@@ -1,12 +1,12 @@
 import { env } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import { deriveOwnerScopeRef } from '../../../src/http/auth';
-import { createHttpRouterConfig, createThreadScopeAuthorizer } from '../../../src/bootstrap';
-import { routeRequest } from '../../../src/http/router';
-import { createPhotoReferenceStoreResolver } from '../../../src/providers/photo/rpc';
-import { createPhotoTokenCodec } from '../../../src/providers/photo/token';
-import type { TelemetryDO } from '../../../src/telemetry/telemetry-do';
-import type { RateLimitDO, ThreadDO } from '../../../src/thread-do';
+import { deriveOwnerScopeRef } from '@api/http/auth';
+import { createHttpRouterConfig, createThreadScopeAuthorizer } from '@api/bootstrap';
+import { routeRequest } from '@api/http/router';
+import { createPhotoReferenceStoreResolver } from '@api/providers/photo/rpc';
+import { createPhotoTokenCodec } from '@api/providers/photo/token';
+import type { TelemetryDO } from '@api/telemetry/telemetry-do';
+import type { RateLimitDO, ThreadDO } from '@api/thread-do';
 
 type PhotoHttpEnv = Cloudflare.Env & {
   readonly APP_TOKEN: string;

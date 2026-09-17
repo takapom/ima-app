@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createHotPepperTransport } from '../../../src/providers/hot-pepper/transport';
-import type { HotPepperSearchRequest } from '../../../src/providers/hot-pepper/types';
-import { PhotoProviderError } from '../../../src/providers/photo/media';
-import { HotPepperError } from '../../../src/providers/hot-pepper/types';
+import { createHotPepperTransport } from '@api/providers/hot-pepper/transport';
+import type { HotPepperSearchRequest } from '@api/providers/hot-pepper/types';
+import { PhotoProviderError } from '@api/providers/photo/media';
+import { HotPepperError } from '@api/providers/hot-pepper/types';
 import {
   createBestEffortRuntimeProviderTraceSink,
   createRuntimeProviderTransportObserver,
   traceRecordForRuntimeProvider,
   type RuntimeProviderTrace,
   type RuntimeProviderTraceOptions,
-} from '../../../src/providers/telemetry/runtime-provider-trace';
-import type { RuntimeProviderTransportObserver } from '../../../src/providers/telemetry/runtime-provider-trace-contract';
+} from '@api/providers/telemetry/runtime-provider-trace';
+import type { RuntimeProviderTransportObserver } from '@api/providers/telemetry/runtime-provider-trace-contract';
 
 const searchRequest: HotPepperSearchRequest = {
   keyword: 'PROVIDER_REQUEST_CANARY quiet cafe',

@@ -34,7 +34,7 @@ import type {
   PublicToolName,
   ToolRuntimeFactory,
   ToolRuntime,
-} from './types';
+} from '@api/tools/types';
 
 type SubmitIssue = v.InferOutput<typeof SubmitIssueSchema>;
 

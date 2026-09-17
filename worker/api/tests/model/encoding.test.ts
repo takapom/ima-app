@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createModelContext } from './fixtures';
-import { encodeModelContext } from '../../src/model/encoding';
-import { MODEL_SYSTEM_PROMPT, MODEL_TERMINAL_MODES } from '../../src/model/system-prompt';
+import { encodeModelContext } from '@api/model/encoding';
+import { MODEL_SYSTEM_PROMPT, MODEL_TERMINAL_MODES } from '@api/model/system-prompt';
 
 describe('model message encoding', () => {
   it('keeps the original mixed-intent request and only sends projected context', () => {

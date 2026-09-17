@@ -1,9 +1,9 @@
 import type { JourneyServiceDateContext } from '@ima/core';
 import { describe, expect, it, vi } from 'vitest';
-import { JOURNEY_DATASET_DO_NAME } from '../../../src/providers/last-train/dataset-identity';
-import { createRuntimeJourneyDatasetBinding } from '../../../src/providers/last-train/runtime-binding';
-import type { JourneyReadResult } from '../../../src/providers/last-train/reader';
-import type { JourneyDatasetRuntimeNamespace } from '../../../src/providers/last-train/runtime-binding';
+import { JOURNEY_DATASET_DO_NAME } from '@api/providers/last-train/dataset-identity';
+import { createRuntimeJourneyDatasetBinding } from '@api/providers/last-train/runtime-binding';
+import type { JourneyReadResult } from '@api/providers/last-train/reader';
+import type { JourneyDatasetRuntimeNamespace } from '@api/providers/last-train/runtime-binding';
 
 const context = {} as JourneyServiceDateContext;
 const unavailable: JourneyReadResult = {

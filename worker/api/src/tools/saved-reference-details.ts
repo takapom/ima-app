@@ -20,8 +20,8 @@ import type {
   SafeGetPlaceDetailsOutput,
   SafePlaceFields,
   SavedPlaceReferenceResolver,
-} from './types';
-import { issue } from './validation';
+} from '@api/tools/types';
+import { issue } from '@api/tools/validation';
 
 export type SavedDetailsFailure = {
   readonly savedPlaceRef: SavedPlaceRef;

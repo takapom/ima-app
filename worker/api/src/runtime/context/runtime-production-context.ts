@@ -17,21 +17,21 @@ import {
   ModelEvidenceSourceSchema,
   OriginalTurnSchema,
 } from '@ima/core';
-import type { RuntimeThinkComposition } from '../turn-execution/runtime-think-connection';
+import type { RuntimeThinkComposition } from '@api/runtime/turn-execution/runtime-think-connection';
 import {
   referenceSnapshotFor,
   stateFromReference,
   type RuntimeProductionCandidateIdentityReference,
   type RuntimeProductionContextPersistence,
   type RuntimeProductionContextStateForReference,
-} from './runtime-production-context-reference';
+} from '@api/runtime/context/runtime-production-context-reference';
 import {
   cardSetFor,
   cardSetForDisplayContext,
   hasDisplayContext,
   stagedCardSetFor,
   RuntimeProductionContextLimitError,
-} from './runtime-production-display-context';
+} from '@api/runtime/context/runtime-production-display-context';
 
 import {
   originalTurnFor,
@@ -39,7 +39,7 @@ import {
   responseHistory,
   projectConversationHistory,
   type RetainedHistoryEntry,
-} from './runtime-conversation-history';
+} from '@api/runtime/context/runtime-conversation-history';
 
 type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 

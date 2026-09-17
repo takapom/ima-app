@@ -10,7 +10,7 @@ import {
   type PhotoTokenCodec,
   type PhotoTokenExpectedScope,
   type PhotoTokenInput,
-} from './types';
+} from '@api/providers/photo/types';
 
 const TOKEN_VERSION = 'p1';
 const TOKEN_SEGMENT_COUNT = 3;

@@ -6,7 +6,7 @@ import {
   SearchResponseSchema,
 } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import { RuntimeProductionContextReferenceSchema } from '../src/runtime/context/runtime-production-context-reference';
+import { RuntimeProductionContextReferenceSchema } from '@api/runtime/context/runtime-production-context-reference';
 import type { RuntimeProductionCardSetSnapshot } from './runtime-native/runtime-production-model-observation';
 import { call, createThread, productionEnv, turnBody } from './runtime-production-http-support';
 

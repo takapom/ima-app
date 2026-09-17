@@ -4,7 +4,7 @@ import {
   observeRuntimeSubmitRejection,
   runtimeSubmitRejectionFor,
   type RuntimeSubmitRejection,
-} from '../../../src/runtime/turn-execution/runtime-submit-diagnostic';
+} from '@api/runtime/turn-execution/runtime-submit-diagnostic';
 
 const invalid: SubmitCardsInvalid = {
   status: 'invalid',

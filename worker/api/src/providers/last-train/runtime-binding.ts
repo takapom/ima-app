@@ -1,8 +1,8 @@
-import { JOURNEY_DATASET_DO_NAME } from './dataset-identity';
-import type { JourneyDatasetDO } from './dataset-do';
-import type { RuntimeJourneyDataset } from './port';
+import { JOURNEY_DATASET_DO_NAME } from '@api/providers/last-train/dataset-identity';
+import type { JourneyDatasetDO } from '@api/providers/last-train/dataset-do';
+import type { RuntimeJourneyDataset } from '@api/providers/last-train/port';
 
-export type { RuntimeJourneyDataset } from './port';
+export type { RuntimeJourneyDataset } from '@api/providers/last-train/port';
 
 export type JourneyDatasetRuntimeNamespace = Pick<
   DurableObjectNamespace<JourneyDatasetDO>,

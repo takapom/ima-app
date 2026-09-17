@@ -15,12 +15,12 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '../../src/runtime/budget/runtime-budget';
+} from '@api/runtime/budget/runtime-budget';
 import {
   createRuntimeTurnFactory,
   type RuntimeTurnFactoryOptions,
   type RuntimeTurnPortDependencies,
-} from '../../src/runtime/turn-execution/runtime-turn-factory';
+} from '@api/runtime/turn-execution/runtime-turn-factory';
 import { createToolRegistry } from '../tools/registry-fixture';
 
 /** Reports no walking-route or last-train capability, matching the connected providers. */

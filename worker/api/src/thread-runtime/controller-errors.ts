@@ -1,16 +1,16 @@
 import {
   isRuntimeThinkConnectionError,
   type RuntimeThinkConnectionError,
-} from '../runtime/turn-execution/runtime-think-connection';
+} from '@api/runtime/turn-execution/runtime-think-connection';
 import {
   RuntimeProductionContextLimitError,
   RuntimeProductionDisplayContextError,
-} from '../runtime/context/runtime-production-display-context';
+} from '@api/runtime/context/runtime-production-display-context';
 import {
   runtimeFailure,
   type ThreadRuntimeFailureCode,
   type ThreadRuntimeTurnResult,
-} from './admission';
+} from '@api/thread-runtime/admission';
 
 const runtimeErrorCode = (error: RuntimeThinkConnectionError): ThreadRuntimeFailureCode => {
   switch (error.code) {

@@ -2,7 +2,7 @@ import type {
   PlacesSearchCursorBinding,
   PlacesSearchCursorResolution,
   PlacesSearchCursorState,
-} from './types';
+} from '@api/providers/places-search/types';
 
 export const PLACES_SEARCH_CURSOR_TTL_MS = 5 * 60 * 1_000;
 const CURSOR_VERSION = 'v1';

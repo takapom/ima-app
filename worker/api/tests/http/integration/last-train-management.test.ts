@@ -5,11 +5,11 @@ import {
   handleJourneyDatasetManagement,
   JOURNEY_DATASET_ADMIN_HEADER,
   JOURNEY_DATASET_MANAGEMENT_PATH,
-} from '../../../src/providers/last-train/management';
+} from '@api/providers/last-train/management';
 import {
   JOURNEY_DATASET_DO_NAME,
   type JourneyDatasetDO,
-} from '../../../src/providers/last-train/dataset-do';
+} from '@api/providers/last-train/dataset-do';
 
 const ADMIN_TOKEN = 'm14-admin-fixture-token';
 // Keep the original relative dates while placing expiry alarms after the real test clock.

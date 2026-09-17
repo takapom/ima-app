@@ -15,24 +15,30 @@ import {
   IsoTimestampSchema,
   REQUEST_ID_HEADER,
 } from '@ima/contracts';
-import { HttpBoundaryError, toErrorResponse, type BoundaryFailure } from './errors';
-import { authenticateRequest, type AuthConfig, type AuthenticatedContext } from './auth';
-import { isValidRequestId, parseJsonBodyWithRaw } from './input';
+import { HttpBoundaryError, toErrorResponse, type BoundaryFailure } from '@api/http/errors';
+import { authenticateRequest, type AuthConfig, type AuthenticatedContext } from '@api/http/auth';
+import { isValidRequestId, parseJsonBodyWithRaw } from '@api/http/input';
 import type {
   ApplicationOperation,
   ApplicationResult,
   HandlerContext,
   HandlerDependencies,
-} from './handler';
+} from '@api/http/handler';
 import type { CancellationToken } from '@ima/core';
-import { matchRoute, type MatchedRoute } from './router-match';
-import type { AppIntegrityGate } from '../security/app-integrity';
-import { authorizeAppIntegrity } from '../security/app-integrity-http';
-import { handleAppIntegrityHttpRoute, isAppIntegrityHttpRoute } from './app-integrity-routes';
-import { handleOwnerHttpRoute, isOwnerHttpRoute } from './owner-routes';
-import { handleThreadPlaceWriteRoute, isThreadPlaceWriteRoute } from './thread-place-routes';
-import { ensurePhotoResponse } from './photo-route';
-import { rateLimitedResponse } from './rate-limit-response';
+import { matchRoute, type MatchedRoute } from '@api/http/router-match';
+import type { AppIntegrityGate } from '@api/security/app-integrity';
+import { authorizeAppIntegrity } from '@api/security/app-integrity-http';
+import {
+  handleAppIntegrityHttpRoute,
+  isAppIntegrityHttpRoute,
+} from '@api/http/app-integrity-routes';
+import { handleOwnerHttpRoute, isOwnerHttpRoute } from '@api/http/owner-routes';
+import {
+  handleThreadPlaceWriteRoute,
+  isThreadPlaceWriteRoute,
+} from '@api/http/thread-place-routes';
+import { ensurePhotoResponse } from '@api/http/photo-route';
+import { rateLimitedResponse } from '@api/http/rate-limit-response';
 
 export const DEFAULT_JSON_BODY_LIMIT_BYTES = 32 * 1024;
 

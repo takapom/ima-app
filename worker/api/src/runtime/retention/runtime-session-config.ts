@@ -1,5 +1,5 @@
 import type { Session } from '@cloudflare/think';
-import { sanitizeRuntimeCompactionSummary } from './runtime-retention';
+import { sanitizeRuntimeCompactionSummary } from '@api/runtime/retention/runtime-retention';
 
 /** Compaction never receives a provider summary as a model or persistence grant. */
 export const configureRuntimeCompaction = (session: Session): Session =>

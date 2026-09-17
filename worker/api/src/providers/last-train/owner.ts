@@ -11,10 +11,13 @@ import {
   rollbackJourneyDataset,
   type JourneyImportResult,
   type JourneyMaintenanceResult,
-} from './importer';
-import { createJourneyReader, type JourneyReadResult } from './reader';
-import { createDurableJourneyDatasetStore, JourneyDatasetStorageError } from './store';
-import { parseJourneyDataset } from './types';
+} from '@api/providers/last-train/importer';
+import { createJourneyReader, type JourneyReadResult } from '@api/providers/last-train/reader';
+import {
+  createDurableJourneyDatasetStore,
+  JourneyDatasetStorageError,
+} from '@api/providers/last-train/store';
+import { parseJourneyDataset } from '@api/providers/last-train/types';
 
 export type JourneyDatasetCommand =
   | {

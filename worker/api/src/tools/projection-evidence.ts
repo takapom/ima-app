@@ -22,7 +22,7 @@ import {
   PriceInfoSchema,
   WalkingRouteSchema,
 } from '@ima/core';
-import type { ModelSafeObservation } from './types';
+import type { ModelSafeObservation } from '@api/tools/types';
 
 export type ProjectionRegistry = Pick<
   CandidateObservationRegistryPort,

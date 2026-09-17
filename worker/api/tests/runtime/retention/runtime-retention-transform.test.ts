@@ -1,13 +1,13 @@
 import { APICallError, InvalidToolInputError, jsonSchema } from 'ai';
 import type { JSONValue, LanguageModelUsage, TextStreamPart, Tool } from 'ai';
 import { describe, expect, it, vi } from 'vitest';
-import { RuntimeModelGuardError } from '../../../src/runtime/turn-execution/runtime-model-guard';
+import { RuntimeModelGuardError } from '@api/runtime/turn-execution/runtime-model-guard';
 import {
   createRuntimeRetentionTransform,
   type RuntimeRetentionTransformOptions,
   type RuntimeRetentionToolOutputProjection,
   type RuntimeRetentionTransformReport,
-} from '../../../src/runtime/retention/runtime-retention-transform';
+} from '@api/runtime/retention/runtime-retention-transform';
 
 const CANARY = `provider-secret-${crypto.randomUUID()}`;
 type TestTools = {

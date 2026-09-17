@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { HttpBoundaryError } from '../../../src/http/errors';
-import type { HandlerContext } from '../../../src/http/handler';
-import { createPhotoBodyHandler } from '../../../src/providers/photo/http';
-import { createMemoryPhotoReferenceStore } from '../../../src/providers/photo/reference-store';
-import { PhotoProviderError } from '../../../src/providers/photo/media';
-import { createPhotoTokenCodec } from '../../../src/providers/photo/token';
-import type { RuntimeProviderTransportObserver } from '../../../src/providers/telemetry/runtime-provider-trace-contract';
+import type { HttpBoundaryError } from '@api/http/errors';
+import type { HandlerContext } from '@api/http/handler';
+import { createPhotoBodyHandler } from '@api/providers/photo/http';
+import { createMemoryPhotoReferenceStore } from '@api/providers/photo/reference-store';
+import { PhotoProviderError } from '@api/providers/photo/media';
+import { createPhotoTokenCodec } from '@api/providers/photo/token';
+import type { RuntimeProviderTransportObserver } from '@api/providers/telemetry/runtime-provider-trace-contract';
 
 const NOW = '2026-09-10T12:00:00.000Z';
 const OWNER = 'owner:photo-test';

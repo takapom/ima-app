@@ -10,7 +10,7 @@ import type {
   SearchPlacesOutput,
 } from '@ima/core';
 import type { ModelContextFieldPolicy } from '@ima/core';
-import { projectDetailsResult, projectSearchResult } from '../../src/tools/projection';
+import { projectDetailsResult, projectSearchResult } from '@api/tools/projection';
 import { createToolRegistry, toolScope } from './registry-fixture';
 
 const context: HarnessContext = {

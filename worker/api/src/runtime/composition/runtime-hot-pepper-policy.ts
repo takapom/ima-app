@@ -1,13 +1,13 @@
 import type { ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
-import type { RuntimeProductionOverrides } from './runtime-production-types';
+import type { RuntimeProductionOverrides } from '@api/runtime/composition/runtime-production-types';
 import type {
   PhotoDisplayPolicySnapshot,
   PhotoTokenObservationSource,
-} from '../../providers/photo/issuance';
+} from '@api/providers/photo/issuance';
 import {
   sessionExpiryAt,
   type ProductionObservationPolicyInput,
-} from './runtime-production-support';
+} from '@api/runtime/composition/runtime-production-support';
 
 /** Application usage policy for the selected provider; not a claim of provider-side verification. */
 export const hotPepperModelContextPolicy: ModelContextFieldPolicy = {

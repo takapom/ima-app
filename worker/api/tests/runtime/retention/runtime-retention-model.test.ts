@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest';
 import {
   defaultRuntimeModelContextPolicy,
   projectRuntimeToolResultForModel,
-} from '../../../src/runtime/context/runtime-field-policy';
+} from '@api/runtime/context/runtime-field-policy';
 import {
   captureRuntimeEphemeralToolCall,
   captureRuntimeEphemeralToolResult,
   type RuntimeRetentionContext,
-} from '../../../src/runtime/retention/runtime-retention';
-import { projectRuntimeCurrentTurnMessages } from '../../../src/runtime/retention/runtime-retention-model';
+} from '@api/runtime/retention/runtime-retention';
+import { projectRuntimeCurrentTurnMessages } from '@api/runtime/retention/runtime-retention-model';
 
 const NOW = '2026-09-10T00:00:00Z';
 const CANARY = 'M16_MODEL_INPUT_CANARY';

@@ -10,10 +10,10 @@ import {
   REQUEST_ID_HEADER,
   RequestHeadersSchema,
 } from '@ima/contracts';
-import type { AuthenticationResult } from '../../src/http/auth';
-import { authenticateRequest, deriveOwnerScopeRef } from '../../src/http/auth';
-import { toErrorResponse, toPublicError } from '../../src/http/errors';
-import { parseJsonBody } from '../../src/http/input';
+import type { AuthenticationResult } from '@api/http/auth';
+import { authenticateRequest, deriveOwnerScopeRef } from '@api/http/auth';
+import { toErrorResponse, toPublicError } from '@api/http/errors';
+import { parseJsonBody } from '@api/http/input';
 
 const OWNER_CREDENTIAL = `${'A'.repeat(42)}A`;
 const OTHER_OWNER_CREDENTIAL = `${'A'.repeat(41)}B${'A'}`;

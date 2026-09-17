@@ -6,16 +6,16 @@ import {
   type PlaceDetailsPort,
   type ToolExecutionContext,
 } from '@ima/core';
-import type { PlacesSearchRegistration } from '../places-search/registration';
-import type { HotPepperTransport } from './transport';
-import { HotPepperError } from './types';
+import type { PlacesSearchRegistration } from '@api/providers/places-search/registration';
+import type { HotPepperTransport } from '@api/providers/hot-pepper/transport';
+import { HotPepperError } from '@api/providers/hot-pepper/types';
 import {
   hotPepperIssue,
   hotPepperProviderIssue,
   hotPepperObservationContext,
   isHotPepperDetailField,
   registerHotPepperField,
-} from './place-observations';
+} from '@api/providers/hot-pepper/place-observations';
 
 export const createHotPepperDetailsAdapter = (options: {
   readonly transport: HotPepperTransport;

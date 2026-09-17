@@ -1,7 +1,10 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema, SavedPlaceRegistrationSchema } from '@ima/core';
-import type { OwnerDecideInput, OwnerDecideResult } from './owner-store';
-import type { DurableSavedReferenceStore, SavedReferenceOperationOptions } from './store';
+import type { OwnerDecideInput, OwnerDecideResult } from '@api/saved-references/owner-store';
+import type {
+  DurableSavedReferenceStore,
+  SavedReferenceOperationOptions,
+} from '@api/saved-references/store';
 
 const REFERENCE_TABLE = 'm16_saved_place_reference';
 const OPERATION_TABLE = 'm16_saved_decide_operation';

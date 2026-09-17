@@ -5,14 +5,14 @@ import type {
   OwnerPrefsPutResult,
   OwnerPrefsReadResult,
   OwnerSavedListResult,
-} from './owner-store';
+} from '@api/saved-references/owner-store';
 import type {
   SavedReferenceDeleteResult,
   SavedReferenceOperationOptions,
   SavedReferenceReadResult,
   SavedReferenceRegistrationResult,
   SavedReferenceReplayResult,
-} from './store';
+} from '@api/saved-references/store';
 
 const OWNER_NAME_PREFIX = 'saved-reference-owner:';
 

@@ -1,4 +1,4 @@
-import { ThreadDO as ProductionThreadDO } from '../../src/thread-do';
+import { ThreadDO as ProductionThreadDO } from '@api/thread-do';
 
 export const isDevLiveModelEnvironment = (env: unknown): boolean =>
   typeof env === 'object' &&

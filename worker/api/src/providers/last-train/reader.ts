@@ -6,8 +6,8 @@ import {
   type JourneyServiceDateContext,
 } from '@ima/core';
 import * as v from 'valibot';
-import type { JourneyDatasetReader } from './store';
-import { parseJourneyDataset } from './types';
+import type { JourneyDatasetReader } from '@api/providers/last-train/store';
+import { parseJourneyDataset } from '@api/providers/last-train/types';
 
 export type JourneyReadResult =
   | {

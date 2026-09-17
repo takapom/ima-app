@@ -1,13 +1,13 @@
 import type { StepConfig, ToolCallContext, ToolCallDecision } from '@cloudflare/think';
-import type { RuntimeBudget, RuntimeBudgetResult } from '../budget/runtime-budget';
+import type { RuntimeBudget, RuntimeBudgetResult } from '@api/runtime/budget/runtime-budget';
 import type {
   RuntimeBeforeStepDelegate,
   RuntimeBeforeToolCallDelegate,
-} from './runtime-turn-factory';
+} from '@api/runtime/turn-execution/runtime-turn-factory';
 import type {
   RuntimeModelGuardAcceptance,
   RuntimeModelGuardCallOptions,
-} from './runtime-model-guard';
+} from '@api/runtime/turn-execution/runtime-model-guard';
 
 type RuntimeFinalResponseOptions = {
   readonly budget: RuntimeBudget;

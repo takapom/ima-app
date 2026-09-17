@@ -1,14 +1,11 @@
 import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import type {
-  ThreadRuntimeTarget,
-  ThreadRuntimeTurnInput,
-} from '../../src/thread-runtime/admission';
+import type { ThreadRuntimeTarget, ThreadRuntimeTurnInput } from '@api/thread-runtime/admission';
 import {
   createRuntimeRetentionAlarmCapability,
   RUNTIME_RETENTION_ALARM_TABLE,
-} from '../../src/thread-runtime/runtime-retention-alarm';
-import { sessionExpiryAt } from '../../src/runtime/composition/runtime-production-support';
+} from '@api/thread-runtime/runtime-retention-alarm';
+import { sessionExpiryAt } from '@api/runtime/composition/runtime-production-support';
 import type { ProductionThreadDO } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {

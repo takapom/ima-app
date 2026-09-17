@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { PhotoPathSchema, SavedReferencePathSchema, ThreadPathSchema } from '@ima/contracts';
-import type { BoundaryFailure } from './errors';
-import type { PhotoPath, SavedReferencePath, ThreadPath } from './handler';
+import type { BoundaryFailure } from '@api/http/errors';
+import type { PhotoPath, SavedReferencePath, ThreadPath } from '@api/http/handler';
 
 export type LifecycleAction = 'cancel' | 'resume' | 'restart' | 'end';
 

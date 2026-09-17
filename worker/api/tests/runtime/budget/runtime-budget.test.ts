@@ -3,7 +3,7 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '../../../src/runtime/budget/runtime-budget';
+} from '@api/runtime/budget/runtime-budget';
 
 const config = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudgetConfig => ({
   ...DEFAULT_RUNTIME_BUDGET,

@@ -1,4 +1,4 @@
-import type { TelemetryProvider } from '../../telemetry/schema';
+import type { TelemetryProvider } from '@api/telemetry/schema';
 
 export type RuntimeProviderTransportProvider = Extract<
   TelemetryProvider,

@@ -1,13 +1,13 @@
-import { HttpBoundaryError } from '../../http/errors';
-import type { HandlerContext, PhotoBodyHandler, PhotoPath } from '../../http/handler';
-import { PhotoProviderError, type PhotoMediaTransport } from './media';
-import type { RuntimeProviderTransportObserver } from '../telemetry/runtime-provider-trace-contract';
+import { HttpBoundaryError } from '@api/http/errors';
+import type { HandlerContext, PhotoBodyHandler, PhotoPath } from '@api/http/handler';
+import { PhotoProviderError, type PhotoMediaTransport } from '@api/providers/photo/media';
+import type { RuntimeProviderTransportObserver } from '@api/providers/telemetry/runtime-provider-trace-contract';
 import {
   PhotoTokenError,
   type PhotoHandleClaims,
   type PhotoTokenCodec,
   type PhotoTransportTraceIdentity,
-} from './types';
+} from '@api/providers/photo/types';
 
 const tokenFailure = (error: PhotoTokenError): HttpBoundaryError => {
   switch (error.code) {

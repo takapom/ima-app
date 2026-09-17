@@ -13,8 +13,8 @@ import type {
   SubmitValidationContext,
 } from '@ima/core';
 import { IsoTimestampSchema, RetentionMetadataSchema } from '@ima/core';
-import { DEFAULT_RUNTIME_BUDGET } from '../budget/runtime-budget';
-import type { RuntimeRetentionContext } from '../retention/runtime-retention';
+import { DEFAULT_RUNTIME_BUDGET } from '@api/runtime/budget/runtime-budget';
+import type { RuntimeRetentionContext } from '@api/runtime/retention/runtime-retention';
 
 const CURSOR_SECRET = 'PLACES_CURSOR_SECRET';
 

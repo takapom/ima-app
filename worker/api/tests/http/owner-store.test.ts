@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Preferences } from '@ima/contracts';
-import { createMemoryOwnerStore } from '../../src/saved-references/memory-owner-store';
-import type { OwnerStore } from '../../src/saved-references/owner-store';
+import { createMemoryOwnerStore } from '@api/saved-references/memory-owner-store';
+import type { OwnerStore } from '@api/saved-references/owner-store';
 
 const OWNER_A = 'owner-a';
 const OWNER_B = 'owner-b';

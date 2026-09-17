@@ -20,26 +20,26 @@ import * as v from 'valibot';
 import type {
   LastTrainObservationPolicy,
   LastTrainObservationRegistrar,
-} from '../../providers/last-train/registration';
-import { createLastTrainObservationRegistrar } from '../../providers/last-train/registration';
+} from '@api/providers/last-train/registration';
+import { createLastTrainObservationRegistrar } from '@api/providers/last-train/registration';
 import {
   createLastTrainDetailsPort,
   type LastTrainDetailsDispatcherOptions,
-} from '../../providers/last-train/details';
+} from '@api/providers/last-train/details';
 import {
   createLastTrainJourneyPort,
   type RuntimeJourneyDataset,
   type LastTrainJourneyPortOptions,
   type LastTrainRoutePorts,
-} from '../../providers/last-train/port';
+} from '@api/providers/last-train/port';
 import {
   createPhotoTokenPreparer,
   type PhotoTokenPreparerDependencies,
-} from '../../providers/photo/issuance';
-import type { RuntimePhotoTokenPreparer } from '../response/runtime-response';
+} from '@api/providers/photo/issuance';
+import type { RuntimePhotoTokenPreparer } from '@api/runtime/response/runtime-response';
 
 /** Kept at this runtime export for callers while the protocol type lives with last-train ports. */
-export type { RuntimeJourneyDataset } from '../../providers/last-train/port';
+export type { RuntimeJourneyDataset } from '@api/providers/last-train/port';
 
 export type RuntimeLastTrainRevisionState = {
   readonly byCandidate: Map<string, { readonly revision: number; readonly evaluationKey: string }>;

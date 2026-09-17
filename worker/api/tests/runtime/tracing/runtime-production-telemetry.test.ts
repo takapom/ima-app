@@ -3,10 +3,10 @@ import {
   createRuntimeProductionTelemetrySinks,
   createRuntimeTelemetryFailureObserver,
   type RuntimeTelemetryDiagnostic,
-} from '../../../src/thread-runtime/runtime-production-telemetry';
-import type { RuntimeModelTrace } from '../../../src/runtime/tracing/runtime-model-trace';
-import type { RuntimeProviderTrace } from '../../../src/providers/telemetry/runtime-provider-trace';
-import type { RuntimeTurnTrace } from '../../../src/runtime/tracing/runtime-turn-trace';
+} from '@api/thread-runtime/runtime-production-telemetry';
+import type { RuntimeModelTrace } from '@api/runtime/tracing/runtime-model-trace';
+import type { RuntimeProviderTrace } from '@api/providers/telemetry/runtime-provider-trace';
+import type { RuntimeTurnTrace } from '@api/runtime/tracing/runtime-turn-trace';
 
 const turnTrace: RuntimeTurnTrace = {
   ownerScopeRef: 'owner-m26-diagnostic',

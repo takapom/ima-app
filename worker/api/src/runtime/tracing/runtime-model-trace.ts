@@ -3,13 +3,13 @@ import type {
   RuntimeModelGuardGenerateResult,
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from '../turn-execution/runtime-model-guard';
-import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '../../telemetry/schema';
-import { parseTraceRecord } from '../../telemetry/trace';
+} from '@api/runtime/turn-execution/runtime-model-guard';
+import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '@api/telemetry/schema';
+import { parseTraceRecord } from '@api/telemetry/trace';
 import {
   createBestEffortRuntimeTraceSink,
   type RuntimeTraceSinkFailure,
-} from './runtime-trace-sink';
+} from '@api/runtime/tracing/runtime-trace-sink';
 
 export type RuntimeModelTrace = {
   readonly ownerScopeRef: string;

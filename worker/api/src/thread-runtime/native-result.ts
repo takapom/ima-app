@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { AssistantResponseSchema } from '@ima/contracts';
-import type { RuntimeThinkTurnResult as NativeRuntimeTurnResult } from '../runtime/turn-execution/runtime-think-connection';
-import { runtimeFailure, type ThreadRuntimeTurnResult } from './admission';
+import type { RuntimeThinkTurnResult as NativeRuntimeTurnResult } from '@api/runtime/turn-execution/runtime-think-connection';
+import { runtimeFailure, type ThreadRuntimeTurnResult } from '@api/thread-runtime/admission';
 
 /** Converts the private Think result into the public DO result at one boundary. */
 export const threadRuntimeResultFromNative = (

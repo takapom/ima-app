@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
-import { HttpBoundaryError } from '../../src/http/errors';
-import { routeRequest } from '../../src/http/router';
+import { HttpBoundaryError } from '@api/http/errors';
+import { routeRequest } from '@api/http/router';
 import { makeHarness, makeRequest, searchInput } from './router-fixtures';
 
 const deferred = <T>() => {

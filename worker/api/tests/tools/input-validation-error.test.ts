@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   safeToolInputValidationMessage,
   toolInputInvalidFields,
-} from '../../src/tools/input-validation-error';
-import { searchPlacesToolSchema } from '../../src/tools/schemas';
+} from '@api/tools/input-validation-error';
+import { searchPlacesToolSchema } from '@api/tools/schemas';
 
 const CANARY = 'SECRET_INPUT_CANARY';
 const input = {

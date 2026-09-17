@@ -1,6 +1,6 @@
 import { env, evictDurableObject, runInDurableObject, SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import type { RateLimitDO, ThreadDO } from '../../../src/thread-do';
+import type { RateLimitDO, ThreadDO } from '@api/thread-do';
 
 const APP_TOKEN = 'test-app-token';
 const OWNER_A = 'A'.repeat(42) + 'E';

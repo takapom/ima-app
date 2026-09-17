@@ -1,12 +1,12 @@
 import { EventsRequestSchema, type EventsRequest } from '@ima/contracts';
-import type { EventsSink, HandlerContext } from '../http/handler';
+import type { EventsSink, HandlerContext } from '@api/http/handler';
 import * as v from 'valibot';
 import {
   telemetryEventRecordSchema,
   type TelemetryEventRecord,
   type TelemetryResultCode,
-} from './schema';
-export type { TelemetryEventRecord, TelemetryResultCode } from './schema';
+} from '@api/telemetry/schema';
+export type { TelemetryEventRecord, TelemetryResultCode } from '@api/telemetry/schema';
 
 export interface TelemetryEventStore {
   write(record: TelemetryEventRecord, ownerScopeRef: string): Promise<void>;

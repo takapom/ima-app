@@ -5,12 +5,12 @@ import {
   createJourneyDatasetOwner,
   type JourneyDatasetCommandResult,
   type JourneyDatasetExecutionResult,
-} from './owner';
-import { type JourneyReadResult } from './reader';
-import { JOURNEY_DATASET_MAX_RECORDS } from './types';
-import { JourneyDatasetStorageError } from './store';
+} from '@api/providers/last-train/owner';
+import { type JourneyReadResult } from '@api/providers/last-train/reader';
+import { JOURNEY_DATASET_MAX_RECORDS } from '@api/providers/last-train/types';
+import { JourneyDatasetStorageError } from '@api/providers/last-train/store';
 
-export { JOURNEY_DATASET_DO_NAME } from './dataset-identity';
+export { JOURNEY_DATASET_DO_NAME } from '@api/providers/last-train/dataset-identity';
 
 const revision = v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1)));
 const records = v.pipe(v.array(v.unknown()), v.maxLength(JOURNEY_DATASET_MAX_RECORDS));
