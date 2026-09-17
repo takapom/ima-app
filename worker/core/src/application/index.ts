@@ -17,3 +17,4 @@ export type {
 } from '@core/application/submission/submit-cards-evidence';
 export * from '@core/application/submission/submit-application';
 export * from '@core/application/submission/submit-cards-port';
+export * from '@core/application/saved-references/owner-operations';

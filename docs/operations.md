@@ -3,16 +3,16 @@
 ## 設定の入口
 
 ローカルの固定データ起動は[開発](development.md#apiキー不要のローカル起動)を参照する。
-実環境の設定名と安全な初期値は[.dev.vars.example](../.dev.vars.example)、[.env.example](../.env.example)、[mobile環境例](../apps/mobile/.env.example)、[Wrangler設定](../worker/api/wrangler.jsonc)、[EAS設定](../apps/mobile/eas.json)で管理する。
+実環境の設定名と安全な初期値は[.dev.vars.example](../.dev.vars.example)、[.env.example](../.env.example)、[mobile環境例](../apps/mobile/.env.example)、[Wrangler設定](../worker/wrangler.jsonc)、[EAS設定](../apps/mobile/eas.json)で管理する。
 実secret、アカウントID、署名資格は追跡ファイルやコマンド引数へ書かない。Worker secretを端末の公開環境変数へ入れない。
 
-| 区分           | 必要な設定・確認                                                                                                                                              |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Worker         | `IMA_ENV`、`IMA_RUNTIME_MODE`、`APP_TOKEN`、対象環境のDO binding/migration                                                                                    |
-| モデル         | `OPENAI_API_KEY`。モデル名とProvider optionsは[model設定](../worker/api/src/model/provider-config.ts)と[options](../worker/api/src/model/provider-options.ts) |
-| 店舗検索・詳細 | `HOTPEPPER_API_KEY`、`PLACES_CURSOR_SECRET`                                                                                                                   |
-| 端末・配布     | HTTPS endpoint、実bundle ID、EAS project、Apple署名、App Attest                                                                                               |
-| 有効化         | Provider flags、用途別policy、実アカウント・API・課金・許諾の検収                                                                                             |
+| 区分           | 必要な設定・確認                                                                                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Worker         | `IMA_ENV`、`IMA_RUNTIME_MODE`、`APP_TOKEN`、対象環境のDO binding/migration                                                                                                                              |
+| モデル         | `OPENAI_API_KEY`。モデル名とProvider optionsは[model設定](../worker/adapters/outbound/providers/openai/provider-config.ts)と[options](../worker/adapters/outbound/providers/openai/provider-options.ts) |
+| 店舗検索・詳細 | `HOTPEPPER_API_KEY`、`PLACES_CURSOR_SECRET`                                                                                                                                                             |
+| 端末・配布     | HTTPS endpoint、実bundle ID、EAS project、Apple署名、App Attest                                                                                                                                         |
+| 有効化         | Provider flags、用途別policy、実アカウント・API・課金・許諾の検収                                                                                                                                       |
 
 キーやflagだけで利用可能と判定しない。runtime factoryはモデル・ホットペッパーの停止flagとsecret、用途別policyを確認する。詳細は[アーキテクチャ](architecture.md)と[Providerポリシー](provider-policy.md)を参照する。
 
@@ -54,17 +54,17 @@ bun scripts/release-preflight.ts --track external
 MODEL_EVAL_LIVE=1 bunx vitest run --config vitest.model-eval-live.config.ts
 ```
 
-[評価runner](../worker/api/tests/model-eval-live)は実モデル＋固定Providerを使うため、実店舗APIの検収ではない。`MODEL_EVAL_LIVE=0`はProvider呼出し前に停止する検証経路であり、実モデル成功に数えない。
+[評価runner](../worker/tests/model-eval-live)は実モデル＋固定Providerを使うため、実店舗APIの検収ではない。`MODEL_EVAL_LIVE=0`はProvider呼出し前に停止する検証経路であり、実モデル成功に数えない。
 profile・反復・候補identity対応・人手レビューのcoverageを確認する。候補対応の欠落、不正response、未計測費用は未評価または失敗として残し、0や成功で補わない。
 
 ## 終電datasetの管理
 
-[JourneyDatasetDO](../worker/api/src/providers/last-train)が固定名`m14-last-train-v1`でactive revisionと履歴を所有する。
+[JourneyDatasetDO](../worker/adapters/outbound/persistence/last-train/dataset-do.ts)が固定名`m14-last-train-v1`でactive revisionと履歴を所有する。
 管理入口`/internal/m14/last-train`は通常のowner認証と別の管理credentialを使い、`import`・`update`・`rollback`・`expire`をstrict schemaとrevision CASで実行する。通常のturnから更新しない。
 
 実時刻表を検証してから投入し、生成fixtureを本番seedにしない。期限切れや空datasetはdisabled。検証時刻から7日未満を条件とし、alarmと利用前検証の両方で期限を扱う。
 alarm同期失敗は適用済みrevision付き`alarm_failed`になり得るため、旧revisionを盲目的に再送せず、現在のrevisionを踏まえて再同期する。
-時刻計算・駅の連結・運行日の契約は[Core](../worker/core/src/domain)と[終電Adapter](../worker/api/src/providers/last-train)を参照する。
+時刻計算・駅の連結・運行日の契約は[Core](../worker/core/src/domain)と[終電Adapter](../worker/adapters/outbound/providers/last-train)を参照する。
 
 ## デプロイと復旧
 
@@ -79,7 +79,7 @@ alarm同期失敗は適用済みrevision付き`alarm_failed`になり得るた�
 
 EASはdevelopment（Simulator/Dev Client）、internal（staging）、external（production）のprofileを使う。build時のbundle ID・project ID・endpointが欠ければ拒否する。profileの存在を署名や実機成功の証明にしない。
 
-障害時は[flags](../worker/api/src/telemetry/flags.ts)の対象Providerを停止し、必要なら`IMA_KILL_SWITCH=true`を適用する。未指定・不正なProvider flagは停止側。不正なkill switchは停止側だが、未指定のkill switchはfalseという互換既定があるため、環境設定に明示する。
+障害時は[flags](../worker/composition/operational-flags.ts)の対象Providerを停止し、必要なら`IMA_KILL_SWITCH=true`を適用する。未指定・不正なProvider flagは停止側。不正なkill switchは停止側だが、未指定のkill switchはfalseという互換既定があるため、環境設定に明示する。
 停止後に実際の外部呼出し停止を確認し、fixtureへ暗黙に切り替えない。
 
 復旧では対象環境のWorker version履歴から既知の版へ戻し、health、認証、DO migration互換性、保存期限、Provider停止状態を再確認する。DOを手作業で削除して復旧扱いにせず、データ変更が必要なら後方互換migrationを検証する。

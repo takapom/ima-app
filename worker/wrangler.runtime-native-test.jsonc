@@ -1,0 +1,22 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "ima-api-runtime-native-test",
+  "main": "tests/runtime-native/runtime-native-worker.ts",
+  "compatibility_date": "2026-08-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": { "IMA_RUNTIME_MODE": "fixture" },
+  "durable_objects": {
+    "bindings": [
+      { "name": "THREADS", "class_name": "ThreadDO" },
+      { "name": "PRODUCTION_THREADS", "class_name": "ProductionThreadDO" },
+      { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
+      { "name": "TELEMETRY", "class_name": "TelemetryDO" },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["ThreadDO", "ProductionThreadDO", "RateLimitDO", "TelemetryDO"],
+    },
+  ],
+}

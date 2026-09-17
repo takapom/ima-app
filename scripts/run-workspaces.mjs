@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const workspaces = ['packages/contracts', 'worker/core', 'worker/api', 'apps/mobile'];
+const workspaces = ['packages/contracts', 'worker/core', 'worker', 'apps/mobile'];
 const command = process.argv[2];
 
 if (!command) {

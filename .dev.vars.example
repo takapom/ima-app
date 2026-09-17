@@ -1,4 +1,4 @@
-# Copy to worker/api/.dev.vars for local Worker secrets.
+# Copy to worker/.dev.vars for local Worker secrets.
 # Never commit the copied file or real values.
 IMA_ENV=dev
 IMA_RUNTIME_MODE=fixture

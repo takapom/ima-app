@@ -8,7 +8,7 @@ export default defineConfig({
   resolve: { alias: workspaceAliases },
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: './worker/api/wrangler.model-eval-live-test.jsonc' },
+      wrangler: { configPath: './worker/wrangler.model-eval-live-test.jsonc' },
       miniflare: {
         bindings: {
           IMA_ENV: liveRequested ? 'production' : 'dev',
@@ -27,8 +27,8 @@ export default defineConfig({
   ],
   test: {
     name: 'model-eval-live',
-    setupFiles: ['./worker/api/tests/runtime-setup.ts'],
-    include: ['worker/api/tests/model-eval-live/**/*.test.ts'],
+    setupFiles: ['./worker/tests/runtime-setup.ts'],
+    include: ['worker/tests/model-eval-live/**/*.test.ts'],
     testTimeout: 60_000,
   },
 });

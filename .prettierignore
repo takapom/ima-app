@@ -4,7 +4,7 @@ node_modules
 dist
 coverage
 bun.lock
-worker/api/tests/runtime-gate/runtime-env.d.ts
+worker/tests/runtime-gate/runtime-env.d.ts
 *.png
 
 .agents/skills/ima-issue-delivery/agents/openai.yaml

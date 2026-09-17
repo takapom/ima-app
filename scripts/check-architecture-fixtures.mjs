@@ -42,13 +42,19 @@ const baseFiles = {
     "import type { Model } from '../domain/model.js';\nimport type { Port } from '../ports/index.js';\nexport type Application = (model: Model, port: Port) => void;\n",
   'worker/core/src/helpers/util.ts': 'export const helper = true;\n',
   'worker/core/src/adapters/index.ts': 'export const adapter = true;\n',
-  'worker/api/package.json': JSON.stringify({
-    name: '@ima/api',
+  'worker/package.json': JSON.stringify({
+    name: '@ima/worker',
     dependencies: { '@ima/core': 'workspace:*', '@ima/contracts': 'workspace:*' },
   }),
-  'worker/api/src/index.ts':
+  'worker/entrypoints/cloudflare/worker.ts':
     "import type { Application } from '@ima/core';\nimport { contract } from '@ima/contracts';\nexport type { Application };\nexport { contract };\n",
-  'worker/api/src/http.ts': 'export const http = true;\n',
+  'worker/adapters/inbound/http/router.ts': 'export const http = true;\n',
+  'worker/adapters/inbound/tools/index.ts': 'export const tools = true;\n',
+  'worker/adapters/outbound/providers/provider.ts': 'export const provider = true;\n',
+  'worker/composition/factory.ts': 'export const factory = true;\n',
+  'worker/composition/bootstrap.ts': 'export const bootstrap = true;\n',
+  'worker/core/src/ports/owner-store.ts': 'export type OwnerStore = { read(): void };\n',
+  'worker/core/src/ports/saved-reference-store.ts': 'export type StoreResult = { ok: boolean };\n',
   'node_modules/react/package.json': JSON.stringify({
     name: 'react',
     main: 'index.js',
@@ -64,6 +70,78 @@ const baseFiles = {
 };
 
 const cases = [
+  {
+    name: 'worker-root-alias-cannot-bypass-core-package',
+    target: 'worker/entrypoints/cloudflare/worker.ts',
+    source: "import '@worker/core/src/index.js';\n",
+    rule: 'no-cross-workspace-relative-import',
+  },
+  {
+    name: 'runtime-cannot-import-input-adapter',
+    target: 'worker/runtime/turn.ts',
+    source: "import '@worker/adapters/inbound/tools/index.js';\n",
+    rule: 'worker-runtime-no-adapters-or-composition',
+  },
+  {
+    name: 'runtime-cannot-import-output-adapter',
+    target: 'worker/runtime/turn.ts',
+    source: "import '@worker/adapters/outbound/providers/provider.js';\n",
+    rule: 'worker-runtime-no-adapters-or-composition',
+  },
+  {
+    name: 'runtime-cannot-import-composition',
+    target: 'worker/runtime/turn.ts',
+    source: "import '@worker/composition/factory.js';\n",
+    rule: 'worker-runtime-no-adapters-or-composition',
+  },
+  {
+    name: 'outbound-may-implement-owner-port',
+    target: 'worker/adapters/outbound/providers/provider.ts',
+    source: "import type { OwnerStore } from '@ima/core'; export type Provider = OwnerStore;\n",
+  },
+  {
+    name: 'composition-may-import-adapters',
+    target: 'worker/composition/factory.ts',
+    source:
+      "import '@worker/adapters/inbound/tools/index.js'; import '@worker/adapters/outbound/providers/provider.js';\n",
+  },
+  {
+    name: 'outbound-cannot-import-inbound',
+    target: 'worker/adapters/outbound/providers/provider.ts',
+    source: "import '@worker/adapters/inbound/http/router.js';\n",
+    rule: 'worker-outbound-no-inbound',
+  },
+  {
+    name: 'adapter-cannot-import-composition',
+    target: 'worker/adapters/outbound/providers/provider.ts',
+    source: "import '@worker/composition/factory.js';\n",
+    rule: 'worker-adapters-no-composition',
+  },
+  {
+    name: 'adapter-cannot-import-bootstrap',
+    target: 'worker/adapters/inbound/http/router.ts',
+    source: "import '@worker/composition/bootstrap.js';\n",
+    rule: 'worker-adapters-no-composition',
+  },
+  {
+    name: 'tools-cannot-import-provider',
+    target: 'worker/adapters/inbound/tools/index.ts',
+    source: "export * from '@worker/adapters/outbound/providers/provider.js';\n",
+    rule: 'worker-tools-no-outbound',
+  },
+  {
+    name: 'owner-port-cannot-import-adapter-type',
+    target: 'worker/core/src/ports/owner-store.ts',
+    source:
+      "import type { provider } from '@worker/adapters/outbound/providers/provider.js'; export type OwnerStore = typeof provider;\n",
+    rule: 'core-no-app-or-worker',
+  },
+  {
+    name: 'owner-contract-cannot-reexport-adapter',
+    target: 'worker/core/src/ports/saved-reference-store.ts',
+    source: "export * from '@worker/adapters/outbound/providers/provider.js';\n",
+    rule: 'core-no-app-or-worker',
+  },
   { name: 'allowed-public-entries-and-core-direction', expected: null },
   {
     name: 'mobile-internal-alias-is-allowed',
@@ -80,20 +158,20 @@ const cases = [
     target: 'worker/core/src/index.ts',
   },
   {
-    name: 'api-internal-alias-is-allowed',
-    source: "export { http } from '@api/http.js';\n",
-    target: 'worker/api/src/index.ts',
+    name: 'worker-internal-alias-is-allowed',
+    source: "export { http } from '@worker/adapters/inbound/http/router.js';\n",
+    target: 'worker/entrypoints/cloudflare/worker.ts',
   },
   {
-    name: 'api-cannot-bypass-core-package-with-alias',
+    name: 'worker-cannot-bypass-core-package-with-alias',
     source: "import '@core/index.js';\n",
-    target: 'worker/api/src/index.ts',
+    target: 'worker/entrypoints/cloudflare/worker.ts',
     rule: 'no-cross-workspace-relative-import',
   },
   {
-    name: 'api-cannot-import-private-core-through-alias',
+    name: 'worker-cannot-import-private-core-through-alias',
     source: "import type { Model } from '@core/domain/model.js';\nexport type { Model };\n",
-    target: 'worker/api/src/index.ts',
+    target: 'worker/entrypoints/cloudflare/worker.ts',
     rule: 'no-private-workspace-import-from-app',
   },
   {
@@ -110,7 +188,7 @@ const cases = [
   {
     name: 'worker-may-import-workerd-virtual-module',
     source: "import { DurableObject } from 'cloudflare:workers';\nexport { DurableObject };\n",
-    target: 'worker/api/src/index.ts',
+    target: 'worker/entrypoints/cloudflare/worker.ts',
   },
   {
     name: 'core-cannot-import-workerd-virtual-module',
@@ -121,12 +199,12 @@ const cases = [
   {
     name: 'worker-tests-may-import-pool-virtual-module',
     source: "import { env } from 'cloudflare:test';\nexport { env };\n",
-    target: 'worker/api/tests/runtime.test.ts',
+    target: 'worker/tests/runtime.test.ts',
   },
   {
     name: 'worker-production-cannot-import-pool-virtual-module',
     source: "import 'cloudflare:test';\n",
-    target: 'worker/api/src/index.ts',
+    target: 'worker/entrypoints/cloudflare/worker.ts',
     rule: 'cloudflare-test-only-worker-tests',
   },
   {
@@ -141,10 +219,10 @@ const cases = [
     rule: 'mobile-only-contracts',
   },
   {
-    name: 'api-cannot-import-mobile',
+    name: 'worker-cannot-import-mobile',
     source: "import '../../../apps/mobile/src/index.js';\n",
-    rule: 'api-only-contracts-core',
-    target: 'worker/api/src/index.ts',
+    rule: 'worker-only-contracts-core',
+    target: 'worker/entrypoints/cloudflare/worker.ts',
   },
   {
     name: 'core-and-contracts-are-independent',
@@ -160,7 +238,7 @@ const cases = [
   },
   {
     name: 'core-cannot-import-worker',
-    source: "import '../../../worker/api/src/index.js';\n",
+    source: "import '../../../worker/entrypoints/cloudflare/worker.js';\n",
     rule: 'core-no-app-or-worker',
     target: 'worker/core/src/index.ts',
   },
@@ -172,7 +250,7 @@ const cases = [
   },
   {
     name: 'contracts-cannot-import-worker',
-    source: "import '../../../worker/api/src/index.js';\n",
+    source: "import '../../../worker/entrypoints/cloudflare/worker.js';\n",
     rule: 'contracts-no-app-or-worker',
     target: 'packages/contracts/src/index.ts',
   },
@@ -182,20 +260,20 @@ const cases = [
     rule: 'no-cross-workspace-relative-import',
   },
   {
-    name: 'api-cannot-import-sibling-core-by-relative-path',
+    name: 'worker-cannot-import-sibling-core-by-relative-path',
     source: "import '../../core/src/index.js';\n",
-    target: 'worker/api/src/index.ts',
+    target: 'worker/entrypoints/cloudflare/worker.ts',
     rule: 'no-cross-workspace-relative-import',
   },
   {
-    name: 'api-cannot-import-private-core-module',
+    name: 'worker-cannot-import-private-core-module',
     source: "import '../../core/src/domain/model.js';\n",
-    target: 'worker/api/src/index.ts',
+    target: 'worker/entrypoints/cloudflare/worker.ts',
     rule: 'no-private-workspace-import-from-app',
   },
   {
-    name: 'core-cannot-import-sibling-api',
-    source: "import '../../api/src/index.js';\n",
+    name: 'core-cannot-import-parent-worker',
+    source: "import '../../entrypoints/cloudflare/worker.js';\n",
     target: 'worker/core/src/index.ts',
     rule: 'core-no-app-or-worker',
   },
@@ -264,9 +342,9 @@ const cases = [
     addManifestDependency: ['apps/mobile/package.json', '@ima/core'],
   },
   {
-    name: 'api-manifest-cannot-declare-mobile-without-import',
-    manifestRule: 'manifest-api-only-contracts-core',
-    addManifestDependency: ['worker/api/package.json', '@ima/mobile'],
+    name: 'worker-manifest-cannot-declare-mobile-without-import',
+    manifestRule: 'manifest-worker-only-contracts-core',
+    addManifestDependency: ['worker/package.json', '@ima/mobile'],
   },
   {
     name: 'vitest-is-allowed-only-for-test-runner',
@@ -282,14 +360,14 @@ const cases = [
   },
   {
     name: 'worker-runtime-test-may-import-fixture',
-    source: "import '../fixtures/runtime.js';\n",
-    target: 'worker/api/src/runtime.test.ts',
+    source: "import './fixtures/runtime.js';\n",
+    target: 'worker/runtime.test.ts',
     addFixture: true,
   },
   {
     name: 'worker-production-cannot-import-fixture',
-    source: "import '../fixtures/runtime.js';\n",
-    target: 'worker/api/src/runtime.ts',
+    source: "import './fixtures/runtime.js';\n",
+    target: 'worker/runtime.ts',
     rule: 'no-fixture-in-production',
     addFixture: true,
   },
@@ -355,7 +433,7 @@ function runFixture(testCase) {
     }
     if (testCase.addFixture) {
       writeFixture(root, {
-        'worker/api/fixtures/runtime.js': 'export const fixture = true;\n',
+        'worker/fixtures/runtime.js': 'export const fixture = true;\n',
       });
     }
     if (testCase.addManifestDependency) {

@@ -6,7 +6,7 @@ export default defineConfig({
   resolve: { alias: workspaceAliases },
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: './worker/api/wrangler.runtime-native-test.jsonc' },
+      wrangler: { configPath: './worker/wrangler.runtime-native-test.jsonc' },
       miniflare: {
         bindings: {
           APP_TOKEN: 'test-app-token',
@@ -26,7 +26,7 @@ export default defineConfig({
   ],
   test: {
     name: 'runtime-native',
-    setupFiles: ['./worker/api/tests/runtime-setup.ts'],
-    include: ['worker/api/tests/runtime-native/**/*.test.ts'],
+    setupFiles: ['./worker/tests/runtime-setup.ts'],
+    include: ['worker/tests/runtime-native/**/*.test.ts'],
   },
 });

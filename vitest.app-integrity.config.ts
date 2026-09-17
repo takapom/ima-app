@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     cloudflareTest({
       wrangler: {
-        configPath: './worker/api/wrangler.app-integrity-test.jsonc',
+        configPath: './worker/wrangler.app-integrity-test.jsonc',
       },
       miniflare: {
         bindings: { APP_TOKEN: 'test-app-token' },
@@ -16,7 +16,7 @@ export default defineConfig({
   ],
   test: {
     name: 'worker-app-integrity',
-    setupFiles: ['./worker/api/tests/runtime-setup.ts'],
-    include: ['worker/api/tests/app-integrity/app-integrity-self.test.ts'],
+    setupFiles: ['./worker/tests/runtime-setup.ts'],
+    include: ['worker/tests/app-integrity/app-integrity-self.test.ts'],
   },
 });

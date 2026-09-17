@@ -54,8 +54,8 @@
         "typescript": "5.9.3",
       },
     },
-    "worker/api": {
-      "name": "@ima/api",
+    "worker": {
+      "name": "@ima/worker",
       "version": "0.0.0",
       "dependencies": {
         "@ai-sdk/openai": "3.0.69",
@@ -404,7 +404,7 @@
 
     "@humanwhocodes/retry": ["@humanwhocodes/retry@0.4.3", "", {}, "sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ=="],
 
-    "@ima/api": ["@ima/api@workspace:worker/api"],
+    "@ima/worker": ["@ima/worker@workspace:worker"],
 
     "@ima/contracts": ["@ima/contracts@workspace:packages/contracts"],
 

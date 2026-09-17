@@ -1,23 +1,67 @@
 module.exports = {
   forbidden: [
     {
+      name: 'worker-runtime-no-adapters-or-composition',
+      severity: 'error',
+      from: {
+        path: '^worker/runtime/',
+      },
+      to: {
+        path: '^worker/(?:adapters|composition|entrypoints)/',
+      },
+    },
+    {
+      name: 'worker-outbound-no-inbound',
+      severity: 'error',
+      from: {
+        path: '^worker/adapters/outbound/',
+      },
+      to: {
+        path: '^worker/adapters/inbound/',
+      },
+    },
+    {
+      name: 'worker-adapters-no-composition',
+      severity: 'error',
+      from: {
+        path: '^worker/adapters/',
+      },
+      to: {
+        path: '^worker/(?:composition|entrypoints)(?:/|$)',
+      },
+    },
+    {
+      name: 'worker-tools-no-outbound',
+      severity: 'error',
+      from: {
+        path: '^worker/adapters/inbound/tools/',
+      },
+      to: {
+        path: '^worker/adapters/outbound/',
+      },
+    },
+    {
       name: 'no-circular',
       severity: 'error',
-      from: { pathNot: '(^|/)node_modules/' },
-      to: { circular: true },
+      from: {
+        pathNot: '(^|/)node_modules/',
+      },
+      to: {
+        circular: true,
+      },
     },
     {
       name: 'not-to-unresolvable',
       severity: 'error',
       from: {},
-      // These virtual modules are supplied by workerd and its test pool.
-      to: { couldNotResolve: true, pathNot: '^cloudflare:(?:test|workers)$' },
+      to: {
+        couldNotResolve: true,
+        pathNot: '^cloudflare:(?:test|workers)$',
+      },
     },
     {
       name: 'no-non-package-json',
       severity: 'error',
-      // Unit-test runners are root-level dev tooling; workspace manifests own
-      // production/runtime dependencies and the manifest checker covers those.
       from: {
         pathNot:
           '(^|/)node_modules/|(^|/)(?:test|tests|scripts/fixtures)(/|$)|\\.(?:test|spec)\\.[^/]+$',
@@ -41,63 +85,99 @@ module.exports = {
     {
       name: 'cloudflare-workers-only-worker',
       severity: 'error',
-      from: { pathNot: '^worker/api/' },
-      to: { path: '^cloudflare:workers$' },
+      from: {
+        pathNot: '^worker/(?!core(?:/|$))',
+      },
+      to: {
+        path: '^cloudflare:workers$',
+      },
     },
     {
       name: 'cloudflare-test-only-worker-tests',
       severity: 'error',
-      from: { pathNot: '^worker/api/tests/' },
-      to: { path: '^cloudflare:test$' },
+      from: {
+        pathNot: '^worker/tests/',
+      },
+      to: {
+        path: '^cloudflare:test$',
+      },
     },
     {
       name: 'not-to-test',
       severity: 'error',
-      from: { pathNot: '(^|/)(test|tests|scripts/fixtures)(/|$)|\\.(?:test|spec)\\.[^/]+$' },
-      to: { path: '(^|/)(test|tests|scripts/fixtures)(/|$)|\\.(?:test|spec)\\.[^/]+$' },
+      from: {
+        pathNot: '(^|/)(test|tests|scripts/fixtures)(/|$)|\\.(?:test|spec)\\.[^/]+$',
+      },
+      to: {
+        path: '(^|/)(test|tests|scripts/fixtures)(/|$)|\\.(?:test|spec)\\.[^/]+$',
+      },
     },
     {
       name: 'mobile-only-contracts',
       severity: 'error',
-      from: { path: '^apps/mobile(?:/|$)' },
-      to: { path: '^(?:packages/(?!contracts(?:/|$))|worker/)' },
+      from: {
+        path: '^apps/mobile(?:/|$)',
+      },
+      to: {
+        path: '^(?:packages/(?!contracts(?:/|$))|worker/)',
+      },
     },
     {
-      name: 'api-only-contracts-core',
+      name: 'worker-only-contracts-core',
       severity: 'error',
-      from: { path: '^worker/api(?:/|$)' },
+      from: {
+        path: '^worker/(?!core(?:/|$))',
+      },
       to: {
-        path: '^(?:apps/mobile(?:/|$)|packages/(?!contracts(?:/|$))|worker/(?!(?:api|core)(?:/|$)))',
+        path: '^(?:apps/mobile(?:/|$)|packages/(?!contracts(?:/|$)))',
       },
     },
     {
       name: 'core-contracts-independent',
       severity: 'error',
-      from: { path: '^worker/core(?:/|$)' },
-      to: { path: '^packages/contracts(?:/|$)' },
+      from: {
+        path: '^worker/core(?:/|$)',
+      },
+      to: {
+        path: '^packages/contracts(?:/|$)',
+      },
     },
     {
       name: 'contracts-core-independent',
       severity: 'error',
-      from: { path: '^packages/contracts(?:/|$)' },
-      to: { path: '^worker/core(?:/|$)' },
+      from: {
+        path: '^packages/contracts(?:/|$)',
+      },
+      to: {
+        path: '^worker/core(?:/|$)',
+      },
     },
     {
       name: 'core-no-app-or-worker',
       severity: 'error',
-      from: { path: '^worker/core(?:/|$)' },
-      to: { path: '^(?:apps/mobile|worker/api)(?:/|$)' },
+      from: {
+        path: '^worker/core(?:/|$)',
+      },
+      to: {
+        path: '^(?:apps/mobile(?:/|$)|worker/(?!core(?:/|$)))',
+      },
     },
     {
       name: 'contracts-no-app-or-worker',
       severity: 'error',
-      from: { path: '^packages/contracts(?:/|$)' },
-      to: { path: '^(?:apps/mobile|worker/api)(?:/|$)' },
+      from: {
+        path: '^packages/contracts(?:/|$)',
+      },
+      to: {
+        path: '^(?:apps/mobile|worker)(?:/|$)',
+      },
     },
     {
       name: 'no-cross-workspace-relative-import',
       severity: 'error',
-      from: { path: '^(?:apps/mobile|worker/api)(?:/|$)' },
+      from: {
+        path: '^(?:apps/mobile(?:/|$)|worker/(?!core(?:/|$)))',
+      },
       to: {
         path: '^(?:packages/contracts|worker/core)(?:/|$)',
         dependencyTypes: ['local', 'aliased'],
@@ -106,7 +186,9 @@ module.exports = {
     {
       name: 'no-cross-workspace-relative-import-from-contracts',
       severity: 'error',
-      from: { path: '^packages/contracts(?:/|$)' },
+      from: {
+        path: '^packages/contracts(?:/|$)',
+      },
       to: {
         path: '^(?:packages/(?!contracts(?:/|$))|worker/)',
         dependencyTypes: ['local', 'aliased'],
@@ -115,7 +197,9 @@ module.exports = {
     {
       name: 'no-cross-workspace-relative-import-from-core',
       severity: 'error',
-      from: { path: '^worker/core(?:/|$)' },
+      from: {
+        path: '^worker/core(?:/|$)',
+      },
       to: {
         path: '^(?:packages/|worker/(?!core(?:/|$)))',
         dependencyTypes: ['local', 'aliased'],
@@ -124,13 +208,19 @@ module.exports = {
     {
       name: 'no-private-workspace-import-from-app',
       severity: 'error',
-      from: { path: '^(?:apps/mobile|worker/api)(?:/|$)' },
-      to: { path: '^(?:packages/contracts|worker/core)/(?!src/index\\.ts$)' },
+      from: {
+        path: '^(?:apps/mobile(?:/|$)|worker/(?!core(?:/|$)))',
+      },
+      to: {
+        path: '^(?:packages/contracts|worker/core)/(?!src/index\\.ts$)',
+      },
     },
     {
       name: 'core-no-runtime-sdk',
       severity: 'error',
-      from: { path: '^worker/core(?:/|$)' },
+      from: {
+        path: '^worker/core(?:/|$)',
+      },
       to: {
         path: '(^|/)(?:cloudflare|wrangler|expo|react-native|ai|@ai-sdk|@cloudflare|workers-ai-provider)(/|$)',
       },
@@ -139,28 +229,42 @@ module.exports = {
       name: 'no-fixture-in-production',
       severity: 'error',
       from: {
-        path: '^(?:apps/mobile|worker/api|packages/contracts|worker/core)(?:/|$)',
+        path: '^(?:apps/mobile|packages/contracts|worker)(?:/|$)',
         pathNot: '(^|/)(?:test|tests)(/|$)|\\.(?:test|spec)\\.[^/]+$',
       },
-      to: { path: '(^|/)fixtures(/|$)' },
+      to: {
+        path: '(^|/)fixtures(/|$)',
+      },
     },
     {
       name: 'core-domain-only-domain',
       severity: 'error',
-      from: { path: '^worker/core/src/domain(?:/|$)' },
-      to: { path: '^worker/core/src/(?!domain(?:/|$))' },
+      from: {
+        path: '^worker/core/src/domain(?:/|$)',
+      },
+      to: {
+        path: '^worker/core/src/(?!domain(?:/|$))',
+      },
     },
     {
       name: 'core-ports-only-domain-ports',
       severity: 'error',
-      from: { path: '^worker/core/src/ports(?:/|$)' },
-      to: { path: '^worker/core/src/(?!domain(?:/|$)|ports(?:/|$))' },
+      from: {
+        path: '^worker/core/src/ports(?:/|$)',
+      },
+      to: {
+        path: '^worker/core/src/(?!domain(?:/|$)|ports(?:/|$))',
+      },
     },
     {
       name: 'core-application-only-inner',
       severity: 'error',
-      from: { path: '^worker/core/src/application(?:/|$)' },
-      to: { path: '^worker/core/src/(?!domain(?:/|$)|ports(?:/|$)|application(?:/|$))' },
+      from: {
+        path: '^worker/core/src/application(?:/|$)',
+      },
+      to: {
+        path: '^worker/core/src/(?!domain(?:/|$)|ports(?:/|$)|application(?:/|$))',
+      },
     },
   ],
   options: {

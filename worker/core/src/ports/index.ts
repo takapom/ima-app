@@ -5,3 +5,5 @@ export * from '@core/ports/registry';
 export * from '@core/ports/submission';
 export * from '@core/ports/commit';
 export * from '@core/ports/walking-route';
+export * from '@core/ports/owner-store';
+export * from '@core/ports/saved-reference-store';

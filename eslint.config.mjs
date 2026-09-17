@@ -113,11 +113,11 @@ export default tseslint.config(
     },
   },
   {
-    files: ['worker/api/tests/**/*.ts'],
+    files: ['worker/tests/**/*.ts'],
     languageOptions: {
       parserOptions: {
         projectService: false,
-        project: './worker/api/tsconfig.tests.json',
+        project: './worker/tsconfig.tests.json',
       },
     },
   },
@@ -257,14 +257,21 @@ export default tseslint.config(
     },
   },
   {
-    files: ['worker/api/src/tool-bindings/**/*.{ts,tsx}'],
+    files: ['worker/adapters/inbound/tools/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
+          paths: [
+            {
+              name: 'ai',
+              importNames: ['generateText', 'streamText', 'generateObject', 'streamObject'],
+              message: 'Tool bindings must not run models.',
+            },
+          ],
           patterns: [
             {
-              group: ['ai', '@ai-sdk/*', '@cloudflare/ai', '@googlemaps/*', 'workers-ai-provider'],
+              group: ['@ai-sdk/*', '@cloudflare/ai', '@googlemaps/*', 'workers-ai-provider'],
               message: 'Tool bindings call a Worker provider adapter, not a provider SDK.',
             },
           ],

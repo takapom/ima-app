@@ -15,7 +15,7 @@
     "resolveJsonModule": true,
     "paths": {
       "@core/*": ["./worker/core/src/*"],
-      "@api/*": ["./worker/api/src/*"],
+      "@worker/*": ["./worker/*"],
       "@mobile/*": ["./apps/mobile/src/*"],
       "@contracts/*": ["./packages/contracts/src/*"]
     }

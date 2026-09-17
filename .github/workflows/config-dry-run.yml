@@ -42,7 +42,7 @@ jobs:
       - run: bun install --frozen-lockfile
 
       - name: Generate types and bundle Worker without deploying
-        working-directory: worker/api
+        working-directory: worker
         shell: bash
         run: |
           set -euo pipefail
