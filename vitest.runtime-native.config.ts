@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: './workers/api/wrangler.runtime-native-test.jsonc' },
+      wrangler: { configPath: './worker/api/wrangler.runtime-native-test.jsonc' },
       miniflare: {
         bindings: {
           APP_TOKEN: 'test-app-token',
@@ -24,7 +24,7 @@ export default defineConfig({
   ],
   test: {
     name: 'runtime-native',
-    setupFiles: ['./workers/api/tests/runtime-setup.ts'],
-    include: ['workers/api/tests/runtime-native/**/*.test.ts'],
+    setupFiles: ['./worker/api/tests/runtime-setup.ts'],
+    include: ['worker/api/tests/runtime-native/**/*.test.ts'],
   },
 });

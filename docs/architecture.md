@@ -7,18 +7,22 @@ iPhoneアプリとCloudflare Workerの2デプロイ面を持つモジュラー�
 ```mermaid
 flowchart LR
   Mobile[apps/mobile] --> Contracts[packages/contracts]
-  Worker[workers/api] --> Contracts
-  Worker --> Core[worker/core]
+  subgraph Backend[worker/]
+    Worker[worker/api] --> Core[worker/core]
+  end
+  Worker --> Contracts
 ```
 
 矢印はコードの依存方向。4つのworkspaceを使い、Coreとcontractsは相互依存しない。
+
+バックエンドは`worker/`配下にまとめ、業務判断の`core/`と実行環境・外部接続の`api/`を独立したpackageとして保つ。`packages/contracts`はMobileとAPIの共有契約としてバックエンドの外に置く。
 
 | 配置                 | 責務                                                                          |
 | -------------------- | ----------------------------------------------------------------------------- |
 | `apps/mobile`        | UI描画、hooksによる接続、state管理、HTTP・SQLite・位置・共有のservices        |
 | `packages/contracts` | 公開HTTP DTO、描画型、検証schema。業務処理や内部Portは置かない                |
 | `worker/core`        | Domain、Application、入力・出力Ports、候補・観測・根拠・応答確定の判断        |
-| `workers/api`        | HTTP認証・DTO変換、SDK実行、Tool Binding、Provider/Storage Adapter、Bootstrap |
+| `worker/api`         | HTTP認証・DTO変換、SDK実行、Tool Binding、Provider/Storage Adapter、Bootstrap |
 
 package外からは公開exportsを使う。相対パス、alias、型import、再exportでも境界を迂回しない。
 Core内部はApplication→Ports/Domain、Ports→Domainの方向を守る。SDK、直接I/O、環境変数、直接の時計・乱数をCoreへ持ち込まず、必要な値やPortを注入する。
@@ -64,7 +68,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 
 ## ランタイムの制約
 
-- Thinkのnative loopを使い、汎用ループや二重の実行管理を追加しない。採用SDKと固定版は[Worker manifest](../workers/api/package.json)とlockfileで管理する。
+- Thinkのnative loopを使い、汎用ループや二重の実行管理を追加しない。採用SDKと固定版は[Worker manifest](../worker/api/package.json)とlockfileで管理する。
 - 公開Toolは`search_places`、`get_place_details`、`submit_cards`の3つ。MCP・client・workspace操作を追加の入口にしない。
 - モデルのstep全体を副作用前に検査し、read＋submit、複数submit、final＋Toolを拒否する。読み取りだけの複数操作は表現できる。
 - 根拠・鮮度・必須条件・revisionを検証し、確定は1回だけ行う。`committed`で停止し、成功後の追加生成を要求しない。invalidは上限内で修正する。
@@ -72,7 +76,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 - 保存禁止・不明な本文はSDK永続化とlive cacheの前に置換する。Tool結果は当該turnへの一時入力に使う。許可された会話本文は既存のThreadDOコンテキストへ期限付きで保持し、各turnと再起動後に期限を検証してモデル文脈へ戻す。由来不明のcompaction summaryは保持しない。
 - 再起動後の再送は同じ確定IDと許可された参照だけで成立させ、保存禁止本文の完全復元を約束しない。
 
-設定・停止時にfixtureへ暗黙に切り替えない。Provider/model設定は[model](../workers/api/src/model)、組立ては[runtime-production-factory.ts](../workers/api/src/runtime/composition/runtime-production-factory.ts)、保存前処理は[runtime-retention.ts](../workers/api/src/runtime/retention/runtime-retention.ts)を参照する。
+設定・停止時にfixtureへ暗黙に切り替えない。Provider/model設定は[model](../worker/api/src/model)、組立ては[runtime-production-factory.ts](../worker/api/src/runtime/composition/runtime-production-factory.ts)、保存前処理は[runtime-retention.ts](../worker/api/src/runtime/retention/runtime-retention.ts)を参照する。
 
 ## データの正と保存境界
 
@@ -85,7 +89,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 | 終電dataset                            | `JourneyDatasetDO`            | revision CASと検証期限を持つ共有データ          |
 | 運用イベント                           | `TelemetryDO`                 | 固定項目のみ。本文・秘密・生座標を記録しない    |
 
-[OwnerStore](../workers/api/src/saved-references/owner-store.ts)はWorkerが所有するasync Port。HTTP/Applicationは[DO Adapter](../workers/api/src/saved-references/durable-owner-store.ts)経由で永続化する。
+[OwnerStore](../worker/api/src/saved-references/owner-store.ts)はWorkerが所有するasync Port。HTTP/Applicationは[DO Adapter](../worker/api/src/saved-references/durable-owner-store.ts)経由で永続化する。
 bindingは`SAVED_REFERENCES`、owner shard名は`saved-reference-owner:{ownerScopeRef}`。ThreadDOへprefsをコピーして独立した正にしない。
 検索bodyのprefsは今夜の上書きであり、暗黙の永続writeにしない。D1 Adapterや汎用Repositoryは必要になるまで追加しない。
 

@@ -41,13 +41,13 @@ module.exports = {
     {
       name: 'cloudflare-workers-only-worker',
       severity: 'error',
-      from: { pathNot: '^workers/api/' },
+      from: { pathNot: '^worker/api/' },
       to: { path: '^cloudflare:workers$' },
     },
     {
       name: 'cloudflare-test-only-worker-tests',
       severity: 'error',
-      from: { pathNot: '^workers/api/tests/' },
+      from: { pathNot: '^worker/api/tests/' },
       to: { path: '^cloudflare:test$' },
     },
     {
@@ -60,13 +60,15 @@ module.exports = {
       name: 'mobile-only-contracts',
       severity: 'error',
       from: { path: '^apps/mobile(?:/|$)' },
-      to: { path: '^(?:packages/(?!contracts(?:/|$))|workers/|worker/)' },
+      to: { path: '^(?:packages/(?!contracts(?:/|$))|worker/)' },
     },
     {
       name: 'api-only-contracts-core',
       severity: 'error',
-      from: { path: '^workers/api(?:/|$)' },
-      to: { path: '^(?:apps/mobile(?:/|$)|packages/(?!(?:contracts|core)(?:/|$)))' },
+      from: { path: '^worker/api(?:/|$)' },
+      to: {
+        path: '^(?:apps/mobile(?:/|$)|packages/(?!contracts(?:/|$))|worker/(?!(?:api|core)(?:/|$)))',
+      },
     },
     {
       name: 'core-contracts-independent',
@@ -84,18 +86,18 @@ module.exports = {
       name: 'core-no-app-or-worker',
       severity: 'error',
       from: { path: '^worker/core(?:/|$)' },
-      to: { path: '^(?:apps/mobile|workers/api)(?:/|$)' },
+      to: { path: '^(?:apps/mobile|worker/api)(?:/|$)' },
     },
     {
       name: 'contracts-no-app-or-worker',
       severity: 'error',
       from: { path: '^packages/contracts(?:/|$)' },
-      to: { path: '^(?:apps/mobile|workers/api)(?:/|$)' },
+      to: { path: '^(?:apps/mobile|worker/api)(?:/|$)' },
     },
     {
       name: 'no-cross-workspace-relative-import',
       severity: 'error',
-      from: { path: '^(?:apps/mobile|workers/api)(?:/|$)' },
+      from: { path: '^(?:apps/mobile|worker/api)(?:/|$)' },
       to: {
         path: '^(?:packages/contracts|worker/core)(?:/|$)',
         dependencyTypes: ['local', 'aliased'],
@@ -106,7 +108,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^packages/contracts(?:/|$)' },
       to: {
-        path: '^(?:packages/(?!contracts(?:/|$))|worker/core(?:/|$))',
+        path: '^(?:packages/(?!contracts(?:/|$))|worker/)',
         dependencyTypes: ['local', 'aliased'],
       },
     },
@@ -115,14 +117,14 @@ module.exports = {
       severity: 'error',
       from: { path: '^worker/core(?:/|$)' },
       to: {
-        path: '^packages/',
+        path: '^(?:packages/|worker/(?!core(?:/|$)))',
         dependencyTypes: ['local', 'aliased'],
       },
     },
     {
       name: 'no-private-workspace-import-from-app',
       severity: 'error',
-      from: { path: '^(?:apps/mobile|workers/api)(?:/|$)' },
+      from: { path: '^(?:apps/mobile|worker/api)(?:/|$)' },
       to: { path: '^(?:packages/contracts|worker/core)/(?!src/index\\.ts$)' },
     },
     {
@@ -137,7 +139,7 @@ module.exports = {
       name: 'no-fixture-in-production',
       severity: 'error',
       from: {
-        path: '^(?:apps/mobile|workers/api|packages/contracts|worker/core)(?:/|$)',
+        path: '^(?:apps/mobile|worker/api|packages/contracts|worker/core)(?:/|$)',
         pathNot: '(^|/)(?:test|tests)(/|$)|\\.(?:test|spec)\\.[^/]+$',
       },
       to: { path: '(^|/)fixtures(/|$)' },

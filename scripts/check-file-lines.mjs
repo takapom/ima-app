@@ -18,7 +18,7 @@ const ignoredDirectories = new Set([
 const ignoredExtensions = new Set(['.md']);
 const ignoredFiles = new Set([
   'bun.lock',
-  'workers/api/worker-configuration.d.ts',
+  'worker/api/worker-configuration.d.ts',
   'repomix-output.xml',
 ]);
 

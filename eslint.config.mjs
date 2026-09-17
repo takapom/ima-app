@@ -113,11 +113,11 @@ export default tseslint.config(
     },
   },
   {
-    files: ['workers/api/tests/**/*.ts'],
+    files: ['worker/api/tests/**/*.ts'],
     languageOptions: {
       parserOptions: {
         projectService: false,
-        project: './workers/api/tsconfig.tests.json',
+        project: './worker/api/tsconfig.tests.json',
       },
     },
   },
@@ -257,7 +257,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['workers/api/src/tool-bindings/**/*.{ts,tsx}'],
+    files: ['worker/api/src/tool-bindings/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',

@@ -11,7 +11,7 @@ bun install --frozen-lockfile
 ## APIキー不要のローカル起動
 
 専用Workerは合成認証値で起動でき、`.dev.vars`は不要。
-既存の`workers/api/.dev.vars`がある場合は、live credentialやProvider停止設定を混在させない。開発fixtureはliveへフォールバックせず、live credentialが設定されている場合は拒否する。
+既存の`worker/api/.dev.vars`がある場合は、live credentialやProvider停止設定を混在させない。開発fixtureはliveへフォールバックせず、live credentialが設定されている場合は拒否する。
 
 ```sh
 bun run dev:worker:fixture
@@ -45,7 +45,7 @@ Dev Clientは`bun run dev:mobile`で起動する。同一マシンのWeb/Simulat
 
 ## 実LLMとホットペッパーでのローカル起動
 
-`workers/api/.dev.vars.llm`を作り、次の3項目を設定する。このファイルはGitの追跡対象外で、既存の`.dev.vars`とは別に読み込む。
+`worker/api/.dev.vars.llm`を作り、次の3項目を設定する。このファイルはGitの追跡対象外で、既存の`.dev.vars`とは別に読み込む。
 
 ```dotenv
 OPENAI_API_KEY=自分のOpenAI_APIキー
@@ -55,7 +55,7 @@ PLACES_CURSOR_SECRET=16バイト以上のランダムな秘密値
 
 [ホットペッパーWebサービス](https://webservice.recruit.co.jp/register)でAPIキーを取得する。カーソル署名値は例として `openssl rand -hex 32` で生成できる。キー変更後はWorkerを再起動する。
 
-次のコマンドは実OpenAI APIとホットペッパーAPIを使用する。モデルは[既存のモデル設定](../workers/api/src/model/provider-config.ts)に従い、API利用料が発生する。
+次のコマンドは実OpenAI APIとホットペッパーAPIを使用する。モデルは[既存のモデル設定](../worker/api/src/model/provider-config.ts)に従い、API利用料が発生する。
 
 ```sh
 bun run dev:worker:llm
@@ -67,7 +67,7 @@ bun run dev:worker:llm
 
 キー不足・無効キー・API障害はエラーになり、固定モデルへ切り替わらない。キーなし起動へ戻す場合はWorkerを終了し、`bun run dev:worker:fixture`で起動する。
 
-検索・会話の待機上限は[Workerのターン予算](../workers/api/src/runtime/budget/runtime-budget.ts)、[モデル呼び出し](../workers/api/src/runtime/turn-execution/runtime-model-guard.ts)、[端末のHTTPクライアント](../apps/mobile/src/services/api/client.ts)で管理する。時間切れの診断ログは`kind: "timeout"`、`code: "MODEL_STREAM_TIMEOUT"`となる。待機設定を変更した場合はWorkerとExpoの両方を再起動する。
+検索・会話の待機上限は[Workerのターン予算](../worker/api/src/runtime/budget/runtime-budget.ts)、[モデル呼び出し](../worker/api/src/runtime/turn-execution/runtime-model-guard.ts)、[端末のHTTPクライアント](../apps/mobile/src/services/api/client.ts)で管理する。時間切れの診断ログは`kind: "timeout"`、`code: "MODEL_STREAM_TIMEOUT"`となる。待機設定を変更した場合はWorkerとExpoの両方を再起動する。
 
 `kind: "invalid_tool_input"`はProvider呼出し前のTool引数検証エラー。`fields`に値を含まない契約上の項目名を出し、LLMにも同じ項目名を返して修正を促す。HTTP 200は会話応答の成功を示し、店舗検索やカード提示の成功を保証しない。
 

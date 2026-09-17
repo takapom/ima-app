@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: './workers/api/wrangler.runtime-production-http-test.jsonc' },
+      wrangler: { configPath: './worker/api/wrangler.runtime-production-http-test.jsonc' },
       miniflare: {
         bindings: {
           APP_TOKEN: 'test-app-token',
@@ -25,12 +25,12 @@ export default defineConfig({
   ],
   test: {
     name: 'runtime-production-http',
-    setupFiles: ['./workers/api/tests/runtime-setup.ts'],
+    setupFiles: ['./worker/api/tests/runtime-setup.ts'],
     include: [
-      'workers/api/tests/runtime-production-http.test.ts',
-      'workers/api/tests/runtime-production-saved-reference-http.test.ts',
-      'workers/api/tests/runtime-production-saved-reference-refresh.test.ts',
-      'workers/api/tests/runtime-production-saved-reference-refresh-timeout.test.ts',
+      'worker/api/tests/runtime-production-http.test.ts',
+      'worker/api/tests/runtime-production-saved-reference-http.test.ts',
+      'worker/api/tests/runtime-production-saved-reference-refresh.test.ts',
+      'worker/api/tests/runtime-production-saved-reference-refresh-timeout.test.ts',
     ],
   },
 });

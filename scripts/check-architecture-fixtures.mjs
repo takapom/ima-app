@@ -40,8 +40,12 @@ const baseFiles = {
     "import type { Model } from '../domain/model.js';\nimport type { Port } from '../ports/index.js';\nexport type Application = (model: Model, port: Port) => void;\n",
   'worker/core/src/helpers/util.ts': 'export const helper = true;\n',
   'worker/core/src/adapters/index.ts': 'export const adapter = true;\n',
-  'workers/api/package.json': JSON.stringify({ name: '@ima/api' }),
-  'workers/api/src/index.ts': 'export const api = true;\n',
+  'worker/api/package.json': JSON.stringify({
+    name: '@ima/api',
+    dependencies: { '@ima/core': 'workspace:*', '@ima/contracts': 'workspace:*' },
+  }),
+  'worker/api/src/index.ts':
+    "import type { Application } from '@ima/core';\nimport { contract } from '@ima/contracts';\nexport type { Application };\nexport { contract };\n",
   'node_modules/react/package.json': JSON.stringify({
     name: 'react',
     main: 'index.js',
@@ -61,7 +65,7 @@ const cases = [
   {
     name: 'worker-may-import-workerd-virtual-module',
     source: "import { DurableObject } from 'cloudflare:workers';\nexport { DurableObject };\n",
-    target: 'workers/api/src/index.ts',
+    target: 'worker/api/src/index.ts',
   },
   {
     name: 'core-cannot-import-workerd-virtual-module',
@@ -72,12 +76,12 @@ const cases = [
   {
     name: 'worker-tests-may-import-pool-virtual-module',
     source: "import { env } from 'cloudflare:test';\nexport { env };\n",
-    target: 'workers/api/tests/runtime.test.ts',
+    target: 'worker/api/tests/runtime.test.ts',
   },
   {
     name: 'worker-production-cannot-import-pool-virtual-module',
     source: "import 'cloudflare:test';\n",
-    target: 'workers/api/src/index.ts',
+    target: 'worker/api/src/index.ts',
     rule: 'cloudflare-test-only-worker-tests',
   },
   {
@@ -95,7 +99,7 @@ const cases = [
     name: 'api-cannot-import-mobile',
     source: "import '../../../apps/mobile/src/index.js';\n",
     rule: 'api-only-contracts-core',
-    target: 'workers/api/src/index.ts',
+    target: 'worker/api/src/index.ts',
   },
   {
     name: 'core-and-contracts-are-independent',
@@ -111,7 +115,7 @@ const cases = [
   },
   {
     name: 'core-cannot-import-worker',
-    source: "import '../../../workers/api/src/index.js';\n",
+    source: "import '../../../worker/api/src/index.js';\n",
     rule: 'core-no-app-or-worker',
     target: 'worker/core/src/index.ts',
   },
@@ -123,7 +127,7 @@ const cases = [
   },
   {
     name: 'contracts-cannot-import-worker',
-    source: "import '../../../workers/api/src/index.js';\n",
+    source: "import '../../../worker/api/src/index.js';\n",
     rule: 'contracts-no-app-or-worker',
     target: 'packages/contracts/src/index.ts',
   },
@@ -131,6 +135,24 @@ const cases = [
     name: 'relative-cross-workspace-imports-are-forbidden',
     source: "import '../../../packages/contracts/src/index.js';\n",
     rule: 'no-cross-workspace-relative-import',
+  },
+  {
+    name: 'api-cannot-import-sibling-core-by-relative-path',
+    source: "import '../../core/src/index.js';\n",
+    target: 'worker/api/src/index.ts',
+    rule: 'no-cross-workspace-relative-import',
+  },
+  {
+    name: 'api-cannot-import-private-core-module',
+    source: "import '../../core/src/domain/model.js';\n",
+    target: 'worker/api/src/index.ts',
+    rule: 'no-private-workspace-import-from-app',
+  },
+  {
+    name: 'core-cannot-import-sibling-api',
+    source: "import '../../api/src/index.js';\n",
+    target: 'worker/core/src/index.ts',
+    rule: 'core-no-app-or-worker',
   },
   {
     name: 'core-cannot-import-runtime-sdk',
@@ -200,7 +222,7 @@ const cases = [
   {
     name: 'api-manifest-cannot-declare-mobile-without-import',
     manifestRule: 'manifest-api-only-contracts-core',
-    addManifestDependency: ['workers/api/package.json', '@ima/mobile'],
+    addManifestDependency: ['worker/api/package.json', '@ima/mobile'],
   },
   {
     name: 'vitest-is-allowed-only-for-test-runner',
@@ -217,13 +239,13 @@ const cases = [
   {
     name: 'worker-runtime-test-may-import-fixture',
     source: "import '../fixtures/runtime.js';\n",
-    target: 'workers/api/src/runtime.test.ts',
+    target: 'worker/api/src/runtime.test.ts',
     addFixture: true,
   },
   {
     name: 'worker-production-cannot-import-fixture',
     source: "import '../fixtures/runtime.js';\n",
-    target: 'workers/api/src/runtime.ts',
+    target: 'worker/api/src/runtime.ts',
     rule: 'no-fixture-in-production',
     addFixture: true,
   },
@@ -289,7 +311,7 @@ function runFixture(testCase) {
     }
     if (testCase.addFixture) {
       writeFixture(root, {
-        'workers/api/fixtures/runtime.js': 'export const fixture = true;\n',
+        'worker/api/fixtures/runtime.js': 'export const fixture = true;\n',
       });
     }
     if (testCase.addAlias) {
@@ -307,15 +329,7 @@ function runFixture(testCase) {
     }
     const result = spawnSync(
       process.execPath,
-      [
-        dependencyCruiser,
-        '--validate',
-        '.dependency-cruiser.cjs',
-        'apps',
-        'packages',
-        'workers',
-        'worker',
-      ],
+      [dependencyCruiser, '--validate', '.dependency-cruiser.cjs', 'apps', 'packages', 'worker'],
       {
         cwd: root,
         encoding: 'utf8',

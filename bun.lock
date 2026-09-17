@@ -54,7 +54,7 @@
         "typescript": "5.9.3",
       },
     },
-    "workers/api": {
+    "worker/api": {
       "name": "@ima/api",
       "version": "0.0.0",
       "dependencies": {
@@ -404,7 +404,7 @@
 
     "@humanwhocodes/retry": ["@humanwhocodes/retry@0.4.3", "", {}, "sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ=="],
 
-    "@ima/api": ["@ima/api@workspace:workers/api"],
+    "@ima/api": ["@ima/api@workspace:worker/api"],
 
     "@ima/contracts": ["@ima/contracts@workspace:packages/contracts"],
 

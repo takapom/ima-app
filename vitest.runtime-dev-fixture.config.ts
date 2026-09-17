@@ -7,7 +7,7 @@ export default defineConfig({
       defineProject({
         plugins: [
           cloudflareTest({
-            wrangler: { configPath: './workers/api/wrangler.runtime-dev-fixture-test.jsonc' },
+            wrangler: { configPath: './worker/api/wrangler.runtime-dev-fixture-test.jsonc' },
             miniflare: {
               bindings: {
                 APP_TOKEN: 'dev-fixture-app-token',
@@ -29,11 +29,11 @@ export default defineConfig({
         ],
         test: {
           name: `runtime-dev-${mode}`,
-          setupFiles: ['./workers/api/tests/runtime-setup.ts'],
+          setupFiles: ['./worker/api/tests/runtime-setup.ts'],
           include: [
             mode !== 'fixture'
-              ? 'workers/api/tests/runtime-dev-fixture/runtime-dev-llm.test.ts'
-              : 'workers/api/tests/runtime-dev-fixture/runtime-dev-fixture*.test.ts',
+              ? 'worker/api/tests/runtime-dev-fixture/runtime-dev-llm.test.ts'
+              : 'worker/api/tests/runtime-dev-fixture/runtime-dev-fixture*.test.ts',
           ],
         },
       }),

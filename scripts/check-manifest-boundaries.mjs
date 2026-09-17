@@ -6,7 +6,7 @@ const workspaceRules = {
     allowed: new Set(['@ima/contracts']),
     rule: 'manifest-mobile-only-contracts',
   },
-  'workers/api': {
+  'worker/api': {
     allowed: new Set(['@ima/contracts', '@ima/core']),
     rule: 'manifest-api-only-contracts-core',
   },

@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [
     cloudflareTest({
       wrangler: {
-        configPath: './workers/api/wrangler.jsonc',
+        configPath: './worker/api/wrangler.jsonc',
       },
       miniflare: {
         bindings: {
@@ -17,7 +17,7 @@ export default defineConfig({
   ],
   test: {
     name: 'worker',
-    setupFiles: ['./workers/api/tests/runtime-setup.ts'],
-    include: ['tests/worker.test.ts', 'workers/api/tests/http/integration/*.test.ts'],
+    setupFiles: ['./worker/api/tests/runtime-setup.ts'],
+    include: ['tests/worker.test.ts', 'worker/api/tests/http/integration/*.test.ts'],
   },
 });

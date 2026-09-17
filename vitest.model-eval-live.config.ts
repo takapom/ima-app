@@ -6,7 +6,7 @@ const liveRequested = ['1', 'true'].includes(process.env.MODEL_EVAL_LIVE ?? '');
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: './workers/api/wrangler.model-eval-live-test.jsonc' },
+      wrangler: { configPath: './worker/api/wrangler.model-eval-live-test.jsonc' },
       miniflare: {
         bindings: {
           IMA_ENV: liveRequested ? 'production' : 'dev',
@@ -25,8 +25,8 @@ export default defineConfig({
   ],
   test: {
     name: 'model-eval-live',
-    setupFiles: ['./workers/api/tests/runtime-setup.ts'],
-    include: ['workers/api/tests/model-eval-live/**/*.test.ts'],
+    setupFiles: ['./worker/api/tests/runtime-setup.ts'],
+    include: ['worker/api/tests/model-eval-live/**/*.test.ts'],
     testTimeout: 60_000,
   },
 });
