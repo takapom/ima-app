@@ -12,7 +12,13 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": {
+      "@core/*": ["./worker/core/src/*"],
+      "@api/*": ["./worker/api/src/*"],
+      "@mobile/*": ["./apps/mobile/src/*"],
+      "@contracts/*": ["./packages/contracts/src/*"]
+    }
   },
   "exclude": ["node_modules", ".wrangler", "dist", "coverage"]
 }

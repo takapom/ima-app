@@ -23,11 +23,13 @@ const baseFiles = {
   }),
   'apps/mobile/src/index.ts':
     "import { contract } from '@ima/contracts';\nimport React from 'react';\nexport { contract, React };\n",
+  'apps/mobile/src/view.ts': 'export const view = true;\n',
   'packages/contracts/package.json': JSON.stringify({
     name: '@ima/contracts',
     exports: { '.': { types: './src/index.ts', default: './src/index.ts' } },
   }),
   'packages/contracts/src/index.ts': 'export const contract = true;\n',
+  'packages/contracts/src/value.ts': 'export const value = true;\n',
   'worker/core/package.json': JSON.stringify({
     name: '@ima/core',
     exports: { '.': { types: './src/index.ts', default: './src/index.ts' } },
@@ -46,6 +48,7 @@ const baseFiles = {
   }),
   'worker/api/src/index.ts':
     "import type { Application } from '@ima/core';\nimport { contract } from '@ima/contracts';\nexport type { Application };\nexport { contract };\n",
+  'worker/api/src/http.ts': 'export const http = true;\n',
   'node_modules/react/package.json': JSON.stringify({
     name: 'react',
     main: 'index.js',
@@ -62,6 +65,48 @@ const baseFiles = {
 
 const cases = [
   { name: 'allowed-public-entries-and-core-direction', expected: null },
+  {
+    name: 'mobile-internal-alias-is-allowed',
+    source: "export { view } from '@mobile/view.js';\n",
+  },
+  {
+    name: 'contracts-internal-alias-is-allowed',
+    source: "export { value as contract } from '@contracts/value.js';\n",
+    target: 'packages/contracts/src/index.ts',
+  },
+  {
+    name: 'core-internal-alias-is-allowed',
+    source: "export * from '@core/application/index.js';\n",
+    target: 'worker/core/src/index.ts',
+  },
+  {
+    name: 'api-internal-alias-is-allowed',
+    source: "export { http } from '@api/http.js';\n",
+    target: 'worker/api/src/index.ts',
+  },
+  {
+    name: 'api-cannot-bypass-core-package-with-alias',
+    source: "import '@core/index.js';\n",
+    target: 'worker/api/src/index.ts',
+    rule: 'no-cross-workspace-relative-import',
+  },
+  {
+    name: 'api-cannot-import-private-core-through-alias',
+    source: "import type { Model } from '@core/domain/model.js';\nexport type { Model };\n",
+    target: 'worker/api/src/index.ts',
+    rule: 'no-private-workspace-import-from-app',
+  },
+  {
+    name: 'mobile-cannot-bypass-contracts-package-with-alias',
+    source: "export * from '@contracts/index.js';\n",
+    rule: 'no-cross-workspace-relative-import',
+  },
+  {
+    name: 'core-domain-cannot-import-application-through-alias',
+    source: "import '@core/application/index.js';\n",
+    target: 'worker/core/src/domain/model.ts',
+    rule: 'core-domain-only-domain',
+  },
   {
     name: 'worker-may-import-workerd-virtual-module',
     source: "import { DurableObject } from 'cloudflare:workers';\nexport { DurableObject };\n",
@@ -200,7 +245,6 @@ const cases = [
     name: 'alias-boundaries-are-enforced',
     source: "import '@core/index.js';\n",
     rule: 'mobile-only-contracts',
-    addAlias: true,
   },
   {
     name: 'core-domain-cannot-import-helper',
@@ -312,13 +356,6 @@ function runFixture(testCase) {
     if (testCase.addFixture) {
       writeFixture(root, {
         'worker/api/fixtures/runtime.js': 'export const fixture = true;\n',
-      });
-    }
-    if (testCase.addAlias) {
-      writeFixture(root, {
-        'tsconfig.base.json': JSON.stringify({
-          compilerOptions: { baseUrl: '.', paths: { '@core/*': ['worker/core/src/*'] } },
-        }),
       });
     }
     if (testCase.addManifestDependency) {

@@ -1,6 +1,8 @@
+import { workspaceAliases } from './vitest.aliases.ts';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  resolve: { alias: workspaceAliases },
   test: {
     name: 'unit',
     include: [

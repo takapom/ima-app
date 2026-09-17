@@ -1,7 +1,9 @@
+import { workspaceAliases } from './vitest.aliases.ts';
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  resolve: { alias: workspaceAliases },
   plugins: [
     cloudflareTest({
       wrangler: {

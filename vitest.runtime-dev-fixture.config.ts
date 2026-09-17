@@ -1,3 +1,4 @@
+import { workspaceAliases } from './vitest.aliases.ts';
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
 import { defineConfig, defineProject } from 'vitest/config';
 
@@ -5,6 +6,7 @@ export default defineConfig({
   test: {
     projects: ['fixture', 'llm', 'llm-unconfigured'].map((mode) =>
       defineProject({
+        resolve: { alias: workspaceAliases },
         plugins: [
           cloudflareTest({
             wrangler: { configPath: './worker/api/wrangler.runtime-dev-fixture-test.jsonc' },

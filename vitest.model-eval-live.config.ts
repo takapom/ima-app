@@ -1,9 +1,11 @@
+import { workspaceAliases } from './vitest.aliases.ts';
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
 import { defineConfig } from 'vitest/config';
 
 const liveRequested = ['1', 'true'].includes(process.env.MODEL_EVAL_LIVE ?? '');
 
 export default defineConfig({
+  resolve: { alias: workspaceAliases },
   plugins: [
     cloudflareTest({
       wrangler: { configPath: './worker/api/wrangler.model-eval-live-test.jsonc' },
