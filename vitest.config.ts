@@ -6,6 +6,7 @@ export default defineConfig({
     include: [
       'tests/**/*.test.ts',
       'packages/*/src/**/*.test.ts',
+      'worker/core/src/**/*.test.ts',
       'apps/*/src/**/*.test.ts',
       'workers/api/tests/http/*.test.ts',
       'workers/api/tests/tools/*.test.ts',

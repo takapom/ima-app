@@ -28,18 +28,18 @@ const baseFiles = {
     exports: { '.': { types: './src/index.ts', default: './src/index.ts' } },
   }),
   'packages/contracts/src/index.ts': 'export const contract = true;\n',
-  'packages/core/package.json': JSON.stringify({
+  'worker/core/package.json': JSON.stringify({
     name: '@ima/core',
     exports: { '.': { types: './src/index.ts', default: './src/index.ts' } },
   }),
-  'packages/core/src/index.ts': "export * from './application/index.js';\n",
-  'packages/core/src/domain/model.ts': 'export type Model = { readonly id: string };\n',
-  'packages/core/src/ports/index.ts':
+  'worker/core/src/index.ts': "export * from './application/index.js';\n",
+  'worker/core/src/domain/model.ts': 'export type Model = { readonly id: string };\n',
+  'worker/core/src/ports/index.ts':
     "import type { Model } from '../domain/model.js';\nexport type Port = (model: Model) => void;\n",
-  'packages/core/src/application/index.ts':
+  'worker/core/src/application/index.ts':
     "import type { Model } from '../domain/model.js';\nimport type { Port } from '../ports/index.js';\nexport type Application = (model: Model, port: Port) => void;\n",
-  'packages/core/src/helpers/util.ts': 'export const helper = true;\n',
-  'packages/core/src/adapters/index.ts': 'export const adapter = true;\n',
+  'worker/core/src/helpers/util.ts': 'export const helper = true;\n',
+  'worker/core/src/adapters/index.ts': 'export const adapter = true;\n',
   'workers/api/package.json': JSON.stringify({ name: '@ima/api' }),
   'workers/api/src/index.ts': 'export const api = true;\n',
   'node_modules/react/package.json': JSON.stringify({
@@ -66,7 +66,7 @@ const cases = [
   {
     name: 'core-cannot-import-workerd-virtual-module',
     source: "import 'cloudflare:workers';\n",
-    target: 'packages/core/src/index.ts',
+    target: 'worker/core/src/index.ts',
     rule: 'cloudflare-workers-only-worker',
   },
   {
@@ -83,7 +83,7 @@ const cases = [
   {
     name: 'core-tests-cannot-import-pool-virtual-module',
     source: "import 'cloudflare:test';\n",
-    target: 'packages/core/src/runtime.test.ts',
+    target: 'worker/core/src/runtime.test.ts',
     rule: 'cloudflare-test-only-worker-tests',
   },
   {
@@ -107,13 +107,13 @@ const cases = [
     name: 'core-cannot-import-mobile',
     source: "import '../../../apps/mobile/src/index.js';\n",
     rule: 'core-no-app-or-worker',
-    target: 'packages/core/src/index.ts',
+    target: 'worker/core/src/index.ts',
   },
   {
     name: 'core-cannot-import-worker',
     source: "import '../../../workers/api/src/index.js';\n",
     rule: 'core-no-app-or-worker',
-    target: 'packages/core/src/index.ts',
+    target: 'worker/core/src/index.ts',
   },
   {
     name: 'contracts-cannot-import-mobile',
@@ -136,7 +136,7 @@ const cases = [
     name: 'core-cannot-import-runtime-sdk',
     source: "import 'wrangler';\n",
     rule: 'core-no-runtime-sdk',
-    target: 'packages/core/src/index.ts',
+    target: 'worker/core/src/index.ts',
     addWrangler: true,
   },
   {
@@ -184,13 +184,13 @@ const cases = [
     name: 'core-domain-cannot-import-helper',
     source: "import '../helpers/util.js';\n",
     rule: 'core-domain-only-domain',
-    target: 'packages/core/src/domain/model.ts',
+    target: 'worker/core/src/domain/model.ts',
   },
   {
     name: 'core-application-cannot-import-adapter',
     source: "import '../adapters/index.js';\n",
     rule: 'core-application-only-inner',
-    target: 'packages/core/src/application/index.ts',
+    target: 'worker/core/src/application/index.ts',
   },
   {
     name: 'mobile-manifest-cannot-declare-core-without-import',
@@ -252,7 +252,7 @@ function runFixture(testCase) {
     cpSync(manifestChecker, join(root, 'scripts/check-manifest-boundaries.mjs'));
     writeFixture(root, baseFiles);
     linkWorkspace(root, '@ima/contracts', '../../packages/contracts');
-    linkWorkspace(root, '@ima/core', '../../packages/core');
+    linkWorkspace(root, '@ima/core', '../../worker/core');
     const sourcePath = testCase.target ?? 'apps/mobile/src/index.ts';
     if (testCase.source !== undefined) {
       writeFixture(root, { [sourcePath]: testCase.source });
@@ -265,7 +265,7 @@ function runFixture(testCase) {
           version: '1.0.0',
         }),
         'node_modules/wrangler/index.js': 'module.exports = {};\n',
-        'packages/core/package.json': JSON.stringify({
+        'worker/core/package.json': JSON.stringify({
           name: '@ima/core',
           dependencies: { wrangler: '1.0.0' },
         }),
@@ -295,7 +295,7 @@ function runFixture(testCase) {
     if (testCase.addAlias) {
       writeFixture(root, {
         'tsconfig.base.json': JSON.stringify({
-          compilerOptions: { baseUrl: '.', paths: { '@core/*': ['packages/core/src/*'] } },
+          compilerOptions: { baseUrl: '.', paths: { '@core/*': ['worker/core/src/*'] } },
         }),
       });
     }
@@ -307,7 +307,15 @@ function runFixture(testCase) {
     }
     const result = spawnSync(
       process.execPath,
-      [dependencyCruiser, '--validate', '.dependency-cruiser.cjs', 'apps', 'packages', 'workers'],
+      [
+        dependencyCruiser,
+        '--validate',
+        '.dependency-cruiser.cjs',
+        'apps',
+        'packages',
+        'workers',
+        'worker',
+      ],
       {
         cwd: root,
         encoding: 'utf8',

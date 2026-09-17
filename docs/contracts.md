@@ -10,7 +10,7 @@
 | prefs・保存一覧・決定          | [owner-http.ts](../packages/contracts/src/owner-http.ts)、[saved-reference-http.ts](../packages/contracts/src/saved-reference-http.ts) |
 | HTTPルートとmethod             | [router-match.ts](../workers/api/src/http/router-match.ts)                                                                             |
 | 認証・所有者scope              | [auth.ts](../workers/api/src/http/auth.ts)                                                                                             |
-| モデル向け3操作                | [tools](../workers/api/src/tools)、[Core Ports](../packages/core/src/ports)                                                            |
+| モデル向け3操作                | [tools](../workers/api/src/tools)、[Core Ports](../worker/core/src/ports)                                                              |
 
 ## HTTPの利用手順
 

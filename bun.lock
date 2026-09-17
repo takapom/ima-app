@@ -54,20 +54,6 @@
         "typescript": "5.9.3",
       },
     },
-    "packages/core": {
-      "name": "@ima/core",
-      "version": "0.0.0",
-      "dependencies": {
-        "valibot": "1.4.2",
-      },
-    },
-    "packages/eval": {
-      "name": "@ima/eval",
-      "version": "0.0.0",
-      "dependencies": {
-        "@ima/core": "workspace:*",
-      },
-    },
     "workers/api": {
       "name": "@ima/api",
       "version": "0.0.0",
@@ -83,6 +69,13 @@
       "devDependencies": {
         "@cloudflare/ai-chat": "0.11.0",
         "zod": "4.5.4",
+      },
+    },
+    "worker/core": {
+      "name": "@ima/core",
+      "version": "0.0.0",
+      "dependencies": {
+        "valibot": "1.4.2",
       },
     },
   },
@@ -415,9 +408,7 @@
 
     "@ima/contracts": ["@ima/contracts@workspace:packages/contracts"],
 
-    "@ima/core": ["@ima/core@workspace:packages/core"],
-
-    "@ima/eval": ["@ima/eval@workspace:packages/eval"],
+    "@ima/core": ["@ima/core@workspace:worker/core"],
 
     "@ima/mobile": ["@ima/mobile@workspace:apps/mobile"],
 

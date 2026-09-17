@@ -64,7 +64,7 @@ profile・反復・候補identity対応・人手レビューのcoverageを確認
 
 実時刻表を検証してから投入し、生成fixtureを本番seedにしない。期限切れや空datasetはdisabled。検証時刻から7日未満を条件とし、alarmと利用前検証の両方で期限を扱う。
 alarm同期失敗は適用済みrevision付き`alarm_failed`になり得るため、旧revisionを盲目的に再送せず、現在のrevisionを踏まえて再同期する。
-時刻計算・駅の連結・運行日の契約は[Core](../packages/core/src/domain)と[終電Adapter](../workers/api/src/providers/last-train)を参照する。
+時刻計算・駅の連結・運行日の契約は[Core](../worker/core/src/domain)と[終電Adapter](../workers/api/src/providers/last-train)を参照する。
 
 ## デプロイと復旧
 

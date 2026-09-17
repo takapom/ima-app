@@ -60,7 +60,7 @@ module.exports = {
       name: 'mobile-only-contracts',
       severity: 'error',
       from: { path: '^apps/mobile(?:/|$)' },
-      to: { path: '^(?:packages/(?!contracts(?:/|$))|workers/)' },
+      to: { path: '^(?:packages/(?!contracts(?:/|$))|workers/|worker/)' },
     },
     {
       name: 'api-only-contracts-core',
@@ -71,19 +71,19 @@ module.exports = {
     {
       name: 'core-contracts-independent',
       severity: 'error',
-      from: { path: '^packages/core(?:/|$)' },
+      from: { path: '^worker/core(?:/|$)' },
       to: { path: '^packages/contracts(?:/|$)' },
     },
     {
       name: 'contracts-core-independent',
       severity: 'error',
       from: { path: '^packages/contracts(?:/|$)' },
-      to: { path: '^packages/core(?:/|$)' },
+      to: { path: '^worker/core(?:/|$)' },
     },
     {
       name: 'core-no-app-or-worker',
       severity: 'error',
-      from: { path: '^packages/core(?:/|$)' },
+      from: { path: '^worker/core(?:/|$)' },
       to: { path: '^(?:apps/mobile|workers/api)(?:/|$)' },
     },
     {
@@ -97,7 +97,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^(?:apps/mobile|workers/api)(?:/|$)' },
       to: {
-        path: '^packages/(?:contracts|core)(?:/|$)',
+        path: '^(?:packages/contracts|worker/core)(?:/|$)',
         dependencyTypes: ['local', 'aliased'],
       },
     },
@@ -106,16 +106,16 @@ module.exports = {
       severity: 'error',
       from: { path: '^packages/contracts(?:/|$)' },
       to: {
-        path: '^packages/(?!contracts(?:/|$))',
+        path: '^(?:packages/(?!contracts(?:/|$))|worker/core(?:/|$))',
         dependencyTypes: ['local', 'aliased'],
       },
     },
     {
       name: 'no-cross-workspace-relative-import-from-core',
       severity: 'error',
-      from: { path: '^packages/core(?:/|$)' },
+      from: { path: '^worker/core(?:/|$)' },
       to: {
-        path: '^packages/(?!core(?:/|$))',
+        path: '^packages/',
         dependencyTypes: ['local', 'aliased'],
       },
     },
@@ -123,12 +123,12 @@ module.exports = {
       name: 'no-private-workspace-import-from-app',
       severity: 'error',
       from: { path: '^(?:apps/mobile|workers/api)(?:/|$)' },
-      to: { path: '^packages/(?:contracts|core)/(?!src/index\\.ts$)' },
+      to: { path: '^(?:packages/contracts|worker/core)/(?!src/index\\.ts$)' },
     },
     {
       name: 'core-no-runtime-sdk',
       severity: 'error',
-      from: { path: '^packages/core(?:/|$)' },
+      from: { path: '^worker/core(?:/|$)' },
       to: {
         path: '(^|/)(?:cloudflare|wrangler|expo|react-native|ai|@ai-sdk|@cloudflare|workers-ai-provider)(/|$)',
       },
@@ -137,7 +137,7 @@ module.exports = {
       name: 'no-fixture-in-production',
       severity: 'error',
       from: {
-        path: '^(?:apps/mobile|workers/api|packages/contracts|packages/core)(?:/|$)',
+        path: '^(?:apps/mobile|workers/api|packages/contracts|worker/core)(?:/|$)',
         pathNot: '(^|/)(?:test|tests)(/|$)|\\.(?:test|spec)\\.[^/]+$',
       },
       to: { path: '(^|/)fixtures(/|$)' },
@@ -145,20 +145,20 @@ module.exports = {
     {
       name: 'core-domain-only-domain',
       severity: 'error',
-      from: { path: '^packages/core/src/domain(?:/|$)' },
-      to: { path: '^packages/core/src/(?!domain(?:/|$))' },
+      from: { path: '^worker/core/src/domain(?:/|$)' },
+      to: { path: '^worker/core/src/(?!domain(?:/|$))' },
     },
     {
       name: 'core-ports-only-domain-ports',
       severity: 'error',
-      from: { path: '^packages/core/src/ports(?:/|$)' },
-      to: { path: '^packages/core/src/(?!domain(?:/|$)|ports(?:/|$))' },
+      from: { path: '^worker/core/src/ports(?:/|$)' },
+      to: { path: '^worker/core/src/(?!domain(?:/|$)|ports(?:/|$))' },
     },
     {
       name: 'core-application-only-inner',
       severity: 'error',
-      from: { path: '^packages/core/src/application(?:/|$)' },
-      to: { path: '^packages/core/src/(?!domain(?:/|$)|ports(?:/|$)|application(?:/|$))' },
+      from: { path: '^worker/core/src/application(?:/|$)' },
+      to: { path: '^worker/core/src/(?!domain(?:/|$)|ports(?:/|$)|application(?:/|$))' },
     },
   ],
   options: {

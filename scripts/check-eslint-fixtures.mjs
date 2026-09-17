@@ -15,19 +15,19 @@ function countedSource(count, newline, trailingNewline, line) {
 const lintCases = [
   {
     name: 'no-explicit-any',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: 'export const invalidValue: any = 1;\n',
     rule: '@typescript-eslint/no-explicit-any',
   },
   {
     name: 'no-floating-promises',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: 'export function invalidPromise(): void { Promise.resolve(1); }\n',
     rule: '@typescript-eslint/no-floating-promises',
   },
   {
     name: 'switch-exhaustiveness',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source:
       [
         "type Event = { type: 'created' } | { type: 'deleted' };",
@@ -55,26 +55,26 @@ const lintCases = [
   },
   {
     name: 'allowed-typed-code',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source:
       'export async function validPromise(): Promise<number> {\n  return await Promise.resolve(1);\n}\n',
     rule: null,
   },
   {
     name: 'max-lines-499-lf-no-eof',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: countedSource(499, '\n', false, (index) => `export const line${index} = ${index};`),
     rule: null,
   },
   {
     name: 'max-lines-500-crlf-comments',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: countedSource(500, '\r\n', true, () => '// counted comment'),
     rule: null,
   },
   {
     name: 'max-lines-501-crlf-blank-comments',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: countedSource(501, '\r\n', true, (index) =>
       index % 2 === 0 ? '// counted comment' : '',
     ),
@@ -82,37 +82,37 @@ const lintCases = [
   },
   {
     name: 'core-clock-input-is-allowed',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: 'export const parsedInput = (input: string): number => Date.parse(input);\n',
     rule: null,
   },
   {
     name: 'core-now-is-forbidden',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: 'export const invalidClock = Date.now();\n',
     rule: 'no-restricted-properties',
   },
   {
     name: 'core-current-time-constructor-is-forbidden',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: 'export const invalidClock = new Date();\n',
     rule: 'no-restricted-syntax',
   },
   {
     name: 'core-global-fetch-is-forbidden',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: "export const invalidNetworkCall = () => globalThis.fetch('/private');\n",
     rule: 'no-restricted-syntax',
   },
   {
     name: 'core-timer-is-forbidden',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: 'export const invalidTimer = () => setTimeout(() => undefined, 1);\n',
     rule: 'no-restricted-syntax',
   },
   {
     name: 'core-node-io',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: "import fs from 'node:fs';\nexport { fs };\n",
     rule: 'no-restricted-imports',
   },
@@ -136,7 +136,7 @@ const lintCases = [
   },
   {
     name: 'allowed-core-code',
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: 'export const allowedCoreValue = 1;\n',
     rule: null,
   },
@@ -200,14 +200,14 @@ function runLint(testCase) {
 
 function runTypecheck() {
   const testCase = {
-    directory: 'packages/core/src',
+    directory: 'worker/core/src',
     source: 'const invalidType: string = 42;\nexport { invalidType };\n',
   };
   const { temporaryDirectory } = writeTemporaryFixture(testCase);
   try {
     const result = spawnSync(
       process.execPath,
-      [tsc, '-p', 'packages/core/tsconfig.json', '--noEmit'],
+      [tsc, '-p', 'worker/core/tsconfig.json', '--noEmit'],
       {
         cwd: repositoryRoot,
         encoding: 'utf8',

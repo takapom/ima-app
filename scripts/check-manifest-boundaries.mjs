@@ -14,7 +14,7 @@ const workspaceRules = {
     allowed: new Set(),
     rule: 'manifest-contracts-independent',
   },
-  'packages/core': {
+  'worker/core': {
     allowed: new Set(),
     rule: 'manifest-core-independent',
   },

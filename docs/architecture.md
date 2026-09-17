@@ -8,7 +8,7 @@ iPhoneアプリとCloudflare Workerの2デプロイ面を持つモジュラー�
 flowchart LR
   Mobile[apps/mobile] --> Contracts[packages/contracts]
   Worker[workers/api] --> Contracts
-  Worker --> Core[packages/core]
+  Worker --> Core[worker/core]
 ```
 
 矢印はコードの依存方向。4つのworkspaceを使い、Coreとcontractsは相互依存しない。
@@ -17,7 +17,7 @@ flowchart LR
 | -------------------- | ----------------------------------------------------------------------------- |
 | `apps/mobile`        | UI描画、hooksによる接続、state管理、HTTP・SQLite・位置・共有のservices        |
 | `packages/contracts` | 公開HTTP DTO、描画型、検証schema。業務処理や内部Portは置かない                |
-| `packages/core`      | Domain、Application、入力・出力Ports、候補・観測・根拠・応答確定の判断        |
+| `worker/core`        | Domain、Application、入力・出力Ports、候補・観測・根拠・応答確定の判断        |
 | `workers/api`        | HTTP認証・DTO変換、SDK実行、Tool Binding、Provider/Storage Adapter、Bootstrap |
 
 package外からは公開exportsを使う。相対パス、alias、型import、再exportでも境界を迂回しない。
