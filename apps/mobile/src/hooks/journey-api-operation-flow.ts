@@ -2,8 +2,8 @@ import type { CreateThreadResponse, SearchResponse } from '@ima/contracts';
 import type {
   JourneyApiController,
   JourneyApiControllerState,
-} from '../services/thread-session/journey-controller';
-import type { ApiResult } from '../services/api/api';
+} from '@mobile/services/thread-session/journey-controller';
+import type { ApiResult } from '@mobile/services/api/api';
 
 export type JourneyApiRetryResult = ApiResult<CreateThreadResponse> | ApiResult<SearchResponse>;
 

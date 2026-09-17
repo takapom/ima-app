@@ -1,11 +1,11 @@
-import { applyThreadSnapshotJson } from '../assistant-response';
-import { type ApiRequestGate } from './request-gate';
+import { applyThreadSnapshotJson } from '@mobile/services/assistant-response';
+import { type ApiRequestGate } from '@mobile/services/thread-session/request-gate';
 import type {
   JourneyApiControllerOptions,
   JourneyApiControllerState,
   JourneyLocalRestoreResult,
   JourneyLocalSnapshot,
-} from './journey-controller-types';
+} from '@mobile/services/thread-session/journey-controller-types';
 import {
   controllerError,
   latestTurnId,
@@ -13,8 +13,8 @@ import {
   stateForThread,
   validLocalSnapshot,
   validOpaqueId,
-} from './journey-controller-support';
-import type { ApiRequestOptions, ApiResult } from '../api/api';
+} from '@mobile/services/thread-session/journey-controller-support';
+import type { ApiRequestOptions, ApiResult } from '@mobile/services/api/api';
 import type { ThreadReadResponse } from '@ima/contracts';
 
 type HistoryDependencies = {

@@ -1,7 +1,10 @@
 import type { PublicCard } from '@ima/contracts';
-import type { AssistantResponseState } from '../state/assistant-response';
-import { selectJourneyCandidateOrder, type JourneyActionState } from '../state/journey-actions';
-import type { JourneySubmitContext } from './journey-screen-props';
+import type { AssistantResponseState } from '@mobile/state/assistant-response';
+import {
+  selectJourneyCandidateOrder,
+  type JourneyActionState,
+} from '@mobile/state/journey-actions';
+import type { JourneySubmitContext } from '@mobile/screens/journey-screen-props';
 
 /** Build the displayed context from the action result, including a just-skipped candidate. */
 export const submitContextFor = (

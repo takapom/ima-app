@@ -10,7 +10,7 @@ import {
   advanceAssistantRevision,
   applyAssistantResponse,
   type AssistantResponseState,
-} from '../state/assistant-response';
+} from '@mobile/state/assistant-response';
 
 export type ResponseApplyResult = {
   readonly state: AssistantResponseState;

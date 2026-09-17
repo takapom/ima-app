@@ -1,4 +1,4 @@
-import type { PhotoApiError, PhotoAsset } from '../services/api/photo-client';
+import type { PhotoApiError, PhotoAsset } from '@mobile/services/api/photo-client';
 
 export type PhotoImageIdentity = {
   readonly client: object;

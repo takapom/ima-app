@@ -1,4 +1,4 @@
-import type { JourneyPhase } from './journey-shell';
+import type { JourneyPhase } from '@mobile/state/journey-shell';
 
 export type JourneyRequestStatus = 'idle' | 'pending' | 'error' | 'cancelled';
 

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createSavedPlaceListService } from './saved-place-list';
-import type { SavedPlaceRecord } from '../sqlite/types';
-import type { ServerSavedPlaceRef, LocalSavedEntryId } from './saved-place-types';
+import { createSavedPlaceListService } from '@mobile/services/saved-places/saved-place-list';
+import type { SavedPlaceRecord } from '@mobile/services/sqlite/types';
+import type {
+  ServerSavedPlaceRef,
+  LocalSavedEntryId,
+} from '@mobile/services/saved-places/saved-place-types';
 
 const now = '2026-09-11T03:00:00.000Z';
 

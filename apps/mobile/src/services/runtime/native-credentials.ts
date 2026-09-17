@@ -1,5 +1,5 @@
 import { parseRequestHeaders } from '@ima/contracts';
-import type { ApiCredentials } from '../api/api';
+import type { ApiCredentials } from '@mobile/services/api/api';
 import type { SecureStoreOptions } from 'expo-secure-store';
 
 export const NATIVE_CREDENTIALS_KEY_PREFIX = 'ima.api.credentials.v1.' as const;

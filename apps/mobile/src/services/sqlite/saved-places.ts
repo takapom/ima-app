@@ -4,8 +4,8 @@ import {
   projectRetention,
   sessionExpiryAt,
   sessionWindowStartAt,
-} from './retention';
-import { currentIso } from './expiration';
+} from '@mobile/services/sqlite/retention';
+import { currentIso } from '@mobile/services/sqlite/expiration';
 import type {
   LocalSavedEntryId,
   SavedPlaceInput,
@@ -14,8 +14,8 @@ import type {
   SqliteConnection,
   SqliteStore,
   SqliteStoreOptions,
-} from './types';
-import { iso, opaqueId, readSavedPlace, text } from './rows';
+} from '@mobile/services/sqlite/types';
+import { iso, opaqueId, readSavedPlace, text } from '@mobile/services/sqlite/rows';
 
 type SavedPlaceStore = Pick<
   SqliteStore,

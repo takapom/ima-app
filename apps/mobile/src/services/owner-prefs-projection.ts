@@ -4,18 +4,18 @@ import {
   type PrefsWriteResponse,
   type RetentionMetadata,
 } from '@ima/contracts';
-import type { OwnerPrefsClient } from './api/owner-client';
-import type { ApiError, ApiResult } from './api/api';
+import type { OwnerPrefsClient } from '@mobile/services/api/owner-client';
+import type { ApiError, ApiResult } from '@mobile/services/api/api';
 import {
   createJourneyPreferencesService,
   isValidJourneyConditions,
   type JourneyPreferencesReadResult,
   type JourneyPreferencesSaveResult,
-} from './preferences';
-import type { ServerSavedPlaceRef } from './saved-places/saved-place-types';
-import { sessionExpiryAt } from './sqlite/retention';
-import type { SqliteStore } from './sqlite/types';
-import type { JourneyConditions } from '../state/journey-input';
+} from '@mobile/services/preferences';
+import type { ServerSavedPlaceRef } from '@mobile/services/saved-places/saved-place-types';
+import { sessionExpiryAt } from '@mobile/services/sqlite/retention';
+import type { SqliteStore } from '@mobile/services/sqlite/types';
+import type { JourneyConditions } from '@mobile/state/journey-input';
 
 export type OwnerPrefsSqlite = Pick<SqliteStore, 'readPreferences' | 'savePreferences'> &
   Partial<Pick<SqliteStore, 'listSavedPlaces' | 'savePlace' | 'deleteSavedPlace' | 'markDecided'>>;

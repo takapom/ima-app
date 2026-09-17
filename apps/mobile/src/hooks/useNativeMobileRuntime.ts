@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import type { JourneyApiControllerBinding } from '../services/thread-session/journey-api-binding';
+import type { JourneyApiControllerBinding } from '@mobile/services/thread-session/journey-api-binding';
 import {
   createNativeMobileJourneyRuntime,
   type NativeMobileJourneyRuntime,
   type NativeMobileRuntimeOptions,
   type NativeMobileRuntimeReason,
-} from '../services/runtime/native-mobile-runtime';
+} from '@mobile/services/runtime/native-mobile-runtime';
 
 export type UseNativeMobileRuntimeOptions = {
   /** A host-composed binding bypasses every native SDK load. */

@@ -16,29 +16,29 @@ import type {
   JourneyApiSearchFactoryInput,
   JourneyApiTurnFactoryInput,
   JourneySavedPlacePreviewBinding,
-} from '../thread-session/journey-api-binding';
+} from '@mobile/services/thread-session/journey-api-binding';
 import {
   createJourneyApiController,
   type JourneyApiControllerState,
   type JourneyLocalRestorePort,
-} from '../thread-session/journey-controller';
-import { createJourneyApiClient } from '../api/client';
-import { createOwnerPrefsClient, type OwnerPrefsClient } from '../api/owner-client';
-import { createJourneyPhotoClient } from '../api/photo-client';
-import { createRuntimeId } from '../runtime-id';
+} from '@mobile/services/thread-session/journey-controller';
+import { createJourneyApiClient } from '@mobile/services/api/client';
+import { createOwnerPrefsClient, type OwnerPrefsClient } from '@mobile/services/api/owner-client';
+import { createJourneyPhotoClient } from '@mobile/services/api/photo-client';
+import { createRuntimeId } from '@mobile/services/runtime-id';
 import {
   createSavedReferenceJourneyStorage,
   type JourneyStorageService,
-} from '../saved-places/journey-storage';
-import { createSavedPlaceListService } from '../saved-places/saved-place-list';
+} from '@mobile/services/saved-places/journey-storage';
+import { createSavedPlaceListService } from '@mobile/services/saved-places/saved-place-list';
 import {
   createSavedReferenceService,
   type SavedReferenceScope,
-} from '../saved-places/saved-reference-service';
-import type { SqliteStore } from '../sqlite/types';
-import type { LocationService } from '../location/types';
-import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from '../api/api';
-import { projectAssistantResponseState } from '../../state/assistant-response-projection';
+} from '@mobile/services/saved-places/saved-reference-service';
+import type { SqliteStore } from '@mobile/services/sqlite/types';
+import type { LocationService } from '@mobile/services/location/types';
+import type { ApiCredentialProvider, ApiCredentials, ApiFetch } from '@mobile/services/api/api';
+import { projectAssistantResponseState } from '@mobile/state/assistant-response-projection';
 
 export type MobileRuntimeEnvironment = Readonly<Record<string, string | undefined>>;
 export type MobileJourneyRuntimeMode = 'fixture' | 'live' | 'unconfigured';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createJourneyShellState, journeyShellReducer } from './journey-shell';
+import { createJourneyShellState, journeyShellReducer } from '@mobile/state/journey-shell';
 
 describe('journey shell state', () => {
   it('ignores a blank request and keeps the draft available', () => {

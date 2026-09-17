@@ -2,16 +2,16 @@ import { describe, expect, it } from 'vitest';
 import {
   journeyPreferenceChangeFor,
   journeyPreferenceTransitionFor,
-} from '../hooks/useJourneyPreferences';
+} from '@mobile/hooks/useJourneyPreferences';
 import {
   createJourneyPreferencesService,
   hasPersistedJourneyPreferenceChange,
   journeyConditionsForPreferences,
   type JourneyPreferencesStorage,
   type JourneyPreferencesSaveResult,
-} from './preferences';
-import type { SqlitePreferences, SqlitePreferencesInput } from './sqlite/types';
-import type { JourneyConditions } from '../state/journey-input';
+} from '@mobile/services/preferences';
+import type { SqlitePreferences, SqlitePreferencesInput } from '@mobile/services/sqlite/types';
+import type { JourneyConditions } from '@mobile/state/journey-input';
 
 const fallback: JourneyConditions = {
   stationLabel: '渋谷',

@@ -1,12 +1,12 @@
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { JourneyScreen } from './src/screens/JourneyScreen';
-import { useNativeMobileRuntime } from './src/hooks/useNativeMobileRuntime';
-import { useNativeJourneyPersistence } from './src/hooks/useNativeJourneyPersistence';
+import { JourneyScreen } from '@mobile/screens/JourneyScreen';
+import { useNativeMobileRuntime } from '@mobile/hooks/useNativeMobileRuntime';
+import { useNativeJourneyPersistence } from '@mobile/hooks/useNativeJourneyPersistence';
 import {
   nativeMobileRuntimeMessage,
   type NativeMobileRuntimeOptions,
-} from './src/services/runtime/native-mobile-runtime';
-import type { JourneyApiControllerBinding } from './src/services/thread-session/journey-api-binding';
+} from '@mobile/services/runtime/native-mobile-runtime';
+import type { JourneyApiControllerBinding } from '@mobile/services/thread-session/journey-api-binding';
 
 export type AppProps = {
   /** The host supplies fixture/live credentials and request fields at this boundary. */

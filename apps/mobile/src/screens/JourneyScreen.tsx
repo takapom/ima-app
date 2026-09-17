@@ -1,44 +1,47 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { AppBar } from '../components/AppBar';
-import { Canvas } from '../components/Canvas';
-import { Composer } from '../components/Composer';
-import { ConditionChips } from '../components/conditions/ConditionChips';
-import { DecidedState } from '../components/response/DecidedState';
-import { Drawer } from '../components/Drawer';
-import { EmptyState } from '../components/response/EmptyState';
-import { ErrorState } from '../components/response/ErrorState';
-import { ResultsState } from '../components/response/ResultsState';
-import { SavedPlacePreviewSurface } from '../components/saved-places/SavedPlacePreviewSurface';
-import { WorkingState } from '../components/response/WorkingState';
-import { useAssistantResponseProjection } from '../hooks/useAssistantResponseProjection';
-import { useJourneyActions } from '../hooks/useJourneyActions';
-import { useJourneyShell } from '../hooks/useJourneyShell';
+import { AppBar } from '@mobile/components/AppBar';
+import { Canvas } from '@mobile/components/Canvas';
+import { Composer } from '@mobile/components/Composer';
+import { ConditionChips } from '@mobile/components/conditions/ConditionChips';
+import { DecidedState } from '@mobile/components/response/DecidedState';
+import { Drawer } from '@mobile/components/Drawer';
+import { EmptyState } from '@mobile/components/response/EmptyState';
+import { ErrorState } from '@mobile/components/response/ErrorState';
+import { ResultsState } from '@mobile/components/response/ResultsState';
+import { SavedPlacePreviewSurface } from '@mobile/components/saved-places/SavedPlacePreviewSurface';
+import { WorkingState } from '@mobile/components/response/WorkingState';
+import { useAssistantResponseProjection } from '@mobile/hooks/useAssistantResponseProjection';
+import { useJourneyActions } from '@mobile/hooks/useJourneyActions';
+import { useJourneyShell } from '@mobile/hooks/useJourneyShell';
 import {
   useJourneyPreferences,
   type UseJourneyPreferencesResult,
-} from '../hooks/useJourneyPreferences';
-import { useJourneySourceLink } from '../hooks/useJourneySourceLink';
-import { useSavedPlacePreview } from '../hooks/useSavedPlacePreview';
-import { selectedCardFor, submitContextFor } from './journey-screen-model';
-import { useJourneyApiController } from '../hooks/useJourneyApiController';
-import { selectJourneyNoticeText } from '../services/journey-source-link';
+} from '@mobile/hooks/useJourneyPreferences';
+import { useJourneySourceLink } from '@mobile/hooks/useJourneySourceLink';
+import { useSavedPlacePreview } from '@mobile/hooks/useSavedPlacePreview';
+import { selectedCardFor, submitContextFor } from '@mobile/screens/journey-screen-model';
+import { useJourneyApiController } from '@mobile/hooks/useJourneyApiController';
+import { selectJourneyNoticeText } from '@mobile/services/journey-source-link';
 import {
   selectAssistantMessageRecords,
   selectAssistantMessages,
-} from '../state/assistant-response';
+} from '@mobile/state/assistant-response';
 import {
   DEFAULT_SUGGESTIONS,
   type ConditionScope,
   type JourneyConditions,
   preferenceChipLabels,
   suggestionsFor,
-} from '../state/journey-input';
-import { resolveJourneyPhase } from '../state/journey-phase';
-import type { JourneyScreenProps } from './journey-screen-props';
+} from '@mobile/state/journey-input';
+import { resolveJourneyPhase } from '@mobile/state/journey-phase';
+import type { JourneyScreenProps } from '@mobile/screens/journey-screen-props';
 
-export type { JourneyScreenProps, JourneySubmitContext } from './journey-screen-props';
-export type { JourneyRequestStatus } from '../state/journey-phase';
+export type {
+  JourneyScreenProps,
+  JourneySubmitContext,
+} from '@mobile/screens/journey-screen-props';
+export type { JourneyRequestStatus } from '@mobile/state/journey-phase';
 
 type JourneyScreenStateOwnerProps = JourneyScreenProps & {
   readonly preferenceState: UseJourneyPreferencesResult;

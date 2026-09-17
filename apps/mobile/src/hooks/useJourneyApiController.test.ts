@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { journeyApiErrorMessage } from './useJourneyApiController';
+import { journeyApiErrorMessage } from '@mobile/hooks/useJourneyApiController';
 import {
   awaitRetryIfCurrent,
   operationStillCurrent,
@@ -7,7 +7,7 @@ import {
   releaseJourneyApiController,
   restoreThenReadIfCurrent,
   submissionScopeMatches,
-} from './journey-api-operation-flow';
+} from '@mobile/hooks/journey-api-operation-flow';
 
 describe('Journey API hook boundary', () => {
   it('keeps public error messages safe and actionable without exposing response details', () => {

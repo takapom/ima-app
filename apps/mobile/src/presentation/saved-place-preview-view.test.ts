@@ -5,19 +5,19 @@ import {
   savedPlaceItemsFor,
   savedPlacePreviewDisplayFor,
   savedPlacePreviewFailureTextFor,
-} from './saved-place-preview-view';
+} from '@mobile/presentation/saved-place-preview-view';
 import type {
   SavedPlaceListItem,
   SavedPlaceListResult,
-} from '../services/saved-places/saved-place-list';
+} from '@mobile/services/saved-places/saved-place-list';
 import {
   createSavedPlacePreviewState,
   type SavedPlacePreviewState,
-} from '../state/saved-place-preview';
+} from '@mobile/state/saved-place-preview';
 import type {
   LocalSavedEntryId,
   ServerSavedPlaceRef,
-} from '../services/saved-places/saved-place-types';
+} from '@mobile/services/saved-places/saved-place-types';
 
 const retention: RetentionMetadata = {
   retentionDecision: 'allow',

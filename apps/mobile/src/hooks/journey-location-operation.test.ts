@@ -4,7 +4,7 @@ import {
   locationDraftScopeMatches,
   prepareJourneyLocation,
   unavailableJourneyLocation,
-} from './journey-location-operation';
+} from '@mobile/hooks/journey-location-operation';
 
 const snapshot: LocationSnapshot = {
   status: 'available',

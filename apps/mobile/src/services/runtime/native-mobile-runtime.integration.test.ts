@@ -3,25 +3,25 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { LocationService } from '../location/types';
+import type { LocationService } from '@mobile/services/location/types';
 import {
   createNativeSqliteAdapter,
   type NativeSqliteDatabase,
   type NativeSqliteDriver,
-} from '../sqlite/native';
-import type { LocalSavedEntryId, SqliteValue } from '../sqlite/types';
+} from '@mobile/services/sqlite/native';
+import type { LocalSavedEntryId, SqliteValue } from '@mobile/services/sqlite/types';
 import {
   NATIVE_CREDENTIALS_KEY_PREFIX,
   nativeCredentialScopeFor,
   nativeCredentialStorageKeyFor,
   type NativeCredentialAuthority,
   type NativeCredentialStoreClient,
-} from './native-credentials';
+} from '@mobile/services/runtime/native-credentials';
 import {
   createNativeMobileJourneyRuntime,
   type NativeMobileRuntimeOptions,
-} from './native-mobile-runtime';
-import type { ApiFetch } from '../api/api';
+} from '@mobile/services/runtime/native-mobile-runtime';
+import type { ApiFetch } from '@mobile/services/api/api';
 import {
   createThreadResponse,
   json,
@@ -29,7 +29,7 @@ import {
   searchRequestFor,
   searchResponse,
   stringField,
-} from './tests/mobile-runtime-storage-fixtures';
+} from '@mobile/services/runtime/tests/mobile-runtime-storage-fixtures';
 
 vi.mock('expo-sqlite', () => ({
   openDatabaseSync: () => {

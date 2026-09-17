@@ -1,4 +1,4 @@
-import type { DecisionHapticsService } from './journey-haptics';
+import type { DecisionHapticsService } from '@mobile/services/journey-haptics';
 
 /**
  * The native module is reduced to the one operation this action needs. Keeping

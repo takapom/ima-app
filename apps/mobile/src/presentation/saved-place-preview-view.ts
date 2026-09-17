@@ -1,10 +1,13 @@
-import type { SavedPlaceListResult } from '../services/saved-places/saved-place-list';
-import type { SavedPlaceItem } from '../state/journey-shell';
-import { collectAttributions, type AttributionPresentation } from './attribution';
+import type { SavedPlaceListResult } from '@mobile/services/saved-places/saved-place-list';
+import type { SavedPlaceItem } from '@mobile/state/journey-shell';
+import {
+  collectAttributions,
+  type AttributionPresentation,
+} from '@mobile/presentation/attribution';
 import type {
   SavedPlacePreviewFailure,
   SavedPlacePreviewState,
-} from '../state/saved-place-preview';
+} from '@mobile/state/saved-place-preview';
 
 export type SavedPlacePreviewDisplay = {
   readonly name: string;

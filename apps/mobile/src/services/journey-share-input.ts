@@ -1,7 +1,10 @@
 import type { EvidenceRef, PublicCard } from '@ima/contracts';
-import { collectAttributions } from '../presentation/attribution';
-import { placePageUrlFor } from './journey-map';
-import type { JourneyShareAttribution, JourneyShareCandidate } from './journey-share';
+import { collectAttributions } from '@mobile/presentation/attribution';
+import { placePageUrlFor } from '@mobile/services/journey-map';
+import type {
+  JourneyShareAttribution,
+  JourneyShareCandidate,
+} from '@mobile/services/journey-share';
 
 const usableIdentity = (card: PublicCard): { readonly name: string } | null => {
   const field = card.facts.identity;

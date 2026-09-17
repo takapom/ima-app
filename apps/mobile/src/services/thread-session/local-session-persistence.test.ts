@@ -1,19 +1,19 @@
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RetentionMetadata } from '@ima/contracts';
-import type { AssistantResponseState } from '../../state/assistant-response';
-import { createAssistantResponseState } from '../../state/assistant-response';
+import type { AssistantResponseState } from '@mobile/state/assistant-response';
+import { createAssistantResponseState } from '@mobile/state/assistant-response';
 import {
   createLocalSessionPersistence,
   createSqliteJourneyLocalRestore,
-} from './local-session-persistence';
-import { createSqliteStore } from '../sqlite/store';
+} from '@mobile/services/thread-session/local-session-persistence';
+import { createSqliteStore } from '@mobile/services/sqlite/store';
 import type {
   LocalSavedEntryId,
   SqliteConnection,
   SqliteStore,
   SqliteValue,
-} from '../sqlite/types';
+} from '@mobile/services/sqlite/types';
 
 const nowValue = '2026-09-10T12:00:00.000Z';
 const sessionExpiresAt = '2026-09-10T13:00:00.000Z';

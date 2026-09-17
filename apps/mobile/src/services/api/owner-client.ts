@@ -7,9 +7,9 @@ import {
   type PrefsWriteResponse,
   type SavedReferenceListResponse,
 } from '@ima/contracts';
-import { createApiRequester } from './client';
-import { issueResult } from './response';
-import type { ApiClientOptions, ApiRequestOptions, ApiResult } from './api';
+import { createApiRequester } from '@mobile/services/api/client';
+import { issueResult } from '@mobile/services/api/response';
+import type { ApiClientOptions, ApiRequestOptions, ApiResult } from '@mobile/services/api/api';
 
 const CLIENT_REQUEST_ID = 'client-invalid';
 

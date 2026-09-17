@@ -5,9 +5,12 @@ import {
   type JourneyMapOpenResult,
   type JourneyMapService,
   type WalkingMapDestinationResolver,
-} from './journey-map';
-import type { JourneyShareService, ShareSheetResult } from './journey-share';
-import { prepareSourceLink, type JourneySourceLinkService } from './journey-source-link';
+} from '@mobile/services/journey-map';
+import type { JourneyShareService, ShareSheetResult } from '@mobile/services/journey-share';
+import {
+  prepareSourceLink,
+  type JourneySourceLinkService,
+} from '@mobile/services/journey-source-link';
 
 /**
  * Native adapters stay at the service boundary. The resolver must receive

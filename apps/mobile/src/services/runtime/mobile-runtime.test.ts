@@ -4,7 +4,7 @@ import {
   createMobileJourneyRuntime,
   JourneyApiRequestFactoryError,
   mobileJourneyRuntimeMessage,
-} from './mobile-runtime';
+} from '@mobile/services/runtime/mobile-runtime';
 
 const baseEnv = {
   EXPO_PUBLIC_API_MODE: 'fixture',

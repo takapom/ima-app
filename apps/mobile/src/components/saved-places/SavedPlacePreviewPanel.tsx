@@ -1,11 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { AttributionList } from '../candidates/CandidateCard';
+import { AttributionList } from '@mobile/components/candidates/CandidateCard';
 import {
   savedPlacePreviewDisplayFor,
   savedPlacePreviewFailureTextFor,
-} from '../../presentation/saved-place-preview-view';
-import type { SavedPlacePreviewState } from '../../state/saved-place-preview';
-import { colors, radii, spacing, typography } from '../../theme/tokens';
+} from '@mobile/presentation/saved-place-preview-view';
+import type { SavedPlacePreviewState } from '@mobile/state/saved-place-preview';
+import { colors, radii, spacing, typography } from '@mobile/theme/tokens';
 
 type SavedPlacePreviewPanelProps = {
   readonly state: SavedPlacePreviewState;

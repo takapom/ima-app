@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { JourneyApiControllerBinding } from '../thread-session/journey-api-binding';
-import type { ApiFetch } from '../api/api';
+import type { JourneyApiControllerBinding } from '@mobile/services/thread-session/journey-api-binding';
+import type { ApiFetch } from '@mobile/services/api/api';
 import {
   createThreadResponse,
   json,
@@ -13,7 +13,7 @@ import {
   searchResponse,
   stringField,
   visibleCandidate,
-} from './tests/mobile-runtime-storage-fixtures';
+} from '@mobile/services/runtime/tests/mobile-runtime-storage-fixtures';
 
 type BoundBinding = JourneyApiControllerBinding & {
   readonly storage: NonNullable<JourneyApiControllerBinding['storage']>;

@@ -6,8 +6,8 @@ import type {
   ThreadTurnRequest,
 } from '@ima/contracts';
 import { APP_TOKEN_HEADER, REQUEST_ID_HEADER } from '@ima/contracts';
-import { createJourneyApiClient } from './client';
-import type { ApiClientOptions, ApiFetch } from './api';
+import { createJourneyApiClient } from '@mobile/services/api/client';
+import type { ApiClientOptions, ApiFetch } from '@mobile/services/api/api';
 
 const timestamp = '2026-09-10T12:00:00Z';
 const ownerCredential = `${'A'.repeat(42)}A`;

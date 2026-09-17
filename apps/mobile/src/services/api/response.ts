@@ -1,5 +1,5 @@
 import type { ParseResult } from '@ima/contracts';
-import type { ApiResult } from './api';
+import type { ApiResult } from '@mobile/services/api/api';
 
 export type ResponseSpec<T> = {
   readonly route: string;

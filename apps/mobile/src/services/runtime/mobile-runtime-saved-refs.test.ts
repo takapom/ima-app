@@ -7,10 +7,10 @@ import type {
   SearchResponse,
   ThreadReadResponse,
 } from '@ima/contracts';
-import type { JourneyApiSubmitContext } from '../thread-session/journey-api-binding';
-import { createJourneyApiController } from '../thread-session/journey-controller';
-import { createJourneyApiRequestFactory } from './mobile-runtime';
-import type { ApiResult, JourneyApiClient } from '../api/api';
+import type { JourneyApiSubmitContext } from '@mobile/services/thread-session/journey-api-binding';
+import { createJourneyApiController } from '@mobile/services/thread-session/journey-controller';
+import { createJourneyApiRequestFactory } from '@mobile/services/runtime/mobile-runtime';
+import type { ApiResult, JourneyApiClient } from '@mobile/services/api/api';
 
 const contextFor = (savedPlaceRefs: readonly string[]): JourneyApiSubmitContext => ({
   conditions: {

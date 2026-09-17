@@ -1,25 +1,28 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { MobileJourneyRuntime } from './mobile-runtime';
-import type { JourneyApiControllerBinding } from '../thread-session/journey-api-binding';
-import type { JourneyApiController } from '../thread-session/journey-controller-types';
-import type { NativeSqliteAdapter, NativeSqliteAdapterOptions } from '../sqlite/native';
-import type { SqliteStore } from '../sqlite/types';
+import type { MobileJourneyRuntime } from '@mobile/services/runtime/mobile-runtime';
+import type { JourneyApiControllerBinding } from '@mobile/services/thread-session/journey-api-binding';
+import type { JourneyApiController } from '@mobile/services/thread-session/journey-controller-types';
+import type {
+  NativeSqliteAdapter,
+  NativeSqliteAdapterOptions,
+} from '@mobile/services/sqlite/native';
+import type { SqliteStore } from '@mobile/services/sqlite/types';
 import {
   NATIVE_CREDENTIALS_KEY_PREFIX,
   nativeCredentialScopeFor,
   nativeCredentialStorageKeyFor,
   type NativeCredentialAuthority,
   type NativeCredentialStoreClient,
-} from './native-credentials';
+} from '@mobile/services/runtime/native-credentials';
 import {
   createNativeMobileJourneyRuntime,
   nativeCredentialScopeMatchesRuntime,
   nativeSqliteStorageScopeFor,
-} from './native-mobile-runtime';
+} from '@mobile/services/runtime/native-mobile-runtime';
 
 const runtimeMock = vi.hoisted(() => ({ create: vi.fn() }));
 
-vi.mock('./mobile-runtime', () => ({
+vi.mock('@mobile/services/runtime/mobile-runtime', () => ({
   createMobileJourneyRuntime: runtimeMock.create,
   mobileJourneyRuntimeMessage: () => null,
 }));

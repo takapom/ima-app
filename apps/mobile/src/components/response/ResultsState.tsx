@@ -1,14 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { CardsData, PublicCard } from '@ima/contracts';
-import { CandidateCard } from '../candidates/CandidateCard';
+import { CandidateCard } from '@mobile/components/candidates/CandidateCard';
 import {
   buildMessageHistory,
   cardSetStatusLabel,
   type MessageHistoryItem,
-} from './results-state-model';
-import type { AssistantMessageRecord, CardSetDisplayState } from '../../state/assistant-response';
-import type { JourneyPhotoClient } from '../../services/api/photo-client';
-import { colors, spacing, typography } from '../../theme/tokens';
+} from '@mobile/components/response/results-state-model';
+import type { AssistantMessageRecord, CardSetDisplayState } from '@mobile/state/assistant-response';
+import type { JourneyPhotoClient } from '@mobile/services/api/photo-client';
+import { colors, spacing, typography } from '@mobile/theme/tokens';
 
 type ResultsStateProps = {
   readonly cards: CardsData | null;

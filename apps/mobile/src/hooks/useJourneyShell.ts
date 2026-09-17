@@ -4,8 +4,8 @@ import {
   journeyShellReducer,
   type DrawerView,
   type JourneyShellState,
-} from '../state/journey-shell';
-import type { ConditionScope, JourneyConditions } from '../state/journey-input';
+} from '@mobile/state/journey-shell';
+import type { ConditionScope, JourneyConditions } from '@mobile/state/journey-input';
 
 export type JourneyShellController = JourneyShellState & {
   readonly beginRequest: (query: string) => void;

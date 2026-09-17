@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { PublicCard } from '@ima/contracts';
-import { buildAppleWalkingMapUrl, placePageUrlFor, resolveJourneyMapTarget } from './journey-map';
+import {
+  buildAppleWalkingMapUrl,
+  placePageUrlFor,
+  resolveJourneyMapTarget,
+} from '@mobile/services/journey-map';
 
 const retention = {
   retentionDecision: 'deny' as const,

@@ -3,19 +3,19 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   createAssistantResponseState,
   type AssistantResponseState,
-} from '../state/assistant-response';
+} from '@mobile/state/assistant-response';
 import {
   nextAssistantResponseExpiryAt,
   projectAssistantResponseState,
   type AssistantResponseProjectionNow,
-} from '../state/assistant-response-projection';
+} from '@mobile/state/assistant-response-projection';
 import {
   advanceAssistantResponseNow,
   createMonotonicAssistantResponseClock,
   subscribeToAssistantResponseResume,
   systemAssistantResponseClock,
   type AssistantResponseClock,
-} from '../services/assistant-response-clock';
+} from '@mobile/services/assistant-response-clock';
 
 const emptyAssistantResponseState = createAssistantResponseState('mobile-thread');
 

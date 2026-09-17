@@ -6,7 +6,7 @@ import {
   REQUEST_ID_HEADER,
   parseRequestHeaders,
 } from '@ima/contracts';
-import type { ApiClientOptions, ApiCredentials, ApiError } from './api';
+import type { ApiClientOptions, ApiCredentials, ApiError } from '@mobile/services/api/api';
 
 const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
 

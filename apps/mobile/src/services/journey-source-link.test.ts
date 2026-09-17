@@ -5,7 +5,7 @@ import {
   prepareSourceLink,
   selectJourneyNoticeText,
   type JourneySourceLinkService,
-} from './journey-source-link';
+} from '@mobile/services/journey-source-link';
 
 describe('journey source link boundary', () => {
   it('accepts http(s) links and gives the native service a normalized URL', async () => {

@@ -4,13 +4,13 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { RetentionMetadata, Preferences } from '@ima/contracts';
-import { createSqliteStore } from './store';
+import { createSqliteStore } from '@mobile/services/sqlite/store';
 import type {
   LocalSavedEntryId,
   ServerSavedPlaceRef,
   SqliteConnection,
   SqliteValue,
-} from './types';
+} from '@mobile/services/sqlite/types';
 
 type OpenedDatabase = { readonly raw: DatabaseSync; readonly connection: SqliteConnection };
 

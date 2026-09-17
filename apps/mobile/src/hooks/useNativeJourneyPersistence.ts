@@ -1,12 +1,12 @@
 import { AppState } from 'react-native';
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
-import type { ResponseResumeSubscription } from '../services/assistant-response-clock';
-import type { NativeMobileJourneyRuntime } from '../services/runtime/native-mobile-runtime';
+import type { ResponseResumeSubscription } from '@mobile/services/assistant-response-clock';
+import type { NativeMobileJourneyRuntime } from '@mobile/services/runtime/native-mobile-runtime';
 import {
   createNativeJourneyPersistence,
   type NativeJourneyPersistenceScheduler,
   type NativeJourneyPersistenceSnapshot,
-} from '../services/native-journey-persistence';
+} from '@mobile/services/native-journey-persistence';
 
 export type UseNativeJourneyPersistenceOptions = {
   readonly runtime?: NativeMobileJourneyRuntime | null;

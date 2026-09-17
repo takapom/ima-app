@@ -3,8 +3,8 @@ import {
   createDefaultJourneyConditions,
   MAX_STATION_LABEL_LENGTH,
   type JourneyConditions,
-} from '../state/journey-input';
-import type { SqliteStore } from './sqlite/types';
+} from '@mobile/state/journey-input';
+import type { SqliteStore } from '@mobile/services/sqlite/types';
 
 export type JourneyPreferencesStorage = Pick<SqliteStore, 'readPreferences' | 'savePreferences'>;
 

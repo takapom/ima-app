@@ -4,8 +4,8 @@ import {
   createLocationService,
   LOCATION_MAX_AGE_MS,
   LOCATION_TIMEOUT_CAP_MS,
-} from './location-service';
-import type { ExpoLocationSdk } from './types';
+} from '@mobile/services/location/location-service';
+import type { ExpoLocationSdk } from '@mobile/services/location/types';
 
 const NOW = Date.parse('2026-09-11T03:00:00.000Z');
 

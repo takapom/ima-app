@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keyboardOffsetForSafeArea, paddingWithSafeArea } from './safe-area';
+import { keyboardOffsetForSafeArea, paddingWithSafeArea } from '@mobile/theme/safe-area';
 
 describe('safe-area layout boundaries', () => {
   it('adds the top or bottom device inset to the intentional spacing', () => {

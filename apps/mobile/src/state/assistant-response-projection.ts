@@ -1,5 +1,5 @@
 import type { CardsData, EvidenceRef, PublicCard, RetentionMetadata } from '@ima/contracts';
-import type { AssistantResponseState } from './assistant-response';
+import type { AssistantResponseState } from '@mobile/state/assistant-response';
 
 type DisplayField<T> =
   | {

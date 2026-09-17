@@ -4,7 +4,7 @@ import {
   openJourneySourceLink,
   type JourneySourceLinkService,
   type SourceLinkOpenResult,
-} from '../services/journey-source-link';
+} from '@mobile/services/journey-source-link';
 
 export type JourneySourceLinkNotice = {
   readonly tone: 'info' | 'success' | 'error';

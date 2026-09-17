@@ -4,9 +4,15 @@ import {
   createSavedReferenceJourneyStorage,
   createUnavailableJourneyStorageService,
   type JourneyStorageSaveOptions,
-} from './journey-storage';
-import type { SavedReferenceSaveInput, SavedReferenceService } from './saved-reference-service';
-import type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
+} from '@mobile/services/saved-places/journey-storage';
+import type {
+  SavedReferenceSaveInput,
+  SavedReferenceService,
+} from '@mobile/services/saved-places/saved-reference-service';
+import type {
+  LocalSavedEntryId,
+  ServerSavedPlaceRef,
+} from '@mobile/services/saved-places/saved-place-types';
 
 const referenceRetention: RetentionMetadata = {
   retentionDecision: 'allow',

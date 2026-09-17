@@ -1,7 +1,10 @@
 import type { PublicCard, RetentionMetadata } from '@ima/contracts';
-import type { AssistantResponseState } from '../../state/assistant-response';
-import type { JourneyApiController, JourneyLocalRestorePort } from './journey-controller-types';
-import type { SnapshotInput, SqliteStore, ThreadInput } from '../sqlite/types';
+import type { AssistantResponseState } from '@mobile/state/assistant-response';
+import type {
+  JourneyApiController,
+  JourneyLocalRestorePort,
+} from '@mobile/services/thread-session/journey-controller-types';
+import type { SnapshotInput, SqliteStore, ThreadInput } from '@mobile/services/sqlite/types';
 
 type LocalSessionController = Pick<JourneyApiController, 'getState' | 'subscribe'>;
 type LocalSessionStore = Pick<SqliteStore, 'saveThread' | 'writeSnapshot'>;

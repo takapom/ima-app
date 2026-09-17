@@ -1,4 +1,4 @@
-import { createRuntimeId } from '../services/runtime-id';
+import { createRuntimeId } from '@mobile/services/runtime-id';
 
 export type JourneySaveOperationRegistry = {
   readonly keyFor: (operationKey: string) => string;

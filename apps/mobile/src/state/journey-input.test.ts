@@ -7,7 +7,7 @@ import {
   preferenceChipLabels,
   suggestionsFor,
   uniqueTerms,
-} from './journey-input';
+} from '@mobile/state/journey-input';
 
 describe('journey input helpers', () => {
   it('adds a suggestion without submitting and suppresses an existing term', () => {

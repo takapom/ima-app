@@ -5,10 +5,10 @@ import type {
   PriceInfo,
   PublicCard,
 } from '@ima/contracts';
-import type { AttributionPresentation } from '../../presentation/attribution';
+import type { AttributionPresentation } from '@mobile/presentation/attribution';
 
-export { collectAttributions } from '../../presentation/attribution';
-export type { AttributionPresentation } from '../../presentation/attribution';
+export { collectAttributions } from '@mobile/presentation/attribution';
+export type { AttributionPresentation } from '@mobile/presentation/attribution';
 
 type KnownField<T> = {
   readonly status: 'known';

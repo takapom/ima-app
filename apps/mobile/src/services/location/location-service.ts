@@ -6,7 +6,7 @@ import type {
   LocationAcquireResult,
   LocationService,
   LocationServiceOptions,
-} from './types';
+} from '@mobile/services/location/types';
 
 export const LOCATION_MAX_AGE_MS = 60_000;
 export const LOCATION_TIMEOUT_MS = 5_000;

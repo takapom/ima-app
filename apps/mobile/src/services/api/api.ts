@@ -13,7 +13,7 @@ import type {
   ThreadTurnRequest,
   PublicError,
 } from '@ima/contracts';
-import type { SavedReferenceRefreshResponse } from './saved-reference-refresh';
+import type { SavedReferenceRefreshResponse } from '@mobile/services/api/saved-reference-refresh';
 
 export type ApiMode = 'fixture' | 'live';
 

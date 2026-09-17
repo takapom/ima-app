@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createJourneyHistoryService } from './journey-history';
-import type { ThreadRecord } from './sqlite/types';
+import { createJourneyHistoryService } from '@mobile/services/journey-history';
+import type { ThreadRecord } from '@mobile/services/sqlite/types';
 
 const thread = (overrides: Partial<ThreadRecord> = {}): ThreadRecord => ({
   id: 'thread-a',

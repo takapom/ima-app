@@ -1,13 +1,13 @@
 import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import type { RetentionMetadata } from '@ima/contracts';
-import { createSqliteStore } from './store';
+import { createSqliteStore } from '@mobile/services/sqlite/store';
 import type {
   LocalSavedEntryId,
   ServerSavedPlaceRef,
   SqliteConnection,
   SqliteValue,
-} from './types';
+} from '@mobile/services/sqlite/types';
 
 const asLocal = (value: string): LocalSavedEntryId => value as LocalSavedEntryId;
 const asServer = (value: string): ServerSavedPlaceRef => value as ServerSavedPlaceRef;

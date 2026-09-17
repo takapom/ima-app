@@ -1,13 +1,19 @@
 import type { PublicCard, RetentionMetadata } from '@ima/contracts';
-import type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
+import type {
+  LocalSavedEntryId,
+  ServerSavedPlaceRef,
+} from '@mobile/services/saved-places/saved-place-types';
 import type {
   SavedReferenceDecideResult,
   SavedReferenceScope,
   SavedReferenceSaveResult,
   SavedReferenceService,
-} from './saved-reference-service';
+} from '@mobile/services/saved-places/saved-reference-service';
 
-export type { LocalSavedEntryId, ServerSavedPlaceRef } from './saved-place-types';
+export type {
+  LocalSavedEntryId,
+  ServerSavedPlaceRef,
+} from '@mobile/services/saved-places/saved-place-types';
 
 /**
  * Keep public metadata at the storage boundary so the SQLite adapter can

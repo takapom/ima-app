@@ -1,4 +1,4 @@
-import type { SqliteConnection } from './types';
+import type { SqliteConnection } from '@mobile/services/sqlite/types';
 
 export const SQLITE_SCHEMA_VERSION = 2;
 

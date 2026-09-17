@@ -5,7 +5,7 @@ import {
   preferenceChipLabels,
   type ConditionScope,
   type JourneyConditions,
-} from './journey-input';
+} from '@mobile/state/journey-input';
 
 export type JourneyPhase = 'empty' | 'working' | 'results' | 'decided' | 'error' | 'cancelled';
 export type JourneyRequestState = 'idle' | 'pending' | 'error' | 'cancelled';

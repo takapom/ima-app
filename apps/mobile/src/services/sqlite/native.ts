@@ -1,7 +1,12 @@
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteOpenOptions } from 'expo-sqlite';
-import { createSqliteStore } from './store';
-import type { SqliteConnection, SqliteStore, SqliteStoreOptions, SqliteValue } from './types';
+import { createSqliteStore } from '@mobile/services/sqlite/store';
+import type {
+  SqliteConnection,
+  SqliteStore,
+  SqliteStoreOptions,
+  SqliteValue,
+} from '@mobile/services/sqlite/types';
 
 /** The synchronous subset used by the store; the concrete SDK stays in this adapter. */
 export type NativeSqliteExecuteResult<T> = {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createApiRequestGate, type ApiOperationInput } from './request-gate';
+import {
+  createApiRequestGate,
+  type ApiOperationInput,
+} from '@mobile/services/thread-session/request-gate';
 
 const operation = (overrides: Partial<ApiOperationInput> = {}): ApiOperationInput => ({
   threadId: 'thread-1',

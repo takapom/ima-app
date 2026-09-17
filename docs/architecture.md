@@ -25,6 +25,7 @@ flowchart LR
 | `worker/api`         | HTTP認証・DTO変換、SDK実行、Tool Binding、Provider/Storage Adapter、Bootstrap |
 
 package外からは公開exportsを使う。相対パス、alias、型import、再exportでも境界を迂回しない。
+workspace内部の`src/`参照は`@core/`・`@api/`・`@mobile/`・`@contracts/`を使う。対応先は[共通TypeScript設定](../tsconfig.base.json)を正とし、Vitestもこの定義を読む。workspace間は`@ima/core`・`@ima/contracts`などのpackage名を使い、内部aliasで他packageへ入らない。`src/`外のテスト補助・tooling・設定・assetの参照には相対パスを使う。
 Core内部はApplication→Ports/Domain、Ports→Domainの方向を守る。SDK、直接I/O、環境変数、直接の時計・乱数をCoreへ持ち込まず、必要な値やPortを注入する。
 UIはservices経由でI/Oを行い、stateへネイティブI/Oを混ぜない。
 

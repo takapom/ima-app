@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { EvidenceRef, PublicCard, PublicMessage, RetentionMetadata } from '@ima/contracts';
-import { presentFact } from '../components/candidates/candidate-card-model';
-import { presentDecidedIdentity } from '../components/response/decided-state-model';
-import { createAssistantResponseState } from './assistant-response';
+import { presentFact } from '@mobile/components/candidates/candidate-card-model';
+import { presentDecidedIdentity } from '@mobile/components/response/decided-state-model';
+import { createAssistantResponseState } from '@mobile/state/assistant-response';
 import {
   nextAssistantResponseExpiryAt,
   projectAssistantResponseState,
-} from './assistant-response-projection';
+} from '@mobile/state/assistant-response-projection';
 
 const availableRetention = (displayUntil: string | null): RetentionMetadata => ({
   retentionDecision: 'allow',

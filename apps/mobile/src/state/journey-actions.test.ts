@@ -5,7 +5,7 @@ import {
   reconcileJourneyActionContext,
   selectJourneyCandidateOrder,
   type JourneyActionContext,
-} from './journey-actions';
+} from '@mobile/state/journey-actions';
 
 const context: JourneyActionContext = {
   candidateIds: ['hero', 'alt-1', 'alt-2'],

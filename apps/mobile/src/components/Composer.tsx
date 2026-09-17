@@ -1,8 +1,13 @@
 import { Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MAX_CHIPS, MAX_QUERY_LENGTH, appendSuggestion, uniqueTerms } from '../state/journey-input';
-import { paddingWithSafeArea } from '../theme/safe-area';
-import { colors, radii, scaleForDynamicType, spacing, typography } from '../theme/tokens';
+import {
+  MAX_CHIPS,
+  MAX_QUERY_LENGTH,
+  appendSuggestion,
+  uniqueTerms,
+} from '@mobile/state/journey-input';
+import { paddingWithSafeArea } from '@mobile/theme/safe-area';
+import { colors, radii, scaleForDynamicType, spacing, typography } from '@mobile/theme/tokens';
 
 type ComposerProps = {
   readonly value: string;

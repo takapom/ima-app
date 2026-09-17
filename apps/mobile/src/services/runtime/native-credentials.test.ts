@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ApiCredentialProvider, ApiCredentials } from '../api/api';
+import type { ApiCredentialProvider, ApiCredentials } from '@mobile/services/api/api';
 import {
   createSecureStoreCredentialStore,
   NATIVE_CREDENTIALS_KEY_PREFIX,
@@ -8,7 +8,7 @@ import {
   type NativeCredentialAuthority,
   type NativeCredentialProvider,
   type NativeCredentialStoreClient,
-} from './native-credentials';
+} from '@mobile/services/runtime/native-credentials';
 
 const authority: NativeCredentialAuthority = {
   environment: 'production',

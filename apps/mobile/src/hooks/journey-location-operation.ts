@@ -1,6 +1,6 @@
 import type { LocationSnapshot } from '@ima/contracts';
-import type { JourneyApiSubmitContext } from '../services/thread-session/journey-api-binding';
-import type { LocationService } from '../services/location/types';
+import type { JourneyApiSubmitContext } from '@mobile/services/thread-session/journey-api-binding';
+import type { LocationService } from '@mobile/services/location/types';
 
 export type JourneyLocationPreparation =
   { readonly kind: 'ready'; readonly snapshot: LocationSnapshot } | { readonly kind: 'cancelled' };

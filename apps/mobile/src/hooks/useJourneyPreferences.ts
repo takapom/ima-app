@@ -4,12 +4,12 @@ import {
   type JourneyPreferencesReadResult,
   type JourneyPreferencesSaveResult,
   type JourneyPreferencesService,
-} from '../services/preferences';
+} from '@mobile/services/preferences';
 import {
   createDefaultJourneyConditions,
   type ConditionScope,
   type JourneyConditions,
-} from '../state/journey-input';
+} from '@mobile/state/journey-input';
 
 export type UseJourneyPreferencesOptions = {
   /** Host-composed SQLite-backed settings service. */

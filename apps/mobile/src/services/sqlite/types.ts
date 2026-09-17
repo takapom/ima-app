@@ -1,7 +1,13 @@
 import type { Preferences, RetentionMetadata } from '@ima/contracts';
-import type { LocalSavedEntryId, ServerSavedPlaceRef } from '../saved-places/saved-place-types';
+import type {
+  LocalSavedEntryId,
+  ServerSavedPlaceRef,
+} from '@mobile/services/saved-places/saved-place-types';
 
-export type { LocalSavedEntryId, ServerSavedPlaceRef } from '../saved-places/saved-place-types';
+export type {
+  LocalSavedEntryId,
+  ServerSavedPlaceRef,
+} from '@mobile/services/saved-places/saved-place-types';
 
 export type SqliteValue = string | number | null;
 

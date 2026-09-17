@@ -1,15 +1,15 @@
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import type { EvidenceRef, PublicCard } from '@ima/contracts';
-import type { JourneyPhotoClient } from '../../services/api/photo-client';
-import { usePhotoImage } from '../../hooks/usePhotoImage';
+import type { JourneyPhotoClient } from '@mobile/services/api/photo-client';
+import { usePhotoImage } from '@mobile/hooks/usePhotoImage';
 import {
   isPhotoImageReadyFor,
   type PhotoImageIdentity,
   type PhotoImageState,
-} from '../../state/photo-image-state';
-import { presentFact } from './candidate-card-model';
-import { colors, radii, spacing, typography } from '../../theme/tokens';
+} from '@mobile/state/photo-image-state';
+import { presentFact } from '@mobile/components/candidates/candidate-card-model';
+import { colors, radii, spacing, typography } from '@mobile/theme/tokens';
 
 type PhotoRegionProps = {
   readonly card: PublicCard;

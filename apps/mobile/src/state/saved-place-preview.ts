@@ -1,10 +1,10 @@
 import type { PublicPlaceDetailsData } from '@ima/contracts';
-import type { ApiError } from '../services/api/api';
+import type { ApiError } from '@mobile/services/api/api';
 import type {
   SavedPlaceListItem,
   SavedPlaceListResult,
-} from '../services/saved-places/saved-place-list';
-import type { ServerSavedPlaceRef } from '../services/saved-places/saved-place-types';
+} from '@mobile/services/saved-places/saved-place-list';
+import type { ServerSavedPlaceRef } from '@mobile/services/saved-places/saved-place-types';
 
 export type SavedPlacePreviewPayload = {
   readonly savedPlaceRef: ServerSavedPlaceRef;

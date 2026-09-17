@@ -1,11 +1,14 @@
 import type { PublicCard } from '@ima/contracts';
-import { triggerDecisionHaptics, type DecisionHapticsService } from '../services/journey-haptics';
-import type { JourneyStorageService } from '../services/saved-places/journey-storage';
+import {
+  triggerDecisionHaptics,
+  type DecisionHapticsService,
+} from '@mobile/services/journey-haptics';
+import type { JourneyStorageService } from '@mobile/services/saved-places/journey-storage';
 import {
   canCommitJourneyNotice,
   type JourneyOperationToken,
-} from '../state/journey-operation-gate';
-import type { JourneySaveOperationRegistry } from './journey-save-operation';
+} from '@mobile/state/journey-operation-gate';
+import type { JourneySaveOperationRegistry } from '@mobile/hooks/journey-save-operation';
 
 type DecisionNotice = {
   readonly tone: 'info' | 'success' | 'error';

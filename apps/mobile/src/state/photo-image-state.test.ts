@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PhotoAsset } from '../services/api/photo-client';
+import type { PhotoAsset } from '@mobile/services/api/photo-client';
 import {
   canCommitPhotoResult,
   isPhotoImageReadyFor,
@@ -7,7 +7,7 @@ import {
   shouldExpirePhoto,
   type PhotoImageIdentity,
   type PhotoImageState,
-} from './photo-image-state';
+} from '@mobile/state/photo-image-state';
 
 const asset: PhotoAsset = {
   uri: 'data:image/png;base64,AAEC',

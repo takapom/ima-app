@@ -1,7 +1,11 @@
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createSqliteStore } from './store';
-import type { LocalSavedEntryId, SqliteConnection, SqliteValue } from './types';
+import { createSqliteStore } from '@mobile/services/sqlite/store';
+import type {
+  LocalSavedEntryId,
+  SqliteConnection,
+  SqliteValue,
+} from '@mobile/services/sqlite/types';
 
 const asLocal = (value: string): LocalSavedEntryId => value as LocalSavedEntryId;
 

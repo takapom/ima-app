@@ -1,21 +1,21 @@
-import type { AssistantResponseClock } from '../services/assistant-response-clock';
+import type { AssistantResponseClock } from '@mobile/services/assistant-response-clock';
 import type {
   JourneyApiControllerBinding,
   JourneyApiSubmitContext,
   JourneySavedPlacePreviewBinding,
-} from '../services/thread-session/journey-api-binding';
-import type { JourneyPhotoClient } from '../services/api/photo-client';
-import type { JourneyActionServices } from '../hooks/useJourneyActions';
-import type { WalkingMapDestinationResolver } from '../services/journey-map';
-import type { JourneyPreferencesService } from '../services/preferences';
-import type { JourneyStorageService } from '../services/saved-places/journey-storage';
-import type { JourneySourceLinkService } from '../services/journey-source-link';
-import type { AssistantResponseState } from '../state/assistant-response';
-import type { ConditionScope, JourneyConditions } from '../state/journey-input';
-import type { AssistantResponseProjectionNow } from '../state/assistant-response-projection';
-import type { RecoverIntent } from '../state/journey-actions';
-import type { SavedPlaceItem, SearchHistoryItem } from '../state/journey-shell';
-import type { JourneyRequestStatus } from '../state/journey-phase';
+} from '@mobile/services/thread-session/journey-api-binding';
+import type { JourneyPhotoClient } from '@mobile/services/api/photo-client';
+import type { JourneyActionServices } from '@mobile/hooks/useJourneyActions';
+import type { WalkingMapDestinationResolver } from '@mobile/services/journey-map';
+import type { JourneyPreferencesService } from '@mobile/services/preferences';
+import type { JourneyStorageService } from '@mobile/services/saved-places/journey-storage';
+import type { JourneySourceLinkService } from '@mobile/services/journey-source-link';
+import type { AssistantResponseState } from '@mobile/state/assistant-response';
+import type { ConditionScope, JourneyConditions } from '@mobile/state/journey-input';
+import type { AssistantResponseProjectionNow } from '@mobile/state/assistant-response-projection';
+import type { RecoverIntent } from '@mobile/state/journey-actions';
+import type { SavedPlaceItem, SearchHistoryItem } from '@mobile/state/journey-shell';
+import type { JourneyRequestStatus } from '@mobile/state/journey-phase';
 
 export type JourneySubmitContext = JourneyApiSubmitContext;
 

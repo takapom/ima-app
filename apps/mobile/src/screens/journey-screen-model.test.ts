@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createJourneyActionState, journeyActionReducer } from '../state/journey-actions';
-import { submitContextFor } from './journey-screen-model';
-import { createJourneyApiRequestFactory } from '../services/runtime/mobile-runtime';
-import { createDefaultJourneyConditions } from '../state/journey-input';
+import { createJourneyActionState, journeyActionReducer } from '@mobile/state/journey-actions';
+import { submitContextFor } from '@mobile/screens/journey-screen-model';
+import { createJourneyApiRequestFactory } from '@mobile/services/runtime/mobile-runtime';
+import { createDefaultJourneyConditions } from '@mobile/state/journey-input';
 
 describe('candidate feedback request', () => {
   it('sends the just-skipped candidate and preserves the thread and remaining cards', () => {

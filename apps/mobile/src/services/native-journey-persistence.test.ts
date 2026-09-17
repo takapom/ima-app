@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Preferences } from '@ima/contracts';
-import type { JourneyApiController } from './thread-session/journey-controller-types';
+import type { JourneyApiController } from '@mobile/services/thread-session/journey-controller-types';
 import {
   createNativeJourneyPersistence,
   type NativeJourneyPersistenceScheduler,
   type NativeJourneyPersistenceStorage,
-} from './native-journey-persistence';
-import type { ThreadRecord } from './sqlite/types';
+} from '@mobile/services/native-journey-persistence';
+import type { ThreadRecord } from '@mobile/services/sqlite/types';
 
 const thread = (id: string, expiresAt = '2026-09-10T19:00:00.000Z'): ThreadRecord => ({
   id,

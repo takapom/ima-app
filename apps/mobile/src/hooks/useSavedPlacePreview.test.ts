@@ -3,18 +3,18 @@ import type { PublicPlaceDetailsData, RetentionMetadata } from '@ima/contracts';
 import {
   createSavedPlacePreviewController,
   type SavedPlacePreviewController,
-} from '../services/saved-places/saved-place-preview-controller';
-import { createSavedPlaceListService } from '../services/saved-places/saved-place-list';
-import type { SavedPlaceRecord } from '../services/sqlite/types';
+} from '@mobile/services/saved-places/saved-place-preview-controller';
+import { createSavedPlaceListService } from '@mobile/services/saved-places/saved-place-list';
+import type { SavedPlaceRecord } from '@mobile/services/sqlite/types';
 import type {
   LocalSavedEntryId,
   ServerSavedPlaceRef,
-} from '../services/saved-places/saved-place-types';
+} from '@mobile/services/saved-places/saved-place-types';
 import type {
   SavedReferenceRefreshInput,
   SavedReferenceRefreshResult,
   SavedReferenceService,
-} from '../services/saved-places/saved-reference-service';
+} from '@mobile/services/saved-places/saved-reference-service';
 
 vi.mock('react-native', () => ({
   AppState: {

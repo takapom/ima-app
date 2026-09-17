@@ -1,6 +1,6 @@
 import { AppState } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
-import type { JourneyPhotoClient } from '../services/api/photo-client';
+import type { JourneyPhotoClient } from '@mobile/services/api/photo-client';
 import {
   canCommitPhotoResult,
   initialPhotoImageState,
@@ -8,9 +8,9 @@ import {
   shouldExpirePhoto,
   type PhotoImageIdentity,
   type PhotoImageState,
-} from '../state/photo-image-state';
+} from '@mobile/state/photo-image-state';
 
-export type { PhotoImageState } from '../state/photo-image-state';
+export type { PhotoImageState } from '@mobile/state/photo-image-state';
 
 /** Loads a single server-issued photo handle and forgets it when the route deadline passes. */
 export const usePhotoImage = (

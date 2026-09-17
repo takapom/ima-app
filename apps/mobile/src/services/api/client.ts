@@ -17,7 +17,7 @@ import {
   parseThreadSnapshot,
   type ParseResult,
 } from '@ima/contracts';
-import { parseSavedReferenceRefreshResponse } from './saved-reference-refresh';
+import { parseSavedReferenceRefreshResponse } from '@mobile/services/api/saved-reference-refresh';
 import type {
   ApiClientOptions,
   ApiError,
@@ -25,10 +25,15 @@ import type {
   ApiRequestOptions,
   ApiResult,
   JourneyApiClient,
-} from './api';
-import { runWithinDeadline } from './deadline';
-import { buildApiUrl, credentialHeaders, parseRetryAfter, timeoutFor } from './request-helpers';
-import { issueResult, parserFor, readJson, type ResponseSpec } from './response';
+} from '@mobile/services/api/api';
+import { runWithinDeadline } from '@mobile/services/api/deadline';
+import {
+  buildApiUrl,
+  credentialHeaders,
+  parseRetryAfter,
+  timeoutFor,
+} from '@mobile/services/api/request-helpers';
+import { issueResult, parserFor, readJson, type ResponseSpec } from '@mobile/services/api/response';
 
 type ResponseParser<T> = (input: unknown) => ParseResult<T>;
 export type ApiRequestSpec<T> = ResponseSpec<T> & {

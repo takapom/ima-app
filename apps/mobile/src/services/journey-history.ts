@@ -1,5 +1,5 @@
-import type { SqliteStore, ThreadRecord } from './sqlite/types';
-import { opaqueId } from './sqlite/rows';
+import type { SqliteStore, ThreadRecord } from '@mobile/services/sqlite/types';
+import { opaqueId } from '@mobile/services/sqlite/rows';
 
 /** A history row carries only an opaque thread reference and its observed time. */
 export type JourneyHistoryItem = {

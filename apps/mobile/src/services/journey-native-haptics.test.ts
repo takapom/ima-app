@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createNativeDecisionHapticsService,
   type NativeJourneyHapticsModule,
-} from './journey-native-haptics';
-import { triggerDecisionHaptics } from './journey-haptics';
+} from '@mobile/services/journey-native-haptics';
+import { triggerDecisionHaptics } from '@mobile/services/journey-haptics';
 
 const expoHapticsMock = vi.hoisted(() => {
   const state = {

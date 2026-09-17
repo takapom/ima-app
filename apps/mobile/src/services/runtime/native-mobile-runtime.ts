@@ -1,13 +1,13 @@
 import type { PublicCard, RetentionMetadata } from '@ima/contracts';
-import { createRuntimeId } from '../runtime-id';
-import type { LocalSavedEntryId } from '../saved-places/saved-place-types';
-import type { LocationService, LocationServiceOptions } from '../location/types';
+import { createRuntimeId } from '@mobile/services/runtime-id';
+import type { LocalSavedEntryId } from '@mobile/services/saved-places/saved-place-types';
+import type { LocationService, LocationServiceOptions } from '@mobile/services/location/types';
 import type {
   NativeSqliteAdapter,
   NativeSqliteAdapterOptions,
   NativeSqliteDriver,
-} from '../sqlite/native';
-import type { SqliteStore } from '../sqlite/types';
+} from '@mobile/services/sqlite/native';
+import type { SqliteStore } from '@mobile/services/sqlite/types';
 import {
   createSecureStoreCredentialStore,
   nativeCredentialScopeFor,
@@ -16,7 +16,7 @@ import {
   type NativeCredentialProvider,
   type NativeCredentialScope,
   type NativeCredentialStoreClient,
-} from './native-credentials';
+} from '@mobile/services/runtime/native-credentials';
 import {
   createMobileJourneyRuntime,
   mobileJourneyRuntimeMessage,
@@ -25,14 +25,14 @@ import {
   type MobileJourneyRuntimeReason,
   type MobileRuntimeEnvironment,
   type MobileJourneySavedReferenceOptions,
-} from './mobile-runtime';
-import type { ApiCredentialProvider } from '../api/api';
-import { waitFor, type WaitResult } from './native-runtime-deferred';
+} from '@mobile/services/runtime/mobile-runtime';
+import type { ApiCredentialProvider } from '@mobile/services/api/api';
+import { waitFor, type WaitResult } from '@mobile/services/runtime/native-runtime-deferred';
 import {
   createLocalSessionPersistence,
   createSqliteJourneyLocalRestore,
   type LocalSessionPersistence,
-} from '../thread-session/local-session-persistence';
+} from '@mobile/services/thread-session/local-session-persistence';
 
 export const NATIVE_RUNTIME_INIT_TIMEOUT_MS = 5_000;
 const NATIVE_RUNTIME_TIMEOUT_CAP_MS = 15_000;
@@ -208,7 +208,7 @@ const locationFor = async (
   const loader =
     options.locationLoader ??
     (async (locationOptions: LocationServiceOptions): Promise<LocationService> => {
-      const module = await import('../location/expo-location-adapter');
+      const module = await import('@mobile/services/location/expo-location-adapter');
       return module.createExpoLocationService(locationOptions);
     });
   return waitFor(() => loader(options.locationOptions ?? {}), timeoutMs, signal);
@@ -255,7 +255,7 @@ const sqliteFor = async (
     };
     const adapter =
       sqliteOptions.adapterFactory === undefined
-        ? (await import('../sqlite/native')).createNativeSqliteAdapter(adapterOptions)
+        ? (await import('@mobile/services/sqlite/native')).createNativeSqliteAdapter(adapterOptions)
         : await sqliteOptions.adapterFactory(adapterOptions);
     // A module/SDK can resolve after the shared initialization deadline. Close
     // that handle without running migrations or exposing a store.

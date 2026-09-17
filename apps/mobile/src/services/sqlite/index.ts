@@ -1,4 +1,4 @@
-export { migrateSqlite, SQLITE_SCHEMA_VERSION } from './schema';
+export { migrateSqlite, SQLITE_SCHEMA_VERSION } from '@mobile/services/sqlite/schema';
 export {
   canPersistOwnerScopedReference,
   minimumDeadline,
@@ -7,6 +7,6 @@ export {
   retentionPayloadExpired,
   sessionExpiryAt,
   sessionWindowStartAt,
-} from './retention';
-export { createSqliteStore } from './store';
-export type * from './types';
+} from '@mobile/services/sqlite/retention';
+export { createSqliteStore } from '@mobile/services/sqlite/store';
+export type * from '@mobile/services/sqlite/types';

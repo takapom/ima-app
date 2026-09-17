@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '../../theme/tokens';
+import { colors, spacing, typography } from '@mobile/theme/tokens';
 
 type EmptyStateProps = {
   readonly onExample: (query: string) => void;

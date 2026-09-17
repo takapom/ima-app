@@ -1,10 +1,10 @@
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ConditionEditor } from './conditions/ConditionEditor';
-import { paddingWithSafeArea } from '../theme/safe-area';
-import { colors, radii, spacing, typography } from '../theme/tokens';
-import type { ConditionScope, JourneyConditions } from '../state/journey-input';
-import type { DrawerView, SavedPlaceItem, SearchHistoryItem } from '../state/journey-shell';
+import { ConditionEditor } from '@mobile/components/conditions/ConditionEditor';
+import { paddingWithSafeArea } from '@mobile/theme/safe-area';
+import { colors, radii, spacing, typography } from '@mobile/theme/tokens';
+import type { ConditionScope, JourneyConditions } from '@mobile/state/journey-input';
+import type { DrawerView, SavedPlaceItem, SearchHistoryItem } from '@mobile/state/journey-shell';
 
 type DrawerProps = {
   readonly open: boolean;

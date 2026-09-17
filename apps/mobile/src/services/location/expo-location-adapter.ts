@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
-import { createLocationService } from './location-service';
-import type { LocationService, LocationServiceOptions } from './types';
+import { createLocationService } from '@mobile/services/location/location-service';
+import type { LocationService, LocationServiceOptions } from '@mobile/services/location/types';
 
 /**
  * Builds the one-shot foreground adapter. This factory does not request

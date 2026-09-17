@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveJourneyPhase } from './journey-phase';
+import { resolveJourneyPhase } from '@mobile/state/journey-phase';
 
 describe('journey phase projection', () => {
   it('keeps decided as a render phase only while its selected card exists', () => {

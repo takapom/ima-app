@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scaleForDynamicType } from './tokens';
+import { scaleForDynamicType } from '@mobile/theme/tokens';
 
 describe('mobile dynamic type layout helpers', () => {
   it('keeps normal metrics at or below the default font scale', () => {

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { RetentionMetadata } from '@ima/contracts';
 import { REQUEST_ID_HEADER } from '@ima/contracts';
-import { createJourneyApiClient } from './client';
+import { createJourneyApiClient } from '@mobile/services/api/client';
 import {
   parseSavedReferenceRefreshResponse,
   type SavedReferenceRefreshResponse,
-} from './saved-reference-refresh';
-import type { ApiClientOptions, ApiFetch } from './api';
+} from '@mobile/services/api/saved-reference-refresh';
+import type { ApiClientOptions, ApiFetch } from '@mobile/services/api/api';
 
 const ownerCredential = `${'A'.repeat(42)}A`;
 const savedPlaceRef = 'saved-ref-1';

@@ -3,7 +3,7 @@ import {
   advanceAssistantResponseNow,
   createMonotonicAssistantResponseClock,
   subscribeToAssistantResponseResume,
-} from './assistant-response-clock';
+} from '@mobile/services/assistant-response-clock';
 
 describe('assistant response clock', () => {
   it('does not move the production projection clock backward', () => {

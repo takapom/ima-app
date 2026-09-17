@@ -6,8 +6,8 @@ import {
   isValidStorageScope,
   type NativeSqliteDatabase,
   type NativeSqliteDriver,
-} from './native';
-import type { LocalSavedEntryId, SqliteValue } from './types';
+} from '@mobile/services/sqlite/native';
+import type { LocalSavedEntryId, SqliteValue } from '@mobile/services/sqlite/types';
 
 vi.mock('expo-sqlite', () => ({
   openDatabaseSync: () => {

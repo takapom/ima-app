@@ -1,5 +1,9 @@
-import { iso } from './rows';
-import type { SqliteConnection, SqliteClock, SqliteStoreOptions } from './types';
+import { iso } from '@mobile/services/sqlite/rows';
+import type {
+  SqliteConnection,
+  SqliteClock,
+  SqliteStoreOptions,
+} from '@mobile/services/sqlite/types';
 
 export const currentIso = (clock: SqliteClock): string => {
   const value = iso(clock.now());

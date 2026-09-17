@@ -1,5 +1,5 @@
 import type { PublicMessage } from '@ima/contracts';
-import type { AssistantMessageRecord, CardSetDisplayState } from '../../state/assistant-response';
+import type { AssistantMessageRecord, CardSetDisplayState } from '@mobile/state/assistant-response';
 
 export type MessageCardSetRelation = 'current' | 'past' | 'none';
 

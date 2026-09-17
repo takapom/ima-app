@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
-import type { JourneyPhotoClient } from '../../services/api/photo-client';
-import { collectAttributions } from '../../presentation/attribution';
-import type { AttributionPresentation } from '../../presentation/attribution';
+import type { JourneyPhotoClient } from '@mobile/services/api/photo-client';
+import { collectAttributions } from '@mobile/presentation/attribution';
+import type { AttributionPresentation } from '@mobile/presentation/attribution';
 import {
   collectPhotoAttributions,
   presentCardFacts,
@@ -10,9 +10,9 @@ import {
   presentFact,
   shouldShowPhotoRegion,
   type FactPresentation,
-} from './candidate-card-model';
-import { PhotoRegion } from './PhotoRegion';
-import { colors, radii, scaleForDynamicType, spacing, typography } from '../../theme/tokens';
+} from '@mobile/components/candidates/candidate-card-model';
+import { PhotoRegion } from '@mobile/components/candidates/PhotoRegion';
+import { colors, radii, scaleForDynamicType, spacing, typography } from '@mobile/theme/tokens';
 
 type CandidateCardProps = {
   readonly card: PublicCard;

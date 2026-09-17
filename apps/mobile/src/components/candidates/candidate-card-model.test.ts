@@ -8,7 +8,7 @@ import {
   presentEvidenceText,
   presentFact,
   shouldShowPhotoRegion,
-} from './candidate-card-model';
+} from '@mobile/components/candidates/candidate-card-model';
 
 const retention = {
   retentionDecision: 'deny' as const,

@@ -1,5 +1,5 @@
 import type { PublicCard } from '@ima/contracts';
-import { prepareSourceLink } from './journey-source-link';
+import { prepareSourceLink } from '@mobile/services/journey-source-link';
 
 export type WalkingMapDestination = {
   readonly latitude: number;

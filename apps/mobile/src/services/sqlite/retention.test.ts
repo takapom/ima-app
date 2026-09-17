@@ -8,7 +8,7 @@ import {
   retentionPayloadExpired,
   sessionExpiryAt,
   sessionWindowStartAt,
-} from './retention';
+} from '@mobile/services/sqlite/retention';
 
 const full = (overrides: Partial<RetentionMetadata> = {}): RetentionMetadata => ({
   retentionDecision: 'allow',

@@ -1,15 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import type { PublicCard } from '@ima/contracts';
-import { triggerDecisionHaptics, type DecisionHapticsService } from './journey-haptics';
-import { buildAppleWalkingMapUrl } from './journey-map';
+import {
+  triggerDecisionHaptics,
+  type DecisionHapticsService,
+} from '@mobile/services/journey-haptics';
+import { buildAppleWalkingMapUrl } from '@mobile/services/journey-map';
 import {
   prepareJourneyShare,
   shareJourneyCandidate,
   type JourneyShareService,
-} from './journey-share';
-import { saveJourneyCandidate, type JourneyStorageService } from './saved-places/journey-storage';
-import { journeyShareInputFor } from './journey-share-input';
-import type { LocalSavedEntryId } from './saved-places/saved-place-types';
+} from '@mobile/services/journey-share';
+import {
+  saveJourneyCandidate,
+  type JourneyStorageService,
+} from '@mobile/services/saved-places/journey-storage';
+import { journeyShareInputFor } from '@mobile/services/journey-share-input';
+import type { LocalSavedEntryId } from '@mobile/services/saved-places/saved-place-types';
 
 const retention = {
   retentionDecision: 'deny' as const,

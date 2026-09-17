@@ -1,6 +1,6 @@
-import type { SavedPlacePreviewPayload } from '../../state/saved-place-preview';
-import type { SavedPlaceListItem } from './saved-place-list';
-import { retentionDisplayExpired } from '../sqlite/retention';
+import type { SavedPlacePreviewPayload } from '@mobile/state/saved-place-preview';
+import type { SavedPlaceListItem } from '@mobile/services/saved-places/saved-place-list';
+import { retentionDisplayExpired } from '@mobile/services/sqlite/retention';
 
 export type SavedPlacePreviewExpiry =
   | {

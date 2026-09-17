@@ -5,13 +5,13 @@ import type {
   SearchRequest,
   ThreadTurnRequest,
 } from '@ima/contracts';
-import type { JourneyConditions } from '../../state/journey-input';
-import type { LocationService } from '../location/types';
-import type { JourneyApiController } from './journey-controller-types';
-import type { JourneyPhotoClient } from '../api/photo-client';
-import type { JourneyStorageService } from '../saved-places/journey-storage';
-import type { SavedPlaceListService } from '../saved-places/saved-place-list';
-import type { SavedReferenceService } from '../saved-places/saved-reference-service';
+import type { JourneyConditions } from '@mobile/state/journey-input';
+import type { LocationService } from '@mobile/services/location/types';
+import type { JourneyApiController } from '@mobile/services/thread-session/journey-controller-types';
+import type { JourneyPhotoClient } from '@mobile/services/api/photo-client';
+import type { JourneyStorageService } from '@mobile/services/saved-places/journey-storage';
+import type { SavedPlaceListService } from '@mobile/services/saved-places/saved-place-list';
+import type { SavedReferenceService } from '@mobile/services/saved-places/saved-reference-service';
 
 export type JourneySavedPlacePreviewBinding = {
   /** The same owner-scoped SQLite projection used by the runtime save adapter. */

@@ -4,22 +4,22 @@ import {
   createNativeJourneyMapService,
   createNativeJourneyShareService,
   createNativeJourneySourceLinkService,
-} from '../services/journey-native';
-import type { DecisionHapticsService } from '../services/journey-haptics';
-import { createNativeDecisionHapticsService } from '../services/journey-native-haptics';
-import type { JourneyMapOpenResult, JourneyMapService } from '../services/journey-map';
+} from '@mobile/services/journey-native';
+import type { DecisionHapticsService } from '@mobile/services/journey-haptics';
+import { createNativeDecisionHapticsService } from '@mobile/services/journey-native-haptics';
+import type { JourneyMapOpenResult, JourneyMapService } from '@mobile/services/journey-map';
 import {
   createUnavailableJourneyStorageService,
   saveJourneyCandidate,
   type JourneyStorageService,
-} from '../services/saved-places/journey-storage';
+} from '@mobile/services/saved-places/journey-storage';
 import {
   prepareJourneyShare,
   shareJourneyCandidate,
   type JourneyShareService,
-} from '../services/journey-share';
-import type { JourneySourceLinkService } from '../services/journey-source-link';
-import { journeyShareInputFor } from '../services/journey-share-input';
+} from '@mobile/services/journey-share';
+import type { JourneySourceLinkService } from '@mobile/services/journey-source-link';
+import { journeyShareInputFor } from '@mobile/services/journey-share-input';
 import {
   createJourneyActionState,
   journeyActionReducer,
@@ -30,15 +30,15 @@ import {
   type JourneyActionContext,
   type JourneyActionState,
   type RecoverIntent,
-} from '../state/journey-actions';
-import type { AssistantResponseState } from '../state/assistant-response';
+} from '@mobile/state/journey-actions';
+import type { AssistantResponseState } from '@mobile/state/assistant-response';
 import {
   canCommitJourneyNotice,
   canCommitJourneyOperation,
   type JourneyOperationToken,
-} from '../state/journey-operation-gate';
-import { createJourneySaveOperationRegistry } from './journey-save-operation';
-import { persistJourneyDecision } from './persist-journey-decision';
+} from '@mobile/state/journey-operation-gate';
+import { createJourneySaveOperationRegistry } from '@mobile/hooks/journey-save-operation';
+import { persistJourneyDecision } from '@mobile/hooks/persist-journey-decision';
 export type JourneyActionServices = {
   readonly map: JourneyMapService;
   readonly share: JourneyShareService;

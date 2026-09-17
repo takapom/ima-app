@@ -1,17 +1,20 @@
-import type { ResponseResumeSubscription } from './assistant-response-clock';
-import { subscribeToAssistantResponseResume } from './assistant-response-clock';
+import type { ResponseResumeSubscription } from '@mobile/services/assistant-response-clock';
+import { subscribeToAssistantResponseResume } from '@mobile/services/assistant-response-clock';
 import {
   createJourneyHistoryService,
   type JourneyHistoryItem,
   type JourneyHistoryResult,
   type JourneyHistoryService,
-} from './journey-history';
-import type { OwnerPrefsClient } from './api/owner-client';
-import type { JourneyApiController } from './thread-session/journey-controller-types';
-import { createOwnerPrefsProjection } from './owner-prefs-projection';
-import { createJourneyPreferencesService, type JourneyPreferencesService } from './preferences';
-import { createRuntimeId } from './runtime-id';
-import type { SqliteStore } from './sqlite/types';
+} from '@mobile/services/journey-history';
+import type { OwnerPrefsClient } from '@mobile/services/api/owner-client';
+import type { JourneyApiController } from '@mobile/services/thread-session/journey-controller-types';
+import { createOwnerPrefsProjection } from '@mobile/services/owner-prefs-projection';
+import {
+  createJourneyPreferencesService,
+  type JourneyPreferencesService,
+} from '@mobile/services/preferences';
+import { createRuntimeId } from '@mobile/services/runtime-id';
+import type { SqliteStore } from '@mobile/services/sqlite/types';
 
 export type NativeJourneyPersistenceScheduler = {
   readonly schedule: (callback: () => void, delayMilliseconds: number) => unknown;

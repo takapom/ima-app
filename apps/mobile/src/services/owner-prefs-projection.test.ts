@@ -1,18 +1,18 @@
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Preferences, PrefsReadResponse, PrefsWriteResponse } from '@ima/contracts';
-import type { OwnerPrefsClient } from './api/owner-client';
-import type { ApiResult } from './api/api';
-import { createOwnerPrefsProjection } from './owner-prefs-projection';
-import { createSqliteStore } from './sqlite/store';
+import type { OwnerPrefsClient } from '@mobile/services/api/owner-client';
+import type { ApiResult } from '@mobile/services/api/api';
+import { createOwnerPrefsProjection } from '@mobile/services/owner-prefs-projection';
+import { createSqliteStore } from '@mobile/services/sqlite/store';
 import type {
   LocalSavedEntryId,
   ServerSavedPlaceRef,
   SqliteConnection,
   SqliteStore,
   SqliteValue,
-} from './sqlite/types';
-import type { JourneyConditions } from '../state/journey-input';
+} from '@mobile/services/sqlite/types';
+import type { JourneyConditions } from '@mobile/state/journey-input';
 
 const conditions: JourneyConditions = {
   stationLabel: '恵比寿',

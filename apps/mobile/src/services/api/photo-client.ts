@@ -1,8 +1,19 @@
 import { REQUEST_ID_HEADER, parsePublicError, parsePhotoPath } from '@ima/contracts';
-import { runWithinDeadline } from './deadline';
-import { buildApiUrl, credentialHeaders, parseRetryAfter, timeoutFor } from './request-helpers';
-import { issueResult, readJson } from './response';
-import type { ApiClientOptions, ApiError, ApiFetch, ApiRequestOptions, ApiSuccess } from './api';
+import { runWithinDeadline } from '@mobile/services/api/deadline';
+import {
+  buildApiUrl,
+  credentialHeaders,
+  parseRetryAfter,
+  timeoutFor,
+} from '@mobile/services/api/request-helpers';
+import { issueResult, readJson } from '@mobile/services/api/response';
+import type {
+  ApiClientOptions,
+  ApiError,
+  ApiFetch,
+  ApiRequestOptions,
+  ApiSuccess,
+} from '@mobile/services/api/api';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;

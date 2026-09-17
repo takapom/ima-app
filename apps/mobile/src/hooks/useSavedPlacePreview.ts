@@ -1,14 +1,14 @@
 import { AppState } from 'react-native';
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import type { JourneySavedPlacePreviewBinding } from '../services/thread-session/journey-api-binding';
-import { subscribeToAssistantResponseResume } from '../services/assistant-response-clock';
-import { createSavedPlacePreviewController } from '../services/saved-places/saved-place-preview-controller';
+import type { JourneySavedPlacePreviewBinding } from '@mobile/services/thread-session/journey-api-binding';
+import { subscribeToAssistantResponseResume } from '@mobile/services/assistant-response-clock';
+import { createSavedPlacePreviewController } from '@mobile/services/saved-places/saved-place-preview-controller';
 import {
   savedPlaceConsultationRefFor,
   savedPlaceItemsFor,
-} from '../presentation/saved-place-preview-view';
-import type { SavedPlaceItem } from '../state/journey-shell';
-import type { SavedPlacePreviewState } from '../state/saved-place-preview';
+} from '@mobile/presentation/saved-place-preview-view';
+import type { SavedPlaceItem } from '@mobile/state/journey-shell';
+import type { SavedPlacePreviewState } from '@mobile/state/saved-place-preview';
 
 export type SavedPlacePreviewUi = {
   readonly connected: boolean;

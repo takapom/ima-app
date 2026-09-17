@@ -6,7 +6,7 @@ import {
   createAssistantResponseState,
   selectAssistantMessageRecords,
   selectAssistantMessages,
-} from './assistant-response';
+} from '@mobile/state/assistant-response';
 const initialState = createAssistantResponseState('thread-1');
 
 const message = {

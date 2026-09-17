@@ -7,15 +7,15 @@ import type {
   ThreadReadResponse,
   ThreadTurnRequest,
 } from '@ima/contracts';
-import type { AssistantResponseState } from '../../state/assistant-response';
+import type { AssistantResponseState } from '@mobile/state/assistant-response';
 import type {
   ApiError,
   ApiRequestOptions,
   ApiResult,
   JourneyApiClient,
   LifecycleResponse,
-} from '../api/api';
-import type { ApiOperationToken } from './request-gate';
+} from '@mobile/services/api/api';
+import type { ApiOperationToken } from '@mobile/services/thread-session/request-gate';
 
 export type JourneyLocalSnapshot = {
   readonly threadId: string;

@@ -3,8 +3,8 @@ import type {
   SavedPlaceRecord,
   SnapshotRecord,
   SqlitePreferences,
-} from './types';
-import { MAX_STATION_LABEL_LENGTH } from '../../state/journey-input';
+} from '@mobile/services/sqlite/types';
+import { MAX_STATION_LABEL_LENGTH } from '@mobile/state/journey-input';
 
 export const isStationLabel = (value: unknown): value is string =>
   typeof value === 'string' && value.length <= MAX_STATION_LABEL_LENGTH;

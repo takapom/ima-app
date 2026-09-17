@@ -1,7 +1,7 @@
 import { parseSavedReferencePath } from '@ima/contracts';
-import { createMonotonicAssistantResponseClock } from '../assistant-response-clock';
-import type { SavedPlaceRecord, SqliteStore } from '../sqlite/types';
-import type { ServerSavedPlaceRef } from './saved-place-types';
+import { createMonotonicAssistantResponseClock } from '@mobile/services/assistant-response-clock';
+import type { SavedPlaceRecord, SqliteStore } from '@mobile/services/sqlite/types';
+import type { ServerSavedPlaceRef } from '@mobile/services/saved-places/saved-place-types';
 
 export type SavedPlaceListItem = {
   /** Local identity is only used to connect a row to the injected SQLite store. */

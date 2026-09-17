@@ -1,24 +1,24 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { CreateThreadResponse, LocationSnapshot, SearchResponse } from '@ima/contracts';
-import type { JourneyApiControllerState } from '../services/thread-session/journey-controller';
+import type { JourneyApiControllerState } from '@mobile/services/thread-session/journey-controller';
 import type {
   JourneyApiControllerBinding,
   JourneyApiSubmitContext,
-} from '../services/thread-session/journey-api-binding';
-import type { ApiError, ApiResult, LifecycleResponse } from '../services/api/api';
+} from '@mobile/services/thread-session/journey-api-binding';
+import type { ApiError, ApiResult, LifecycleResponse } from '@mobile/services/api/api';
 import {
   awaitRetryIfCurrent,
   retryCreatedThreadThenSearchIfCurrent,
   restoreThenReadIfCurrent,
   releaseJourneyApiController,
   submissionScopeMatches,
-} from './journey-api-operation-flow';
+} from '@mobile/hooks/journey-api-operation-flow';
 import {
   locationDraftScopeMatches,
   prepareJourneyLocation,
   unavailableJourneyLocation,
   type JourneyLocationDraft,
-} from './journey-location-operation';
+} from '@mobile/hooks/journey-location-operation';
 
 export type {
   JourneyApiCancelFactoryInput,
@@ -28,7 +28,7 @@ export type {
   JourneyApiSubmitContext,
   JourneyApiTurnFactoryInput,
   JourneySavedPlacePreviewBinding,
-} from '../services/thread-session/journey-api-binding';
+} from '@mobile/services/thread-session/journey-api-binding';
 
 export {
   awaitRetryIfCurrent,
@@ -37,7 +37,7 @@ export {
   releaseJourneyApiController,
   restoreThenReadIfCurrent,
   submissionScopeMatches,
-} from './journey-api-operation-flow';
+} from '@mobile/hooks/journey-api-operation-flow';
 
 export type JourneyApiRequestStatus = 'idle' | 'pending' | 'error' | 'cancelled';
 

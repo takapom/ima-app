@@ -1,5 +1,5 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { colors, radii, spacing, typography } from '../../theme/tokens';
+import { colors, radii, spacing, typography } from '@mobile/theme/tokens';
 
 type WorkingStateProps = {
   readonly query: string;

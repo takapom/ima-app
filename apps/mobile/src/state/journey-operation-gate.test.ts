@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { canCommitJourneyNotice, canCommitJourneyOperation } from './journey-operation-gate';
+import {
+  canCommitJourneyNotice,
+  canCommitJourneyOperation,
+} from '@mobile/state/journey-operation-gate';
 
 describe('journey operation gate', () => {
   it('keeps state results for the same response context', () => {

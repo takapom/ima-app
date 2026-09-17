@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { paddingWithSafeArea } from '../theme/safe-area';
-import { colors, radii, spacing, typography } from '../theme/tokens';
+import { paddingWithSafeArea } from '@mobile/theme/safe-area';
+import { colors, radii, spacing, typography } from '@mobile/theme/tokens';
 
 type AppBarProps = {
   readonly onMenu: () => void;

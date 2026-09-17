@@ -1,3 +1,4 @@
+import { message } from '@mobile/services/thread-session/tests/journey-controller-fixtures';
 import { describe, expect, it, vi } from 'vitest';
 import type {
   AssistantMessageResponse,
@@ -6,33 +7,21 @@ import type {
   LifecycleCommand,
   LocationSnapshot,
   Preferences,
-  PublicMessage,
   SearchRequest,
   SearchResponse,
   ThreadReadResponse,
   ThreadTurnRequest,
 } from '@ima/contracts';
-import { createJourneyApiController, type JourneyLocalSnapshot } from './journey-controller';
-import type { ApiRequestOptions, ApiResult, JourneyApiClient, LifecycleResponse } from '../api/api';
-const message = {
-  text: '候補を確認しました',
-  evidenceIds: [],
-  evidence: [],
-  basis: 'conversational',
-  retention: {
-    retentionDecision: 'deny',
-    retentionMode: 'session_only',
-    sessionExpiresAt: '2026-09-10T13:00:00Z',
-    freshUntil: '2026-09-10T13:00:00Z',
-    displayUntil: '2026-09-10T13:00:00Z',
-    retentionUntil: null,
-    deletionScheduledAt: null,
-    attribution: null,
-    restoreMode: 'reference_only',
-    policyStatus: 'policy_withheld',
-    displayPolicyStatus: 'available',
-  },
-} as PublicMessage;
+import {
+  createJourneyApiController,
+  type JourneyLocalSnapshot,
+} from '@mobile/services/thread-session/journey-controller';
+import type {
+  ApiRequestOptions,
+  ApiResult,
+  JourneyApiClient,
+  LifecycleResponse,
+} from '@mobile/services/api/api';
 const response = (threadId: string, turnId: string, responseId: string, revision: number) =>
   ({
     schemaVersion: 'v1',
