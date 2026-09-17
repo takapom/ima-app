@@ -7,13 +7,13 @@ import {
   OpaqueIdSchema,
   RevisionSchema,
   SchemaVersionSchema,
-} from './common';
+} from '@contracts/common';
 import {
   AttributionSchema,
   DisplayFieldSchema,
   PublicEvidenceTextSchema,
   RetentionMetadataSchema,
-} from './public';
+} from '@contracts/public';
 
 const timestamp = '2026-09-09T12:00:00Z';
 

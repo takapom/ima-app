@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { SearchRequestSchema } from './preferences';
+import { SearchRequestSchema } from '@contracts/preferences';
 
 const baseRequest = {
   schemaVersion: 'v1',

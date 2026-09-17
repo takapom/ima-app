@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { RegistryScopeSchema, type RegistryScope } from '../domain/freshness';
+import { RegistryScopeSchema, type RegistryScope } from '@core/domain/freshness';
 import {
   CandidateIdSchema,
   NonNegativeSafeIntegerSchema,
@@ -9,7 +9,7 @@ import {
   RevisionSchema,
   SchemaVersionSchema,
   Text,
-} from '../domain/primitives';
+} from '@core/domain/primitives';
 
 export const CommitReferencesSchema = v.strictObject({
   candidateIds: v.pipe(

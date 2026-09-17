@@ -5,7 +5,7 @@ import {
   IsoTimestampSchema,
   OpaqueIdSchema,
   Text,
-} from './common';
+} from '@contracts/common';
 
 const RestoreModeSchema = v.picklist(['full', 'reference_only', 'unavailable']);
 const PolicyStatusSchema = v.picklist([

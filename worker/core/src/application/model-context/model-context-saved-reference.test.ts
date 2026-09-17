@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ModelContextError, projectModelContext } from './model-context';
+import {
+  ModelContextError,
+  projectModelContext,
+} from '@core/application/model-context/model-context';
 
 const harness = {
   threadId: 'thread-saved',

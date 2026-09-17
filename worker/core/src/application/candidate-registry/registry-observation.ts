@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { AnyObservationSchema } from '../../domain/evidence';
+import { AnyObservationSchema } from '@core/domain/evidence';
 import {
   contextKeyForObservation,
   matchesObservationContext,
@@ -7,7 +7,7 @@ import {
   ObservationContextSchema,
   RegistryScopeSchema,
   type RegistryScope,
-} from '../../domain/freshness';
+} from '@core/domain/freshness';
 import {
   RegistryError,
   type CandidateRecord,
@@ -15,9 +15,9 @@ import {
   type ReadonlyStoredObservation,
   type RegistryJsonValue,
   type StoredObservation,
-} from '../../domain/registry';
-import { RetentionMetadataSchema } from '../../domain/retention';
-import { IsoTimestampSchema, OpaqueIdSchema, type CandidateId } from '../../domain/primitives';
+} from '@core/domain/registry';
+import { RetentionMetadataSchema } from '@core/domain/retention';
+import { IsoTimestampSchema, OpaqueIdSchema, type CandidateId } from '@core/domain/primitives';
 
 export type ObservationPreparationDependencies = {
   readonly candidateFor: (candidateId: CandidateId) => Readonly<CandidateRecord> | undefined;

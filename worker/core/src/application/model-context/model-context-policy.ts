@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import type { DetailField } from '../../domain/primitives';
+import type { DetailField } from '@core/domain/primitives';
 
 /** A decision is scoped to one model-context use; unknown never grants access. */
 export const ModelContextFieldDecisionSchema = v.picklist(['allow', 'deny', 'unknown']);

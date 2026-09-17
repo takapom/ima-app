@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { DirectedWalkingRouteInputSchema } from './walking-route';
+import { DirectedWalkingRouteInputSchema } from '@core/ports/walking-route';
 
 const point = (lat: number, lng: number) => ({ lat, lng });
 

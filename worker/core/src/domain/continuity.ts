@@ -6,9 +6,9 @@ import {
   SavedPlaceRefSchema,
   SafeIntegerSchema,
   Text,
-} from './primitives';
-import type { CandidateId, CardSetId, OpaqueId } from './primitives';
-import { RegistryScopeSchema, type RegistryScope } from './freshness';
+} from '@core/domain/primitives';
+import type { CandidateId, CardSetId, OpaqueId } from '@core/domain/primitives';
+import { RegistryScopeSchema, type RegistryScope } from '@core/domain/freshness';
 
 /** A saved reference contains only an owner-scoped provider identity, never provider payload. */
 export const SavedPlaceRegistrationSchema = v.strictObject({

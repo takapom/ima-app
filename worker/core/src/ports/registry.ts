@@ -6,9 +6,9 @@ import type {
   ObservationReuseResult,
   ReadonlyStoredObservation,
   StoredObservation,
-} from '../domain/registry';
-import type { RegistryScope } from '../domain/freshness';
-import type { CandidateId, ObservationId } from '../domain/primitives';
+} from '@core/domain/registry';
+import type { RegistryScope } from '@core/domain/freshness';
+import type { CandidateId, ObservationId } from '@core/domain/primitives';
 
 export type ObservationReplacement = {
   /** The new immutable observation to publish after the expected observations are checked. */

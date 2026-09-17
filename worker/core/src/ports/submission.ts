@@ -6,9 +6,9 @@ import {
   RevisionSchema,
   SafeIntegerSchema,
   Text,
-} from '../domain/primitives';
-import type { CancellationToken, ToolExecutionContext } from './context';
-import { SubmitCardsInputSchema } from './model';
+} from '@core/domain/primitives';
+import type { CancellationToken, ToolExecutionContext } from '@core/ports/context';
+import { SubmitCardsInputSchema } from '@core/ports/model';
 
 export const SubmitCardsPortInputSchema = SubmitCardsInputSchema;
 export type SubmitCardsPortInput = v.InferOutput<typeof SubmitCardsPortInputSchema>;

@@ -4,7 +4,7 @@ import {
   JourneyRecordSchema,
   JourneyServiceDateContextSchema,
   weekdayForCalendarDate,
-} from './journey';
+} from '@core/domain/journey';
 
 const source = {
   provider: 'fixture',

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as v from 'valibot';
-import { PublicErrorSchema } from './errors';
+import { PublicErrorSchema } from '@contracts/errors';
 
 const base = {
   schemaVersion: 'v1',

@@ -6,7 +6,7 @@ import {
   RequestIdSchema,
   SchemaVersionSchema,
   Text,
-} from './common';
+} from '@contracts/common';
 
 export const PreferencesSchema = v.strictObject({
   homeStationRef: v.nullable(OpaqueIdSchema),

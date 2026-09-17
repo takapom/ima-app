@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { JourneyRecord } from '../../domain/journey';
-import { calculateJourneyTiming } from './journey-calculation';
+import type { JourneyRecord } from '@core/domain/journey';
+import { calculateJourneyTiming } from '@core/application/travel/journey-calculation';
 
 const journey: JourneyRecord = {
   journeyRef: 'journey-1',

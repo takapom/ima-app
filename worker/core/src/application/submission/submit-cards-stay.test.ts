@@ -1,9 +1,9 @@
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { OpeningHoursSchema } from '../../domain/place-values';
-import { makeFixture, now } from './tests/submit-cards-fixtures';
-import { minimumStayIssue, openIntervalAt } from './submit-cards-stay';
-import { resolveObservation } from './submit-cards-evidence';
+import { OpeningHoursSchema } from '@core/domain/place-values';
+import { makeFixture, now } from '@core/application/submission/tests/submit-cards-fixtures';
+import { minimumStayIssue, openIntervalAt } from '@core/application/submission/submit-cards-stay';
+import { resolveObservation } from '@core/application/submission/submit-cards-evidence';
 
 const openEndedHours = {
   timeZone: 'UTC',

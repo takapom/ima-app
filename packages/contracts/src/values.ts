@@ -8,8 +8,8 @@ import {
   OpaqueIdSchema,
   RevisionSchema,
   Text,
-} from './common';
-import { DisplayFieldSchema, PublicEvidenceTextSchema } from './public';
+} from '@contracts/common';
+import { DisplayFieldSchema, PublicEvidenceTextSchema } from '@contracts/public';
 
 const PublicWarningSchema = v.strictObject({
   code: Text(80),

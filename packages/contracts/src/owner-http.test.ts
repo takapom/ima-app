@@ -9,7 +9,7 @@ import {
   parsePlaceDecideResponse,
   parseSavedReferenceListRequest,
   parseSavedReferenceListResponse,
-} from './owner-http';
+} from '@contracts/owner-http';
 
 const prefs = {
   homeStationRef: 'station-shibuya',

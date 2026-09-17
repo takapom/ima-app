@@ -1,6 +1,11 @@
 import * as v from 'valibot';
-import { OpaqueIdSchema, RequestIdSchema, RevisionSchema, SchemaVersionSchema } from './common';
-import type { ParseResult } from './response';
+import {
+  OpaqueIdSchema,
+  RequestIdSchema,
+  RevisionSchema,
+  SchemaVersionSchema,
+} from '@contracts/common';
+import type { ParseResult } from '@contracts/response';
 
 export const SavedReferencePathSchema = v.strictObject({
   savedPlaceRef: OpaqueIdSchema,

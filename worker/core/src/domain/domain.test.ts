@@ -17,7 +17,7 @@ import {
   RetentionMetadataSchema,
   RevisionSchema,
   TurnConstraintsSchema,
-} from './index';
+} from '@core/domain/index';
 
 const timestamp = '2026-09-09T12:00:00Z';
 const allowRetention = (overrides: Record<string, unknown> = {}) => ({

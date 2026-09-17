@@ -3,7 +3,7 @@ import {
   WALKING_LOCATION_MAX_AGE_MS,
   distanceBetweenWalkingCoordinatesMeters,
   validateWalkingLocation,
-} from './walking-route-policy';
+} from '@core/application/travel/walking-route-policy';
 
 const now = '2026-09-10T09:00:00.000Z';
 const originCoordinates = { lat: 35.6595, lng: 139.7005 };

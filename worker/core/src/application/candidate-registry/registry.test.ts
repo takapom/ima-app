@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { CandidateObservationRegistry } from './registry';
-import type { ClockPort, RegistryIdPort } from '../../ports/context';
+import { CandidateObservationRegistry } from '@core/application/candidate-registry/registry';
+import type { ClockPort, RegistryIdPort } from '@core/ports/context';
 import {
   contextKeyForObservation,
   type ObservationContext,
   type RegistryScope,
-} from '../../domain/freshness';
+} from '@core/domain/freshness';
 import {
   RegistryError,
   type CandidateRegistration,
   type ObservationRegistration,
-} from '../../domain/registry';
-import type { RetentionMetadata } from '../../domain/retention';
+} from '@core/domain/registry';
+import type { RetentionMetadata } from '@core/domain/retention';
 
 class FixedClock implements ClockPort {
   constructor(private value: string) {}

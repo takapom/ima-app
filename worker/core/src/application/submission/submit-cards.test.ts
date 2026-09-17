@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateMessage, validateSubmitCards } from './submit-cards';
+import { validateMessage, validateSubmitCards } from '@core/application/submission/submit-cards';
 import {
   addObservation,
   makeFixture,
@@ -7,7 +7,7 @@ import {
   makeSelection,
   now,
   type EvidenceIds,
-} from './tests/submit-cards-fixtures';
+} from '@core/application/submission/tests/submit-cards-fixtures';
 
 const idsFor = (
   fixture: ReturnType<typeof makeFixture>,

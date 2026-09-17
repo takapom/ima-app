@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { JourneyRecord, JourneyServiceDateContext } from '../../domain/journey';
+import type { JourneyRecord, JourneyServiceDateContext } from '@core/domain/journey';
 import {
   classifyJourneyForServiceDate,
   validateJourneyForServiceDate,
   validateJourneyRecord,
-} from './journey-validation';
+} from '@core/application/travel/journey-validation';
 
 const source = {
   provider: 'fixture',

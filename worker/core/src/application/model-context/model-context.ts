@@ -4,7 +4,7 @@ import {
   CardSetRecordSchema,
   type CandidateStatus,
   type CardSetRecord,
-} from '../../domain';
+} from '@core/domain';
 import {
   CandidateIdSchema,
   ObservationIdSchema,
@@ -12,23 +12,26 @@ import {
   SavedPlaceRefSchema,
   Text,
   TurnIdSchema,
-} from '../../domain/primitives';
-import type { HarnessContext } from '../../ports/context';
-import { HarnessContextSchema } from '../../ports/context';
-import { TurnConditionValuesSchema, type TurnConditionValues } from '../turn-constraints';
-import { ModelContextError } from './model-context-errors';
+} from '@core/domain/primitives';
+import type { HarnessContext } from '@core/ports/context';
+import { HarnessContextSchema } from '@core/ports/context';
+import {
+  TurnConditionValuesSchema,
+  type TurnConditionValues,
+} from '@core/application/turn-constraints';
+import { ModelContextError } from '@core/application/model-context/model-context-errors';
 import {
   ModelEvidenceSourceSchema,
   projectModelEvidenceForLlmInput,
   type ModelEvidence,
-} from './model-evidence';
+} from '@core/application/model-context/model-evidence';
 import {
   denyModelContextFieldPolicy,
   ModelContextFieldPolicySchema,
   modelContextFieldAllowed,
   modelEvidenceFieldDecision,
-} from './model-context-policy';
-import type { ModelContextFieldPolicy } from './model-context-policy';
+} from '@core/application/model-context/model-context-policy';
+import type { ModelContextFieldPolicy } from '@core/application/model-context/model-context-policy';
 
 export {
   evaluateModelEvidenceAvailability,
@@ -36,23 +39,26 @@ export {
   ModelEvidenceSourceSchema,
   projectModelEvidence,
   projectModelEvidenceForLlmInput,
-} from './model-evidence';
+} from '@core/application/model-context/model-evidence';
 export type {
   ModelEvidenceAvailability,
   ModelEvidenceAvailabilityInput,
   ModelEvidence,
   ModelEvidenceSource,
-} from './model-evidence';
+} from '@core/application/model-context/model-evidence';
 export {
   denyModelContextFieldPolicy,
   ModelContextFieldDecisionSchema,
   ModelContextFieldPolicySchema,
   modelContextFieldAllowed,
   modelEvidenceFieldDecision,
-} from './model-context-policy';
-export type { ModelContextFieldDecision, ModelContextFieldPolicy } from './model-context-policy';
-export { ModelContextError } from './model-context-errors';
-export type { ModelContextErrorCode } from './model-context-errors';
+} from '@core/application/model-context/model-context-policy';
+export type {
+  ModelContextFieldDecision,
+  ModelContextFieldPolicy,
+} from '@core/application/model-context/model-context-policy';
+export { ModelContextError } from '@core/application/model-context/model-context-errors';
+export type { ModelContextErrorCode } from '@core/application/model-context/model-context-errors';
 
 const EvidenceIdsSchema = v.pipe(
   v.array(ObservationIdSchema),

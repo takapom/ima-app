@@ -4,8 +4,8 @@ import {
   TurnConstraintsSchema,
   type ModelActionMetadata,
   type TurnConstraints,
-} from '../domain/constraints';
-import { OpaqueIdSchema, SafeIntegerSchema, Text, TurnIdSchema } from '../domain/primitives';
+} from '@core/domain/constraints';
+import { OpaqueIdSchema, SafeIntegerSchema, Text, TurnIdSchema } from '@core/domain/primitives';
 
 const ConstraintMinutesSchema = v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(180));
 

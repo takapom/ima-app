@@ -9,20 +9,20 @@ import {
   RequestHeadersSchema,
   RouteContracts,
   ThreadReadResponseSchema,
-} from './http';
+} from '@contracts/http';
 import {
   CreateThreadResponseSchema,
   EventPayloadSchema,
   LocationSnapshotSchema,
   SearchRequestSchema,
   ThreadTurnRequestSchema,
-} from './preferences';
-import { DisplayFieldSchema } from './public';
+} from '@contracts/preferences';
+import { DisplayFieldSchema } from '@contracts/public';
 import {
   AssistantMessageResponseSchema,
   PhotoResponseDescriptorSchema,
   SearchResponseSchema,
-} from './response';
+} from '@contracts/response';
 import {
   CardsDataSchema,
   LastTrainInfoSchema,
@@ -33,9 +33,9 @@ import {
   PriceRangeSchema,
   PublicPlaceDetailsDataSchema,
   WalkingRouteSchema,
-} from './values';
+} from '@contracts/values';
 
-import { card, identity, message, searchRequest, timestamp } from './tests/dto-fixtures';
+import { card, identity, message, searchRequest, timestamp } from '@contracts/tests/dto-fixtures';
 
 describe('public display and HTTP DTOs', () => {
   it('requires renderable card facts and evidence', () => {

@@ -8,14 +8,14 @@ import {
   matchesDetailsRequest,
   SearchPlacesInputSchema,
   SearchPlacesOutputSchema,
-} from './operations';
-import { ModelDecisionSchema, ModelRequestSchema, SubmitCardsInputSchema } from './model';
+} from '@core/ports/operations';
+import { ModelDecisionSchema, ModelRequestSchema, SubmitCardsInputSchema } from '@core/ports/model';
 import {
   SubmitCardsCommittedSchema,
   SubmitCardsPortInputSchema,
   SubmitCardsPortResultSchema,
-} from './submission';
-import { LocationContextSchema, ToolExecutionContextSchema } from './context';
+} from '@core/ports/submission';
+import { LocationContextSchema, ToolExecutionContextSchema } from '@core/ports/context';
 
 const modelContext = {
   threadId: 'thread-1',

@@ -5,9 +5,9 @@ import {
   RevisionSchema,
   SchemaVersionSchema,
   Text,
-} from './common';
-import { PublicEvidenceTextSchema } from './public';
-import { CardsDataSchema } from './values';
+} from '@contracts/common';
+import { PublicEvidenceTextSchema } from '@contracts/public';
+import { CardsDataSchema } from '@contracts/values';
 
 export const PublicMessageSchema = PublicEvidenceTextSchema(300);
 export type PublicMessage = v.InferOutput<typeof PublicMessageSchema>;

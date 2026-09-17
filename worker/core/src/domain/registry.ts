@@ -1,9 +1,9 @@
 import * as v from 'valibot';
-import type { Observation, SourceRef } from './evidence';
-import type { ObservationContext, RegistryScope } from './freshness';
-import type { RetentionMetadata } from './retention';
-import { OpaqueIdSchema, Text } from './primitives';
-import type { CandidateId, IsoTimestamp, ObservationId, OpaqueId } from './primitives';
+import type { Observation, SourceRef } from '@core/domain/evidence';
+import type { ObservationContext, RegistryScope } from '@core/domain/freshness';
+import type { RetentionMetadata } from '@core/domain/retention';
+import { OpaqueIdSchema, Text } from '@core/domain/primitives';
+import type { CandidateId, IsoTimestamp, ObservationId, OpaqueId } from '@core/domain/primitives';
 
 export const CandidateStatusSchema = v.picklist([
   'operational',

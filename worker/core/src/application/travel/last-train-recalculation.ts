@@ -1,9 +1,9 @@
 import * as v from 'valibot';
-import { JOURNEY_EXIT_BUFFER_SECONDS } from '../../domain/journey';
-import { LastTrainInfoSchema, type LastTrainInfo } from '../../domain/place-values';
-import { IsoTimestampSchema, SafeIntegerSchema } from '../../domain/primitives';
-import type { Issue } from '../../domain/issue';
-import type { Result } from '../../domain/result';
+import { JOURNEY_EXIT_BUFFER_SECONDS } from '@core/domain/journey';
+import { LastTrainInfoSchema, type LastTrainInfo } from '@core/domain/place-values';
+import { IsoTimestampSchema, SafeIntegerSchema } from '@core/domain/primitives';
+import type { Issue } from '@core/domain/issue';
+import type { Result } from '@core/domain/result';
 
 const MAX_DATE_MILLISECONDS = 8_640_000_000_000_000;
 

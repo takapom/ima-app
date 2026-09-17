@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { HttpsUrlSchema, IsoTimestampSchema, Text } from './primitives';
+import { HttpsUrlSchema, IsoTimestampSchema, Text } from '@core/domain/primitives';
 
 export const AttributionSchema = v.strictObject({
   label: Text(160),

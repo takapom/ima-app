@@ -10,10 +10,10 @@ import {
   SavedPlaceRefSchema,
   SafeIntegerSchema,
   Text,
-} from '../domain';
-import { FieldResultSchema } from '../domain/result';
-import type { Result } from '../domain/result';
-import type { SourceRef } from '../domain/evidence';
+} from '@core/domain';
+import { FieldResultSchema } from '@core/domain/result';
+import type { Result } from '@core/domain/result';
+import type { SourceRef } from '@core/domain/evidence';
 import {
   LastTrainInfoSchema,
   OpeningHoursSchema,
@@ -23,10 +23,10 @@ import {
   ContactInfoSchema,
   FacilitiesInfoSchema,
   WalkingRouteSchema,
-} from '../domain/place-values';
-import type { IsoTimestamp } from '../domain/primitives';
-import type { LastTrainInfo, WalkingRoute } from '../domain/place-values';
-import type { CancellationToken, HarnessContext, ToolExecutionContext } from './context';
+} from '@core/domain/place-values';
+import type { IsoTimestamp } from '@core/domain/primitives';
+import type { LastTrainInfo, WalkingRoute } from '@core/domain/place-values';
+import type { CancellationToken, HarnessContext, ToolExecutionContext } from '@core/ports/context';
 
 const CurrentLocationAreaSchema = v.strictObject({
   kind: v.literal('current_location'),

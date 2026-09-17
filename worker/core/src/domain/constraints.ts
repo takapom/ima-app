@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { TurnIdSchema, OpaqueIdSchema, SafeIntegerSchema, Text } from './primitives';
+import { TurnIdSchema, OpaqueIdSchema, SafeIntegerSchema, Text } from '@core/domain/primitives';
 
 const PositiveMinutesSchema = v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(180));
 

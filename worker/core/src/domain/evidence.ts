@@ -5,9 +5,13 @@ import {
   IsoTimestampSchema,
   ObservationIdSchema,
   Text,
-} from './primitives';
-import { ObservationContextSchema } from './freshness';
-import { AttributionSchema, RetentionMetadataSchema, retentionDoesNotExceed } from './retention';
+} from '@core/domain/primitives';
+import { ObservationContextSchema } from '@core/domain/freshness';
+import {
+  AttributionSchema,
+  RetentionMetadataSchema,
+  retentionDoesNotExceed,
+} from '@core/domain/retention';
 
 export const SourceRefSchema = v.strictObject({
   provider: Text(80),

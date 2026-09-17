@@ -6,46 +6,50 @@ import {
   RevisionSchema,
   SchemaVersionSchema,
   Text,
-} from './common';
+} from '@contracts/common';
 import {
   CreateThreadRequestSchema,
   CreateThreadResponseSchema,
   EventsRequestSchema,
   SearchRequestSchema,
   ThreadTurnRequestSchema,
-} from './preferences';
-import { PublicErrorSchema } from './errors';
-import type { PublicError } from './errors';
-import { PublicCandidateRefSchema } from './public';
-import { PublicPlaceDetailsDataSchema } from './values';
+} from '@contracts/preferences';
+import { PublicErrorSchema } from '@contracts/errors';
+import type { PublicError } from '@contracts/errors';
+import { PublicCandidateRefSchema } from '@contracts/public';
+import { PublicPlaceDetailsDataSchema } from '@contracts/values';
 import {
   AssistantCardsResponseSchema,
   AssistantMessageResponseSchema,
   PhotoResponseDescriptorSchema,
   SearchResponseSchema,
-} from './response';
-import type { AssistantCardsResponse, AssistantMessageResponse, ParseResult } from './response';
-import type { CreateThreadResponse } from './preferences';
-import type { CreateThreadRequest, SearchRequest, ThreadTurnRequest } from './preferences';
-import type { RetentionMetadata } from './public';
-import { OwnerHttpRouteContracts } from './owner-http';
+} from '@contracts/response';
+import type {
+  AssistantCardsResponse,
+  AssistantMessageResponse,
+  ParseResult,
+} from '@contracts/response';
+import type { CreateThreadResponse } from '@contracts/preferences';
+import type { CreateThreadRequest, SearchRequest, ThreadTurnRequest } from '@contracts/preferences';
+import type { RetentionMetadata } from '@contracts/public';
+import { OwnerHttpRouteContracts } from '@contracts/owner-http';
 import {
   SavedReferenceCreateRequestSchema,
   SavedReferenceCreateResponseSchema,
   SavedReferenceDeleteRequestSchema,
   SavedReferencePathSchema,
-} from './saved-reference-http';
+} from '@contracts/saved-reference-http';
 export {
   SavedReferenceCreateRequestSchema,
   SavedReferenceCreateResponseSchema,
   SavedReferenceDeleteRequestSchema,
   SavedReferencePathSchema,
-} from './saved-reference-http';
+} from '@contracts/saved-reference-http';
 export type {
   SavedReferenceCreateRequest,
   SavedReferenceCreateResponse,
   SavedReferenceDeleteRequest,
-} from './saved-reference-http';
+} from '@contracts/saved-reference-http';
 
 export const APP_TOKEN_HEADER = 'X-App-Token' as const;
 export const DEVICE_ID_HEADER = 'X-Device-Id' as const;

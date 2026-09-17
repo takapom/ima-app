@@ -4,7 +4,7 @@ import {
   TurnConstraintError,
   validateModelActionMetadata,
   validateTurnConstraintsProposal,
-} from './turn-constraints';
+} from '@core/application/turn-constraints';
 
 const context = {
   threadId: 'thread-1',

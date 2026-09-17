@@ -1,3 +1,3 @@
-export * from './application';
-export * from './domain';
-export * from './ports';
+export * from '@core/application';
+export * from '@core/domain';
+export * from '@core/ports';

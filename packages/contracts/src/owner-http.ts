@@ -5,13 +5,13 @@ import {
   RequestIdSchema,
   RevisionSchema,
   SchemaVersionSchema,
-} from './common';
-import { PreferencesSchema } from './preferences';
-import type { ParseResult } from './response';
+} from '@contracts/common';
+import { PreferencesSchema } from '@contracts/preferences';
+import type { ParseResult } from '@contracts/response';
 import {
   SavedReferenceCreateRequestSchema,
   type SavedReferenceCreateRequest,
-} from './saved-reference-http';
+} from '@contracts/saved-reference-http';
 
 /** Owner prefs start at revision 0 because nothing may be stored yet. */
 export const OwnerPrefsRevisionSchema = v.union([v.literal(0), RevisionSchema]);

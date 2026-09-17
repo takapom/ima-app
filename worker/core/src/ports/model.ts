@@ -1,9 +1,9 @@
 import * as v from 'valibot';
-import { EvidenceTextSchema } from '../domain/evidence';
-import { ModelActionMetadataSchema } from '../domain/constraints';
-import { CandidateIdSchema, ObservationIdSchema, Text } from '../domain/primitives';
-import { ModelContextSchema } from './context';
-import { ModelGetPlaceDetailsInputSchema, SearchPlacesInputSchema } from './operations';
+import { EvidenceTextSchema } from '@core/domain/evidence';
+import { ModelActionMetadataSchema } from '@core/domain/constraints';
+import { CandidateIdSchema, ObservationIdSchema, Text } from '@core/domain/primitives';
+import { ModelContextSchema } from '@core/ports/context';
+import { ModelGetPlaceDetailsInputSchema, SearchPlacesInputSchema } from '@core/ports/operations';
 
 const EvidenceIdsSchema = v.pipe(
   v.array(ObservationIdSchema),

@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { OpeningHoursSchema } from './values';
+import { OpeningHoursSchema } from '@contracts/values';
 
 describe('public opening-hours intervals', () => {
   it('allows an open-ended provider interval without inventing a close', () => {

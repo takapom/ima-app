@@ -8,10 +8,10 @@ import {
   OpaqueIdSchema,
   RevisionSchema,
   Text,
-} from '../domain/primitives';
-import type { WalkingRoute } from '../domain/place-values';
-import type { Result } from '../domain/result';
-import type { CancellationToken, HarnessContext, ToolExecutionContext } from './context';
+} from '@core/domain/primitives';
+import type { WalkingRoute } from '@core/domain/place-values';
+import type { Result } from '@core/domain/result';
+import type { CancellationToken, HarnessContext, ToolExecutionContext } from '@core/ports/context';
 
 export const WalkingCoordinatesSchema = v.strictObject({
   lat: v.pipe(FiniteNumberSchema, v.minValue(-90), v.maxValue(90)),

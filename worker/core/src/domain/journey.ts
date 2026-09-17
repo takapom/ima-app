@@ -1,7 +1,7 @@
 import * as v from 'valibot';
-import { CalendarDateSchema, IsoTimestampSchema, OpaqueIdSchema } from './primitives';
-import { SourceRefSchema } from './evidence';
-import { LastTrainTransferSchema } from './place-values';
+import { CalendarDateSchema, IsoTimestampSchema, OpaqueIdSchema } from '@core/domain/primitives';
+import { SourceRefSchema } from '@core/domain/evidence';
+import { LastTrainTransferSchema } from '@core/domain/place-values';
 
 export const JourneyWeekdaySchema = v.picklist([
   'monday',

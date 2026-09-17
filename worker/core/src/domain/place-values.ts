@@ -10,7 +10,7 @@ import {
   RevisionSchema,
   SafeIntegerSchema,
   Text,
-} from './primitives';
+} from '@core/domain/primitives';
 
 export const PlaceIdentitySchema = v.strictObject({
   name: Text(160),

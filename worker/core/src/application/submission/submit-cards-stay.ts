@@ -1,11 +1,11 @@
-import { OpeningHoursSchema, type OpeningHours } from '../../domain/place-values';
+import { OpeningHoursSchema, type OpeningHours } from '@core/domain/place-values';
 import {
   issue,
   parseObservationValue,
   type KnownObservationField,
   type ResolvedObservation,
   type SubmitValidationIssue,
-} from './submit-cards-evidence';
+} from '@core/application/submission/submit-cards-evidence';
 
 /** Round elapsed milliseconds down so sub-second input never overstates available stay. */
 export const elapsedSecondsFloor = (endMilliseconds: number, startMilliseconds: number): number =>

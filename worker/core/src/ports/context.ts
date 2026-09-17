@@ -10,8 +10,8 @@ import {
   SafeIntegerSchema,
   Text,
   TurnIdSchema,
-} from '../domain/primitives';
-import type { CandidateIdSchema } from '../domain/primitives';
+} from '@core/domain/primitives';
+import type { CandidateIdSchema } from '@core/domain/primitives';
 
 const LocationCoordinatesSchema = v.strictObject({
   lat: v.pipe(FiniteNumberSchema, v.minValue(-90), v.maxValue(90)),

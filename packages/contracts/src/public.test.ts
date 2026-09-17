@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { EvidenceRefSchema, parseRetentionMetadata } from './public';
+import { EvidenceRefSchema, parseRetentionMetadata } from '@contracts/public';
 
 const allowed = {
   retentionDecision: 'allow',

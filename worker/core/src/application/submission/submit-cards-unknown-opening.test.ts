@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { validateSubmitCards } from './submit-cards';
+import { validateSubmitCards } from '@core/application/submission/submit-cards';
 import {
   addObservation,
   makeFixture,
   makeInput,
   makeSelection,
   now,
-} from './tests/submit-cards-fixtures';
+} from '@core/application/submission/tests/submit-cards-fixtures';
 
 const fixtureFor = (
   listedOpenAtEvaluation: boolean | null = null,

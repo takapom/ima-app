@@ -5,7 +5,7 @@ import {
   SafeIntegerSchema,
   Text,
   ThreadIdSchema,
-} from './primitives';
+} from '@core/domain/primitives';
 
 export const LocationRevisionSchema = v.pipe(SafeIntegerSchema, v.minValue(0));
 export type LocationRevision = v.InferOutput<typeof LocationRevisionSchema>;

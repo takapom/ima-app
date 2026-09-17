@@ -4,7 +4,7 @@ import {
   WalkingRouteSchema,
   type LastTrainInfo,
   type WalkingRoute,
-} from '../../domain/place-values';
+} from '@core/domain/place-values';
 import {
   issue,
   parseObservationValue,
@@ -12,9 +12,9 @@ import {
   type ResolvedObservation,
   type SubmitValidationContext,
   type SubmitValidationIssue,
-} from './submit-cards-evidence';
-import { minimumStayIssue, openIntervalAt } from './submit-cards-stay';
-import { recalculateLastTrainAtArrival } from '../travel/last-train-recalculation';
+} from '@core/application/submission/submit-cards-evidence';
+import { minimumStayIssue, openIntervalAt } from '@core/application/submission/submit-cards-stay';
+import { recalculateLastTrainAtArrival } from '@core/application/travel/last-train-recalculation';
 
 const MAX_DATE_MILLISECONDS = 8_640_000_000_000_000;
 

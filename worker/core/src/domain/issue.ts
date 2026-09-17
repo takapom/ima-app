@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { NonNegativeSafeIntegerSchema, Text } from './primitives';
+import { NonNegativeSafeIntegerSchema, Text } from '@core/domain/primitives';
 
 export const IssueCodeSchema = v.picklist([
   'INVALID_ARGUMENT',

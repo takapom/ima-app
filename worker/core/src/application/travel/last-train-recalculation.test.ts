@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { LastTrainInfo } from '../../domain/place-values';
-import { recalculateLastTrainAtArrival } from './last-train-recalculation';
+import type { LastTrainInfo } from '@core/domain/place-values';
+import { recalculateLastTrainAtArrival } from '@core/application/travel/last-train-recalculation';
 
 const info: LastTrainInfo = {
   serviceDate: '2026-09-10',

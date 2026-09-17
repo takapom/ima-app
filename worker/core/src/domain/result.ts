@@ -1,7 +1,7 @@
 import * as v from 'valibot';
-import { ObservationSchema } from './evidence';
-import { IssueSchema } from './issue';
-import { Text } from './primitives';
+import { ObservationSchema } from '@core/domain/evidence';
+import { IssueSchema } from '@core/domain/issue';
+import { Text } from '@core/domain/primitives';
 
 export const FieldResultSchema = <T extends v.GenericSchema>(value: T) =>
   v.variant('status', [
