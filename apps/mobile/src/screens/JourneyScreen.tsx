@@ -369,6 +369,7 @@ function JourneyScreenStateOwner({
           {phase === 'results' ? (
             <ResultsState
               cards={renderedResponse.cards}
+              {...(now === undefined ? {} : { now })}
               cardSetId={renderedResponse.cardSetId}
               cardSetDisplay={renderedResponse.cardSetDisplay}
               messageRecords={renderedMessageRecords}

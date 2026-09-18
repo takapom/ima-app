@@ -9,12 +9,14 @@ import {
   type PhotoImageState,
 } from '@mobile/state/photo-image-state';
 import { presentFact } from '@mobile/components/candidates/candidate-card-model';
-import { colors, radii, spacing, typography } from '@mobile/theme/tokens';
+import { colors, spacing, typography } from '@mobile/theme/tokens';
 
 type PhotoRegionProps = {
   readonly card: PublicCard;
   readonly client?: JourneyPhotoClient;
   readonly compact?: boolean;
+  /** Edge length of the compact thumbnail; callers size it to their own row. */
+  readonly compactSize?: number;
 };
 
 const photoDeadline = (evidence: readonly EvidenceRef[]): string | null => {
@@ -53,12 +55,14 @@ function PhotoSlide({
   client,
   compact,
   width,
+  size,
 }: {
   readonly token: string;
   readonly displayUntil: string | null;
   readonly client?: JourneyPhotoClient;
   readonly compact: boolean;
   readonly width: number;
+  readonly size: number;
 }): React.JSX.Element {
   const state = usePhotoImage(client, token, displayUntil);
   const [imageFailed, setImageFailed] = useState(false);
@@ -72,12 +76,20 @@ function PhotoSlide({
         onError={() => setImageFailed(true)}
         resizeMode="cover"
         source={{ uri: state.asset.uri }}
-        style={[compact ? styles.compactImage : styles.heroImage, { width }]}
+        style={[
+          compact ? styles.compactImage : styles.heroImage,
+          compact ? { height: size, width: size } : { width },
+        ]}
       />
     );
   }
   return (
-    <View style={compact ? styles.compactUnavailable : styles.heroUnavailable}>
+    <View
+      style={[
+        compact ? styles.compactUnavailable : styles.heroUnavailable,
+        compact ? { height: size, width: size } : null,
+      ]}
+    >
       <Text style={styles.unavailableText}>
         {imageFailed ? '写真を表示できません' : statusText(state)}
       </Text>
@@ -90,9 +102,10 @@ export function PhotoRegion({
   card,
   client,
   compact = false,
+  compactSize = 56,
 }: PhotoRegionProps): React.JSX.Element {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [viewportWidth, setViewportWidth] = useState(compact ? 56 : 0);
+  const [viewportWidth, setViewportWidth] = useState(compact ? compactSize : 0);
   const scrollRef = useRef<ScrollView>(null);
   const field = card.facts.photos;
   const presentation = presentFact(field, (value) => String(value.photos.length));
@@ -107,7 +120,12 @@ export function PhotoRegion({
   }, [card.candidateId, photoCount, photoKey]);
   if (field === undefined || presentation.status !== 'known' || field.status !== 'known') {
     return (
-      <View style={compact ? styles.compactPlaceholder : styles.heroPlaceholder}>
+      <View
+        style={[
+          compact ? styles.compactPlaceholder : styles.heroPlaceholder,
+          compact ? { height: compactSize, width: compactSize } : null,
+        ]}
+      >
         <Text style={styles.placeholderText}>
           {presentation.status === 'expired' ? '写真は表示期限を過ぎています' : presentation.label}
         </Text>
@@ -116,15 +134,25 @@ export function PhotoRegion({
   }
   if (field.value.photos.length === 0) {
     return (
-      <View style={compact ? styles.compactPlaceholder : styles.heroPlaceholder}>
+      <View
+        style={[
+          compact ? styles.compactPlaceholder : styles.heroPlaceholder,
+          compact ? { height: compactSize, width: compactSize } : null,
+        ]}
+      >
         <Text style={styles.placeholderText}>写真なし</Text>
       </View>
     );
   }
   const displayUntil = photoDeadline(presentation.evidence);
-  const pageWidth = compact ? 56 : viewportWidth;
+  const pageWidth = compact ? compactSize : viewportWidth;
   return (
-    <View style={compact ? styles.compactRegion : styles.heroRegion}>
+    <View
+      style={[
+        compact ? styles.compactRegion : styles.heroRegion,
+        compact ? { height: compactSize, width: compactSize } : null,
+      ]}
+    >
       <ScrollView
         accessibilityLabel="候補の写真"
         contentContainerStyle={styles.scrollContent}
@@ -149,12 +177,18 @@ export function PhotoRegion({
               <PhotoSlide
                 compact={compact}
                 displayUntil={displayUntil}
+                size={compactSize}
                 width={pageWidth}
                 token={photo.photoToken}
                 {...(client === undefined ? {} : { client })}
               />
             ) : (
-              <View style={compact ? styles.compactPlaceholder : styles.heroUnavailable}>
+              <View
+                style={[
+                  compact ? styles.compactPlaceholder : styles.heroUnavailable,
+                  compact ? { height: compactSize, width: compactSize } : null,
+                ]}
+              >
                 <Text style={styles.placeholderText}>写真</Text>
               </View>
             )}
@@ -172,7 +206,8 @@ const styles = StyleSheet.create({
   heroRegion: {
     ...StyleSheet.absoluteFill,
     backgroundColor: '#222224',
-    borderRadius: radii.card,
+    // The card clips its own corners; rounding here would notch the photo
+    // where it meets the body below it.
     overflow: 'hidden',
   },
   heroImage: {

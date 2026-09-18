@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EvidenceRef, PublicCard } from '@ima/contracts';
+import { dedupeAttributions } from '@mobile/presentation/attribution';
 import {
   collectAttributions,
   collectPhotoAttributions,
@@ -183,6 +184,19 @@ describe('candidate card model', () => {
     expect(collectAttributions([facts.price.evidence, text.evidence])).toEqual([
       { label: '価格情報', sourceLink: 'https://example.com/price-1' },
     ]);
+  });
+
+  it('drops a source already credited by another collector', () => {
+    // The card concatenates field attributions with photo attributions; Hot Pepper credits
+    // both, and two identical entries collide on the React key used to render them.
+    const provider = { label: 'ホットペッパー グルメ', sourceLink: 'https://example.com/shop-1' };
+    expect(dedupeAttributions([provider, { ...provider }])).toEqual([provider]);
+  });
+
+  it('keeps the same label when it points at a different source', () => {
+    const first = { label: 'ホットペッパー グルメ', sourceLink: 'https://example.com/shop-1' };
+    const second = { label: 'ホットペッパー グルメ', sourceLink: 'https://example.com/shop-2' };
+    expect(dedupeAttributions([first, second])).toEqual([first, second]);
   });
 
   it('prefers all public source credits when an evidence item has plural attributions', () => {

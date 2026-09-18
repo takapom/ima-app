@@ -1,22 +1,36 @@
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
 import type { JourneyPhotoClient } from '@mobile/services/api/photo-client';
-import { collectAttributions } from '@mobile/presentation/attribution';
+import { collectAttributions, dedupeAttributions } from '@mobile/presentation/attribution';
 import type { AttributionPresentation } from '@mobile/presentation/attribution';
 import {
+  cardRenderNow,
+  toCardViewModel,
+  type CardOpening,
+  type CardViewModel,
+} from '@mobile/presentation/candidate-card-view';
+import {
   collectPhotoAttributions,
-  presentCardFacts,
-  presentEvidenceText,
   presentFact,
-  shouldShowPhotoRegion,
-  type FactPresentation,
 } from '@mobile/components/candidates/candidate-card-model';
+import {
+  AmenityChips,
+  Chevron,
+  HoursLine,
+  MetaLine,
+  PhotoScrim,
+  StatusPill,
+} from '@mobile/components/candidates/CandidateCardParts';
 import { PhotoRegion } from '@mobile/components/candidates/PhotoRegion';
-import { colors, radii, scaleForDynamicType, spacing, typography } from '@mobile/theme/tokens';
+import { colors, spacing, typography } from '@mobile/theme/tokens';
+
+const ALT_THUMBNAIL = 76;
 
 type CandidateCardProps = {
   readonly card: PublicCard;
   readonly primary: boolean;
+  /** Injected render time; the countdown is resolved here, never baked in upstream. */
+  readonly now?: string;
   readonly onChoose?: (candidateId: string) => void;
   readonly onDecide?: (candidateId: string) => void;
   readonly onSave?: (card: PublicCard) => void;
@@ -25,35 +39,38 @@ type CandidateCardProps = {
   readonly photoClient?: JourneyPhotoClient;
 };
 
-const cardIdentity = (card: PublicCard) => {
-  const field = card.facts.identity;
-  return field.status === 'known' && presentFact(field, (value) => value.name).status === 'known'
-    ? field.value
-    : null;
-};
+/** Photo attribution repeats the provider the other fields already cite; key on unique sources. */
+const cardAttributions = (card: PublicCard): readonly AttributionPresentation[] =>
+  dedupeAttributions([
+    ...collectAttributions([
+      presentFact(card.facts.identity, (value) => value.name).evidence,
+      presentFact(card.facts.opening_hours, () => '').evidence,
+      presentFact(card.facts.price, () => '').evidence,
+      presentFact(card.facts.facilities, () => '').evidence,
+      presentFact(card.facts.walking_route, () => '').evidence,
+    ]),
+    ...collectPhotoAttributions(card),
+  ]);
 
-const walkingMinutes = (card: PublicCard): string => {
-  const fact = card.facts.walking_route;
-  if (
-    fact?.status !== 'known' ||
-    presentFact(fact, (value) => String(value.durationSeconds)).status !== 'known'
-  ) {
-    return '徒歩情報なし';
+/** One-line opening summary for the quieter alternative rows. */
+const openingSummary = (opening: CardOpening): string | null => {
+  switch (opening.kind) {
+    case 'none':
+      return null;
+    case 'listed':
+      return opening.text;
+    case 'closed':
+      return opening.reopensAtLabel === null ? '本日は終了' : `${opening.reopensAtLabel}から`;
+    case 'open':
+    case 'closing':
+      return `${opening.closesAtLabel}まで`;
   }
-  return `徒歩${Math.max(1, Math.round(fact.value.durationSeconds / 60))}分`;
-};
-
-const metaLabel = (card: PublicCard): string => {
-  const identity = cardIdentity(card);
-  const values = [identity?.area ?? '', identity?.category ?? '', walkingMinutes(card)].filter(
-    (value) => value !== '徒歩情報なし' && value.length > 0,
-  );
-  return values.join(' · ');
 };
 
 export function CandidateCard({
   card,
   primary,
+  now,
   onChoose,
   onDecide,
   onSave,
@@ -61,160 +78,155 @@ export function CandidateCard({
   onSourcePress,
   photoClient,
 }: CandidateCardProps): React.JSX.Element {
-  const { fontScale } = useWindowDimensions();
-  const identity = cardIdentity(card);
-  const name = identity?.name ?? '候補';
-  const facts = presentCardFacts(card);
-  const showPhotoRegion = shouldShowPhotoRegion(card);
-  const why = presentEvidenceText(card.why);
-  const diff = card.diff === undefined ? null : presentEvidenceText(card.diff);
-  const identityEvidence = presentFact(card.facts.identity, (value) => value.name).evidence;
-  const walkingEvidence = presentFact(card.facts.walking_route, (value) =>
-    String(value.durationSeconds),
-  ).evidence;
-  const attributions = [
-    ...collectAttributions([
-      identityEvidence,
-      walkingEvidence,
-      facts.openingHours.evidence,
-      facts.price.evidence,
-      facts.lastTrain.evidence,
-      why.evidence,
-      ...(diff === null ? [] : [diff.evidence]),
-    ]),
-    ...collectPhotoAttributions(card),
-  ];
-  const choose = (): void => onChoose?.(card.candidateId);
-  const decide = (): void => onDecide?.(card.candidateId);
+  const view = toCardViewModel(card, cardRenderNow(now));
+  const attributions = cardAttributions(card);
 
   if (!primary) {
     return (
-      <Pressable
-        accessibilityLabel={`${name}を主提案にする`}
-        accessibilityRole="button"
-        disabled={onChoose === undefined}
-        onPress={choose}
-        style={({ pressed }) => [styles.alternative, pressed && styles.pressed]}
-      >
-        {showPhotoRegion ? (
-          <View
-            style={[
-              styles.thumbnail,
-              {
-                minHeight: scaleForDynamicType(56, fontScale),
-                minWidth: scaleForDynamicType(56, fontScale),
-              },
-            ]}
-          >
-            <PhotoRegion
-              card={card}
-              compact
-              {...(photoClient === undefined ? {} : { client: photoClient })}
-            />
-          </View>
-        ) : null}
-        <View style={styles.alternativeBody}>
-          <Text numberOfLines={1} style={styles.name}>
-            {name}
-          </Text>
-          {diff ? <Text style={styles.diff}>{diff.text}</Text> : null}
-          <Text numberOfLines={2} style={styles.factSummary}>
-            {[facts.openingHours.label, facts.price.label, facts.lastTrain.label].join(' · ')}
-          </Text>
-          <AttributionList
-            attributions={attributions}
-            {...(onSourcePress === undefined ? {} : { onSourcePress })}
-          />
-        </View>
-        <Text style={styles.walk}>{walkingMinutes(card)}</Text>
-      </Pressable>
+      <AlternativeRow
+        card={card}
+        view={view}
+        {...(onChoose === undefined ? {} : { onChoose })}
+        {...(photoClient === undefined ? {} : { photoClient })}
+      />
     );
   }
 
+  const saveAction = onSave === undefined ? undefined : (): void => onSave(card);
+  const decideAction = onDecide === undefined ? undefined : (): void => onDecide(card.candidateId);
+  const primaryIsSave = view.primaryAction === 'save';
+
+  const heading = (
+    <>
+      {view.category === null ? null : (
+        <Text style={view.dimmed ? styles.categoryDim : styles.category}>{view.category}</Text>
+      )}
+      <Text style={view.dimmed ? styles.nameDim : styles.name}>{view.name}</Text>
+    </>
+  );
+
   return (
     <View style={styles.hero}>
-      <View
-        style={
-          showPhotoRegion
-            ? [styles.heroVisual, { minHeight: scaleForDynamicType(168, fontScale) }]
-            : styles.heroHeader
-        }
-      >
-        {showPhotoRegion ? (
+      {view.visual === 'photo' ? (
+        <View style={styles.visual}>
           <PhotoRegion
             card={card}
             {...(photoClient === undefined ? {} : { client: photoClient })}
           />
-        ) : null}
-        <View style={styles.heroOverlay}>
-          <Text numberOfLines={1} style={styles.heroName}>
-            {name}
-          </Text>
-          <Text style={styles.heroWalk}>{walkingMinutes(card)}</Text>
+          <PhotoScrim />
+          {view.dimmed ? <View style={styles.veil} /> : null}
+          <View style={styles.pillAnchor}>
+            <StatusPill opening={view.opening} />
+          </View>
+          <View style={styles.nameAnchor}>{heading}</View>
         </View>
-      </View>
-      <View style={styles.heroBody}>
-        <Text numberOfLines={3} style={styles.why}>
-          {why.text}
-        </Text>
-        {diff ? <Text style={styles.diff}>{diff.text}</Text> : null}
-        <Text style={styles.meta}>{metaLabel(card)}</Text>
-        <View style={styles.factList}>
-          <FactRow label="営業" fact={facts.openingHours} />
-          <FactRow label="価格" fact={facts.price} />
-          <FactRow label="終電" fact={facts.lastTrain} />
+      ) : (
+        // Without a photo the heading becomes the lead surface. Reserving a photo-shaped
+        // frame here would read as a broken image rather than as a card that has none.
+        <View style={styles.heading}>
+          <StatusPill opening={view.opening} />
+          <View style={styles.headingText}>{heading}</View>
         </View>
+      )}
+
+      <View style={styles.body}>
+        <HoursLine dimmed={view.dimmed} opening={view.opening} />
+        <MetaLine access={view.access} dimmed={view.dimmed} price={view.price} />
+        <AmenityChips amenities={view.amenities} dimmed={view.dimmed} />
+
+        <View style={styles.actionRow}>
+          <Pressable
+            accessibilityLabel={primaryIsSave ? `${view.name}を残す` : `${view.name}に決める`}
+            accessibilityRole="button"
+            disabled={primaryIsSave ? saveAction === undefined : decideAction === undefined}
+            onPress={primaryIsSave ? saveAction : decideAction}
+            style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}
+          >
+            <Text style={styles.primaryActionText}>
+              {primaryIsSave ? '明日のために残す' : 'ここにする'}
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityLabel={primaryIsSave ? `${view.name}に決める` : `${view.name}を残す`}
+            accessibilityRole="button"
+            disabled={primaryIsSave ? decideAction === undefined : saveAction === undefined}
+            onPress={primaryIsSave ? decideAction : saveAction}
+            style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]}
+          >
+            <Text style={styles.secondaryActionText}>{primaryIsSave ? 'ここにする' : '残す'}</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.footnoteRow}>
+          <Text style={styles.footnote}>掲載の営業時間 · 今の混雑と空席は未確認</Text>
+          {onSkip === undefined ? null : (
+            <Pressable
+              accessibilityLabel={`${view.name}を今夜の候補から外す`}
+              accessibilityRole="button"
+              onPress={() => onSkip(card.candidateId)}
+              style={({ pressed }) => [styles.skip, pressed && styles.pressed]}
+            >
+              <Text style={styles.skipText}>ちがう</Text>
+            </Pressable>
+          )}
+        </View>
+
         <AttributionList
           attributions={attributions}
           {...(onSourcePress === undefined ? {} : { onSourcePress })}
         />
-        <Pressable
-          accessibilityLabel={`${name}に決める`}
-          accessibilityRole="button"
-          disabled={onDecide === undefined}
-          onPress={decide}
-          style={({ pressed }) => [styles.decide, pressed && styles.pressed]}
-        >
-          <Text style={styles.decideText}>ここにする</Text>
-        </Pressable>
-        <View style={styles.actionRow}>
-          <Pressable
-            accessibilityLabel={`${name}を残す`}
-            accessibilityRole="button"
-            disabled={onSave === undefined}
-            onPress={() => onSave?.(card)}
-            style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]}
-          >
-            <Text style={styles.secondaryActionText}>残す</Text>
-          </Pressable>
-          <Pressable
-            accessibilityLabel={`${name}を今夜の候補から外す`}
-            accessibilityRole="button"
-            disabled={onSkip === undefined}
-            onPress={() => onSkip?.(card.candidateId)}
-            style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]}
-          >
-            <Text style={styles.secondaryActionText}>ちがう</Text>
-          </Pressable>
-        </View>
       </View>
     </View>
   );
 }
 
-type FactRowProps = {
-  readonly label: string;
-  readonly fact: FactPresentation;
+type AlternativeRowProps = {
+  readonly card: PublicCard;
+  readonly view: CardViewModel;
+  readonly onChoose?: (candidateId: string) => void;
+  readonly photoClient?: JourneyPhotoClient;
 };
 
-function FactRow({ label, fact }: FactRowProps): React.JSX.Element {
+/** Alternatives sit a full tier below the hero: lighter name, no accent, no actions of their own. */
+function AlternativeRow({
+  card,
+  view,
+  onChoose,
+  photoClient,
+}: AlternativeRowProps): React.JSX.Element {
+  const summary = openingSummary(view.opening);
+  const meta = [summary, view.access].filter((part): part is string => part !== null).join(' · ');
   return (
-    <View style={styles.factRow}>
-      <Text style={styles.factLabel}>{label}</Text>
-      <Text style={[styles.factValue, fact.status === 'known' ? null : styles.factUnavailable]}>
-        {fact.label}
-      </Text>
-    </View>
+    <Pressable
+      accessibilityLabel={`${view.name}を主提案にする`}
+      accessibilityRole="button"
+      disabled={onChoose === undefined}
+      onPress={() => onChoose?.(card.candidateId)}
+      style={({ pressed }) => [styles.alternative, pressed && styles.pressed]}
+    >
+      {view.visual === 'photo' ? (
+        <View style={styles.thumbnail}>
+          <PhotoRegion
+            card={card}
+            compact
+            compactSize={ALT_THUMBNAIL}
+            {...(photoClient === undefined ? {} : { client: photoClient })}
+          />
+        </View>
+      ) : null}
+      <View style={styles.alternativeBody}>
+        <Text numberOfLines={1} style={styles.alternativeName}>
+          {view.name}
+        </Text>
+        {view.diff === null ? null : <Text style={styles.alternativeDiff}>{view.diff}</Text>}
+        {meta.length === 0 ? null : (
+          <Text numberOfLines={1} style={styles.alternativeMeta}>
+            {meta}
+          </Text>
+        )}
+      </View>
+      <Chevron />
+    </Pressable>
   );
 }
 
@@ -223,6 +235,7 @@ export type AttributionListProps = {
   readonly onSourcePress?: (sourceLink: string) => void;
 };
 
+/** Per-source attribution stays on the card; the provider policy requires it to be visible. */
 export function AttributionList({
   attributions,
   onSourcePress,
@@ -230,10 +243,9 @@ export function AttributionList({
   if (attributions.length === 0) return null;
   return (
     <View style={styles.attribution}>
-      <Text style={styles.attributionLabel}>出典</Text>
       {attributions.map((attribution) => {
-        if (attribution.sourceLink !== null && onSourcePress !== undefined) {
-          const sourceLink = attribution.sourceLink;
+        const sourceLink = attribution.sourceLink;
+        if (sourceLink !== null && onSourcePress !== undefined) {
           return (
             <Pressable
               accessibilityLabel={`${attribution.label}を開く`}
@@ -260,173 +272,182 @@ export function AttributionList({
 
 const styles = StyleSheet.create({
   hero: {
-    backgroundColor: colors.surface,
-    borderColor: '#232323',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 26,
-    borderWidth: 1,
     overflow: 'hidden',
   },
-  heroVisual: {
+  visual: {
+    aspectRatio: 0.97,
     backgroundColor: '#222224',
-    justifyContent: 'flex-end',
-    padding: spacing.section,
     position: 'relative',
+    width: '100%',
   },
-  heroHeader: {
-    paddingHorizontal: spacing.section,
-    paddingTop: spacing.section,
+  veil: {
+    backgroundColor: 'rgba(9, 9, 10, 0.58)',
+    pointerEvents: 'none',
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
-  heroOverlay: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  pillAnchor: {
+    alignItems: 'flex-start',
+    left: 14,
+    position: 'absolute',
+    top: 14,
   },
-  heroName: {
-    color: colors.text,
-    flex: 1,
-    fontSize: typography.title,
-    fontWeight: '800',
+  nameAnchor: {
+    bottom: 18,
+    gap: 7,
+    left: 18,
+    position: 'absolute',
+    right: 18,
   },
-  heroWalk: {
-    color: colors.cream,
-    fontSize: 20,
-    fontWeight: '800',
-    marginLeft: spacing.compact,
-  },
-  heroBody: {
-    padding: spacing.section,
-  },
-  why: {
-    color: '#cfcfc8',
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  meta: {
-    color: colors.muted,
-    fontSize: typography.label,
-    marginTop: spacing.compact,
-    minHeight: 18,
-  },
-  decide: {
-    alignItems: 'center',
-    backgroundColor: colors.cream,
-    borderRadius: radii.button,
-    justifyContent: 'center',
-    marginTop: spacing.section,
-    minHeight: spacing.touch,
-  },
-  decideText: {
-    color: colors.ink,
-    fontSize: typography.button,
+  category: {
+    color: colors.lime,
+    fontSize: 11,
     fontWeight: '700',
+    letterSpacing: 1.5,
+  },
+  categoryDim: {
+    color: '#7f8a5c',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+  },
+  name: {
+    color: '#f4f3ee',
+    fontSize: 27,
+    fontWeight: '800',
+    lineHeight: 34,
+  },
+  nameDim: {
+    color: '#d3d2cd',
+    fontSize: 27,
+    fontWeight: '800',
+    lineHeight: 34,
+  },
+  heading: {
+    backgroundColor: '#1c1c20',
+    gap: 14,
+    paddingBottom: 18,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+  },
+  headingText: {
+    gap: 7,
+  },
+  body: {
+    paddingBottom: 18,
+    paddingHorizontal: 18,
+    paddingTop: 16,
   },
   actionRow: {
     flexDirection: 'row',
     gap: spacing.compact,
-    marginTop: spacing.compact,
+    marginTop: 16,
+  },
+  primaryAction: {
+    alignItems: 'center',
+    backgroundColor: colors.cream,
+    borderRadius: 15,
+    flexGrow: 1,
+    justifyContent: 'center',
+    minHeight: 50,
+  },
+  primaryActionText: {
+    color: colors.ink,
+    fontSize: typography.button,
+    fontWeight: '700',
   },
   secondaryAction: {
     alignItems: 'center',
     borderColor: colors.border,
-    borderRadius: radii.button,
+    borderRadius: 15,
     borderWidth: 1,
-    flex: 1,
     justifyContent: 'center',
-    minHeight: spacing.touch,
+    minHeight: 50,
+    width: 84,
   },
   secondaryActionText: {
-    color: colors.text,
-    fontSize: typography.button,
+    color: colors.muted,
+    fontSize: 11,
     fontWeight: '700',
+  },
+  footnoteRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.compact,
+    justifyContent: 'space-between',
+    marginTop: 14,
+    minHeight: 44,
+  },
+  footnote: {
+    color: '#7c7b76',
+    flexShrink: 1,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  skip: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: 8,
+  },
+  skipText: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   alternative: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: '#232323',
-    borderRadius: radii.button,
-    borderWidth: 1,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: 20,
     flexDirection: 'row',
-    gap: spacing.compact,
-    minHeight: 72,
-    paddingHorizontal: 6,
-    paddingVertical: 6,
+    gap: 12,
+    minHeight: 96,
+    padding: 10,
   },
   thumbnail: {
-    alignItems: 'center',
-    backgroundColor: '#222224',
-    borderRadius: 12,
-    justifyContent: 'center',
-    minHeight: 56,
-    minWidth: 56,
-    padding: 4,
+    borderRadius: 15,
+    height: ALT_THUMBNAIL,
+    overflow: 'hidden',
+    width: ALT_THUMBNAIL,
   },
   alternativeBody: {
     flex: 1,
-    gap: 3,
+    gap: 4,
     minWidth: 0,
   },
-  name: {
+  alternativeName: {
     color: colors.text,
     fontSize: typography.body,
-    fontWeight: '800',
-  },
-  diff: {
-    color: colors.lime,
-    fontSize: typography.label,
-  },
-  factSummary: {
-    color: colors.muted,
-    fontSize: typography.label,
-    lineHeight: 17,
-    marginTop: 3,
-  },
-  factList: {
-    gap: 4,
-    marginTop: spacing.section,
-  },
-  factRow: {
-    flexDirection: 'row',
-    gap: spacing.compact,
-  },
-  factLabel: {
-    color: colors.faint,
-    fontSize: typography.label,
     fontWeight: '700',
-    minWidth: 36,
   },
-  factValue: {
-    color: colors.text,
-    flex: 1,
+  alternativeDiff: {
+    color: '#b9b8b1',
     fontSize: typography.label,
-    lineHeight: 18,
   },
-  factUnavailable: {
-    color: colors.muted,
+  alternativeMeta: {
+    color: '#8f8e88',
+    fontSize: 11,
   },
   attribution: {
-    gap: 3,
-    marginTop: spacing.section,
-  },
-  attributionLabel: {
-    color: colors.faint,
-    fontSize: typography.label,
-    fontWeight: '700',
+    columnGap: spacing.compact,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 6,
   },
   attributionText: {
-    color: colors.muted,
-    fontSize: typography.label,
+    color: '#6b6a66',
+    fontSize: 11,
   },
   attributionLink: {
-    color: colors.lime,
-    fontSize: typography.label,
+    color: '#6b6a66',
+    fontSize: 11,
     textDecorationLine: 'underline',
-  },
-  walk: {
-    color: colors.cream,
-    fontSize: typography.label,
-    fontWeight: '800',
-    maxWidth: 76,
-    textAlign: 'right',
   },
   pressed: {
     opacity: 0.72,

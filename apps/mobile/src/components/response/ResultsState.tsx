@@ -12,6 +12,8 @@ import { colors, spacing, typography } from '@mobile/theme/tokens';
 
 type ResultsStateProps = {
   readonly cards: CardsData | null;
+  /** Injected render time; cards resolve their opening countdown against it. */
+  readonly now?: string;
   readonly cardSetId: string | null;
   readonly cardSetDisplay: CardSetDisplayState;
   readonly messageRecords: readonly AssistantMessageRecord[];
@@ -39,6 +41,7 @@ const orderedCards = (
 
 export function ResultsState({
   cards,
+  now,
   cardSetId,
   cardSetDisplay,
   messageRecords,
@@ -75,6 +78,7 @@ export function ResultsState({
       <Text style={styles.kicker}>主提案</Text>
       <CandidateCard
         card={hero}
+        {...(now === undefined ? {} : { now })}
         onDecide={onDecide}
         {...(onSave === undefined ? {} : { onSave })}
         {...(onSkip === undefined ? {} : { onSkip })}
@@ -92,6 +96,7 @@ export function ResultsState({
             <CandidateCard
               card={card}
               key={card.candidateId}
+              {...(now === undefined ? {} : { now })}
               primary={false}
               {...(onChoose === undefined ? {} : { onChoose })}
               {...(onSourcePress === undefined ? {} : { onSourcePress })}
