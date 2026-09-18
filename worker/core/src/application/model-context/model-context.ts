@@ -302,9 +302,11 @@ export const projectModelContext = (source: unknown): ProjectedModelContext => {
       reason: 'station directory was not supplied',
     },
     history: modelContextFieldAllowed(fieldPolicy.history)
-      ? value.history
-          .filter((entry) => entry.evidenceIds.every((id) => usableEvidenceIds.has(id)))
-          .map(({ threadId: _threadId, ...entry }) => entry)
+      ? value.history.map(({ threadId: _threadId, ...entry }) =>
+          entry.evidenceIds.every((id) => usableEvidenceIds.has(id))
+            ? entry
+            : { ...entry, evidenceIds: [], basis: 'conversational' },
+        )
       : [],
     cardSet:
       value.cardSet === null || !modelContextFieldAllowed(fieldPolicy.cardSet)
