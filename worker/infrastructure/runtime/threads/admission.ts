@@ -65,6 +65,11 @@ export type ThreadRuntimeReplayResult =
     }
   | { readonly status: 'unavailable'; readonly code: 'NOT_FOUND' | 'STALE_TURN' };
 
+/**
+ * `NO_TERMINAL_ACTION`, `BUDGET_EXCEEDED`, `MODEL_TIMEOUT` and `MIXED_TERMINAL_ACTION` describe a
+ * turn that ran without producing cards or a message. They exist so the boundary can tell the
+ * user which situation occurred instead of reporting every such turn as an upstream failure.
+ */
 export type ThreadRuntimeFailureCode =
   | 'INVALID_ARGUMENT'
   | 'NOT_FOUND'
@@ -75,7 +80,11 @@ export type ThreadRuntimeFailureCode =
   | 'CANCELLED'
   | 'STALE_TURN'
   | 'RUNTIME_UNCONFIGURED'
-  | 'RUNTIME_FAILED';
+  | 'RUNTIME_FAILED'
+  | 'NO_TERMINAL_ACTION'
+  | 'BUDGET_EXCEEDED'
+  | 'MODEL_TIMEOUT'
+  | 'MIXED_TERMINAL_ACTION';
 
 export type ThreadRuntimeAdmission =
   | { readonly status: 'admitted'; readonly invalidate?: ThreadRuntimeTarget }

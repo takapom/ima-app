@@ -9,8 +9,8 @@ import {
   createRuntimeApplicationHandler,
   serverTurnId,
   type RuntimeThreadStub,
-} from '@worker/adapters/inbound/http/runtime-handler';
-import type { HandlerContext } from '@worker/adapters/inbound/http/handler';
+} from '@worker/infrastructure/adapters/inbound/http/runtime-handler';
+import type { HandlerContext } from '@worker/infrastructure/adapters/inbound/http/handler';
 import {
   isThreadRuntimeTarget,
   isThreadRuntimeTurnInput,
@@ -19,7 +19,7 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import { searchInput, searchResponse } from '../adapters/inbound/http/router-fixtures';
 
 const ownerScopeRef = 'owner-bootstrap-runtime';
@@ -317,6 +317,35 @@ describe('HTTP runtime bootstrap adapter', () => {
       failure: { status: 409, code: 'CANCELLED' },
     });
     expect(classification).not.toHaveBeenCalled();
+  });
+
+  it('tells the client which situation ended a turn without cards or a message', async () => {
+    const failureFor = async (code: Parameters<typeof runtimeFailure>[0]) => {
+      const stub = makeStub({ runRuntimeTurn: vi.fn(() => Promise.resolve(runtimeFailure(code))) });
+      return makeHandler(stub)
+        .handle(runtimeOperation, contextFor())
+        .then(() => undefined)
+        .catch((error: unknown) => (error as { readonly failure: unknown }).failure);
+    };
+
+    await expect(failureFor('NO_TERMINAL_ACTION')).resolves.toEqual({
+      status: 422,
+      code: 'BUDGET_EXCEEDED',
+    });
+    await expect(failureFor('BUDGET_EXCEEDED')).resolves.toEqual({
+      status: 422,
+      code: 'BUDGET_EXCEEDED',
+    });
+    await expect(failureFor('MODEL_TIMEOUT')).resolves.toEqual({ status: 504, code: 'TIMEOUT' });
+    await expect(failureFor('MIXED_TERMINAL_ACTION')).resolves.toEqual({
+      status: 409,
+      code: 'MIXED_TERMINAL_ACTION',
+    });
+    // An upstream outage keeps its own code so the two situations stay distinguishable.
+    await expect(failureFor('RUNTIME_FAILED')).resolves.toEqual({
+      status: 502,
+      code: 'PROVIDER_UNAVAILABLE',
+    });
   });
 
   it('keeps malformed runtime responses and unexpected errors at the HTTP boundary', async () => {

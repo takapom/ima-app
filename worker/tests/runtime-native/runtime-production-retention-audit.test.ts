@@ -11,7 +11,7 @@ import {
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import type { ProductionThreadDO } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {
@@ -231,7 +231,7 @@ describe('M16 production retention write audit', () => {
           text: '[m16-llm-only] [m16-late-tool] M16_ALARM_STORAGE_CANARY を保存しない',
         },
       }),
-    ).resolves.toMatchObject({ status: 'failed', code: 'RUNTIME_FAILED' });
+    ).resolves.toMatchObject({ status: 'failed', code: 'MIXED_TERMINAL_ACTION' });
     await expectCleanAudit(stub);
   });
 });

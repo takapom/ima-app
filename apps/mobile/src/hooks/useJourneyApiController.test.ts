@@ -38,6 +38,26 @@ describe('Journey API hook boundary', () => {
     expect(journeyApiErrorMessage(null)).toBeNull();
   });
 
+  it('explains a turn that ended without cards instead of blaming the connection', () => {
+    const httpError = (status: 422 | 504, code: 'BUDGET_EXCEEDED' | 'TIMEOUT') => ({
+      kind: 'http' as const,
+      status,
+      publicError: {
+        schemaVersion: 'v1' as const,
+        requestId: 'error-request',
+        status,
+        code,
+        message: 'unused',
+      },
+      retryAfterSeconds: null,
+    });
+
+    const budget = journeyApiErrorMessage(httpError(422, 'BUDGET_EXCEEDED'));
+    expect(budget).toContain('候補');
+    expect(budget).not.toContain('サービスに接続できませんでした');
+    expect(journeyApiErrorMessage(httpError(504, 'TIMEOUT'))).toContain('時間');
+  });
+
   it('stops an older history continuation after a newer thread takes over', async () => {
     let releaseRestore: (() => void) | undefined;
     let generation = 1;

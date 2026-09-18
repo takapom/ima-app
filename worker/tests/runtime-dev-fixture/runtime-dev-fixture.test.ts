@@ -331,10 +331,12 @@ describe('keyless dev fixture graph', () => {
       method: 'POST',
       body: JSON.stringify(constrained),
     });
-    expect(response.status).toBe(502);
+    // The constraint cannot be evidenced, so every repair is rejected and the turn ends without
+    // cards. That is a spent turn budget, not an upstream outage, and the code says so.
+    expect(response.status).toBe(422);
     const parsed = v.safeParse(ErrorResponseSchema, await response.json());
     expect(parsed.success).toBe(true);
     if (!parsed.success) throw new Error('constraint rejection response was invalid');
-    expect(parsed.output).toMatchObject({ status: 502, code: 'PROVIDER_UNAVAILABLE' });
+    expect(parsed.output).toMatchObject({ status: 422, code: 'BUDGET_EXCEEDED' });
   });
 });

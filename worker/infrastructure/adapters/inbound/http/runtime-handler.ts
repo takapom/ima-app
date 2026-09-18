@@ -11,13 +11,13 @@ import type {
   ApplicationOperation,
   ApplicationResult,
   HandlerContext,
-} from '@worker/adapters/inbound/http/handler';
-import { HttpBoundaryError } from '@worker/adapters/inbound/http/errors';
+} from '@worker/infrastructure/adapters/inbound/http/handler';
+import { HttpBoundaryError } from '@worker/infrastructure/adapters/inbound/http/errors';
 import {
   dispatchRuntimeRequest,
   RuntimeDispatchError,
   type RuntimeDispatchTarget,
-} from '@worker/runtime/turn-execution/runtime-dispatch';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-dispatch';
 import {
   type ThreadRuntimeCancelResult,
   type ThreadRuntimeFailureCode,
@@ -25,8 +25,8 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
-import type { ThreadSnapshotResult } from '@worker/runtime/threads/thread-types';
+} from '@worker/infrastructure/runtime/threads/admission';
+import type { ThreadSnapshotResult } from '@worker/infrastructure/runtime/threads/thread-types';
 
 /** Structural RPC surface keeps this adapter independent of the concrete DO implementation. */
 export type RuntimeThreadStub = {
@@ -72,6 +72,14 @@ const threadFailure = (code: ThreadRuntimeFailureCode): HttpBoundaryError => {
     case 'IDEMPOTENCY_CONFLICT':
     case 'TURN_ALREADY_ACTIVE':
       return new HttpBoundaryError({ status: 409, code: 'CONFLICT' });
+    case 'MIXED_TERMINAL_ACTION':
+      return new HttpBoundaryError({ status: 409, code: 'MIXED_TERMINAL_ACTION' });
+    // A turn that ends without cards or a message spent its budget; it is not an upstream outage.
+    case 'NO_TERMINAL_ACTION':
+    case 'BUDGET_EXCEEDED':
+      return new HttpBoundaryError({ status: 422, code: 'BUDGET_EXCEEDED' });
+    case 'MODEL_TIMEOUT':
+      return new HttpBoundaryError({ status: 504, code: 'TIMEOUT' });
     case 'RUNTIME_UNCONFIGURED':
     case 'RUNTIME_FAILED':
       return new HttpBoundaryError({ status: 502, code: 'PROVIDER_UNAVAILABLE' });

@@ -2,12 +2,12 @@ import * as v from 'valibot';
 import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { AssistantResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/adapters/outbound/providers/openai/provider-options';
+import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/infrastructure/adapters/outbound/providers/openai/provider-options';
 import { sessionExpiryAt } from '@worker/composition/runtime-production-support';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import type { ProductionThreadDO, RuntimeProductionReport } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {
@@ -303,7 +303,7 @@ describe('production factory through a real Think Durable Object', () => {
       stub.runRuntimeTurn(requestFor(target, '[m16-late-tool] final response with a tool')),
     ).resolves.toMatchObject({
       status: 'failed',
-      code: 'RUNTIME_FAILED',
+      code: 'MIXED_TERMINAL_ACTION',
       response: null,
     });
 
@@ -336,7 +336,7 @@ describe('production factory through a real Think Durable Object', () => {
       stub.runRuntimeTurn(requestFor(target, '[m16-late-submit] final response with cards')),
     ).resolves.toMatchObject({
       status: 'failed',
-      code: 'RUNTIME_FAILED',
+      code: 'MIXED_TERMINAL_ACTION',
       response: null,
     });
 
@@ -369,7 +369,7 @@ describe('production factory through a real Think Durable Object', () => {
       stub.runRuntimeTurn(requestFor(target, '[m16-exhausted-budget] no extra model call')),
     ).resolves.toMatchObject({
       status: 'failed',
-      code: 'RUNTIME_FAILED',
+      code: 'MODEL_TIMEOUT',
       response: null,
     });
 

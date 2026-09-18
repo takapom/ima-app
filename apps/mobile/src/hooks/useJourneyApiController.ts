@@ -106,6 +106,16 @@ export const journeyApiErrorMessage = (error: ApiError | null): string | null =>
   if (error.kind === 'http' && error.status === 429) {
     return 'ただいま混み合っています。少し待ってから再試行してください。';
   }
+  // The turn ran but could not finish a proposal. Say so instead of blaming the connection.
+  if (error.kind === 'http' && error.publicError.code === 'BUDGET_EXCEEDED') {
+    return '今回は候補をまとめきれませんでした。条件を絞ってもう一度試してください。';
+  }
+  if (error.kind === 'http' && error.publicError.code === 'MIXED_TERMINAL_ACTION') {
+    return '応答をまとめきれませんでした。もう一度試してください。';
+  }
+  if (error.kind === 'http' && error.status === 504) {
+    return '応答に時間がかかっています。もう一度試してください。';
+  }
   if (error.kind === 'http' && error.status >= 500) {
     return 'サービスに接続できませんでした。少し待ってから再試行してください。';
   }
