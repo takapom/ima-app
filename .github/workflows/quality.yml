@@ -31,6 +31,7 @@ jobs:
           EXPO_PUBLIC_API_BASE_URL: http://localhost:8787
         run: bun run env:preflight -- --target dev
       - run: bun run format
+      - run: bun run docs
       - run: bun run lint
       - run: bun run architecture
       - run: bun run typecheck
