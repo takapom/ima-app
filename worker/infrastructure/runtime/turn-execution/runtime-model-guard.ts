@@ -5,12 +5,12 @@ import {
   type RuntimeBatchAction,
   type RuntimeBatchIssueCode,
   type RuntimeBatchResult,
-} from '@worker/runtime/turn-execution/runtime-batch';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-batch';
 import type {
   RuntimeBudget,
   RuntimeBudgetDenial,
   RuntimeBudgetResult,
-} from '@worker/runtime/budget/runtime-budget';
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 
 /** AI SDK's public model middleware currently accepts V3 models. */
 export type RuntimeModelGuardModel = Extract<LanguageModel, { specificationVersion: 'v3' }>;
@@ -146,6 +146,18 @@ type ValidatedModelStep = {
   readonly finalText: string | null;
 };
 
+/**
+ * Text emitted alongside tool calls is a conversational preamble, not a terminal action: it is
+ * never shown to the user and never persisted, so accepting it would deny the whole step — and
+ * with it the turn — for a habit that commits nothing. A final-only step still rejects tools.
+ */
+const endsTurn = (
+  actions: readonly RuntimeBatchAction[],
+  hasText: boolean,
+  finishedWithToolCalls: boolean,
+): boolean =>
+  !actions.some((action) => action.kind === 'tool') && (hasText || !finishedWithToolCalls);
+
 const actionsFromStream = (
   parts: readonly RuntimeModelGuardStreamPart[],
   finalResponse: boolean,
@@ -183,7 +195,7 @@ const actionsFromStream = (
 
   const finish = finishes[0];
   if (finish === undefined) throw new RuntimeModelGuardError('FINISH_COUNT');
-  if (hasText || finish.finishReason.unified !== 'tool-calls') {
+  if (endsTurn(actions, hasText, finish.finishReason.unified === 'tool-calls')) {
     actions.push({ kind: 'final', text });
   }
   const batch = validateActions(actions, finalResponse);
@@ -217,7 +229,7 @@ const actionsFromGenerate = (
       throw new RuntimeModelGuardError('UNSUPPORTED_PART');
     }
   }
-  if (hasText || result.finishReason.unified !== 'tool-calls') {
+  if (endsTurn(actions, hasText, result.finishReason.unified === 'tool-calls')) {
     actions.push({ kind: 'final', text });
   }
   const batch = validateActions(actions, finalResponse);

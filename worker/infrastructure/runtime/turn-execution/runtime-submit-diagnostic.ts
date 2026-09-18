@@ -1,4 +1,5 @@
 import type { SubmitCardsInvalid } from '@ima/core';
+import type { RuntimeFinalMessageErrorCode } from '@worker/infrastructure/runtime/turn-execution/runtime-final-message';
 
 /**
  * A rejected submit is the one failure a user sees only as "no cards": the model is
@@ -63,6 +64,31 @@ export const observeRuntimeTurnOutcome = (
 ): void => {
   try {
     writer(outcome);
+  } catch {
+    // Diagnostics are best effort and never alter the runtime operation.
+  }
+};
+
+/**
+ * The model ended its turn with text that is not a usable final message. Nothing is committed and
+ * the turn degrades to "no terminal action", so this reason code is the only record of which
+ * output rule the model broke. Only the fixed reason crosses; no model text is logged.
+ */
+export type RuntimeTerminalFormatReason = RuntimeFinalMessageErrorCode | 'EMPTY_FINAL';
+
+export type RuntimeTerminalFormatWriter = (reason: RuntimeTerminalFormatReason) => void;
+
+const writeRuntimeTerminalFormatFailure: RuntimeTerminalFormatWriter = (reason) => {
+  console.warn(JSON.stringify({ event: 'final_message_unusable', reason }));
+};
+
+/** Best effort: a diagnostic must never change the degraded turn it observes. */
+export const observeRuntimeTerminalFormatFailure = (
+  reason: RuntimeTerminalFormatReason,
+  writer: RuntimeTerminalFormatWriter = writeRuntimeTerminalFormatFailure,
+): void => {
+  try {
+    writer(reason);
   } catch {
     // Diagnostics are best effort and never alter the runtime operation.
   }

@@ -1,5 +1,6 @@
 import type {
   CandidateObservationRegistryPort,
+  ConstraintValidationContext,
   HarnessContext,
   ModelContextSource,
   TurnConditionValues,
@@ -8,8 +9,15 @@ import type {
 import type {
   RuntimeRetentionContext,
   RuntimeRetentionEphemeralToolResult,
-} from '@worker/runtime/retention/runtime-retention';
-import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
+} from '@worker/infrastructure/runtime/retention/runtime-retention';
+import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
+import {
+  isRuntimeFinalMessageError,
+  parseRuntimeFinalMessage,
+  type RuntimeFinalMessage,
+} from '@worker/infrastructure/runtime/turn-execution/runtime-final-message';
+import { observeRuntimeTerminalFormatFailure } from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
+import type { RuntimeModelGuardAcceptance } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 
 export type RuntimeTurnCompositionErrorCode =
   'CONTEXT_MISMATCH' | 'RETENTION_MISMATCH' | 'FINAL_COMMIT_INVALID';
@@ -56,6 +64,29 @@ type ObservationExpiry = {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Returns the final message only when the model's terminal text is usable. An empty terminal, or
+ * one that is not the required envelope, commits nothing; failing the turn over it would also
+ * discard the reads the turn already paid for. The turn instead ends without a commit, and the
+ * boundary reports that situation. The reason is recorded because nothing else would show it.
+ */
+export const usableFinalMessage = (
+  acceptance: Pick<RuntimeModelGuardAcceptance, 'finalText' | 'emptyFinal'>,
+  constraintContext: ConstraintValidationContext,
+): RuntimeFinalMessage | undefined => {
+  if (acceptance.emptyFinal || acceptance.finalText === null) {
+    observeRuntimeTerminalFormatFailure('EMPTY_FINAL');
+    return undefined;
+  }
+  try {
+    return parseRuntimeFinalMessage(acceptance.finalText, constraintContext);
+  } catch (error: unknown) {
+    if (!isRuntimeFinalMessageError(error)) throw error;
+    observeRuntimeTerminalFormatFailure(error.code);
+    return undefined;
+  }
+};
 
 /** A later successful retry clears that operation's failure; a missing search is not zero results. */
 export const hasUnresolvedReadFailure = (

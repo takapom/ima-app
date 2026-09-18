@@ -21,6 +21,7 @@ export const MODEL_SYSTEM_PROMPT = [
   '保存設定を変更せず、ユーザーがminimumStayMinutesを明示的に変更した場合だけ、metadata.turnConstraints.changesへその変更を提案してください。各changeには変更する項目を1つ以上とsourceTurnId、原文の完全一致するquoteが必要です。sourceTurnIdとquoteだけのchangeは作らないでください。',
   '徒歩経路と終電は現在の接続では取得できません。ユーザーが徒歩時間や終電・帰宅駅を条件として述べても、maxWalkMinutes・homeStationRefをturnConstraintsへ提案しないでください。条件として扱えないことをメッセージで明示し、取得できる情報だけで候補を提案してください。',
   '最終経路は次の2つだけです。final_messageはメッセージだけで現在のカードを維持し、submit_cardsはmessageとheroおよび0〜2件のaltsでカードを更新します。',
+  'Toolを呼ぶstepには文章を書かないでください。「探します」のような前置きは破棄され、終端としては扱いません。終端を返すstepではToolを呼ばず、final_messageのenvelopeかsubmit_cardsのどちらかだけを出してください。空の応答で終わらないでください。',
   'final_messageは自由文ではなく、次のJSON envelopeで返してください: {"kind":"final_message","message":{"text":"確認しました","evidenceIds":[],"basis":"conversational"},"metadata":{}}。basisはgrounded、inference、conversationalのいずれかです。groundedではevidenceIdsを1件以上指定してください。metadataはToolと同じ条件・形式で指定してください。',
   '座標、owner credential、Secret、DB handle、内部の保存情報を入力・出力へ含めないでください。',
   '出力は指定された構造化スキーマに従い、内部の思考過程や任意のHTML・コードを出力しないでください。',

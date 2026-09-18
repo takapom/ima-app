@@ -1,4 +1,4 @@
-import { createPublicToolSet } from '@worker/adapters/inbound/tools';
+import { createPublicToolSet } from '@worker/infrastructure/adapters/inbound/tools';
 import type { PrepareStepContext, Session, TurnConfig } from '@cloudflare/think';
 import type { JSONValue, ToolSet } from 'ai';
 import type { AssistantResponse } from '@ima/contracts';
@@ -18,16 +18,16 @@ import type {
   TurnConditionValues,
 } from '@ima/core';
 import { projectModelContext, SubmitApplication, createSubmitCardsPort } from '@ima/core';
-import { encodeModelContext } from '@worker/runtime/model/encoding';
+import { encodeModelContext } from '@worker/infrastructure/runtime/model/encoding';
 import type {
   RuntimeThinkComposition,
   RuntimeThinkPersistMessages,
   RuntimeThinkTurnBuildRequest,
-} from '@worker/runtime/turn-execution/runtime-think-connection';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import {
   projectRuntimeCurrentTurnMessages,
   type RuntimeRetentionModelProjectionOptions,
-} from '@worker/runtime/retention/runtime-retention-model';
+} from '@worker/infrastructure/runtime/retention/runtime-retention-model';
 import {
   captureRuntimeEphemeralToolCall,
   captureRuntimeEphemeralToolResult,
@@ -36,50 +36,48 @@ import {
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
   type RuntimeRetentionScopeIdentity,
-} from '@worker/runtime/retention/runtime-retention';
-import { createRuntimeRetentionTransform } from '@worker/runtime/retention/runtime-retention-transform';
+} from '@worker/infrastructure/runtime/retention/runtime-retention';
+import { createRuntimeRetentionTransform } from '@worker/infrastructure/runtime/retention/runtime-retention-transform';
 import {
   createRuntimeReadPorts,
   type RuntimeReadAttemptSignalBridge,
   type RuntimeReadCostResolver,
-} from '@worker/runtime/tool-reads/runtime-read-ports';
-import {
-  parseRuntimeFinalMessage,
-  type RuntimeFinalMessage,
-} from '@worker/runtime/turn-execution/runtime-final-message';
+} from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
+import type { RuntimeFinalMessage } from '@worker/infrastructure/runtime/turn-execution/runtime-final-message';
 import {
   createRuntimeTurnFactory,
   type RuntimeBeforeToolCallDelegate,
   type RuntimeTurnPortDependencies,
-} from '@worker/runtime/turn-execution/runtime-turn-factory';
-import { createRuntimeFinalResponseHooks } from '@worker/runtime/turn-execution/runtime-final-response';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-turn-factory';
+import { createRuntimeFinalResponseHooks } from '@worker/infrastructure/runtime/turn-execution/runtime-final-response';
 import type {
   RuntimeModelGuardAcceptance,
   RuntimeModelGuardCallOptions,
   RuntimeModelGuardModel,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
-import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
-import type { RuntimePublicResponseDependencies } from '@worker/runtime/response/runtime-response';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
+import type { RuntimePublicResponseDependencies } from '@worker/infrastructure/runtime/response/runtime-response';
 import {
   createRuntimePhotoPreparationState,
   prepareAndMapRuntimeResponse,
   resetRuntimePhotoPreparationState,
-} from '@worker/runtime/response/runtime-public-response';
+} from '@worker/infrastructure/runtime/response/runtime-public-response';
 import {
   modelSource,
   hasUnresolvedReadFailure,
   observationResultIsReusable,
   observedWindow,
+  usableFinalMessage,
   RuntimeTurnCompositionError,
 } from '@worker/composition/runtime-turn-composition-support';
 import {
   clearRuntimeCardSetId,
   registerRuntimeCardSetId,
-} from '@worker/adapters/outbound/persistence/thread/durable-commit-adapter';
-import { projectRuntimeToolResultForModel } from '@worker/runtime/context/runtime-field-policy';
-import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-session-config';
+} from '@worker/infrastructure/adapters/outbound/persistence/thread/durable-commit-adapter';
+import { projectRuntimeToolResultForModel } from '@worker/infrastructure/runtime/context/runtime-field-policy';
+import { configureRuntimeCompaction } from '@worker/infrastructure/runtime/retention/runtime-session-config';
 
-export type { RuntimePublicResponseDependencies } from '@worker/runtime/response/runtime-response';
+export type { RuntimePublicResponseDependencies } from '@worker/infrastructure/runtime/response/runtime-response';
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;
 
 export type RuntimeCompositionModelContext = Omit<ModelContextSource, 'harness' | 'conditions'>;
@@ -406,8 +404,11 @@ export function createRuntimeTurnComposition(
     ) {
       throw new RuntimeTurnCompositionError('FINAL_COMMIT_INVALID');
     }
-    acceptedFinal = parseRuntimeFinalMessage(acceptance.finalText, options.constraintContext);
-    turn.applyMetadata(acceptedFinal.metadata);
+    // An unusable terminal commits nothing; the turn ends without a commit instead of failing.
+    const finalMessage = usableFinalMessage(acceptance, options.constraintContext);
+    if (finalMessage === undefined) return;
+    acceptedFinal = finalMessage;
+    turn.applyMetadata(finalMessage.metadata);
     finalResponse.accept(acceptance);
   };
 

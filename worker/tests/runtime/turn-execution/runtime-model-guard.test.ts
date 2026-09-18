@@ -1,147 +1,29 @@
 import { stepCountIs, streamText, tool } from 'ai';
 import { z } from 'zod';
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_RUNTIME_BUDGET,
-  RuntimeBudget,
-  type RuntimeBudgetConfig,
-} from '@worker/runtime/budget/runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   RUNTIME_MODEL_MAX_RETRIES,
+  wrapRuntimeModelGuard,
   type RuntimeModelGuardAcceptance,
   type RuntimeModelGuardCallOptions,
   type RuntimeModelGuardGenerateResult,
-  type RuntimeModelGuardModel,
   type RuntimeModelGuardStreamPart,
-  wrapRuntimeModelGuard,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
-import type { RuntimeModelGuardError } from '@worker/runtime/turn-execution/runtime-model-guard';
-
-type GenerateContent = RuntimeModelGuardGenerateResult['content'][number];
-
-const usage = {
-  inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
-  outputTokens: { total: 1, text: 1, reasoning: 0 },
-} satisfies Extract<RuntimeModelGuardStreamPart, { type: 'finish' }>['usage'];
-
-const finish = (
-  unified: 'stop' | 'tool-calls',
-): Extract<RuntimeModelGuardStreamPart, { type: 'finish' }> => ({
-  type: 'finish',
+} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
+import {
+  budget,
+  expectGuardCode,
+  finish,
+  guarded,
+  modelFor,
+  modelScript,
+  readAll,
+  streamCall,
+  textParts,
+  toolParts,
   usage,
-  finishReason: { unified, raw: unified },
-});
-
-const streamOf = (
-  parts: readonly RuntimeModelGuardStreamPart[],
-): ReadableStream<RuntimeModelGuardStreamPart> =>
-  new ReadableStream({
-    start(controller) {
-      parts.forEach((part) => controller.enqueue(part));
-      controller.close();
-    },
-  });
-
-const toolParts = (toolName: string, id = `call-${toolName}`): RuntimeModelGuardStreamPart[] => [
-  { type: 'tool-input-start', id, toolName },
-  { type: 'tool-input-delta', id, delta: '{}' },
-  { type: 'tool-input-end', id },
-  { type: 'tool-call', toolCallId: id, toolName, input: '{}' },
-];
-
-const textParts = (text = 'done'): RuntimeModelGuardStreamPart[] => [
-  { type: 'text-start', id: 'text-1' },
-  { type: 'text-delta', id: 'text-1', delta: text },
-  { type: 'text-end', id: 'text-1' },
-];
-
-const validFinal = (): RuntimeModelGuardStreamPart[] => [
-  { type: 'stream-start', warnings: [] },
-  ...textParts(),
-  finish('stop'),
-];
-
-const budget = (
-  overrides: Partial<RuntimeBudgetConfig> = {},
-  options: { now?: () => number; isStale?: () => boolean; signal?: AbortSignal } = {},
-): RuntimeBudget =>
-  new RuntimeBudget({
-    config: { ...DEFAULT_RUNTIME_BUDGET, ...overrides },
-    startedAtMs: 0,
-    now: options.now ?? (() => 1),
-    ...(options.isStale === undefined ? {} : { isStale: options.isStale }),
-    ...(options.signal === undefined ? {} : { signal: options.signal }),
-  });
-
-type ModelScript = {
-  readonly streamParts?: readonly RuntimeModelGuardStreamPart[];
-  readonly generateResult?: RuntimeModelGuardGenerateResult;
-  readonly pendingStream?: boolean;
-  readonly calls: { stream: number; generate: number };
-  readonly seenSignals: AbortSignal[];
-};
-
-const modelFor = (script: ModelScript): RuntimeModelGuardModel => ({
-  specificationVersion: 'v3',
-  provider: 'runtime-model-guard-fixture',
-  modelId: 'runtime-model-guard-fixture',
-  supportedUrls: {},
-  doGenerate: (options: RuntimeModelGuardCallOptions) => {
-    script.calls.generate += 1;
-    if (options.abortSignal !== undefined) script.seenSignals.push(options.abortSignal);
-    if (script.generateResult === undefined) {
-      return Promise.reject(new Error('RUNTIME_MODEL_GUARD_GENERATE_NOT_CONFIGURED'));
-    }
-    return Promise.resolve(script.generateResult);
-  },
-  doStream: (options: RuntimeModelGuardCallOptions) => {
-    script.calls.stream += 1;
-    if (options.abortSignal !== undefined) script.seenSignals.push(options.abortSignal);
-    if (script.pendingStream === true) return new Promise(() => undefined);
-    return Promise.resolve({ stream: streamOf(script.streamParts ?? validFinal()) });
-  },
-});
-
-const modelScript = (
-  streamParts?: readonly RuntimeModelGuardStreamPart[],
-  extra: Partial<Pick<ModelScript, 'generateResult' | 'pendingStream'>> = {},
-): ModelScript =>
-  streamParts === undefined
-    ? { calls: { stream: 0, generate: 0 }, seenSignals: [], ...extra }
-    : { streamParts, calls: { stream: 0, generate: 0 }, seenSignals: [], ...extra };
-
-const guarded = (
-  script: ModelScript,
-  options: Partial<Parameters<typeof wrapRuntimeModelGuard>[1]> = {},
-): RuntimeModelGuardModel => {
-  const turnBudget = budget();
-  return wrapRuntimeModelGuard(modelFor(script), {
-    budget: turnBudget,
-    remainingTimeMs: (finalResponse) => turnBudget.remainingModelTimeMs(finalResponse),
-    ...options,
-  });
-};
-
-const readAll = async (stream: ReadableStream<RuntimeModelGuardStreamPart>): Promise<void> => {
-  const reader = stream.getReader();
-  try {
-    while (!(await reader.read()).done) {
-      // The guard already performed the meaningful validation; this drains its replay stream.
-    }
-  } finally {
-    reader.releaseLock();
-  }
-};
-
-const streamCall = (model: RuntimeModelGuardModel, signal?: AbortSignal) =>
-  model.doStream({ prompt: [], ...(signal === undefined ? {} : { abortSignal: signal }) });
-
-const expectGuardCode = async (
-  call: PromiseLike<unknown>,
-  code: RuntimeModelGuardError['code'],
-) => {
-  await expect(call).rejects.toMatchObject({ code });
-};
+  type GenerateContent,
+} from './runtime-model-guard-fixture';
 
 describe('wrapRuntimeModelGuard', () => {
   it('reserves before the provider and reports acceptance only after a complete valid step', async () => {
@@ -172,11 +54,6 @@ describe('wrapRuntimeModelGuard', () => {
         finish('tool-calls'),
       ],
       'MULTIPLE_SUBMIT',
-    ],
-    [
-      'final and tool',
-      [...toolParts('search_places'), ...textParts('late final'), finish('stop')],
-      'FINAL_WITH_TOOL',
     ],
     ['unknown tool', [...toolParts('delete_everything'), finish('tool-calls')], 'UNKNOWN_TOOL'],
   ] as const)('rejects %s before acceptance', async (_name, parts, code) => {
