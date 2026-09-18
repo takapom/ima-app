@@ -38,6 +38,56 @@ describe('submit-cards pure validation and card assembly', () => {
     }
   });
 
+  it('attaches display-only observations the model never cited', () => {
+    const fixture = makeFixture();
+    const ids = idsFor(fixture);
+    const facilities = addObservation(
+      fixture.registry,
+      fixture.context,
+      'candidate-1',
+      'facilities',
+      {
+        wifi: 'yes',
+        nonSmoking: 'partial',
+        privateRoom: 'unknown',
+        parking: 'no',
+        sourceText: [],
+      },
+    );
+    // The model cites only the claim and constraint fields it must ground; price, photos
+    // and facilities are display-only and must still reach the card.
+    const selection = {
+      ...makeSelection('candidate-1', ids),
+      evidenceIds: [ids.identity, ids.opening, ids.walking],
+    };
+    const result = validateSubmitCards(makeInput([selection]), fixture.context, fixture.registry);
+
+    expect(result.status).toBe('valid');
+    if (result.status === 'valid') {
+      expect(result.response.hero.price?.rawLabel).toBe('¥¥');
+      expect(result.response.hero.photos?.photos[0]?.photoRef).toBe('photo-candidate-1');
+      expect(result.response.hero.facilities?.nonSmoking).toBe('partial');
+      // Attribution and photo tokens are keyed off card evidence, so the attached ids belong there.
+      expect(result.response.hero.evidenceIds).toEqual(
+        expect.arrayContaining([ids.price, ids.photos, facilities]),
+      );
+    }
+  });
+
+  it('never attaches a claim field the model failed to cite', () => {
+    const fixture = makeFixture();
+    const ids = idsFor(fixture);
+    const selection = { ...makeSelection('candidate-1', ids), evidenceIds: [ids.identity] };
+    const result = validateSubmitCards(makeInput([selection]), fixture.context, fixture.registry);
+
+    expect(result.status).toBe('invalid');
+    if (result.status === 'invalid') {
+      expect(result.issues.some((entry) => entry.missingFields.includes('opening_hours'))).toBe(
+        true,
+      );
+    }
+  });
+
   it.each([1, 2, 3])('keeps exactly %s selected cards without padding', (count) => {
     const candidateIds = ['candidate-1', 'candidate-2', 'candidate-3'].slice(0, count);
     const fixture = makeFixture(candidateIds);

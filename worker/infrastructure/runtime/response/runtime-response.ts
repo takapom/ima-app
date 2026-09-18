@@ -8,17 +8,20 @@ import {
 } from '@ima/contracts';
 import {
   type CommittedResponse,
-  type LastTrainInfo,
-  type OpeningHours,
-  type PlaceIdentity,
-  type PriceInfo,
   type ValidatedCard,
   type ValidatedEvidenceText,
-  type WalkingRoute,
   type RetentionMetadata,
 } from '@ima/core';
 
-type CorePhotoInfo = NonNullable<ValidatedCard['photos']>;
+import {
+  publicFacilities,
+  publicIdentity,
+  publicLastTrain,
+  publicOpeningHours,
+  publicPhotos,
+  publicPrice,
+  publicWalkingRoute,
+} from '@worker/infrastructure/runtime/response/runtime-response-values';
 type EvidenceLink = ValidatedEvidenceText['evidence'][number];
 
 export type RuntimePublicResponseMetadata = {
@@ -234,123 +237,6 @@ const publicText = (
   };
 };
 
-const publicIdentity = (value: PlaceIdentity) => ({
-  name: value.name,
-  area: value.area,
-  address: value.address,
-  category: value.category,
-  stationName: value.stationName,
-  accessText: value.accessText,
-  businessStatus: value.businessStatus,
-  sourceUrl: value.sourceUrl,
-});
-
-const publicOpeningHours = (value: OpeningHours) => ({
-  timeZone: value.timeZone,
-  intervals: value.intervals.map((interval) => ({
-    startAt: interval.startAt,
-    endAt: interval.endAt,
-  })),
-  weeklyText: [...value.weeklyText],
-  evaluatedAt: value.evaluatedAt,
-  listedOpenAtEvaluation: value.listedOpenAtEvaluation,
-  nextBoundaryAt: value.nextBoundaryAt,
-  lastOrderAt: value.lastOrderAt,
-  lastOrderRaw: value.lastOrderRaw,
-});
-
-const publicPrice = (value: PriceInfo) => ({
-  level: value.level,
-  range:
-    value.range === null
-      ? null
-      : {
-          currency: value.range.currency,
-          min: value.range.min,
-          max: value.range.max,
-          unit: value.range.unit,
-        },
-  rawLabel: value.rawLabel,
-});
-
-const publicPhotos = (
-  value: CorePhotoInfo,
-  candidateId: string,
-  options: RuntimePublicResponseOptions,
-):
-  | {
-      readonly status: 'known';
-      readonly value: PhotoInfo;
-    }
-  | { readonly status: 'unknown'; readonly reason: string } => {
-  const resolvePhotoToken = options.resolvePhotoToken;
-  if (value.photos.length === 0) {
-    return { status: 'known', value: { photos: [] } };
-  }
-  if (resolvePhotoToken === undefined) {
-    return { status: 'unknown', reason: '写真を表示できません' };
-  }
-  const photos = [];
-  for (const photo of value.photos) {
-    const photoToken = resolvePhotoToken(candidateId, photo.photoRef);
-    if (photoToken === undefined) continue;
-    photos.push({
-      photoToken,
-      attributions: photo.attributions.map((attribution) => ({
-        displayName: attribution.displayName,
-        uri: attribution.uri,
-      })),
-      sourceUrl: photo.sourceUrl,
-    });
-  }
-  if (value.photos.length > 0 && photos.length === 0) {
-    return { status: 'unknown', reason: '写真を表示できません' };
-  }
-  return {
-    status: 'known',
-    value: {
-      photos,
-      ...(photos.length < value.photos.length
-        ? { partialReason: '一部の写真は表示できません' }
-        : {}),
-    },
-  };
-};
-
-const publicWalkingRoute = (value: WalkingRoute) => ({
-  originRef: value.originRef,
-  destinationCandidateId: value.destinationCandidateId,
-  originRevision: value.originRevision,
-  evaluatedAt: value.evaluatedAt,
-  durationSeconds: value.durationSeconds,
-  distanceMeters: value.distanceMeters,
-  warnings: value.warnings.map((warning) => ({
-    code: warning.code,
-    message: warning.message,
-  })),
-});
-
-const publicLastTrain = (value: LastTrainInfo) => ({
-  serviceDate: value.serviceDate,
-  fromStationRef: value.fromStationRef,
-  homeStationRef: value.homeStationRef,
-  journeyRef: value.journeyRef,
-  lastDepartureAt: value.lastDepartureAt,
-  arrivesHomeAt: value.arrivesHomeAt,
-  transfers: value.transfers.map((transfer) => ({
-    fromStationRef: transfer.fromStationRef,
-    toStationRef: transfer.toStationRef,
-    departureAt: transfer.departureAt,
-    arrivalAt: transfer.arrivalAt,
-  })),
-  placeToStationSeconds: value.placeToStationSeconds,
-  arrivePlaceAt: value.arrivePlaceAt,
-  leaveBy: value.leaveBy,
-  availableStaySeconds: value.availableStaySeconds,
-  minimumStayMinutes: value.minimumStayMinutes,
-  usable: value.usable,
-});
-
 const cardEvidence = (
   card: ValidatedCard,
   field: string,
@@ -392,7 +278,7 @@ const publicPhotoFact = (
   | { readonly status: 'unknown'; readonly reason: string }
   | undefined => {
   if (card.photos === null) return undefined;
-  const projection = publicPhotos(card.photos, card.candidateId, options);
+  const projection = publicPhotos(card.photos, card.candidateId, options.resolvePhotoToken);
   if (projection.status === 'unknown') return projection;
   try {
     return known(projection.value, cardEvidence(card, 'photos', options));
@@ -416,6 +302,14 @@ const publicCard = (card: ValidatedCard, options: RuntimePublicResponseOptions) 
       ? {}
       : { price: known(publicPrice(card.price), cardEvidence(card, 'price', options)) }),
     ...(photoFact === undefined ? {} : { photos: photoFact }),
+    ...(card.facilities === null
+      ? {}
+      : {
+          facilities: known(
+            publicFacilities(card.facilities),
+            cardEvidence(card, 'facilities', options),
+          ),
+        }),
     ...(card.walkingRoute === null
       ? {}
       : {

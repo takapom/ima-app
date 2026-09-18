@@ -21,6 +21,12 @@ import {
   mapCommittedResponseToPublic,
   RuntimePublicResponseError,
 } from '@worker/infrastructure/runtime/response/runtime-response';
+import {
+  card,
+  cardEvidenceLinks,
+  responseMetadata,
+  retention,
+} from './runtime-final-message-card-fixture';
 
 const now = '2026-09-10T12:00:00Z';
 const scope = { ownerScopeRef: 'owner-final', threadId: 'thread-final' };
@@ -235,105 +241,6 @@ describe('runtime final message boundary', () => {
   });
 });
 
-const retention = {
-  retentionDecision: 'deny' as const,
-  retentionMode: 'session_only' as const,
-  sessionExpiresAt: '2026-09-10T23:00:00Z',
-  freshUntil: '2026-09-10T13:00:00Z',
-  displayUntil: '2026-09-10T22:00:00Z',
-  retentionUntil: null,
-  deletionScheduledAt: null,
-  attribution: { label: 'Fixture', sourceLink: null },
-  restoreMode: 'reference_only' as const,
-  policyStatus: 'available' as const,
-  displayPolicyStatus: 'available' as const,
-};
-
-type EvidenceLink = ValidatedMessageResponse['message']['evidence'][number];
-
-const evidenceLink = (observationId: string, field: EvidenceLink['field']): EvidenceLink => ({
-  observationId,
-  candidateId: 'candidate-1',
-  field,
-  sources: [
-    {
-      provider: 'fixture',
-      recordRef: `record-${observationId}`,
-      attribution: 'Fixture',
-      publicUrl: null,
-    },
-  ],
-  retention,
-});
-
-const responseMetadata = {
-  threadId: 'thread-final',
-  turnId: 'turn-final',
-  responseId: 'response-final',
-  revision: 2,
-  textRetention: retention,
-};
-
-const identity = {
-  name: '店A',
-  area: '恵比寿',
-  address: null,
-  category: 'cafe',
-  stationName: null,
-  accessText: null,
-  businessStatus: 'operational' as const,
-  sourceUrl: null,
-};
-
-const openingHours = {
-  timeZone: 'UTC',
-  intervals: [{ startAt: '2026-09-10T11:00:00Z', endAt: '2026-09-10T15:00:00Z' }],
-  weeklyText: ['11:00-15:00'],
-  evaluatedAt: now,
-  listedOpenAtEvaluation: true,
-  nextBoundaryAt: '2026-09-10T15:00:00Z',
-  lastOrderAt: '2026-09-10T14:00:00Z',
-  lastOrderRaw: '14:00',
-};
-
-const cardEvidenceLinks = new Map([
-  ['obs-identity', evidenceLink('obs-identity', 'identity')],
-  ['obs-opening', evidenceLink('obs-opening', 'opening_hours')],
-  ['obs-photos', evidenceLink('obs-photos', 'photos')],
-]);
-
-const requireCardEvidenceLink = (evidenceId: string): EvidenceLink => {
-  const link = cardEvidenceLinks.get(evidenceId);
-  if (link === undefined) throw new Error('card evidence fixture is incomplete');
-  return link;
-};
-
-const card: ValidatedCard = {
-  candidateId: 'candidate-1',
-  identity,
-  openingHours,
-  price: null,
-  photos: {
-    photos: [
-      {
-        photoRef: 'photo-internal-token',
-        attributions: [{ displayName: 'Fixture source', uri: null }],
-        sourceUrl: null,
-      },
-    ],
-  },
-  walkingRoute: null,
-  lastTrain: null,
-  evidenceIds: ['obs-identity', 'obs-opening', 'obs-photos'],
-  why: {
-    text: '営業中の候補です',
-    evidenceIds: ['obs-identity'],
-    basis: 'grounded',
-    evidence: [requireCardEvidenceLink('obs-identity')],
-  },
-  diff: null,
-};
-
 describe('Core committed response to public DTO mapping', () => {
   it('maps a message response through the public schema and strips Core-only evidence fields', () => {
     const response: ValidatedMessageResponse = {
@@ -354,6 +261,52 @@ describe('Core committed response to public DTO mapping', () => {
       message: [{ text: '条件を確認しました', evidence: [], retention }],
     });
     expect(JSON.stringify(publicResponse)).not.toContain('recordRef');
+  });
+
+  it('carries facilities onto the public card so amenity display has data to render', () => {
+    const withFacilities: ValidatedCard = {
+      ...card,
+      evidenceIds: [...card.evidenceIds, 'obs-facilities'],
+      facilities: {
+        wifi: 'yes',
+        nonSmoking: 'partial',
+        privateRoom: 'unknown',
+        parking: 'no',
+        sourceText: [],
+      },
+    };
+    const publicResponse = mapCommittedResponseToPublic(
+      { presentation: 'replace' as const, message: [card.why], hero: withFacilities, alts: [] },
+      {
+        ...responseMetadata,
+        cardSetId: 'card-set-facilities',
+        resolveCardEvidence: (_candidateId, evidenceId) => cardEvidenceLinks.get(evidenceId),
+        resolvePhotoToken: () => 'photo-token-public',
+      },
+    );
+
+    expect(v.safeParse(AssistantResponseSchema, publicResponse).success).toBe(true);
+    if (publicResponse.kind !== 'cards') throw new Error('expected cards response');
+    expect(publicResponse.cards.hero.facts.facilities).toMatchObject({
+      status: 'known',
+      value: { wifi: 'yes', nonSmoking: 'partial' },
+    });
+  });
+
+  it('omits the facilities fact entirely when the provider supplied none', () => {
+    const publicResponse = mapCommittedResponseToPublic(
+      { presentation: 'replace' as const, message: [card.why], hero: card, alts: [] },
+      {
+        ...responseMetadata,
+        cardSetId: 'card-set-no-facilities',
+        resolveCardEvidence: (_candidateId, evidenceId) => cardEvidenceLinks.get(evidenceId),
+        resolvePhotoToken: () => 'photo-token-public',
+      },
+    );
+
+    expect(v.safeParse(AssistantResponseSchema, publicResponse).success).toBe(true);
+    if (publicResponse.kind !== 'cards') throw new Error('expected cards response');
+    expect(publicResponse.cards.hero.facts.facilities).toBeUndefined();
   });
 
   it('maps cards with field evidence, photo token translation, and no internal source objects', () => {

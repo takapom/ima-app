@@ -200,10 +200,14 @@ describe('public tool catalog', () => {
     expect(tools.search_places.description).toContain('0件のときは語を減らす');
     expect(tools.search_places.description).toContain('openNow=false');
     expect(tools.get_place_details.description).toContain('まとめて1回のget_place_details');
-    expect(tools.get_place_details.description).toContain('fieldsへidentityとopening_hours');
-    expect(tools.get_place_details.description).toContain('写真は任意');
+    expect(tools.get_place_details.description).toContain(
+      'fieldsへidentity、opening_hours、price、photos、facilities',
+    );
+    expect(tools.get_place_details.description).toContain('identityとopening_hoursは確定に必須');
+    expect(tools.get_place_details.description).toContain('写真や価格が無い店舗でも提案できます');
     expect(tools.submit_cards.description).toContain('2nd step');
     expect(tools.submit_cards.description).toContain('identityとopening_hoursのobservationId');
+    expect(tools.submit_cards.description).toContain('引用しなかったfieldはカードに表示されません');
     expect(tools.submit_cards.description).toContain('読み取りと確定は同じstepにできません');
     expect(getPublicTool(tools, 'walking_route')).toBeUndefined();
     const result = await invokePublicToolByName(

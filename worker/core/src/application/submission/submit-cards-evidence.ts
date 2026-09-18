@@ -36,6 +36,7 @@ import type { ReadonlyStoredObservation } from '@core/domain/registry';
 
 const PositiveMinutesSchema = v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(180));
 type PhotoInfo = v.InferOutput<typeof PhotoInfoSchema>;
+type FacilitiesInfo = v.InferOutput<typeof FacilitiesInfoSchema>;
 
 /**
  * Conditions supplied by the Harness/Application. They are deliberately separate from model
@@ -128,6 +129,7 @@ export type ValidatedCard = {
   openingHours: OpeningHours;
   price: PriceInfo | null;
   photos: PhotoInfo | null;
+  facilities: FacilitiesInfo | null;
   walkingRoute: WalkingRoute | null;
   lastTrain: LastTrainInfo | null;
   evidenceIds: readonly string[];

@@ -410,9 +410,10 @@ export const createPublicToolSet = (dependencies: ToolBindingDependencies): Publ
     get_place_details: tool<DetailsToolEnvelope, DetailsToolResult>({
       description: [
         '登録済み候補の要求したfieldsだけを取得します。未対応のfieldは推測せず未対応として扱ってください。',
-        'カード提示の1st step: 提案する候補をまとめて1回のget_place_detailsへ渡します。requestsは配列なので候補ごとに呼び分けず、各要素のfieldsへidentityとopening_hoursを指定してください。',
-        '取得したidentityとopening_hoursのobservationIdは、次のstepのsubmit_cardsで各候補のevidenceIdsへ入れてください。読み取りと確定は同じstepにできません。',
-        '写真は任意です。photosが利用可能なら同じget_place_detailsで取得し、そのobservationIdもevidenceIdsへ加えてください。写真が未取得・取得不可でも店舗は提案できます。',
+        'カード提示の1st step: 提案する候補をまとめて1回のget_place_detailsへ渡します。requestsは配列なので候補ごとに呼び分けず、各要素のfieldsへidentity、opening_hours、price、photos、facilitiesを指定してください。',
+        'identityとopening_hoursは確定に必須です。price、photos、facilitiesはカードの表示に使うので、利用可能なら同じ呼び出しで併せて取得してください。',
+        '取得できたobservationIdは、次のstepのsubmit_cardsで各候補のevidenceIdsへ入れてください。読み取りと確定は同じstepにできません。',
+        '取得できなかったfieldは未取得として扱い、そのまま提案を続けてください。写真や価格が無い店舗でも提案できます。',
       ].join('\n'),
       inputSchema: getPlaceDetailsToolSchema,
       execute: (input, options) =>
@@ -423,6 +424,7 @@ export const createPublicToolSet = (dependencies: ToolBindingDependencies): Publ
         '根拠付きのカードとmessageを検証し、1回だけ確定します。',
         'カード提示の2nd step: 先のstepで提案する候補をまとめて1回のget_place_detailsへ渡し、各候補のidentityとopening_hoursを取得してください。',
         '各カードのevidenceIdsへその候補のidentityとopening_hoursのobservationIdを入れてください。この2つが揃ったカードだけが確定できます。読み取りと確定は同じstepにできません。',
+        'price、photos、facilitiesも取得できていれば、そのobservationIdを同じevidenceIdsへ加えてください。引用しなかったfieldはカードに表示されません。',
       ].join('\n'),
       inputSchema: submitCardsToolSchema,
       execute: (input, options) =>

@@ -135,6 +135,7 @@ const photoResponse: CommittedResponse = {
       lastOrderRaw: null,
     },
     price: null,
+    facilities: null,
     photos: { photos: [{ photoRef: 'places/A/photos/one', attributions: [], sourceUrl: null }] },
     walkingRoute: null,
     lastTrain: null,

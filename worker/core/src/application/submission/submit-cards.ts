@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import { EvidenceTextSchema } from '@core/domain/evidence';
 import {
+  FacilitiesInfoSchema,
   OpeningHoursSchema,
   PlaceIdentitySchema,
   PhotoInfoSchema,
@@ -36,6 +37,53 @@ import {
 } from '@core/application/submission/submit-cards-travel';
 
 export type { SubmitValidationContext } from '@core/application/submission/submit-cards-evidence';
+
+/**
+ * Fields the card renders but the model never reasons over. The model's citations stay
+ * authoritative for the claims it makes (identity and opening hours remain required and
+ * model-cited); these are selected by the Application so a card's appearance does not
+ * depend on the model remembering to cite an asset. Each one still passes the same
+ * `resolveObservation` checks — scope, candidate, context, freshness, retention, reuse —
+ * so nothing unverified reaches a card.
+ */
+const DISPLAY_ONLY_FIELDS = ['price', 'photos', 'facilities'] as const;
+
+/**
+ * Attaches display-only observations the model did not cite. A field that fails validation
+ * is simply left off the card: it is never the model's error and must not block the commit.
+ * Returns the observation ids attached, so card evidence and attribution stay complete.
+ */
+const attachDisplayObservations = (
+  candidateId: string,
+  byField: Map<KnownObservationField, ResolvedObservation>,
+  path: string,
+  context: SubmitValidationContext,
+  registry: CandidateObservationRegistryPort,
+): readonly string[] => {
+  const attached: string[] = [];
+  for (const field of DISPLAY_ONLY_FIELDS) {
+    if (byField.has(field)) continue;
+    const stored = registry
+      .listObservations(context.scope, candidateId)
+      .filter((observation) => observation.field === field)
+      .slice()
+      .sort((left, right) => Date.parse(right.fetchedAt) - Date.parse(left.fetchedAt));
+    for (const observation of stored) {
+      const resolved = resolveObservation(
+        observation.observationId,
+        candidateId,
+        path,
+        context,
+        registry,
+      );
+      if (resolved.issue !== undefined || resolved.resolved === undefined) continue;
+      byField.set(field, resolved.resolved);
+      attached.push(observation.observationId);
+      break;
+    }
+  }
+  return attached;
+};
 
 const validateCandidate = (
   selection: CardSelection,
@@ -87,6 +135,13 @@ const validateCandidate = (
       }
     }
   }
+  const attachedEvidenceIds = attachDisplayObservations(
+    selection.candidateId,
+    byField,
+    path,
+    context,
+    registry,
+  );
   const identityObservation = byField.get('identity');
   const openingObservation = byField.get('opening_hours');
   if (identityObservation === undefined)
@@ -213,6 +268,7 @@ const validateCandidate = (
     );
   const priceObservation = byField.get('price');
   const photosObservation = byField.get('photos');
+  const facilitiesObservation = byField.get('facilities');
   const price =
     priceObservation === undefined
       ? null
@@ -221,6 +277,10 @@ const validateCandidate = (
     photosObservation === undefined
       ? null
       : (parseObservationValue(photosObservation.observation, PhotoInfoSchema) ?? null);
+  const facilities =
+    facilitiesObservation === undefined
+      ? null
+      : (parseObservationValue(facilitiesObservation.observation, FacilitiesInfoSchema) ?? null);
   return {
     status: 'valid',
     response: {
@@ -229,9 +289,10 @@ const validateCandidate = (
       openingHours: opening,
       price,
       photos,
+      facilities,
       walkingRoute: walkingRoute ?? null,
       lastTrain: lastTrain.info,
-      evidenceIds: selection.evidenceIds,
+      evidenceIds: [...selection.evidenceIds, ...attachedEvidenceIds],
       why: why.response,
       diff: diff === null ? null : diff.status === 'valid' ? diff.response : null,
     },
