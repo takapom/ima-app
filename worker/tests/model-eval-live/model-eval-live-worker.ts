@@ -11,6 +11,7 @@ import {
 } from '@worker/infrastructure/runtime/threads/admission';
 import {
   LiveTraceRecorder,
+  LIVE_PROMPT_VERSION,
   wrapModelForLiveEvaluation,
   type LiveTraceSnapshot,
 } from '../../tooling/model-eval/live';
@@ -102,7 +103,7 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
   }
 
   getModelEvalProfile(): { readonly model: string; readonly promptVersion: string } {
-    return { model: this.liveModel, promptVersion: 'm25-production-default-v1' };
+    return { model: this.liveModel, promptVersion: LIVE_PROMPT_VERSION };
   }
 
   configureModelEvalRequestCapture(enabled: boolean): void {

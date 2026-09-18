@@ -1,7 +1,7 @@
 import type { ModelEvalLiveCliCode } from './live-types';
 
 export const LIVE_MODEL_VERSION = 'openai:gpt-5.6-luna' as const;
-export const LIVE_PROMPT_VERSION = 'm25-production-default-v1' as const;
+export const LIVE_PROMPT_VERSION = 'm25-production-default-v2' as const;
 
 export type LiveOptIn =
   | { readonly enabled: true }

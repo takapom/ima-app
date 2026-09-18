@@ -397,22 +397,33 @@ export const invokePublicToolByName = (
 export const createPublicToolSet = (dependencies: ToolBindingDependencies): PublicToolSet =>
   ({
     search_places: tool<SearchToolEnvelope, SearchToolResult>({
-      description:
-        'Search places in the supplied area. It does not guarantee opening, walking, or last-train conditions.',
+      description: [
+        '指定地域の店舗をホットペッパーで検索します。keywordは空白区切りのAND検索で、areaに指定した地域名もqueryと同じkeywordへ連結されます。',
+        'queryには掲載情報に現れる短い語だけを使い、「甘いもの」「まったり」のような要望表現はスイーツ・カフェ・居酒屋などのジャンル語へ置き換えてください。',
+        '0件のときは語を減らすか別のジャンル語で再検索し、検索していない状態を候補なしと断定しないでください。',
+        '営業中フィルタは未対応のためopenNow=falseを使ってください。営業時間は掲載文であり、今の営業・到着時の営業・空席を保証しません。未確認と明示してください。徒歩・終電の条件も保証しません。',
+      ].join('\n'),
       inputSchema: searchPlacesToolSchema,
       execute: (input, options) =>
         invokePublicToolEnvelope('search_places', input, dependencies, invocationOf(options)),
     }),
     get_place_details: tool<DetailsToolEnvelope, DetailsToolResult>({
-      description:
-        'Read only the requested fields for registered candidates. Unsupported fields are reported instead of inferred.',
+      description: [
+        '登録済み候補の要求したfieldsだけを取得します。未対応のfieldは推測せず未対応として扱ってください。',
+        'カード提示の1st step: 提案する候補をまとめて1回のget_place_detailsへ渡します。requestsは配列なので候補ごとに呼び分けず、各要素のfieldsへidentityとopening_hoursを指定してください。',
+        '取得したidentityとopening_hoursのobservationIdは、次のstepのsubmit_cardsで各候補のevidenceIdsへ入れてください。読み取りと確定は同じstepにできません。',
+        '写真は任意です。photosが利用可能なら同じget_place_detailsで取得し、そのobservationIdもevidenceIdsへ加えてください。写真が未取得・取得不可でも店舗は提案できます。',
+      ].join('\n'),
       inputSchema: getPlaceDetailsToolSchema,
       execute: (input, options) =>
         invokePublicToolEnvelope('get_place_details', input, dependencies, invocationOf(options)),
     }),
     submit_cards: tool<SubmitToolEnvelope, SubmitToolResult>({
-      description:
-        'Submit grounded cards and message for application validation and one-time commitment.',
+      description: [
+        '根拠付きのカードとmessageを検証し、1回だけ確定します。',
+        'カード提示の2nd step: 先のstepで提案する候補をまとめて1回のget_place_detailsへ渡し、各候補のidentityとopening_hoursを取得してください。',
+        '各カードのevidenceIdsへその候補のidentityとopening_hoursのobservationIdを入れてください。この2つが揃ったカードだけが確定できます。読み取りと確定は同じstepにできません。',
+      ].join('\n'),
       inputSchema: submitCardsToolSchema,
       execute: (input, options) =>
         invokePublicToolEnvelope('submit_cards', input, dependencies, invocationOf(options)),

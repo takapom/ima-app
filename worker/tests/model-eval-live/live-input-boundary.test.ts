@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { MODEL_EVALUATION_SCENARIOS } from '../../tooling/model-eval/dataset';
 import { buildEvaluationTurnRequest } from '../../tooling/model-eval/scenario-input';
 import { executeLiveEvaluationCase } from '../../tooling/model-eval/live-coordinator';
+import { LIVE_PROMPT_VERSION } from '../../tooling/model-eval/live-cli';
 import { createLiveEvaluationTurnPlan } from '../../tooling/model-eval/live-plan';
 import type { EvaluationCase } from '../../tooling/model-eval/types';
 import type { EvaluationCardContext } from '../../tooling/model-eval/scenario-input';
@@ -71,6 +72,9 @@ describe('model-eval live input boundary', () => {
     'passes formal %s context into ModelEvalThreadDO without a provider call',
     async (id) => {
       const { evaluationCase, result, captured, stub } = await runInputBoundary(scenarioFor(id));
+      expect(await stub.getModelEvalProfile()).toMatchObject({
+        promptVersion: LIVE_PROMPT_VERSION,
+      });
       expect(result.attempt.status).toBe('runtime_failed');
       expect(captured).not.toBeNull();
       if (captured === null) return;

@@ -3,6 +3,7 @@ import { AssistantResponseSchema, type AssistantResponse } from '@ima/contracts'
 import {
   buildEvaluationRunFromResponse,
   createLiveProbeArtifact,
+  LIVE_PROMPT_VERSION,
   type LiveProbeAttempt,
   type LiveProbeFailure,
   type LiveProbeProfile,
@@ -94,7 +95,7 @@ const safeFailureCode = (value: unknown): string =>
 
 const versionsFor = (profile: LiveCoordinatorProfile | null) => ({
   modelVersion: profile === null ? 'openai:unknown' : `openai:${profile.model}`,
-  promptVersion: profile?.promptVersion ?? 'm25-production-default-v1',
+  promptVersion: profile?.promptVersion ?? LIVE_PROMPT_VERSION,
 });
 
 const responseFrom = (result: LiveTurnExecution): AssistantResponse => {

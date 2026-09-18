@@ -194,6 +194,17 @@ describe('public tool catalog', () => {
       'search_places',
       'submit_cards',
     ]);
+    expect(tools.search_places.description).toContain('空白区切りのAND検索');
+    expect(tools.search_places.description).toContain('地域名もqueryと同じkeywordへ連結');
+    expect(tools.search_places.description).toContain('ジャンル語へ置き換えて');
+    expect(tools.search_places.description).toContain('0件のときは語を減らす');
+    expect(tools.search_places.description).toContain('openNow=false');
+    expect(tools.get_place_details.description).toContain('まとめて1回のget_place_details');
+    expect(tools.get_place_details.description).toContain('fieldsへidentityとopening_hours');
+    expect(tools.get_place_details.description).toContain('写真は任意');
+    expect(tools.submit_cards.description).toContain('2nd step');
+    expect(tools.submit_cards.description).toContain('identityとopening_hoursのobservationId');
+    expect(tools.submit_cards.description).toContain('読み取りと確定は同じstepにできません');
     expect(getPublicTool(tools, 'walking_route')).toBeUndefined();
     const result = await invokePublicToolByName(
       'walking_route',
