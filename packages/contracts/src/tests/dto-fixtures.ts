@@ -35,6 +35,8 @@ export const identity = {
     area: '恵比寿',
     address: null,
     category: 'cafe',
+    stationName: null,
+    accessText: null,
     businessStatus: 'operational',
     sourceUrl: 'https://example.com/place',
   },

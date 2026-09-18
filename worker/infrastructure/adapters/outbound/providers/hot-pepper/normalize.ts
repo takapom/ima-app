@@ -35,13 +35,27 @@ export const normalizeHotPepperPrice = (
   };
 };
 
+/**
+ * Hot Pepper states a facility as a short verdict, optionally followed by a free-form note after
+ * a full-width colon ("なし ：近隣のコインパーキングをご利用ください"). Only the verdict decides the
+ * value; the note stays in `sourceText`. Smoking uses its own vocabulary and never the yes/no one.
+ */
+const facilityVerdict = (value: string): string => {
+  const [verdict] = value.normalize('NFKC').split(':', 1);
+  return (verdict ?? '').trim().toLocaleLowerCase('ja-JP');
+};
+
 const facilityValueFor = (value: unknown): HotPepperFacilityValue => {
   if (typeof value === 'boolean') return value ? 'yes' : 'no';
   if (typeof value !== 'string') return 'unknown';
-  const normalized = value.normalize('NFKC').trim().toLocaleLowerCase('ja-JP');
-  if (['yes', 'true', 'あり', '有', '可', '○', 'o'].includes(normalized)) return 'yes';
-  if (['no', 'false', 'なし', '無', '不可', '×', 'x'].includes(normalized)) return 'no';
-  if (['partial', '一部', '条件あり', '場合による'].includes(normalized)) return 'partial';
+  const normalized = facilityVerdict(value);
+  if (['yes', 'true', 'あり', '有', '可', '○', 'o', '全面禁煙'].includes(normalized)) return 'yes';
+  if (['no', 'false', 'なし', '無', '不可', '×', 'x', '禁煙席なし'].includes(normalized)) {
+    return 'no';
+  }
+  if (['partial', '一部', '条件あり', '場合による', '一部禁煙', '分煙'].includes(normalized)) {
+    return 'partial';
+  }
   return 'unknown';
 };
 

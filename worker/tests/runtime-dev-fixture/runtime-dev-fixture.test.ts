@@ -297,7 +297,8 @@ describe('keyless dev fixture graph', () => {
     expect(hero.facts.price?.status).toBe('known');
     if (hero.facts.price?.status !== 'known') throw new Error('fixture price was not returned');
     expect(hero.facts.price.value.range).toBeNull();
-    expect(hero.facts.price.value.rawLabel).toBe('1,200〜2,400円');
+    // The listed band (budget.name) is preferred; budget.average is free-form promotional text.
+    expect(hero.facts.price.value.rawLabel).toBe('1200～2400円');
     const customerText = [
       ...response.output.response.message.map((item) => item.text),
       hero.why.text,

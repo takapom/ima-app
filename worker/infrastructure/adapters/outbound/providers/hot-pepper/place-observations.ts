@@ -20,6 +20,16 @@ import { HotPepperError } from '@worker/infrastructure/adapters/outbound/provide
 import type { HotPepperShopWire } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/wire';
 import { HotPepperPhotoUrlSchema } from '@worker/infrastructure/security/photo-resource-policy';
 
+/** Optional identity text is omitted rather than emptied, so absence stays distinguishable. */
+const boundedIdentityText = (
+  value: string | null | undefined,
+  maxLength: number,
+): string | undefined => {
+  if (value === undefined || value === null) return undefined;
+  const trimmed = value.trim();
+  return trimmed.length === 0 || trimmed.length > maxLength ? undefined : trimmed;
+};
+
 export const hotPepperFieldSchemas = {
   identity: PlaceIdentitySchema,
   opening_hours: OpeningHoursSchema,
@@ -103,15 +113,22 @@ const fieldValue = (
         ],
       };
     }
-    case 'identity':
+    case 'identity': {
+      // Station and access are listed route text, never a measured walking route. They are carried
+      // for display only; a walking constraint still needs walking_route evidence.
+      const stationName = boundedIdentityText(shop.station_name, 160);
+      const accessText = boundedIdentityText(shop.access, 500);
       return {
         name: shop.name,
         address: shop.address ?? null,
         area,
         category: shop.genre?.name ?? null,
+        stationName: stationName ?? null,
+        accessText: accessText ?? null,
         businessStatus: 'unknown',
         sourceUrl: hotPepperSourceFor(shop).publicUrl,
       };
+    }
     case 'opening_hours': {
       // Free-form opening/holiday text does not establish an opening interval or open-now status.
       const weeklyText = [
@@ -132,13 +149,15 @@ const fieldValue = (
           };
     }
     case 'price': {
+      // `budget.name` is the listed price band ("2001～3000円"). `budget.average` is free-form and
+      // can carry promotional text, so it is only the fallback when no band is listed.
       const price = normalizeHotPepperPrice(shop);
       return price.status !== 'known'
         ? undefined
         : {
             level: null,
             range: null,
-            rawLabel: price.value.averageLabel ?? price.value.budgetLabel,
+            rawLabel: price.value.budgetLabel ?? price.value.averageLabel,
           };
     }
     case 'facilities': {

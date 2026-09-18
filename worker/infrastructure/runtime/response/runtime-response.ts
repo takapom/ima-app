@@ -239,6 +239,8 @@ const publicIdentity = (value: PlaceIdentity) => ({
   area: value.area,
   address: value.address,
   category: value.category,
+  stationName: value.stationName,
+  accessText: value.accessText,
   businessStatus: value.businessStatus,
   sourceUrl: value.sourceUrl,
 });

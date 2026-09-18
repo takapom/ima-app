@@ -113,6 +113,8 @@ const identity: PlaceIdentity = {
   area: '渋谷',
   address: null,
   category: 'cafe',
+  stationName: null,
+  accessText: null,
   businessStatus: 'operational',
   sourceUrl: 'https://public.example/place',
 };

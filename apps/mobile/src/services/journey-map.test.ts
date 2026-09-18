@@ -33,6 +33,8 @@ const cardWith = (
         area: '恵比寿',
         address: '東京都渋谷区恵比寿1-1-1',
         category: 'cafe',
+        stationName: null,
+        accessText: null,
         businessStatus: 'operational',
         sourceUrl,
       },

@@ -157,6 +157,8 @@ describe('runtime field policy', () => {
       area: '渋谷',
       address: null,
       category: 'cafe',
+      stationName: null,
+      accessText: null,
       businessStatus: 'operational' as const,
       sourceUrl: null,
     };

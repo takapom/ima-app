@@ -374,6 +374,8 @@ export const createRuntimeNativePortFixture = (
       area: 'Fixture area',
       address: null,
       category: 'cafe',
+      stationName: null,
+      accessText: null,
       businessStatus: 'operational',
       sourceUrl: null,
     },

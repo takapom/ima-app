@@ -55,6 +55,8 @@ const card = (): PublicCard => {
           area: '渋谷',
           address: null,
           category: 'カフェ',
+          stationName: null,
+          accessText: null,
           businessStatus: 'operational',
           sourceUrl: null,
         },

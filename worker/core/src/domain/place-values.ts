@@ -17,6 +17,9 @@ export const PlaceIdentitySchema = v.strictObject({
   area: Text(160),
   address: v.nullable(v.pipe(v.string(), v.maxLength(500))),
   category: v.nullable(v.pipe(v.string(), v.maxLength(120))),
+  /** Listed nearest station and route text. Null means the Provider supplied neither. */
+  stationName: v.nullable(Text(160)),
+  accessText: v.nullable(Text(500)),
   businessStatus: v.picklist([
     'operational',
     'temporarily_closed',

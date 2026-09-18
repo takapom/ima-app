@@ -117,9 +117,10 @@ describe('Hot Pepper primary provider composition', () => {
         },
       ],
     });
+    // `budget.name` is the listed band; `budget.average` is free-form and stays the fallback.
     expect(candidate.price).toMatchObject({
       status: 'known',
-      observations: [{ value: { range: null, level: null } }],
+      observations: [{ value: { range: null, level: null, rawLabel: '1200～2400円' } }],
     });
     f.advance();
     const details = await f.details(candidate.candidateId, [
@@ -160,6 +161,13 @@ describe('Hot Pepper primary provider composition', () => {
     expect(result).toMatchObject({
       status: 'ok',
       data: { items: [{ fields: { identity: { status: 'known' } } }] },
+    });
+    // Listed station and route text are display facts carried on identity, not a measured route.
+    const identity = result.status === 'ok' ? result.data.items[0]?.fields.identity : undefined;
+    if (identity?.status !== 'known') throw new Error('Identity missing');
+    expect(identity.observations[0]?.value).toMatchObject({
+      stationName: '恵比寿',
+      accessText: 'ＪＲ 恵比寿駅 西口 徒歩3分',
     });
     expect(await f.details(id, ['photos', 'walking_route'])).toMatchObject({
       status: 'error',

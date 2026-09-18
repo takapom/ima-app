@@ -77,6 +77,8 @@ const providerResult: JSONValue = {
                   area: '渋谷',
                   address: null,
                   category: 'cafe',
+                  stationName: null,
+                  accessText: null,
                   businessStatus: 'operational',
                   sourceUrl: null,
                 },
