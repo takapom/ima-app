@@ -7,7 +7,7 @@ import {
   sanitizeTelemetryEvent,
   type TelemetryEventRecord,
   type TelemetryEventStore,
-} from '@worker/telemetry/events';
+} from '@worker/infrastructure/telemetry/events';
 import {
   OPERATIONAL_FLAG_ENV,
   operationalCapabilityMode,
@@ -19,7 +19,7 @@ import {
   filterTelemetryRetention,
   parseTraceRecord,
   type TraceRecord,
-} from '@worker/telemetry/trace';
+} from '@worker/infrastructure/telemetry/trace';
 
 class FixtureTelemetryEventStore implements TelemetryEventStore {
   readonly records: TelemetryEventRecord[] = [];

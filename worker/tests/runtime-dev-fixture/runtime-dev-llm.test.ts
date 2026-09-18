@@ -7,10 +7,10 @@ import {
 } from '@ima/contracts';
 import * as v from 'valibot';
 import { describe, expect, it, vi } from 'vitest';
-import { OPENAI_MODEL_NAME } from '@worker/adapters/outbound/providers/openai/provider-config';
+import { OPENAI_MODEL_NAME } from '@worker/infrastructure/adapters/outbound/providers/openai/provider-config';
 import { fixturePlace } from '@worker/composition/runtime-dev-fixture-place';
 import { createDevFixtureModel } from '@worker/composition/runtime-dev-fixture';
-import type { RuntimeModelGuardStreamPart } from '@worker/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelGuardStreamPart } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import { requestInput } from '../composition/runtime-production-factory-fixtures';
 import { withDevFixtureCors } from './runtime-dev-fixture-cors';
 import { isDevLiveModelEnvironment } from './runtime-dev-llm';

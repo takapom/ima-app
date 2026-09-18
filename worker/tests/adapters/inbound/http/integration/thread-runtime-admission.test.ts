@@ -6,9 +6,9 @@ import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
   ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
-import { runtimeFailure } from '@worker/runtime/threads/admission';
-import { persistRuntimeResult } from '@worker/adapters/outbound/persistence/thread/result-persistence';
+} from '@worker/infrastructure/runtime/threads/admission';
+import { runtimeFailure } from '@worker/infrastructure/runtime/threads/admission';
+import { persistRuntimeResult } from '@worker/infrastructure/adapters/outbound/persistence/thread/result-persistence';
 
 const OWNER_A = 'A'.repeat(42) + 'E';
 const OWNER_B = 'B'.repeat(42) + 'E';

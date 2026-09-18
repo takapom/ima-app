@@ -8,8 +8,8 @@ import type {
   RetentionMetadata,
   ToolExecutionContext,
 } from '@ima/core';
-import type { JourneyReadResult } from '@worker/adapters/outbound/persistence/last-train/reader';
-import type { LastTrainRoutePorts } from '@worker/adapters/outbound/providers/last-train/journey-adapter';
+import type { JourneyReadResult } from '@worker/infrastructure/adapters/outbound/persistence/last-train/reader';
+import type { LastTrainRoutePorts } from '@worker/infrastructure/adapters/outbound/providers/last-train/journey-adapter';
 import {
   createRuntimeLastTrainRevisionState,
   createRuntimeProviderComposition,

@@ -13,13 +13,13 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '@worker/runtime/budget/runtime-budget';
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   createRuntimeReadAttemptSignalBridge,
   createRuntimeReadPorts,
-} from '@worker/runtime/tool-reads/runtime-read-ports';
-import { createHotPepperTransport } from '@worker/adapters/outbound/providers/hot-pepper/transport';
-import type { HotPepperSearchRequest } from '@worker/adapters/outbound/providers/hot-pepper/types';
+} from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
+import { createHotPepperTransport } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/transport';
+import type { HotPepperSearchRequest } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/types';
 
 const context: HarnessContext = {
   threadId: 'thread-attempt-signal',

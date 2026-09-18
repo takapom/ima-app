@@ -3,7 +3,7 @@ import type { RuntimeProductionOverrides } from '@worker/composition/runtime-pro
 import type {
   PhotoDisplayPolicySnapshot,
   PhotoTokenObservationSource,
-} from '@worker/runtime/response/photo-token-issuance';
+} from '@worker/infrastructure/runtime/response/photo-token-issuance';
 import {
   sessionExpiryAt,
   type ProductionObservationPolicyInput,

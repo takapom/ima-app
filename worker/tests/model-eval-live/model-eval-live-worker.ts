@@ -1,14 +1,14 @@
 import type { CandidateRecord, ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
 import { ThreadDO as ProductionThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
-import { createLiveOpenAIProvider } from '@worker/adapters/outbound/providers/openai/model-provider';
-import type { RuntimeModelGuardModel } from '@worker/runtime/turn-execution/runtime-model-guard';
+import { createLiveOpenAIProvider } from '@worker/infrastructure/adapters/outbound/providers/openai/model-provider';
+import type { RuntimeModelGuardModel } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import { sessionExpiryAt } from '@worker/composition/runtime-production-support';
 import {
   isThreadRuntimeTurnInput,
   runtimeFailure,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import {
   LiveTraceRecorder,
   wrapModelForLiveEvaluation,
@@ -36,7 +36,7 @@ export {
   MODEL_EVAL_NOW,
 } from './model-eval-place-fixture';
 export { ModelEvalFixtureThreadDO } from './model-eval-context-worker';
-export { SavedReferenceDO } from '@worker/adapters/outbound/persistence/saved-references/saved-reference-do';
+export { SavedReferenceDO } from '@worker/infrastructure/adapters/outbound/persistence/saved-references/saved-reference-do';
 
 type ModelEvalEnv = Cloudflare.Env & {
   readonly OPENAI_API_KEY?: string;

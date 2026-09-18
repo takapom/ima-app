@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Preferences } from '@ima/contracts';
-import { createMemoryOwnerStore } from '@worker/adapters/outbound/persistence/saved-references/memory-owner-store';
+import { createMemoryOwnerStore } from '@worker/infrastructure/adapters/outbound/persistence/saved-references/memory-owner-store';
 import type { OwnerStore } from '@ima/core';
 
 const OWNER_A = 'owner-a';

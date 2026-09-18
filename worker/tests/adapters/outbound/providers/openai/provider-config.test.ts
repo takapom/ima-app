@@ -5,7 +5,7 @@ import {
   OPENAI_MODEL_NAME,
   OPENAI_REASONING_EFFORT,
   resolveOpenAIModelConfig,
-} from '@worker/adapters/outbound/providers/openai/provider-config';
+} from '@worker/infrastructure/adapters/outbound/providers/openai/provider-config';
 
 describe('live model provider configuration', () => {
   it.each([undefined, '', '   ', 42])('rejects an absent or invalid %s value', (apiKey) => {

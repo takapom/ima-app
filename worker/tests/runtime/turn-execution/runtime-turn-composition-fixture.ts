@@ -20,7 +20,7 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '@worker/runtime/budget/runtime-budget';
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   createRuntimeTurnComposition,
   type RuntimeCompositionModelContext,
@@ -30,8 +30,8 @@ import {
   type RuntimeTurnCompositionCoreOptions,
   type RuntimeTurnCompositionPublicOptions,
 } from '@worker/composition/runtime-turn-composition';
-import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
-import type { RuntimeTurnPortDependencies } from '@worker/runtime/turn-execution/runtime-turn-factory';
+import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
+import type { RuntimeTurnPortDependencies } from '@worker/infrastructure/runtime/turn-execution/runtime-turn-factory';
 
 export const NOW = '2026-09-10T00:00:00Z';
 export const SCOPE = { ownerScopeRef: 'owner-tools', threadId: 'thread-tools' };

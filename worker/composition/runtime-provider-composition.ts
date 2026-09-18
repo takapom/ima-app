@@ -20,26 +20,26 @@ import * as v from 'valibot';
 import type {
   LastTrainObservationPolicy,
   LastTrainObservationRegistrar,
-} from '@worker/adapters/outbound/providers/last-train/registration';
-import { createLastTrainObservationRegistrar } from '@worker/adapters/outbound/providers/last-train/registration';
+} from '@worker/infrastructure/adapters/outbound/providers/last-train/registration';
+import { createLastTrainObservationRegistrar } from '@worker/infrastructure/adapters/outbound/providers/last-train/registration';
 import {
   createLastTrainDetailsPort,
   type LastTrainDetailsDispatcherOptions,
-} from '@worker/adapters/outbound/providers/last-train/details-adapter';
+} from '@worker/infrastructure/adapters/outbound/providers/last-train/details-adapter';
 import {
   createLastTrainJourneyPort,
   type RuntimeJourneyDataset,
   type LastTrainJourneyPortOptions,
   type LastTrainRoutePorts,
-} from '@worker/adapters/outbound/providers/last-train/journey-adapter';
+} from '@worker/infrastructure/adapters/outbound/providers/last-train/journey-adapter';
 import {
   createPhotoTokenPreparer,
   type PhotoTokenPreparerDependencies,
-} from '@worker/runtime/response/photo-token-issuance';
-import type { RuntimePhotoTokenPreparer } from '@worker/runtime/response/runtime-response';
+} from '@worker/infrastructure/runtime/response/photo-token-issuance';
+import type { RuntimePhotoTokenPreparer } from '@worker/infrastructure/runtime/response/runtime-response';
 
 /** Kept at this runtime export for callers while the protocol type lives with last-train ports. */
-export type { RuntimeJourneyDataset } from '@worker/adapters/outbound/providers/last-train/journey-adapter';
+export type { RuntimeJourneyDataset } from '@worker/infrastructure/adapters/outbound/providers/last-train/journey-adapter';
 
 export type RuntimeLastTrainRevisionState = {
   readonly byCandidate: Map<string, { readonly revision: number; readonly evaluationKey: string }>;

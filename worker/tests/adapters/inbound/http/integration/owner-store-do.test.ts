@@ -1,11 +1,11 @@
 import { env, evictDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import type { Preferences } from '@ima/contracts';
-import { createDurableOwnerStore } from '@worker/adapters/outbound/persistence/saved-references/durable-owner-store';
+import { createDurableOwnerStore } from '@worker/infrastructure/adapters/outbound/persistence/saved-references/durable-owner-store';
 import {
   savedReferenceOwnerName,
   type SavedReferenceNamespace,
-} from '@worker/adapters/outbound/persistence/saved-references/saved-reference-do';
+} from '@worker/infrastructure/adapters/outbound/persistence/saved-references/saved-reference-do';
 
 type TestEnv = Cloudflare.Env & {
   readonly SAVED_REFERENCES: SavedReferenceNamespace;

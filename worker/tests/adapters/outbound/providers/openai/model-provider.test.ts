@@ -1,13 +1,13 @@
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createLiveOpenAIProvider } from '@worker/adapters/outbound/providers/openai/model-provider';
+import { createLiveOpenAIProvider } from '@worker/infrastructure/adapters/outbound/providers/openai/model-provider';
 import {
   ModelProviderConfigurationError,
   OPENAI_API_KEY_NAME,
   OPENAI_MODEL_NAME,
   OPENAI_REASONING_EFFORT,
-} from '@worker/adapters/outbound/providers/openai/provider-config';
+} from '@worker/infrastructure/adapters/outbound/providers/openai/provider-config';
 
 const API_KEY = 'sk-provider-test-only';
 

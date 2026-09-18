@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   OPENAI_PROVIDER_REQUEST_OPTIONS,
   type OpenAIProviderRequestOptions,
-} from '@worker/adapters/outbound/providers/openai/provider-options';
+} from '@worker/infrastructure/adapters/outbound/providers/openai/provider-options';
 import {
   OPENAI_MODEL_NAME,
   OPENAI_REASONING_EFFORT,
-} from '@worker/adapters/outbound/providers/openai/provider-config';
+} from '@worker/infrastructure/adapters/outbound/providers/openai/provider-config';
 
 describe('OpenAI Responses request profile', () => {
   it('keeps the fixed model options independent of the live SDK', () => {

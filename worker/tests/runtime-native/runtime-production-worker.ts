@@ -1,5 +1,5 @@
 import type { ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
-import { DEFAULT_RUNTIME_BUDGET } from '@worker/runtime/budget/runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import { ThreadDO as ProductionThreadDOBase } from '@worker/entrypoints/cloudflare/thread-do';
 import {
   modelForProduction,

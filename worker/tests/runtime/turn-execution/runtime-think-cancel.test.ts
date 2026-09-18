@@ -16,17 +16,20 @@ import type {
 } from '@ima/core';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
+import {
+  DEFAULT_RUNTIME_BUDGET,
+  RuntimeBudget,
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   createRuntimeThinkConnection,
   type RuntimeThinkConnection,
   type RuntimeThinkPersistMessages,
-} from '@worker/runtime/turn-execution/runtime-think-connection';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import { createRuntimeTurnComposition } from '@worker/composition/runtime-turn-composition';
 import type {
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import { createToolRegistry, toolScope } from '../../adapters/inbound/tools/registry-fixture';
 
 const NOW = '2026-09-10T00:00:00Z';

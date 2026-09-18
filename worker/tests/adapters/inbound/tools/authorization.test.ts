@@ -9,8 +9,14 @@ import type {
   SearchPlacesInput,
   SubmitCardsPort,
 } from '@ima/core';
-import { createPublicToolSet, invokePublicTool } from '@worker/adapters/inbound/tools';
-import type { ToolBindingDependencies, ToolRuntime } from '@worker/adapters/inbound/tools';
+import {
+  createPublicToolSet,
+  invokePublicTool,
+} from '@worker/infrastructure/adapters/inbound/tools';
+import type {
+  ToolBindingDependencies,
+  ToolRuntime,
+} from '@worker/infrastructure/adapters/inbound/tools';
 import { createToolRegistry } from './registry-fixture';
 
 const context: HarnessContext = {

@@ -130,7 +130,7 @@ const lintCases = [
   },
   {
     name: 'worker-provider-sdk',
-    directory: 'worker/adapters/inbound/tools',
+    directory: 'worker/infrastructure/adapters/inbound/tools',
     source: "import { generateText } from 'ai';\nexport { generateText };\n",
     rule: 'no-restricted-imports',
   },
@@ -154,7 +154,7 @@ const lintCases = [
   },
   {
     name: 'allowed-worker-code',
-    directory: 'worker/adapters/inbound/tools',
+    directory: 'worker/infrastructure/adapters/inbound/tools',
     source: 'export const allowedToolValue = 1;\n',
     rule: null,
   },

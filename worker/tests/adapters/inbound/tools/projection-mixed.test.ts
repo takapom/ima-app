@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HarnessContext, Result, SearchPlacesOutput } from '@ima/core';
-import { projectSearchResult } from '@worker/adapters/inbound/tools/projection';
+import { projectSearchResult } from '@worker/infrastructure/adapters/inbound/tools/projection';
 import { createToolRegistry } from './registry-fixture';
 
 const context: HarnessContext = {

@@ -1,11 +1,11 @@
 import type { CandidateObservationRegistry, PlaceDetailsPort, PlaceSearchPort } from '@ima/core';
-import { createHotPepperTransport } from '@worker/adapters/outbound/providers/hot-pepper/transport';
-import { createHotPepperSearchAdapter } from '@worker/adapters/outbound/providers/hot-pepper/search-adapter';
-import { createHotPepperDetailsAdapter } from '@worker/adapters/outbound/providers/hot-pepper/details-adapter';
-import { createPlacesSearchRegistration } from '@worker/adapters/outbound/providers/places-search/registration';
-import type { createPlacesSearchContinuation } from '@worker/adapters/outbound/providers/places-search/continuation';
-import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';
-import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
+import { createHotPepperTransport } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/transport';
+import { createHotPepperSearchAdapter } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/search-adapter';
+import { createHotPepperDetailsAdapter } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/details-adapter';
+import { createPlacesSearchRegistration } from '@worker/infrastructure/adapters/outbound/providers/places-search/registration';
+import type { createPlacesSearchContinuation } from '@worker/infrastructure/adapters/outbound/providers/places-search/continuation';
+import type { RuntimeProviderTransportObserver } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
+import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   disabledDetailsPort,
   disabledSearchPort,

@@ -1,8 +1,8 @@
 import { AppAttestEnrollRequestSchema } from '@ima/contracts';
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { deriveOwnerScopeRef } from '@worker/adapters/inbound/http/auth';
-import { routeRequest } from '@worker/adapters/inbound/http/router';
+import { deriveOwnerScopeRef } from '@worker/infrastructure/adapters/inbound/http/auth';
+import { routeRequest } from '@worker/infrastructure/adapters/inbound/http/router';
 import {
   createAppIntegrityGate,
   type AppIntegrityGate,
@@ -10,7 +10,7 @@ import {
   type AppIntegrityChallengeStore,
   type AppIntegrityNonce,
   type AppIntegrityKey,
-} from '@worker/security/app-integrity';
+} from '@worker/infrastructure/security/app-integrity';
 import { makeHarness, makeRequest, requestId, searchInput, turnInput } from './router-fixtures';
 
 const NOW = '2026-09-10T00:00:00.000Z';

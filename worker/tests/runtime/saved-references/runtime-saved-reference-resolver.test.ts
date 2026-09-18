@@ -13,7 +13,7 @@ import {
   createSavedPlaceReferenceResolver,
   type SavedReferenceProviderRefreshRequest,
   type SavedReferenceResolverDependencies,
-} from '@worker/runtime/saved-references/runtime-saved-reference-resolver';
+} from '@worker/infrastructure/runtime/saved-references/runtime-saved-reference-resolver';
 
 const scope: RegistryScope = { ownerScopeRef: 'saved-owner', threadId: 'saved-thread' };
 const reference: SavedPlaceReference = {

@@ -4,20 +4,23 @@ import {
   RateLimitDO,
   ThreadDO as ProductionThreadDO,
 } from '@worker/entrypoints/cloudflare/thread-do';
-import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
-import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/adapters/outbound/providers/openai/provider-options';
-import { sanitizeRuntimeCompactionSummary } from '@worker/runtime/retention/runtime-retention';
+import {
+  DEFAULT_RUNTIME_BUDGET,
+  RuntimeBudget,
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
+import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/infrastructure/adapters/outbound/providers/openai/provider-options';
+import { sanitizeRuntimeCompactionSummary } from '@worker/infrastructure/runtime/retention/runtime-retention';
 import {
   HotPepperError,
   type HotPepperSearchRequest,
-} from '@worker/adapters/outbound/providers/hot-pepper/types';
-import { createHotPepperTransport } from '@worker/adapters/outbound/providers/hot-pepper/transport';
-import type { DurableCommitPort } from '@worker/adapters/outbound/persistence/thread/durable-commit-adapter';
+} from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/types';
+import { createHotPepperTransport } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/transport';
+import type { DurableCommitPort } from '@worker/infrastructure/adapters/outbound/persistence/thread/durable-commit-adapter';
 import {
   createRuntimeTurnComposition,
   type RuntimePublicResponseDependencies,
 } from '@worker/composition/runtime-turn-composition';
-import type { RuntimeThinkConnectionOptions } from '@worker/runtime/turn-execution/runtime-think-connection';
+import type { RuntimeThinkConnectionOptions } from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import type { ValidatedEvidenceText } from '@ima/core';
 import {
   isRuntimeNativeScenario,
@@ -258,7 +261,7 @@ export class ThreadDO extends ProductionThreadDO {
 
 export { RateLimitDO };
 export { ProductionThreadDO } from './runtime-production-worker';
-export { TelemetryDO } from '@worker/adapters/outbound/persistence/telemetry/telemetry-do';
+export { TelemetryDO } from '@worker/infrastructure/adapters/outbound/persistence/telemetry/telemetry-do';
 
 type RuntimeNativeEnv = Parameters<typeof production.fetch>[1];
 type RuntimeNativeExecutionContext = Parameters<typeof production.fetch>[2];

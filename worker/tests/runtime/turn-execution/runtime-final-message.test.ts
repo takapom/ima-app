@@ -16,11 +16,11 @@ import {
 import {
   parseRuntimeFinalMessage,
   RuntimeFinalMessageError,
-} from '@worker/runtime/turn-execution/runtime-final-message';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-final-message';
 import {
   mapCommittedResponseToPublic,
   RuntimePublicResponseError,
-} from '@worker/runtime/response/runtime-response';
+} from '@worker/infrastructure/runtime/response/runtime-response';
 
 const now = '2026-09-10T12:00:00Z';
 const scope = { ownerScopeRef: 'owner-final', threadId: 'thread-final' };

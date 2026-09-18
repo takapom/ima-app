@@ -3,10 +3,10 @@ import {
   createThreadScopeAuthorizer,
   type BootstrapEnv,
 } from '@worker/composition/bootstrap';
-import { routeRequest } from '@worker/adapters/inbound/http/router';
+import { routeRequest } from '@worker/infrastructure/adapters/inbound/http/router';
 import { RateLimitDO } from '@worker/entrypoints/cloudflare/thread-do';
-import { TelemetryDO } from '@worker/adapters/outbound/persistence/telemetry/telemetry-do';
-import { SavedReferenceDO } from '@worker/adapters/outbound/persistence/saved-references/saved-reference-do';
+import { TelemetryDO } from '@worker/infrastructure/adapters/outbound/persistence/telemetry/telemetry-do';
+import { SavedReferenceDO } from '@worker/infrastructure/adapters/outbound/persistence/saved-references/saved-reference-do';
 import { ProductionThreadDO, RUNTIME_PRODUCTION_NOW } from './runtime-production-worker';
 
 export class ProductionHttpThreadDO extends ProductionThreadDO {

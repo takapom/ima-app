@@ -1,4 +1,4 @@
-import { createPublicToolSet } from '@worker/adapters/inbound/tools';
+import { createPublicToolSet } from '@worker/infrastructure/adapters/inbound/tools';
 import type {
   GetPlaceDetailsInput,
   GetPlaceDetailsOutput,
@@ -16,12 +16,12 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '@worker/runtime/budget/runtime-budget';
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   createRuntimeTurnFactory,
   type RuntimeTurnFactoryOptions,
   type RuntimeTurnPortDependencies,
-} from '@worker/runtime/turn-execution/runtime-turn-factory';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-turn-factory';
 import { createToolRegistry } from '../adapters/inbound/tools/registry-fixture';
 
 /** Reports no walking-route or last-train capability, matching the connected providers. */

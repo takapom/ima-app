@@ -5,7 +5,7 @@ import {
   createDurableSavedReferenceStore,
   type DurableSavedReferenceStore,
   type SavedReferenceIdFactory,
-} from '@worker/adapters/outbound/persistence/saved-references/store';
+} from '@worker/infrastructure/adapters/outbound/persistence/saved-references/store';
 
 const OWNER_A = `m16-owner-a-${'a'.repeat(20)}`;
 const OWNER_B = `m16-owner-b-${'b'.repeat(20)}`;

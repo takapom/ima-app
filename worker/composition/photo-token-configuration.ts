@@ -1,8 +1,8 @@
-import { createPhotoTokenCodec } from '@worker/adapters/outbound/security/photo-token-codec';
+import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/outbound/security/photo-token-codec';
 import {
   createPhotoReferenceStoreResolver,
   type PhotoReferenceRpc,
-} from '@worker/adapters/outbound/persistence/photo/rpc';
+} from '@worker/infrastructure/adapters/outbound/persistence/photo/rpc';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

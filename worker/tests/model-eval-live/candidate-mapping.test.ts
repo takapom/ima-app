@@ -5,9 +5,9 @@ import {
   type RegistryIdPort,
 } from '@ima/core';
 import { describe, expect, it } from 'vitest';
-import { createPlacesSearchRegistration } from '@worker/adapters/outbound/providers/places-search/registration';
+import { createPlacesSearchRegistration } from '@worker/infrastructure/adapters/outbound/providers/places-search/registration';
 import { createRuntimeProductionConnectionOptions } from '@worker/composition/runtime-production-factory';
-import { invokePublicToolEnvelope } from '@worker/adapters/inbound/tools';
+import { invokePublicToolEnvelope } from '@worker/infrastructure/adapters/inbound/tools';
 import {
   createCandidateIdentityCapture,
   resolveCandidateIdentityMapping,

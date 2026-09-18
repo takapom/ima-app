@@ -20,11 +20,11 @@ import {
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import {
   createOwnerSavedReferenceRpc,
   type SavedReferenceNamespace,
-} from '@worker/adapters/outbound/persistence/saved-references/saved-reference-do';
+} from '@worker/infrastructure/adapters/outbound/persistence/saved-references/saved-reference-do';
 import type { LiveSavedReferenceBinding } from '../../tooling/model-eval/saved-reference-live';
 import {
   MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,

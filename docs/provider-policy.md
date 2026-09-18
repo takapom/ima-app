@@ -35,7 +35,7 @@
 - `freshUntil`は事実として再利用できる期限。`displayUntil`・`retentionUntil`と区別し、鮮度切れを再取得済みに見せない。
 - 保存・表示はsession期限と用途別期限の短い方で停止する。`deletionScheduledAt`を登録し、停止中は次の利用前cleanupで失効させる。
 - 由来不明・保存禁止本文はSDK永続化とlive cacheの前に置換する。当該turnに限るモデル入力と永続履歴を混同しない。
-- 生キー・HTTP本文・座標をテレメトリへ記録しない。OpenAI Responsesは[Provider options](../worker/adapters/outbound/providers/openai/provider-options.ts)で`store:false`を指定する。Cloudflareのplatform log等の外部保存面は別に検収する。
+- 生キー・HTTP本文・座標をテレメトリへ記録しない。OpenAI Responsesは[Provider options](../worker/infrastructure/adapters/outbound/providers/openai/provider-options.ts)で`store:false`を指定する。Cloudflareのplatform log等の外部保存面は別に検収する。
 - 生成文が複数の根拠を引用するときは、最も短い期限と必要な帰属を継承する。根拠IDを持つだけで保持条件を解除しない。
 - 許可された質問・回答はThreadDOの既存コンテキストに本文と保持条件を残す。会話としての復元は表示・保持・削除・session期限までとし、引用された店舗の事実は別途`freshUntil`と根拠の有効性を検証する。
 - 異なるowner/threadの候補・観測を再利用しない。保存店舗レコードに名称・住所・写真・生成文を埋め込まない。

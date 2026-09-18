@@ -6,12 +6,12 @@ import type {
 import {
   isHotPepperDetailField,
   hotPepperObservationContext,
-} from '@worker/adapters/outbound/providers/hot-pepper/place-observations';
+} from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/place-observations';
 import { productionScopeFor } from '@worker/composition/runtime-production-support';
 import type {
   RuntimeReadCost,
   RuntimeReadCostRequest,
-} from '@worker/runtime/tool-reads/runtime-read-ports';
+} from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
 
 const detailsProviderCost = (
   input: GetPlaceDetailsInput,

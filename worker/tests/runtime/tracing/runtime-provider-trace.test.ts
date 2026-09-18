@@ -1,16 +1,16 @@
-import { createRuntimeProviderTransportObserver } from '@worker/adapters/outbound/providers/telemetry/runtime-provider-observer';
+import { createRuntimeProviderTransportObserver } from '@worker/infrastructure/adapters/outbound/providers/telemetry/runtime-provider-observer';
 import { describe, expect, it, vi } from 'vitest';
-import { createHotPepperTransport } from '@worker/adapters/outbound/providers/hot-pepper/transport';
-import type { HotPepperSearchRequest } from '@worker/adapters/outbound/providers/hot-pepper/types';
-import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
-import { HotPepperError } from '@worker/adapters/outbound/providers/hot-pepper/types';
+import { createHotPepperTransport } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/transport';
+import type { HotPepperSearchRequest } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/types';
+import { PhotoProviderError } from '@worker/infrastructure/runtime/ports/photo-media';
+import { HotPepperError } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/types';
 import {
   createBestEffortRuntimeProviderTraceSink,
   traceRecordForRuntimeProvider,
   type RuntimeProviderTrace,
   type RuntimeProviderTraceOptions,
-} from '@worker/runtime/tracing/runtime-provider-trace';
-import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';
+} from '@worker/infrastructure/runtime/tracing/runtime-provider-trace';
+import type { RuntimeProviderTransportObserver } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
 
 const searchRequest: HotPepperSearchRequest = {
   keyword: 'PROVIDER_REQUEST_CANARY quiet cafe',

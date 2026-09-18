@@ -3,8 +3,8 @@ import type {
   RuntimeModelGuardCallOptions,
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
-import { HOT_PEPPER_GOURMET_ENDPOINT } from '@worker/adapters/outbound/providers/hot-pepper/types';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
+import { HOT_PEPPER_GOURMET_ENDPOINT } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/types';
 import { fixturePlace } from '@worker/composition/runtime-dev-fixture-place';
 import {
   sessionExpiryAt,

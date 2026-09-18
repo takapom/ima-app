@@ -25,9 +25,15 @@ import type {
   PhotoBodyHandler,
   RateLimiter,
   RateLimitResult,
-} from '@worker/adapters/inbound/http/handler';
-import { type HttpRouterConfig, type ResourceKind } from '@worker/adapters/inbound/http/router';
-import { HttpBoundaryError, type BoundaryFailure } from '@worker/adapters/inbound/http/errors';
+} from '@worker/infrastructure/adapters/inbound/http/handler';
+import {
+  type HttpRouterConfig,
+  type ResourceKind,
+} from '@worker/infrastructure/adapters/inbound/http/router';
+import {
+  HttpBoundaryError,
+  type BoundaryFailure,
+} from '@worker/infrastructure/adapters/inbound/http/errors';
 
 export const requestId = 'request-1';
 export const appToken = 'test-app-token';

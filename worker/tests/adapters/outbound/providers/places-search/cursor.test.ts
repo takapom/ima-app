@@ -2,11 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createPlacesSearchCursorStore,
   PLACES_SEARCH_CURSOR_TTL_MS,
-} from '@worker/adapters/outbound/providers/places-search/cursor';
+} from '@worker/infrastructure/adapters/outbound/providers/places-search/cursor';
 import type {
   PlacesSearchCursorBinding,
   PlacesSearchCursorState,
-} from '@worker/adapters/outbound/providers/places-search/types';
+} from '@worker/infrastructure/adapters/outbound/providers/places-search/types';
 
 const binding = (): PlacesSearchCursorBinding => ({
   ownerScopeRef: 'owner-places',

@@ -1,27 +1,27 @@
-import { initializeThreadStorage } from '@worker/adapters/outbound/persistence/thread/schema';
-import { DurableRuntimeTurnStore } from '@worker/adapters/outbound/persistence/thread/turn-store';
+import { initializeThreadStorage } from '@worker/infrastructure/adapters/outbound/persistence/thread/schema';
+import { DurableRuntimeTurnStore } from '@worker/infrastructure/adapters/outbound/persistence/thread/turn-store';
 import { RuntimeProductionThinkHost } from '@worker/entrypoints/cloudflare/runtime-production-host';
 import {
   createRuntimeSavedCandidateResolver,
   runtimeSavedCandidateBindingFor,
   type RuntimeSavedCandidateResult,
-} from '@worker/runtime/threads/runtime-saved-candidate-rpc';
-import { ThreadRuntimeController } from '@worker/runtime/threads/controller';
-import { runtimeThreadBindingFor } from '@worker/runtime/threads/runtime-thread-binding';
+} from '@worker/infrastructure/runtime/threads/runtime-saved-candidate-rpc';
+import { ThreadRuntimeController } from '@worker/infrastructure/runtime/threads/controller';
+import { runtimeThreadBindingFor } from '@worker/infrastructure/runtime/threads/runtime-thread-binding';
 import {
   createDurableCommitPort,
   type DurableCommitPort,
-} from '@worker/adapters/outbound/persistence/thread/durable-commit-adapter';
+} from '@worker/infrastructure/adapters/outbound/persistence/thread/durable-commit-adapter';
 import {
   runtimeFailure,
   type ThreadRuntimeCancelResult,
   type ThreadRuntimeReplayResult,
   type ThreadRuntimeResponseMetadata,
   type ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
-import { executeRuntimeThreadTurn } from '@worker/runtime/threads/runtime-thread-turn-execution';
-import { createRuntimeSessionExpiryGate } from '@worker/runtime/threads/session-expiry';
-import { cleanupRuntimeResources } from '@worker/runtime/threads/thread-cleanup';
+} from '@worker/infrastructure/runtime/threads/admission';
+import { executeRuntimeThreadTurn } from '@worker/infrastructure/runtime/threads/runtime-thread-turn-execution';
+import { createRuntimeSessionExpiryGate } from '@worker/infrastructure/runtime/threads/session-expiry';
+import { cleanupRuntimeResources } from '@worker/infrastructure/runtime/threads/thread-cleanup';
 import {
   isThreadConflictError,
   isThreadStateError,
@@ -31,34 +31,34 @@ import {
   type ThreadDeleteResult,
   type ThreadSnapshot,
   type ThreadSnapshotResult,
-} from '@worker/runtime/threads/thread-types';
+} from '@worker/infrastructure/runtime/threads/thread-types';
 
-import { createThreadPhotoReferences } from '@worker/adapters/outbound/persistence/photo/thread-references';
-import type { PhotoReferenceRecord } from '@worker/runtime/ports/photo';
+import { createThreadPhotoReferences } from '@worker/infrastructure/adapters/outbound/persistence/photo/thread-references';
+import type { PhotoReferenceRecord } from '@worker/infrastructure/runtime/ports/photo';
 import type {
   PhotoReferenceGetResult,
   PhotoReferencePutResult,
   PhotoReferenceRpc,
-} from '@worker/adapters/outbound/persistence/photo/rpc';
+} from '@worker/infrastructure/adapters/outbound/persistence/photo/rpc';
 import {
   stateOf,
   snapshotFromOperation,
   type ThreadAction,
   type ThreadOperationRow,
   type ThreadRow,
-} from '@worker/adapters/outbound/persistence/thread/thread-do-state';
-export { RateLimitDO } from '@worker/adapters/outbound/persistence/security/rate-limit-do';
+} from '@worker/infrastructure/adapters/outbound/persistence/thread/thread-do-state';
+export { RateLimitDO } from '@worker/infrastructure/adapters/outbound/persistence/security/rate-limit-do';
 export type {
   RateLimitCheckInput,
   RateLimitCheckResult,
   RateLimitConfig,
-} from '@worker/adapters/outbound/persistence/security/rate-limit-do';
+} from '@worker/infrastructure/adapters/outbound/persistence/security/rate-limit-do';
 export {
   isThreadConflictError,
   isThreadStateError,
   ThreadConflictError,
   ThreadStateError,
-} from '@worker/runtime/threads/thread-types';
+} from '@worker/infrastructure/runtime/threads/thread-types';
 export type {
   ThreadAuthorization,
   ThreadConflictErrorCode,
@@ -68,7 +68,7 @@ export type {
   ThreadSnapshotResult,
   ThreadState,
   ThreadStateErrorCode,
-} from '@worker/runtime/threads/thread-types';
+} from '@worker/infrastructure/runtime/threads/thread-types';
 
 export type ThreadSavedCandidateResult = RuntimeSavedCandidateResult;
 

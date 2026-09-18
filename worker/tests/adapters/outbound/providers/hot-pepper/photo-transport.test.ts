@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createHotPepperPhotoTransport } from '@worker/adapters/outbound/providers/hot-pepper/photo-transport';
+import { createHotPepperPhotoTransport } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/photo-transport';
 
 const URL = 'https://imgfp.hotp.jp/IMGH/00/01/P000000001/P000000001_480.jpg';
 const bytes = new Uint8Array([255, 216, 255, 217]);

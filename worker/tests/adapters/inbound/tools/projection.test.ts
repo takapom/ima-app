@@ -13,7 +13,7 @@ import type { ModelContextFieldPolicy } from '@ima/core';
 import {
   projectDetailsResult,
   projectSearchResult,
-} from '@worker/adapters/inbound/tools/projection';
+} from '@worker/infrastructure/adapters/inbound/tools/projection';
 import { createToolRegistry, toolScope } from './registry-fixture';
 
 const context: HarnessContext = {

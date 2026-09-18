@@ -2,10 +2,10 @@ import { env, runInDurableObject } from 'cloudflare:test';
 import type { AssistantResponse } from '@ima/contracts';
 import type { CommitRequest, CommitPortResult } from '@ima/core';
 import { describe, expect, it } from 'vitest';
-import { createDurableCommitPort } from '@worker/adapters/outbound/persistence/thread/durable-commit-adapter';
-import { persistRuntimeResult } from '@worker/adapters/outbound/persistence/thread/result-persistence';
+import { createDurableCommitPort } from '@worker/infrastructure/adapters/outbound/persistence/thread/durable-commit-adapter';
+import { persistRuntimeResult } from '@worker/infrastructure/adapters/outbound/persistence/thread/result-persistence';
 import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
-import type { ThreadRuntimeTarget } from '@worker/runtime/threads/admission';
+import type { ThreadRuntimeTarget } from '@worker/infrastructure/runtime/threads/admission';
 
 type TestEnv = Cloudflare.Env & { THREADS: DurableObjectNamespace<ThreadDO> };
 

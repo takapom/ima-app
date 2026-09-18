@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { HttpBoundaryError } from '@worker/adapters/inbound/http/errors';
-import type { HandlerContext } from '@worker/adapters/inbound/http/handler';
-import { createPhotoBodyHandler } from '@worker/adapters/inbound/http/photo-body-handler';
-import { createMemoryPhotoReferenceStore } from '@worker/adapters/outbound/persistence/photo/reference-store';
-import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
-import { createPhotoTokenCodec } from '@worker/adapters/outbound/security/photo-token-codec';
-import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';
+import type { HttpBoundaryError } from '@worker/infrastructure/adapters/inbound/http/errors';
+import type { HandlerContext } from '@worker/infrastructure/adapters/inbound/http/handler';
+import { createPhotoBodyHandler } from '@worker/infrastructure/adapters/inbound/http/photo-body-handler';
+import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters/outbound/persistence/photo/reference-store';
+import { PhotoProviderError } from '@worker/infrastructure/runtime/ports/photo-media';
+import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/outbound/security/photo-token-codec';
+import type { RuntimeProviderTransportObserver } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
 
 const NOW = '2026-09-10T12:00:00.000Z';
 const OWNER = 'owner:photo-test';

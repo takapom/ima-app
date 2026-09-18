@@ -15,7 +15,7 @@ import {
   type EvaluationTurnSeed,
 } from '../../tooling/model-eval/turn-plan';
 import type { EvaluationCase } from '../../tooling/model-eval/types';
-import type { ThreadRuntimeTurnResult } from '@worker/runtime/threads/admission';
+import type { ThreadRuntimeTurnResult } from '@worker/infrastructure/runtime/threads/admission';
 import {
   MODEL_EVAL_CONTEXT_NOW,
   MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,

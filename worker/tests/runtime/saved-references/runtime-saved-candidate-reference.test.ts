@@ -5,11 +5,11 @@ import {
   parseRuntimeProductionContextReference,
   referenceSnapshotFor,
   type RuntimeProductionContextReference,
-} from '@worker/runtime/context/runtime-production-context-reference';
+} from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 import {
   resolveRuntimeSavedCandidate,
   type RuntimeSavedCandidateResult,
-} from '@worker/runtime/threads/runtime-saved-candidate-rpc';
+} from '@worker/infrastructure/runtime/threads/runtime-saved-candidate-rpc';
 
 const scope: RegistryScope = { ownerScopeRef: 'saved-owner', threadId: 'saved-thread' };
 const snapshot = {

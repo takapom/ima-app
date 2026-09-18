@@ -1,7 +1,7 @@
 import { env, runInDurableObject, SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import type { TelemetryDO } from '@worker/adapters/outbound/persistence/telemetry/telemetry-do';
-import { TELEMETRY_RETENTION_MS } from '@worker/telemetry/retention';
+import type { TelemetryDO } from '@worker/infrastructure/adapters/outbound/persistence/telemetry/telemetry-do';
+import { TELEMETRY_RETENTION_MS } from '@worker/infrastructure/telemetry/retention';
 
 const OWNER_A = 'A'.repeat(42) + 'E';
 const OWNER_B = 'B'.repeat(42) + 'E';

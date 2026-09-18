@@ -7,12 +7,12 @@ import type {
   ToolExecutionContext,
 } from '@ima/core';
 import { CandidateObservationRegistry as Registry } from '@ima/core';
-import { createHotPepperDetailsAdapter } from '@worker/adapters/outbound/providers/hot-pepper/details-adapter';
-import { createHotPepperTransport } from '@worker/adapters/outbound/providers/hot-pepper/transport';
+import { createHotPepperDetailsAdapter } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/details-adapter';
+import { createHotPepperTransport } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/transport';
 import {
   createPlacesSearchRegistration,
   type PlacesSearchObservationPolicy,
-} from '@worker/adapters/outbound/providers/places-search/registration';
+} from '@worker/infrastructure/adapters/outbound/providers/places-search/registration';
 
 export const NOW = '2026-09-10T02:00:00.000Z';
 export const SCOPE = { ownerScopeRef: 'owner-details', threadId: 'thread-details' } as const;

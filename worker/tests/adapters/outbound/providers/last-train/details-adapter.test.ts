@@ -11,14 +11,14 @@ import { describe, expect, it } from 'vitest';
 import {
   createLastTrainDetailsPort,
   type LastTrainDetailsDispatcherOptions,
-} from '@worker/adapters/outbound/providers/last-train/details-adapter';
+} from '@worker/infrastructure/adapters/outbound/providers/last-train/details-adapter';
 import {
   createLastTrainJourneyPort,
   type JourneyDatasetReadPort,
   type LastTrainRoutePorts,
-} from '@worker/adapters/outbound/providers/last-train/journey-adapter';
-import { createLastTrainObservationRegistrar } from '@worker/adapters/outbound/providers/last-train/registration';
-import type { JourneyReadResult } from '@worker/adapters/outbound/persistence/last-train/reader';
+} from '@worker/infrastructure/adapters/outbound/providers/last-train/journey-adapter';
+import { createLastTrainObservationRegistrar } from '@worker/infrastructure/adapters/outbound/providers/last-train/registration';
+import type { JourneyReadResult } from '@worker/infrastructure/adapters/outbound/persistence/last-train/reader';
 import {
   context as placesContext,
   execution as placesExecution,

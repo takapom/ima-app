@@ -4,27 +4,27 @@ module.exports = {
       name: 'worker-runtime-no-adapters-or-composition',
       severity: 'error',
       from: {
-        path: '^worker/runtime/',
+        path: '^worker/infrastructure/runtime/',
       },
       to: {
-        path: '^worker/(?:adapters|composition|entrypoints)/',
+        path: '^worker/(?:infrastructure/adapters|composition|entrypoints)/',
       },
     },
     {
       name: 'worker-outbound-no-inbound',
       severity: 'error',
       from: {
-        path: '^worker/adapters/outbound/',
+        path: '^worker/infrastructure/adapters/outbound/',
       },
       to: {
-        path: '^worker/adapters/inbound/',
+        path: '^worker/infrastructure/adapters/inbound/',
       },
     },
     {
       name: 'worker-adapters-no-composition',
       severity: 'error',
       from: {
-        path: '^worker/adapters/',
+        path: '^worker/infrastructure/adapters/',
       },
       to: {
         path: '^worker/(?:composition|entrypoints)(?:/|$)',
@@ -34,10 +34,10 @@ module.exports = {
       name: 'worker-tools-no-outbound',
       severity: 'error',
       from: {
-        path: '^worker/adapters/inbound/tools/',
+        path: '^worker/infrastructure/adapters/inbound/tools/',
       },
       to: {
-        path: '^worker/adapters/outbound/',
+        path: '^worker/infrastructure/adapters/outbound/',
       },
     },
     {

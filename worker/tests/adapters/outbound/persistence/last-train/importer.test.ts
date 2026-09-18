@@ -4,16 +4,16 @@ import {
   expireJourneyDataset,
   importJourneyDataset,
   rollbackJourneyDataset,
-} from '@worker/adapters/outbound/persistence/last-train/importer';
-import { createJourneyReader } from '@worker/adapters/outbound/persistence/last-train/reader';
+} from '@worker/infrastructure/adapters/outbound/persistence/last-train/importer';
+import { createJourneyReader } from '@worker/infrastructure/adapters/outbound/persistence/last-train/reader';
 import type {
   JourneyActivationResult,
   JourneyDatasetMutationStore,
-} from '@worker/adapters/outbound/persistence/last-train/store';
+} from '@worker/infrastructure/adapters/outbound/persistence/last-train/store';
 import {
   JourneyDatasetEnvelopeSchema,
   type JourneyDatasetEnvelope,
-} from '@worker/adapters/outbound/persistence/last-train/types';
+} from '@worker/infrastructure/adapters/outbound/persistence/last-train/types';
 import * as v from 'valibot';
 
 const source = {

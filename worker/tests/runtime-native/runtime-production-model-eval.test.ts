@@ -15,7 +15,7 @@ import type { EvaluationCase } from '../../tooling/model-eval/types';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import type {
   ProductionThreadDO,
   RuntimeProductionCandidateIdentity,

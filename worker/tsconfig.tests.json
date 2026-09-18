@@ -4,12 +4,12 @@
     "types": ["@cloudflare/workers-types", "@cloudflare/vitest-pool-workers/types", "node"]
   },
   "include": [
-    "adapters/**/*.ts",
+    "infrastructure/adapters/**/*.ts",
     "composition/**/*.ts",
     "entrypoints/**/*.ts",
-    "runtime/**/*.ts",
-    "security/**/*.ts",
-    "telemetry/**/*.ts",
+    "infrastructure/runtime/**/*.ts",
+    "infrastructure/security/**/*.ts",
+    "infrastructure/telemetry/**/*.ts",
     "tests/**/*.ts"
   ]
 }

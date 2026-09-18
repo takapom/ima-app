@@ -4,15 +4,15 @@ import {
   createThreadScopeAuthorizer,
   type BootstrapEnv,
 } from '@worker/composition/bootstrap';
-import { routeRequest } from '@worker/adapters/inbound/http/router';
+import { routeRequest } from '@worker/infrastructure/adapters/inbound/http/router';
 import {
   handleJourneyDatasetManagement,
   type JourneyDatasetNamespace,
-} from '@worker/adapters/inbound/http/journey-dataset-management';
-import { JourneyDatasetDO } from '@worker/adapters/outbound/persistence/last-train/dataset-do';
+} from '@worker/infrastructure/adapters/inbound/http/journey-dataset-management';
+import { JourneyDatasetDO } from '@worker/infrastructure/adapters/outbound/persistence/last-train/dataset-do';
 import { RateLimitDO, ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
-import { TelemetryDO } from '@worker/adapters/outbound/persistence/telemetry/telemetry-do';
-import { AppIntegrityDO } from '@worker/adapters/outbound/persistence/security/app-integrity-do';
+import { TelemetryDO } from '@worker/infrastructure/adapters/outbound/persistence/telemetry/telemetry-do';
+import { AppIntegrityDO } from '@worker/infrastructure/adapters/outbound/persistence/security/app-integrity-do';
 
 type IndexEnv = BootstrapEnv & {
   readonly JOURNEY_DATASETS?: JourneyDatasetNamespace;
@@ -56,4 +56,4 @@ export default {
 } satisfies ExportedHandler<IndexEnv>;
 
 export { AppIntegrityDO, JourneyDatasetDO, RateLimitDO, TelemetryDO, ThreadDO };
-export { SavedReferenceDO } from '@worker/adapters/outbound/persistence/saved-references/saved-reference-do';
+export { SavedReferenceDO } from '@worker/infrastructure/adapters/outbound/persistence/saved-references/saved-reference-do';

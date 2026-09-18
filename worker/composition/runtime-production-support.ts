@@ -1,5 +1,5 @@
-import { sessionExpiryAt } from '@worker/runtime/retention/session-expiry-policy';
-export { sessionExpiryAt } from '@worker/runtime/retention/session-expiry-policy';
+import { sessionExpiryAt } from '@worker/infrastructure/runtime/retention/session-expiry-policy';
+export { sessionExpiryAt } from '@worker/infrastructure/runtime/retention/session-expiry-policy';
 import * as v from 'valibot';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type {
@@ -15,8 +15,8 @@ import type {
   SubmitValidationContext,
 } from '@ima/core';
 import { IsoTimestampSchema, RetentionMetadataSchema } from '@ima/core';
-import { DEFAULT_RUNTIME_BUDGET } from '@worker/runtime/budget/runtime-budget';
-import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
+import { DEFAULT_RUNTIME_BUDGET } from '@worker/infrastructure/runtime/budget/runtime-budget';
+import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
 
 const CURSOR_SECRET = 'PLACES_CURSOR_SECRET';
 

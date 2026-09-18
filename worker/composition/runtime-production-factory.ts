@@ -1,17 +1,17 @@
 import { CandidateObservationRegistry } from '@ima/core';
-import type { createPlacesSearchContinuation } from '@worker/adapters/outbound/providers/places-search/continuation';
-import { createLiveOpenAIProvider } from '@worker/adapters/outbound/providers/openai/model-provider';
-import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/adapters/outbound/providers/openai/provider-options';
-import { createRuntimeReadAttemptSignalBridge } from '@worker/runtime/tool-reads/runtime-read-ports';
-import { wrapRuntimeModelTrace } from '@worker/runtime/tracing/runtime-model-trace';
-import { createRuntimeProviderTransportObserver } from '@worker/adapters/outbound/providers/telemetry/runtime-provider-observer';
+import type { createPlacesSearchContinuation } from '@worker/infrastructure/adapters/outbound/providers/places-search/continuation';
+import { createLiveOpenAIProvider } from '@worker/infrastructure/adapters/outbound/providers/openai/model-provider';
+import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/infrastructure/adapters/outbound/providers/openai/provider-options';
+import { createRuntimeReadAttemptSignalBridge } from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
+import { wrapRuntimeModelTrace } from '@worker/infrastructure/runtime/tracing/runtime-model-trace';
+import { createRuntimeProviderTransportObserver } from '@worker/infrastructure/adapters/outbound/providers/telemetry/runtime-provider-observer';
 import {
   createRuntimeTurnComposition,
   type RuntimeTurnCompositionCoreOptions,
 } from '@worker/composition/runtime-turn-composition';
-import { wrapRuntimeProductionCommit } from '@worker/runtime/context/runtime-production-context';
-import { createFactoryRuntimeContext } from '@worker/runtime/context/runtime-production-context-factory';
-import { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
+import { wrapRuntimeProductionCommit } from '@worker/infrastructure/runtime/context/runtime-production-context';
+import { createFactoryRuntimeContext } from '@worker/infrastructure/runtime/context/runtime-production-context-factory';
+import { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   harnessContextFor,
   productionCapabilities,
@@ -35,13 +35,13 @@ import {
   hotPepperPhotoDisplayPolicy,
 } from '@worker/composition/runtime-hot-pepper-policy';
 import { configuredPhotoTokenCodec } from '@worker/composition/photo-token-configuration';
-import { createPhotoTokenPreparer } from '@worker/runtime/response/photo-token-issuance';
-import { configureRuntimeProductionSession } from '@worker/runtime/retention/runtime-production-session';
+import { createPhotoTokenPreparer } from '@worker/infrastructure/runtime/response/photo-token-issuance';
+import { configureRuntimeProductionSession } from '@worker/infrastructure/runtime/retention/runtime-production-session';
 import type {
   RuntimeThinkConnectionOptions,
   RuntimeThinkTurnBuildRequest,
-} from '@worker/runtime/turn-execution/runtime-think-connection';
-import { defaultRuntimeModelContextPolicy } from '@worker/runtime/context/runtime-field-policy';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
+import { defaultRuntimeModelContextPolicy } from '@worker/infrastructure/runtime/context/runtime-field-policy';
 import { unavailableSubmit } from '@worker/composition/runtime-production-submit';
 import { resolveRuntimeProductionReadCost } from '@worker/composition/runtime-production-read-cost';
 import { createRuntimeProductionPlacePorts } from '@worker/composition/runtime-production-place-ports';
@@ -52,7 +52,7 @@ import {
   devFixtureOverridesFor,
   isKeylessDevFixtureEnvironment,
 } from '@worker/composition/runtime-dev-fixture';
-import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
+import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
 import type {
   ProductionBuildInput,
   RuntimeProductionConnectionOptions,

@@ -10,10 +10,16 @@ import {
   REQUEST_ID_HEADER,
   RequestHeadersSchema,
 } from '@ima/contracts';
-import type { AuthenticationResult } from '@worker/adapters/inbound/http/auth';
-import { authenticateRequest, deriveOwnerScopeRef } from '@worker/adapters/inbound/http/auth';
-import { toErrorResponse, toPublicError } from '@worker/adapters/inbound/http/errors';
-import { parseJsonBody } from '@worker/adapters/inbound/http/input';
+import type { AuthenticationResult } from '@worker/infrastructure/adapters/inbound/http/auth';
+import {
+  authenticateRequest,
+  deriveOwnerScopeRef,
+} from '@worker/infrastructure/adapters/inbound/http/auth';
+import {
+  toErrorResponse,
+  toPublicError,
+} from '@worker/infrastructure/adapters/inbound/http/errors';
+import { parseJsonBody } from '@worker/infrastructure/adapters/inbound/http/input';
 
 const OWNER_CREDENTIAL = `${'A'.repeat(42)}A`;
 const OTHER_OWNER_CREDENTIAL = `${'A'.repeat(41)}B${'A'}`;

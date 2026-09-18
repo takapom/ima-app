@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createMemoryPhotoReferenceStore } from '@worker/adapters/outbound/persistence/photo/reference-store';
-import { createPhotoTokenCodec } from '@worker/adapters/outbound/security/photo-token-codec';
+import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters/outbound/persistence/photo/reference-store';
+import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/outbound/security/photo-token-codec';
 import {
   PhotoTokenError,
   type PhotoReferenceStoreWithClear,
   type PhotoTokenInput,
-} from '@worker/runtime/ports/photo';
+} from '@worker/infrastructure/runtime/ports/photo';
 
 const NOW = '2026-09-10T12:00:00.000Z';
 const SECRET = 'photo-token-fixture-secret';

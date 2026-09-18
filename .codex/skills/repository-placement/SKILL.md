@@ -13,7 +13,7 @@ description: >-
 - 業務側の永続化契約は [CoreのPorts](../../../worker/core/src/ports) が所有する。
   [OwnerStore](../../../worker/core/src/ports/owner-store.ts) を具体例として読む。
 - ApplicationはPortを呼ぶ手順と業務判断を持ち、Domainは保存方式・SDK・HTTPへ依存しない。
-- 具象の保存実装は [outbound/persistence](../../../worker/adapters/outbound/persistence)、
+- 具象の保存実装は [outbound/persistence](../../../worker/infrastructure/adapters/outbound/persistence)、
   生成・注入は [composition](../../../worker/composition) が担当する。
 - Runtime固有の契約と公開HTTP DTOをCoreの永続化Portへ混ぜない。
 

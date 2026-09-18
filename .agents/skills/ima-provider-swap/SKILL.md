@@ -20,7 +20,7 @@ Google からHot Pepperへの差し替え（#43）で確立した順序。未接
 各段階を1コミット以上に分け、`<type>(<scope>): <変更> (#<sub-issue番号>)`で実在番号を付ける。
 
 1. **policy定義** — 用途別の利用範囲と保持期限を決める。実装より先に境界を固定する。
-2. **新Adapter追加** — `worker/adapters/outbound/providers/<provider>/`にPort実装とHTTPを置く。既存経路は触らない。CoreへSDK・環境変数・直接I/Oを持ち込まない。
+2. **新Adapter追加** — `worker/infrastructure/adapters/outbound/providers/<provider>/`にPort実装とHTTPを置く。既存経路は触らない。CoreへSDK・環境変数・直接I/Oを持ち込まない。
 3. **構成を能力に絞る** — [composition](../../../worker/composition)で新Providerが提供できる能力を宣言する。提供しない機能は停止側に倒す。
 4. **実行経路の切替** — `worker/composition/`の注入先を新Adapterへ向ける。旧実装はまだ残す。
 5. **fixture更新** — 開発用fixture → SDK/DO統合fixture → 実モデル評価fixtureの順に新形式へ揃える。

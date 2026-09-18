@@ -1,4 +1,4 @@
-import type { HotPepperTransport } from '@worker/adapters/outbound/providers/hot-pepper/transport';
+import type { HotPepperTransport } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/transport';
 import type { TurnConfig } from '@cloudflare/think';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type {
@@ -13,21 +13,21 @@ import type {
   PlaceDetailsPort,
   PlaceSearchPort,
 } from '@ima/core';
-import type { PlacesSearchObservationPolicy } from '@worker/adapters/outbound/providers/places-search/registration';
-import type { RuntimeReadAttemptSignalBridge } from '@worker/runtime/tool-reads/runtime-read-ports';
+import type { PlacesSearchObservationPolicy } from '@worker/infrastructure/adapters/outbound/providers/places-search/registration';
+import type { RuntimeReadAttemptSignalBridge } from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
 import type {
   RuntimeCompositionModelContext,
   RuntimeCompositionValidationContext,
   RuntimePublicResponseDependencies,
 } from '@worker/composition/runtime-turn-composition';
-import type { RuntimeProductionContextPersistence } from '@worker/runtime/context/runtime-production-context-reference';
+import type { RuntimeProductionContextPersistence } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 import type { ProductionRetentionSource } from '@worker/composition/runtime-production-support';
-import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
-import type { RuntimeModelGuardModel } from '@worker/runtime/turn-execution/runtime-model-guard';
-import type { RuntimeModelTraceSink } from '@worker/runtime/tracing/runtime-model-trace';
-import type { RuntimeThinkTurnBuildRequest } from '@worker/runtime/turn-execution/runtime-think-connection';
-import type { RuntimeProviderTraceSink } from '@worker/runtime/tracing/runtime-provider-trace';
-import type { SavedPlaceReferenceResolver } from '@worker/runtime/ports/tool-binding';
+import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
+import type { RuntimeModelGuardModel } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelTraceSink } from '@worker/infrastructure/runtime/tracing/runtime-model-trace';
+import type { RuntimeThinkTurnBuildRequest } from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
+import type { RuntimeProviderTraceSink } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace';
+import type { SavedPlaceReferenceResolver } from '@worker/infrastructure/runtime/ports/tool-binding';
 
 export type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;

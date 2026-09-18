@@ -6,13 +6,13 @@
 実環境の設定名と安全な初期値は[.dev.vars.example](../.dev.vars.example)、[.env.example](../.env.example)、[mobile環境例](../apps/mobile/.env.example)、[Wrangler設定](../worker/wrangler.jsonc)、[EAS設定](../apps/mobile/eas.json)で管理する。
 実secret、アカウントID、署名資格は追跡ファイルやコマンド引数へ書かない。Worker secretを端末の公開環境変数へ入れない。
 
-| 区分           | 必要な設定・確認                                                                                                                                                                                        |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Worker         | `IMA_ENV`、`IMA_RUNTIME_MODE`、`APP_TOKEN`、対象環境のDO binding/migration                                                                                                                              |
-| モデル         | `OPENAI_API_KEY`。モデル名とProvider optionsは[model設定](../worker/adapters/outbound/providers/openai/provider-config.ts)と[options](../worker/adapters/outbound/providers/openai/provider-options.ts) |
-| 店舗検索・詳細 | `HOTPEPPER_API_KEY`、`PLACES_CURSOR_SECRET`                                                                                                                                                             |
-| 端末・配布     | HTTPS endpoint、実bundle ID、EAS project、Apple署名、App Attest                                                                                                                                         |
-| 有効化         | Provider flags、用途別policy、実アカウント・API・課金・許諾の検収                                                                                                                                       |
+| 区分           | 必要な設定・確認                                                                                                                                                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Worker         | `IMA_ENV`、`IMA_RUNTIME_MODE`、`APP_TOKEN`、対象環境のDO binding/migration                                                                                                                                                            |
+| モデル         | `OPENAI_API_KEY`。モデル名とProvider optionsは[model設定](../worker/infrastructure/adapters/outbound/providers/openai/provider-config.ts)と[options](../worker/infrastructure/adapters/outbound/providers/openai/provider-options.ts) |
+| 店舗検索・詳細 | `HOTPEPPER_API_KEY`、`PLACES_CURSOR_SECRET`                                                                                                                                                                                           |
+| 端末・配布     | HTTPS endpoint、実bundle ID、EAS project、Apple署名、App Attest                                                                                                                                                                       |
+| 有効化         | Provider flags、用途別policy、実アカウント・API・課金・許諾の検収                                                                                                                                                                     |
 
 キーやflagだけで利用可能と判定しない。runtime factoryはモデル・ホットペッパーの停止flagとsecret、用途別policyを確認する。詳細は[アーキテクチャ](architecture.md)と[Providerポリシー](provider-policy.md)を参照する。
 
@@ -59,12 +59,12 @@ profile・反復・候補identity対応・人手レビューのcoverageを確認
 
 ## 終電datasetの管理
 
-[JourneyDatasetDO](../worker/adapters/outbound/persistence/last-train/dataset-do.ts)が固定名`m14-last-train-v1`でactive revisionと履歴を所有する。
+[JourneyDatasetDO](../worker/infrastructure/adapters/outbound/persistence/last-train/dataset-do.ts)が固定名`m14-last-train-v1`でactive revisionと履歴を所有する。
 管理入口`/internal/m14/last-train`は通常のowner認証と別の管理credentialを使い、`import`・`update`・`rollback`・`expire`をstrict schemaとrevision CASで実行する。通常のturnから更新しない。
 
 実時刻表を検証してから投入し、生成fixtureを本番seedにしない。期限切れや空datasetはdisabled。検証時刻から7日未満を条件とし、alarmと利用前検証の両方で期限を扱う。
 alarm同期失敗は適用済みrevision付き`alarm_failed`になり得るため、旧revisionを盲目的に再送せず、現在のrevisionを踏まえて再同期する。
-時刻計算・駅の連結・運行日の契約は[Core](../worker/core/src/domain)と[終電Adapter](../worker/adapters/outbound/providers/last-train)を参照する。
+時刻計算・駅の連結・運行日の契約は[Core](../worker/core/src/domain)と[終電Adapter](../worker/infrastructure/adapters/outbound/providers/last-train)を参照する。
 
 ## デプロイと復旧
 

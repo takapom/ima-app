@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { HotPepperError } from '@worker/adapters/outbound/providers/hot-pepper/types';
-import { parseHotPepperResponse } from '@worker/adapters/outbound/providers/hot-pepper/wire';
+import { HotPepperError } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/types';
+import { parseHotPepperResponse } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/wire';
 
 const shop = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   id: 'hp-1',

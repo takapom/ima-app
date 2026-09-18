@@ -1,4 +1,4 @@
-import { createPublicToolSet } from '@worker/adapters/inbound/tools';
+import { createPublicToolSet } from '@worker/infrastructure/adapters/inbound/tools';
 import type { PrepareStepContext, Session, TurnContext } from '@cloudflare/think';
 import type {
   GetPlaceDetailsOutput,
@@ -17,20 +17,20 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '@worker/runtime/budget/runtime-budget';
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   createRuntimeThinkConnection,
   RuntimeThinkConnectionError,
   type RuntimeThinkComposition,
   type RuntimeThinkPersistMessages,
-} from '@worker/runtime/turn-execution/runtime-think-connection';
-import { createRuntimeTurnFactory } from '@worker/runtime/turn-execution/runtime-turn-factory';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
+import { createRuntimeTurnFactory } from '@worker/infrastructure/runtime/turn-execution/runtime-turn-factory';
 import {
   RUNTIME_RETENTION_WITHHELD,
   redactedRuntimeToolInput,
   type RuntimeRetentionContext,
-} from '@worker/runtime/retention/runtime-retention';
-import { createRuntimeRetentionTransform } from '@worker/runtime/retention/runtime-retention-transform';
+} from '@worker/infrastructure/runtime/retention/runtime-retention';
+import { createRuntimeRetentionTransform } from '@worker/infrastructure/runtime/retention/runtime-retention-transform';
 import { createToolRegistry } from '../../adapters/inbound/tools/registry-fixture';
 import { modelFor } from '../../support/runtime-model-fixture';
 

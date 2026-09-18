@@ -257,7 +257,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['worker/adapters/inbound/tools/**/*.{ts,tsx}'],
+    files: ['worker/infrastructure/adapters/inbound/tools/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',

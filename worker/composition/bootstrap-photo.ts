@@ -1,8 +1,8 @@
-import { HttpBoundaryError } from '@worker/adapters/inbound/http/errors';
-import type { PhotoBodyHandler } from '@worker/adapters/inbound/http/handler';
-import { createPhotoBodyHandler } from '@worker/adapters/inbound/http/photo-body-handler';
+import { HttpBoundaryError } from '@worker/infrastructure/adapters/inbound/http/errors';
+import type { PhotoBodyHandler } from '@worker/infrastructure/adapters/inbound/http/handler';
+import { createPhotoBodyHandler } from '@worker/infrastructure/adapters/inbound/http/photo-body-handler';
 import { configuredPhotoTokenCodec } from '@worker/composition/photo-token-configuration';
-import { createHotPepperPhotoTransport } from '@worker/adapters/outbound/providers/hot-pepper/photo-transport';
+import { createHotPepperPhotoTransport } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/photo-transport';
 import { resolveRuntimeOperationalGate } from '@worker/composition/runtime-operational-gate';
 
 export const createConfiguredPhoto = (env: unknown): PhotoBodyHandler => {

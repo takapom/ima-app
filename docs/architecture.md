@@ -15,7 +15,7 @@ flowchart LR
 
 矢印はコードの依存方向。4つのworkspaceを使い、Coreとcontractsは相互依存しない。
 
-バックエンドは`worker/`配下にまとめる。`worker/`自体を実行package `@ima/worker`、その内側の`core/`を業務判断の独立package `@ima/core`とする。各責務のディレクトリはWorker package内のモジュールであり、個別のpackageにはしない。`packages/contracts`はMobileとAPIの共有契約としてバックエンドの外に置く。
+バックエンドは`worker/`配下にまとめる。`worker/`自体を実行package `@ima/worker`、その内側の`core/`を業務判断の独立package `@ima/core`とする。業務層は`core/`、技術的な実行基盤は`infrastructure/`に分ける。起動入口は`entrypoints/`、生成・注入は`composition/`に置く。Infrastructure内は機能別のモジュールであり、個別のpackageにはしない。`packages/contracts`はMobileとAPIの共有契約としてバックエンドの外に置く。
 
 | 配置                 | 責務                                                                          |
 | -------------------- | ----------------------------------------------------------------------------- |
@@ -37,50 +37,51 @@ UIはservices経由でI/Oを行い、stateへネイティブI/Oを混ぜない�
 apps/mobile/
 packages/contracts/
 worker/
-├── core/                    # 独立package。src/にdomain・application・ports
-├── adapters/
-│   ├── inbound/
-│   │   ├── http/
-│   │   └── tools/
-│   └── outbound/
-│       ├── providers/
-│       ├── persistence/
-│       └── security/
-├── runtime/
+├── core/                    # 業務層。独立packageのsrc/にdomain・application・ports
+├── infrastructure/          # 技術層。Worker package内のモジュール
+│   ├── runtime/
+│   ├── security/
+│   ├── telemetry/
+│   └── adapters/
+│       ├── inbound/
+│       │   ├── http/
+│       │   └── tools/
+│       └── outbound/
+│           ├── providers/
+│           ├── persistence/
+│           └── security/
 ├── entrypoints/cloudflare/
 ├── composition/
-├── security/
-├── telemetry/
 ├── tests/
 ├── tooling/
 ├── package.json
 └── wrangler*.jsonc
 ```
 
-WorkerのAdapterは`worker/adapters/`へ集約する。`inbound/http`はHTTP入口、`inbound/tools`はLLMのTool入口。`outbound/providers`はHot Pepper・OpenAI・終電の接続と変換、`outbound/persistence`はDO・SQL・メモリストアの具体実装、`outbound/security`は写真トークンの署名実装を持つ。テストも`worker/tests/adapters/`で同じ分類を使い、HTTP配下の`integration/`はworkerdで実行する。
+WorkerのAdapterは`worker/infrastructure/adapters/`へ集約する。`inbound/http`はHTTP入口、`inbound/tools`はLLMのTool入口。`outbound/providers`はHot Pepper・OpenAI・終電の接続と変換、`outbound/persistence`はDO・SQL・メモリストアの具体実装、`outbound/security`は写真トークンの署名実装を持つ。テストも`worker/tests/adapters/`で同じ分類を使い、HTTP配下の`integration/`はworkerdで実行する。
 
-CoreのPortは`worker/core/src/ports/`に置く。OwnerStoreと保存参照の契約もCoreが所有し、保存・決定の手順は`core/src/application/saved-references/`が担う。HTTP Adapterは公開DTOとエラーの変換を担当する。Runtime固有のPortは`runtime/ports/`に置く。
+CoreのPortは`worker/core/src/ports/`に置く。OwnerStoreと保存参照の契約もCoreが所有し、保存・決定の手順は`core/src/application/saved-references/`が担う。HTTP Adapterは公開DTOとエラーの変換を担当する。実行基盤固有のPortは`infrastructure/runtime/ports/`や`infrastructure/security/`・`infrastructure/telemetry/`が所有し、Coreの業務Portと区別する。
 
 Adapterの生成・注入は`composition/`が担当する。RuntimeからAdapter・composition・entrypointsへの逆依存、Adapterからcomposition・entrypointsへの逆依存を禁止する。出力Adapterから入力Adapter、Toolから出力Adapterへの直接依存も禁止し、Toolと永続化の実装はPort経由で注入する。
 
-| Worker内の配置            | 責務                                                                                                                      |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `core/`                   | SDK・HTTP・永続化方式に依存しない業務判断とPort                                                                           |
-| `runtime/`                | SDKを使ったturn実行、キャンセル、予算、文脈・保持・公開応答の制御。`model/`はモデル文脈・プロンプト、`threads/`は実行管理 |
-| `adapters/`               | HTTP・Toolの入力変換と、Provider・永続化・署名の具体実装。SQLによるturn管理は`outbound/persistence/thread/`               |
-| `entrypoints/cloudflare/` | WorkerとThreadDOの起動・プラットフォーム接続。DOのbinding名とmigrationは維持する                                          |
-| `composition/`            | 環境設定を読み、Portと具象Adapter・Runtimeを組み立てる                                                                    |
-| `security/`               | App Integrity・認証・レート制限の契約と判定                                                                               |
-| `telemetry/`              | 運用イベントの契約・集計・受け渡し                                                                                        |
+| Worker内の配置              | 責務                                                                                                                      |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `core/`                     | SDK・HTTP・永続化方式に依存しない業務判断とPort                                                                           |
+| `infrastructure/runtime/`   | SDKを使ったturn実行、キャンセル、予算、文脈・保持・公開応答の制御。`model/`はモデル文脈・プロンプト、`threads/`は実行管理 |
+| `infrastructure/adapters/`  | HTTP・Toolの入力変換と、Provider・永続化・署名の具体実装。SQLによるturn管理は`outbound/persistence/thread/`               |
+| `entrypoints/cloudflare/`   | WorkerとThreadDOの起動・プラットフォーム接続。DOのbinding名とmigrationは維持する                                          |
+| `composition/`              | 環境設定を読み、Portと具象Adapter・Runtimeを組み立てる                                                                    |
+| `infrastructure/security/`  | App Integrity・認証・レート制限の契約と判定                                                                               |
+| `infrastructure/telemetry/` | 運用イベントの契約・集計・受け渡し                                                                                        |
 
-| 配置                 | 探す対象                                                                                                                                                                                       |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Core `application/`  | `model-context`はモデル入力、`candidate-registry`は候補・観測の登録、`submission`は検証・確定、`travel`は移動計算、`saved-references`は保存・決定。今回の条件変更は直下の`turn-constraints.ts` |
-| Worker `runtime/`    | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・保存参照・計測は各フォルダ                                            |
-| Mobile `services/`   | `api`はHTTPとその契約、`thread-session`は会話操作・復元、`runtime`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`                                              |
-| Mobile `components/` | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI。表示文言・表示用変換は`presentation`                                                   |
+| 配置                             | 探す対象                                                                                                                                                                                       |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core `application/`              | `model-context`はモデル入力、`candidate-registry`は候補・観測の登録、`submission`は検証・確定、`travel`は移動計算、`saved-references`は保存・決定。今回の条件変更は直下の`turn-constraints.ts` |
+| Worker `infrastructure/runtime/` | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・保存参照・計測は各フォルダ                                            |
+| Mobile `services/`               | `api`はHTTPとその契約、`thread-session`は会話操作・復元、`runtime`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`                                              |
+| Mobile `components/`             | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI。表示文言・表示用変換は`presentation`                                                   |
 
-Coreの単体テストは`worker/core/src/`の対象実装の近くに置く。Workerのテストは`worker/tests/`に集約し、`adapters/`・`runtime/`・`composition/`など実装に対応する分類を使う。評価CLIなどの開発用コードは`worker/tooling/`に置く。テスト専用fixtureを公開exportsへ追加しない。配置変更だけで既存の公開入口や責務・依存方向を変更しない。
+Coreの単体テストは`worker/core/src/`の対象実装の近くに置く。Workerのテストは`worker/tests/`に集約し、`adapters/`・`runtime/`・`security/`はInfrastructureの対応モジュール、`composition/`は組み立て処理を検証する。評価CLIなどの開発用コードは`worker/tooling/`に置く。テスト専用fixtureを公開exportsへ追加しない。配置変更だけで既存の公開入口や責務・依存方向を変更しない。
 
 ## 実行とデータの流れ
 
@@ -118,7 +119,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 - 保存禁止・不明な本文はSDK永続化とlive cacheの前に置換する。Tool結果は当該turnへの一時入力に使う。許可された会話本文は既存のThreadDOコンテキストへ期限付きで保持し、各turnと再起動後に期限を検証してモデル文脈へ戻す。由来不明のcompaction summaryは保持しない。
 - 再起動後の再送は同じ確定IDと許可された参照だけで成立させ、保存禁止本文の完全復元を約束しない。
 
-設定・停止時にfixtureへ暗黙に切り替えない。Provider/model設定は[OpenAI Adapter](../worker/adapters/outbound/providers/openai)、組立ては[runtime-production-factory.ts](../worker/composition/runtime-production-factory.ts)、保存前処理は[runtime-retention.ts](../worker/runtime/retention/runtime-retention.ts)を参照する。
+設定・停止時にfixtureへ暗黙に切り替えない。Provider/model設定は[OpenAI Adapter](../worker/infrastructure/adapters/outbound/providers/openai)、組立ては[runtime-production-factory.ts](../worker/composition/runtime-production-factory.ts)、保存前処理は[runtime-retention.ts](../worker/infrastructure/runtime/retention/runtime-retention.ts)を参照する。
 
 ## データの正と保存境界
 
@@ -131,7 +132,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 | 終電dataset                            | `JourneyDatasetDO`            | revision CASと検証期限を持つ共有データ          |
 | 運用イベント                           | `TelemetryDO`                 | 固定項目のみ。本文・秘密・生座標を記録しない    |
 
-[OwnerStore](../worker/core/src/ports/owner-store.ts)はCoreが所有するasync Port。HTTP AdapterとCore Applicationは[DO Adapter](../worker/adapters/outbound/persistence/saved-references/durable-owner-store.ts)経由で永続化する。
+[OwnerStore](../worker/core/src/ports/owner-store.ts)はCoreが所有するasync Port。HTTP AdapterとCore Applicationは[DO Adapter](../worker/infrastructure/adapters/outbound/persistence/saved-references/durable-owner-store.ts)経由で永続化する。
 bindingは`SAVED_REFERENCES`、owner shard名は`saved-reference-owner:{ownerScopeRef}`。ThreadDOへprefsをコピーして独立した正にしない。
 検索bodyのprefsは今夜の上書きであり、暗黙の永続writeにしない。D1 Adapterや汎用Repositoryは必要になるまで追加しない。
 

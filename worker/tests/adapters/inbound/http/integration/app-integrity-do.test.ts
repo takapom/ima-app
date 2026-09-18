@@ -6,12 +6,12 @@ import {
   createAppIntegrityGate,
   type AppIntegrityKey,
   type AppIntegrityNonce,
-} from '@worker/security/app-integrity';
+} from '@worker/infrastructure/security/app-integrity';
 import {
   createDurableAppIntegrityStores,
   type AppIntegrityDO,
   type AppIntegrityNamespace,
-} from '@worker/adapters/outbound/persistence/security/app-integrity-do';
+} from '@worker/infrastructure/adapters/outbound/persistence/security/app-integrity-do';
 
 const OWNER_A = `${'A'.repeat(42)}E`;
 const OWNER_B = `${'B'.repeat(42)}E`;

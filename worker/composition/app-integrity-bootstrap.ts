@@ -4,11 +4,11 @@ import {
   type AppAttestEnvironment,
   type AppIntegrityGate,
   type AppIntegrityVerifier,
-} from '@worker/security/app-integrity';
+} from '@worker/infrastructure/security/app-integrity';
 import {
   createDurableAppIntegrityStores,
   type AppIntegrityNamespace,
-} from '@worker/adapters/outbound/persistence/security/app-integrity-do';
+} from '@worker/infrastructure/adapters/outbound/persistence/security/app-integrity-do';
 
 type BootstrapAppIntegrityEnv = {
   readonly APP_INTEGRITY?: AppIntegrityNamespace;

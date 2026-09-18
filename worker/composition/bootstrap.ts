@@ -1,41 +1,44 @@
-import { DurableRateLimiter } from '@worker/adapters/outbound/persistence/security/durable-rate-limiter';
-import { createThreadApplicationHandler } from '@worker/adapters/inbound/http/thread-application';
-export { createThreadScopeAuthorizer } from '@worker/adapters/inbound/http/thread-application';
+import { DurableRateLimiter } from '@worker/infrastructure/adapters/outbound/persistence/security/durable-rate-limiter';
+import { createThreadApplicationHandler } from '@worker/infrastructure/adapters/inbound/http/thread-application';
+export { createThreadScopeAuthorizer } from '@worker/infrastructure/adapters/inbound/http/thread-application';
 import type {
   ApplicationHandler,
   EventsSink,
   HandlerDependencies,
   PhotoBodyHandler,
-} from '@worker/adapters/inbound/http/handler';
-import { HttpBoundaryError } from '@worker/adapters/inbound/http/errors';
+} from '@worker/infrastructure/adapters/inbound/http/handler';
+import { HttpBoundaryError } from '@worker/infrastructure/adapters/inbound/http/errors';
 import {
   DEFAULT_JSON_BODY_LIMIT_BYTES,
   type HttpRouterConfig,
   type ResourceScopeAuthorizer,
-} from '@worker/adapters/inbound/http/router';
+} from '@worker/infrastructure/adapters/inbound/http/router';
 import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 import type {
   RateLimitConfig,
   RateLimitDO,
-} from '@worker/adapters/outbound/persistence/security/rate-limit-do';
+} from '@worker/infrastructure/adapters/outbound/persistence/security/rate-limit-do';
 import {
   createRuntimeApplicationHandler,
   type RuntimeCancellationClassification,
-} from '@worker/adapters/inbound/http/runtime-handler';
-import type { AppIntegrityNamespace } from '@worker/adapters/outbound/persistence/security/app-integrity-do';
+} from '@worker/infrastructure/adapters/inbound/http/runtime-handler';
+import type { AppIntegrityNamespace } from '@worker/infrastructure/adapters/outbound/persistence/security/app-integrity-do';
 import { createBootstrapAppIntegrityGate } from '@worker/composition/app-integrity-bootstrap';
-import type { AppIntegrityVerifier } from '@worker/security/app-integrity';
-import { createBestEffortEventsSink, createTelemetryEventsSink } from '@worker/telemetry/events';
+import type { AppIntegrityVerifier } from '@worker/infrastructure/security/app-integrity';
+import {
+  createBestEffortEventsSink,
+  createTelemetryEventsSink,
+} from '@worker/infrastructure/telemetry/events';
 import {
   createDurableTelemetryStore,
   type TelemetryNamespace,
-} from '@worker/adapters/outbound/persistence/telemetry/telemetry-do';
-import type { AppIntegrityGate } from '@worker/security/app-integrity';
+} from '@worker/infrastructure/adapters/outbound/persistence/telemetry/telemetry-do';
+import type { AppIntegrityGate } from '@worker/infrastructure/security/app-integrity';
 import { createConfiguredPhoto } from '@worker/composition/bootstrap-photo';
-import { createDurableOwnerStore } from '@worker/adapters/outbound/persistence/saved-references/durable-owner-store';
-import type { SavedReferenceNamespace } from '@worker/adapters/outbound/persistence/saved-references/saved-reference-rpc';
+import { createDurableOwnerStore } from '@worker/infrastructure/adapters/outbound/persistence/saved-references/durable-owner-store';
+import type { SavedReferenceNamespace } from '@worker/infrastructure/adapters/outbound/persistence/saved-references/saved-reference-rpc';
 
-export { createApplicationScopeAuthorizer } from '@worker/adapters/inbound/http/saved-reference-refresh';
+export { createApplicationScopeAuthorizer } from '@worker/infrastructure/adapters/inbound/http/saved-reference-refresh';
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;

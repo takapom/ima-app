@@ -1,8 +1,8 @@
 import { wrapLanguageModel } from 'ai';
 import * as v from 'valibot';
 import { AssistantResponseSchema, type AssistantResponse } from '@ima/contracts';
-import type { RuntimeModelGuardModel } from '@worker/runtime/turn-execution/runtime-model-guard';
-import type { RuntimeModelGuardStreamPart } from '@worker/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelGuardModel } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelGuardStreamPart } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import type {
   CandidateSelection,
   EvaluationCase,

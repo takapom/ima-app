@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Preferences, PrefsWriteRequest } from '@ima/contracts';
-import { HttpBoundaryError } from '@worker/adapters/inbound/http/errors';
-import type { HandlerContext } from '@worker/adapters/inbound/http/handler';
+import { HttpBoundaryError } from '@worker/infrastructure/adapters/inbound/http/errors';
+import type { HandlerContext } from '@worker/infrastructure/adapters/inbound/http/handler';
 import {
   handleOwnerApplication,
   type OwnerSavedCandidateResolver,
-} from '@worker/adapters/inbound/http/owner-application';
-import { createMemoryOwnerStore } from '@worker/adapters/outbound/persistence/saved-references/memory-owner-store';
+} from '@worker/infrastructure/adapters/inbound/http/owner-application';
+import { createMemoryOwnerStore } from '@worker/infrastructure/adapters/outbound/persistence/saved-references/memory-owner-store';
 import type { OwnerStore } from '@ima/core';
 
 const OWNER = 'owner-a';

@@ -28,7 +28,7 @@ import {
   type SubmitValidationContext,
   type ToolExecutionContext,
 } from '@ima/core';
-import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
+import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
 
 export const RUNTIME_NATIVE_NOW = '2026-09-10T12:00:00Z';
 export const RUNTIME_NATIVE_OWNER = 'owner-runtime-native';

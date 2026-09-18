@@ -17,13 +17,13 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '@worker/runtime/budget/runtime-budget';
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   createRuntimeReadPorts,
   type RuntimeReadCostRequest,
   type RuntimeReadPortOptions,
-} from '@worker/runtime/tool-reads/runtime-read-ports';
-import { runtimeFor } from '@worker/adapters/inbound/tools/validation';
+} from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
+import { runtimeFor } from '@worker/infrastructure/adapters/inbound/tools/validation';
 
 const budgetConfig = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudgetConfig => ({
   ...DEFAULT_RUNTIME_BUDGET,
