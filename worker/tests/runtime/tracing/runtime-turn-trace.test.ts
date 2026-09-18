@@ -99,12 +99,26 @@ describe('runtime turn trace producer', () => {
     expect(failures).toEqual(['write_failed', 'write_failed', 'write_failed']);
   });
 
+  it.each([
+    ['MODEL_TIMEOUT', 'EXPIRED'],
+    ['MIXED_TERMINAL_ACTION', 'CONFLICT'],
+    ['NO_TERMINAL_ACTION', 'BUDGET_EXCEEDED'],
+  ])('classifies failed %s turns as %s', (failureCode, resultCode) => {
+    expect(
+      runtimeTurnTraceOutcome({
+        savedStatus: 'failed',
+        responseAvailable: false,
+        failureCode,
+        cancelled: false,
+      }),
+    ).toEqual({ status: 'error', resultCode });
+  });
+
   it('does not mark a saved turn successful when final response metadata is absent', () => {
     expect(
       runtimeTurnTraceOutcome({
         savedStatus: 'completed',
         responseAvailable: false,
-        guardFailureCode: undefined,
         failureCode: undefined,
         cancelled: false,
       }),
@@ -113,7 +127,6 @@ describe('runtime turn trace producer', () => {
       runtimeTurnTraceOutcome({
         savedStatus: 'completed',
         responseAvailable: true,
-        guardFailureCode: undefined,
         failureCode: undefined,
         cancelled: false,
       }),

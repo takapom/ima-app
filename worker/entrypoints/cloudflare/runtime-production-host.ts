@@ -188,7 +188,6 @@ export abstract class RuntimeProductionThinkHost<
         ...runtimeTurnTraceOutcome({
           savedStatus: result.status,
           responseAvailable: result.status === 'completed' && result.response !== null,
-          guardFailureCode: undefined,
           failureCode: result.code,
           cancelled: result.status === 'cancelled',
         }),

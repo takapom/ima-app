@@ -84,23 +84,25 @@ export const createBestEffortRuntimeTurnTraceSink = (
 
 export const runtimeTurnTraceOutcome = (input: {
   readonly savedStatus: string | undefined;
-  readonly guardFailureCode: string | undefined;
   readonly failureCode: string | undefined;
   readonly responseAvailable: boolean;
   readonly cancelled: boolean;
 }): Pick<RuntimeTurnTrace, 'status' | 'resultCode'> => {
-  const code = input.guardFailureCode ?? input.failureCode;
+  const code = input.failureCode;
   if (input.cancelled || code === 'CANCELLED' || code === 'MODEL_STREAM_ABORTED') {
     return { status: 'cancelled', resultCode: 'CANCELLED' };
   }
   if (input.savedStatus === 'completed' && input.responseAvailable === true) {
     return { status: 'ok', resultCode: 'OK' };
   }
-  if (code === 'BUDGET_EXCEEDED') {
+  if (code === 'BUDGET_EXCEEDED' || code === 'NO_TERMINAL_ACTION') {
     return { status: 'error', resultCode: 'BUDGET_EXCEEDED' };
   }
-  if (code === 'STALE_TURN' || code === 'DEADLINE') {
+  if (code === 'STALE_TURN' || code === 'DEADLINE' || code === 'MODEL_TIMEOUT') {
     return { status: 'error', resultCode: 'EXPIRED' };
+  }
+  if (code === 'MIXED_TERMINAL_ACTION') {
+    return { status: 'error', resultCode: 'CONFLICT' };
   }
   if (code === 'FORBIDDEN' || code === 'UNKNOWN_TOOL' || code === 'INVALID_ARGUMENT') {
     return { status: 'error', resultCode: code === 'FORBIDDEN' ? 'FORBIDDEN' : 'INVALID_ARGUMENT' };
