@@ -10,3 +10,6 @@ worker/tests/runtime-gate/runtime-env.d.ts
 .agents/skills/ima-issue-delivery/agents/openai.yaml
 
 .claude/
+
+# Agent skill assets have their own examples, scripts, and generated bundles.
+.codex/skills/

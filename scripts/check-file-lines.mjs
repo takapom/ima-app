@@ -36,11 +36,14 @@ export function findFileLineViolations(root = process.cwd()) {
         continue;
       }
       const path = join(directory, entry.name);
+      const relativePath = relative(root, path);
+      if (relativePath === '.codex/skills' || entry.isSymbolicLink()) {
+        continue;
+      }
       if (entry.isDirectory()) {
         walk(path);
         continue;
       }
-      const relativePath = relative(root, path);
       if (ignoredFiles.has(relativePath)) {
         continue;
       }

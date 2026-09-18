@@ -35,6 +35,11 @@ describe('document path gate', () => {
   it.each([
     ['README.md', 0],
     ['AGENTS.md', 0],
+    ['.codex/AGENTS.md', 0],
+    ['.codex/skills/example/SKILL.md', 0],
+    ['.codex/skills/example/references/example.md', 0],
+    ['.codex/skills/example/progress.md', 1],
+    ['.codex/progress.md', 1],
     ['docs/architecture.md', 0],
     ['.agents/skills/ima-issue-delivery/SKILL.md', 0],
     ['docs/design/m28-hot-pepper.md', 1],
@@ -59,6 +64,16 @@ describe('document path gate', () => {
     const result = run(pathChecker, root);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('docs/product.md: 151 lines (max 150)');
+  });
+
+  it('allows long skill references while still validating their links', () => {
+    const root = temporaryRoot();
+    const file = '.codex/skills/example/references/example.md';
+    write(root, file, `${'reference\n'.repeat(151)}[missing](missing.md)\n`);
+    expect(run(pathChecker, root).status).toBe(0);
+    const result = run(linkChecker, root);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('missing target missing.md');
   });
 });
 

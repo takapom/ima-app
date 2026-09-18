@@ -38,24 +38,24 @@ describe('Journey API hook boundary', () => {
     expect(journeyApiErrorMessage(null)).toBeNull();
   });
 
-  it('explains a turn that ended without cards instead of blaming the connection', () => {
-    const httpError = (status: 422 | 504, code: 'BUDGET_EXCEEDED' | 'TIMEOUT') => ({
-      kind: 'http' as const,
-      status,
+  it.each([
+    { status: 422, code: 'BUDGET_EXCEEDED', expected: '候補' },
+    { status: 504, code: 'TIMEOUT', expected: '時間' },
+  ] as const)('explains $code instead of blaming the connection', ({ expected, ...failure }) => {
+    const message = journeyApiErrorMessage({
+      kind: 'http',
+      status: failure.status,
       publicError: {
-        schemaVersion: 'v1' as const,
+        schemaVersion: 'v1',
         requestId: 'error-request',
-        status,
-        code,
+        ...failure,
         message: 'unused',
       },
       retryAfterSeconds: null,
     });
 
-    const budget = journeyApiErrorMessage(httpError(422, 'BUDGET_EXCEEDED'));
-    expect(budget).toContain('候補');
-    expect(budget).not.toContain('サービスに接続できませんでした');
-    expect(journeyApiErrorMessage(httpError(504, 'TIMEOUT'))).toContain('時間');
+    expect(message).toContain(expected);
+    expect(message).not.toContain('サービスに接続できませんでした');
   });
 
   it('stops an older history continuation after a newer thread takes over', async () => {

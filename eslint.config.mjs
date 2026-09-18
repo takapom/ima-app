@@ -3,6 +3,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 const ignored = [
+  '.codex/skills/**',
   '**/node_modules/**',
   '**/.expo/**',
   '**/.wrangler/**',

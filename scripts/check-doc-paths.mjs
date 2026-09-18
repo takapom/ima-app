@@ -5,12 +5,18 @@ import { pathToFileURL } from 'node:url';
 
 // Documents live at fixed entry points so planning, progress, and audit records
 // stay in GitHub Issues instead of returning as tracked files.
-const allowedPaths = new Set(['AGENTS.md', 'CLAUDE.md', 'README.md']);
+const allowedPaths = new Set(['AGENTS.md', 'CLAUDE.md', 'README.md', '.codex/AGENTS.md']);
 const allowedPatterns = [/^docs\/[a-z0-9-]+\.md$/, /^\.agents\/skills\/[a-z0-9-]+\/SKILL\.md$/];
+const skillDocumentPattern =
+  /^\.codex\/skills\/[a-z0-9-]+\/(?:(?:SKILL|README|AGENTS)\.md|(?:reference|references|rules)\/[a-z0-9_-]+\.md)$/;
 const maxDocumentLines = 150;
 
 export function isAllowedDocumentPath(path) {
-  return allowedPaths.has(path) || allowedPatterns.some((pattern) => pattern.test(path));
+  return (
+    allowedPaths.has(path) ||
+    skillDocumentPattern.test(path) ||
+    allowedPatterns.some((pattern) => pattern.test(path))
+  );
 }
 
 export function countDocumentLines(source) {
@@ -26,7 +32,7 @@ export function findDocumentViolations(files, root = process.cwd()) {
       continue;
     }
     const count = countDocumentLines(readFileSync(join(root, file), 'utf8'));
-    if (count > maxDocumentLines) {
+    if (!skillDocumentPattern.test(file) && count > maxDocumentLines) {
       violations.push(`${file}: ${count} lines (max ${maxDocumentLines})`);
     }
   }

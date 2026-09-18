@@ -116,28 +116,27 @@ describe('createRuntimeTurnComposition', () => {
     ['text that is not the envelope', '確認しました', false],
     ['a truncated envelope', '{"kind":"final_message"', false],
     ['an empty terminal', '', true],
-  ] as const)('degrades %s to no commit instead of failing the turn', async (
-    _name,
-    finalText,
-    emptyFinal,
-  ) => {
-    const commit = new RecordingCommit();
-    const { composition } = createComposition(commit);
+  ] as const)(
+    'degrades %s to no commit instead of failing the turn',
+    async (_name, finalText, emptyFinal) => {
+      const commit = new RecordingCommit();
+      const { composition } = createComposition(commit);
 
-    expect(() =>
-      composition.onAccepted({
-        terminal: 'message',
-        finalText,
-        emptyFinal,
-        partCount: 1,
-        bytes: 32,
-      }),
-    ).not.toThrow();
+      expect(() =>
+        composition.onAccepted({
+          terminal: 'message',
+          finalText,
+          emptyFinal,
+          partCount: 1,
+          bytes: 32,
+        }),
+      ).not.toThrow();
 
-    await expect(composition.getCommittedResponse()).resolves.toBeUndefined();
-    expect(commit.requests).toHaveLength(0);
-    composition.dispose();
-  });
+      await expect(composition.getCommittedResponse()).resolves.toBeUndefined();
+      expect(commit.requests).toHaveLength(0);
+      composition.dispose();
+    },
+  );
 
   it('maps the committed response with the receipt identity when public dependencies are injected', async () => {
     const commit = new RecordingCommit('receipt-public-response');

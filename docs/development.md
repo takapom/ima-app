@@ -91,6 +91,7 @@ bun run dev:worker:llm
 段階ごとの実行は`test:unit`、`test:app-integrity`、`test:worker-http`、`test:runtime`を使う。
 変更に応じた関連検査を実行し、実行していない検査を合格としない。型・lintの正確な設定は[tsconfig.base.json](../tsconfig.base.json)、[ESLint設定](../eslint.config.mjs)、[Prettier設定](../.prettierrc.json)で管理する。
 独自lintは既存の規則で検出できない違反がある場合に限って追加する。文書の配置は[check-doc-paths](../scripts/check-doc-paths.mjs)が許可する入口に限る。
+`.codex/skills/`のスキル資産はアプリ用の整形・lint・行数・disable理由検査から除外する。スキル文書は製品文書の行数上限を適用せず、配置・リンクを検査する。
 
 手書きコード・テスト・設定は空行・コメント込み500行以内。Markdown、lockfile、明示した生成物はファイル行数制限から除外する。コミットの追加＋削除は文書・テスト・生成物も含め2,000行以内とし、必要な試験の切り離しや圧縮で回避しない。
 

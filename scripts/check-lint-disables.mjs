@@ -6,6 +6,7 @@ export function parseSourceFileList(output) {
   return output
     .split('\0')
     .filter(Boolean)
+    .filter((file) => !file.startsWith('.codex/skills/'))
     .filter((file) => existsSync(file))
     .filter((file) => file !== 'scripts/check-lint-disables.mjs');
 }

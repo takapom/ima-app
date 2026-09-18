@@ -1,12 +1,12 @@
 import { env } from 'cloudflare:test';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type { TelemetryDO } from '@worker/infrastructure/adapters/outbound/persistence/telemetry/telemetry-do';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
 } from '@worker/infrastructure/runtime/threads/admission';
-import type { ProductionThreadDO } from './runtime-production-worker';
+import { RUNTIME_PRODUCTION_NOW, type ProductionThreadDO } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {
   readonly PRODUCTION_THREADS: DurableObjectNamespace<ProductionThreadDO>;
@@ -61,6 +61,16 @@ const tracesFor = async (threadId: string) => {
 };
 
 describe('production turn telemetry', () => {
+  beforeEach(() => {
+    // The producer and TelemetryDO must share a clock inside the seven-day retention window.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(RUNTIME_PRODUCTION_NOW));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('records provider calls per turn and does not trace reference replay', async () => {
     const threadId = `m26-trace-${crypto.randomUUID()}`;
     const target: ThreadRuntimeTarget = {
@@ -99,6 +109,7 @@ describe('production turn telemetry', () => {
       operation: 'turn',
       status: 'ok',
       resultCode: 'OK',
+      occurredAt: RUNTIME_PRODUCTION_NOW,
     });
     expect(turns[0]?.durationMs).toEqual(expect.any(Number));
     expect(turns[0]).not.toHaveProperty('provider');

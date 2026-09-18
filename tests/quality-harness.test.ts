@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -39,6 +39,9 @@ describe('file line quality gate', () => {
     ['handwritten.xml', 501, 1],
     ['index.html', 501, 1],
     ['mock.html', 501, 1],
+    ['.codex/skills/example/scripts/bundle.js', 501, 0],
+    ['.codex/config.json', 501, 1],
+    ['worker/skills/source.ts', 501, 1],
   ])('%s with %i lines returns status %i', (file, count, status) => {
     const root = temporaryRoot();
     const target = join(root, file);
@@ -51,9 +54,27 @@ describe('file line quality gate', () => {
       expect(result.stderr).toContain(`${file}: ${count} lines`);
     }
   });
+
+  it('does not follow a dangling local tool symlink', () => {
+    const root = temporaryRoot();
+    symlinkSync('missing-skill', join(root, 'skill-link'));
+    expect(run(fileLineChecker, root).status).toBe(0);
+  });
 });
 
 describe('eslint disable quality gate', () => {
+  it('excludes agent skill scripts without excluding application source', () => {
+    const root = temporaryRoot();
+    execFileSync('git', ['init', '--quiet'], { cwd: root });
+    const skillDirectory = join(root, '.codex/skills/example');
+    mkdirSync(skillDirectory, { recursive: true });
+    const directive = ['eslint', 'disable'].join('-');
+    writeFileSync(join(skillDirectory, 'example.js'), `// ${directive}\n`);
+    expect(run(disableChecker, root).status).toBe(0);
+    writeFileSync(join(root, 'source.js'), `// ${directive}\n`);
+    expect(run(disableChecker, root).status).toBe(1);
+  });
+
   it('scans untracked source files and requires an inline reason', () => {
     const root = temporaryRoot();
     execFileSync('git', ['init', '--quiet'], { cwd: root });
