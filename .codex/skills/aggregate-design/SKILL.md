@@ -18,6 +18,12 @@ description: |
 
 # 集約設計ガイド
 
+## ima-appでの適用
+
+[現行アーキテクチャ](../../../docs/architecture.md)を優先する。対象はCoreの業務上の不変条件と整合性境界。DOやDTOを名前だけで集約とみなさず、既存の関数・readonly型も評価する。クラス化・イベント基盤の追加を一律に要求しない。
+
+以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
+
 DDDにおける集約(Aggregate)設計の原則。
 
 ## 集約とは
@@ -277,9 +283,9 @@ Product集約              BacklogItem集約
 - [ ] 楽観的ロックの要件がないのに、不要なバージョン番号を持っていないか
 - [ ] 永続化ロジックが集約内に漏れていないか
 
-## 関連スキル（併読推奨）
-このスキルを使用する際は、以下のスキルも併せて参照すること：
-- `domain-building-blocks`: 集約を構成する要素（値オブジェクト、エンティティ、ドメインサービス）の設計
-- `aggregate-transaction-boundary`: 集約とトランザクション境界の関係（1トランザクション=1集約ルール）
-- `cross-aggregate-constraints`: 集約間の制約チェックと結果整合性の設計
-- `repository-placement`: 集約のリポジトリインターフェースの配置場所
+## 関連資料
+関連する判断が必要な場合だけ、次の資料を参照する：
+- [domain-building-blocks](../domain-building-blocks/SKILL.md): 集約を構成する要素（値オブジェクト、エンティティ、ドメインサービス）の設計
+- [aggregate-transaction-boundary](../aggregate-transaction-boundary/SKILL.md): 集約とトランザクション境界の関係（1トランザクション=1集約ルール）
+- [cross-aggregate-constraints](../cross-aggregate-constraints/SKILL.md): 集約間の制約チェックと結果整合性の設計
+- [repository-placement](../repository-placement/SKILL.md): 集約のリポジトリインターフェースの配置場所

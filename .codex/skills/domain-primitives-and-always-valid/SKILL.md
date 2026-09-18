@@ -11,6 +11,12 @@ description: >-
 
 # Domain Primitives & Always-Valid Domain Model
 
+## ima-appでの適用
+
+[現行アーキテクチャ](../../../docs/architecture.md)を優先する。入力検証schemaとCoreの業務不変条件を区別する。TypeScriptの型キャストだけで検証済みにせず、既存の検証・失敗表現に合わせる。すべてのプリミティブのラップや公開DTOのドメイン型化を要求しない。
+
+以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
+
 プリミティブ型を信頼せず、ドメイン固有の型で不変条件を強制する。
 
 ## 核心原則
@@ -379,8 +385,8 @@ impl OrderRepository {
 - Scott Wlaschin "Domain Modeling Made Functional" - 型駆動設計の実践
 - Einar Landre "Prefer Domain-Specific Types to Primitive Types" in "97 Things Every Programmer Should Know" - コンパイラにバグを見つけさせる
 
-## 関連スキル（併読推奨）
-このスキルを使用する際は、以下のスキルも併せて参照すること：
-- `parse-dont-validate`: 型レベルで不変式を保証する設計哲学
-- `when-to-wrap-primitives`: プリミティブ型をラップすべきかの判断基準
-- `domain-building-blocks`: ドメインプリミティブが構成する値オブジェクトの設計
+## 関連資料
+関連する判断が必要な場合だけ、次の資料を参照する：
+- [契約とデータの扱い](../../../docs/contracts.md): 境界での入力検証と内部型
+- [when-to-wrap-primitives](../when-to-wrap-primitives/SKILL.md): プリミティブ型をラップすべきかの判断基準
+- [domain-building-blocks](../domain-building-blocks/SKILL.md): ドメインプリミティブが構成する値オブジェクトの設計

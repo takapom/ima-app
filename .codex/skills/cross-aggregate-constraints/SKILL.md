@@ -15,6 +15,12 @@ description: >
 
 # 集約間の制約チェック
 
+## ima-appでの適用
+
+[現行アーキテクチャ](../../../docs/architecture.md)を優先する。ThreadDOとSavedReferenceDOのデータの正・寿命を確認してから制約を評価する。SQLiteの投影をサーバー側の正として扱わない。CQRS/ESの節は採用済みの構成にだけ適用し、必要条件を緩める変更は提案として分ける。
+
+以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
+
 集約間の制約に直面したら、まず要件を疑い、次に技術的制約を理解し、最後に覚悟を決める。
 
 ## 典型的な問題
@@ -344,8 +350,8 @@ CQRS/ESの非同期・イベント駆動的な性質上、以下は避けられ�
 - [ ] 一時的な不整合データの存在を許容する設計になっているか
 - [ ] 複雑さに見合うビジネス価値があるか評価したか
 
-## 関連スキル（併読推奨）
-このスキルを使用する際は、以下のスキルも併せて参照すること：
-- `aggregate-design`: 集約境界の設計（制約問題の根本原因）
-- `aggregate-transaction-boundary`: 1トランザクション=1集約ルールと結果整合性
-- `cqrs-aggregate-modeling`: CQRS/ESによるイベント駆動の結果整合性
+## 関連資料
+関連する判断が必要な場合だけ、次の資料を参照する：
+- [aggregate-design](../aggregate-design/SKILL.md): 集約境界の設計（制約問題の根本原因）
+- [aggregate-transaction-boundary](../aggregate-transaction-boundary/SKILL.md): 1トランザクション=1集約ルールと結果整合性
+- [現行アーキテクチャ](../../../docs/architecture.md#データの正と保存境界): データの正と投影の境界

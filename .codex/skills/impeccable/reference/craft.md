@@ -6,18 +6,11 @@ Before writing code, you need: PRODUCT.md loaded, register identified and the ma
 
 Treat any approved visual direction (generated mock or stated reference) as a concrete contract for composition, hierarchy, density, atmosphere, signature motifs, and distinctive visual moves. Don't let mocks replace structure, copy, accessibility, or state design. But if the live result lacks the approved direction's major ingredients, the implementation is wrong.
 
-### Gates: do not compress
+### ima-appでの進め方
 
-Craft has **multiple user gates**, not one. When the harness has native image generation (Codex via `image_gen`), the gate sequence before code is:
-
-1. **Shape brief confirmed** (Step 1)
-2. **Direction questions answered** (codex.md Step A)
-3. **Palette confirmed** (codex.md Step B)
-4. **One mock direction approved or delegated** (codex.md Step D)
-
-You must stop at every gate. **Shape confirmation alone is NOT a green light to start coding.** It is the green light to begin codex.md Step A. Compressing gates 2 through 4 because the shape brief felt complete is the dominant failure mode of this flow.
-
-When the harness lacks native image generation, gates 2-4 collapse into the brief itself, and shape confirmation does advance straight to code.
+[SKILL.md](../SKILL.md)の適用範囲を先に読む。既存のExpoアプリとUIを使う。
+依頼・現行仕様で確定した範囲は実装へ進める。以下にある形状・配色・画像モックの確認は、
+未決の判断が実装に必要な場合だけ行う。`codex.md` の画像制作フローは画像が必要なタスクに限る。
 
 ## Step 0: Project Foundation
 
@@ -44,13 +37,13 @@ Default: Astro for brand briefs, the project's existing framework for product br
 
 Run $impeccable shape, passing along whatever feature description the user provided. Shape is **required** for craft; it is what produces a confirmed direction.
 
-Present the shape output and stop. Wait for the user to confirm, override, or course-correct before writing code.
+Present unresolved design choices when they affect scope or behavior. Existing authorization and confirmed specifications are sufficient to proceed.
 
 If the user already supplied a confirmed brief or ran shape separately, use it and skip this step.
 
 When the original prompt + PRODUCT.md already answer scope, content, and visual direction with no real ambiguity, the shape output can be **compact** (3-5 bullets stating what you're building and the visual lane, ending with one or two specific questions or "confirm or override"). The full 10-section structured brief is reserved for genuinely ambiguous, multi-screen, or stakeholder-heavy tasks. Don't pad a clear brief into a long one to look thorough; equally, don't skip the pause to look efficient.
 
-If the harness has native image generation (Codex), a compact shape's "confirm or override" advances to **Step 3 and the codex.md flow**, not to Step 4. Phrase the closing line accordingly: "Confirm or override; once we lock direction, I'll run a couple of palette and reference questions before generating any mocks." This stops the model from reading shape confirmation as code-green.
+Proceed to implementation when the direction is clear. Use Step 3 only when visual assets or mock exploration are needed.
 
 ## Step 2: Load References
 

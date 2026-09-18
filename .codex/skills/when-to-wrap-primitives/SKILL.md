@@ -15,6 +15,12 @@ description: >-
 
 # プリミティブ型ラップ判断ガイド
 
+## ima-appでの適用
+
+[現行アーキテクチャ](../../../docs/architecture.md)を優先する。対象はCoreで意味・単位・不変条件の取り違えを防ぐ型。公開DTOや単純な表示値まで一律にラップせず、既存のschema・型・検証関数で足りるかを先に確認する。
+
+以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
+
 プリミティブ型をラップすべきか否かは、**コスト対効果**で判断する。盲目的にラップするのも、
 一切ラップしないのも、どちらも設計の失敗である。
 
@@ -317,8 +323,8 @@ impl Money {
 - J. B. Rainsberger "Demystifying the Dependency Inversion Principle" - Primitive Obsessionへの言及
 - ThoughtWorks "Object Calisthenics" - 「Wrap All Primitives」ルールの出典（練習用であり本番ルールではない）
 
-## 関連スキル（併読推奨）
-このスキルを使用する際は、以下のスキルも併せて参照すること：
-- `domain-primitives-and-always-valid`: ラップする判断後の具体的な設計パターン
-- `parse-dont-validate`: ラップ時に適用するparseパターン
-- `domain-building-blocks`: ラップされたプリミティブが属する値オブジェクトの設計
+## 関連資料
+関連する判断が必要な場合だけ、次の資料を参照する：
+- [domain-primitives-and-always-valid](../domain-primitives-and-always-valid/SKILL.md): ラップする判断後の具体的な設計パターン
+- [契約とデータの扱い](../../../docs/contracts.md): 境界での入力検証と内部型
+- [domain-building-blocks](../domain-building-blocks/SKILL.md): ラップされたプリミティブが属する値オブジェクトの設計

@@ -1,9 +1,18 @@
 ---
 name: fixing-accessibility
-description: Audit and fix HTML accessibility issues including ARIA labels, keyboard navigation, focus management, color contrast, and form errors. Use when adding interactive controls, forms, dialogs, or reviewing WCAG compliance.
+description: ima-appのReact NativeとExpo Webのアクセシビリティをレビュー・修正する。名前・状態・フォーカス・文字拡大・操作性を、対象プラットフォームのAPIで検証する。
 ---
 
 # fixing-accessibility
+
+## ima-appでの適用
+
+Native UIではReact NativeのアクセシビリティAPIと既存コンポーネントを使う。
+VoiceOverの名前・役割・状態・フォーカス順、文字拡大、タッチ操作、モーダル、動きを減らす設定を確認する。
+以下のHTML要素・ARIA・Tab・CSSの規則はExpo WebまたはWeb固有実装に適用し、Nativeへそのまま移植しない。
+利用可能なプロパティは[manifest](../../../apps/mobile/package.json)の採用版と型定義で確認する。
+静的レビュー・Web操作・Simulator・実機VoiceOverの結果を区別して報告する。
+
 
 Fix accessibility issues.
 

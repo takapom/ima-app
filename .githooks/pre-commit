@@ -2,8 +2,4 @@
 set -eu
 
 bun run commit-size --staged
-bun run format
-bun run lint
-bun run architecture
-bun run typecheck
-bun run test
+bun run check

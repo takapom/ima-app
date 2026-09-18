@@ -10,6 +10,12 @@ description: >-
 
 # DDDモジュールパターン
 
+## ima-appでの適用
+
+[現行アーキテクチャ](../../../docs/architecture.md)を優先する。モジュール分割は既存レイヤ内で判断する。Coreのdomain・application・portsやWorkerのadapters・runtime・compositionを、技術名という理由だけで撤去・統合しない。workspace境界・公開exports・内部aliasを保つ。
+
+以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
+
 > 「モジュールはドメインの概念を反映すべきであり、技術的な関心事ではない」
 > — Eric Evans, Domain-Driven Design (2003)
 
@@ -160,8 +166,7 @@ infrastructure/
 - Evans, Eric. "Domain-Driven Design" (2003), Chapter 5: Modules
 - Vernon, Vaughn. "Implementing Domain-Driven Design" (2013), Chapter 9: Modules
 
-## 関連スキル（併読推奨）
-このスキルを使用する際は、以下のスキルも併せて参照すること：
-- `package-design`: モジュール設計の基盤となるパッケージ設計原則
-- `clean-architecture`: ドメインモジュールを配置する層構造
-- `domain-building-blocks`: モジュール内に配置するビルディングブロックの設計
+## 関連資料
+関連する判断が必要な場合だけ、次の資料を参照する：
+- [現行アーキテクチャ](../../../docs/architecture.md): 層構造と依存方向
+- [domain-building-blocks](../domain-building-blocks/SKILL.md): モジュール内に配置するビルディングブロックの設計

@@ -77,21 +77,25 @@ bun run dev:worker:llm
 
 | コマンド               | 検証するもの                                               |
 | ---------------------- | ---------------------------------------------------------- |
+| `bun run check`        | 変更パスに対応するゲートだけを選んで実行                   |
 | `bun run format`       | Prettierによる整形                                         |
+| `bun run docs`         | 文書の配置・行数と、相対リンク・見出しアンカーの実在       |
 | `bun run lint`         | 型付きESLint、Hooks、500行制限、disable理由、違反fixture   |
 | `bun run architecture` | 解決済み依存グラフ、manifest、公開exports、境界違反fixture |
 | `bun run typecheck`    | 4 workspace、rootと関連toolingのTypeScript                 |
-| `bun run test`         | 単体、Worker、App Integrity、実SDK/DO、開発fixture         |
+| `bun run test`         | 単体、App Integrity、Worker HTTP、実SDK/DO、開発fixture    |
 | `bun run build`        | 各workspaceのbuild。Workerはdeploy dry-run                 |
 | `bun run commit-size`  | 各コミットの追加＋削除行数                                 |
 
+`bun run check`はstageした差分から必要なゲートを選ぶ。文書だけの変更はformatとdocs、mobileだけの変更はWorker poolを除いた範囲になる。ルート設定や未知のパスは全ゲートを選ぶ。`--all`で全ゲート、`--list`で選択結果だけを表示する。
+段階ごとの実行は`test:unit`、`test:app-integrity`、`test:worker-http`、`test:runtime`を使う。
 変更に応じた関連検査を実行し、実行していない検査を合格としない。型・lintの正確な設定は[tsconfig.base.json](../tsconfig.base.json)、[ESLint設定](../eslint.config.mjs)、[Prettier設定](../.prettierrc.json)で管理する。
-独自lintは既存の規則で検出できない違反がある場合に限って追加する。
+独自lintは既存の規則で検出できない違反がある場合に限って追加する。文書の配置は[check-doc-paths](../scripts/check-doc-paths.mjs)が許可する入口に限る。
 
 手書きコード・テスト・設定は空行・コメント込み500行以内。Markdown、lockfile、明示した生成物はファイル行数制限から除外する。コミットの追加＋削除は文書・テスト・生成物も含め2,000行以内とし、必要な試験の切り離しや圧縮で回避しない。
 
 [quality CI](../.github/workflows/quality.yml)はmainへのpushで品質検査と各コミットの行数検査を実行する構成。[config dry-run CI](../.github/workflows/config-dry-run.yml)はdev/staging/productionの設定を検査する。定義の存在を、GitHub上での成功や保護設定の証明にしない。
-ローカルhookは補助であり、必要なら`git config core.hooksPath .githooks`で有効にする。
+ローカルhookは補助であり、必要なら`git config core.hooksPath .githooks`で有効にする。hookは`commit-size`と`bun run check`を実行し、CIは全ゲートを実行する。
 
 ## 検証の使い分け
 

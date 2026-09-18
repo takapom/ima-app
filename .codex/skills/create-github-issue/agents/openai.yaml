@@ -1,4 +1,4 @@
 interface:
-  display_name: "Create GitHub Issue"
-  short_description: "関連コードを調査してGitHub Issueを作成する"
-  default_prompt: "Use $create-github-issue to investigate the repository, draft a task, and create the approved GitHub issue."
+  display_name: "ima-app Issue作成"
+  short_description: "ima-appの現行仕様とコードを調査し、根拠のあるIssueを作成"
+  default_prompt: "$create-github-issue を使い、ima-appの関連コードと現行仕様を調べ、この依頼をIssueにしてください。"

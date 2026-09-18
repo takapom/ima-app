@@ -9,6 +9,12 @@ description: >-
 
 # ドメインモデルのビルディングブロック
 
+## ima-appでの適用
+
+[現行アーキテクチャ](../../../docs/architecture.md)を優先する。Coreの既存の関数・readonly型・検証結果を使って不変条件を表現する。例にあるクラスやfp-tsを導入条件としない。公開DTOはcontracts、HTTPとの変換はWorkerが所有する。
+
+以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
+
 > このガイドは特定のプログラミング言語に依存せず、どの言語でも適用可能な原則を説明しています。コード例はTypeScriptで示していますが、概念は他の言語にも応用できます。
 
 ドメイン駆動設計では、適切なドメインモデルのビルディングブロックを使うことが重要です。
@@ -311,9 +317,9 @@ function bankAccountTransfer(
 }
 ```
 
-## 関連スキル（併読推奨）
-このスキルを使用する際は、以下のスキルも併せて参照すること：
-- `aggregate-design`: ビルディングブロックを束ねる集約の設計ルール
-- `domain-model-first`: テストファーストでビルディングブロックを実装する開発手順
-- `parse-dont-validate`: 値オブジェクトを型レベルで設計するパターン
-- `domain-primitives-and-always-valid`: ドメインプリミティブとスマートコンストラクタの設計
+## 関連資料
+関連する判断が必要な場合だけ、次の資料を参照する：
+- [aggregate-design](../aggregate-design/SKILL.md): ビルディングブロックを束ねる集約の設計ルール
+- [domain-model-first](../domain-model-first/SKILL.md): テストファーストでビルディングブロックを実装する開発手順
+- [契約とデータの扱い](../../../docs/contracts.md): 境界での入力検証と内部型
+- [domain-primitives-and-always-valid](../domain-primitives-and-always-valid/SKILL.md): ドメインプリミティブとスマートコンストラクタの設計

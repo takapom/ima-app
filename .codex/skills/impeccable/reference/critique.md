@@ -20,7 +20,7 @@ Resolve one stable target, run two independent assessments, synthesize a design 
    - "this page" -> the current URL or source file
 2. **Compute the slug**:
    ```bash
-   node .agents/skills/impeccable/scripts/critique-storage.mjs slug "<resolved-path-or-url>"
+   node .codex/skills/impeccable/scripts/critique-storage.mjs slug "<resolved-path-or-url>"
    ```
    Keep it. If the command exits non-zero, skip persistence and trend for this run, but continue the critique.
 3. **Read `.impeccable/critique/ignore.md`** if it exists. Drop matching findings silently; it is the only prior-run input critique consumes.
@@ -58,7 +58,7 @@ Run the bundled detector and browser visualization evidence. Assessment B is man
 
 CLI scan:
 ```bash
-node .agents/skills/impeccable/scripts/detect.mjs --json [target]
+node .codex/skills/impeccable/scripts/detect.mjs --json [target]
 ```
 
 - Pass markup files/directories as `[target]`; do not pass CSS-only files.
@@ -72,7 +72,7 @@ Browser visualization is required for a viewable target when browser automation 
 1. Create a fresh tab and navigate.
 2. Preflight mutable injection by setting `document.title` and appending a `<script>` tag. Read-only evaluate APIs do not count.
 3. If mutation is unavailable, skip live server, browser presentation, and injection; report fallback signal.
-4. If mutation is available, start `node .agents/skills/impeccable/scripts/live-server.mjs --background`, present the browser if supported, label `[Human]`, scroll top, inject `http://localhost:PORT/detect.js`, wait 2-3 seconds, read `impeccable` console messages, then stop the live server.
+4. If mutation is available, start `node .codex/skills/impeccable/scripts/live-server.mjs --background`, present the browser if supported, label `[Human]`, scroll top, inject `http://localhost:PORT/detect.js`, wait 2-3 seconds, read `impeccable` console messages, then stop the live server.
 5. For multi-view targets, inject on 3-5 representative pages.
 
 Codex Browser note: Use the Browser skill. Do not spend a Browser attempt on `file://`. Only call `visibility.set(true)` after mutable script injection is confirmed for the `[Human]` overlay path; verify with `get()`. Use `tab.dev.logs({ filter: "impeccable" })` for console results. Its Playwright `evaluate(...)` surface is read-only; do not rely on it for mutation.
@@ -174,39 +174,10 @@ Codex Run Notes are final-chat only. Do not include this section in the persiste
 - Prioritize ruthlessly. If everything is important, nothing is.
 - Don't soften criticism. Developers need honest feedback to ship great design.
 
-### Persist the Snapshot
+### 結果の記録
 
-Once the report above is finalized, write it to `.impeccable/critique/` so the user can refer back, and so `$impeccable polish` can pick up the priority issues without a copy-paste.
-
-Skip this step if the Setup slug was null (vague or root-level target).
-
-1. **Write the body to a temp file** so you can pipe it to the helper. Use the full critique report (heuristic table, anti-patterns verdict, priority issues, persona red flags, minor observations, and questions), but stop before the "Ask the User" / "Recommended Actions" sections that come later.
-
-   Codex: exclude Run Notes from the temp body file; Run Notes are final-chat only because persistence, trend read, and temp cleanup happen after the snapshot write.
-
-2. **Pass the structured metadata** through `IMPECCABLE_CRITIQUE_META` (JSON), then run the write command:
-   ```bash
-   IMPECCABLE_CRITIQUE_META='{"target":"<user phrasing>","total_score":<n>,"p0_count":<n>,"p1_count":<n>}' \
-     node .agents/skills/impeccable/scripts/critique-storage.mjs write <slug> <body-file>
-   ```
-   The helper prints the absolute path it wrote.
-
-3. **Delete the temp body file** after the write attempt completes, whether the write succeeded or failed. If deletion fails, mention `temp-file cleanup failed: <reason>` briefly in the final output, but do not block the critique.
-
-4. **Read the trend** for context:
-   ```bash
-   node .agents/skills/impeccable/scripts/critique-storage.mjs trend <slug> 5
-   ```
-   This returns a JSON array of the last 5 frontmatter entries (including the one you just wrote).
-
-5. **Append a single line to the user-visible output**, after the report and before the questions:
-
-   > **Trend for `<slug>` (last 5 runs): 24 → 28 → 32 → 29 → 32**
-   > Wrote `.impeccable/critique/<filename>`.
-
-   If this is the first run for the slug, the trend is just one score; say so: "First run for this target, no trend yet."
-
-This is fire-and-forget. Do not show the user the helper's JSON output; only the human-readable trend line and the written path. Failures here should not block the rest of the flow; print the error and move on.
+ima-appでは結果を会話に示す。Issueへの証跡記録が依頼されている場合は既存Issueを更新する。
+`.impeccable/critique/` へのsnapshot保存とtrend生成は行わない。
 
 ### Ask the User
 

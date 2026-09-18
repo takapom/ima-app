@@ -7,6 +7,7 @@ React Native / ExpoとCloudflare Workerで構成しています。ローカル�
 
 - [開発・ローカル起動](docs/development.md)
 - [製品仕様](docs/product.md)
+- [AIの振る舞い](docs/ai-behavior.md)
 - [ディレクトリ構成・アーキテクチャ](docs/architecture.md)
 - [契約とデータの扱い](docs/contracts.md)
 - [Providerポリシー](docs/provider-policy.md)
