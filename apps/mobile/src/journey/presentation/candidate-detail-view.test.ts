@@ -76,6 +76,36 @@ const card = (facts: Partial<PublicCard['facts']> = {}): PublicCard => ({
 const photos = known({ photos: [{ photoToken: 'token-1', attributions: [], sourceUrl: null }] });
 
 describe('candidate detail facts', () => {
+  it.each([null, 'https://www.hotpepper.jp/strJ000000001/?vos=nhppalsa000016'])(
+    'shares the card URL without changing it or substituting credits: %s',
+    (sourceUrl) => {
+      const identity = card().facts.identity;
+      if (identity.status !== 'known') throw new Error('known fixture required');
+      const source = card({
+        identity: known({ ...identity.value, sourceUrl }),
+        opening_hours: known(hours()),
+      });
+      for (const now of [NOW, Date.parse(at(21))]) {
+        const view = toCandidateDetailViewModel(source, now);
+        expect(view.sourceUrl).toBe(sourceUrl);
+        expect(view.sourceUrl).toBe(toCardViewModel(source, now).sourceUrl);
+      }
+    },
+  );
+
+  it.each([
+    { status: 'unknown', reason: 'not supplied' },
+    { status: 'unsupported', reason: 'not supported' },
+    { status: 'not_applicable', reason: 'not applicable' },
+    { status: 'error', code: 'PROVIDER_UNAVAILABLE', reason: 'down' },
+  ] as const)('omits the URL for $status identity even if other facts have credits', (identity) => {
+    const source = card({ identity, opening_hours: known(hours()) });
+    const view = toCandidateDetailViewModel(source, NOW);
+    expect(view.attributions.length).toBeGreaterThan(0);
+    expect(view.sourceUrl).toBeNull();
+    expect(view.sourceUrl).toBe(toCardViewModel(source, NOW).sourceUrl);
+  });
+
   it('uses the same photo and typographic decisions as the card', () => {
     expect(toCandidateDetailViewModel(card({ photos }), NOW).visual).toBe('photo');
     expect(toCandidateDetailViewModel(card(), NOW).visual).toBe('typographic');
@@ -228,7 +258,11 @@ describe('candidate detail facts', () => {
       const denied = { ...evidence('denied'), retention: { ...retention, displayPolicyStatus } };
       const view = toCandidateDetailViewModel(
         card({
-          identity: { ...identity, evidence: [evidence('ok'), denied] },
+          identity: {
+            ...identity,
+            value: { ...identity.value, sourceUrl: 'https://www.hotpepper.jp/strJ000000001/' },
+            evidence: [evidence('ok'), denied],
+          },
           photos: { ...photos, evidence: [denied] },
           opening_hours: { ...known(hours()), evidence: [denied] },
           facilities: {
@@ -247,6 +281,7 @@ describe('candidate detail facts', () => {
       );
       expect(view).toMatchObject({
         name: '候補',
+        sourceUrl: null,
         visual: 'typographic',
         opening: { kind: 'none' },
         hours: [],

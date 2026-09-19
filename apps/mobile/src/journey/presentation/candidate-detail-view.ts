@@ -27,6 +27,7 @@ export type CandidateDetailViewModel = {
   readonly candidateId: string;
   readonly name: string;
   readonly category: string | null;
+  readonly sourceUrl: string | null;
   readonly visual: CardVisual;
   readonly opening: CardOpening;
   readonly hours: readonly string[];
@@ -88,6 +89,7 @@ export const toCandidateDetailViewModel = (
     candidateId: card.candidateId,
     name: summary.name,
     category: text(identity?.category),
+    sourceUrl: summary.sourceUrl,
     visual: summary.visual,
     opening: summary.opening,
     hours: readField(card.facts.opening_hours)?.weeklyText.filter((entry) => entry.trim()) ?? [],

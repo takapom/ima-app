@@ -39,6 +39,15 @@ describe('journey source link boundary', () => {
     expect(openSourceLink).not.toHaveBeenCalled();
   });
 
+  it('passes the complete shop URL to the native service including provider query parameters', async () => {
+    const sourceUrl = 'https://www.hotpepper.jp/strJ000000001/?vos=nhppalsa000016';
+    const openSourceLink = vi.fn(() => Promise.resolve({ status: 'opened' as const }));
+    await expect(openJourneySourceLink({ openSourceLink }, sourceUrl)).resolves.toEqual({
+      status: 'opened',
+    });
+    expect(openSourceLink).toHaveBeenCalledExactlyOnceWith(sourceUrl);
+  });
+
   it('rejects embedded URL credentials and empty hosts', async () => {
     const service: JourneySourceLinkService = {
       openSourceLink: () => Promise.resolve({ status: 'opened' }),

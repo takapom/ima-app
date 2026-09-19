@@ -45,8 +45,13 @@ export function CandidateDetailSheet({
   }, [card, close]);
   if (card === null) return null;
   const view = toCandidateDetailViewModel(card, detail.now);
+  const { sourceUrl } = view;
   const photos = candidateDetailPhotos(card, detail.photos, photoClient, detail.now);
   const handlers = { decide: () => onDecide(card.candidateId), save: () => onSave(card) };
+  const openSource = (url: string): void => {
+    close();
+    onSourcePress(url);
+  };
   return (
     <>
       <Pressable
@@ -90,6 +95,22 @@ export function CandidateDetailSheet({
             </Text>
             <StatusPill opening={view.opening} />
           </View>
+          {sourceUrl === null ? null : (
+            <View style={styles.section}>
+              <Text style={styles.label}>店舗ページ</Text>
+              <Pressable
+                accessibilityLabel={`${view.name}の店舗ページを開く`}
+                accessibilityRole="link"
+                onPress={() => openSource(sourceUrl)}
+                style={({ pressed }) => [styles.sourceLink, pressed && styles.dimmed]}
+              >
+                <Text style={[styles.value, styles.sourceUrl]}>{sourceUrl}</Text>
+                <Text accessible={false} style={styles.value}>
+                  ↗
+                </Text>
+              </Pressable>
+            </View>
+          )}
           {detailSections(view).map(({ label, lines }) => (
             <View key={label} style={styles.section}>
               <Text style={styles.label}>{label}</Text>
@@ -105,10 +126,7 @@ export function CandidateDetailSheet({
             <AttributionList
               attributions={view.attributions}
               comfortable
-              onSourcePress={(url) => {
-                close();
-                onSourcePress(url);
-              }}
+              onSourcePress={openSource}
             />
           </View>
         </ScrollView>
@@ -165,6 +183,15 @@ const styles = StyleSheet.create({
   name: { color: colors.text, fontSize: typography.title, fontWeight: '800' },
   label: { color: colors.muted, fontSize: typography.label },
   section: { gap: spacing.compact },
+  sourceLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.compact,
+    minHeight: spacing.touch,
+    minWidth: spacing.touch,
+    paddingVertical: spacing.compact,
+  },
+  sourceUrl: { flex: 1, textDecorationLine: 'underline' },
   value: {
     color: colors.text,
     fontSize: typography.body,

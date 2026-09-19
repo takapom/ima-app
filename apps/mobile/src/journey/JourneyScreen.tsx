@@ -390,6 +390,7 @@ function JourneyScreenStateOwner({
                 sourceLink.notice?.text ?? null,
               )}
               onOpenDetail={detail.open}
+              onSourcePress={openSourceLink}
               onPhotoReady={detail.rememberPhoto}
               onSave={save}
               {...(photoClient === undefined ? {} : { photoClient })}

@@ -35,6 +35,19 @@ export const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', gap: spacing.compact },
   access: { flex: 1, minWidth: 0 },
   price: { flexShrink: 1, maxWidth: '65%' },
+  sourceLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.compact,
+    minHeight: spacing.touch,
+    minWidth: spacing.touch,
+  },
+  sourceUrl: {
+    flex: 1,
+    color: colors.muted,
+    fontSize: typography.label,
+    textDecorationLine: 'underline',
+  },
   actionRow: { flexDirection: 'row', gap: spacing.compact, marginTop: 'auto' },
   primaryAction: {
     flexDirection: 'row',

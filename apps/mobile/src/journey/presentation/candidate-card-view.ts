@@ -37,6 +37,7 @@ export type CardViewModel = {
   readonly candidateId: string;
   readonly name: string;
   readonly category: string | null;
+  readonly sourceUrl: string | null;
   readonly visual: CardVisual;
   readonly opening: CardOpening;
   /** Null means the line is not rendered at all; absence never becomes a placeholder row. */
@@ -261,6 +262,7 @@ export const toCardViewModel = (card: PublicCard, now: number): CardViewModel =>
     candidateId: card.candidateId,
     name: identity?.name ?? '候補',
     category: identity?.category ?? null,
+    sourceUrl: identity?.sourceUrl ?? null,
     visual: resolveVisual(card),
     opening,
     access: resolveAccess(identity, readField(card.facts.walking_route)),

@@ -70,6 +70,70 @@ const card = (facts: Partial<PublicCard['facts']> = {}): PublicCard => ({
 
 const photos = known({ photos: [{ photoToken: 'token-1', attributions: [], sourceUrl: null }] });
 
+describe('card source URL', () => {
+  const sourceUrl = 'https://www.hotpepper.jp/strJ000000001/?vos=nhppalsa000016';
+  const linkedCard = (): PublicCard => {
+    const identity = card().facts.identity;
+    if (identity.status !== 'known') throw new Error('known fixture required');
+    return card({ identity: known({ ...identity.value, sourceUrl }) });
+  };
+
+  it('keeps the full identity URL including its query, even while closed', () => {
+    const source = linkedCard();
+    expect(toCardViewModel(source, NOW).sourceUrl).toBe(sourceUrl);
+    const closed = toCardViewModel(
+      card({ ...source.facts, opening_hours: known(hours()) }),
+      Date.parse(at(21)),
+    );
+    expect(closed.opening.kind).toBe('closed');
+    expect(closed.sourceUrl).toBe(sourceUrl);
+  });
+
+  it('does not substitute attribution or photo URLs for a missing identity URL', () => {
+    const source = card({
+      photos: known({
+        photos: [{ photoToken: 'token-1', attributions: [], sourceUrl }],
+      }),
+    });
+    expect(toCardViewModel(source, NOW).sourceUrl).toBeNull();
+  });
+
+  it.each([
+    { status: 'unknown', reason: 'not supplied' },
+    { status: 'unsupported', reason: 'not supported' },
+    { status: 'not_applicable', reason: 'not applicable' },
+    { status: 'error', code: 'PROVIDER_UNAVAILABLE', reason: 'down' },
+  ] as const)('omits the URL for $status identity', (identity) => {
+    expect(toCardViewModel(card({ identity }), NOW).sourceUrl).toBeNull();
+  });
+
+  it.each([
+    'expired',
+    'policy_withheld',
+    'attribution_missing',
+    'disabled_capability',
+    'disabled_m35',
+  ] as const)(
+    'removes a previously visible URL when any evidence becomes %s',
+    (displayPolicyStatus) => {
+      const source = linkedCard();
+      const identity = source.facts.identity;
+      if (identity.status !== 'known') throw new Error('known fixture required');
+      expect(toCardViewModel(source, NOW).sourceUrl).toBe(sourceUrl);
+      const hidden = card({
+        identity: {
+          ...identity,
+          evidence: [
+            ...identity.evidence,
+            { ...evidence('denied'), retention: { ...retention, displayPolicyStatus } },
+          ],
+        },
+      });
+      expect(toCardViewModel(hidden, NOW).sourceUrl).toBeNull();
+    },
+  );
+});
+
 describe('card visual', () => {
   it('uses the photo treatment only when a photo is actually present', () => {
     expect(toCardViewModel(card({ photos }), NOW).visual).toBe('photo');

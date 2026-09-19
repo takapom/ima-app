@@ -20,6 +20,7 @@ type CandidateCardProps = {
   /** Injected render time; the countdown is resolved here, never baked in upstream. */
   readonly now?: string;
   readonly onOpenDetail?: (candidateId: string) => void;
+  readonly onSourcePress: (sourceLink: string) => void;
   readonly onPhotoReady?: RememberPhoto;
   readonly onSave?: (card: PublicCard) => void;
   readonly photoClient?: JourneyPhotoClient;
@@ -29,11 +30,13 @@ export function CandidateCard({
   card,
   now,
   onOpenDetail,
+  onSourcePress,
   onPhotoReady,
   onSave,
   photoClient,
 }: CandidateCardProps): React.JSX.Element {
   const view = toCardViewModel(card, cardRenderNow(now));
+  const { sourceUrl } = view;
 
   const saveAction = onSave === undefined ? undefined : (): void => onSave(card);
   const openDetails = (): void => onOpenDetail?.(card.candidateId);
@@ -91,6 +94,21 @@ export function CandidateCard({
             </Text>
           )}
         </View>
+      )}
+      {sourceUrl === null ? null : (
+        <Pressable
+          accessibilityLabel={`${view.name}の店舗ページを開く`}
+          accessibilityRole="link"
+          onPress={() => onSourcePress(sourceUrl)}
+          style={({ pressed }) => [styles.sourceLink, pressed && styles.pressed]}
+        >
+          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.sourceUrl}>
+            {sourceUrl}
+          </Text>
+          <Text accessible={false} style={styles.meta}>
+            ↗
+          </Text>
+        </Pressable>
       )}
       <View style={styles.actionRow}>
         <Pressable

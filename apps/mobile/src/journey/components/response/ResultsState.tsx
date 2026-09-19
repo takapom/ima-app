@@ -27,6 +27,7 @@ type ResultsStateProps = {
   readonly candidateOrder?: readonly string[];
   readonly notice?: string | null;
   readonly onOpenDetail: (candidateId: string) => void;
+  readonly onSourcePress: (sourceLink: string) => void;
   readonly onPhotoReady?: RememberPhoto;
   readonly onSave?: (card: PublicCard) => void;
   readonly photoClient?: JourneyPhotoClient;
@@ -41,6 +42,7 @@ export function ResultsState({
   candidateOrder,
   notice = null,
   onOpenDetail,
+  onSourcePress,
   onPhotoReady,
   onSave,
   photoClient,
@@ -73,6 +75,7 @@ export function ResultsState({
             card={card}
             {...(now === undefined ? {} : { now })}
             onOpenDetail={onOpenDetail}
+            onSourcePress={onSourcePress}
             {...(onPhotoReady === undefined ? {} : { onPhotoReady })}
             {...(onSave === undefined ? {} : { onSave })}
             {...(photoClient === undefined ? {} : { photoClient })}
