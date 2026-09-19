@@ -187,15 +187,15 @@ describe('card opening state', () => {
 describe('card action and emphasis', () => {
   it('hands the primary action to 残す only when the place is closed', () => {
     const open = toCardViewModel(card({ opening_hours: known(hours()) }), NOW);
-    expect(open).toMatchObject({ primaryAction: 'decide', dimmed: false });
+    expect(open).toMatchObject({ primaryAction: 'details', dimmed: false });
 
     const closed = toCardViewModel(card({ opening_hours: known(hours()) }), Date.parse(at(21)));
     expect(closed).toMatchObject({ primaryAction: 'save', dimmed: true });
   });
 
-  it('keeps the decide action when the hours are unknown', () => {
+  it('keeps details available when the hours are unknown', () => {
     expect(toCardViewModel(card(), NOW)).toMatchObject({
-      primaryAction: 'decide',
+      primaryAction: 'details',
       dimmed: false,
     });
   });

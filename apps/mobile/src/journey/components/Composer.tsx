@@ -8,6 +8,7 @@ import {
 } from '@mobile/journey/state/journey-input';
 import { paddingWithSafeArea } from '@mobile/ui/theme/safe-area';
 import { colors, radii, scaleForDynamicType, spacing, typography } from '@mobile/ui/theme/tokens';
+import { Icon } from '@mobile/ui/Icon';
 
 type ComposerProps = {
   readonly value: string;
@@ -47,7 +48,7 @@ export function Composer({
     <View
       style={[
         styles.container,
-        { paddingBottom: paddingWithSafeArea(spacing.section, insets.bottom) },
+        { paddingBottom: Math.max(18, paddingWithSafeArea(spacing.section, insets.bottom)) },
       ]}
     >
       {visibleSuggestions.length > 0 ? (
@@ -78,12 +79,15 @@ export function Composer({
           style={[styles.input, { maxHeight: scaleForDynamicType(96, fontScale) }]}
           value={value}
         />
-        <Text accessibilityLabel={`${value.length}文字`} style={styles.counter}>
-          {value.length}/{maxLength}
-        </Text>
+        {value.length >= maxLength * 0.9 ? (
+          <Text accessibilityLabel={`${value.length}文字`} style={styles.counter}>
+            {value.length}/{maxLength}
+          </Text>
+        ) : null}
         <Pressable
           accessibilityLabel={pending ? '検索を取り消す' : '検索を送信'}
           accessibilityRole="button"
+          accessibilityState={{ disabled: !actionEnabled }}
           disabled={!actionEnabled}
           onPress={() => (pending ? onCancel?.() : onSubmit?.(value))}
           style={({ pressed }) => [
@@ -92,9 +96,11 @@ export function Composer({
             pressed && styles.pressed,
           ]}
         >
-          <Text allowFontScaling={false} style={styles.sendText}>
-            {pending ? '×' : '↑'}
-          </Text>
+          <Icon
+            name={pending ? 'close' : 'arrow'}
+            size={18}
+            color={actionEnabled ? colors.ink : colors.muted}
+          />
         </Pressable>
       </View>
     </View>
@@ -105,7 +111,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.page,
     paddingBottom: spacing.section,
-    paddingTop: spacing.compact,
+    paddingTop: 0,
   },
   suggestions: {
     flexDirection: 'row',
@@ -127,15 +133,13 @@ const styles = StyleSheet.create({
   },
   inputRow: {
     alignItems: 'flex-end',
-    backgroundColor: 'rgba(18, 18, 20, 0.92)',
-    borderColor: colors.border,
+    backgroundColor: '#151517',
     borderRadius: radii.field,
-    borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.compact,
     paddingBottom: 6,
-    paddingLeft: spacing.section,
-    paddingRight: 6,
+    paddingLeft: 16,
+    paddingRight: 8,
     paddingTop: 6,
   },
   input: {
@@ -156,19 +160,13 @@ const styles = StyleSheet.create({
   send: {
     alignItems: 'center',
     backgroundColor: colors.cream,
-    borderRadius: radii.small,
-    height: spacing.touch,
+    borderRadius: radii.pill,
+    height: 44,
     justifyContent: 'center',
-    width: spacing.touch,
+    width: 44,
   },
   sendDisabled: {
-    opacity: 0.45,
-  },
-  sendText: {
-    color: colors.ink,
-    fontSize: 20,
-    fontWeight: '800',
-    lineHeight: 22,
+    backgroundColor: '#26262a',
   },
   pressed: {
     opacity: 0.72,

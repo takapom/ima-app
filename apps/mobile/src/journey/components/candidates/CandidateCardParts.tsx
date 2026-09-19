@@ -1,23 +1,15 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { CardOpening } from '@mobile/journey/presentation/candidate-card-view';
 import { colors, radii, typography } from '@mobile/ui/theme/tokens';
-
-/**
- * Bottom-up scrim behind the name. No gradient library is installed, so the ramp is a stack
- * of flat bands; six steps is enough that the seams do not read at card size.
- */
-const SCRIM_BANDS = [0, 0.2, 0.45, 0.68, 0.85, 0.96] as const;
+import { Icon } from '@mobile/ui/Icon';
+import { LinearGradient } from '@mobile/ui/LinearGradient';
 
 export function PhotoScrim(): React.JSX.Element {
   return (
-    <View style={styles.scrim}>
-      {SCRIM_BANDS.map((alpha) => (
-        <View
-          key={alpha}
-          style={[styles.scrimBand, { backgroundColor: `rgba(9, 9, 10, ${alpha})` }]}
-        />
-      ))}
-    </View>
+    <LinearGradient
+      style={styles.scrim}
+      value="linear-gradient(0deg, rgba(9,9,10,0.96) 0%, rgba(9,9,10,0.78) 30%, rgba(9,9,10,0) 100%)"
+    />
   );
 }
 
@@ -50,6 +42,7 @@ export function StatusPill({
   if (opening.kind === 'closing') {
     return (
       <View style={[styles.pill, styles.pillUrgent]}>
+        <Icon name="clock" color={colors.ink} size={13} />
         <Text style={styles.pillUrgentText}>あと{opening.remainingMinutes}分で閉店</Text>
       </View>
     );
@@ -86,6 +79,7 @@ export function HoursLine({
         <Text numberOfLines={2} style={valueStyle}>
           {opening.text}
         </Text>
+        <Text style={styles.lastOrder}>掲載の営業時間</Text>
       </View>
     );
   }
@@ -119,11 +113,7 @@ export function HoursLine({
   );
 }
 
-/**
- * Access and price sit on separate lines. The provider's access text is a full building
- * address plus route ("大阪駅前第4ビルB1F 地下鉄御堂筋線 梅田駅 徒歩4分/JR…"), so sharing one
- * truncating line with it would routinely push the price out of the card entirely.
- */
+/** Price retains its width; only long access text truncates. Full facts remain in details. */
 export function MetaLine({
   access,
   price,
@@ -136,14 +126,15 @@ export function MetaLine({
   if (access === null && price === null) return null;
   const valueStyle = dimmed ? styles.metaValueDim : styles.metaValue;
   return (
-    <View>
+    <View style={styles.metaRow}>
       {access === null ? null : (
-        <Text numberOfLines={1} style={styles.metaLine}>
+        <Text numberOfLines={1} style={[styles.metaLine, styles.access]}>
           <Text style={valueStyle}>{access}</Text>
         </Text>
       )}
+      {access !== null && price !== null ? <Text style={styles.separator}>·</Text> : null}
       {price === null ? null : (
-        <Text numberOfLines={1} style={access === null ? styles.metaLine : styles.metaLineNext}>
+        <Text style={[styles.metaLine, styles.price]}>
           <Text style={valueStyle}>{price}</Text>
         </Text>
       )}
@@ -178,13 +169,10 @@ const styles = StyleSheet.create({
   scrim: {
     bottom: 0,
     pointerEvents: 'none',
-    height: '62%',
+    height: '67.2%',
     left: 0,
     position: 'absolute',
     right: 0,
-  },
-  scrimBand: {
-    flex: 1,
   },
   chevron: {
     borderRightWidth: 2,
@@ -203,12 +191,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   pillGlass: {
-    backgroundColor: 'rgba(10, 10, 11, 0.62)',
+    backgroundColor: 'rgba(10, 10, 11, 0.52)',
     borderColor: 'rgba(255, 255, 255, 0.16)',
     borderWidth: 1,
   },
   pillQuiet: {
-    backgroundColor: 'rgba(10, 10, 11, 0.6)',
+    backgroundColor: 'rgba(10, 10, 11, 0.5)',
     borderColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
   },
@@ -283,17 +271,14 @@ const styles = StyleSheet.create({
     color: '#8c8b85',
     fontWeight: '600',
   },
+  metaRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 12 },
+  access: { flex: 1, minWidth: 0 },
+  price: { flexShrink: 1, maxWidth: '65%' },
+  separator: { color: '#46453f', fontSize: 13 },
   metaLine: {
     color: '#7c7b76',
     fontSize: 13,
     lineHeight: 20,
-    marginTop: 12,
-  },
-  metaLineNext: {
-    color: '#7c7b76',
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 4,
   },
   metaValue: {
     color: colors.text,

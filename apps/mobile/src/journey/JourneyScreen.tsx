@@ -9,6 +9,7 @@ import { Drawer } from '@mobile/journey/components/Drawer';
 import { EmptyState } from '@mobile/journey/components/response/EmptyState';
 import { ErrorState } from '@mobile/journey/components/response/ErrorState';
 import { ResultsState } from '@mobile/journey/components/response/ResultsState';
+import { ResultsAttribution } from '@mobile/journey/components/response/ResultsAttribution';
 import { SavedPlacePreviewSurface } from '@mobile/saved-places/components/SavedPlacePreviewSurface';
 import { WorkingState } from '@mobile/journey/components/response/WorkingState';
 import { useAssistantResponseProjection } from '@mobile/journey/hooks/useAssistantResponseProjection';
@@ -432,6 +433,9 @@ function JourneyScreenStateOwner({
         </ScrollView>
       </View>
       <SavedPlacePreviewSurface controller={savedPlaceUi} onSourcePress={openSourceLink} />
+      {phase === 'results' ? (
+        <ResultsAttribution cards={renderedResponse.cards} onSourcePress={openSourceLink} />
+      ) : null}
       <Composer
         disabled={phase === 'working'}
         onChange={journey.updateDraft}

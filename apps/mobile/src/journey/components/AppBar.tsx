@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { paddingWithSafeArea } from '@mobile/ui/theme/safe-area';
-import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
+import { colors, spacing } from '@mobile/ui/theme/tokens';
+import { Icon } from '@mobile/ui/Icon';
 
 type AppBarProps = {
   readonly onMenu: () => void;
@@ -12,7 +13,10 @@ export function AppBar({ onMenu, onNewSearch }: AppBarProps): React.JSX.Element 
   const insets = useSafeAreaInsets();
   return (
     <View
-      style={[styles.container, { paddingTop: paddingWithSafeArea(spacing.compact, insets.top) }]}
+      style={[
+        styles.container,
+        { paddingTop: Math.max(20, paddingWithSafeArea(spacing.compact, insets.top)) },
+      ]}
     >
       <Pressable
         accessibilityLabel="メニュー"
@@ -21,9 +25,7 @@ export function AppBar({ onMenu, onNewSearch }: AppBarProps): React.JSX.Element 
         onPress={onMenu}
         style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
       >
-        <Text allowFontScaling={false} style={styles.icon}>
-          ☰
-        </Text>
+        <Icon name="menu" size={16} color="#7c7b76" />
       </Pressable>
       <Text style={styles.logo} accessibilityRole="header">
         ima<Text style={styles.logoDot}>.</Text>
@@ -35,9 +37,7 @@ export function AppBar({ onMenu, onNewSearch }: AppBarProps): React.JSX.Element 
         onPress={onNewSearch}
         style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
       >
-        <Text allowFontScaling={false} style={styles.plus}>
-          ＋
-        </Text>
+        <Icon name="plus" size={16} color="#7c7b76" />
       </Pressable>
     </View>
   );
@@ -49,34 +49,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.page,
-    paddingBottom: spacing.compact,
+    paddingBottom: 4,
   },
   iconButton: {
     alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.borderSoft,
-    borderRadius: radii.small,
-    borderWidth: 1,
-    height: 40,
+    backgroundColor: '#151517',
+    borderRadius: 999,
+    height: 44,
     justifyContent: 'center',
-    width: 40,
-  },
-  icon: {
-    color: colors.text,
-    fontSize: 19,
-    lineHeight: 21,
-  },
-  plus: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: '300',
-    lineHeight: 25,
+    width: 44,
   },
   logo: {
-    color: colors.text,
-    fontSize: typography.title,
+    color: '#8f8e88',
+    fontSize: 16,
     fontWeight: '800',
-    letterSpacing: -1,
+    letterSpacing: 0.2,
   },
   logoDot: {
     color: colors.lime,

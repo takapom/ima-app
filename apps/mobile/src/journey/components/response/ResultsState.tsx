@@ -1,6 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { CardsData, PublicCard } from '@ima/contracts';
 import { CandidateCard } from '@mobile/journey/components/candidates/CandidateCard';
+import { presentEvidenceText } from '@mobile/journey/components/candidates/candidate-card-model';
 import {
   buildMessageHistory,
   cardSetStatusLabel,
@@ -77,9 +79,9 @@ export function ResultsState({
     <View style={styles.container}>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       {statusLabel ? <Text style={styles.statusLabel}>{statusLabel}</Text> : null}
-      <MessageHistory items={messageHistory} />
-      <Text style={styles.kicker}>主提案</Text>
+      <MessageHistory items={messageHistory} fallback={presentEvidenceText(hero.why).text} />
       <CandidateCard
+        key={hero.candidateId}
         card={hero}
         {...(now === undefined ? {} : { now })}
         onDecide={onDecide}
@@ -118,25 +120,43 @@ type MessageHistoryProps = {
 };
 
 function MessageHistory({ items, fallback }: MessageHistoryProps): React.JSX.Element | null {
+  const [expanded, setExpanded] = useState(false);
   if (items.length === 0) {
-    return fallback ? <Text style={styles.messageText}>{fallback}</Text> : null;
+    return fallback ? (
+      <View style={styles.messageBox}>
+        <View style={styles.messageDot} />
+        <Text style={[styles.messageText, styles.messageBody]}>{fallback}</Text>
+      </View>
+    ) : null;
   }
   return (
     <View style={styles.messageHistory}>
-      {items.map((item) => (
-        <View key={item.key} style={styles.messageBox}>
-          <Text style={styles.messageKicker}>imaから</Text>
-          <Text style={styles.messageText}>
-            {item.message?.text ??
-              (item.displayPolicyStatus === 'expired'
-                ? 'このメッセージは表示期限を過ぎています。'
-                : 'このメッセージは現在表示できません。')}
+      {items.length > 1 ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
+          onPress={() => setExpanded(!expanded)}
+          style={styles.historyToggle}
+        >
+          <Text style={styles.historyLabel}>
+            {expanded ? '前のやりとりを閉じる' : `前のやりとり ${items.length - 1}件`}
           </Text>
-          {item.relation !== 'none' ? (
-            <Text style={styles.messageRelation}>
-              {item.relation === 'current' ? '表示中の候補' : '過去の候補'}
+        </Pressable>
+      ) : null}
+      {(expanded ? items : items.slice(-1)).map((item) => (
+        <View key={item.key} style={styles.messageBox}>
+          <View style={styles.messageDot} />
+          <View style={styles.messageBody}>
+            <Text style={styles.messageText}>
+              {item.message?.text ??
+                (item.displayPolicyStatus === 'expired'
+                  ? 'このメッセージは表示期限を過ぎています。'
+                  : 'このメッセージは現在表示できません。')}
             </Text>
-          ) : null}
+            {item.relation === 'past' ? (
+              <Text style={styles.messageRelation}>過去の候補</Text>
+            ) : null}
+          </View>
         </View>
       ))}
     </View>
@@ -145,16 +165,19 @@ function MessageHistory({ items, fallback }: MessageHistoryProps): React.JSX.Ele
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.compact,
+    gap: 14,
     paddingHorizontal: spacing.page,
-    paddingTop: spacing.compact,
+    paddingTop: 10,
   },
   messageBox: {
-    backgroundColor: colors.surfaceRaised,
-    borderColor: colors.border,
-    borderRadius: 18,
-    padding: spacing.section,
+    flexDirection: 'row',
+    gap: 9,
+    paddingHorizontal: 4,
   },
+  messageDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.lime, marginTop: 7 },
+  messageBody: { flex: 1 },
+  historyToggle: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
+  historyLabel: { color: colors.muted, fontSize: 12 },
   messageHistory: {
     gap: spacing.compact,
   },
@@ -166,16 +189,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.section,
     padding: spacing.section,
   },
-  messageKicker: {
-    color: colors.lime,
-    fontSize: typography.label,
-    fontWeight: '700',
-  },
   messageText: {
-    color: colors.text,
-    fontSize: typography.body,
-    lineHeight: 22,
-    marginTop: 4,
+    color: '#7c7b76',
+    fontSize: 13,
+    lineHeight: 20,
   },
   messageRelation: {
     color: colors.faint,

@@ -44,7 +44,7 @@ export type CardViewModel = {
   readonly price: string | null;
   readonly amenities: readonly string[];
   readonly diff: string | null;
-  readonly primaryAction: 'decide' | 'save';
+  readonly primaryAction: 'details' | 'save';
   readonly dimmed: boolean;
 };
 
@@ -247,7 +247,7 @@ export const toCardViewModel = (card: PublicCard, now: number): CardViewModel =>
     price: resolvePrice(readField(card.facts.price)),
     amenities: resolveAmenities(readField(card.facts.facilities)),
     diff: resolveDiff(card.diff),
-    primaryAction: opening.kind === 'closed' ? 'save' : 'decide',
+    primaryAction: opening.kind === 'closed' ? 'save' : 'details',
     dimmed: opening.kind === 'closed',
   };
 };

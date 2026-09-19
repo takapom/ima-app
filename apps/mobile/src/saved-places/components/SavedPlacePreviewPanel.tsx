@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { AttributionList } from '@mobile/journey/components/candidates/CandidateCard';
+import { AttributionList } from '@mobile/ui/AttributionList';
 import {
   savedPlacePreviewDisplayFor,
   savedPlacePreviewFailureTextFor,
