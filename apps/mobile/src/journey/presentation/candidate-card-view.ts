@@ -74,7 +74,7 @@ export const cardRenderNow = (now: string | undefined): number => {
  * Yields the value only when the field is known AND every piece of its evidence is still
  * displayable. A withheld or expired field is treated as absent so no stale value renders.
  */
-const readField = <T>(field: DisplayFieldLike<T> | undefined): T | null => {
+export const readField = <T>(field: DisplayFieldLike<T> | undefined): T | null => {
   if (field === undefined || field.status !== 'known') return null;
   const withheld = field.evidence.some(
     (evidence) => evidence.retention.displayPolicyStatus !== 'available',
@@ -83,7 +83,7 @@ const readField = <T>(field: DisplayFieldLike<T> | undefined): T | null => {
 };
 
 /** Provider access text mixes full-width Latin (`ＪＲ`) into half-width prose; even it out. */
-const normalizeWidth = (value: string): string =>
+export const normalizeWidth = (value: string): string =>
   value.replace(/[！-～]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0));
 
 const intlOrNull = (build: () => Intl.DateTimeFormat): Intl.DateTimeFormat | null => {

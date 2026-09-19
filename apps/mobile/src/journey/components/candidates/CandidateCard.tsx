@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
@@ -20,7 +19,7 @@ import { PhotoRegion } from '@mobile/journey/components/candidates/PhotoRegion';
 import { colors } from '@mobile/ui/theme/tokens';
 import { Icon } from '@mobile/ui/Icon';
 import { LinearGradient } from '@mobile/ui/LinearGradient';
-import { CandidateDetails } from '@mobile/journey/components/candidates/CandidateDetails';
+import type { RememberPhoto } from '@mobile/journey/state/photo-image-state';
 import { styles } from '@mobile/journey/components/candidates/candidate-card-styles';
 
 const ALT_THUMBNAIL = 76;
@@ -31,10 +30,9 @@ type CandidateCardProps = {
   /** Injected render time; the countdown is resolved here, never baked in upstream. */
   readonly now?: string;
   readonly onChoose?: (candidateId: string) => void;
-  readonly onDecide?: (candidateId: string) => void;
+  readonly onOpenDetail?: (candidateId: string) => void;
+  readonly onPhotoReady?: RememberPhoto;
   readonly onSave?: (card: PublicCard) => void;
-  readonly onSkip?: (candidateId: string) => void;
-  readonly onSourcePress?: (sourceLink: string) => void;
   readonly photoClient?: JourneyPhotoClient;
 };
 
@@ -58,14 +56,12 @@ export function CandidateCard({
   primary,
   now,
   onChoose,
-  onDecide,
+  onOpenDetail,
+  onPhotoReady,
   onSave,
-  onSkip,
-  onSourcePress,
   photoClient,
 }: CandidateCardProps): React.JSX.Element {
   const view = toCardViewModel(card, cardRenderNow(now));
-  const [detailsOpen, setDetailsOpen] = useState(false);
 
   if (!primary) {
     return (
@@ -79,7 +75,7 @@ export function CandidateCard({
   }
 
   const saveAction = onSave === undefined ? undefined : (): void => onSave(card);
-  const openDetails = (): void => setDetailsOpen(true);
+  const openDetails = (): void => onOpenDetail?.(card.candidateId);
   const primaryIsSave = view.primaryAction === 'save';
 
   const heading = (
@@ -97,6 +93,7 @@ export function CandidateCard({
         <View style={styles.visual}>
           <PhotoRegion
             card={card}
+            {...(onPhotoReady === undefined ? {} : { onPhotoReady })}
             {...(photoClient === undefined ? {} : { client: photoClient })}
           />
           {view.dimmed ? <View style={styles.veil} /> : null}
@@ -160,16 +157,6 @@ export function CandidateCard({
 
         <Text style={styles.footnote}>掲載の営業時間 · 今の混雑と空席は未確認</Text>
       </View>
-      <CandidateDetails
-        card={card}
-        view={view}
-        visible={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-        {...(onDecide === undefined ? {} : { onDecide })}
-        {...(onSave === undefined ? {} : { onSave })}
-        {...(onSkip === undefined ? {} : { onSkip })}
-        {...(onSourcePress === undefined ? {} : { onSourcePress })}
-      />
     </View>
   );
 }

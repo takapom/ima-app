@@ -1,10 +1,13 @@
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
-import type { EvidenceRef, PublicCard } from '@ima/contracts';
+import type { PublicCard } from '@ima/contracts';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
 import { usePhotoImage } from '@mobile/journey/hooks/usePhotoImage';
 import {
   isPhotoImageReadyFor,
+  photoDeadline,
+  type ReadyPhotoImage,
+  type RememberPhoto,
   type PhotoImageIdentity,
   type PhotoImageState,
 } from '@mobile/journey/state/photo-image-state';
@@ -15,24 +18,10 @@ type PhotoRegionProps = {
   readonly card: PublicCard;
   readonly client?: JourneyPhotoClient;
   readonly compact?: boolean;
+  readonly images?: readonly ReadyPhotoImage[];
+  readonly onPhotoReady?: RememberPhoto;
   /** Edge length of the compact thumbnail; callers size it to their own row. */
   readonly compactSize?: number;
-};
-
-const photoDeadline = (evidence: readonly EvidenceRef[]): string | null => {
-  const deadlines = evidence.flatMap((item) =>
-    [
-      item.retention.displayUntil,
-      item.retention.sessionExpiresAt,
-      item.retention.retentionUntil,
-      item.retention.deletionScheduledAt,
-    ].flatMap((value) => {
-      if (value === null) return [];
-      const milliseconds = Date.parse(value);
-      return Number.isFinite(milliseconds) ? [milliseconds] : [];
-    }),
-  );
-  return deadlines.length === 0 ? null : new Date(Math.min(...deadlines)).toISOString();
 };
 
 const statusText = (state: PhotoImageState): string => {
@@ -56,6 +45,7 @@ function PhotoSlide({
   compact,
   width,
   size,
+  onPhotoReady,
 }: {
   readonly token: string;
   readonly displayUntil: string | null;
@@ -63,10 +53,15 @@ function PhotoSlide({
   readonly compact: boolean;
   readonly width: number;
   readonly size: number;
+  readonly onPhotoReady?: RememberPhoto;
 }): React.JSX.Element {
   const state = usePhotoImage(client, token, displayUntil);
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => setImageFailed(false), [token]);
+  useEffect(() => {
+    if (state.status === 'ready' && !imageFailed) return onPhotoReady?.(state);
+    return undefined;
+  }, [state, imageFailed, onPhotoReady]);
   const identity: PhotoImageIdentity | null =
     client === undefined ? null : { client, token, displayUntil };
   if (identity !== null && isPhotoImageReadyFor(state, identity) && !imageFailed) {
@@ -103,6 +98,8 @@ export function PhotoRegion({
   client,
   compact = false,
   compactSize = 56,
+  images,
+  onPhotoReady,
 }: PhotoRegionProps): React.JSX.Element {
   const [activeIndex, setActiveIndex] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(compact ? compactSize : 0);
@@ -145,6 +142,21 @@ export function PhotoRegion({
     );
   }
   const displayUntil = photoDeadline(presentation.evidence);
+  if (images !== undefined) {
+    return (
+      <View style={styles.heroRegion}>
+        {images.slice(0, 1).map((image) => (
+          <Image
+            key={image.token}
+            accessibilityLabel="候補の写真"
+            resizeMode="cover"
+            source={{ uri: image.asset.uri }}
+            style={styles.heroImage}
+          />
+        ))}
+      </View>
+    );
+  }
   const pageWidth = compact ? compactSize : viewportWidth;
   return (
     <View
@@ -175,6 +187,7 @@ export function PhotoRegion({
           <View key={photo.photoToken} style={[styles.slide, { width: pageWidth }]}>
             {index === activeIndex && pageWidth > 0 ? (
               <PhotoSlide
+                {...(onPhotoReady === undefined ? {} : { onPhotoReady })}
                 compact={compact}
                 displayUntil={displayUntil}
                 size={compactSize}

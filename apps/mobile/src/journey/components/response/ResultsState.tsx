@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { RememberPhoto } from '@mobile/journey/state/photo-image-state';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { CardsData, PublicCard } from '@ima/contracts';
 import { CandidateCard } from '@mobile/journey/components/candidates/CandidateCard';
@@ -25,10 +26,9 @@ type ResultsStateProps = {
   readonly candidateOrder?: readonly string[];
   readonly notice?: string | null;
   readonly onChoose?: (candidateId: string) => void;
-  readonly onDecide: (candidateId: string) => void;
+  readonly onOpenDetail: (candidateId: string) => void;
+  readonly onPhotoReady?: RememberPhoto;
   readonly onSave?: (card: PublicCard) => void;
-  readonly onSkip?: (candidateId: string) => void;
-  readonly onSourcePress?: (sourceLink: string) => void;
   readonly photoClient?: JourneyPhotoClient;
 };
 
@@ -53,10 +53,9 @@ export function ResultsState({
   candidateOrder,
   notice = null,
   onChoose,
-  onDecide,
+  onOpenDetail,
+  onPhotoReady,
   onSave,
-  onSkip,
-  onSourcePress,
   photoClient,
 }: ResultsStateProps): React.JSX.Element {
   const displayCards = cards === null ? [] : orderedCards(cards, candidateOrder);
@@ -84,11 +83,10 @@ export function ResultsState({
         key={hero.candidateId}
         card={hero}
         {...(now === undefined ? {} : { now })}
-        onDecide={onDecide}
+        onOpenDetail={onOpenDetail}
+        {...(onPhotoReady === undefined ? {} : { onPhotoReady })}
         {...(onSave === undefined ? {} : { onSave })}
-        {...(onSkip === undefined ? {} : { onSkip })}
         primary
-        {...(onSourcePress === undefined ? {} : { onSourcePress })}
         {...(photoClient === undefined ? {} : { photoClient })}
       />
       {alternatives.length > 0 ? (
@@ -104,7 +102,6 @@ export function ResultsState({
               {...(now === undefined ? {} : { now })}
               primary={false}
               {...(onChoose === undefined ? {} : { onChoose })}
-              {...(onSourcePress === undefined ? {} : { onSourcePress })}
               {...(photoClient === undefined ? {} : { photoClient })}
             />
           ))}

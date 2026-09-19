@@ -1,4 +1,5 @@
 export const colors = {
+  overlayScrim: 'rgba(0, 0, 0, 0.46)',
   background: '#0c0c0d',
   surface: '#171719',
   surfaceRaised: '#1c1c1e',

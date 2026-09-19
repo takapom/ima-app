@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { PublicCard } from '@ima/contracts';
+import { useCandidateDetail } from '@mobile/journey/hooks/useCandidateDetail';
+import { CandidateDetailSheet } from '@mobile/journey/components/candidates/CandidateDetailSheet';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { AppBar } from '@mobile/journey/components/AppBar';
 import { Canvas } from '@mobile/ui/Canvas';
@@ -343,6 +346,14 @@ function JourneyScreenStateOwner({
     decided !== null,
     requestStartRevision !== null && renderedResponse.revision > requestStartRevision,
   );
+  const detail = useCandidateDetail(
+    phase === 'results' ? renderedResponse : null,
+    actions.candidateOrder,
+    now,
+  );
+  const save = (card: PublicCard): void => {
+    void actions.save(card).then(savedPlaceUi.reload).catch(actions.reportFailure);
+  };
   const visibleSavedPlaces = savedPlaces ?? [];
   const savedPlacesUnavailable = savedPlaceUi.connected
     ? savedPlaceUi.unavailable
@@ -378,16 +389,9 @@ function JourneyScreenStateOwner({
                 actions.notice?.text ?? null,
                 sourceLink.notice?.text ?? null,
               )}
-              onDecide={decide}
-              onSave={(card) => {
-                void actions.save(card).then(savedPlaceUi.reload).catch(actions.reportFailure);
-              }}
-              onSkip={(candidateId) => {
-                if (requestStatus === 'pending') return;
-                const next = actions.skipTonight(candidateId);
-                if (next !== null) submit('この候補はちがう。', next);
-              }}
-              onSourcePress={openSourceLink}
+              onOpenDetail={detail.open}
+              onPhotoReady={detail.rememberPhoto}
+              onSave={save}
               {...(photoClient === undefined ? {} : { photoClient })}
               onChoose={actions.promote}
             />
@@ -449,6 +453,13 @@ function JourneyScreenStateOwner({
         }
         value={journey.draft}
         {...(onSubmit === undefined ? {} : { onSubmit: submit })}
+      />
+      <CandidateDetailSheet
+        detail={detail}
+        onDecide={decide}
+        onSave={save}
+        onSourcePress={openSourceLink}
+        photoClient={photoClient}
       />
       <Drawer
         history={history}

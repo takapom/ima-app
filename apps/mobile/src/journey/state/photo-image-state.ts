@@ -1,4 +1,5 @@
 import type { PhotoApiError, PhotoAsset } from '@mobile/platform/http/photo-client';
+import type { EvidenceRef } from '@ima/contracts';
 
 export type PhotoImageIdentity = {
   readonly client: object;
@@ -23,6 +24,25 @@ export type PhotoImageState =
     }
   | { readonly status: 'expired' }
   | { readonly status: 'unavailable'; readonly error: PhotoApiError | null };
+
+export type ReadyPhotoImage = Extract<PhotoImageState, { readonly status: 'ready' }>;
+export type RememberPhoto = (image: ReadyPhotoImage) => () => void;
+
+export const photoDeadline = (evidence: readonly EvidenceRef[]): string | null => {
+  const deadlines = evidence.flatMap((item) =>
+    [
+      item.retention.displayUntil,
+      item.retention.sessionExpiresAt,
+      item.retention.retentionUntil,
+      item.retention.deletionScheduledAt,
+    ].flatMap((value) => {
+      if (value === null) return [];
+      const milliseconds = Date.parse(value);
+      return Number.isFinite(milliseconds) ? [milliseconds] : [];
+    }),
+  );
+  return deadlines.length === 0 ? null : new Date(Math.min(...deadlines)).toISOString();
+};
 
 export const initialPhotoImageState = (
   client: object | undefined,

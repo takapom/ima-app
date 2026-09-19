@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import type { EvidenceRef, PublicCard } from '@ima/contracts';
-import { candidateDetails } from '@mobile/journey/presentation/candidate-details';
 import {
   cardAttributions,
   resultAttributions,
@@ -41,71 +40,6 @@ const card: PublicCard = {
   },
   why: { text: '希望に合う候補', evidenceIds: [], evidence: [], basis: 'grounded', retention },
 };
-
-describe('candidate details', () => {
-  it('preserves full access and opening text hidden by the compact summary', () => {
-    const details = candidateDetails({
-      ...card,
-      facts: {
-        ...card.facts,
-        opening_hours: known({
-          timeZone: 'Asia/Tokyo',
-          intervals: [],
-          weeklyText: ['月〜金 12:00〜23:00', '定休日: 土日'],
-          evaluatedAt: '2026-09-19T00:00:00Z',
-          listedOpenAtEvaluation: null,
-          nextBoundaryAt: null,
-          lastOrderAt: null,
-          lastOrderRaw: null,
-        }),
-      },
-    });
-    expect(details.rows.find((row) => row.label === 'アクセス')?.fact.label).toBe(
-      '西口を出て直進、交差点の奥の建物2階',
-    );
-    const opening = details.rows.find((row) => row.label === '営業時間')?.fact.label;
-    expect(opening).toContain('月〜金 12:00〜23:00 / 定休日: 土日');
-    expect(opening).toContain('営業状況 未確認');
-    expect(details.sourceUrl).toBe('https://example.com/shop/1');
-  });
-
-  it('never discloses expired identity, address or source links in the detail sheet', () => {
-    const identity = card.facts.identity;
-    if (identity?.status !== 'known') throw new Error('fixture identity must be known');
-    const details = candidateDetails({
-      ...card,
-      facts: {
-        identity: {
-          ...identity,
-          evidence: [
-            {
-              ...evidence,
-              retention: { ...retention, displayPolicyStatus: 'expired' },
-            },
-          ],
-        },
-      },
-    });
-    expect(details.sourceUrl).toBeNull();
-    expect(details.rows.map((row) => row.fact.status)).toEqual(['expired', 'expired']);
-    expect(JSON.stringify(details)).not.toContain('東京都');
-    expect(JSON.stringify(details)).not.toContain('example.com');
-  });
-
-  it('keeps failures and unsupported information distinct, without creating absent rows', () => {
-    const details = candidateDetails({
-      ...card,
-      facts: {
-        ...card.facts,
-        price: { status: 'error', code: 'PROVIDER_UNAVAILABLE', reason: '取得に失敗しました' },
-        last_train: { status: 'unsupported', reason: '終電の提供なし' },
-      },
-    });
-    expect(details.rows.find((row) => row.label === '予算')?.fact.status).toBe('error');
-    expect(details.rows.find((row) => row.label === '終電')?.fact.status).toBe('unsupported');
-    expect(details.rows.some((row) => row.label === '営業時間')).toBe(false);
-  });
-});
 
 describe('result credits', () => {
   it('collects photo and explanation credits as well as the place source', () => {
