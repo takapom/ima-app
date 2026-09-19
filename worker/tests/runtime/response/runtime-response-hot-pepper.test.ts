@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { ValidatedMessageResponse, RetentionMetadata } from '@ima/core';
+import type { ValidatedMessageResponse } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import {
   mapCommittedResponseToPublic,
   RuntimePublicResponseError,
-} from '@worker/infrastructure/runtime/response/runtime-response';
+} from '@worker/runtime/response/runtime-response';
 
 const availableRetention: RetentionMetadata = {
   retentionDecision: 'allow',

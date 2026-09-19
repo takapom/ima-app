@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
+import { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
 import {
   isRuntimeModelGuardError,
   wrapRuntimeModelGuard,
   type RuntimeModelGuardModel,
   type RuntimeModelGuardStreamPart,
-} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
+} from '@worker/runtime/turn-execution/runtime-model-guard';
 
 const parts: RuntimeModelGuardStreamPart[] = [
   { type: 'tool-call', toolCallId: 'search-call', toolName: 'search_places', input: '{}' },

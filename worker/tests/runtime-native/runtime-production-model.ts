@@ -1,4 +1,4 @@
-import type { CandidateRecord } from '@ima/core';
+import type { CandidateRecord } from '@worker/domain/candidates/registry';
 import type {
   RuntimeGateModel,
   RuntimeGateModelCallOptions,

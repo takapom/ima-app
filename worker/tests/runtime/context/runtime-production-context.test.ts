@@ -1,18 +1,16 @@
 import type { AssistantResponse, ThreadTurnRequest } from '@ima/contracts';
-import {
-  CandidateObservationRegistry,
-  denyModelContextFieldPolicy,
-  type RegistryIdPort,
-  type RegistryScope,
-} from '@ima/core';
+import { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
+import { denyModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import { type RegistryIdPort } from '@worker/application/ports/context';
+import { type RegistryScope } from '@worker/domain/evidence/freshness';
 import { describe, expect, it } from 'vitest';
-import { createRuntimeProductionContextStore } from '@worker/infrastructure/runtime/context/runtime-production-context';
-import type { RuntimeProductionContextReference } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
+import { createRuntimeProductionContextStore } from '@worker/runtime/context/runtime-production-context';
+import type { RuntimeProductionContextReference } from '@worker/runtime/context/runtime-production-context-reference';
 import {
   RuntimeProductionContextLimitError,
   RuntimeProductionDisplayContextError,
-} from '@worker/infrastructure/runtime/context/runtime-production-display-context';
-import { runtimeResultForError } from '@worker/infrastructure/runtime/threads/controller-errors';
+} from '@worker/runtime/context/runtime-production-display-context';
+import { runtimeResultForError } from '@worker/runtime/threads/controller-errors';
 
 const scope: RegistryScope = { ownerScopeRef: 'context-owner', threadId: 'context-thread' };
 

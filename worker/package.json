@@ -5,21 +5,20 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./entrypoints/cloudflare/worker.ts",
-      "default": "./entrypoints/cloudflare/worker.ts"
+      "types": "./src/entrypoints/cloudflare/worker.ts",
+      "default": "./src/entrypoints/cloudflare/worker.ts"
     }
   },
   "scripts": {
     "dev": "wrangler dev --local",
     "dev:llm": "wrangler dev --config wrangler.runtime-dev-fixture-test.jsonc --env-file .dev.vars.llm --local --port 8787 --var IMA_RUNTIME_MODE:live --var IMA_PROVIDER_OPENAI:true --var IMA_PROVIDER_PLACES:false --var IMA_PROVIDER_ROUTES:false --var IMA_PROVIDER_LAST_TRAIN:false --var IMA_PROVIDER_HOTPEPPER:true",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.tests.json --noEmit && tsc -p tooling/tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.business.json --noEmit && tsc --noEmit && tsc -p tsconfig.tests.json --noEmit && tsc -p tooling/tsconfig.json --noEmit",
     "build": "wrangler deploy --dry-run"
   },
   "dependencies": {
     "@ai-sdk/openai": "3.0.69",
     "@cloudflare/think": "0.17.0",
     "@ima/contracts": "workspace:*",
-    "@ima/core": "workspace:*",
     "agents": "0.22.0",
     "ai": "6.0.182",
     "valibot": "1.4.2"

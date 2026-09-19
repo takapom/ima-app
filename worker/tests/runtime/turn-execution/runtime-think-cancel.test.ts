@@ -3,33 +3,31 @@ import type {
   CommitPort,
   CommitPortResult,
   CommitRequest,
-  CommittedResponse,
-  ConstraintValidationContext,
-  HarnessContext,
+} from '@worker/application/ports/commit';
+import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
+import type { ConstraintValidationContext } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
+import type { HarnessContext } from '@worker/application/ports/context';
+import type {
   PlaceDetailsPort,
   PlaceSearchPort,
-  Result,
   SearchPlacesOutput,
-  SubmitCardsPort,
-  SubmitCardsPortResult,
-  SubmitValidationContext,
-} from '@ima/core';
+} from '@worker/application/ports/operations';
+import type { Result } from '@worker/domain/result';
+import type { SubmitCardsPort, SubmitCardsPortResult } from '@worker/application/ports/submission';
+import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_RUNTIME_BUDGET,
-  RuntimeBudget,
-} from '@worker/infrastructure/runtime/budget/runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
 import {
   createRuntimeThinkConnection,
   type RuntimeThinkConnection,
   type RuntimeThinkPersistMessages,
-} from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
+} from '@worker/runtime/turn-execution/runtime-think-connection';
 import { createRuntimeTurnComposition } from '@worker/composition/runtime-turn-composition';
 import type {
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
+} from '@worker/runtime/turn-execution/runtime-model-guard';
 import { createToolRegistry, toolScope } from '../../adapters/inbound/tools/registry-fixture';
 
 const NOW = '2026-09-10T00:00:00Z';

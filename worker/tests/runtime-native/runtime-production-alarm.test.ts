@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/infrastructure/runtime/threads/admission';
+} from '@worker/runtime/threads/admission';
 import {
   createRuntimeRetentionAlarmCapability,
   RUNTIME_RETENTION_ALARM_TABLE,
-} from '@worker/infrastructure/runtime/threads/runtime-retention-alarm';
+} from '@worker/runtime/threads/runtime-retention-alarm';
 import { sessionExpiryAt } from '@worker/composition/runtime-production-support';
 import type { ProductionThreadDO } from './runtime-production-worker';
 

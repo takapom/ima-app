@@ -2,12 +2,12 @@ import * as v from 'valibot';
 import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { AssistantResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/infrastructure/adapters/outbound/providers/openai/provider-options';
+import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/adapters/out/providers/openai/provider-options';
 import { sessionExpiryAt } from '@worker/composition/runtime-production-support';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/infrastructure/runtime/threads/admission';
+} from '@worker/runtime/threads/admission';
 import type { ProductionThreadDO, RuntimeProductionReport } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {

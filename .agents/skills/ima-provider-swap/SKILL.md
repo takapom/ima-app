@@ -10,7 +10,7 @@ Google からHot Pepperへの差し替え（#43）で確立した順序。未接
 
 ## 原則
 
-- **Coreの契約を変えない。** 差し替えは[Port](../../../worker/core/src/ports/operations.ts)の実装を入れ替える作業。`PlaceSearchPort`/`PlaceDetailsPort`の形を変えたくなったら、それはProvider差し替えではなく契約変更として別に扱う。
+- **Coreの契約を変えない。** 差し替えは[Port](../../../worker/src/application/ports/operations.ts)の実装を入れ替える作業。`PlaceSearchPort`/`PlaceDetailsPort`の形を変えたくなったら、それはProvider差し替えではなく契約変更として別に扱う。
 - **追加してから撤去する。** 新旧が併存する中間コミットを許し、各コミットでテストが通る状態を保つ。
 - **撤去は葉から幹へ。** 参照が残っている実装を先に消さない。
 - 責務と依存方向は[アーキテクチャ](../../../docs/architecture.md)、用途別policyは[Providerポリシー](../../../docs/provider-policy.md)に従う。
@@ -20,9 +20,9 @@ Google からHot Pepperへの差し替え（#43）で確立した順序。未接
 各段階を1コミット以上に分け、`<type>(<scope>): <変更> (#<sub-issue番号>)`で実在番号を付ける。
 
 1. **policy定義** — 用途別の利用範囲と保持期限を決める。実装より先に境界を固定する。
-2. **新Adapter追加** — `worker/infrastructure/adapters/outbound/providers/<provider>/`にPort実装とHTTPを置く。既存経路は触らない。CoreへSDK・環境変数・直接I/Oを持ち込まない。
-3. **構成を能力に絞る** — [composition](../../../worker/composition)で新Providerが提供できる能力を宣言する。提供しない機能は停止側に倒す。
-4. **実行経路の切替** — `worker/composition/`の注入先を新Adapterへ向ける。旧実装はまだ残す。
+2. **新Adapter追加** — `worker/src/adapters/out/providers/<provider>/`にPort実装とHTTPを置く。既存経路は触らない。業務層へSDK・環境変数・直接I/Oを持ち込まない。
+3. **構成を能力に絞る** — [composition](../../../worker/src/composition)で新Providerが提供できる能力を宣言する。提供しない機能は停止側に倒す。
+4. **実行経路の切替** — `worker/src/composition/`の注入先を新Adapterへ向ける。旧実装はまだ残す。
 5. **fixture更新** — 開発用fixture → SDK/DO統合fixture → 実モデル評価fixtureの順に新形式へ揃える。
 6. **旧実装の撤去** — 合成経路 → Adapter → HTTP → 専用型 → 応答の正規化、の順に消す。1段ごとにコミットする。
 7. **UI側の停止** — 接続しなくなった条件入力・表示をmobileから外す。存在しない機能を操作できる状態で残さない。

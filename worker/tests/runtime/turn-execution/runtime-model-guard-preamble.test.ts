@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RuntimeModelGuardAcceptance } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelGuardAcceptance } from '@worker/runtime/turn-execution/runtime-model-guard';
 import {
   finish,
   guarded,

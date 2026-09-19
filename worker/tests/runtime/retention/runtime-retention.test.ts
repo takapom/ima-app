@@ -1,6 +1,6 @@
 import type { JSONValue, ModelMessage, UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
-import type { RetentionMetadata } from '@ima/core';
+import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import {
   attachRuntimeRetentionContext,
   captureRuntimeEphemeralToolCall,
@@ -17,8 +17,8 @@ import {
   type RuntimeRetentionContext,
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
-} from '@worker/infrastructure/runtime/retention/runtime-retention';
-import { projectRuntimeCurrentTurnMessages } from '@worker/infrastructure/runtime/retention/runtime-retention-model';
+} from '@worker/runtime/retention/runtime-retention';
+import { projectRuntimeCurrentTurnMessages } from '@worker/runtime/retention/runtime-retention-model';
 
 const NOW = '2026-09-10T00:00:00Z';
 const RANDOM_CANARY = 'runtime-retention-secret-7f2a';

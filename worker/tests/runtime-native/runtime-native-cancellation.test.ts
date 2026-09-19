@@ -8,7 +8,7 @@ import { RUNTIME_NATIVE_OWNER } from './runtime-native-ports';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/infrastructure/runtime/threads/admission';
+} from '@worker/runtime/threads/admission';
 
 type NativeTestEnv = Cloudflare.Env & {
   THREADS: DurableObjectNamespace<ThreadDO>;

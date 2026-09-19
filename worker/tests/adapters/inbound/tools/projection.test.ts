@@ -1,19 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type {
   GetPlaceDetailsOutput,
-  HarnessContext,
-  Observation,
-  ObservationContext,
-  PlaceIdentity,
-  Result,
-  RetentionMetadata,
   SearchPlacesOutput,
-} from '@ima/core';
-import type { ModelContextFieldPolicy } from '@ima/core';
-import {
-  projectDetailsResult,
-  projectSearchResult,
-} from '@worker/infrastructure/adapters/inbound/tools/projection';
+} from '@worker/application/ports/operations';
+import type { HarnessContext } from '@worker/application/ports/context';
+import type { Observation } from '@worker/domain/evidence/evidence';
+import type { ObservationContext } from '@worker/domain/evidence/freshness';
+import type { PlaceIdentity } from '@worker/domain/places/place-values';
+import type { Result } from '@worker/domain/result';
+import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import { projectDetailsResult, projectSearchResult } from '@worker/adapters/in/tools/projection';
 import { createToolRegistry, toolScope } from './registry-fixture';
 
 const context: HarnessContext = {

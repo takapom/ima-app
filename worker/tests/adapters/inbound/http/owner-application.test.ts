@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Preferences, PrefsWriteRequest } from '@ima/contracts';
-import { HttpBoundaryError } from '@worker/infrastructure/adapters/inbound/http/errors';
-import type { HandlerContext } from '@worker/infrastructure/adapters/inbound/http/handler';
+import { HttpBoundaryError } from '@worker/adapters/in/http/errors';
+import type { HandlerContext } from '@worker/adapters/in/http/handler';
 import {
   handleOwnerApplication,
   type OwnerSavedCandidateResolver,
-} from '@worker/infrastructure/adapters/inbound/http/owner-application';
-import { createMemoryOwnerStore } from '@worker/infrastructure/adapters/outbound/persistence/saved-references/memory-owner-store';
-import type { OwnerStore } from '@ima/core';
+} from '@worker/adapters/in/http/owner-application';
+import { createMemoryOwnerStore } from '@worker/adapters/out/persistence/saved-references/memory-owner-store';
+import type { OwnerStore } from '@worker/application/ports/owner-store';
 
 const OWNER = 'owner-a';
 const REQUEST_ID = 'request-1';

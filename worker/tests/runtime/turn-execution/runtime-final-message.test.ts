@@ -1,26 +1,28 @@
 import * as v from 'valibot';
 import { expect, describe, it } from 'vitest';
 import { AssistantResponseSchema } from '@ima/contracts';
+import { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
+import { SubmitApplication } from '@worker/application/use-cases/submit-response/submit-application';
 import {
-  CandidateObservationRegistry,
-  SubmitApplication,
   type CommitPort,
   type CommitRecord,
   type CommitRequest,
-  type ConstraintValidationContext,
-  type RegistryIdPort,
+} from '@worker/application/ports/commit';
+import { type ConstraintValidationContext } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
+import { type RegistryIdPort } from '@worker/application/ports/context';
+import {
   type SubmitValidationContext,
   type ValidatedCard,
   type ValidatedMessageResponse,
-} from '@ima/core';
+} from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import {
   parseRuntimeFinalMessage,
   RuntimeFinalMessageError,
-} from '@worker/infrastructure/runtime/turn-execution/runtime-final-message';
+} from '@worker/runtime/turn-execution/runtime-final-message';
 import {
   mapCommittedResponseToPublic,
   RuntimePublicResponseError,
-} from '@worker/infrastructure/runtime/response/runtime-response';
+} from '@worker/runtime/response/runtime-response';
 import {
   card,
   cardEvidenceLinks,

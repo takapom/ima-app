@@ -8,9 +8,9 @@
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | 公開HTTP・応答・保持メタデータ | [contracts公開入口](../packages/contracts/src/index.ts)                                                                                |
 | prefs・保存一覧・決定          | [owner-http.ts](../packages/contracts/src/owner-http.ts)、[saved-reference-http.ts](../packages/contracts/src/saved-reference-http.ts) |
-| HTTPルートとmethod             | [router-match.ts](../worker/infrastructure/adapters/inbound/http/router-match.ts)                                                      |
-| 認証・所有者scope              | [auth.ts](../worker/infrastructure/adapters/inbound/http/auth.ts)                                                                      |
-| モデル向け3操作                | [tools](../worker/infrastructure/adapters/inbound/tools)、[Core Ports](../worker/core/src/ports)                                       |
+| HTTPルートとmethod             | [router-match.ts](../worker/src/adapters/in/http/router-match.ts)                                                                      |
+| 認証・所有者scope              | [auth.ts](../worker/src/adapters/in/http/auth.ts)                                                                                      |
+| モデル向け3操作                | [tools](../worker/src/adapters/in/tools)、[Application Ports](../worker/src/application/ports)                                         |
 
 ## HTTPの利用手順
 

@@ -1,4 +1,4 @@
-import type { ModelGetPlaceDetailsInput } from '@ima/core';
+import type { ModelGetPlaceDetailsInput } from '@worker/application/ports/operations';
 import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,

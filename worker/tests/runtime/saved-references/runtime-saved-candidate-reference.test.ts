@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import type { ModelContextSource, RegistryScope } from '@ima/core';
+import type { ModelContextSource } from '@worker/application/model-context/model-context';
+import type { RegistryScope } from '@worker/domain/evidence/freshness';
 import {
   candidateIdentityForReference,
   parseRuntimeProductionContextReference,
   referenceSnapshotFor,
   type RuntimeProductionContextReference,
-} from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
+} from '@worker/runtime/context/runtime-production-context-reference';
 import {
   resolveRuntimeSavedCandidate,
   type RuntimeSavedCandidateResult,
-} from '@worker/infrastructure/runtime/threads/runtime-saved-candidate-rpc';
+} from '@worker/runtime/threads/runtime-saved-candidate-rpc';
 
 const scope: RegistryScope = { ownerScopeRef: 'saved-owner', threadId: 'saved-thread' };
 const snapshot = {

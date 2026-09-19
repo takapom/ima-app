@@ -1,5 +1,6 @@
 import type { LanguageModel } from 'ai';
-import type { GetPlaceDetailsInput, SearchPlacesInput, SubmitCardsInput } from '@ima/core';
+import type { GetPlaceDetailsInput, SearchPlacesInput } from '@worker/application/ports/operations';
+import type { SubmitCardsInput } from '@worker/application/ports/model';
 import { identityObservationId, observationFor } from './runtime-model-observations';
 
 export type RuntimeGateScenario =

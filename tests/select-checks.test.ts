@@ -28,7 +28,7 @@ describe('quality gate selection', () => {
   });
 
   it('skips the worker pools for mobile-only changes', () => {
-    const selected = select(['apps/mobile/src/components/candidates/card.tsx']);
+    const selected = select(['apps/mobile/src/journey/components/candidates/card.tsx']);
     expect(selected).toContain('test:unit');
     expect(selected).not.toContain('test:runtime');
     expect(selected).not.toContain('test:worker-http');
@@ -38,8 +38,8 @@ describe('quality gate selection', () => {
   it('runs the worker pools for shared contracts and both backend workspaces', () => {
     for (const file of [
       'packages/contracts/src/turn.ts',
-      'worker/core/src/domain/place.ts',
-      'worker/entrypoints/cloudflare/worker.ts',
+      'worker/src/domain/places/place.ts',
+      'worker/src/entrypoints/cloudflare/worker.ts',
     ]) {
       expect(select([file])).toEqual(allGates.filter((gate) => gate !== 'docs'));
     }

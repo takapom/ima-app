@@ -1,4 +1,8 @@
-import type { ModelGetPlaceDetailsInput, SearchPlacesInput, SubmitCardsInput } from '@ima/core';
+import type {
+  ModelGetPlaceDetailsInput,
+  SearchPlacesInput,
+} from '@worker/application/ports/operations';
+import type { SubmitCardsInput } from '@worker/application/ports/model';
 import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,

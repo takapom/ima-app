@@ -1,5 +1,7 @@
-import { CandidateObservationRegistry } from '@ima/core';
-import type { CandidateRegistration, ClockPort, RegistryIdPort, RegistryScope } from '@ima/core';
+import { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
+import type { CandidateRegistration } from '@worker/domain/candidates/registry';
+import type { ClockPort, RegistryIdPort } from '@worker/application/ports/context';
+import type { RegistryScope } from '@worker/domain/evidence/freshness';
 
 export const toolScope: RegistryScope = {
   ownerScopeRef: 'owner-tools',

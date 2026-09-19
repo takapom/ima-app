@@ -2,30 +2,31 @@ import { describe, expect, it } from 'vitest';
 import {
   HarnessContextSchema,
   type CancellationToken,
+  type HarnessContext,
+  type ToolExecutionContext,
+} from '@worker/application/ports/context';
+import {
   type GetPlaceDetailsInput,
   type GetPlaceDetailsOutput,
-  type HarnessContext,
   type PlaceDetailsPort,
   type PlaceSearchPort,
-  type Result,
   type SearchPlacesInput,
   type SearchPlacesOutput,
-  type SubmitCardsInput,
+} from '@worker/application/ports/operations';
+import { type Result } from '@worker/domain/result';
+import { type SubmitCardsInput } from '@worker/application/ports/model';
+import {
   type SubmitCardsPort,
   type SubmitCardsPortResult,
-  type ToolExecutionContext,
-} from '@ima/core';
+} from '@worker/application/ports/submission';
 import * as v from 'valibot';
 import {
   createPublicToolSet,
   getPublicTool,
   invokePublicTool,
   invokePublicToolByName,
-} from '@worker/infrastructure/adapters/inbound/tools';
-import type {
-  ToolBindingDependencies,
-  ToolRuntime,
-} from '@worker/infrastructure/adapters/inbound/tools';
+} from '@worker/adapters/in/tools';
+import type { ToolBindingDependencies, ToolRuntime } from '@worker/adapters/in/tools';
 import { createToolRegistry } from './registry-fixture';
 
 const context: HarnessContext = {

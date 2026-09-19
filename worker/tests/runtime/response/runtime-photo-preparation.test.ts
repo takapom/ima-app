@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ValidatedMessageResponse } from '@ima/core';
+import type { ValidatedMessageResponse } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import {
   prepareRuntimePhotoResolver,
   type RuntimePublicResponseDependencies,
-} from '@worker/infrastructure/runtime/response/runtime-response';
+} from '@worker/runtime/response/runtime-response';
 
 const response: ValidatedMessageResponse = {
   presentation: 'keep',

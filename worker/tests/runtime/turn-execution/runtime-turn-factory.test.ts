@@ -1,13 +1,13 @@
 import type { TurnContext } from '@cloudflare/think';
-import { TurnConstraintError } from '@ima/core';
-import type { SubmitCardsPort } from '@ima/core';
+import { TurnConstraintError } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
+import type { SubmitCardsPort } from '@worker/application/ports/submission';
 import { describe, expect, it } from 'vitest';
-import { RuntimeTurnFactoryError } from '@worker/infrastructure/runtime/turn-execution/runtime-turn-factory';
+import { RuntimeTurnFactoryError } from '@worker/runtime/turn-execution/runtime-turn-factory';
 import type {
   RuntimeSubmitRejection,
   RuntimeTurnOutcome,
-} from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
-import { invokePublicToolEnvelope } from '@worker/infrastructure/adapters/inbound/tools';
+} from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
+import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';
 import { modelFor } from '../../support/runtime-model-fixture';
 import {
   committedResult,

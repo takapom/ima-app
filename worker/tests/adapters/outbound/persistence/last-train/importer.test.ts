@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import type { JourneyRecord, JourneyServiceDateContext } from '@ima/core';
+import type { JourneyRecord, JourneyServiceDateContext } from '@worker/domain/travel/journey';
 import {
   expireJourneyDataset,
   importJourneyDataset,
   rollbackJourneyDataset,
-} from '@worker/infrastructure/adapters/outbound/persistence/last-train/importer';
-import { createJourneyReader } from '@worker/infrastructure/adapters/outbound/persistence/last-train/reader';
+} from '@worker/adapters/out/persistence/last-train/importer';
+import { createJourneyReader } from '@worker/adapters/out/persistence/last-train/reader';
 import type {
   JourneyActivationResult,
   JourneyDatasetMutationStore,
-} from '@worker/infrastructure/adapters/outbound/persistence/last-train/store';
+} from '@worker/adapters/out/persistence/last-train/store';
 import {
   JourneyDatasetEnvelopeSchema,
   type JourneyDatasetEnvelope,
-} from '@worker/infrastructure/adapters/outbound/persistence/last-train/types';
+} from '@worker/adapters/out/persistence/last-train/types';
 import * as v from 'valibot';
 
 const source = {

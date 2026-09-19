@@ -125,12 +125,9 @@ export default tseslint.config(
   {
     files: [
       'apps/mobile/App.tsx',
-      'apps/mobile/components/**/*.{ts,tsx}',
-      'apps/mobile/hooks/**/*.{ts,tsx}',
-      'apps/mobile/state/**/*.{ts,tsx}',
-      'apps/mobile/src/components/**/*.{ts,tsx}',
-      'apps/mobile/src/hooks/**/*.{ts,tsx}',
-      'apps/mobile/src/state/**/*.{ts,tsx}',
+      'apps/mobile/src/{journey,saved-places,preferences}/{components,hooks,state}/**/*.{ts,tsx}',
+      'apps/mobile/src/ui/Canvas.tsx',
+      'apps/mobile/src/composition/hooks/**/*.{ts,tsx}',
     ],
     rules: {
       'react-hooks/exhaustive-deps': 'error',
@@ -140,12 +137,9 @@ export default tseslint.config(
   {
     files: [
       'apps/mobile/App.tsx',
-      'apps/mobile/components/**/*.{ts,tsx}',
-      'apps/mobile/hooks/**/*.{ts,tsx}',
-      'apps/mobile/state/**/*.{ts,tsx}',
-      'apps/mobile/src/components/**/*.{ts,tsx}',
-      'apps/mobile/src/hooks/**/*.{ts,tsx}',
-      'apps/mobile/src/state/**/*.{ts,tsx}',
+      'apps/mobile/src/{journey,saved-places,preferences}/{components,hooks,state}/**/*.{ts,tsx}',
+      'apps/mobile/src/ui/Canvas.tsx',
+      'apps/mobile/src/composition/hooks/**/*.{ts,tsx}',
     ],
     rules: {
       'no-restricted-globals': [
@@ -193,14 +187,17 @@ export default tseslint.config(
     },
   },
   {
-    files: ['worker/core/**/*.{ts,tsx}'],
+    files: ['worker/src/domain/**/*.{ts,tsx}', 'worker/src/application/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: { projectService: false, project: './worker/tsconfig.business.json' },
+    },
     rules: {
       'no-restricted-globals': [
         'error',
-        { name: 'crypto', message: 'Core must receive an ID/randomness port.' },
-        { name: 'fetch', message: 'Core must use an injected port for I/O.' },
-        { name: 'process', message: 'Core must receive environment values as input.' },
-        { name: 'console', message: 'Core must use an injected observation port.' },
+        { name: 'crypto', message: 'Business code must receive an ID/randomness port.' },
+        { name: 'fetch', message: 'Business code must use an injected port for I/O.' },
+        { name: 'process', message: 'Business code must receive environment values as input.' },
+        { name: 'console', message: 'Business code must use an injected observation port.' },
       ],
       'no-restricted-imports': [
         'error',
@@ -219,46 +216,62 @@ export default tseslint.config(
                 'workers-ai-provider',
                 'wrangler',
               ],
-              message: 'Core cannot import runtime, provider, or direct I/O SDKs.',
+              message: 'Business code cannot import runtime, provider, or direct I/O SDKs.',
             },
           ],
         },
       ],
       'no-restricted-properties': [
         'error',
-        { object: 'Date', property: 'now', message: 'Core must receive a Clock port.' },
-        { object: 'Math', property: 'random', message: 'Core must receive randomness as a port.' },
-        { object: 'crypto', property: 'randomUUID', message: 'Core must receive an ID port.' },
-        { object: 'globalThis', property: 'crypto', message: 'Core must receive an ID port.' },
-        { object: 'process', property: 'env', message: 'Core must receive environment values.' },
+        { object: 'Date', property: 'now', message: 'Business code must receive a Clock port.' },
+        {
+          object: 'Math',
+          property: 'random',
+          message: 'Business code must receive randomness as a port.',
+        },
+        {
+          object: 'crypto',
+          property: 'randomUUID',
+          message: 'Business code must receive an ID port.',
+        },
+        {
+          object: 'globalThis',
+          property: 'crypto',
+          message: 'Business code must receive an ID port.',
+        },
+        {
+          object: 'process',
+          property: 'env',
+          message: 'Business code must receive environment values.',
+        },
       ],
       'no-restricted-syntax': [
         'error',
         {
           selector: "NewExpression[callee.name='Date'][arguments.length=0]",
-          message: 'Core must receive a Clock port instead of reading the current time.',
+          message: 'Business code must receive a Clock port instead of reading the current time.',
         },
         {
           selector: "CallExpression[callee.name='Date'][arguments.length=0]",
-          message: 'Core must receive a Clock port instead of reading the current time.',
+          message: 'Business code must receive a Clock port instead of reading the current time.',
         },
         {
           selector: "MemberExpression[object.name='globalThis'][property.name='fetch']",
-          message: 'Core must use an injected port for network I/O.',
+          message: 'Business code must use an injected port for network I/O.',
         },
         {
           selector: "CallExpression[callee.name='setTimeout']",
-          message: 'Core must receive scheduling as a port.',
+          message: 'Business code must receive scheduling as a port.',
         },
         {
           selector: "CallExpression[callee.name='setInterval']",
-          message: 'Core must receive scheduling as a port.',
+          message: 'Business code must receive scheduling as a port.',
         },
       ],
     },
   },
   {
-    files: ['worker/infrastructure/adapters/inbound/tools/**/*.{ts,tsx}'],
+    files: ['worker/src/adapters/in/tools/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',

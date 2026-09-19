@@ -1,24 +1,22 @@
 import {
   type GetPlaceDetailsInput,
-  type HarnessContext,
-  type JourneyRecord,
-  type JourneyServiceDateContext,
   type LastTrainJourneyInput,
   type LastTrainJourneyPort,
-  type ToolExecutionContext,
-} from '@ima/core';
+} from '@worker/application/ports/operations';
+import { type HarnessContext, type ToolExecutionContext } from '@worker/application/ports/context';
+import { type JourneyRecord, type JourneyServiceDateContext } from '@worker/domain/travel/journey';
 import { describe, expect, it } from 'vitest';
 import {
   createLastTrainDetailsPort,
   type LastTrainDetailsDispatcherOptions,
-} from '@worker/infrastructure/adapters/outbound/providers/last-train/details-adapter';
+} from '@worker/adapters/out/providers/last-train/details-adapter';
 import {
   createLastTrainJourneyPort,
   type JourneyDatasetReadPort,
   type LastTrainRoutePorts,
-} from '@worker/infrastructure/adapters/outbound/providers/last-train/journey-adapter';
-import { createLastTrainObservationRegistrar } from '@worker/infrastructure/adapters/outbound/providers/last-train/registration';
-import type { JourneyReadResult } from '@worker/infrastructure/adapters/outbound/persistence/last-train/reader';
+} from '@worker/adapters/out/providers/last-train/journey-adapter';
+import { createLastTrainObservationRegistrar } from '@worker/adapters/out/providers/last-train/registration';
+import type { JourneyReadResult } from '@worker/adapters/out/persistence/last-train/reader';
 import {
   context as placesContext,
   execution as placesExecution,

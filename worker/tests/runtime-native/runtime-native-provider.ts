@@ -1,4 +1,5 @@
-import type { GetPlaceDetailsInput, SubmitCardsInput } from '@ima/core';
+import type { GetPlaceDetailsInput } from '@worker/application/ports/operations';
+import type { SubmitCardsInput } from '@worker/application/ports/model';
 import {
   modelFor,
   type RuntimeGateModel,

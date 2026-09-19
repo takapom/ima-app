@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createThreadPhotoReferences } from '@worker/infrastructure/adapters/outbound/persistence/photo/thread-references';
-import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters/outbound/persistence/photo/reference-store';
+import { createThreadPhotoReferences } from '@worker/adapters/out/persistence/photo/thread-references';
+import { createMemoryPhotoReferenceStore } from '@worker/adapters/out/persistence/photo/reference-store';
 import type {
   PhotoReferenceLookupScope,
   PhotoReferenceRecord,
   PhotoReferenceStoreWithClear,
-} from '@worker/infrastructure/runtime/ports/photo';
+} from '@worker/runtime/ports/photo';
 
 const NOW = '2026-09-10T12:00:00.000Z';
 const HANDLE = 'h'.repeat(22);

@@ -1,18 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import type { HarnessContext, ToolExecutionContext } from '@worker/application/ports/context';
 import type {
-  HarnessContext,
   PlaceDetailsPort,
   PlaceSearchPort,
   SearchPlacesInput,
   SearchPlacesOutput,
-  SubmitCardsPort,
-  ToolExecutionContext,
-} from '@ima/core';
-import { invokePublicTool } from '@worker/infrastructure/adapters/inbound/tools';
-import type {
-  ToolBindingDependencies,
-  ToolRuntime,
-} from '@worker/infrastructure/adapters/inbound/tools';
+} from '@worker/application/ports/operations';
+import type { SubmitCardsPort } from '@worker/application/ports/submission';
+import { invokePublicTool } from '@worker/adapters/in/tools';
+import type { ToolBindingDependencies, ToolRuntime } from '@worker/adapters/in/tools';
 import { createToolRegistry } from './registry-fixture';
 
 const context: HarnessContext = {

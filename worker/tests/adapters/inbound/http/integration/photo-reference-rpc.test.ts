@@ -1,7 +1,7 @@
 import { env, evictDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
-import type { PhotoReferenceRecord } from '@worker/infrastructure/runtime/ports/photo';
+import type { PhotoReferenceRecord } from '@worker/runtime/ports/photo';
 
 type PhotoTestEnv = Cloudflare.Env & {
   readonly THREADS: DurableObjectNamespace<ThreadDO>;

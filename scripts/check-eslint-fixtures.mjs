@@ -15,19 +15,19 @@ function countedSource(count, newline, trailingNewline, line) {
 const lintCases = [
   {
     name: 'no-explicit-any',
-    directory: 'worker/core/src',
+    directory: 'worker/src/application',
     source: 'export const invalidValue: any = 1;\n',
     rule: '@typescript-eslint/no-explicit-any',
   },
   {
     name: 'no-floating-promises',
-    directory: 'worker/core/src',
+    directory: 'worker/src/application',
     source: 'export function invalidPromise(): void { Promise.resolve(1); }\n',
     rule: '@typescript-eslint/no-floating-promises',
   },
   {
     name: 'switch-exhaustiveness',
-    directory: 'worker/core/src',
+    directory: 'worker/src/application',
     source:
       [
         "type Event = { type: 'created' } | { type: 'deleted' };",
@@ -42,7 +42,7 @@ const lintCases = [
   },
   {
     name: 'react-hooks-order',
-    directory: 'apps/mobile/src/components',
+    directory: 'apps/mobile/src/journey/components',
     source:
       [
         "import { useState } from 'react';",
@@ -55,106 +55,106 @@ const lintCases = [
   },
   {
     name: 'allowed-typed-code',
-    directory: 'worker/core/src',
+    directory: 'worker/src/application',
     source:
       'export async function validPromise(): Promise<number> {\n  return await Promise.resolve(1);\n}\n',
     rule: null,
   },
   {
     name: 'max-lines-499-lf-no-eof',
-    directory: 'worker/core/src',
+    directory: 'worker/src/application',
     source: countedSource(499, '\n', false, (index) => `export const line${index} = ${index};`),
     rule: null,
   },
   {
     name: 'max-lines-500-crlf-comments',
-    directory: 'worker/core/src',
+    directory: 'worker/src/application',
     source: countedSource(500, '\r\n', true, () => '// counted comment'),
     rule: null,
   },
   {
     name: 'max-lines-501-crlf-blank-comments',
-    directory: 'worker/core/src',
+    directory: 'worker/src/application',
     source: countedSource(501, '\r\n', true, (index) =>
       index % 2 === 0 ? '// counted comment' : '',
     ),
     rule: 'max-lines',
   },
   {
-    name: 'core-clock-input-is-allowed',
-    directory: 'worker/core/src',
+    name: 'business-clock-input-is-allowed',
+    directory: 'worker/src/application',
     source: 'export const parsedInput = (input: string): number => Date.parse(input);\n',
     rule: null,
   },
   {
-    name: 'core-now-is-forbidden',
-    directory: 'worker/core/src',
+    name: 'business-now-is-forbidden',
+    directory: 'worker/src/application',
     source: 'export const invalidClock = Date.now();\n',
     rule: 'no-restricted-properties',
   },
   {
-    name: 'core-current-time-constructor-is-forbidden',
-    directory: 'worker/core/src',
+    name: 'business-current-time-constructor-is-forbidden',
+    directory: 'worker/src/application',
     source: 'export const invalidClock = new Date();\n',
     rule: 'no-restricted-syntax',
   },
   {
-    name: 'core-global-fetch-is-forbidden',
-    directory: 'worker/core/src',
+    name: 'business-global-fetch-is-forbidden',
+    directory: 'worker/src/application',
     source: "export const invalidNetworkCall = () => globalThis.fetch('/private');\n",
     rule: 'no-restricted-syntax',
   },
   {
-    name: 'core-timer-is-forbidden',
-    directory: 'worker/core/src',
+    name: 'business-timer-is-forbidden',
+    directory: 'worker/src/application',
     source: 'export const invalidTimer = () => setTimeout(() => undefined, 1);\n',
     rule: 'no-restricted-syntax',
   },
   {
-    name: 'core-node-io',
-    directory: 'worker/core/src',
+    name: 'business-node-io',
+    directory: 'worker/src/application',
     source: "import fs from 'node:fs';\nexport { fs };\n",
     rule: 'no-restricted-imports',
   },
   {
     name: 'mobile-network-io',
-    directory: 'apps/mobile/src/components',
+    directory: 'apps/mobile/src/journey/components',
     source: "export const invalidNetworkCall = () => fetch('/private');\n",
     rule: 'no-restricted-globals',
   },
   {
     name: 'mobile-global-fetch-io',
-    directory: 'apps/mobile/src/components',
+    directory: 'apps/mobile/src/journey/components',
     source: "export const invalidNetworkCall = () => globalThis.fetch('/private');\n",
     rule: 'no-restricted-syntax',
   },
   {
     name: 'worker-provider-sdk',
-    directory: 'worker/infrastructure/adapters/inbound/tools',
+    directory: 'worker/src/adapters/in/tools',
     source: "import { generateText } from 'ai';\nexport { generateText };\n",
     rule: 'no-restricted-imports',
   },
   {
-    name: 'allowed-core-code',
-    directory: 'worker/core/src',
+    name: 'allowed-business-code',
+    directory: 'worker/src/application',
     source: 'export const allowedCoreValue = 1;\n',
     rule: null,
   },
   {
     name: 'allowed-mobile-code',
-    directory: 'apps/mobile/src/components',
+    directory: 'apps/mobile/src/journey/components',
     source: 'export const AllowedMobileValue = 1;\n',
     rule: null,
   },
   {
     name: 'mobile-service-network-io',
-    directory: 'apps/mobile/src/services',
+    directory: 'apps/mobile/src/journey/services',
     source: "export const serviceNetworkCall = () => fetch('/private');\n",
     rule: null,
   },
   {
     name: 'allowed-worker-code',
-    directory: 'worker/infrastructure/adapters/inbound/tools',
+    directory: 'worker/src/adapters/in/tools',
     source: 'export const allowedToolValue = 1;\n',
     rule: null,
   },
@@ -200,14 +200,14 @@ function runLint(testCase) {
 
 function runTypecheck() {
   const testCase = {
-    directory: 'worker/core/src',
+    directory: 'worker/src/application',
     source: 'const invalidType: string = 42;\nexport { invalidType };\n',
   };
   const { temporaryDirectory } = writeTemporaryFixture(testCase);
   try {
     const result = spawnSync(
       process.execPath,
-      [tsc, '-p', 'worker/core/tsconfig.json', '--noEmit'],
+      [tsc, '-p', 'worker/tsconfig.business.json', '--noEmit'],
       {
         cwd: repositoryRoot,
         encoding: 'utf8',

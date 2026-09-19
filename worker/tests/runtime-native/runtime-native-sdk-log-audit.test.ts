@@ -4,7 +4,7 @@ import type { ThreadDO } from './runtime-native-worker';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/infrastructure/runtime/threads/admission';
+} from '@worker/runtime/threads/admission';
 
 type NativeTestEnv = Cloudflare.Env & {
   readonly THREADS: DurableObjectNamespace<ThreadDO>;

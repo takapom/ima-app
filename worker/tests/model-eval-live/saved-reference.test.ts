@@ -19,7 +19,7 @@ import { savedRefsFor } from '../../tooling/model-eval/saved-reference';
 import {
   createOwnerSavedReferenceRpc,
   type SavedReferenceNamespace,
-} from '@worker/infrastructure/adapters/outbound/persistence/saved-references/saved-reference-do';
+} from '@worker/adapters/out/persistence/saved-references/saved-reference-do';
 import { MODEL_EVAL_NOW } from './model-eval-place-fixture';
 import type {
   ModelEvalFixtureSavedReference,

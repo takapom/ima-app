@@ -1,4 +1,6 @@
-import type { Observation, OpeningHours, PlaceIdentity, RetentionMetadata } from '@ima/core';
+import type { Observation } from '@worker/domain/evidence/evidence';
+import type { OpeningHours, PlaceIdentity } from '@worker/domain/places/place-values';
+import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 
 const IDENTITY_RETENTION = {
   retentionDecision: 'allow',

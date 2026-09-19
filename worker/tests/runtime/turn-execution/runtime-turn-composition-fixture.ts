@@ -1,18 +1,20 @@
+import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import type {
-  CandidateObservationRegistryPort,
   CommitHashPort,
   CommitPort,
   CommitPortResult,
   CommitRequest,
-  ConstraintValidationContext,
-  HarnessContext,
+} from '@worker/application/ports/commit';
+import type { ConstraintValidationContext } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
+import type { HarnessContext } from '@worker/application/ports/context';
+import type {
   PlaceDetailsPort,
   PlaceSearchPort,
-  Result,
   SearchPlacesOutput,
-  SubmitCardsPort,
-  SubmitValidationContext,
-} from '@ima/core';
+} from '@worker/application/ports/operations';
+import type { Result } from '@worker/domain/result';
+import type { SubmitCardsPort } from '@worker/application/ports/submission';
+import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { JSONValue, TextStreamPart, ToolResultPart, ToolSet } from 'ai';
 import { createToolRegistry } from '../../adapters/inbound/tools/registry-fixture';
 import { modelFor } from '../../support/runtime-model-fixture';
@@ -20,7 +22,7 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '@worker/infrastructure/runtime/budget/runtime-budget';
+} from '@worker/runtime/budget/runtime-budget';
 import {
   createRuntimeTurnComposition,
   type RuntimeCompositionModelContext,
@@ -30,8 +32,8 @@ import {
   type RuntimeTurnCompositionCoreOptions,
   type RuntimeTurnCompositionPublicOptions,
 } from '@worker/composition/runtime-turn-composition';
-import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
-import type { RuntimeTurnPortDependencies } from '@worker/infrastructure/runtime/turn-execution/runtime-turn-factory';
+import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
+import type { RuntimeTurnPortDependencies } from '@worker/runtime/turn-execution/runtime-turn-factory';
 
 export const NOW = '2026-09-10T00:00:00Z';
 export const SCOPE = { ownerScopeRef: 'owner-tools', threadId: 'thread-tools' };

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { AssistantResponse, ThreadTurnRequest } from '@ima/contracts';
-import { denyModelContextFieldPolicy, validateModelActionMetadata } from '@ima/core';
-import { createRuntimeProductionContextStore } from '@worker/infrastructure/runtime/context/runtime-production-context';
-import type { RuntimeProductionContextReference } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
+import { denyModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import { validateModelActionMetadata } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
+import { createRuntimeProductionContextStore } from '@worker/runtime/context/runtime-production-context';
+import type { RuntimeProductionContextReference } from '@worker/runtime/context/runtime-production-context-reference';
 import { createToolRegistry } from '../../adapters/inbound/tools/registry-fixture';
 import {
   allowRetention,

@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { CommittedResponse, ReadonlyStoredObservation } from '@ima/core';
+import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
+import type { ReadonlyStoredObservation } from '@worker/domain/candidates/registry';
 import {
   collectPhotoTokenObservations,
   createPhotoTokenPreparer,
   preparePhotoTokens,
   type PhotoDisplayPolicySnapshot,
-} from '@worker/infrastructure/runtime/response/photo-token-issuance';
-import { PhotoTokenError, type PhotoTokenCodec } from '@worker/infrastructure/runtime/ports/photo';
-import type { RuntimePolicyRecord } from '@worker/infrastructure/runtime/context/runtime-field-policy';
+} from '@worker/runtime/response/photo-token-issuance';
+import { PhotoTokenError, type PhotoTokenCodec } from '@worker/runtime/ports/photo';
+import type { RuntimePolicyRecord } from '@worker/runtime/context/runtime-field-policy';
 
 const CONTEXT = {
   ownerScopeRef: 'owner-photo',

@@ -1,7 +1,7 @@
 import { stepCountIs, streamText, tool } from 'ai';
 import { z } from 'zod';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RUNTIME_BUDGET } from '@worker/infrastructure/runtime/budget/runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET } from '@worker/runtime/budget/runtime-budget';
 import {
   RUNTIME_MODEL_MAX_RETRIES,
   wrapRuntimeModelGuard,
@@ -9,7 +9,7 @@ import {
   type RuntimeModelGuardCallOptions,
   type RuntimeModelGuardGenerateResult,
   type RuntimeModelGuardStreamPart,
-} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
+} from '@worker/runtime/turn-execution/runtime-model-guard';
 import {
   budget,
   expectGuardCode,

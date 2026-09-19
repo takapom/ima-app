@@ -9,8 +9,8 @@ import {
   createRuntimeApplicationHandler,
   serverTurnId,
   type RuntimeThreadStub,
-} from '@worker/infrastructure/adapters/inbound/http/runtime-handler';
-import type { HandlerContext } from '@worker/infrastructure/adapters/inbound/http/handler';
+} from '@worker/adapters/in/http/runtime-handler';
+import type { HandlerContext } from '@worker/adapters/in/http/handler';
 import {
   isThreadRuntimeTarget,
   isThreadRuntimeTurnInput,
@@ -19,7 +19,7 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-} from '@worker/infrastructure/runtime/threads/admission';
+} from '@worker/runtime/threads/admission';
 import { searchInput, searchResponse } from '../adapters/inbound/http/router-fixtures';
 
 const ownerScopeRef = 'owner-bootstrap-runtime';

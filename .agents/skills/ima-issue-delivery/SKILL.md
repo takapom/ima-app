@@ -29,7 +29,7 @@ description: ima-appのsub-issue実装をmain上で進め、2,000行以内のコ
 ## レビューと検証
 
 - 主担当がコミット前に差分・Issue対応・関連テスト・行数を確認する。sub agentの完了報告だけで合格にしない。
-- フロントはUI + hooks/state + services、バックエンドはヘキサゴナル。SDK/Provider依存をCoreへ持ち込まない。
+- フロントはUI + hooks/state + services、バックエンドはヘキサゴナル。SDK/Provider依存を業務層へ持ち込まない。
 - 手書きコード・テスト・設定の1ファイル500行制限と、format/lint/architecture/typecheck/test/buildの品質方針は維持する。
 - CIはmainへのpushを対象に品質検査と各コミットの行数検査を行う設計へ変更する。push後CIはコミット前検証を代替しない。CI失敗時は次の機能実装より修正を優先する。
 - 検査が未実装なら、ローカルで確認した結果と未整備事項を明記し、CIで強制済みと報告しない。文書変更にはリンク・構文・整合確認など相応の検証を行う。

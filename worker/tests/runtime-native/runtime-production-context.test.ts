@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/infrastructure/runtime/threads/admission';
-import { RuntimeProductionContextReferenceSchema } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
+} from '@worker/runtime/threads/admission';
+import { RuntimeProductionContextReferenceSchema } from '@worker/runtime/context/runtime-production-context-reference';
 import type { ProductionThreadDO } from './runtime-production-worker';
-import { createRuntimeSessionExpiryGate } from '@worker/infrastructure/runtime/threads/session-expiry';
+import { createRuntimeSessionExpiryGate } from '@worker/runtime/threads/session-expiry';
 
 type ProductionTestEnv = Cloudflare.Env & {
   readonly PRODUCTION_THREADS: DurableObjectNamespace<ProductionThreadDO>;

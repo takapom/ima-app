@@ -10,8 +10,7 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "worker",
-    "worker/core"
+    "worker"
   ],
   "scripts": {
     "install:ci": "bun install --frozen-lockfile",

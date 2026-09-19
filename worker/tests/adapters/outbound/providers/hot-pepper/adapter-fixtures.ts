@@ -1,18 +1,18 @@
+import type { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
 import type {
-  CandidateObservationRegistry,
   ClockPort,
-  GetPlaceDetailsInput,
   HarnessContext,
   RegistryIdPort,
   ToolExecutionContext,
-} from '@ima/core';
-import { CandidateObservationRegistry as Registry } from '@ima/core';
-import { createHotPepperDetailsAdapter } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/details-adapter';
-import { createHotPepperTransport } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/transport';
+} from '@worker/application/ports/context';
+import type { GetPlaceDetailsInput } from '@worker/application/ports/operations';
+import { CandidateObservationRegistry as Registry } from '@worker/application/candidate-registry/registry';
+import { createHotPepperDetailsAdapter } from '@worker/adapters/out/providers/hot-pepper/details-adapter';
+import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
 import {
   createPlacesSearchRegistration,
   type PlacesSearchObservationPolicy,
-} from '@worker/infrastructure/adapters/outbound/providers/places-search/registration';
+} from '@worker/adapters/out/providers/places-search/registration';
 
 export const NOW = '2026-09-10T02:00:00.000Z';
 export const SCOPE = { ownerScopeRef: 'owner-details', threadId: 'thread-details' } as const;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { RuntimeSingleFlight } from '@worker/infrastructure/runtime/tool-reads/runtime-singleflight';
-import type { RuntimeSingleFlightError } from '@worker/infrastructure/runtime/tool-reads/runtime-singleflight';
+import { RuntimeSingleFlight } from '@worker/runtime/tool-reads/runtime-singleflight';
+import type { RuntimeSingleFlightError } from '@worker/runtime/tool-reads/runtime-singleflight';
 
 describe('RuntimeSingleFlight', () => {
   it('shares one in-flight read across equivalent keys and call IDs', async () => {

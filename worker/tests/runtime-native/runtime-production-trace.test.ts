@@ -1,11 +1,11 @@
 import { env } from 'cloudflare:test';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ThreadTurnRequest } from '@ima/contracts';
-import type { TelemetryDO } from '@worker/infrastructure/adapters/outbound/persistence/telemetry/telemetry-do';
+import type { TelemetryDO } from '@worker/adapters/out/persistence/telemetry/telemetry-do';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/infrastructure/runtime/threads/admission';
+} from '@worker/runtime/threads/admission';
 import { RUNTIME_PRODUCTION_NOW, type ProductionThreadDO } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {

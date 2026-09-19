@@ -4,14 +4,14 @@ import {
   type RuntimeModelGuardGenerateResult,
   type RuntimeModelGuardModel,
   type RuntimeModelGuardStreamPart,
-} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
+} from '@worker/runtime/turn-execution/runtime-model-guard';
 import {
   createBestEffortRuntimeModelTraceSink,
   tokenCountForModelUsage,
   type RuntimeModelTrace,
   traceRecordForRuntimeModel,
   wrapRuntimeModelTrace,
-} from '@worker/infrastructure/runtime/tracing/runtime-model-trace';
+} from '@worker/runtime/tracing/runtime-model-trace';
 
 type FinishPart = Extract<RuntimeModelGuardStreamPart, { type: 'finish' }>;
 

@@ -1,29 +1,31 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TurnConstraintError } from '@ima/core';
+import { TurnConstraintError } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type {
   CancellationToken,
+  HarnessContext,
+  ToolExecutionContext,
+} from '@worker/application/ports/context';
+import type {
   GetPlaceDetailsInput,
   GetPlaceDetailsOutput,
-  HarnessContext,
-  ModelActionMetadata,
   PlaceDetailsPort,
   PlaceSearchPort,
-  Result,
   SearchPlacesInput,
   SearchPlacesOutput,
-  ToolExecutionContext,
-} from '@ima/core';
+} from '@worker/application/ports/operations';
+import type { ModelActionMetadata } from '@worker/domain/constraints/constraints';
+import type { Result } from '@worker/domain/result';
 import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '@worker/infrastructure/runtime/budget/runtime-budget';
+} from '@worker/runtime/budget/runtime-budget';
 import {
   createRuntimeReadPorts,
   type RuntimeReadCostRequest,
   type RuntimeReadPortOptions,
-} from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
-import { runtimeFor } from '@worker/infrastructure/adapters/inbound/tools/validation';
+} from '@worker/runtime/tool-reads/runtime-read-ports';
+import { runtimeFor } from '@worker/adapters/in/tools/validation';
 
 const budgetConfig = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudgetConfig => ({
   ...DEFAULT_RUNTIME_BUDGET,

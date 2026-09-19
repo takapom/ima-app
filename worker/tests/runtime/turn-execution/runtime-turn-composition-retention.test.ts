@@ -1,4 +1,5 @@
-import type { CommitHashPort, ObservationRegistration } from '@ima/core';
+import type { CommitHashPort } from '@worker/application/ports/commit';
+import type { ObservationRegistration } from '@worker/domain/candidates/registry';
 import { describe, expect, it } from 'vitest';
 import {
   NOW,

@@ -1,13 +1,10 @@
-import {
-  CandidateObservationRegistry,
-  type ClockPort,
-  type CommitPort,
-  type RegistryIdPort,
-} from '@ima/core';
+import { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
+import { type ClockPort, type RegistryIdPort } from '@worker/application/ports/context';
+import { type CommitPort } from '@worker/application/ports/commit';
 import { describe, expect, it } from 'vitest';
-import { createPlacesSearchRegistration } from '@worker/infrastructure/adapters/outbound/providers/places-search/registration';
+import { createPlacesSearchRegistration } from '@worker/adapters/out/providers/places-search/registration';
 import { createRuntimeProductionConnectionOptions } from '@worker/composition/runtime-production-factory';
-import { invokePublicToolEnvelope } from '@worker/infrastructure/adapters/inbound/tools';
+import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';
 import {
   createCandidateIdentityCapture,
   resolveCandidateIdentityMapping,

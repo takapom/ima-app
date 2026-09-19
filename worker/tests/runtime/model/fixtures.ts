@@ -1,4 +1,7 @@
-import { projectModelContext, type ProjectedModelContext } from '@ima/core';
+import {
+  projectModelContext,
+  type ProjectedModelContext,
+} from '@worker/application/model-context/model-context';
 
 export const createModelContext = (): ProjectedModelContext =>
   projectModelContext({

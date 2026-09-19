@@ -7,16 +7,12 @@ const workspaceRules = {
     rule: 'manifest-mobile-only-contracts',
   },
   worker: {
-    allowed: new Set(['@ima/contracts', '@ima/core']),
-    rule: 'manifest-worker-only-contracts-core',
+    allowed: new Set(['@ima/contracts']),
+    rule: 'manifest-worker-only-contracts',
   },
   'packages/contracts': {
     allowed: new Set(),
     rule: 'manifest-contracts-independent',
-  },
-  'worker/core': {
-    allowed: new Set(),
-    rule: 'manifest-core-independent',
   },
 };
 

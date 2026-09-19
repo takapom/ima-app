@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { invokePublicToolEnvelope } from '@worker/infrastructure/adapters/inbound/tools';
+import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';
 import {
   createFactory,
   emptyPortCalls,

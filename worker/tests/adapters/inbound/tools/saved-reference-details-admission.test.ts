@@ -1,22 +1,18 @@
 import { expect, it, vi } from 'vitest';
 import type {
   GetPlaceDetailsInput,
-  HarnessContext,
   ModelGetPlaceDetailsInput,
   PlaceDetailsPort,
   PlaceSearchPort,
-  SubmitCardsPort,
-  ToolExecutionContext,
-} from '@ima/core';
-import {
-  DEFAULT_RUNTIME_BUDGET,
-  RuntimeBudget,
-} from '@worker/infrastructure/runtime/budget/runtime-budget';
+} from '@worker/application/ports/operations';
+import type { HarnessContext, ToolExecutionContext } from '@worker/application/ports/context';
+import type { SubmitCardsPort } from '@worker/application/ports/submission';
+import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
 import {
   invokePublicTool,
   type ToolBindingDependencies,
   type ToolRuntime,
-} from '@worker/infrastructure/adapters/inbound/tools';
+} from '@worker/adapters/in/tools';
 import { createToolRegistry, toolScope } from './registry-fixture';
 
 const context: HarnessContext = {

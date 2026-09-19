@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { JSONValue } from 'ai';
-import type { DetailField } from '@ima/core';
+import type { DetailField } from '@worker/domain/primitives';
 import {
   defaultRuntimeModelContextPolicy,
   defaultRuntimeModelProjectionPolicy,
@@ -10,7 +10,7 @@ import {
   type RuntimeFieldUsePolicy,
   type RuntimePolicyRecord,
   type RuntimeModelProjectionPolicyInput,
-} from '@worker/infrastructure/runtime/context/runtime-field-policy';
+} from '@worker/runtime/context/runtime-field-policy';
 
 const record = (overrides: Partial<RuntimePolicyRecord> = {}): RuntimePolicyRecord => ({
   decision: 'allow',

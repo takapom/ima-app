@@ -4,12 +4,5 @@
     "lib": ["ES2022", "WebWorker"],
     "types": ["@cloudflare/workers-types"]
   },
-  "include": [
-    "infrastructure/adapters/**/*.ts",
-    "composition/**/*.ts",
-    "entrypoints/**/*.ts",
-    "infrastructure/runtime/**/*.ts",
-    "infrastructure/security/**/*.ts",
-    "infrastructure/telemetry/**/*.ts"
-  ]
+  "include": ["src/**/*.ts"]
 }

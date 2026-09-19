@@ -14,8 +14,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
-      "@core/*": ["./worker/core/src/*"],
-      "@worker/*": ["./worker/*"],
+      "@worker/*": ["./worker/src/*"],
       "@mobile/*": ["./apps/mobile/src/*"],
       "@contracts/*": ["./packages/contracts/src/*"]
     }

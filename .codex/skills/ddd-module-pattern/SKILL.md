@@ -12,7 +12,7 @@ description: >-
 
 ## ima-appでの適用
 
-[現行アーキテクチャ](../../../docs/architecture.md)を優先する。モジュール分割は既存レイヤ内で判断する。Coreのdomain・application・portsやWorkerのadapters・runtime・compositionを、技術名という理由だけで撤去・統合しない。workspace境界・公開exports・内部aliasを保つ。
+[現行アーキテクチャ](../../../docs/architecture.md)を優先する。モジュール分割は既存レイヤ内で判断する。Workerのdomain・application・portsやWorkerのadapters・runtime・compositionを、技術名という理由だけで撤去・統合しない。Mobile・Worker・contractsのworkspace境界と内部aliasを保ち、Worker業務層の依存方向を静的検査で維持する。
 
 以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
 

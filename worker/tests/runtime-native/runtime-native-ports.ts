@@ -1,34 +1,39 @@
 import * as v from 'valibot';
+import { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
+import { ObservationSchema, type Observation } from '@worker/domain/evidence/evidence';
+import { OpeningHoursSchema, PlaceIdentitySchema } from '@worker/domain/places/place-values';
+import { type CandidateId } from '@worker/domain/primitives';
 import {
-  CandidateObservationRegistry,
-  ObservationSchema,
-  OpeningHoursSchema,
-  PlaceIdentitySchema,
-  type CandidateId,
   type CandidateRegistration,
+  type RegistryJsonValue,
+} from '@worker/domain/candidates/registry';
+import {
   type CommitHashPort,
   type CommitPort,
   type CommitPortResult,
   type CommitRequest,
-  type FieldResult,
+} from '@worker/application/ports/commit';
+import { type FieldResult, type Result } from '@worker/domain/result';
+import {
   type GetPlaceDetailsInput,
   type GetPlaceDetailsOutput,
-  type HarnessContext,
-  type Observation,
   type PlaceDetailsPort,
   type PlaceSearchPort,
-  type RegistryIdPort,
-  type RegistryJsonValue,
-  type RegistryScope,
-  type Result,
   type SearchPlacesOutput,
-  type SubmitCardsInput,
+} from '@worker/application/ports/operations';
+import {
+  type HarnessContext,
+  type RegistryIdPort,
+  type ToolExecutionContext,
+} from '@worker/application/ports/context';
+import { type RegistryScope } from '@worker/domain/evidence/freshness';
+import { type SubmitCardsInput } from '@worker/application/ports/model';
+import {
   type SubmitCardsPort,
   type SubmitCardsPortResult,
-  type SubmitValidationContext,
-  type ToolExecutionContext,
-} from '@ima/core';
-import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
+} from '@worker/application/ports/submission';
+import { type SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
 
 export const RUNTIME_NATIVE_NOW = '2026-09-10T12:00:00Z';
 export const RUNTIME_NATIVE_OWNER = 'owner-runtime-native';
@@ -340,7 +345,7 @@ export type RuntimeNativePortFixture = {
   readonly hashes: RuntimeNativeHashPort;
 };
 
-/** Worker-only fixture: all Core data enters through @ima/core's public package exports. */
+/** Worker-only fixture: business data uses the domain/application module contracts. */
 export const createRuntimeNativePortFixture = (
   options: RuntimeNativeFixtureOptions,
 ): RuntimeNativePortFixture => {

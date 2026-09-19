@@ -1,4 +1,5 @@
-import type { GetPlaceDetailsInput, RetentionMetadata } from '@ima/core';
+import type { GetPlaceDetailsInput } from '@worker/application/ports/operations';
+import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,

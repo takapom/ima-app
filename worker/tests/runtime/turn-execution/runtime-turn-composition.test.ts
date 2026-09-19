@@ -1,5 +1,5 @@
 import type { TurnContext } from '@cloudflare/think';
-import type { ToolExecutionContext } from '@ima/core';
+import type { ToolExecutionContext } from '@worker/application/ports/context';
 import { describe, expect, it } from 'vitest';
 import {
   NOW,

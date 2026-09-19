@@ -3,11 +3,11 @@ import {
   normalizeHotPepperPrice,
   normalizeHotPepperFacilities,
   hotPepperSourceFor,
-} from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/normalize';
+} from '@worker/adapters/out/providers/hot-pepper/normalize';
 import {
   parseHotPepperResponse,
   type HotPepperShopWire,
-} from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/wire';
+} from '@worker/adapters/out/providers/hot-pepper/wire';
 
 const shopFor = (open: string): HotPepperShopWire => {
   const parsed = parseHotPepperResponse({

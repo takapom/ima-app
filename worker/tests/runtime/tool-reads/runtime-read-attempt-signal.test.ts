@@ -2,24 +2,26 @@ import { describe, expect, it, vi } from 'vitest';
 import type {
   CancellationToken,
   HarnessContext,
+  ToolExecutionContext,
+} from '@worker/application/ports/context';
+import type {
   PlaceDetailsPort,
   PlaceSearchPort,
-  Result,
   SearchPlacesInput,
   SearchPlacesOutput,
-  ToolExecutionContext,
-} from '@ima/core';
+} from '@worker/application/ports/operations';
+import type { Result } from '@worker/domain/result';
 import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '@worker/infrastructure/runtime/budget/runtime-budget';
+} from '@worker/runtime/budget/runtime-budget';
 import {
   createRuntimeReadAttemptSignalBridge,
   createRuntimeReadPorts,
-} from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
-import { createHotPepperTransport } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/transport';
-import type { HotPepperSearchRequest } from '@worker/infrastructure/adapters/outbound/providers/hot-pepper/types';
+} from '@worker/runtime/tool-reads/runtime-read-ports';
+import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
+import type { HotPepperSearchRequest } from '@worker/adapters/out/providers/hot-pepper/types';
 
 const context: HarnessContext = {
   threadId: 'thread-attempt-signal',

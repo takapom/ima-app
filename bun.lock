@@ -61,7 +61,6 @@
         "@ai-sdk/openai": "3.0.69",
         "@cloudflare/think": "0.17.0",
         "@ima/contracts": "workspace:*",
-        "@ima/core": "workspace:*",
         "agents": "0.22.0",
         "ai": "6.0.182",
         "valibot": "1.4.2",
@@ -69,13 +68,6 @@
       "devDependencies": {
         "@cloudflare/ai-chat": "0.11.0",
         "zod": "4.5.4",
-      },
-    },
-    "worker/core": {
-      "name": "@ima/core",
-      "version": "0.0.0",
-      "dependencies": {
-        "valibot": "1.4.2",
       },
     },
   },
@@ -407,8 +399,6 @@
     "@ima/worker": ["@ima/worker@workspace:worker"],
 
     "@ima/contracts": ["@ima/contracts@workspace:packages/contracts"],
-
-    "@ima/core": ["@ima/core@workspace:worker/core"],
 
     "@ima/mobile": ["@ima/mobile@workspace:apps/mobile"],
 

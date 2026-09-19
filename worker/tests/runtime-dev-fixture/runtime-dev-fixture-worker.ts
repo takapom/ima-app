@@ -1,6 +1,6 @@
 import production from '@worker/entrypoints/cloudflare/worker';
 import { RateLimitDO } from '@worker/entrypoints/cloudflare/thread-do';
-import { TelemetryDO } from '@worker/infrastructure/adapters/outbound/persistence/telemetry/telemetry-do';
+import { TelemetryDO } from '@worker/adapters/out/persistence/telemetry/telemetry-do';
 import { withDevFixtureCors } from './runtime-dev-fixture-cors';
 
 type ProductionFetch = NonNullable<typeof production.fetch>;

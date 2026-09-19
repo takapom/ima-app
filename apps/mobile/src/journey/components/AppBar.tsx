@@ -1,0 +1,87 @@
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { paddingWithSafeArea } from '@mobile/ui/theme/safe-area';
+import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
+
+type AppBarProps = {
+  readonly onMenu: () => void;
+  readonly onNewSearch: () => void;
+};
+
+export function AppBar({ onMenu, onNewSearch }: AppBarProps): React.JSX.Element {
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      style={[styles.container, { paddingTop: paddingWithSafeArea(spacing.compact, insets.top) }]}
+    >
+      <Pressable
+        accessibilityLabel="メニュー"
+        accessibilityRole="button"
+        hitSlop={8}
+        onPress={onMenu}
+        style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+      >
+        <Text allowFontScaling={false} style={styles.icon}>
+          ☰
+        </Text>
+      </Pressable>
+      <Text style={styles.logo} accessibilityRole="header">
+        ima<Text style={styles.logoDot}>.</Text>
+      </Text>
+      <Pressable
+        accessibilityLabel="新しい検索"
+        accessibilityRole="button"
+        hitSlop={8}
+        onPress={onNewSearch}
+        style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+      >
+        <Text allowFontScaling={false} style={styles.plus}>
+          ＋
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.page,
+    paddingBottom: spacing.compact,
+  },
+  iconButton: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.borderSoft,
+    borderRadius: radii.small,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  icon: {
+    color: colors.text,
+    fontSize: 19,
+    lineHeight: 21,
+  },
+  plus: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: '300',
+    lineHeight: 25,
+  },
+  logo: {
+    color: colors.text,
+    fontSize: typography.title,
+    fontWeight: '800',
+    letterSpacing: -1,
+  },
+  logoDot: {
+    color: colors.lime,
+  },
+  pressed: {
+    opacity: 0.72,
+  },
+});

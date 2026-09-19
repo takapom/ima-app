@@ -1,15 +1,14 @@
+import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
+import type { CandidateRecord } from '@worker/domain/candidates/registry';
 import type {
-  CommittedResponse,
-  CandidateRecord,
   GetPlaceDetailsInput,
-  HarnessContext,
-  JourneyRecord,
   LastTrainJourneyInput,
-  RetentionMetadata,
-  ToolExecutionContext,
-} from '@ima/core';
-import type { JourneyReadResult } from '@worker/infrastructure/adapters/outbound/persistence/last-train/reader';
-import type { LastTrainRoutePorts } from '@worker/infrastructure/adapters/outbound/providers/last-train/journey-adapter';
+} from '@worker/application/ports/operations';
+import type { HarnessContext, ToolExecutionContext } from '@worker/application/ports/context';
+import type { JourneyRecord } from '@worker/domain/travel/journey';
+import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { JourneyReadResult } from '@worker/adapters/out/persistence/last-train/reader';
+import type { LastTrainRoutePorts } from '@worker/adapters/out/providers/last-train/journey-adapter';
 import {
   createRuntimeLastTrainRevisionState,
   createRuntimeProviderComposition,

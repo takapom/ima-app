@@ -1,19 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
+import { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
+import { type CandidateRegistration } from '@worker/domain/candidates/registry';
 import {
-  CandidateObservationRegistry,
-  type CandidateRegistration,
   type CancellationToken,
   type HarnessContext,
   type RegistryIdPort,
-  type RegistryScope,
-  type SavedPlaceReference,
   type ToolExecutionContext,
-} from '@ima/core';
+} from '@worker/application/ports/context';
+import { type RegistryScope } from '@worker/domain/evidence/freshness';
+import { type SavedPlaceReference } from '@worker/domain/candidates/continuity';
 import {
   createSavedPlaceReferenceResolver,
   type SavedReferenceProviderRefreshRequest,
   type SavedReferenceResolverDependencies,
-} from '@worker/infrastructure/runtime/saved-references/runtime-saved-reference-resolver';
+} from '@worker/runtime/saved-references/runtime-saved-reference-resolver';
 
 const scope: RegistryScope = { ownerScopeRef: 'saved-owner', threadId: 'saved-thread' };
 const reference: SavedPlaceReference = {

@@ -1,15 +1,15 @@
 import { env, runInDurableObject, SELF } from 'cloudflare:test';
-import type { JourneyRecord, JourneyServiceDateContext } from '@ima/core';
+import type { JourneyRecord, JourneyServiceDateContext } from '@worker/domain/travel/journey';
 import { describe, expect, it } from 'vitest';
 import {
   handleJourneyDatasetManagement,
   JOURNEY_DATASET_ADMIN_HEADER,
   JOURNEY_DATASET_MANAGEMENT_PATH,
-} from '@worker/infrastructure/adapters/inbound/http/journey-dataset-management';
+} from '@worker/adapters/in/http/journey-dataset-management';
 import {
   JOURNEY_DATASET_DO_NAME,
   type JourneyDatasetDO,
-} from '@worker/infrastructure/adapters/outbound/persistence/last-train/dataset-do';
+} from '@worker/adapters/out/persistence/last-train/dataset-do';
 
 const ADMIN_TOKEN = 'm14-admin-fixture-token';
 // Keep the original relative dates while placing expiry alarms after the real test clock.

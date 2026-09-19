@@ -3,21 +3,17 @@ import {
   JOURNEY_DATASET_SCHEMA_VERSION,
   JourneyDatasetEnvelopeSchema,
   type JourneyDatasetEnvelope,
-} from '@worker/infrastructure/adapters/outbound/persistence/last-train/types';
+} from '@worker/adapters/out/persistence/last-train/types';
 import {
   createLastTrainJourneyPort,
   type JourneyDatasetReadPort,
   type LastTrainRoutePorts,
-} from '@worker/infrastructure/adapters/outbound/providers/last-train/journey-adapter';
-import type { JourneyReadResult } from '@worker/infrastructure/adapters/outbound/persistence/last-train/reader';
-import type { JourneyDatasetReader } from '@worker/infrastructure/adapters/outbound/persistence/last-train/store';
-import type {
-  HarnessContext,
-  JourneyServiceDateContext,
-  JourneyRecord,
-  LastTrainJourneyInput,
-  ToolExecutionContext,
-} from '@ima/core';
+} from '@worker/adapters/out/providers/last-train/journey-adapter';
+import type { JourneyReadResult } from '@worker/adapters/out/persistence/last-train/reader';
+import type { JourneyDatasetReader } from '@worker/adapters/out/persistence/last-train/store';
+import type { HarnessContext, ToolExecutionContext } from '@worker/application/ports/context';
+import type { JourneyServiceDateContext, JourneyRecord } from '@worker/domain/travel/journey';
+import type { LastTrainJourneyInput } from '@worker/application/ports/operations';
 import { describe, expect, it } from 'vitest';
 
 const now = '2026-09-10T12:00:00Z';

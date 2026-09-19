@@ -1,5 +1,7 @@
 import type { ThreadTurnRequest } from '@ima/contracts';
-import type { CommitPort, ModelContextFieldPolicy, RetentionMetadata } from '@ima/core';
+import type { CommitPort } from '@worker/application/ports/commit';
+import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 
 export const NOW = '2026-09-10T00:00:00.000Z';
 

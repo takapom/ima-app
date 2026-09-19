@@ -1,8 +1,14 @@
 import * as v from 'valibot';
 import type { UIMessage } from 'ai';
-import type { ClockPort, RetentionMetadata } from '@ima/core';
-import { IsoTimestampSchema, OpaqueIdSchema, ThreadIdSchema, TurnIdSchema } from '@ima/core';
-import { RetentionMetadataSchema } from '@ima/core';
+import type { ClockPort } from '@worker/application/ports/context';
+import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import {
+  IsoTimestampSchema,
+  OpaqueIdSchema,
+  ThreadIdSchema,
+  TurnIdSchema,
+} from '@worker/domain/primitives';
+import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
 
 // The envelope accepts runtime extensions so the sanitizer can remove them.
 export const RetentionMessageMetadataSchema = v.object({

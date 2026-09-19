@@ -3,12 +3,12 @@ import {
   createThreadScopeAuthorizer,
   type BootstrapEnv,
 } from '@worker/composition/bootstrap';
-import { routeRequest } from '@worker/infrastructure/adapters/inbound/http/router';
+import { routeRequest } from '@worker/adapters/in/http/router';
 import {
   AppIntegrityDO,
   type AppIntegrityNamespace,
-} from '@worker/infrastructure/adapters/outbound/persistence/security/app-integrity-do';
-import type { AppIntegrityVerifier } from '@worker/infrastructure/security/app-integrity';
+} from '@worker/adapters/out/persistence/security/app-integrity-do';
+import type { AppIntegrityVerifier } from '@worker/security/app-integrity';
 import { RateLimitDO, ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 
 export { AppIntegrityDO, RateLimitDO, ThreadDO };

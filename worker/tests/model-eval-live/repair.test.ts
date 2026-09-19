@@ -6,7 +6,10 @@ import {
   type AssistantResponse,
   type ThreadTurnRequest,
 } from '@ima/contracts';
-import { projectModelEvidenceForLlmInput, type ModelEvidenceSource } from '@ima/core';
+import {
+  projectModelEvidenceForLlmInput,
+  type ModelEvidenceSource,
+} from '@worker/application/model-context/model-evidence';
 import { MODEL_EVALUATION_SCENARIOS } from '../../tooling/model-eval/dataset';
 import { executionProfileFor } from '../../tooling/model-eval/execution-profile';
 import { liveEvaluationProfileFor } from '../../tooling/model-eval/live-plan';

@@ -1,4 +1,5 @@
-import type { CandidateRecord, ModelContextFieldPolicy } from '@ima/core';
+import type { CandidateRecord } from '@worker/domain/candidates/registry';
+import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
 import { ProductionThreadDO } from '../runtime-native/runtime-production-worker';
 import {
   fixedPlacesFetcher,

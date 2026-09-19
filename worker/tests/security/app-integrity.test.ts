@@ -13,8 +13,8 @@ import {
   type AppIntegrityKeyStore,
   type AppIntegrityNonce,
   type AppIntegrityVerifier,
-} from '@worker/infrastructure/security/app-integrity';
-import { routeRequest } from '@worker/infrastructure/adapters/inbound/http/router';
+} from '@worker/security/app-integrity';
+import { routeRequest } from '@worker/adapters/in/http/router';
 import {
   makeHarness,
   makeRequest,

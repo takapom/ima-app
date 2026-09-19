@@ -1,10 +1,10 @@
-import type { SubmitCardsInvalid } from '@ima/core';
+import type { SubmitCardsInvalid } from '@worker/application/ports/submission';
 import { describe, expect, it } from 'vitest';
 import {
   observeRuntimeSubmitRejection,
   runtimeSubmitRejectionFor,
   type RuntimeSubmitRejection,
-} from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
+} from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 
 const invalid: SubmitCardsInvalid = {
   status: 'invalid',

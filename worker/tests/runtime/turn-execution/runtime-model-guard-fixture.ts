@@ -3,7 +3,7 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '@worker/infrastructure/runtime/budget/runtime-budget';
+} from '@worker/runtime/budget/runtime-budget';
 import {
   wrapRuntimeModelGuard,
   type RuntimeModelGuardCallOptions,
@@ -11,7 +11,7 @@ import {
   type RuntimeModelGuardGenerateResult,
   type RuntimeModelGuardModel,
   type RuntimeModelGuardStreamPart,
-} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
+} from '@worker/runtime/turn-execution/runtime-model-guard';
 
 export type GenerateContent = RuntimeModelGuardGenerateResult['content'][number];
 
