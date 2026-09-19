@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import { BackHandler, Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PublicCard } from '@ima/contracts';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
+import { subscribeCandidateDetailBack } from '@mobile/platform/navigation/candidate-detail-back';
 import type { useCandidateDetail } from '@mobile/journey/hooks/useCandidateDetail';
 import {
   candidateDetailPhotos,
@@ -37,11 +38,7 @@ export function CandidateDetailSheet({
   useEffect(() => {
     if (card === null) return undefined;
     Keyboard.dismiss();
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      close();
-      return true;
-    });
-    return () => subscription.remove();
+    return subscribeCandidateDetailBack(close);
   }, [card, close]);
   if (card === null) return null;
   const view = toCandidateDetailViewModel(card, detail.now);
