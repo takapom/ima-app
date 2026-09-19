@@ -3,6 +3,7 @@ import type { EvidenceRef, OpeningHours, PublicCard } from '@ima/contracts';
 import {
   CLOSING_SOON_MINUTES,
   cardRenderNow,
+  cardOpeningSummary,
   toCardViewModel,
 } from '@mobile/journey/presentation/candidate-card-view';
 
@@ -103,6 +104,40 @@ describe('card visual', () => {
 });
 
 describe('card opening state', () => {
+  it('keeps compact hours factual and highlights closing without inventing a current status', () => {
+    expect(cardOpeningSummary({ kind: 'none' })).toBeNull();
+    expect(
+      cardOpeningSummary({
+        kind: 'open',
+        closesAtLabel: '20:00',
+        remainingMinutes: 90,
+        lastOrderLabel: '料理19:30',
+      }),
+    ).toBe('20:00まで営業 · L.O. 料理19:30');
+    expect(cardOpeningSummary({ kind: 'listed', text: '月〜金 11:00〜20:00' })).toBe(
+      '掲載：月〜金 11:00〜20:00',
+    );
+    expect(cardOpeningSummary({ kind: 'closed', reopensAtLabel: null })).toBe('営業時間外');
+    expect(cardOpeningSummary({ kind: 'closed', reopensAtLabel: '明日 11:00' })).toBe(
+      '明日 11:00から営業',
+    );
+    expect(
+      cardOpeningSummary({
+        kind: 'open',
+        closesAtLabel: '20:00',
+        remainingMinutes: 90,
+        lastOrderLabel: null,
+      }),
+    ).toBe('20:00まで営業');
+    expect(
+      cardOpeningSummary({
+        kind: 'closing',
+        closesAtLabel: '20:00',
+        remainingMinutes: 15,
+        lastOrderLabel: null,
+      }),
+    ).toBe('あと15分で閉店 · 20:00まで');
+  });
   it('reports the remaining time from the render clock, not from evaluatedAt', () => {
     // evaluatedAt is 11:00 and says "open"; reading the card at 19:15 must still count down
     // to the 20:00 boundary rather than echo the snapshot taken eight hours earlier.

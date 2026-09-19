@@ -7,6 +7,7 @@ import { presentEvidenceText } from '@mobile/journey/components/candidates/candi
 import {
   buildMessageHistory,
   cardSetStatusLabel,
+  orderedResultCards,
   type MessageHistoryItem,
 } from '@mobile/journey/components/response/results-state-model';
 import type {
@@ -25,23 +26,10 @@ type ResultsStateProps = {
   readonly messageRecords: readonly AssistantMessageRecord[];
   readonly candidateOrder?: readonly string[];
   readonly notice?: string | null;
-  readonly onChoose?: (candidateId: string) => void;
   readonly onOpenDetail: (candidateId: string) => void;
   readonly onPhotoReady?: RememberPhoto;
   readonly onSave?: (card: PublicCard) => void;
   readonly photoClient?: JourneyPhotoClient;
-};
-
-const orderedCards = (
-  cards: CardsData,
-  candidateOrder: readonly string[] | undefined,
-): readonly PublicCard[] => {
-  const source = [cards.hero, ...cards.alts];
-  const order = candidateOrder ?? source.map((card) => card.candidateId);
-  return order.flatMap((candidateId) => {
-    const card = source.find((item) => item.candidateId === candidateId);
-    return card === undefined ? [] : [card];
-  });
 };
 
 export function ResultsState({
@@ -52,13 +40,12 @@ export function ResultsState({
   messageRecords,
   candidateOrder,
   notice = null,
-  onChoose,
   onOpenDetail,
   onPhotoReady,
   onSave,
   photoClient,
 }: ResultsStateProps): React.JSX.Element {
-  const displayCards = cards === null ? [] : orderedCards(cards, candidateOrder);
+  const displayCards = cards === null ? [] : orderedResultCards(cards, candidateOrder);
   const messageHistory = buildMessageHistory(messageRecords, cardSetId, displayCards.length > 0);
   const statusLabel = cardSetStatusLabel(cardSetDisplay, messageHistory.length > 0);
   if (displayCards.length === 0) {
@@ -71,42 +58,28 @@ export function ResultsState({
     );
   }
 
-  const [hero, ...alternatives] = displayCards;
-  if (hero === undefined) return <View />;
+  const [first] = displayCards;
+  if (first === undefined) return <View />;
 
   return (
     <View style={styles.container}>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       {statusLabel ? <Text style={styles.statusLabel}>{statusLabel}</Text> : null}
-      <MessageHistory items={messageHistory} fallback={presentEvidenceText(hero.why).text} />
-      <CandidateCard
-        key={hero.candidateId}
-        card={hero}
-        {...(now === undefined ? {} : { now })}
-        onOpenDetail={onOpenDetail}
-        {...(onPhotoReady === undefined ? {} : { onPhotoReady })}
-        {...(onSave === undefined ? {} : { onSave })}
-        primary
-        {...(photoClient === undefined ? {} : { photoClient })}
-      />
-      {alternatives.length > 0 ? (
-        <View style={styles.alternatives}>
-          <View style={styles.altHeading}>
-            <Text style={styles.kicker}>別案</Text>
-            <Text style={styles.hint}>タップで入れ替え</Text>
-          </View>
-          {alternatives.map((card) => (
-            <CandidateCard
-              card={card}
-              key={card.candidateId}
-              {...(now === undefined ? {} : { now })}
-              primary={false}
-              {...(onChoose === undefined ? {} : { onChoose })}
-              {...(photoClient === undefined ? {} : { photoClient })}
-            />
-          ))}
-        </View>
-      ) : null}
+      <MessageHistory items={messageHistory} fallback={presentEvidenceText(first.why).text} />
+      <View style={styles.cards}>
+        {displayCards.map((card) => (
+          <CandidateCard
+            key={card.candidateId}
+            card={card}
+            {...(now === undefined ? {} : { now })}
+            onOpenDetail={onOpenDetail}
+            {...(onPhotoReady === undefined ? {} : { onPhotoReady })}
+            {...(onSave === undefined ? {} : { onSave })}
+            {...(photoClient === undefined ? {} : { photoClient })}
+          />
+        ))}
+      </View>
+      <Text style={styles.footnote}>掲載の営業時間 · 今の混雑と空席は未確認</Text>
     </View>
   );
 }
@@ -206,23 +179,6 @@ const styles = StyleSheet.create({
     fontSize: typography.label,
     fontWeight: '700',
   },
-  kicker: {
-    color: colors.muted,
-    fontSize: typography.label,
-    fontWeight: '700',
-  },
-  alternatives: {
-    gap: 6,
-    marginTop: spacing.section,
-  },
-  altHeading: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 2,
-  },
-  hint: {
-    color: colors.faint,
-    fontSize: 11,
-  },
+  cards: { gap: spacing.section },
+  footnote: { color: colors.faint, fontSize: typography.label },
 });

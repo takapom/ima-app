@@ -34,6 +34,7 @@ export const radii = {
 export const typography = {
   display: 38,
   title: 24,
+  cardTitle: 18,
   body: 14,
   label: 12,
   button: 14,

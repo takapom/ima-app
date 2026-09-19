@@ -393,7 +393,6 @@ function JourneyScreenStateOwner({
               onPhotoReady={detail.rememberPhoto}
               onSave={save}
               {...(photoClient === undefined ? {} : { photoClient })}
-              onChoose={actions.promote}
             />
           ) : null}
           {phase === 'decided' ? (

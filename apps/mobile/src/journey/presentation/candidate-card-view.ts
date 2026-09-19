@@ -48,6 +48,26 @@ export type CardViewModel = {
   readonly dimmed: boolean;
 };
 
+/** The same compact opening line is used for every candidate, regardless of its rank. */
+export const cardOpeningSummary = (opening: CardOpening): string | null => {
+  const lastOrder =
+    (opening.kind === 'open' || opening.kind === 'closing') && opening.lastOrderLabel !== null
+      ? ` · L.O. ${opening.lastOrderLabel}`
+      : '';
+  switch (opening.kind) {
+    case 'none':
+      return null;
+    case 'listed':
+      return `掲載：${opening.text}`;
+    case 'closed':
+      return opening.reopensAtLabel === null ? '営業時間外' : `${opening.reopensAtLabel}から営業`;
+    case 'closing':
+      return `あと${opening.remainingMinutes}分で閉店 · ${opening.closesAtLabel}まで${lastOrder}`;
+    case 'open':
+      return `${opening.closesAtLabel}まで営業${lastOrder}`;
+  }
+};
+
 type KnownField<T> = {
   readonly status: 'known';
   readonly value: T;

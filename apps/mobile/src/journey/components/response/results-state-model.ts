@@ -1,4 +1,4 @@
-import type { PublicMessage } from '@ima/contracts';
+import type { CardsData, PublicCard, PublicMessage } from '@ima/contracts';
 import type {
   AssistantMessageRecord,
   CardSetDisplayState,
@@ -46,4 +46,16 @@ export const cardSetStatusLabel = (
   if (display.reason === 'reference_only') return '過去の候補を復元できませんでした。';
   if (display.reason === 'unavailable') return '過去の候補は現在表示できません。';
   return null;
+};
+
+export const orderedResultCards = (
+  cards: CardsData,
+  candidateOrder: readonly string[] | undefined,
+): readonly PublicCard[] => {
+  const source = [cards.hero, ...cards.alts];
+  const order = candidateOrder ?? source.map((card) => card.candidateId);
+  return order.flatMap((candidateId) => {
+    const card = source.find((item) => item.candidateId === candidateId);
+    return card === undefined ? [] : [card];
+  });
 };

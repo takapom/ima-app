@@ -366,4 +366,24 @@ describe('detail reads already loaded card photos', () => {
     expect(candidateDetailPhotos(card({ photos: hidden }), [image], client, NOW)).toEqual([]);
     expect(candidateDetailPhotos(card(), [image], client, NOW)).toEqual([]);
   });
+
+  it('shares only the selected card image when all three thumbnails have loaded', () => {
+    const second: ReadyPhotoImage = {
+      ...image,
+      token: 'token-2',
+      asset: { ...image.asset, uri: 'data:image/png;base64,BBBB' },
+    };
+    const third: ReadyPhotoImage = {
+      ...image,
+      token: 'token-3',
+      asset: { ...image.asset, uri: 'data:image/png;base64,CCCC' },
+    };
+    const source = {
+      ...card({
+        photos: known({ photos: [{ photoToken: 'token-2', sourceUrl: null, attributions: [] }] }),
+      }),
+      candidateId: 'candidate-2',
+    };
+    expect(candidateDetailPhotos(source, [image, second, third], client, NOW)).toEqual([second]);
+  });
 });

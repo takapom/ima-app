@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { CardsData, PublicCard } from '@ima/contracts';
 import type {
   AssistantMessageRecord,
   CardSetDisplayState,
@@ -6,6 +7,7 @@ import type {
 import {
   buildMessageHistory,
   cardSetStatusLabel,
+  orderedResultCards,
 } from '@mobile/journey/components/response/results-state-model';
 
 const message = (text: string) => ({
@@ -43,6 +45,31 @@ const record = (
 });
 
 describe('results state model', () => {
+  const candidate = (candidateId: string): PublicCard => ({
+    candidateId,
+    facts: { identity: { status: 'unknown', reason: '表示順序のfixture' } },
+    why: { ...message('提案理由'), basis: 'grounded' },
+  });
+  const cards: CardsData = {
+    hero: candidate('first'),
+    alts: [candidate('second'), candidate('third')],
+  };
+
+  it('returns all three candidates in proposal order with their own data intact', () => {
+    const result = orderedResultCards(cards, undefined);
+    expect(result.map((card) => card.candidateId)).toEqual(['first', 'second', 'third']);
+    expect(result[0]).toBe(cards.hero);
+    expect(result[1]).toBe(cards.alts[0]);
+    expect(result[2]).toBe(cards.alts[1]);
+  });
+
+  it('keeps the current selection order and does not reintroduce excluded or missing cards', () => {
+    expect(
+      orderedResultCards(cards, ['third', 'missing', 'first']).map((card) => card.candidateId),
+    ).toEqual(['third', 'first']);
+    expect(orderedResultCards(cards, [])).toEqual([]);
+    expect(orderedResultCards({ hero: cards.hero, alts: [] }, undefined)).toEqual([cards.hero]);
+  });
   it('shows a clarification message without a misleading empty-card label', () => {
     expect(
       cardSetStatusLabel({ kind: 'empty', reason: 'no_cards', responseId: 'question' }, true),

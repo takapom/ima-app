@@ -13,6 +13,35 @@ const context: JourneyActionContext = {
 };
 
 describe('journey candidate actions', () => {
+  it.each(context.candidateIds)(
+    'can decide %s directly without promoting it first',
+    (candidateId) => {
+      const result = journeyActionReducer(
+        createJourneyActionState(),
+        { type: 'decide', candidateId },
+        context,
+      );
+      expect(result.accepted).toBe(true);
+      if (!result.accepted) return;
+      expect(result.state.decidedCandidateId).toBe(candidateId);
+    },
+  );
+
+  it('saves an alternative without changing the displayed order or deciding it', () => {
+    const result = journeyActionReducer(
+      createJourneyActionState(),
+      { type: 'save', candidateId: 'alt-2' },
+      context,
+    );
+    expect(result.accepted).toBe(true);
+    if (!result.accepted) return;
+    expect(result.state.savedCandidateIds).toEqual(['alt-2']);
+    expect(result.state.promotedCandidateId).toBeNull();
+    expect(result.state.decidedCandidateId).toBeNull();
+    expect(
+      selectJourneyCandidateOrder(context.candidateIds, result.state.promotedCandidateId),
+    ).toEqual(context.candidateIds);
+  });
   it('promotes an existing alternative without copying card data', () => {
     const result = journeyActionReducer(
       createJourneyActionState(),
