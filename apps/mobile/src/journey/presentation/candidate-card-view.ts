@@ -45,9 +45,35 @@ export type CardViewModel = {
   readonly price: string | null;
   readonly amenities: readonly string[];
   readonly diff: string | null;
+  /** Closed shops emphasize 残す. 見てみる stays in the same slot. */
   readonly primaryAction: 'details' | 'save';
   readonly dimmed: boolean;
 };
+
+export const CARD_PEEK_LABEL = '見てみる' as const;
+
+export type CardActionsView = {
+  readonly peek: {
+    readonly label: typeof CARD_PEEK_LABEL;
+    readonly accessibilityLabel: string;
+  };
+  readonly save: {
+    readonly emphasized: boolean;
+    readonly accessibilityLabel: string;
+  };
+};
+
+/** Peek and save keep their slots; only save's emphasis moves with opening state. */
+export const cardActions = (view: CardViewModel): CardActionsView => ({
+  peek: {
+    label: CARD_PEEK_LABEL,
+    accessibilityLabel: `${view.name}を見てみる`,
+  },
+  save: {
+    emphasized: view.primaryAction === 'save',
+    accessibilityLabel: `${view.name}を残す`,
+  },
+});
 
 /** The same compact opening line is used for every candidate, regardless of its rank. */
 export const cardOpeningSummary = (opening: CardOpening): string | null => {

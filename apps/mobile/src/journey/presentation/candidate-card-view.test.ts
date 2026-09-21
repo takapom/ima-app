@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { EvidenceRef, OpeningHours, PublicCard } from '@ima/contracts';
 import {
   CLOSING_SOON_MINUTES,
-  cardRenderNow,
+  cardActions,
   cardOpeningSummary,
+  cardRenderNow,
   toCardViewModel,
 } from '@mobile/journey/presentation/candidate-card-view';
 
@@ -284,19 +285,42 @@ describe('card opening state', () => {
 });
 
 describe('card action and emphasis', () => {
-  it('hands the primary action to 残す only when the place is closed', () => {
+  it('keeps 見てみる in the peek slot and emphasizes 残す only when closed', () => {
     const open = toCardViewModel(card({ opening_hours: known(hours()) }), NOW);
     expect(open).toMatchObject({ primaryAction: 'details', dimmed: false });
+    expect(cardActions(open)).toEqual({
+      peek: {
+        label: '見てみる',
+        accessibilityLabel: 'ミスターフレンドリー 恵比寿店を見てみる',
+      },
+      save: {
+        emphasized: false,
+        accessibilityLabel: 'ミスターフレンドリー 恵比寿店を残す',
+      },
+    });
 
     const closed = toCardViewModel(card({ opening_hours: known(hours()) }), Date.parse(at(21)));
     expect(closed).toMatchObject({ primaryAction: 'save', dimmed: true });
+    expect(cardActions(closed)).toEqual({
+      peek: {
+        label: '見てみる',
+        accessibilityLabel: 'ミスターフレンドリー 恵比寿店を見てみる',
+      },
+      save: {
+        emphasized: true,
+        accessibilityLabel: 'ミスターフレンドリー 恵比寿店を残す',
+      },
+    });
   });
 
-  it('keeps details available when the hours are unknown', () => {
-    expect(toCardViewModel(card(), NOW)).toMatchObject({
+  it('keeps peek available when the hours are unknown', () => {
+    const view = toCardViewModel(card(), NOW);
+    expect(view).toMatchObject({
       primaryAction: 'details',
       dimmed: false,
     });
+    expect(cardActions(view).peek.label).toBe('見てみる');
+    expect(cardActions(view).save.emphasized).toBe(false);
   });
 });
 

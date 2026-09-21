@@ -2,9 +2,10 @@ import { Pressable, Text, View } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
 import {
+  cardActions,
+  cardOpeningSummary,
   cardRenderNow,
   toCardViewModel,
-  cardOpeningSummary,
 } from '@mobile/journey/presentation/candidate-card-view';
 import { PhotoRegion } from '@mobile/journey/components/candidates/PhotoRegion';
 import { colors } from '@mobile/ui/theme/tokens';
@@ -40,7 +41,7 @@ export function CandidateCard({
 
   const saveAction = onSave === undefined ? undefined : (): void => onSave(card);
   const openDetails = (): void => onOpenDetail?.(card.candidateId);
-  const primaryIsSave = view.primaryAction === 'save';
+  const actions = cardActions(view);
   const opening = cardOpeningSummary(view.opening);
 
   return (
@@ -112,33 +113,33 @@ export function CandidateCard({
       )}
       <View style={styles.actionRow}>
         <Pressable
-          accessibilityLabel={primaryIsSave ? `${view.name}を残す` : `${view.name}の詳細を見る`}
+          accessibilityLabel={actions.peek.accessibilityLabel}
           accessibilityRole="button"
-          disabled={primaryIsSave ? saveAction === undefined : false}
-          onPress={primaryIsSave ? saveAction : openDetails}
-          style={({ pressed }) => [
-            styles.primaryAction,
-            primaryIsSave && saveAction === undefined && styles.disabled,
-            pressed && styles.pressed,
-          ]}
+          hitSlop={4}
+          onPress={openDetails}
+          style={({ pressed }) => [styles.peekAction, pressed && styles.pressed]}
         >
-          {primaryIsSave ? <Icon name="bookmark" size={14} color={colors.ink} /> : null}
-          <Text style={styles.primaryActionText}>{primaryIsSave ? '残す' : '詳細を見る'}</Text>
-          {primaryIsSave ? null : <Icon name="chevron" size={12} color={colors.ink} />}
+          <Text style={styles.peekActionText}>{actions.peek.label}</Text>
+          <Icon name="chevron" size={11} color={colors.ink} />
         </Pressable>
         <Pressable
-          accessibilityLabel={primaryIsSave ? `${view.name}の詳細を見る` : `${view.name}を残す`}
+          accessibilityLabel={actions.save.accessibilityLabel}
           accessibilityRole="button"
-          disabled={primaryIsSave ? false : saveAction === undefined}
-          onPress={primaryIsSave ? openDetails : saveAction}
+          disabled={saveAction === undefined}
+          hitSlop={4}
+          onPress={saveAction}
           style={({ pressed }) => [
-            styles.secondaryAction,
-            !primaryIsSave && saveAction === undefined && styles.disabled,
+            styles.saveAction,
+            actions.save.emphasized && styles.saveActionEmphasized,
+            saveAction === undefined && styles.disabled,
             pressed && styles.pressed,
           ]}
         >
-          <Icon name={primaryIsSave ? 'chevron' : 'bookmark'} size={14} color={colors.muted} />
-          <Text style={styles.secondaryActionText}>{primaryIsSave ? '詳細' : '残す'}</Text>
+          <Icon
+            name="bookmark"
+            size={15}
+            color={actions.save.emphasized ? colors.ink : colors.muted}
+          />
         </Pressable>
       </View>
     </View>

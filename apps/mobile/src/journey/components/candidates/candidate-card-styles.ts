@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 
 export const CANDIDATE_THUMBNAIL_SIZE = 76;
+const ACTION_SIZE = 36;
 
 export const styles = StyleSheet.create({
   card: {
@@ -39,7 +40,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.compact,
-    minHeight: spacing.touch,
+    minHeight: ACTION_SIZE,
     minWidth: spacing.touch,
   },
   sourceUrl: {
@@ -48,32 +49,39 @@ export const styles = StyleSheet.create({
     fontSize: typography.label,
     textDecorationLine: 'underline',
   },
-  actionRow: { flexDirection: 'row', gap: spacing.compact, marginTop: 'auto' },
-  primaryAction: {
+  actionRow: {
+    alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.compact,
-    padding: spacing.compact,
+    marginTop: 'auto',
+    minHeight: 44,
+  },
+  peekAction: {
     alignItems: 'center',
     backgroundColor: colors.cream,
-    borderRadius: radii.button,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: spacing.touch,
-  },
-  primaryActionText: { color: colors.ink, fontSize: typography.button, fontWeight: '700' },
-  secondaryAction: {
+    borderRadius: radii.pill,
     flexDirection: 'row',
-    gap: spacing.compact,
-    padding: spacing.compact,
+    gap: 5,
+    height: ACTION_SIZE,
+    justifyContent: 'center',
+    paddingLeft: 16,
+    paddingRight: 14,
+  },
+  peekActionText: { color: colors.ink, fontSize: 13, fontWeight: '700' },
+  saveAction: {
     alignItems: 'center',
     borderColor: colors.border,
-    borderRadius: radii.button,
+    borderRadius: radii.pill,
     borderWidth: 1,
+    height: ACTION_SIZE,
     justifyContent: 'center',
-    minHeight: spacing.touch,
-    minWidth: spacing.touch * 2,
+    marginLeft: 'auto',
+    width: ACTION_SIZE,
   },
-  secondaryActionText: { color: colors.muted, fontSize: typography.label, fontWeight: '700' },
+  saveActionEmphasized: {
+    backgroundColor: colors.cream,
+    borderColor: colors.cream,
+  },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.72 },
 });
