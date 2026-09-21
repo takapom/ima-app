@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+import type { ConversationNavigation } from '@mobile/journey/components/conversations/ConversationHistoryList';
 import type { AssistantResponseClock } from '@mobile/journey/services/assistant-response-clock';
 import type {
   JourneyApiControllerBinding,
@@ -10,7 +12,10 @@ import type { WalkingMapDestinationResolver } from '@mobile/journey/services/jou
 import type { JourneyPreferencesService } from '@mobile/preferences/services/preferences';
 import type { JourneyStorageService } from '@mobile/saved-places/services/journey-storage';
 import type { JourneySourceLinkService } from '@mobile/journey/services/journey-source-link';
-import type { AssistantResponseState } from '@mobile/journey/state/assistant-response';
+import type {
+  AssistantMessageRecord,
+  AssistantResponseState,
+} from '@mobile/journey/state/assistant-response';
 import type { ConditionScope, JourneyConditions } from '@mobile/preferences/state/conditions';
 import type { AssistantResponseProjectionNow } from '@mobile/journey/state/assistant-response-projection';
 import type { RecoverIntent } from '@mobile/journey/state/journey-actions';
@@ -20,6 +25,14 @@ import type { JourneyRequestStatus } from '@mobile/journey/state/journey-phase';
 export type JourneySubmitContext = JourneyApiSubmitContext;
 
 export type JourneyScreenProps = {
+  readonly conversation?: {
+    readonly navigation: ConversationNavigation;
+    readonly renderTranscript: (
+      liveMessages: readonly AssistantMessageRecord[],
+      onSourcePress: (sourceLink: string) => void,
+    ) => ReactNode;
+    readonly hasMessages: boolean;
+  };
   readonly threadId?: string;
   /** Optional HTTP composition; omitted hosts keep the fixture-free shell disconnected. */
   readonly api?: JourneyApiControllerBinding;

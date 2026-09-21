@@ -1,3 +1,4 @@
+import { ConversationJourneyScreen } from '@mobile/journey/ConversationJourneyScreen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JourneyScreen } from '@mobile/journey/JourneyScreen';
 import { PersonalPreviewConnection } from '@mobile/composition/PersonalPreviewConnection';
@@ -46,6 +47,14 @@ function AppContent({ journeyApi, mobileRuntimeOptions }: AppProps): React.JSX.E
     runtime: nativeRuntime.runtime,
     ...(mobileRuntimeOptions?.now === undefined ? {} : { now: mobileRuntimeOptions.now }),
   });
+  if (nativeRuntime.binding?.conversations !== undefined) {
+    return (
+      <ConversationJourneyScreen
+        binding={{ ...nativeRuntime.binding, conversations: nativeRuntime.binding.conversations }}
+        {...(persistence.preferences === undefined ? {} : { preferences: persistence.preferences })}
+      />
+    );
+  }
   if (nativeRuntime.binding !== null) {
     return (
       <JourneyScreen

@@ -1,3 +1,7 @@
+import {
+  ConversationHistoryList,
+  type ConversationNavigation,
+} from '@mobile/journey/components/conversations/ConversationHistoryList';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ConditionEditor } from '@mobile/preferences/components/ConditionEditor';
@@ -11,6 +15,7 @@ import type {
 } from '@mobile/journey/state/journey-shell';
 
 type DrawerProps = {
+  readonly conversationNavigation?: ConversationNavigation;
   readonly open: boolean;
   readonly view: DrawerView;
   readonly history: readonly SearchHistoryItem[];
@@ -38,6 +43,7 @@ const viewTitle: Record<DrawerView, string> = {
 };
 
 export function Drawer({
+  conversationNavigation,
   open,
   view,
   history,
@@ -123,6 +129,8 @@ export function Drawer({
         >
           {view === 'home' ? (
             <HomeView
+              onClose={onClose}
+              {...(conversationNavigation === undefined ? {} : { conversationNavigation })}
               history={history}
               historyUnavailable={historyUnavailable}
               savedPlaces={savedPlaces}
@@ -131,27 +139,31 @@ export function Drawer({
               onViewChange={onViewChange}
             />
           ) : view === 'history' ? (
-            <ListView
-              emptyLabel={
-                historyUnavailable ? '履歴を利用できません' : 'まだ今夜の検索はありません'
-              }
-              items={history}
-              renderItem={(item) => (
-                <Pressable
-                  accessibilityRole="button"
-                  key={item.id}
-                  onPress={() => selectHistory(item)}
-                  style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-                >
-                  <Text style={styles.rowTitle}>{item.label}</Text>
-                  <Text numberOfLines={2} style={styles.rowMeta}>
-                    {item.query}
-                  </Text>
-                  <Text style={styles.rowTime}>{item.time}</Text>
-                </Pressable>
-              )}
-              title={viewTitle[view]}
-            />
+            conversationNavigation !== undefined ? (
+              <ConversationHistoryList navigation={conversationNavigation} onClose={onClose} />
+            ) : (
+              <ListView
+                emptyLabel={
+                  historyUnavailable ? '履歴を利用できません' : 'まだ今夜の検索はありません'
+                }
+                items={history}
+                renderItem={(item) => (
+                  <Pressable
+                    accessibilityRole="button"
+                    key={item.id}
+                    onPress={() => selectHistory(item)}
+                    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                  >
+                    <Text style={styles.rowTitle}>{item.label}</Text>
+                    <Text numberOfLines={2} style={styles.rowMeta}>
+                      {item.query}
+                    </Text>
+                    <Text style={styles.rowTime}>{item.time}</Text>
+                  </Pressable>
+                )}
+                title={viewTitle[view]}
+              />
+            )
           ) : view === 'saved' ? (
             <ListView
               emptyLabel={
@@ -187,6 +199,8 @@ export function Drawer({
 }
 
 type HomeViewProps = {
+  readonly conversationNavigation?: ConversationNavigation;
+  readonly onClose: () => void;
   readonly history: readonly SearchHistoryItem[];
   readonly historyUnavailable: boolean;
   readonly savedPlaces: readonly SavedPlaceItem[];
@@ -196,6 +210,8 @@ type HomeViewProps = {
 };
 
 function HomeView({
+  conversationNavigation,
+  onClose,
   history,
   historyUnavailable,
   savedPlaces,
@@ -210,19 +226,27 @@ function HomeView({
         onPress={onNewSearch}
         style={({ pressed }) => [styles.newButton, pressed && styles.rowPressed]}
       >
-        <Text style={styles.newButtonText}>新しい検索</Text>
+        <Text style={styles.newButtonText}>
+          {conversationNavigation === undefined ? '新しい検索' : '新しい会話'}
+        </Text>
       </Pressable>
-      <Text style={styles.sectionLabel}>今夜の履歴</Text>
-      {historyUnavailable ? (
-        <Text style={styles.empty}>履歴を利用できません</Text>
-      ) : history.length === 0 ? (
-        <Text style={styles.empty}>まだ今夜の検索はありません</Text>
+      {conversationNavigation !== undefined ? (
+        <ConversationHistoryList navigation={conversationNavigation} onClose={onClose} />
       ) : (
-        history.slice(0, 4).map((item) => (
-          <Text key={item.id} numberOfLines={1} style={styles.historyPreview}>
-            {item.label}
-          </Text>
-        ))
+        <>
+          <Text style={styles.sectionLabel}>今夜の履歴</Text>
+          {historyUnavailable ? (
+            <Text style={styles.empty}>履歴を利用できません</Text>
+          ) : history.length === 0 ? (
+            <Text style={styles.empty}>まだ今夜の検索はありません</Text>
+          ) : (
+            history.slice(0, 4).map((item) => (
+              <Text key={item.id} numberOfLines={1} style={styles.historyPreview}>
+                {item.label}
+              </Text>
+            ))
+          )}
+        </>
       )}
       <View style={styles.footer}>
         <Pressable
@@ -230,8 +254,12 @@ function HomeView({
           onPress={() => onViewChange('history')}
           style={({ pressed }) => [styles.navRow, pressed && styles.rowPressed]}
         >
-          <Text style={styles.navText}>今夜の履歴</Text>
-          <Text style={styles.navCount}>{history.length}</Text>
+          <Text style={styles.navText}>
+            {conversationNavigation === undefined ? '今夜の履歴' : '会話履歴'}
+          </Text>
+          <Text style={styles.navCount}>
+            {conversationNavigation?.conversations.length ?? history.length}
+          </Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
