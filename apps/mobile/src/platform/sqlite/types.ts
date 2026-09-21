@@ -1,3 +1,4 @@
+import type { ConversationCache } from '@mobile/platform/sqlite/conversation-cache';
 import type { Preferences, RetentionMetadata } from '@ima/contracts';
 import type {
   LocalSavedEntryId,
@@ -122,6 +123,7 @@ export type SqlitePreferences = Preferences & {
 };
 
 export type SqliteStore = {
+  readonly conversations?: ConversationCache;
   readonly savePlace: (input: SavedPlaceInput) => SavePlaceResult;
   readonly listSavedPlaces: () => readonly SavedPlaceRecord[];
   readonly listTonightDecisions: () => readonly SavedPlaceRecord[];

@@ -1,3 +1,6 @@
+import type { ConversationClient } from '@mobile/platform/http/conversation-client';
+import type { ConversationCache } from '@mobile/platform/sqlite/conversation-cache';
+import type { AssistantResponseState } from '@mobile/journey/state/assistant-response';
 import type {
   CreateThreadRequest,
   LifecycleCommand,
@@ -62,6 +65,13 @@ export type JourneyApiRequestFactory = {
 };
 
 export type JourneyApiControllerBinding = {
+  readonly conversations?: {
+    readonly client: ConversationClient;
+    readonly cache?: ConversationCache;
+    readonly onDisplay: (state: AssistantResponseState | null) => void;
+    readonly now: () => string;
+    readonly id: () => string;
+  };
   readonly controller: JourneyApiController;
   readonly requests: JourneyApiRequestFactory;
   /** Host-composed explicit foreground location acquisition service. */

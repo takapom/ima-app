@@ -1,3 +1,4 @@
+import { createConversationCache } from '@mobile/platform/sqlite/conversations';
 import { createSavedPlaceStore } from '@mobile/platform/sqlite/saved-places';
 import { cleanupExpiredRows, currentIso } from '@mobile/platform/sqlite/expiration';
 import { migrateSqlite } from '@mobile/platform/sqlite/schema';
@@ -34,7 +35,11 @@ export const createSqliteStore = (
   options: SqliteStoreOptions,
 ): SqliteStore => {
   migrateSqlite(database);
-  const cleanupExpired = (): void => cleanupExpiredRows(database, options);
+  const conversations = createConversationCache(database, options.clock);
+  const cleanupExpired = (): void => {
+    cleanupExpiredRows(database, options);
+    conversations.cleanup();
+  };
   const savedPlaces = createSavedPlaceStore(database, options, cleanupExpired);
   cleanupExpired();
 
@@ -285,6 +290,7 @@ export const createSqliteStore = (
   };
 
   return {
+    conversations,
     ...savedPlaces,
     saveSkipTonight,
     isSkippedTonight,

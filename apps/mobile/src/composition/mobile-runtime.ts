@@ -1,3 +1,6 @@
+import { createConversationClient } from '@mobile/platform/http/conversation-client';
+import type { ConversationCache } from '@mobile/platform/sqlite/conversation-cache';
+import type { AssistantResponseState } from '@mobile/journey/state/assistant-response';
 import {
   parseSavedReferencePath,
   type CreateThreadRequest,
@@ -68,6 +71,7 @@ export type MobileJourneySavedReferenceOptions = {
 };
 
 export type MobileJourneyRuntimeOptions = {
+  readonly conversationCache?: ConversationCache;
   readonly env?: MobileRuntimeEnvironment;
   /** Native credential storage will provide this in a later integration unit. */
   readonly credentials?: ApiCredentialProvider;
@@ -290,7 +294,7 @@ const responseSessionExpiryFor = (
 };
 
 const visibleCandidateFor = (
-  controller: JourneyApiControllerBinding['controller'],
+  controller: Pick<JourneyApiControllerBinding['controller'], 'getState'>,
   candidateId: string,
   now: () => string,
 ): boolean => {
@@ -322,7 +326,7 @@ type SavedReferenceRuntimeServices = {
 };
 
 const savedReferenceRuntimeServicesFor = (
-  controller: JourneyApiControllerBinding['controller'],
+  controller: Pick<JourneyApiControllerBinding['controller'], 'getState'>,
   api: Parameters<typeof createSavedReferenceService>[0]['api'],
   options: MobileJourneySavedReferenceOptions | undefined,
   now: () => string,
@@ -423,8 +427,21 @@ export const createMobileJourneyRuntime = (
     ...(options.localRestore === undefined ? {} : { localRestore: options.localRestore }),
   });
   const photoClient = createJourneyPhotoClient({ ...clientOptions, now });
+  let conversationDisplay: AssistantResponseState | null | undefined;
+  const displaySource = {
+    getState: () =>
+      conversationDisplay === undefined
+        ? controller.getState()
+        : {
+            ...controller.getState(),
+            threadId: conversationDisplay?.threadId ?? null,
+            responseState: conversationDisplay,
+            status: 'idle' as const,
+            localSnapshot: null,
+          },
+  };
   const savedReferenceServices = savedReferenceRuntimeServicesFor(
-    controller,
+    displaySource,
     api,
     options.savedReference,
     now,
@@ -436,6 +453,15 @@ export const createMobileJourneyRuntime = (
     ownerClient,
     requestIdFactory,
     binding: {
+      conversations: {
+        client: createConversationClient(clientOptions),
+        onDisplay: (state) => {
+          conversationDisplay = state;
+        },
+        now,
+        id: requestIdFactory,
+        ...(options.conversationCache === undefined ? {} : { cache: options.conversationCache }),
+      },
       controller,
       photoClient,
       requests: createJourneyApiRequestFactory({ now, idFactory }),

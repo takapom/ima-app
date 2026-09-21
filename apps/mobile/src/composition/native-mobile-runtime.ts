@@ -437,7 +437,12 @@ export const createNativeMobileJourneyRuntime = async (
     now,
   );
   try {
-    runtime = createMobileJourneyRuntime(runtimeOptions);
+    runtime = createMobileJourneyRuntime({
+      ...runtimeOptions,
+      ...(sqlite?.store.conversations === undefined
+        ? {}
+        : { conversationCache: sqlite.store.conversations }),
+    });
   } catch {
     disposeResources(null, null, sqlite?.adapter ?? null);
     return unavailable('native_runtime_failed');
