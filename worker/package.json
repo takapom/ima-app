@@ -21,6 +21,7 @@
     "@ima/contracts": "workspace:*",
     "agents": "0.22.0",
     "ai": "6.0.182",
+    "hono": "4.13.8",
     "valibot": "1.4.2"
   },
   "devDependencies": {

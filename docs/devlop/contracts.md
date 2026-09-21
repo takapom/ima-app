@@ -8,9 +8,9 @@
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | 公開HTTP・応答・保持メタデータ | [contracts公開入口](../packages/contracts/src/index.ts)                                                                                |
 | prefs・保存一覧・決定          | [owner-http.ts](../packages/contracts/src/owner-http.ts)、[saved-reference-http.ts](../packages/contracts/src/saved-reference-http.ts) |
-| HTTPルートとmethod             | [router-match.ts](../worker/src/adapters/in/http/router-match.ts)                                                                      |
-| 認証・所有者scope              | [auth.ts](../worker/src/adapters/in/http/auth.ts)                                                                                      |
-| モデル向け3操作                | [tools](../worker/src/adapters/in/tools)、[Application Ports](../worker/src/application/ports)                                         |
+| HTTPルートとmethod             | [router.ts](../../worker/src/adapters/in/http/router.ts)の`app.route()`から機能別Honoルーターへ辿る                                    |
+| 認証・所有者scope              | [auth.ts](../worker/infrastructure/adapters/inbound/http/auth.ts)                                                                      |
+| モデル向け3操作                | [tools](../worker/infrastructure/adapters/inbound/tools)、[Core Ports](../worker/core/src/ports)                                       |
 
 ## HTTPの利用手順
 
@@ -22,7 +22,7 @@
 6. 保存済み条件は`GET /v1/prefs`とrevision CAS付き`PUT /v1/prefs`で管理する。
 
 `cancel`・`resume`・`restart`・`end`はthreadのライフサイクル操作。`resume`は中断状態を継続し、`restart`は新turnを開始する。thread削除は保存一覧の削除と同義にしない。
-ルートにはほかに検索互換入口、候補詳細、写真、イベント、App Integrityがあり、全一覧はmatcherを参照する。
+ルートにはほかに検索互換入口、写真、イベント、App Integrityがある。機能別ルーターがmethodとpathを登録し、共通HTTP境界が認証・入力検証・公開エラーへの変換を行う。
 
 内部開発認証は`X-App-Token`、`X-Device-Id`、`X-App-Version`とowner credentialを使う。
 `X-Ima-Owner-Credential`は32 random bytesのpaddingなしbase64url。Workerでhashしてowner scopeを導出し、生credentialをログに残さない。

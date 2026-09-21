@@ -13,7 +13,7 @@ import type {
   ApplicationResult,
   HandlerContext,
 } from '@worker/adapters/in/http/handler';
-import type { MatchedRoute } from '@worker/adapters/in/http/router-match';
+import type { MatchedRoute } from '@worker/adapters/in/http/http-route';
 import type { CancellationToken } from '@worker/application/ports/context';
 import * as v from 'valibot';
 

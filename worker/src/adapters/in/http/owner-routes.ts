@@ -15,7 +15,7 @@ import type {
   HandlerContext,
 } from '@worker/adapters/in/http/handler';
 import { parseJsonBodyWithRaw } from '@worker/adapters/in/http/input';
-import type { MatchedRoute } from '@worker/adapters/in/http/router-match';
+import type { MatchedRoute } from '@worker/adapters/in/http/http-route';
 
 export type OwnerHttpRoute = Extract<
   MatchedRoute,

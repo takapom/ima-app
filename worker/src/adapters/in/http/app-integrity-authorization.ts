@@ -1,6 +1,6 @@
 import { toErrorResponse } from '@worker/adapters/in/http/errors';
 import type { AuthenticatedContext } from '@worker/adapters/in/http/auth';
-import type { MatchedRoute } from '@worker/adapters/in/http/router-match';
+import type { MatchedRoute } from '@worker/adapters/in/http/http-route';
 import type { AppIntegrityGate } from '@worker/security/app-integrity';
 
 type AuthorizedRoute = Exclude<
