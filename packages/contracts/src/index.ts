@@ -12,3 +12,5 @@ export {
   parseSavedReferenceDeleteRequest,
   parseSavedReferencePath,
 } from '@contracts/saved-reference-http';
+
+export * from '@contracts/conversation-http';

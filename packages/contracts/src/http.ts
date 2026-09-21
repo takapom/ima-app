@@ -32,6 +32,7 @@ import type {
 import type { CreateThreadResponse } from '@contracts/preferences';
 import type { CreateThreadRequest, SearchRequest, ThreadTurnRequest } from '@contracts/preferences';
 import type { RetentionMetadata } from '@contracts/public';
+import { ConversationHttpRouteContracts } from '@contracts/conversation-routes';
 import { OwnerHttpRouteContracts } from '@contracts/owner-http';
 import {
   SavedReferenceCreateRequestSchema,
@@ -322,6 +323,7 @@ export const PhotoBinaryRouteResponseSchema = v.strictObject({
 });
 
 export const RouteContracts = {
+  ...ConversationHttpRouteContracts,
   attestNonce: {
     method: 'GET',
     path: '/v1/attest/nonce',
