@@ -9,12 +9,15 @@ import {
   createDurableAppIntegrityStores,
   type AppIntegrityNamespace,
 } from '@worker/adapters/out/persistence/security/app-integrity-do';
+import { personalPreviewEnabled } from '@worker/composition/personal-preview';
 
 type BootstrapAppIntegrityEnv = {
   readonly APP_INTEGRITY?: AppIntegrityNamespace;
   readonly IMA_ENV?: string;
   readonly APP_ATTEST_ENVIRONMENT?: string;
   readonly APP_ATTEST_MODE?: string;
+  readonly IMA_PERSONAL_PREVIEW?: string;
+  readonly APP_TOKEN?: string;
 };
 
 const isStoreEnvironment = (
@@ -31,6 +34,11 @@ export const createBootstrapAppIntegrityGate = (
   env: BootstrapAppIntegrityEnv,
   verifier?: AppIntegrityVerifier,
 ): AppIntegrityGate => {
+  // HTTP token authentication and owner isolation still run before this gate.
+  // No attestation/verifier success is claimed for a personally signed build.
+  if (personalPreviewEnabled(env)) {
+    return createAppIntegrityGate({ enforcement: 'internal', environment: 'unknown' });
+  }
   const policy = resolveAppIntegrityPolicy({
     ...(env.IMA_ENV === undefined ? {} : { deploymentEnvironment: env.IMA_ENV }),
     ...(env.APP_ATTEST_ENVIRONMENT === undefined

@@ -11,6 +11,29 @@ const baseConfig: Partial<ExpoConfig> = {
 const projectId = '11111111-1111-4111-8111-111111111111';
 
 describe('mobile dynamic config', () => {
+  it('allows a personally signed local staging build without an EAS project', () => {
+    const env = {
+      EXPO_PUBLIC_PERSONAL_PREVIEW: 'true',
+      EXPO_PUBLIC_API_MODE: 'live',
+      EXPO_PUBLIC_ENVIRONMENT: 'staging',
+      EXPO_PUBLIC_API_BASE_URL: 'https://staging.example.invalid',
+      EXPO_IOS_BUNDLE_IDENTIFIER: 'com.example.ima',
+    };
+    expect(createMobileConfig(baseConfig, env).ios?.bundleIdentifier).toBe('com.example.ima');
+    expect(createMobileConfig(baseConfig, env).extra ?? {}).not.toHaveProperty('eas.projectId');
+    expect(() =>
+      createMobileConfig(baseConfig, { ...env, EXPO_PUBLIC_ENVIRONMENT: 'production' }),
+    ).toThrow('local staging build');
+    expect(() => createMobileConfig(baseConfig, { ...env, EAS_BUILD: 'true' })).toThrow(
+      'local staging build',
+    );
+    expect(() =>
+      createMobileConfig(baseConfig, { ...env, EXPO_PUBLIC_API_MODE: 'fixture' }),
+    ).toThrow('local staging build');
+    expect(() =>
+      createMobileConfig(baseConfig, { ...env, EXPO_PUBLIC_FIXTURE_APP_TOKEN: 'local-only-token' }),
+    ).toThrow('must not embed fixture credentials');
+  });
   it('keeps local development free of fabricated external identity', () => {
     const config = createMobileConfig(baseConfig, {
       EXPO_PUBLIC_ENVIRONMENT: 'dev',

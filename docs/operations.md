@@ -42,6 +42,47 @@ bun scripts/release-preflight.ts --track external
 
 ## 実Provider検証
 
+### 自分のiPhoneだけで使う個人検証
+
+Appleの無料Personal TeamではApp Attestを利用できない（[対応Capability](https://developer.apple.com/help/account/reference/supported-capabilities-ios)）。自分の端末へローカル署名して入れる場合だけ、stagingの`IMA_PERSONAL_PREVIEW=true`を明示してApp Attestなしの認証を許可する。既定はfalseで、productionではこの値を指定しても例外を認めない。これは外部配布の検収ではなく、既存の配布preflightも合格扱いにしない。
+
+このモードの認証はAPP_TOKENの所持に依存し、正規アプリ・実機であることは証明しない。64桁の小文字16進トークンが必須で、通常のowner credential認証・所有者分離は維持する。個人検証中はアプリ独自の端末ごと30回/時・ownerごと100回/時の制限を適用しない。通常のstaging・productionではこの制限を維持し、個人検証でも1ターンの処理予算・タイムアウトと外部Provider側の制限は変えない。APP_TOKENを知る人は新しいownerとして利用できるため、本人だけで管理する。
+
+1. `openssl rand -hex 32 | pbcopy`で生成したAPP_TOKENをパスワード管理へ保存し、`bunx wrangler secret put APP_TOKEN --config worker/wrangler.jsonc --env staging`の対話入力で登録する。すでに同じ形式で登録済みなら再生成しない。`OPENAI_API_KEY`、`HOTPEPPER_API_KEY`、`PLACES_CURSOR_SECRET`もstagingのsecretに必要。
+2. リポジトリ直下で次を実行し、個人検証用stagingを有効化する。先に同じコマンドへ`--dry-run`を付けてbundle・bindingを確認する。実行後の検索はOpenAIとHot Pepperへ接続する。
+
+```sh
+bunx wrangler deploy --config worker/wrangler.jsonc --env staging \
+  --var IMA_PERSONAL_PREVIEW:true \
+  --var IMA_RUNTIME_MODE:live \
+  --var IMA_PROVIDER_OPENAI:true \
+  --var IMA_PROVIDER_HOTPEPPER:true \
+  --var IMA_RUNTIME_FLAGS_CONNECTED:1
+```
+
+3. `apps/mobile`で以下を実行する。接続先とbundle IDは自分の値に置き換える。`EXPO_NO_DOTENV=1`で開発用`.env.local`を読み込まず、fixtureの認証情報はシェル環境からも除く。APP_TOKENやProviderのキーをビルドへ渡さない。
+
+```sh
+env -u EXPO_PUBLIC_FIXTURE_APP_TOKEN \
+  -u EXPO_PUBLIC_FIXTURE_DEVICE_ID \
+  -u EXPO_PUBLIC_FIXTURE_OWNER_CREDENTIAL \
+  EXPO_NO_DOTENV=1 \
+  EXPO_PUBLIC_PERSONAL_PREVIEW=true \
+  EXPO_PUBLIC_ENVIRONMENT=staging \
+  EXPO_PUBLIC_API_MODE=live \
+  EXPO_PUBLIC_API_BASE_URL=https://your-worker.your-subdomain.workers.dev \
+  EXPO_PUBLIC_APP_VERSION=0.0.0 \
+  EXPO_IOS_BUNDLE_IDENTIFIER=com.example.ima \
+  bunx expo run:ios --device --configuration Release
+```
+
+4. 起動時の「検証用の接続設定」でAPP_TOKENを入力する。既存のSecureStoreへ端末限定で保存し、owner credentialとdevice IDは端末で生成する。トークン変更は「接続設定」から行う。同じ端末・接続先でのトークン変更はownerとSQLiteの保存先を維持し、認証レコードが消えた場合は新しい保存先を割り当てる。秘密値は画面・ログ・公開環境変数へ再表示しない。
+5. Wi-FiとUSBを切り、Macを停止して携帯回線で新しい検索を実行する。ReleaseにはJSが同梱されるためMetroは不要だが、検索にはインターネット接続が必要。無料署名の期限が切れたら再ビルドする（[Appleアカウントの制限](https://developer.apple.com/help/account/basics/about-your-developer-account)）。
+
+停止する場合は、上の`--var`を付けずに通常の`--env staging`デプロイを行う。追跡設定の`IMA_PERSONAL_PREVIEW=false`・runtime disabled・Provider停止へ戻る。通常デプロイは個人検証用の上書きを維持しない。
+
+### ローカルでの実接続
+
 [実LLMとホットペッパーのローカル起動](development.md#実llmとホットペッパーでのローカル起動)で新しい会話を作り、検索・カード表示・条件変更を実行する。APIの認証失敗・0件・タイムアウトを成功へ補正しない。外部接続はOpenAIとホットペッパーであり、写真・経路・終電は無効。旧Google用のlive smoke runnerは削除済み。
 
 実行日時、対象profile、モデル版、公開schemaの結果、費用、未測定項目を[実接続Issue](https://github.com/takapom/ima-app/issues/36)へ記録する。raw本文・座標・token・secretは証跡へ含めない。

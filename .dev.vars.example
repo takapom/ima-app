@@ -1,6 +1,7 @@
 # Copy to worker/.dev.vars for local Worker secrets.
 # Never commit the copied file or real values.
 IMA_ENV=dev
+IMA_PERSONAL_PREVIEW=false
 IMA_RUNTIME_MODE=fixture
 IMA_RUNTIME_FLAGS_CONNECTED=0
 # Provider capabilities are explicitly off until a verified fixture/live composition is selected.

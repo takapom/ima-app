@@ -256,7 +256,7 @@ const scopesMatch = (left: NativeCredentialScope, right: NativeCredentialScope):
   left.apiOrigin === right.apiOrigin &&
   left.storageScope === right.storageScope;
 
-const createExpoSecureStoreClient = (): NativeCredentialStoreClient => ({
+export const createExpoSecureStoreClient = (): NativeCredentialStoreClient => ({
   secureStoreOptions: async () => {
     const secureStore = await import('expo-secure-store');
     return {

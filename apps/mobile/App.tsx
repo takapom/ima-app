@@ -1,5 +1,6 @@
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JourneyScreen } from '@mobile/journey/JourneyScreen';
+import { PersonalPreviewConnection } from '@mobile/composition/PersonalPreviewConnection';
 import { useNativeMobileRuntime } from '@mobile/composition/hooks/useNativeMobileRuntime';
 import { useNativeJourneyPersistence } from '@mobile/composition/hooks/useNativeJourneyPersistence';
 import {
@@ -19,10 +20,19 @@ export type AppProps = {
 export default function App({ journeyApi, mobileRuntimeOptions }: AppProps): React.JSX.Element {
   return (
     <SafeAreaProvider>
-      <AppContent
-        {...(journeyApi === undefined ? {} : { journeyApi })}
-        {...(mobileRuntimeOptions === undefined ? {} : { mobileRuntimeOptions })}
-      />
+      <PersonalPreviewConnection
+        bypass={journeyApi !== undefined || mobileRuntimeOptions !== undefined}
+      >
+        {(personalOptions) => {
+          const options = mobileRuntimeOptions ?? personalOptions;
+          return (
+            <AppContent
+              {...(journeyApi === undefined ? {} : { journeyApi })}
+              {...(options === undefined ? {} : { mobileRuntimeOptions: options })}
+            />
+          );
+        }}
+      </PersonalPreviewConnection>
     </SafeAreaProvider>
   );
 }

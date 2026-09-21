@@ -64,6 +64,25 @@ export const createMobileConfig = (
   const bundleIdentifier = valueFor(env, 'EXPO_IOS_BUNDLE_IDENTIFIER');
   const projectId = valueFor(env, 'EAS_PROJECT_ID');
   const needsIdentity = requiresExternalIdentity(env);
+  const personalPreview = valueFor(env, 'EXPO_PUBLIC_PERSONAL_PREVIEW') === 'true';
+  if (
+    personalPreview &&
+    (environmentFor(env) !== 'staging' ||
+      valueFor(env, 'EXPO_PUBLIC_API_MODE') !== 'live' ||
+      valueFor(env, 'EAS_BUILD') === 'true')
+  ) {
+    throw new Error('Personal previews require a local staging build');
+  }
+  if (
+    personalPreview &&
+    [
+      'EXPO_PUBLIC_FIXTURE_APP_TOKEN',
+      'EXPO_PUBLIC_FIXTURE_DEVICE_ID',
+      'EXPO_PUBLIC_FIXTURE_OWNER_CREDENTIAL',
+    ].some((key) => valueFor(env, key) !== undefined)
+  ) {
+    throw new Error('Personal previews must not embed fixture credentials');
+  }
 
   requireSecureExternalEndpoint(env);
 
@@ -73,7 +92,7 @@ export const createMobileConfig = (
   if (projectId !== undefined && !PROJECT_ID.test(projectId)) {
     throw new Error('EAS_PROJECT_ID must be a UUID');
   }
-  if (needsIdentity && (!usable(bundleIdentifier) || !usable(projectId))) {
+  if (needsIdentity && (!usable(bundleIdentifier) || (!personalPreview && !usable(projectId)))) {
     throw new Error(
       'External iOS builds require EXPO_IOS_BUNDLE_IDENTIFIER and EAS_PROJECT_ID from the build environment',
     );

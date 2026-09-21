@@ -7,6 +7,7 @@
   "workers_dev": true,
   "vars": {
     "IMA_ENV": "dev",
+    "IMA_PERSONAL_PREVIEW": "false",
     "IMA_RUNTIME_MODE": "fixture",
     "IMA_PROVIDER_OPENAI": "false",
     "IMA_PROVIDER_PLACES": "false",
@@ -42,6 +43,7 @@
       "name": "ima-api-staging",
       "vars": {
         "IMA_ENV": "staging",
+        "IMA_PERSONAL_PREVIEW": "false",
         "IMA_RUNTIME_MODE": "disabled",
         "IMA_PROVIDER_OPENAI": "false",
         "IMA_PROVIDER_PLACES": "false",
@@ -66,6 +68,7 @@
       "name": "ima-api-production",
       "vars": {
         "IMA_ENV": "production",
+        "IMA_PERSONAL_PREVIEW": "false",
         "IMA_RUNTIME_MODE": "disabled",
         "IMA_PROVIDER_OPENAI": "false",
         "IMA_PROVIDER_PLACES": "false",

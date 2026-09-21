@@ -24,6 +24,7 @@ import {
 } from '@worker/adapters/in/http/runtime-handler';
 import type { AppIntegrityNamespace } from '@worker/adapters/out/persistence/security/app-integrity-do';
 import { createBootstrapAppIntegrityGate } from '@worker/composition/app-integrity-bootstrap';
+import { personalPreviewEnabled } from '@worker/composition/personal-preview';
 import type { AppIntegrityVerifier } from '@worker/security/app-integrity';
 import { createBestEffortEventsSink, createTelemetryEventsSink } from '@worker/telemetry/events';
 import {
@@ -39,6 +40,7 @@ export { createApplicationScopeAuthorizer } from '@worker/adapters/in/http/saved
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;
+  readonly IMA_PERSONAL_PREVIEW?: string;
   readonly HOTPEPPER_API_KEY?: string;
   readonly PHOTO_TOKEN_SECRET?: string;
   readonly PLACES_CURSOR_SECRET?: string;
@@ -124,10 +126,9 @@ export const createHttpRouterConfig = (
           ? createUnavailableEvents()
           : createTelemetryEventsSink(createDurableTelemetryStore(env.TELEMETRY))),
     ),
-    rateLimiter: new DurableRateLimiter(
-      env.RATE_LIMITS,
-      options.rateLimit ?? DEFAULT_RATE_LIMIT_CONFIG,
-    ),
+    rateLimiter: personalPreviewEnabled(env)
+      ? { check: () => Promise.resolve({ allowed: true, retryAfterSeconds: null }) }
+      : new DurableRateLimiter(env.RATE_LIMITS, options.rateLimit ?? DEFAULT_RATE_LIMIT_CONFIG),
   };
   return {
     auth: {
