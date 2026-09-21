@@ -10,7 +10,7 @@
 
 ## 実装
 
-- 責務分割・package境界・依存方向・データの正は[アーキテクチャ](docs/architecture.md)、入出力の契約は[契約とデータの扱い](docs/contracts.md)に従う。ディレクトリ配置が合っているだけで適合と判断しない。
+- 責務分割・package境界・依存方向・データの正は[アーキテクチャ](docs/architecture/architecture.md)、入出力の契約は[契約とデータの扱い](docs/devlop/contracts.md)に従う。ディレクトリ配置が合っているだけで適合と判断しない。
 - 不明・未対応・取得失敗・0件を区別する。例外を握りつぶして成功に見せず、型キャストで契約の不整合を隠さない。
 - 見た目が似ているだけで責務の異なる処理を共通化しない。共通化のために依存境界を崩さない。
 - 現在の要件と決定済みの境界に不要な汎用基盤・抽象層・設定項目を、将来の用途だけを理由に先行追加しない。
@@ -20,7 +20,7 @@
 
 - sub-issueの実装・コミット・完了判定は[ima-issue-delivery](.agents/skills/ima-issue-delivery/SKILL.md)、検証結果の判定と証跡は[ima-verification-evidence](.agents/skills/ima-verification-evidence/SKILL.md)、外部Providerの追加・差し替え・撤去は[ima-provider-swap](.agents/skills/ima-provider-swap/SKILL.md)に従う。設計相談やIssueレビューだけの依頼を実装へ広げない。
 - sub agentは担当ファイルを分離し、共有契約やlockfileを同時編集しない。主担当だけがstage・commit・pushを直列で行い、sub agentの完了報告だけで合格にしない。
-- コミット前は`bun run check`で変更パスに対応するゲートを実行する。選ばれなかったゲートを合格として報告しない。コマンドの使い分けは[開発の品質方針](docs/development.md#品質検査)に従い、行数制限などの数値はスクリプトが正とする。
+- コミット前は`bun run check`で変更パスに対応するゲートを実行する。選ばれなかったゲートを合格として報告しない。コマンドの使い分けは[開発の品質方針](docs/devlop/development.md#品質検査)に従い、行数制限などの数値はスクリプトが正とする。
 
 ## 応答と文書
 

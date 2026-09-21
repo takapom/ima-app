@@ -12,7 +12,7 @@ description: >-
 
 ## ima-appでの適用
 
-[現行アーキテクチャ](../../../docs/architecture.md)を優先する。モジュール分割は既存レイヤ内で判断する。Workerのdomain・application・portsやWorkerのadapters・runtime・compositionを、技術名という理由だけで撤去・統合しない。Mobile・Worker・contractsのworkspace境界と内部aliasを保ち、Worker業務層の依存方向を静的検査で維持する。
+[現行アーキテクチャ](../../../docs/architecture/architecture.md)を優先する。モジュール分割は既存レイヤ内で判断する。Workerのdomain・application・portsやWorkerのadapters・runtime・compositionを、技術名という理由だけで撤去・統合しない。Mobile・Worker・contractsのworkspace境界と内部aliasを保ち、Worker業務層の依存方向を静的検査で維持する。
 
 以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
 
@@ -168,5 +168,5 @@ infrastructure/
 
 ## 関連資料
 関連する判断が必要な場合だけ、次の資料を参照する：
-- [現行アーキテクチャ](../../../docs/architecture.md): 層構造と依存方向
+- [現行アーキテクチャ](../../../docs/architecture/architecture.md): 層構造と依存方向
 - [domain-building-blocks](../domain-building-blocks/SKILL.md): モジュール内に配置するビルディングブロックの設計

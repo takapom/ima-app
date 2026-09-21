@@ -17,7 +17,7 @@ metadata:
 ## ima-appでの適用
 
 対象は [apps/mobile](../../../apps/mobile) のReact Nativeコンポーネント。
-[現行アーキテクチャ](../../../docs/architecture.md)のUI・hooks/state・services境界を保つ。
+[現行アーキテクチャ](../../../docs/architecture/architecture.md)のUI・hooks/state・services境界を保つ。
 boolean propがあるだけでcompound componentやContextを増やさず、責務と利用箇所から必要性を判断する。
 DOMの例はNativeの既存部品へ読み替える。React APIの利用可否は[manifest](../../../apps/mobile/package.json)と型定義で確認する。
 

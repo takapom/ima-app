@@ -31,6 +31,13 @@ afterEach(() => {
 describe('file line quality gate', () => {
   it.each([
     ['source.ts', 500, 0],
+    ['apps/mobile/ios/Pods/generated.swift', 501, 0],
+    ['apps/mobile/ios/build/generated.mm', 501, 0],
+    ['apps/mobile/ios/Podfile.lock', 501, 0],
+    ['apps/mobile/ios/ima.xcodeproj/project.pbxproj', 501, 0],
+    ['apps/mobile/ios/ima/AppDelegate.swift', 501, 1],
+    ['worker/build/source.ts', 501, 1],
+    ['diagram.pptx', 501, 0],
     ['source.ts', 501, 1],
     ['fixture.json', 501, 1],
     ['README.md', 501, 0],

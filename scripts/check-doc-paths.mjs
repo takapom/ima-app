@@ -5,7 +5,17 @@ import { pathToFileURL } from 'node:url';
 
 // Documents live at fixed entry points so planning, progress, and audit records
 // stay in GitHub Issues instead of returning as tracked files.
-const allowedPaths = new Set(['AGENTS.md', 'CLAUDE.md', 'README.md', '.codex/AGENTS.md']);
+const allowedPaths = new Set([
+  'AGENTS.md',
+  'CLAUDE.md',
+  'README.md',
+  '.codex/AGENTS.md',
+  'docs/architecture/architecture.md',
+  'docs/devlop/contracts.md',
+  'docs/devlop/development.md',
+  'docs/philosophy/product.md',
+  'docs/philosophy/ai-behavior.md',
+]);
 const allowedPatterns = [/^docs\/[a-z0-9-]+\.md$/, /^\.agents\/skills\/[a-z0-9-]+\/SKILL\.md$/];
 const skillDocumentPattern =
   /^\.codex\/skills\/[a-z0-9-]+\/(?:(?:SKILL|README|AGENTS)\.md|(?:reference|references|rules)\/[a-z0-9_-]+\.md)$/;

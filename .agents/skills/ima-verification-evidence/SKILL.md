@@ -6,7 +6,7 @@ description: ima-appの検証ゲートを判定し、合格の範囲と未測定
 # ima. 検証ゲートと証跡
 
 検証結果を報告・記録するときに読む。固定データの成功を実接続の成功へ広げないことが目的。
-コマンドと使い分けは[開発の品質方針](../../../docs/development.md#品質検査)、環境と配布は[運用](../../../docs/operations.md)に従う。
+コマンドと使い分けは[開発の品質方針](../../../docs/devlop/development.md#品質検査)、環境と配布は[運用](../../../docs/operations.md)に従う。
 
 ## ゲートと合格の定義
 
@@ -17,7 +17,7 @@ description: ima-appの検証ゲートを判定し、合格の範囲と未測定
 | Worker統合    | `bun run test:app-integrity` `test:worker-http`                               | HTTP境界とApp Integrity                |
 | SDK/DO統合    | `bun run test:runtime`                                                        | 本番構成・HTTP・開発fixtureでのSDK制御 |
 | 実モデル      | `MODEL_EVAL_LIVE=1 bunx vitest run --config vitest.model-eval-live.config.ts` | 実モデルの応答。Providerは固定         |
-| 実Provider    | [実LLMとホットペッパー起動](../../../docs/development.md)で会話を作成         | OpenAIとHot Pepperの実接続             |
+| 実Provider    | [実LLMとホットペッパー起動](../../../docs/devlop/development.md)で会話を作成  | OpenAIとHot Pepperの実接続             |
 | 環境preflight | `bun run env:preflight -- --target <env>`                                     | 設定値の形式と存在のみ                 |
 | 実機・配布    | App Attest、EAS成果物、署名、利用条件、終電データ、プライバシー公開           | 各項目を個別に検収                     |
 

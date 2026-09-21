@@ -12,7 +12,7 @@ description: >-
 ## 最初に読むもの
 
 1. [README](../../../README.md)と[製品仕様](../../../docs/product.md)で対象画面の目的を確認する。
-2. [アーキテクチャ](../../../docs/architecture.md)と、[Mobileの実装](../../../apps/mobile/src)の対象画面・既存コンポーネント・テーマを読む。
+2. [アーキテクチャ](../../../docs/architecture/architecture.md)と、[Mobileの実装](../../../apps/mobile/src)の対象画面・既存コンポーネント・テーマを読む。
 3. アプリ画面には [reference/product.md](reference/product.md) を使う。
    LPなどの制作依頼がある場合だけ [reference/brand.md](reference/brand.md) を使う。
 4. 下表から依頼に対応する参照資料だけ読む。設計・監査の依頼を実装へ広げない。
@@ -24,7 +24,7 @@ description: >-
 - `PRODUCT.md` は [docs/product.md](../../../docs/product.md) を読む。
   `DESIGN.md` は既存のテーマ・コンポーネント実装を調べる指示として扱う。
   文書の不足だけで停止したり、ルートに別の仕様書を作ったりしない。
-  仕様変更の文書化は[開発方針](../../../docs/development.md#文書の更新)に従う。
+  仕様変更の文書化は[開発方針](../../../docs/devlop/development.md#文書の更新)に従う。
 - UIはReact Native / Expoを使う。CSS、DOM、Tailwind、Next.js、ブラウザ用アニメーションの例は
   Nativeへ直接適用しない。採用API・色表現・ライブラリは[manifest](../../../apps/mobile/package.json)と既存実装で確認する。
 - 候補カードは製品仕様の表現。汎用の「カード禁止」や装飾上の好みで必要な機能を撤去しない。
@@ -50,7 +50,7 @@ Webプロジェクト初期化や更新案内を手順として実行しない�
 `pin` / `unpin` は複数の設定ディレクトリを書き換える補助機能。明示的に依頼された場合だけ
 [pin.mjs](scripts/pin.mjs)の対象を確認して実行する。
 
-検査は[開発方針](../../../docs/development.md#品質検査)、検証結果の判定は
+検査は[開発方針](../../../docs/devlop/development.md#品質検査)、検証結果の判定は
 [ima-verification-evidence](../../../.agents/skills/ima-verification-evidence/SKILL.md)に従う。
 
 ## コマンド別資料

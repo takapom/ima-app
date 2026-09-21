@@ -14,7 +14,7 @@ description: >-
 
 ## ima-appでの適用
 
-[現行アーキテクチャ](../../../docs/architecture.md)を優先する。分析対象と出力先は依頼の範囲に限る。提案は会話で提示し、永続的な未決案管理はGitHub Issueを使う。分析だけで実装変更やローカルのモデル設計書を作らない。現行の責務と提案モデルを区別する。
+[現行アーキテクチャ](../../../docs/architecture/architecture.md)を優先する。分析対象と出力先は依頼の範囲に限る。提案は会話で提示し、永続的な未決案管理はGitHub Issueを使う。分析だけで実装変更やローカルのモデル設計書を作らない。現行の責務と提案モデルを区別する。
 
 以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
 
@@ -122,4 +122,4 @@ Aggregate Order {
 関連する判断が必要な場合だけ、次の資料を参照する：
 - [domain-building-blocks](../domain-building-blocks/SKILL.md): 抽出対象となるビルディングブロックの定義と設計
 - [aggregate-design](../aggregate-design/SKILL.md): 集約境界の特定と設計ルール
-- [現行アーキテクチャ](../../../docs/architecture.md#データの正と保存境界): データの正と投影の境界
+- [現行アーキテクチャ](../../../docs/architecture/architecture.md#データの正と保存境界): データの正と投影の境界

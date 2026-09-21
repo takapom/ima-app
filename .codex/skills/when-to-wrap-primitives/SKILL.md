@@ -17,7 +17,7 @@ description: >-
 
 ## ima-appでの適用
 
-[現行アーキテクチャ](../../../docs/architecture.md)を優先する。対象はCoreで意味・単位・不変条件の取り違えを防ぐ型。公開DTOや単純な表示値まで一律にラップせず、既存のschema・型・検証関数で足りるかを先に確認する。
+[現行アーキテクチャ](../../../docs/architecture/architecture.md)を優先する。対象はCoreで意味・単位・不変条件の取り違えを防ぐ型。公開DTOや単純な表示値まで一律にラップせず、既存のschema・型・検証関数で足りるかを先に確認する。
 
 以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
 
@@ -326,5 +326,5 @@ impl Money {
 ## 関連資料
 関連する判断が必要な場合だけ、次の資料を参照する：
 - [domain-primitives-and-always-valid](../domain-primitives-and-always-valid/SKILL.md): ラップする判断後の具体的な設計パターン
-- [契約とデータの扱い](../../../docs/contracts.md): 境界での入力検証と内部型
+- [契約とデータの扱い](../../../docs/devlop/contracts.md): 境界での入力検証と内部型
 - [domain-building-blocks](../domain-building-blocks/SKILL.md): ラップされたプリミティブが属する値オブジェクトの設計

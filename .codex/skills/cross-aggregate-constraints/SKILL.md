@@ -17,7 +17,7 @@ description: >
 
 ## ima-appでの適用
 
-[現行アーキテクチャ](../../../docs/architecture.md)を優先する。ThreadDOとSavedReferenceDOのデータの正・寿命を確認してから制約を評価する。SQLiteの投影をサーバー側の正として扱わない。CQRS/ESの節は採用済みの構成にだけ適用し、必要条件を緩める変更は提案として分ける。
+[現行アーキテクチャ](../../../docs/architecture/architecture.md)を優先する。ThreadDOとSavedReferenceDOのデータの正・寿命を確認してから制約を評価する。SQLiteの投影をサーバー側の正として扱わない。CQRS/ESの節は採用済みの構成にだけ適用し、必要条件を緩める変更は提案として分ける。
 
 以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
 
@@ -354,4 +354,4 @@ CQRS/ESの非同期・イベント駆動的な性質上、以下は避けられ�
 関連する判断が必要な場合だけ、次の資料を参照する：
 - [aggregate-design](../aggregate-design/SKILL.md): 集約境界の設計（制約問題の根本原因）
 - [aggregate-transaction-boundary](../aggregate-transaction-boundary/SKILL.md): 1トランザクション=1集約ルールと結果整合性
-- [現行アーキテクチャ](../../../docs/architecture.md#データの正と保存境界): データの正と投影の境界
+- [現行アーキテクチャ](../../../docs/architecture/architecture.md#データの正と保存境界): データの正と投影の境界

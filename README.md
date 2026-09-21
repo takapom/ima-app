@@ -5,11 +5,11 @@
 
 React Native / ExpoとCloudflare Workerで構成しています。ローカルではAPIキー不要の固定データで検索・カード表示を確認できます。起動にはExpoとWorkerの両方が必要です。
 
-- [開発・ローカル起動](docs/development.md)
+- [開発・ローカル起動](docs/devlop/development.md)
 - [製品仕様](docs/product.md)
-- [AIの振る舞い](docs/ai-behavior.md)
-- [ディレクトリ構成・アーキテクチャ](docs/architecture.md)
-- [契約とデータの扱い](docs/contracts.md)
+- [AIの振る舞い](docs/philosophy/ai-behavior.md)
+- [ディレクトリ構成・アーキテクチャ](docs/architecture/architecture.md)
+- [契約とデータの扱い](docs/devlop/contracts.md)
 - [Providerポリシー](docs/provider-policy.md)
 - [環境・検証・配布・復旧](docs/operations.md)
 - [作業規則](AGENTS.md)

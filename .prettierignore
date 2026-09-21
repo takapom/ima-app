@@ -13,3 +13,7 @@ worker/tests/runtime-gate/runtime-env.d.ts
 
 # Agent skill assets have their own examples, scripts, and generated bundles.
 .codex/skills/
+
+apps/mobile/ios/Pods/
+apps/mobile/ios/build/
+apps/mobile/ios/Podfile.lock

@@ -13,7 +13,7 @@ description: >-
 
 ## ima-appでの適用
 
-[現行アーキテクチャ](../../../docs/architecture.md)を優先する。入力検証schemaとCoreの業務不変条件を区別する。TypeScriptの型キャストだけで検証済みにせず、既存の検証・失敗表現に合わせる。すべてのプリミティブのラップや公開DTOのドメイン型化を要求しない。
+[現行アーキテクチャ](../../../docs/architecture/architecture.md)を優先する。入力検証schemaとCoreの業務不変条件を区別する。TypeScriptの型キャストだけで検証済みにせず、既存の検証・失敗表現に合わせる。すべてのプリミティブのラップや公開DTOのドメイン型化を要求しない。
 
 以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
 
@@ -387,6 +387,6 @@ impl OrderRepository {
 
 ## 関連資料
 関連する判断が必要な場合だけ、次の資料を参照する：
-- [契約とデータの扱い](../../../docs/contracts.md): 境界での入力検証と内部型
+- [契約とデータの扱い](../../../docs/devlop/contracts.md): 境界での入力検証と内部型
 - [when-to-wrap-primitives](../when-to-wrap-primitives/SKILL.md): プリミティブ型をラップすべきかの判断基準
 - [domain-building-blocks](../domain-building-blocks/SKILL.md): ドメインプリミティブが構成する値オブジェクトの設計

@@ -7,7 +7,7 @@ description: >-
 
 # 永続化Portの配置
 
-配置の正は[アーキテクチャ](../../../docs/architecture.md)。
+配置の正は[アーキテクチャ](../../../docs/architecture/architecture.md)。
 「Repositoryはユースケース層に置く」という一般論だけで、既存Portを移動しない。
 
 - 業務側の永続化契約は [ApplicationのPorts](../../../worker/src/application/ports) が所有する。

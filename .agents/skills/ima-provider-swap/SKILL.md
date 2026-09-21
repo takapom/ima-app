@@ -13,7 +13,7 @@ Google からHot Pepperへの差し替え（#43）で確立した順序。未接
 - **Coreの契約を変えない。** 差し替えは[Port](../../../worker/src/application/ports/operations.ts)の実装を入れ替える作業。`PlaceSearchPort`/`PlaceDetailsPort`の形を変えたくなったら、それはProvider差し替えではなく契約変更として別に扱う。
 - **追加してから撤去する。** 新旧が併存する中間コミットを許し、各コミットでテストが通る状態を保つ。
 - **撤去は葉から幹へ。** 参照が残っている実装を先に消さない。
-- 責務と依存方向は[アーキテクチャ](../../../docs/architecture.md)、用途別policyは[Providerポリシー](../../../docs/provider-policy.md)に従う。
+- 責務と依存方向は[アーキテクチャ](../../../docs/architecture/architecture.md)、用途別policyは[Providerポリシー](../../../docs/provider-policy.md)に従う。
 
 ## 順序
 
@@ -26,7 +26,7 @@ Google からHot Pepperへの差し替え（#43）で確立した順序。未接
 5. **fixture更新** — 開発用fixture → SDK/DO統合fixture → 実モデル評価fixtureの順に新形式へ揃える。
 6. **旧実装の撤去** — 合成経路 → Adapter → HTTP → 専用型 → 応答の正規化、の順に消す。1段ごとにコミットする。
 7. **UI側の停止** — 接続しなくなった条件入力・表示をmobileから外す。存在しない機能を操作できる状態で残さない。
-8. **文書更新** — [Providerポリシー](../../../docs/provider-policy.md)、[運用](../../../docs/operations.md)、[アーキテクチャ](../../../docs/architecture.md)の現行接続を実態へ合わせる。
+8. **文書更新** — [Providerポリシー](../../../docs/provider-policy.md)、[運用](../../../docs/operations.md)、[アーキテクチャ](../../../docs/architecture/architecture.md)の現行接続を実態へ合わせる。
 
 ## コミット分割
 

@@ -15,7 +15,7 @@ metadata:
 再レンダー・hooks・独立したasync処理・JavaScript処理の規則を対象コードに応じて使う。
 Next.js、RSC、Server Actions、SSR、next/dynamicは現在の構成に適用しない。
 DOM・CSS・localStorage・ブラウザ資源ヒントはWeb固有コードだけが対象。
-通信・永続化は[既存のservices境界](../../../docs/architecture.md)を保ち、SWRやキャッシュ基盤を自動導入しない。
+通信・永続化は[既存のservices境界](../../../docs/architecture/architecture.md)を保ち、SWRやキャッシュ基盤を自動導入しない。
 以下は上流の参照カタログ。既存の課題に関係する規則だけ読み、改善を測定していない場合は性能向上を断定しない。
 
 

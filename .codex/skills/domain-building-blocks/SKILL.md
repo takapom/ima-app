@@ -11,7 +11,7 @@ description: >-
 
 ## ima-appでの適用
 
-[現行アーキテクチャ](../../../docs/architecture.md)を優先する。Coreの既存の関数・readonly型・検証結果を使って不変条件を表現する。例にあるクラスやfp-tsを導入条件としない。公開DTOはcontracts、HTTPとの変換はWorkerが所有する。
+[現行アーキテクチャ](../../../docs/architecture/architecture.md)を優先する。Coreの既存の関数・readonly型・検証結果を使って不変条件を表現する。例にあるクラスやfp-tsを導入条件としない。公開DTOはcontracts、HTTPとの変換はWorkerが所有する。
 
 以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
 
@@ -321,5 +321,5 @@ function bankAccountTransfer(
 関連する判断が必要な場合だけ、次の資料を参照する：
 - [aggregate-design](../aggregate-design/SKILL.md): ビルディングブロックを束ねる集約の設計ルール
 - [domain-model-first](../domain-model-first/SKILL.md): テストファーストでビルディングブロックを実装する開発手順
-- [契約とデータの扱い](../../../docs/contracts.md): 境界での入力検証と内部型
+- [契約とデータの扱い](../../../docs/devlop/contracts.md): 境界での入力検証と内部型
 - [domain-primitives-and-always-valid](../domain-primitives-and-always-valid/SKILL.md): ドメインプリミティブとスマートコンストラクタの設計

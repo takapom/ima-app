@@ -15,9 +15,23 @@ const ignoredDirectories = new Set([
   'dist',
   'node_modules',
 ]);
-const ignoredExtensions = new Set(['.md']);
+const ignoredExtensions = new Set([
+  '.md',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+  '.ico',
+  '.pptx',
+  '.pdf',
+  '.ttf',
+  '.otf',
+]);
+const generatedDirectories = new Set(['apps/mobile/ios/Pods', 'apps/mobile/ios/build']);
 const ignoredFiles = new Set([
   'bun.lock',
+  'apps/mobile/ios/Podfile.lock',
+  'apps/mobile/ios/ima.xcodeproj/project.pbxproj',
   'worker/worker-configuration.d.ts',
   'repomix-output.xml',
 ]);
@@ -37,7 +51,11 @@ export function findFileLineViolations(root = process.cwd()) {
       }
       const path = join(directory, entry.name);
       const relativePath = relative(root, path);
-      if (relativePath === '.codex/skills' || entry.isSymbolicLink()) {
+      if (
+        relativePath === '.codex/skills' ||
+        generatedDirectories.has(relativePath) ||
+        entry.isSymbolicLink()
+      ) {
         continue;
       }
       if (entry.isDirectory()) {

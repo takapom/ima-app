@@ -2,7 +2,7 @@
 
 ## 設定の入口
 
-ローカルの固定データ起動は[開発](development.md#apiキー不要のローカル起動)を参照する。
+ローカルの固定データ起動は[開発](devlop/development.md#apiキー不要のローカル起動)を参照する。
 実環境の設定名と安全な初期値は[.dev.vars.example](../.dev.vars.example)、[.env.example](../.env.example)、[mobile環境例](../apps/mobile/.env.example)、[Wrangler設定](../worker/wrangler.jsonc)、[EAS設定](../apps/mobile/eas.json)で管理する。
 実secret、アカウントID、署名資格は追跡ファイルやコマンド引数へ書かない。Worker secretを端末の公開環境変数へ入れない。
 
@@ -14,7 +14,7 @@
 | 端末・配布     | HTTPS endpoint、実bundle ID、EAS project、Apple署名、App Attest                                                                                                                                       |
 | 有効化         | Provider flags、用途別policy、実アカウント・API・課金・許諾の検収                                                                                                                                     |
 
-キーやflagだけで利用可能と判定しない。runtime factoryはモデル・ホットペッパーの停止flagとsecret、用途別policyを確認する。詳細は[アーキテクチャ](architecture.md)と[Providerポリシー](provider-policy.md)を参照する。
+キーやflagだけで利用可能と判定しない。runtime factoryはモデル・ホットペッパーの停止flagとsecret、用途別policyを確認する。詳細は[アーキテクチャ](architecture/architecture.md)と[Providerポリシー](provider-policy.md)を参照する。
 
 ## preflightと配布判定
 
@@ -83,7 +83,7 @@ env -u EXPO_PUBLIC_FIXTURE_APP_TOKEN \
 
 ### ローカルでの実接続
 
-[実LLMとホットペッパーのローカル起動](development.md#実llmとホットペッパーでのローカル起動)で新しい会話を作り、検索・カード表示・条件変更を実行する。APIの認証失敗・0件・タイムアウトを成功へ補正しない。外部接続はOpenAIとホットペッパーであり、写真・経路・終電は無効。旧Google用のlive smoke runnerは削除済み。
+[実LLMとホットペッパーのローカル起動](devlop/development.md#実llmとホットペッパーでのローカル起動)で新しい会話を作り、検索・カード表示・条件変更を実行する。APIの認証失敗・0件・タイムアウトを成功へ補正しない。外部接続はOpenAIとホットペッパーであり、写真・経路・終電は無効。旧Google用のlive smoke runnerは削除済み。
 
 実行日時、対象profile、モデル版、公開schemaの結果、費用、未測定項目を[実接続Issue](https://github.com/takapom/ima-app/issues/36)へ記録する。raw本文・座標・token・secretは証跡へ含めない。
 

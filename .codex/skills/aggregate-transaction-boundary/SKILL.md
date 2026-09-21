@@ -16,7 +16,7 @@ description: >
 
 ## ima-appでの適用
 
-[現行アーキテクチャ](../../../docs/architecture.md)を優先する。集約の不変条件とDOの保存・revision CASの境界を区別する。独立したDOを単一トランザクションで更新できると仮定せず、既存の再送・確定・保存手順を確認する。結果整合性の例だけを理由にSagaやイベント基盤を追加しない。
+[現行アーキテクチャ](../../../docs/architecture/architecture.md)を優先する。集約の不変条件とDOの保存・revision CASの境界を区別する。独立したDOを単一トランザクションで更新できると仮定せず、既存の再送・確定・保存手順を確認する。結果整合性の例だけを理由にSagaやイベント基盤を追加しない。
 
 以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
 
@@ -260,4 +260,4 @@ Sagaは複数サービスの処理と補償を調整する選択肢であり、�
 関連する判断が必要な場合だけ、次の資料を参照する：
 - [aggregate-design](../aggregate-design/SKILL.md): 集約の設計ルール（トランザクション境界の根拠）
 - [cross-aggregate-constraints](../cross-aggregate-constraints/SKILL.md): 集約間の制約と結果整合性の設計
-- [現行アーキテクチャ](../../../docs/architecture.md#データの正と保存境界): データの正と投影の境界
+- [現行アーキテクチャ](../../../docs/architecture/architecture.md#データの正と保存境界): データの正と投影の境界

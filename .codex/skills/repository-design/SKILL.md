@@ -15,7 +15,7 @@ description: >
 
 ## ima-appでの適用
 
-[現行アーキテクチャ](../../../docs/architecture.md)を優先する。以下の命名・入出力規則は集約Repositoryを設計する場合の指針。既存のOwnerStore・CommitPort・Provider Portへ一律に適用しない。CAS結果や保存結果を返す契約をCQSの一般論だけでvoidへ変えず、async Portと失敗の区別を保つ。
+[現行アーキテクチャ](../../../docs/architecture/architecture.md)を優先する。以下の命名・入出力規則は集約Repositoryを設計する場合の指針。既存のOwnerStore・CommitPort・Provider Portへ一律に適用しない。CAS結果や保存結果を返す契約をCQSの一般論だけでvoidへ変えず、async Portと失敗の区別を保つ。
 
 以下の他言語・他ドメインのコードは設計例であり、このリポジトリの実装・依存を示さない。
 
@@ -76,7 +76,7 @@ fun storeMulti(orders: List<Order>): Int
 ### 同期・非同期パターン
 
 リポジトリは同期型・非同期型いずれでも設計できる。エラーは例外方式またはResult/Either方式を選択する。
-エラー方式は[契約とデータの扱い](../../../docs/contracts.md)と対象Portの実装に合わせる。
+エラー方式は[契約とデータの扱い](../../../docs/devlop/contracts.md)と対象Portの実装に合わせる。
 
 **同期型（例外方式）**:
 
@@ -264,4 +264,4 @@ fun store(order: Order)
 関連する判断が必要な場合だけ、次の資料を参照する：
 - [repository-placement](../repository-placement/SKILL.md): ima-appの永続化Port・Adapterの配置と依存方向
 - [aggregate-design](../aggregate-design/SKILL.md): リポジトリが永続化する集約の設計ルール
-- [契約とデータの扱い](../../../docs/contracts.md): 入出力と失敗の区別
+- [契約とデータの扱い](../../../docs/devlop/contracts.md): 入出力と失敗の区別
