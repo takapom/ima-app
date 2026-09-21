@@ -19,6 +19,7 @@ export type ModelContextEnvelope = {
     readonly savedReferences: ProjectedModelContext['savedReferences'];
     readonly stationDirectory: ProjectedModelContext['stationDirectory'];
     readonly history: ProjectedModelContext['history'];
+    readonly conversationMemory?: ProjectedModelContext['conversationMemory'];
     readonly cardSet: ProjectedModelContext['cardSet'];
     readonly evidence: ProjectedModelContext['evidence'];
     readonly capabilities: ProjectedModelContext['capabilities'];
@@ -65,6 +66,9 @@ const contextEnvelope = (context: ProjectedModelContext): ModelContextEnvelope =
     savedReferences: context.savedReferences,
     stationDirectory: context.stationDirectory,
     history: context.history,
+    ...(context.conversationMemory === undefined
+      ? {}
+      : { conversationMemory: context.conversationMemory }),
     cardSet: context.cardSet,
     evidence: context.evidence,
     capabilities: context.capabilities,

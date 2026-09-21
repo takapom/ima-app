@@ -1,3 +1,8 @@
+import {
+  ConversationMemorySchema,
+  projectConversationMemory,
+  type ProjectedConversationMemory,
+} from '@worker/application/model-context/conversation-memory';
 import * as v from 'valibot';
 import { CandidateStatusSchema, type CandidateStatus } from '@worker/domain/candidates/registry';
 import { CardSetRecordSchema, type CardSetRecord } from '@worker/domain/candidates/continuity';
@@ -138,6 +143,7 @@ const ModelSavedReferencesSchema = v.pipe(
 
 export const ModelContextSourceSchema = v.strictObject({
   harness: HarnessContextSchema,
+  conversationMemory: v.optional(ConversationMemorySchema),
   userText: Text(500),
   history: v.pipe(v.array(ModelHistoryEntrySchema), v.maxLength(32)),
   cardSet: v.nullable(ModelCardSetSourceSchema),
@@ -167,6 +173,7 @@ export type ModelCardSet = {
 };
 
 export type ProjectedModelContext = {
+  readonly conversationMemory?: ProjectedConversationMemory;
   readonly threadId: string;
   readonly turnId: string;
   readonly revision: number;
@@ -286,6 +293,23 @@ export const projectModelContext = (source: unknown): ProjectedModelContext => {
     revision: harness.revision,
     serverNow: harness.serverNow,
     userText: value.userText,
+    ...(value.conversationMemory === undefined
+      ? {}
+      : {
+          conversationMemory: projectConversationMemory(
+            {
+              ...value.conversationMemory,
+              summary: modelContextFieldAllowed(fieldPolicy.history)
+                ? (value.conversationMemory.summary ?? null)
+                : null,
+              entries: modelContextFieldAllowed(fieldPolicy.history)
+                ? value.conversationMemory.entries
+                : [],
+            },
+            harness.ownerScopeRef,
+            harness.serverNow,
+          ),
+        }),
     location: {
       status: harness.location.status,
       areaDescription: harness.preferences.areaText,

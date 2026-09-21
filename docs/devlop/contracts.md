@@ -14,12 +14,18 @@
 
 ## HTTPの利用手順
 
-1. 端末がowner credentialを生成・保持し、`POST /v1/threads`でサーバー発行thread IDを受け取る。
-2. `POST /v1/threads/:threadId/turns`で入力を送り、正規化された公開応答を受け取る。
-3. `GET /v1/threads/:threadId`または`/replay`で同じthreadの状態を取得する。参照のみの復元も正常な区分として扱う。
-4. 保存は`POST /v1/threads/:threadId/saved`、決定は`POST /v1/threads/:threadId/decided`を呼ぶ。
-5. `GET /v1/saved`でownerの参照と決定時刻を取得する。内容の再取得は`GET /v1/saved/:savedPlaceRef/refresh`、削除は`DELETE /v1/saved/:savedPlaceRef`を使う。
-6. 保存済み条件は`GET /v1/prefs`とrevision CAS付き`PUT /v1/prefs`で管理する。
+1. 端末がowner credentialを生成・保持し、`POST /v1/conversations`で会話IDを取得する。
+2. `POST /v1/conversations/:conversationId/turns`へ新しい発言と現在の条件を送り、202でrunを受け取る。ユーザー発言は実行前に保存される。
+3. `GET /v1/conversations`で一覧、`GET /:conversationId`でメタデータ、`GET /:conversationId/messages`で保存済み発言を取得する。末尾2ルートも`/v1/conversations`配下。
+4. `GET /:conversationId/runs/:runId/events`の認証付きSSEで状態と検証済み完成応答を受け取る。切断時は同じrunをGETで再照会し、追加生成しない。文字単位のトークン配信ではない。
+5. `POST /:conversationId/runs/:runId/cancel`で生成を中断する。会話選択や通信断は中断操作と区別する。`DELETE /:conversationId`で会話を削除する。
+6. 保存は`POST /v1/threads/:threadId/saved`、決定は`POST /v1/threads/:threadId/decided`を呼ぶ。
+7. `GET /v1/saved`でownerの参照と決定時刻を取得する。内容の再取得は`GET /v1/saved/:savedPlaceRef/refresh`、削除は`DELETE /v1/saved/:savedPlaceRef`を使う。
+8. 保存済み条件は`GET /v1/prefs`とrevision CAS付き`PUT /v1/prefs`で管理する。
+
+会話APIの正は[conversation-http.ts](../../packages/contracts/src/conversation-http.ts)と[conversation-routes.ts](../../packages/contracts/src/conversation-routes.ts)。会話一覧は更新日時＋IDのcursor、発言はsequenceのbeforeでページ取得する。ownerや全履歴を送信bodyへ入れない。別ownerの会話は404。会話revision競合・同時送信・同じ冪等キーの入力不一致は409。
+会話の送信キー・clientMessageIdは結果不明の再送でも維持する。未完了runは会話ごとに1つ。completedは履歴DBへの回答保存確認後に返る。表示用の完成DTOは短時間の配送用であり、DO再起動後は保存可能な本文と参照だけで復元する。
+既存の`POST /v1/threads`・`POST /v1/threads/:threadId/turns`・read/replayはThread単位の入口として維持する。
 
 `cancel`・`resume`・`restart`・`end`はthreadのライフサイクル操作。`resume`は中断状態を継続し、`restart`は新turnを開始する。thread削除は保存一覧の削除と同義にしない。
 ルートにはほかに検索互換入口、写真、イベント、App Integrityがある。機能別ルーターがmethodとpathを登録し、共通HTTP境界が認証・入力検証・公開エラーへの変換を行う。

@@ -57,3 +57,5 @@ export default {
 
 export { AppIntegrityDO, JourneyDatasetDO, RateLimitDO, TelemetryDO, ThreadDO };
 export { SavedReferenceDO } from '@worker/adapters/out/persistence/saved-references/saved-reference-do';
+
+export { ConversationHistoryDO } from '@worker/entrypoints/cloudflare/conversation-history-do';

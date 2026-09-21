@@ -146,7 +146,14 @@ const defaultPlan = (
     search,
     details,
     retention,
-    modelContext: context.modelContext,
+    modelContext:
+      input.request.conversationMemory === undefined
+        ? context.modelContext
+        : {
+            ...context.modelContext,
+            history: [],
+            conversationMemory: input.request.conversationMemory,
+          },
     validationContext: (at) => ({
       ...validationContextFor(input.context, at.now),
       allowUnknownOpening: true,

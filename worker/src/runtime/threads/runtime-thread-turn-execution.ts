@@ -34,6 +34,9 @@ export const executeRuntimeThreadTurn = async (
         parts: [{ type: 'text' as const, text: input.input.input.text }],
       },
     ],
+    ...(input.input.conversationMemory === undefined
+      ? {}
+      : { conversationMemory: input.input.conversationMemory }),
     runtimeInput: { ...input.input.input, turnId: input.target.turnId },
     isStale: input.isStale,
   };

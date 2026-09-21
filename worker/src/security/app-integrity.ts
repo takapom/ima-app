@@ -19,6 +19,7 @@ export type AppIntegrityPolicy = {
 };
 
 export type AppIntegrityRoute =
+  | 'conversation_turn'
   | 'search'
   | 'place'
   | 'photos'
@@ -167,6 +168,7 @@ const validKeyRef = (value: string): boolean =>
   value.length > 0 && value.length <= KEY_REF_MAX_LENGTH;
 
 const isProtectedRoute = (route: AppIntegrityRoute): boolean =>
+  route === 'conversation_turn' ||
   route === 'search' ||
   route === 'place' ||
   route === 'photos' ||

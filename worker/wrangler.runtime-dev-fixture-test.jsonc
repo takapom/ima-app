@@ -13,6 +13,7 @@
   "durable_objects": {
     "bindings": [
       { "name": "THREADS", "class_name": "ThreadDO" },
+      { "name": "CONVERSATIONS", "class_name": "ConversationHistoryDO" },
       { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
       { "name": "TELEMETRY", "class_name": "TelemetryDO" },
     ],
@@ -20,7 +21,7 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["ThreadDO", "RateLimitDO", "TelemetryDO"],
+      "new_sqlite_classes": ["ThreadDO", "RateLimitDO", "TelemetryDO", "ConversationHistoryDO"],
     },
   ],
 }

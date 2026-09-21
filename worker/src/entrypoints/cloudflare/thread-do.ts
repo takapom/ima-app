@@ -1,3 +1,6 @@
+import { ThreadConversationOutbox } from '@worker/adapters/out/persistence/conversations/thread-conversation-outbox';
+import { isThreadRuntimeTurnInput } from '@worker/runtime/threads/admission';
+import type { ConversationDeliveryScope } from '@worker/runtime/conversations/conversation-delivery';
 import { initializeThreadStorage } from '@worker/adapters/out/persistence/thread/schema';
 import { DurableRuntimeTurnStore } from '@worker/adapters/out/persistence/thread/turn-store';
 import { RuntimeProductionThinkHost } from '@worker/entrypoints/cloudflare/runtime-production-host';
@@ -83,6 +86,7 @@ export class ThreadDO
   private readonly ready: Promise<void>;
   private readonly runtimeController: ThreadRuntimeController;
   private readonly runtimeCommit: DurableCommitPort;
+  private readonly conversationOutbox: ThreadConversationOutbox;
   private readonly sessionExpired = createRuntimeSessionExpiryGate({
     isExpired: () => this.runtimeProductionSessionExpired(),
     readScope: () => {
@@ -114,6 +118,11 @@ export class ThreadDO
 
   constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
     super(ctx, env);
+    this.conversationOutbox = new ThreadConversationOutbox(ctx.storage);
+    this.lifecycle.use({
+      getNextAlarm: () => this.conversationOutbox.nextAlarm(),
+      onAlarm: () => this.conversationOutbox.purge(this.runtimeProductionNow()),
+    });
     this.runtimeCommit = createDurableCommitPort(ctx.storage);
     this.ready = ctx.blockConcurrencyWhile(() =>
       Promise.resolve().then(() => {
@@ -125,6 +134,8 @@ export class ThreadDO
         storage: ctx.storage,
         readBinding: () => runtimeThreadBindingFor(this.rowSync()),
         commitResponse: () => false,
+        onCompleted: (target, result) =>
+          this.conversationOutbox.completed(target, result, this.runtimeProductionNow()),
       }),
       ready: () => this.ready,
       getConnection: () => this.ensureRuntimeThinkConnection(),
@@ -137,6 +148,7 @@ export class ThreadDO
         }),
       onFinalResult: (target, result, durationMs) => {
         this.recordRuntimeTurnTrace(target, result, durationMs);
+        this.ctx.waitUntil(this.lifecycle.rearmAlarm());
       },
       clearMessages: () => this.clearRuntimeMessages(),
     });
@@ -146,7 +158,9 @@ export class ThreadDO
     markComplete: () => void,
   ): Promise<boolean> {
     await this.ready;
-    return this.sessionExpired(markComplete);
+    const expired = await this.sessionExpired(markComplete);
+    if (expired) await this.conversationOutbox.purge(this.runtimeProductionNow());
+    return expired;
   }
 
   /** Runtime composition uses this adapter; the Core port never sees DO or SDK types. */
@@ -401,6 +415,7 @@ export class ThreadDO
         );
       });
       if (cleanupRequired) {
+        this.conversationOutbox.clear();
         await cleanupRuntimeResources({
           cleanupRuntime: () => this.runtimeController.cleanupForDelete(),
           clearContext: () => {
@@ -430,6 +445,28 @@ export class ThreadDO
     return this.runtimeController.runRuntimeTurn(value);
   }
 
+  async runConversationTurn(
+    scope: ConversationDeliveryScope,
+    value: unknown,
+  ): Promise<ThreadRuntimeTurnResult> {
+    await this.ready;
+    if (
+      !isThreadRuntimeTurnInput(value) ||
+      value.ownerScopeRef !== scope.ownerScopeRef ||
+      !(await this.read(scope.ownerScopeRef)).ok
+    )
+      return runtimeFailure('INVALID_ARGUMENT');
+    this.conversationOutbox.bind({ ...scope, target: value });
+    return this.runRuntimeTurn(value);
+  }
+  async readConversationDelivery(scope: ConversationDeliveryScope) {
+    await this.ready;
+    return this.conversationOutbox.read(scope, this.runtimeProductionNow());
+  }
+  async acknowledgeConversationDelivery(scope: ConversationDeliveryScope) {
+    await this.ready;
+    this.conversationOutbox.acknowledge(scope);
+  }
   async cancelRuntimeTurn(value: unknown): Promise<ThreadRuntimeCancelResult> {
     return this.runtimeController.cancelRuntimeTurn(value);
   }

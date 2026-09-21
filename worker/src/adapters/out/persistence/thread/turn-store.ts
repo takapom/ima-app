@@ -73,6 +73,7 @@ const responseColumns =
 
 type DurableRuntimeTurnStoreOptions = {
   readonly storage: DurableObjectStorage;
+  readonly onCompleted?: (target: ThreadRuntimeTarget, result: ThreadRuntimeTurnResult) => void;
   readonly readBinding: () => RuntimeThreadBinding | undefined;
   readonly commitResponse?: (target: ThreadRuntimeTarget, revision: number) => boolean;
 };

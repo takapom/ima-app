@@ -1,3 +1,4 @@
+import type { ConversationHistoryNamespace } from '@worker/adapters/out/persistence/conversations/durable-conversation-store';
 import { DurableRateLimiter } from '@worker/adapters/out/persistence/security/durable-rate-limiter';
 import { createThreadApplicationHandler } from '@worker/adapters/in/http/thread-application';
 export { createThreadScopeAuthorizer } from '@worker/adapters/in/http/thread-application';
@@ -64,6 +65,7 @@ export type BootstrapEnv = {
   readonly APP_INTEGRITY?: AppIntegrityNamespace;
   readonly TELEMETRY?: TelemetryNamespace;
   readonly SAVED_REFERENCES?: SavedReferenceNamespace;
+  readonly CONVERSATIONS?: ConversationHistoryNamespace;
 };
 
 /** 30 device requests and 100 owner requests per hour follows the M05 design ceiling. */
@@ -131,6 +133,12 @@ export const createHttpRouterConfig = (
       : new DurableRateLimiter(env.RATE_LIMITS, options.rateLimit ?? DEFAULT_RATE_LIMIT_CONFIG),
   };
   return {
+    ...(env.CONVERSATIONS === undefined ? {} : { conversations: env.CONVERSATIONS }),
+    conversationReadsRateLimiter: new DurableRateLimiter(
+      env.RATE_LIMITS,
+      { windowMs: 3_600_000, devicePerWindow: 3_600, ownerPerWindow: 12_000 },
+      'conversation-read-v1',
+    ),
     auth: {
       appToken: env.APP_TOKEN ?? '',
       requestIdFactory: options.requestIdFactory ?? (() => crypto.randomUUID()),

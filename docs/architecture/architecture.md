@@ -80,7 +80,10 @@ Coreの単体テストは`worker/src/`の対象実装の近くに置く。Worker
 flowchart TD
   UI[Mobile UI / hooks / state] --> Service[Mobile services]
   Service --> HTTP[Worker HTTP: 認証・入力検証]
-  HTTP --> Thread[ThreadDO: 今夜の実行管理]
+  HTTP --> History[ConversationHistoryDO: 会話・発言・run]
+  History --> Memory[保持判定・直近履歴・抜粋要約]
+  Memory --> Thread[ThreadDO: 今夜の実行管理]
+  Thread -->|確定結果の冪等配送| History
   Thread --> Think[Think SDK native loop]
   Think --> Tools[3 Tool Binding]
   Tools --> App[Core Application / Ports]
@@ -114,18 +117,24 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 
 ## データの正と保存境界
 
-| データ                                 | 正を持つ場所                  | 制約                                            |
-| -------------------------------------- | ----------------------------- | ----------------------------------------------- |
-| 店の名称・営業時間・写真・経路         | 外部Provider                  | 用途別許可・帰属・期限を検証する                |
-| 保存済みprefs・店舗identity・decidedAt | owner単位の`SavedReferenceDO` | 店の本文を埋め込まない                          |
-| 今夜の会話実行・確定参照               | `ThreadDO`                    | session期限と保存前制御を適用する               |
-| 端末prefs・保存一覧・決定時刻          | SQLiteの投影                  | サーバー再取得で更新し、失敗時のstaleを明示する |
-| 終電dataset                            | `JourneyDatasetDO`            | revision CASと検証期限を持つ共有データ          |
-| 運用イベント                           | `TelemetryDO`                 | 固定項目のみ。本文・秘密・生座標を記録しない    |
+| データ                                 | 正を持つ場所                       | 制約                                            |
+| -------------------------------------- | ---------------------------------- | ----------------------------------------------- |
+| 店の名称・営業時間・写真・経路         | 外部Provider                       | 用途別許可・帰属・期限を検証する                |
+| 保存済みprefs・店舗identity・decidedAt | owner単位の`SavedReferenceDO`      | 店の本文を埋め込まない                          |
+| 会話一覧・発言・送信状態               | owner単位の`ConversationHistoryDO` | ユーザー原文は削除まで、回答は保持判定付き      |
+| 今夜の会話実行・確定参照               | `ThreadDO`                         | session期限と保存前制御を適用する               |
+| 端末prefs・保存一覧・決定時刻          | SQLiteの投影                       | サーバー再取得で更新し、失敗時のstaleを明示する |
+| 終電dataset                            | `JourneyDatasetDO`                 | revision CASと検証期限を持つ共有データ          |
+| 運用イベント                           | `TelemetryDO`                      | 固定項目のみ。本文・秘密・生座標を記録しない    |
 
 [OwnerStore](../../worker/src/application/ports/owner-store.ts)はCoreが所有するasync Port。HTTP AdapterとCore Applicationは[DO Adapter](../../worker/src/adapters/out/persistence/saved-references/durable-owner-store.ts)経由で永続化する。
 bindingは`SAVED_REFERENCES`、owner shard名は`saved-reference-owner:{ownerScopeRef}`。ThreadDOへprefsをコピーして独立した正にしない。
 検索bodyのprefsは今夜の上書きであり、暗黙の永続writeにしない。D1 Adapterや汎用Repositoryは必要になるまで追加しない。
+
+会話の長期IDと期限付きThreadのIDを分ける。Threadが失効しても同じ会話へ新Threadを紐づけ、候補・観測IDは移植しない。会話Store・run・memoryのPortは`application/ports`、SQLite実装は`adapters/out/persistence/conversations`、実行連携は`runtime/conversations`が担う。
+発言＋run受付、回答＋run完了はそれぞれ会話DO内で原子的に保存する。Threadの確定結果と未配送記録を同じトランザクションに含め、再照会・alarmで履歴へ冪等配送する。実行成否不明の生成を再実行せず、上限時間で中断を記録する。
+モデル入力は受理した発言より前の直近履歴と、古いユーザー発言の抜粋要約。要約は元メッセージID・範囲・版を持つ派生データで、全会話を網羅する意味要約ではない。Provider生結果や古い事実を新しい根拠にしない。
+会話削除は本文・要約・タイトルを除去して削除印を残す。関連Threadの削除失敗は本文を含まないキューで再試行する。端末SQLiteはowner/endpoint別キャッシュであり、サーバーが正を持つ。
 
 ## 境界の検証
 

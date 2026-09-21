@@ -1,3 +1,4 @@
+import type { ConversationMemory } from '@worker/application/model-context/conversation-memory';
 import { RuntimeThinkConnectionError } from '@worker/runtime/turn-execution/runtime-think-connection-errors';
 export {
   RuntimeThinkConnectionError,
@@ -49,6 +50,7 @@ export type RuntimeThinkTurnRequest = {
   readonly deviceId?: string;
   /** Validated Worker input for the turn builder; this is never sent as an SDK message. */
   readonly runtimeInput?: ThreadTurnRequest;
+  readonly conversationMemory?: ConversationMemory;
   readonly signal?: AbortSignal;
   readonly isStale?: () => boolean;
 };

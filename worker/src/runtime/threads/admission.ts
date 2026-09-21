@@ -1,3 +1,7 @@
+import {
+  ConversationMemorySchema,
+  type ConversationMemory,
+} from '@worker/application/model-context/conversation-memory';
 import * as v from 'valibot';
 import {
   AssistantResponseSchema,
@@ -19,6 +23,7 @@ export type ThreadRuntimeTurnInput = ThreadRuntimeTarget & {
   readonly deviceId?: string;
   /** Validated Worker request; the DO creates the SDK user message from `text`. */
   readonly input: ThreadTurnRequest;
+  readonly conversationMemory?: ConversationMemory;
 };
 
 export type ThreadRuntimeRunStatus = 'completed' | 'cancelled' | 'failed' | 'stale';
@@ -117,6 +122,11 @@ export const isThreadRuntimeTurnInput = (value: unknown): value is ThreadRuntime
   if (!('idempotencyKey' in value) || !('input' in value)) return false;
   if (!isNonEmptyText(value.idempotencyKey)) return false;
   if ('deviceId' in value && !isOpaqueText(value.deviceId)) return false;
+  if (
+    'conversationMemory' in value &&
+    !v.safeParse(ConversationMemorySchema, value.conversationMemory).success
+  )
+    return false;
   const parsed = v.safeParse(ThreadTurnRequestSchema, value.input);
   if (!parsed.success) return false;
   const request = parsed.output;

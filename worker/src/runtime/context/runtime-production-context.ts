@@ -45,7 +45,13 @@ type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 
 export type RuntimeProductionModelContext = Pick<
   ModelContextSource,
-  'userText' | 'history' | 'cardSet' | 'evidence' | 'savedReferences' | 'fieldPolicy'
+  | 'userText'
+  | 'history'
+  | 'cardSet'
+  | 'evidence'
+  | 'savedReferences'
+  | 'fieldPolicy'
+  | 'conversationMemory'
 >;
 
 type ProductionContextState = {

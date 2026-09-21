@@ -13,3 +13,5 @@ const fetch: ProductionFetch = (request, env, executionContext) => {
 export { ThreadDO } from './runtime-dev-llm';
 export { RateLimitDO, TelemetryDO };
 export default { fetch } satisfies { fetch: ProductionFetch };
+
+export { ConversationHistoryDO } from '@worker/entrypoints/cloudflare/conversation-history-do';

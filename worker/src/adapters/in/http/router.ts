@@ -1,3 +1,4 @@
+import { conversationRouter } from '@worker/adapters/in/http/conversation-router';
 import { Hono } from 'hono';
 import { REQUEST_ID_HEADER } from '@ima/contracts';
 import { isValidRequestId } from '@worker/adapters/in/http/input';
@@ -48,6 +49,7 @@ app.onError((error, context) => boundaryErrorResponse(context, error));
 app.notFound(notFoundResponse);
 
 app.route('/v1/threads', threadRouter);
+app.route('/v1/conversations', conversationRouter);
 app.route('/v1/prefs', prefsRouter);
 app.route('/v1/saved', savedRouter);
 app.route('/v1/photos', photoRouter);

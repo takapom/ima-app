@@ -27,6 +27,7 @@ type PersistenceOutcome = {
 
 export type RuntimeResultPersistenceOptions = {
   readonly storage: DurableObjectStorage;
+  readonly onCompleted?: (target: ThreadRuntimeTarget, result: ThreadRuntimeTurnResult) => void;
   readonly target: ThreadRuntimeTarget;
   readonly result: ThreadRuntimeTurnResult;
   /** Test-only compatibility hook for a non-durable CommitPort fixture. */
@@ -81,6 +82,7 @@ export const persistRuntimeResult = (
         metadata.responseId,
         metadata.revision,
       );
+      options.onCompleted?.(target, result);
       return { status: 'completed', committed: true, failureCode: null };
     }
 
@@ -100,6 +102,7 @@ export const persistRuntimeResult = (
         target.turnId,
         target.revision,
       );
+      if (committed) options.onCompleted?.(target, result);
       return {
         status,
         committed,
