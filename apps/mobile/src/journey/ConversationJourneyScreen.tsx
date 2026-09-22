@@ -44,6 +44,11 @@ export function ConversationJourneyScreen({
             messages={state.messages}
             liveMessages={liveMessages}
             onSourcePress={onSourcePress}
+            syncError={state.syncError}
+            unsyncedTurnId={state.syncError === null ? null : (state.run?.turnId ?? null)}
+            onRetrySync={() => {
+              void conversation.retry().catch(conversation.reportError);
+            }}
             loading={state.loading}
             hasOlder={state.beforeSequence !== null}
             onOlder={() => {

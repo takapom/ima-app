@@ -20,3 +20,33 @@ export const conversationTranscriptParts = (
         retention: message.retention,
       }));
 };
+
+/** Unsynced live text is a display row only; it never enters the persisted message collection. */
+export const conversationTranscriptEntries = (
+  records: readonly ConversationMessage[],
+  liveMessages: readonly AssistantMessageRecord[],
+  unsyncedTurnId: string | null,
+): readonly Pick<ConversationMessage['message'], 'messageId' | 'role' | 'parts'>[] => {
+  const entries = records.map((record) => ({
+    messageId: record.message.messageId,
+    role: record.message.role,
+    parts: conversationTranscriptParts(record, liveMessages),
+  }));
+  const missing = liveMessages.filter(
+    (item) =>
+      item.turnId === unsyncedTurnId &&
+      item.message.retention.displayPolicyStatus === 'available' &&
+      !records.some((record) => record.message.source?.responseId === item.responseId),
+  );
+  if (missing.length > 0)
+    entries.push({
+      messageId: `live-${unsyncedTurnId}`,
+      role: 'assistant',
+      parts: missing.map(({ message }) => ({
+        kind: 'retained_text',
+        text: message.text,
+        retention: message.retention,
+      })),
+    });
+  return entries;
+};

@@ -7,7 +7,10 @@ import type {
 } from '@ima/contracts';
 import type { ConversationClient } from '@mobile/platform/http/conversation-client';
 import type { ConversationCache } from '@mobile/platform/sqlite/conversation-cache';
-import type { ApiResult } from '@mobile/platform/http/api';
+import {
+  resultData,
+  mergeMessages,
+} from '@mobile/journey/services/conversations/conversation-controller-support';
 import {
   applyAssistantResponse,
   createAssistantResponseState,
@@ -25,6 +28,7 @@ export type ConversationState = {
   readonly pending: boolean;
   readonly listError: boolean;
   readonly error: string | null;
+  readonly syncError: string | null;
   readonly nextCursor: string | null;
   readonly beforeSequence: number | null;
 };
@@ -38,27 +42,12 @@ const initialState = (): ConversationState => ({
   pending: false,
   listError: false,
   error: null,
+  syncError: null,
   nextCursor: null,
   beforeSequence: null,
 });
 const pendingRun = (run: ConversationRun | null) =>
   run?.status === 'accepted' || run?.status === 'running';
-const resultData = <T>(result: ApiResult<T>): T => {
-  if (!result.ok)
-    throw new Error(
-      result.error.kind === 'http' && result.error.status === 404
-        ? 'NOT_FOUND'
-        : 'CONVERSATION_REQUEST_FAILED',
-    );
-  return result.data;
-};
-const mergeMessages = (
-  left: readonly ConversationMessage[],
-  right: readonly ConversationMessage[],
-) =>
-  [
-    ...new Map([...left, ...right].map((message) => [message.message.messageId, message])).values(),
-  ].sort((a, b) => a.sequence - b.sequence);
 
 export class ConversationController {
   private state = initialState();
@@ -166,12 +155,16 @@ export class ConversationController {
       pending: false,
       error: null,
       beforeSequence: null,
+      syncError: null,
     });
   }
   async select(id: string): Promise<void> {
+    const sameConversation = this.state.selected?.conversationId === id;
     const epoch = this.invalidate();
-    this.retryable = null;
-    this.draft = null;
+    if (!sameConversation) {
+      this.retryable = null;
+      this.draft = null;
+    }
     let cached: readonly ConversationMessage[] = [];
     try {
       cached = this.options.cache?.messages(id) ?? [];
@@ -179,10 +172,13 @@ export class ConversationController {
       /* Network read below supplies the authoritative state. */
     }
     this.update({
-      selected: this.state.conversations.find((item) => item.conversationId === id) ?? null,
-      messages: cached,
-      run: null,
-      responseState: null,
+      selected: sameConversation
+        ? this.state.selected
+        : (this.state.conversations.find((item) => item.conversationId === id) ?? null),
+      messages: sameConversation ? this.state.messages : cached,
+      run: sameConversation ? this.state.run : null,
+      responseState: sameConversation ? this.state.responseState : null,
+      syncError: sameConversation ? this.state.syncError : null,
       loading: true,
       pending: false,
       error: null,
@@ -201,16 +197,18 @@ export class ConversationController {
         messages.messages.some((item) => item.conversationId !== id)
       )
         throw new Error('CONVERSATION_SCOPE_MISMATCH');
+      const run = selected.activeRun ?? (sameConversation ? this.state.run : null);
       this.update({
         selected: selected.conversation,
         messages: messages.messages,
-        run: selected.activeRun,
+        run,
         loading: false,
-        pending: pendingRun(selected.activeRun),
+        pending: pendingRun(run),
         beforeSequence: messages.nextBeforeSequence,
+        syncError: null,
       });
       this.cacheCurrent();
-      if (selected.activeRun !== null) await this.watch(id, selected.activeRun.runId, epoch);
+      if (run !== null && pendingRun(run)) await this.watch(id, run.runId, epoch);
     } catch (error) {
       if (!this.current(epoch)) return;
       if (error instanceof Error && error.message === 'NOT_FOUND') {
@@ -222,7 +220,13 @@ export class ConversationController {
         this.newConversation();
         this.update({ error: 'この会話は削除されています。' });
         await this.refreshList();
-      } else
+      } else if (sameConversation && this.state.responseState !== null)
+        this.update({
+          loading: false,
+          pending: false,
+          syncError: '履歴を同期できませんでした。再取得してください。',
+        });
+      else
         this.update({
           loading: false,
           pending: false,
@@ -291,10 +295,24 @@ export class ConversationController {
   private async sendRetryable(epoch: number): Promise<void> {
     const pending = this.retryable;
     if (pending === null) return;
-    const result = resultData(
-      await this.options.client.send(pending.id, pending.request, { signal: this.abort.signal }),
-    );
+    const sent = await this.options.client.send(pending.id, pending.request, {
+      signal: this.abort.signal,
+    });
     if (!this.current(epoch)) return;
+    if (!sent.ok && sent.error.kind === 'http' && sent.error.status === 409) {
+      this.retryable = null;
+      this.draft = {
+        ...pending.request,
+        clientMessageId: this.options.id(),
+        idempotencyKey: this.options.id(),
+      };
+      const refreshedEpoch = this.epoch + 1;
+      await this.select(pending.id);
+      if (this.current(refreshedEpoch) && this.state.selected?.conversationId === pending.id)
+        this.update({ error: '会話が更新されています。履歴を確認して再送してください。' });
+      return;
+    }
+    const result = resultData(sent);
     if (
       result.conversation.conversationId !== pending.id ||
       result.run.userMessageId !== pending.request.clientMessageId
@@ -347,20 +365,26 @@ export class ConversationController {
           : null,
     });
     if (!pendingRun(value.run)) {
-      const page = resultData(
-        await this.options.client.messages(value.conversation.conversationId, null, {
-          signal: this.abort.signal,
-        }),
-      );
-      if (!this.current(epoch)) return;
-      if (page.messages.some((message) => message.conversationId !== value.run.conversationId))
-        throw new Error('CONVERSATION_SCOPE_MISMATCH');
-      this.update({
-        messages: mergeMessages(this.state.messages, page.messages),
-        beforeSequence: this.state.beforeSequence ?? page.nextBeforeSequence,
-      });
-      this.cacheCurrent();
-      await this.refreshList();
+      try {
+        const page = resultData(
+          await this.options.client.messages(value.conversation.conversationId, null, {
+            signal: this.abort.signal,
+          }),
+        );
+        if (!this.current(epoch)) return;
+        if (page.messages.some((message) => message.conversationId !== value.run.conversationId))
+          throw new Error('CONVERSATION_SCOPE_MISMATCH');
+        this.update({
+          messages: mergeMessages(this.state.messages, page.messages),
+          beforeSequence: this.state.beforeSequence ?? page.nextBeforeSequence,
+        });
+        this.cacheCurrent();
+        await this.refreshList();
+        if (this.current(epoch)) this.update({ syncError: null });
+      } catch {
+        if (this.current(epoch))
+          this.update({ syncError: '回答の状態は確認済みですが、履歴を同期できませんでした。' });
+      }
     }
   }
   private async watch(id: string, runId: string, epoch: number): Promise<void> {

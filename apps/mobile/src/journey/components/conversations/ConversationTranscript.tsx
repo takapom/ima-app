@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { AssistantMessageRecord } from '@mobile/journey/state/assistant-response';
-import { conversationTranscriptParts } from '@mobile/journey/services/conversations/conversation-transcript';
+import { conversationTranscriptEntries } from '@mobile/journey/services/conversations/conversation-transcript';
 import type { ConversationMessage } from '@ima/contracts';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 import { AttributionList } from '@mobile/ui/AttributionList';
@@ -12,6 +12,9 @@ export function ConversationTranscript({
   hasOlder,
   onOlder,
   onSourcePress,
+  syncError,
+  unsyncedTurnId,
+  onRetrySync,
 }: {
   readonly messages: readonly ConversationMessage[];
   readonly liveMessages: readonly AssistantMessageRecord[];
@@ -19,6 +22,9 @@ export function ConversationTranscript({
   readonly hasOlder: boolean;
   readonly onOlder: () => void;
   readonly onSourcePress: (sourceLink: string) => void;
+  readonly syncError: string | null;
+  readonly unsyncedTurnId: string | null;
+  readonly onRetrySync: () => void;
 }): React.JSX.Element {
   return (
     <View style={styles.transcript}>
@@ -37,13 +43,10 @@ export function ConversationTranscript({
           会話を読み込んでいます…
         </Text>
       ) : null}
-      {messages.map((record) => (
-        <View
-          key={record.message.messageId}
-          style={[styles.message, record.message.role === 'user' && styles.user]}
-        >
-          <Text style={styles.role}>{record.message.role === 'user' ? 'あなた' : 'ima.'}</Text>
-          {conversationTranscriptParts(record, liveMessages).map((part, index) =>
+      {conversationTranscriptEntries(messages, liveMessages, unsyncedTurnId).map((entry) => (
+        <View key={entry.messageId} style={[styles.message, entry.role === 'user' && styles.user]}>
+          <Text style={styles.role}>{entry.role === 'user' ? 'あなた' : 'ima.'}</Text>
+          {entry.parts.map((part, index) =>
             part.kind === 'user_text' || part.kind === 'retained_text' ? (
               <View key={index}>
                 <Text selectable style={styles.text}>
@@ -67,6 +70,21 @@ export function ConversationTranscript({
           )}
         </View>
       ))}
+      {syncError !== null ? (
+        <View>
+          <Text accessibilityLiveRegion="polite" style={styles.muted}>
+            {syncError}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            disabled={loading}
+            onPress={onRetrySync}
+            style={styles.more}
+          >
+            <Text style={styles.muted}>履歴を再取得</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }

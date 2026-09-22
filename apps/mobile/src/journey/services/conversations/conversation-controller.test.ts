@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type {
+  AssistantResponse,
   Conversation,
   ConversationMessage,
   ConversationRunResponse,
@@ -8,6 +9,50 @@ import type {
 import type { ConversationClient } from '@mobile/platform/http/conversation-client';
 import { ConversationController } from '@mobile/journey/services/conversations/conversation-controller';
 import type { ApiResult } from '@mobile/platform/http/api';
+import { projectAssistantResponseState } from '@mobile/journey/state/assistant-response-projection';
+import { selectAssistantMessageRecords } from '@mobile/journey/state/assistant-response';
+import { conversationTranscriptEntries } from '@mobile/journey/services/conversations/conversation-transcript';
+
+const liveAnswer = (): AssistantResponse => {
+  const text = {
+    text: 'その場で表示できる回答',
+    basis: 'conversational' as const,
+    evidence: [],
+    evidenceIds: [],
+    retention: {
+      retentionDecision: 'deny' as const,
+      retentionMode: 'session_only' as const,
+      sessionExpiresAt: '2026-09-21T11:00:00Z',
+      freshUntil: null,
+      displayUntil: '2026-09-21T11:00:00Z',
+      retentionUntil: null,
+      deletionScheduledAt: null,
+      attribution: null,
+      restoreMode: 'reference_only' as const,
+      policyStatus: 'policy_withheld' as const,
+      displayPolicyStatus: 'available' as const,
+    },
+  };
+  return {
+    schemaVersion: 'v1',
+    threadId: 'thread-a',
+    turnId: 'turn-a',
+    responseId: 'response-a',
+    revision: 2,
+    kind: 'cards',
+    presentation: 'replace',
+    cardSetId: 'cards-a',
+    message: [text],
+    cards: {
+      hero: {
+        candidateId: 'candidate',
+        facts: { identity: { status: 'unknown', reason: 'fixture' } },
+        why: text,
+      },
+      alts: [],
+    },
+  };
+};
 
 const now = '2026-09-21T10:00:00.000Z';
 const conversation = (id: string): Conversation => ({
@@ -135,6 +180,131 @@ const make = (api: ConversationClient) =>
   });
 
 describe('conversation controller', () => {
+  it('retains live text and cards on same-conversation refresh, still expires them, and clears on a different conversation', async () => {
+    const controller = make({
+      ...client(),
+      send: () => Promise.resolve(ok({ ...run('a', 'completed'), response: liveAnswer() })),
+    });
+    await controller.activate();
+    await controller.select('a');
+    await controller.submit(input);
+    const response = controller.getSnapshot().responseState;
+    expect(response?.cards).not.toBeNull();
+    controller.expire();
+    await controller.select('a');
+    expect(controller.getSnapshot().responseState).toBe(response);
+    if (response === null) throw new Error('MISSING_RESPONSE');
+    const expired = projectAssistantResponseState(response, '2026-09-21T11:00:00Z');
+    expect(expired.cards?.hero.why.retention.displayPolicyStatus).toBe('expired');
+    expect(
+      conversationTranscriptEntries([], selectAssistantMessageRecords(expired), 'turn-a'),
+    ).toEqual([]);
+    await controller.select('b');
+    expect(controller.getSnapshot().responseState).toBeNull();
+    controller.dispose();
+  });
+
+  it('keeps a completed live answer visible during history sync failure and retries only the read', async () => {
+    const completed = { ...run('a', 'completed'), response: liveAnswer() };
+    const saved: ConversationMessage = {
+      conversationId: 'a',
+      sequence: 2,
+      createdAt: now,
+      message: {
+        messageId: 'answer-a',
+        role: 'assistant',
+        source: { threadId: 'thread-a', turnId: 'turn-a', responseId: 'response-a' },
+        parts: [{ kind: 'unavailable', reason: 'policy_withheld' }],
+      },
+    };
+    let reads = 0;
+    const api = client();
+    const send = vi.fn<ConversationClient['send']>().mockResolvedValue(ok(completed));
+    const controller = make({
+      ...api,
+      send,
+      messages: async (id) => {
+        reads++;
+        if (reads === 2) return { ok: false, requestId: 'request', error: { kind: 'offline' } };
+        const result = await api.messages(id);
+        return result.ok && reads > 2
+          ? ok({ ...result.data, messages: [message('a'), saved] })
+          : result;
+      },
+    });
+    await controller.select('a');
+    await controller.submit(input);
+    const received = controller.getSnapshot();
+    expect(received).toMatchObject({ error: null, pending: false, run: { status: 'completed' } });
+    expect(received.syncError).not.toBeNull();
+    if (received.responseState === null) throw new Error('MISSING_RESPONSE');
+    const entries = conversationTranscriptEntries(
+      received.messages,
+      selectAssistantMessageRecords(received.responseState),
+      'turn-a',
+    );
+    expect(JSON.stringify(entries)).toContain('その場で表示できる回答');
+    expect(JSON.stringify(received.messages)).not.toContain('その場で表示できる回答');
+    await controller.retry();
+    expect(send).toHaveBeenCalledOnce();
+    expect(controller.getSnapshot().syncError).toBeNull();
+    expect(controller.getSnapshot().responseState).toBe(received.responseState);
+    expect(controller.getSnapshot().messages).toContainEqual(saved);
+    controller.dispose();
+  });
+
+  it('refreshes the revision after a definitive 409 and resends only on user retry', async () => {
+    let revision = 1;
+    const send = vi
+      .fn<ConversationClient['send']>()
+      .mockImplementationOnce(() => {
+        revision = 3;
+        return Promise.resolve({
+          ok: false,
+          requestId: 'request',
+          error: {
+            kind: 'http',
+            status: 409,
+            retryAfterSeconds: null,
+            publicError: {
+              schemaVersion: 'v1',
+              requestId: 'request',
+              status: 409,
+              code: 'CONFLICT',
+              message: '会話が更新されています',
+            },
+          },
+        });
+      })
+      .mockImplementationOnce((_id, request) => {
+        const result = run('a', 'completed');
+        return Promise.resolve(
+          ok({ ...result, run: { ...result.run, userMessageId: request.clientMessageId } }),
+        );
+      });
+    const controller = make({
+      ...client(),
+      send,
+      get: () =>
+        Promise.resolve(
+          ok({
+            schemaVersion: 'v1',
+            requestId: 'request',
+            conversation: { ...conversation('a'), revision },
+            activeRun: null,
+          }),
+        ),
+    });
+    await controller.select('a');
+    await controller.submit(input);
+    expect(send).toHaveBeenCalledOnce();
+    expect(controller.getSnapshot().selected?.revision).toBe(3);
+    await controller.retry();
+    expect(send.mock.calls[1]?.[1]).toMatchObject({ text: input.text, expectedRevision: 3 });
+    expect(send.mock.calls[1]?.[1].idempotencyKey).not.toBe(send.mock.calls[0]?.[1].idempotencyKey);
+    expect(controller.getSnapshot().error).toBeNull();
+    controller.dispose();
+  });
   it('restores a conversation, continues at its saved revision, deletes it, and starts empty', async () => {
     const restored = { ...conversation('a'), revision: 3, lastSequence: 2 };
     const oldAnswer: ConversationMessage = {
@@ -232,6 +402,12 @@ describe('conversation controller', () => {
     await controller.submit({ ...input, clientMessageId: 'second', idempotencyKey: 'second' });
     expect(send).toHaveBeenCalledOnce();
     expect(controller.getSnapshot().error).toContain('処理中');
+    readRun.mockResolvedValue(ok(run('a', 'completed')));
+    await controller.select('a');
+    expect(controller.getSnapshot()).toMatchObject({
+      pending: false,
+      run: { status: 'completed' },
+    });
     controller.dispose();
   });
   it('ignores a completed stream from a conversation selected before the current one', async () => {

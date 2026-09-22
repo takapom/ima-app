@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { ConversationMessage, PublicMessage } from '@ima/contracts';
-import { conversationTranscriptParts } from '@mobile/journey/services/conversations/conversation-transcript';
+import {
+  conversationTranscriptParts,
+  conversationTranscriptEntries,
+} from '@mobile/journey/services/conversations/conversation-transcript';
 const saved: ConversationMessage = {
   conversationId: 'conversation',
   sequence: 2,
@@ -32,6 +35,37 @@ const message: PublicMessage = {
   },
 };
 describe('conversation display projection', () => {
+  it('shows unsynced current-turn text once, never persists it, and excludes expired or other-turn text', () => {
+    const live = {
+      responseId: 'response',
+      turnId: 'turn',
+      revision: 2,
+      declaredCardSetId: null,
+      cardSetId: null,
+      message,
+    };
+    expect(conversationTranscriptEntries([], [live], 'turn')).toMatchObject([
+      { role: 'assistant', parts: [{ text: message.text }] },
+    ]);
+    expect(conversationTranscriptEntries([saved], [live], 'turn')).toHaveLength(1);
+    expect(conversationTranscriptEntries([], [live], 'another-turn')).toEqual([]);
+    expect(
+      conversationTranscriptEntries(
+        [],
+        [
+          {
+            ...live,
+            message: {
+              ...message,
+              retention: { ...message.retention, displayPolicyStatus: 'expired' },
+            },
+          },
+        ],
+        'turn',
+      ),
+    ).toEqual([]);
+    expect(saved.message.parts).toEqual([{ kind: 'unavailable', reason: 'policy_withheld' }]);
+  });
   it('shows a projected live answer without mutating its non-persistable history record', () => {
     const live = {
       responseId: 'response',
