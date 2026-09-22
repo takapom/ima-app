@@ -65,30 +65,39 @@ describe('conversation recovery and bounded memory', () => {
         let outbox = new ThreadConversationOutbox(state.storage);
         outbox.bind({ ...deliveryScope, target });
         const complete = () =>
-          outbox.completed(
-            target,
+          outbox.commit(
             {
-              status: 'completed',
-              requestId: 'request',
-              response: {
+              expectedRevision: target.revision,
+              record: {
                 schemaVersion: 'v1',
-                threadId: target.threadId,
+                scope: { ownerScopeRef: target.ownerScopeRef, threadId: target.threadId },
                 turnId: target.turnId,
+                idempotencyKey: 'commit',
                 responseId: 'answer',
                 revision: 2,
-                kind: 'message',
+                payloadDigest: 'digest',
                 presentation: 'keep',
-                cardSetId: null,
-                message: [
-                  {
-                    text: '静かな店を探します',
-                    basis: 'conversational',
-                    evidenceIds: [],
-                    evidence: [],
-                    retention,
-                  },
-                ],
+                references: { candidateIds: [], observationIds: [] },
               },
+            },
+            {
+              schemaVersion: 'v1',
+              threadId: target.threadId,
+              turnId: target.turnId,
+              responseId: 'answer',
+              revision: 2,
+              kind: 'message',
+              presentation: 'keep',
+              cardSetId: null,
+              message: [
+                {
+                  text: '静かな店を探します',
+                  basis: 'conversational',
+                  evidenceIds: [],
+                  evidence: [],
+                  retention,
+                },
+              ],
             },
             now,
           );

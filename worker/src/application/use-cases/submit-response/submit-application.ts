@@ -14,6 +14,7 @@ import {
   type CommitPort,
   type CommitReceipt,
   type CommitReferences,
+  type CommitRecord,
   CommitRecordSchema,
 } from '@worker/application/ports/commit';
 import {
@@ -121,7 +122,7 @@ const responseKey = (scope: RegistryScope, turnId: string, responseId: string): 
 
 /**
  * Validates model output, records a reference-only CAS receipt, and keeps the assembled response
- * in memory for the current turn. Durable adapters never receive the assembled response.
+ * in memory for the current turn. The optional preparation hook keeps transport mapping outside Core.
  */
 export class SubmitApplication {
   private readonly ephemeralResponses = new Map<string, EphemeralResponse>();
@@ -131,6 +132,7 @@ export class SubmitApplication {
     private readonly commits: CommitPort,
     private readonly ids: Pick<IdPort, 'nextResponseId'>,
     private readonly hashes: CommitHashPort,
+    private readonly prepareCommit?: (record: CommitRecord, response: CommittedResponse) => void,
   ) {}
 
   commitCards(
@@ -232,6 +234,7 @@ export class SubmitApplication {
     };
     const parsedRecord = v.safeParse(CommitRecordSchema, recordCandidate);
     if (!parsedRecord.success) return schemaFailure('generated commit record is invalid');
+    this.prepareCommit?.(parsedRecord.output, structuredClone(response));
     const rawResult = await this.commits.commit({
       expectedRevision: request.expectedRevision,
       record: parsedRecord.output,

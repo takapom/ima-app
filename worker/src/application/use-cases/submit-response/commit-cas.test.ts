@@ -135,6 +135,37 @@ const message = (text: string) => ({
 });
 
 describe('BarrierCommit CAS', () => {
+  it('does not commit when response preparation fails', async () => {
+    const fixture = makeFixture([], {
+      originRef: null,
+      maxWalkMinutes: null,
+      requireLastOrderAtArrival: false,
+    });
+    const commits = new InMemoryCommitPort();
+    commits.startTurn(fixture.context.scope, 'turn', 1);
+    const application = new SubmitApplication(
+      commits,
+      { nextResponseId: () => 'response' },
+      new FixtureCommitHash(),
+      (record, prepared) => {
+        expect(record.responseId).toBe('response');
+        expect(prepared.presentation).toBe('keep');
+        throw new Error('PREPARATION_FAILED');
+      },
+    );
+    await expect(
+      application.commitMessage(message('条件を確認しました'), fixture.context, fixture.registry, {
+        scope: fixture.context.scope,
+        turnId: 'turn',
+        expectedRevision: 1,
+        idempotencyKey: 'commit',
+      }),
+    ).rejects.toThrow('PREPARATION_FAILED');
+    expect(commits.calls).toBe(0);
+    expect(
+      application.getCommittedResponse(fixture.context.scope, 'turn', 'response'),
+    ).toBeUndefined();
+  });
   it('allows only one side of a same-revision concurrent submit to commit', async () => {
     const fixture = makeFixture([], {
       originRef: null,

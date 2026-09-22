@@ -7,7 +7,7 @@ export const ConversationScopeSchema = v.strictObject({
   ownerScopeRef: OpaqueIdSchema,
   conversationId: OpaqueIdSchema,
 });
-const PageLimitSchema = v.pipe(v.number(), v.safeInteger(), v.minValue(1), v.maxValue(50));
+const PageLimitSchema = v.pipe(v.number(), v.safeInteger(), v.minValue(1), v.maxValue(100));
 
 export const CreateConversationInputSchema = v.strictObject({
   ...ConversationScopeSchema.entries,

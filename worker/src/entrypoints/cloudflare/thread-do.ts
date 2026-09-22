@@ -123,7 +123,10 @@ export class ThreadDO
       getNextAlarm: () => this.conversationOutbox.nextAlarm(),
       onAlarm: () => this.conversationOutbox.purge(this.runtimeProductionNow()),
     });
-    this.runtimeCommit = createDurableCommitPort(ctx.storage);
+    this.runtimeCommit = createDurableCommitPort(ctx.storage, {
+      outbox: this.conversationOutbox,
+      now: () => this.runtimeProductionNow(),
+    });
     this.ready = ctx.blockConcurrencyWhile(() =>
       Promise.resolve().then(() => {
         initializeThreadStorage(ctx.storage);
@@ -148,7 +151,11 @@ export class ThreadDO
         }),
       onFinalResult: (target, result, durationMs) => {
         this.recordRuntimeTurnTrace(target, result, durationMs);
-        this.ctx.waitUntil(this.lifecycle.rearmAlarm());
+        this.ctx.waitUntil(
+          this.conversationOutbox
+            .purge(this.runtimeProductionNow())
+            .then(() => this.lifecycle.rearmAlarm()),
+        );
       },
       clearMessages: () => this.clearRuntimeMessages(),
     });
@@ -159,7 +166,7 @@ export class ThreadDO
   ): Promise<boolean> {
     await this.ready;
     const expired = await this.sessionExpired(markComplete);
-    if (expired) await this.conversationOutbox.purge(this.runtimeProductionNow());
+    if (expired) await this.conversationOutbox.purge(this.runtimeProductionNow(), true);
     return expired;
   }
 
@@ -374,30 +381,30 @@ export class ThreadDO
   async deleteThread(
     ownerScopeRef: string,
     turnId: string | null,
-    expectedRevision: number,
+    expectedRevision: number | null,
     idempotencyKey: string,
   ): Promise<ThreadDeleteResult> {
     await this.ready;
-    let cleanupRequired = false;
     try {
       this.ctx.storage.transactionSync(() => {
         const current = this.checkOwnerIncludingDeleted(this.rowSync(), ownerScopeRef);
+        // Conversation deletion retries cleanup even after the Thread is tombstoned.
+        const revision = expectedRevision ?? current.revision;
         const prior = this.checkOperation(
           this.operationSync(idempotencyKey),
           ownerScopeRef,
           'delete',
           turnId,
-          expectedRevision,
+          revision,
         );
-        if (prior !== undefined) {
-          cleanupRequired = true;
+        if (prior !== undefined) return;
+        if (current.deleted === 1) {
+          if (expectedRevision !== null) throw new ThreadStateError('NOT_FOUND');
           return;
         }
-        if (current.deleted === 1) throw new ThreadStateError('NOT_FOUND');
-        if (expectedRevision !== current.revision) {
+        if (revision !== current.revision) {
           throw new ThreadConflictError('REVISION_CONFLICT');
         }
-        cleanupRequired = true;
         this.ctx.storage.sql.exec(
           'UPDATE thread_state SET active = 0, state = ?, deleted = 1 WHERE singleton = 1',
           'ended',
@@ -408,28 +415,26 @@ export class ThreadDO
           ownerScopeRef,
           'delete',
           turnId,
-          expectedRevision,
+          revision,
           current.revision,
           0,
           'ended',
         );
       });
-      if (cleanupRequired) {
-        this.conversationOutbox.clear();
-        await cleanupRuntimeResources({
-          cleanupRuntime: () => this.runtimeController.cleanupForDelete(),
-          clearContext: () => {
-            const row = this.rowSync();
-            if (row !== undefined) {
-              this.clearRuntimeProductionContext({
-                ownerScopeRef,
-                threadId: row.thread_id,
-              });
-            }
-          },
-          clearPhotos: () => this.photoReferences.clear(),
-        });
-      }
+      this.conversationOutbox.clear();
+      await cleanupRuntimeResources({
+        cleanupRuntime: () => this.runtimeController.cleanupForDelete(),
+        clearContext: () => {
+          const row = this.rowSync();
+          if (row !== undefined) {
+            this.clearRuntimeProductionContext({
+              ownerScopeRef,
+              threadId: row.thread_id,
+            });
+          }
+        },
+        clearPhotos: () => this.photoReferences.clear(),
+      });
       return { ok: true };
     } catch (error: unknown) {
       if (isThreadStateError(error) || isThreadConflictError(error)) {

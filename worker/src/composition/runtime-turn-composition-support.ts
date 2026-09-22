@@ -18,6 +18,33 @@ import {
 } from '@worker/runtime/turn-execution/runtime-final-message';
 import { observeRuntimeTerminalFormatFailure } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 import type { RuntimeModelGuardAcceptance } from '@worker/runtime/turn-execution/runtime-model-guard';
+import type { CommitPort, CommitRecord } from '@worker/application/ports/commit';
+import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
+import { prepareRuntimeConversationResponse } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
+import { mapPreparedRuntimeResponse } from '@worker/runtime/response/runtime-public-response';
+import type { RuntimePublicResponseDependencies } from '@worker/runtime/response/runtime-response';
+
+export const prepareConversationCommit = (
+  port: CommitPort,
+  dependencies: RuntimePublicResponseDependencies | undefined,
+  record: CommitRecord,
+  response: CommittedResponse,
+): void => {
+  if (dependencies === undefined) return;
+  prepareRuntimeConversationResponse(port, record, () =>
+    mapPreparedRuntimeResponse(
+      response,
+      dependencies,
+      {
+        threadId: record.scope.threadId,
+        turnId: record.turnId,
+        responseId: record.responseId,
+        revision: record.revision,
+      },
+      undefined,
+    ),
+  );
+};
 
 export type RuntimeTurnCompositionErrorCode =
   'CONTEXT_MISMATCH' | 'RETENTION_MISMATCH' | 'FINAL_COMMIT_INVALID';

@@ -229,7 +229,7 @@ describe('conversation store', () => {
   it('rejects invalid paging, fingerprints and backdated writes', async () => {
     const store = await initialized();
     expect(
-      await store.list({ ownerScopeRef: scope.ownerScopeRef, limit: 51, before: null }),
+      await store.list({ ownerScopeRef: scope.ownerScopeRef, limit: 101, before: null }),
     ).toEqual({
       ok: false,
       code: 'INVALID_INPUT',

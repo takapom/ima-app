@@ -38,7 +38,7 @@ export type ConversationThreadNamespace = {
     deleteThread(
       owner: string,
       turnId: string | null,
-      revision: number,
+      revision: number | null,
       idempotencyKey: string,
     ): Promise<ThreadDeleteResult>;
     cancelRuntimeTurn(input: unknown): Promise<ThreadRuntimeCancelResult>;

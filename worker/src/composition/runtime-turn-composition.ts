@@ -68,6 +68,7 @@ import {
   observedWindow,
   usableFinalMessage,
   RuntimeTurnCompositionError,
+  prepareConversationCommit,
 } from '@worker/composition/runtime-turn-composition-support';
 import {
   clearRuntimeCardSetId,
@@ -238,6 +239,8 @@ export function createRuntimeTurnComposition(
     guardedCommit,
     { nextResponseId: options.ids.nextResponseId },
     options.hashes,
+    (record, response) =>
+      prepareConversationCommit(options.commit, options.publicResponse, record, response),
   );
   const calls = new Map<string, RuntimeRetentionEphemeralToolCall>();
   const results = new Map<string, RuntimeRetentionEphemeralToolResult>();

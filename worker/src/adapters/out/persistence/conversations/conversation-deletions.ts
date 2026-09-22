@@ -55,17 +55,16 @@ export class ConversationDeletions {
       let deleted = false;
       try {
         const thread = this.threads.getByName(row.thread_id);
-        const state = await thread.read(row.owner);
-        if (!state.ok) deleted = state.code === 'NOT_FOUND';
-        else
-          deleted = (
-            await thread.deleteThread(
-              row.owner,
-              null,
-              state.snapshot.revision,
-              `conversation-delete-${row.conversation_id}`,
-            )
-          ).ok;
+        // A read returning NOT_FOUND can mean cleanup failed after the deletion mark.
+        // Retry the idempotent delete itself; only its success confirms cleanup.
+        deleted = (
+          await thread.deleteThread(
+            row.owner,
+            null,
+            null,
+            `conversation-delete-${row.conversation_id}`,
+          )
+        ).ok;
       } catch {
         /* Keep the queue row and retry time; metadata never makes this a successful purge. */
       }

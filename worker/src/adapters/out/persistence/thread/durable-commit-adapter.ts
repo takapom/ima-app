@@ -1,4 +1,6 @@
 import * as v from 'valibot';
+import type { AssistantResponse } from '@ima/contracts';
+import type { ThreadConversationOutbox } from '@worker/adapters/out/persistence/conversations/thread-conversation-outbox';
 import {
   CommitRequestSchema,
   type CommitPort,
@@ -50,6 +52,7 @@ export type DurableCommitPort = CommitPort & {
   setCardSetId(scope: CommitScope, idempotencyKey: string, cardSetId: string): void;
   /** Releases pending card metadata when a turn ends before a commit. */
   clearCardSetId(scope: CommitScope, idempotencyKey: string): void;
+  setConversationResponse(record: CommitRecord, response: AssistantResponse): void;
 };
 
 const pendingKey = (scope: CommitScope, idempotencyKey: string): string =>
@@ -61,7 +64,9 @@ const isDurableCommitPort = (value: CommitPort): value is DurableCommitPort =>
   'setCardSetId' in value &&
   typeof value.setCardSetId === 'function' &&
   'clearCardSetId' in value &&
-  typeof value.clearCardSetId === 'function';
+  typeof value.clearCardSetId === 'function' &&
+  'setConversationResponse' in value &&
+  typeof value.setConversationResponse === 'function';
 
 /** Supplies Worker-owned card metadata without extending Core's reference-only commit record. */
 export const registerRuntimeCardSetId = (
@@ -80,6 +85,15 @@ export const clearRuntimeCardSetId = (
   idempotencyKey: string,
 ): void => {
   if (isDurableCommitPort(port)) port.clearCardSetId(scope, idempotencyKey);
+};
+
+/** Worker-owned preparation; Core's commit contract remains reference-only. */
+export const prepareRuntimeConversationResponse = (
+  port: CommitPort,
+  record: CommitRecord,
+  response: () => AssistantResponse,
+): void => {
+  if (isDurableCommitPort(port)) port.setConversationResponse(record, response());
 };
 
 export const initializeDurableCommitTable = (storage: DurableObjectStorage): void => {
@@ -176,12 +190,20 @@ const validateRequest = (value: CommitRequest): CommitRequest => {
 
 /**
  * Commits only reference metadata in one DO transaction. When a runtime row is active, its
- * completion metadata is finalized in the same transaction as the snapshot CAS; no body or
- * provider field is accepted by this adapter.
+ * completion metadata and the retention-approved conversation delivery are finalized in the
+ * same transaction as the snapshot CAS. The commit ledger itself remains reference-only.
  */
-export const createDurableCommitPort = (storage: DurableObjectStorage): DurableCommitPort => {
+export const createDurableCommitPort = (
+  storage: DurableObjectStorage,
+  delivery?: { readonly outbox: ThreadConversationOutbox; readonly now: () => string },
+): DurableCommitPort => {
   const pendingCardSets = new Map<string, string>();
+  const pendingResponses = new Map<string, AssistantResponse>();
   return {
+    setConversationResponse(record, response) {
+      if (delivery !== undefined)
+        pendingResponses.set(pendingKey(record.scope, record.idempotencyKey), response);
+    },
     setCardSetId(scope, idempotencyKey, cardSetId) {
       if (!v.safeParse(CardSetIdSchema, cardSetId).success)
         throw new DurableCommitPortError('card set ID is invalid');
@@ -289,10 +311,12 @@ export const createDurableCommitPort = (storage: DurableObjectStorage): DurableC
           );
           if (finalized.rowsWritten !== 1)
             throw new DurableCommitPortError('runtime turn finalization failed');
+          delivery?.outbox.commit(request, pendingResponses.get(key), delivery.now());
           return newReceipt(record);
         });
       } finally {
         pendingCardSets.delete(key);
+        pendingResponses.delete(key);
       }
     },
   };

@@ -1,6 +1,7 @@
 import { messageDeadline } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
 import * as v from 'valibot';
 import type { AssistantResponse } from '@ima/contracts';
+import type { CommitRequest } from '@worker/application/ports/commit';
 import { conversationResponseDeadline } from '@worker/runtime/conversations/conversation-response-deadline';
 import type {
   ThreadRuntimeTarget,
@@ -18,7 +19,7 @@ import {
   retainConversationPart,
 } from '@worker/domain/conversations/conversation-message';
 
-/** Written inside the runtime result transaction; contains only retention-approved message parts. */
+/** Written inside the reference commit transaction; only retention-approved message parts persist. */
 export class ThreadConversationOutbox {
   private readonly live = new Map<string, { response: AssistantResponse; expiresAt: number }>();
   constructor(private readonly storage: DurableObjectStorage) {
@@ -62,10 +63,38 @@ export class ThreadConversationOutbox {
       input.target.revision,
     );
   }
-  completed(target: ThreadRuntimeTarget, result: ThreadRuntimeTurnResult, now: string): void {
+  commit(request: CommitRequest, response: AssistantResponse | undefined, now: string): void {
+    const { record } = request;
     const row = this.storage.sql
       .exec<{ run_id: string }>(
         'SELECT run_id FROM conversation_delivery WHERE owner = ? AND thread_id = ? AND turn_id = ? AND revision = ?',
+        record.scope.ownerScopeRef,
+        record.scope.threadId,
+        record.turnId,
+        request.expectedRevision,
+      )
+      .toArray()[0];
+    if (row === undefined) return;
+    if (
+      response === undefined ||
+      response.threadId !== record.scope.threadId ||
+      response.turnId !== record.turnId ||
+      response.responseId !== record.responseId ||
+      response.revision !== record.revision ||
+      response.presentation !== record.presentation
+    )
+      throw new Error('CONVERSATION_COMMIT_RESPONSE_MISSING');
+    const message = messageFromConversationResponse(response, `answer-${row.run_id}`, now);
+    this.storage.sql.exec(
+      'UPDATE conversation_delivery SET message = ? WHERE run_id = ? AND message IS NULL',
+      JSON.stringify(message),
+      row.run_id,
+    );
+  }
+  completed(target: ThreadRuntimeTarget, result: ThreadRuntimeTurnResult, now: string): void {
+    const row = this.storage.sql
+      .exec<{ run_id: string }>(
+        'SELECT run_id FROM conversation_delivery WHERE owner = ? AND thread_id = ? AND turn_id = ? AND revision = ? AND message IS NOT NULL',
         target.ownerScopeRef,
         target.threadId,
         target.turnId,
@@ -73,12 +102,6 @@ export class ThreadConversationOutbox {
       )
       .toArray()[0];
     if (row === undefined || result.response === null || 'restoreMode' in result.response) return;
-    const message = messageFromConversationResponse(result.response, `answer-${row.run_id}`, now);
-    this.storage.sql.exec(
-      'UPDATE conversation_delivery SET message = ? WHERE run_id = ? AND message IS NULL',
-      JSON.stringify(message),
-      row.run_id,
-    );
     this.live.set(row.run_id, {
       response: result.response,
       expiresAt: conversationResponseDeadline(result.response, Date.parse(now)),
@@ -155,7 +178,15 @@ export class ThreadConversationOutbox {
     deadlines.push(...[...this.live.values()].map((item) => item.expiresAt));
     return deadlines.length === 0 ? null : Math.max(Date.now() + 1, Math.min(...deadlines));
   }
-  async purge(now: string): Promise<void> {
+  async purge(now: string, sessionExpired = false): Promise<void> {
+    this.storage.sql.exec(
+      `DELETE FROM conversation_delivery WHERE message IS NULL AND (? = 1 OR EXISTS (
+        SELECT 1 FROM runtime_turn WHERE owner_scope_ref = conversation_delivery.owner
+        AND thread_id = conversation_delivery.thread_id AND turn_id = conversation_delivery.turn_id
+        AND revision = conversation_delivery.revision AND status IN ('failed', 'cancelled', 'stale')
+      ))`,
+      sessionExpired ? 1 : 0,
+    );
     for (const [id, item] of this.live) if (item.expiresAt <= Date.parse(now)) this.live.delete(id);
     for (const row of this.storage.sql
       .exec<{ owner: string; conversation_id: string; run_id: string }>(

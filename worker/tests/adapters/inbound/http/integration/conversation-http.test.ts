@@ -82,6 +82,10 @@ describe('conversation HTTP ownership and restoration', () => {
       await (await call(`${path}/messages`)).json(),
     );
     expect(messages.messages.map((item) => item.message.messageId)).toEqual(['first-message']);
+    for (const limit of [50, 51, 100]) {
+      expect((await call(`?limit=${limit}`)).status).toBe(200);
+      expect((await call(`${path}/messages?limit=${limit}`)).status).toBe(200);
+    }
     expect((await call(path, 'GET', undefined, `${'D'.repeat(42)}E`)).status).toBe(404);
     expect((await call(path, 'DELETE')).status).toBe(204);
     expect((await call(`${path}/messages`)).status).toBe(404);

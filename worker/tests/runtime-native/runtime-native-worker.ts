@@ -183,6 +183,8 @@ export class ThreadDO extends ProductionThreadDO {
         this.latestExecution = execution;
         const durableCommit = this.createRuntimeCommitPort();
         const commit: DurableCommitPort = {
+          setConversationResponse: (record, response) =>
+            durableCommit.setConversationResponse(record, response),
           setCardSetId: (scope, idempotencyKey, cardSetId) =>
             durableCommit.setCardSetId(scope, idempotencyKey, cardSetId),
           clearCardSetId: (scope, idempotencyKey) =>
