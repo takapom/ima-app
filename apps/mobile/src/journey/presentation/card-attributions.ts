@@ -19,7 +19,6 @@ export const cardAttributions = (card: PublicCard): readonly AttributionPresenta
       presentFact(card.facts.opening_hours, () => '').evidence,
       presentFact(card.facts.price, () => '').evidence,
       presentFact(card.facts.facilities, () => '').evidence,
-      presentFact(card.facts.walking_route, () => '').evidence,
     ]),
     ...collectPhotoAttributions(card),
   ]);

@@ -25,14 +25,11 @@ import {
 } from '@contracts/response';
 import {
   CardsDataSchema,
-  LastTrainInfoSchema,
-  LastTrainTransferSchema,
   OpeningIntervalSchema,
   PlaceIdentitySchema,
   PhotoInfoSchema,
   PriceRangeSchema,
   PublicPlaceDetailsDataSchema,
-  WalkingRouteSchema,
 } from '@contracts/values';
 
 import { card, identity, message, searchRequest, timestamp } from '@contracts/tests/dto-fixtures';
@@ -106,14 +103,6 @@ describe('public display and HTTP DTOs', () => {
       }).success,
     ).toBe(true);
     expect(
-      v.safeParse(LastTrainTransferSchema, {
-        fromStationRef: 'station-a',
-        toStationRef: 'station-b',
-        departureAt: timestamp,
-        arrivalAt: '2026-09-09T11:59:59Z',
-      }).success,
-    ).toBe(false);
-    expect(
       v.safeParse(PriceRangeSchema, {
         currency: 'JPY',
         min: Number.POSITIVE_INFINITY,
@@ -128,39 +117,6 @@ describe('public display and HTTP DTOs', () => {
         max: 1_000,
         unit: 'per_person',
       }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(WalkingRouteSchema, {
-        originRef: 'location-1',
-        destinationCandidateId: 'candidate-1',
-        originRevision: Number.MAX_SAFE_INTEGER + 1,
-        evaluatedAt: timestamp,
-        durationSeconds: 300,
-        distanceMeters: 250,
-        warnings: [],
-      }).success,
-    ).toBe(false);
-    const lastTrain = {
-      serviceDate: '2024-02-29',
-      fromStationRef: 'station-a',
-      homeStationRef: 'station-home',
-      journeyRef: 'journey-1',
-      lastDepartureAt: timestamp,
-      arrivesHomeAt: '2026-09-09T13:00:00Z',
-      transfers: [],
-      placeToStationSeconds: 300,
-      arrivePlaceAt: '2026-09-09T12:00:00Z',
-      leaveBy: '2026-09-09T12:30:00Z',
-      availableStaySeconds: 1_800,
-      minimumStayMinutes: 20,
-      usable: true,
-    };
-    expect(v.safeParse(LastTrainInfoSchema, lastTrain).success).toBe(true);
-    expect(
-      v.safeParse(LastTrainInfoSchema, { ...lastTrain, serviceDate: '2023-02-29' }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(LastTrainInfoSchema, { ...lastTrain, availableStaySeconds: 1_199 }).success,
     ).toBe(false);
   });
 

@@ -42,7 +42,7 @@ const text = (
 
 const card = (): PublicCard => {
   const identityEvidence = evidence('identity', '2026-09-10T00:00:00Z');
-  const walkingEvidence = evidence('walking', '2026-09-10T00:00:00Z');
+  const priceEvidence = evidence('price', '2026-09-10T00:00:00Z');
   const photoEvidence = evidence('photo', '2026-09-10T00:00:00Z');
   const explanationEvidence = evidence('why', '2026-09-10T00:00:00Z');
   return {
@@ -62,18 +62,10 @@ const card = (): PublicCard => {
         },
         evidence: [identityEvidence],
       },
-      walking_route: {
+      price: {
         status: 'known',
-        value: {
-          originRef: 'origin-1',
-          destinationCandidateId: 'candidate-1',
-          originRevision: 1,
-          evaluatedAt: '2026-09-09T12:00:00Z',
-          durationSeconds: 600,
-          distanceMeters: 700,
-          warnings: [],
-        },
-        evidence: [walkingEvidence],
+        value: { level: 2, range: null, rawLabel: '¥¥' },
+        evidence: [priceEvidence],
       },
       photos: {
         status: 'known',
@@ -137,7 +129,7 @@ describe('assistant response expiry projection', () => {
     const projectedCard = projected.cards?.hero;
 
     expect(projectedCard?.facts.identity.status).toBe('known');
-    expect(projectedCard?.facts.walking_route?.status).toBe('known');
+    expect(projectedCard?.facts.price?.status).toBe('known');
     expect(projectedCard?.facts.photos?.status).toBe('known');
     expect(projectedCard?.why.retention.displayPolicyStatus).toBe('available');
     expect(projected.responseRecords[0]?.messages[0]?.retention.displayPolicyStatus).toBe(
@@ -153,14 +145,14 @@ describe('assistant response expiry projection', () => {
       const projected = projectAssistantResponseState(raw, now);
       const projectedCard = projected.cards?.hero;
       const identity = projectedCard?.facts.identity;
-      const walking = projectedCard?.facts.walking_route;
+      const price = projectedCard?.facts.price;
       const photos = projectedCard?.facts.photos;
 
       if (identity?.status !== 'known') throw new Error('identity fixture should remain known');
-      if (walking?.status !== 'known') throw new Error('walking fixture should remain known');
+      if (price?.status !== 'known') throw new Error('price fixture should remain known');
       if (photos?.status !== 'known') throw new Error('photo fixture should remain known');
       expect(identity.evidence[0]?.retention.displayPolicyStatus).toBe('expired');
-      expect(walking.evidence[0]?.retention.displayPolicyStatus).toBe('expired');
+      expect(price.evidence[0]?.retention.displayPolicyStatus).toBe('expired');
       expect(photos.evidence[0]?.retention.displayPolicyStatus).toBe('expired');
       expect(presentFact(identity, String).status).toBe('expired');
       expect(presentDecidedIdentity(projectedCard ?? null)).toBeNull();

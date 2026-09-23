@@ -46,14 +46,7 @@ const observeStructuredFieldResults = (value: unknown, capture: EvidenceReferenc
       const candidateId = item.candidateId;
       for (const [fieldKey, field] of Object.entries(item.fields)) {
         if (!record(field) || field.status !== 'known') continue;
-        const expectedField =
-          fieldKey === 'openingHours'
-            ? 'opening_hours'
-            : fieldKey === 'walkingRoute'
-              ? 'walking_route'
-              : fieldKey === 'lastTrain'
-                ? 'last_train'
-                : fieldKey;
+        const expectedField = fieldKey === 'openingHours' ? 'opening_hours' : fieldKey;
         const observations = field.observations;
         if (!Array.isArray(observations)) {
           capture.observe(undefined);

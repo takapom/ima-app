@@ -1,10 +1,4 @@
-import type {
-  EvidenceRef,
-  LastTrainInfo,
-  OpeningHours,
-  PriceInfo,
-  PublicCard,
-} from '@ima/contracts';
+import type { EvidenceRef, OpeningHours, PriceInfo, PublicCard } from '@ima/contracts';
 import type { AttributionPresentation } from '@mobile/ui/presentation/attribution';
 
 export { collectAttributions } from '@mobile/ui/presentation/attribution';
@@ -127,13 +121,6 @@ const formatAtZone = (value: string, timeZone: string): string => {
   }
 };
 
-const formatSourceTimestamp = (value: string): string => {
-  const match = value.match(
-    /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(?::\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/,
-  );
-  return match === null ? value : `${match[1]} ${match[2]} ${match[3]}`;
-};
-
 export const formatOpeningHours = (value: OpeningHours): string => {
   const openStatus =
     value.listedOpenAtEvaluation === null
@@ -170,25 +157,9 @@ const formatPrice = (value: PriceInfo): string => {
   return value.level === null ? '価格情報あり' : `価格帯レベル ${value.level}`;
 };
 
-const formatLastTrain = (value: LastTrainInfo): string => {
-  const stay =
-    value.availableStaySeconds > 0
-      ? `滞在可能 ${Math.floor(value.availableStaySeconds / 60)}分`
-      : '滞在可能時間なし';
-  return [
-    `適用日 ${value.serviceDate}`,
-    `店を出る時刻 ${formatSourceTimestamp(value.leaveBy)}`,
-    `終電発車 ${formatSourceTimestamp(value.lastDepartureAt)}`,
-    value.usable ? '利用可能' : '条件を満たしません',
-    stay,
-    `最低滞在 ${value.minimumStayMinutes}分`,
-  ].join(' · ');
-};
-
 export const presentCardFacts = (card: PublicCard) => ({
   openingHours: presentFact(card.facts.opening_hours, formatOpeningHours),
   price: presentFact(card.facts.price, formatPrice),
-  lastTrain: presentFact(card.facts.last_train, formatLastTrain),
 });
 
 export const shouldShowPhotoRegion = (card: PublicCard): boolean => {

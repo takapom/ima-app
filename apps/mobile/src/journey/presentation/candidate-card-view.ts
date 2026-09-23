@@ -5,7 +5,6 @@ import type {
   PlaceIdentity,
   PriceInfo,
   PublicCard,
-  WalkingRoute,
 } from '@ima/contracts';
 
 /**
@@ -226,17 +225,8 @@ const resolveOpening = (hours: OpeningHours | null, now: number): CardOpening =>
   };
 };
 
-const resolveAccess = (
-  identity: PlaceIdentity | null,
-  route: WalkingRoute | null,
-): string | null => {
+const resolveAccess = (identity: PlaceIdentity | null): string | null => {
   const station = identity?.stationName ?? null;
-  if (route !== null) {
-    const minutes = Math.max(1, Math.round(route.durationSeconds / 60));
-    return station === null
-      ? `徒歩${minutes}分`
-      : `${normalizeWidth(station)}駅から徒歩${minutes}分`;
-  }
   const accessText = identity?.accessText ?? null;
   if (accessText !== null && accessText.length > 0) return normalizeWidth(accessText);
   return station === null ? null : `${normalizeWidth(station)}駅`;
@@ -291,7 +281,7 @@ export const toCardViewModel = (card: PublicCard, now: number): CardViewModel =>
     sourceUrl: identity?.sourceUrl ?? null,
     visual: resolveVisual(card),
     opening,
-    access: resolveAccess(identity, readField(card.facts.walking_route)),
+    access: resolveAccess(identity),
     price: resolvePrice(readField(card.facts.price)),
     amenities: resolveAmenities(readField(card.facts.facilities)),
     diff: resolveDiff(card.diff),

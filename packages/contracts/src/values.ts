@@ -1,20 +1,13 @@
 import * as v from 'valibot';
 import {
-  CalendarDateSchema,
   CandidateIdSchema,
   HttpsUrlSchema,
   IsoTimestampSchema,
   NullableText,
-  OpaqueIdSchema,
-  RevisionSchema,
   Text,
 } from '@contracts/common';
 import { DisplayFieldSchema, PublicEvidenceTextSchema } from '@contracts/public';
 
-const PublicWarningSchema = v.strictObject({
-  code: Text(80),
-  message: Text(300),
-});
 const HttpsLink = (maxLength: number) => v.pipe(HttpsUrlSchema, v.maxLength(maxLength));
 const finiteNumber = v.pipe(
   v.number(),
@@ -123,53 +116,6 @@ export const FacilitiesInfoSchema = v.strictObject({
 });
 export type FacilitiesInfo = v.InferOutput<typeof FacilitiesInfoSchema>;
 
-export const WalkingRouteSchema = v.strictObject({
-  originRef: OpaqueIdSchema,
-  destinationCandidateId: CandidateIdSchema,
-  originRevision: RevisionSchema,
-  evaluatedAt: IsoTimestampSchema,
-  durationSeconds: nonNegativeFiniteInteger,
-  distanceMeters: nonNegativeFiniteNumber,
-  warnings: v.array(PublicWarningSchema),
-});
-export type WalkingRoute = v.InferOutput<typeof WalkingRouteSchema>;
-
-export const LastTrainTransferSchema = v.pipe(
-  v.strictObject({
-    fromStationRef: OpaqueIdSchema,
-    toStationRef: OpaqueIdSchema,
-    departureAt: IsoTimestampSchema,
-    arrivalAt: IsoTimestampSchema,
-  }),
-  v.check(
-    (transfer) => Date.parse(transfer.departureAt) <= Date.parse(transfer.arrivalAt),
-    'train transfer must arrive at or after departure',
-  ),
-);
-
-export const LastTrainInfoSchema = v.pipe(
-  v.strictObject({
-    serviceDate: CalendarDateSchema,
-    fromStationRef: OpaqueIdSchema,
-    homeStationRef: OpaqueIdSchema,
-    journeyRef: OpaqueIdSchema,
-    lastDepartureAt: IsoTimestampSchema,
-    arrivesHomeAt: IsoTimestampSchema,
-    transfers: v.array(LastTrainTransferSchema),
-    placeToStationSeconds: nonNegativeFiniteInteger,
-    arrivePlaceAt: IsoTimestampSchema,
-    leaveBy: IsoTimestampSchema,
-    availableStaySeconds: finiteInteger,
-    minimumStayMinutes: v.pipe(finiteInteger, v.minValue(1), v.maxValue(180)),
-    usable: v.boolean(),
-  }),
-  v.check(
-    (info) => !info.usable || info.availableStaySeconds >= info.minimumStayMinutes * 60,
-    'usable last train must satisfy minimum stay',
-  ),
-);
-export type LastTrainInfo = v.InferOutput<typeof LastTrainInfoSchema>;
-
 /** Facts rendered in a card or details screen; every fact carries its own evidence. */
 const publicFieldEntries = {
   identity: v.optional(DisplayFieldSchema(PlaceIdentitySchema)),
@@ -178,8 +124,6 @@ const publicFieldEntries = {
   photos: v.optional(DisplayFieldSchema(PhotoInfoSchema)),
   contact: v.optional(DisplayFieldSchema(ContactInfoSchema)),
   facilities: v.optional(DisplayFieldSchema(FacilitiesInfoSchema)),
-  walking_route: v.optional(DisplayFieldSchema(WalkingRouteSchema)),
-  last_train: v.optional(DisplayFieldSchema(LastTrainInfoSchema)),
 };
 
 export const PublicPlaceFieldsSchema = v.strictObject(publicFieldEntries);

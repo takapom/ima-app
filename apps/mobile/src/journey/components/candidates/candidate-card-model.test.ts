@@ -135,36 +135,6 @@ describe('candidate card model', () => {
     ).toContain('確認時点では営業中 · 平日 10:00–20:00 · L.O. 19:30 · 営業時間の切替');
   });
 
-  it('formats last train from its service date and source offset', () => {
-    const facts = presentCardFacts(
-      card({
-        last_train: {
-          status: 'known',
-          value: {
-            serviceDate: '2026-09-10',
-            fromStationRef: 'station-from',
-            homeStationRef: 'station-home',
-            journeyRef: 'journey-1',
-            lastDepartureAt: '2026-09-10T23:45:00+09:00',
-            arrivesHomeAt: '2026-09-11T00:30:00+09:00',
-            transfers: [],
-            placeToStationSeconds: 600,
-            arrivePlaceAt: '2026-09-10T20:00:00+09:00',
-            leaveBy: '2026-09-10T23:30:00+09:00',
-            availableStaySeconds: 3600,
-            minimumStayMinutes: 30,
-            usable: true,
-          },
-          evidence: [evidence('train-1', '終電情報')],
-        },
-      }),
-    );
-
-    expect(facts.lastTrain.label).toContain(
-      '適用日 2026-09-10 · 店を出る時刻 2026-09-10 23:30 +09:00 · 終電発車 2026-09-10 23:45 +09:00 · 利用可能 · 滞在可能 60分',
-    );
-  });
-
   it('marks inference text and preserves the fact-specific source attribution', () => {
     const facts = presentCardFacts(
       card({

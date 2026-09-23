@@ -208,7 +208,6 @@ describe('development HTTP with OpenAI and Hot Pepper transports', () => {
         uri: 'https://www.hotpepper.jp/strDEVFIXTURE/',
       });
       expect(JSON.stringify(body)).not.toContain(PHOTO_URL);
-      expect(parsed.response.cards.hero.facts.walking_route?.status).not.toBe('known');
       expect(tools).toContain('search_places');
       expect(tools).toContain('get_place_details');
       expect(tools.filter((tool) => tool === 'submit_cards')).toHaveLength(1);
