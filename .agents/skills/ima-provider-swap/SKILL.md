@@ -5,8 +5,8 @@ description: ima-appの外部Provider追加・差し替え・撤去を、Coreを
 
 # ima. Providerの差し替えと撤去
 
-外部Provider（店舗検索・詳細・写真・経路・終電）を追加、差し替え、撤去するときに読む。
-Google からHot Pepperへの差し替え（#43）で確立した順序。未接続の写真・経路・終電を接続するときに再利用する。
+外部Provider（店舗検索・詳細・写真）を追加、差し替え、撤去するときに読む。
+Google からHot Pepperへの差し替え（#43）で確立し、徒歩経路・終電の撤去（#55）でも使った順序。
 
 ## 原則
 
@@ -39,4 +39,4 @@ Google からHot Pepperへの差し替え（#43）で確立した順序。未接
 - 旧Providerの型・HTTP・Adapter・fixture・smoke runnerが残っていない。`grep`で旧Provider名の残存を確認する。
 - 提供しなくなった機能が、UI・条件入力・公開DTO・policyのすべてで停止している。
 - 実接続の検収は別ゲート。固定データの成功を実API成功に数えない。判定と証跡は[ima-verification-evidence](../ima-verification-evidence/SKILL.md)に従う。
-- 現在の外部接続はOpenAIとHot Pepperのみ。写真・経路・終電を接続した場合は、この記述を含む文書を同じ作業で更新する。
+- 現在の外部接続はOpenAIとHot Pepperのみ。Providerを接続・撤去した場合は、この記述を含む文書を同じ作業で更新する。

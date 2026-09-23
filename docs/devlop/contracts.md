@@ -46,11 +46,10 @@ thread ID、device ID、IPだけを所有者の認可根拠にしない。reques
 
 `search_places`は新規検索またはopaque cursorによる継続。`get_place_details`はcandidateと要求fieldを指定した読み取り。`submit_cards`は根拠付きのmessage・hero・altsを検証して確定する。
 
-詳細fieldはidentity、opening_hours、price、photos、contact、facilities、walking_route、last_train。未要求の取得、未知fieldの黙殺、営業時間からの入店保証は行わない。
+詳細fieldはidentity、opening_hours、price、photos、contact、facilities。未要求の取得、未知fieldの黙殺、営業時間からの入店保証は行わない。
 モデルには必要な文脈を投影し、Providerの生ID、秘密、生レスポンス、不要な座標を渡さない。
 
 根拠はcandidate・field・実行文脈・鮮度・由来に結び付ける。読み取りと確定の混在などの実行制約は[アーキテクチャ](../architecture/architecture.md#ランタイムの制約)に従う。
-必須条件変更は原文quoteとsource turnに基づいて検証し、4つ目のToolや保存設定の変更操作にしない。
 
 ## 保存・写真・再取得
 
@@ -61,3 +60,4 @@ thread ID、device ID、IPだけを所有者の認可根拠にしない。reques
 tokenはWorker発行のowner/deviceに結び付くopaque参照であり、Providerのphoto handleや署名URLを端末へ露出しない。写真ごとの帰属を表示する。
 
 schemaや保存形式の非互換変更は明示移行または失効で扱い、castで旧payloadを新契約に見せない。
+prefsの`homeStationRef`・`maxWalkMinutes`・`minimumStayMinutes`は#55で撤去した。旧版端末と保存済みturn入力のため、入力では値を検証して破棄する。出力には含めない。
