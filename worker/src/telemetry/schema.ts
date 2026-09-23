@@ -44,14 +44,7 @@ export const telemetryEventRecordSchema = v.strictObject({
 });
 export type TelemetryEventRecord = v.InferOutput<typeof telemetryEventRecordSchema>;
 
-export const telemetryProviderSchema = v.picklist([
-  'places',
-  'routes',
-  'last_train',
-  'hotpepper',
-  'photo',
-  'openai',
-]);
+export const telemetryProviderSchema = v.picklist(['places', 'hotpepper', 'photo', 'openai']);
 export type TelemetryProvider = v.InferOutput<typeof telemetryProviderSchema>;
 
 export const telemetryOperationSchema = v.picklist(['turn', 'call', 'provider']);

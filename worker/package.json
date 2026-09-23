@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "wrangler dev --local",
-    "dev:llm": "wrangler dev --config wrangler.runtime-dev-fixture-test.jsonc --env-file .dev.vars.llm --local --port 8787 --var IMA_RUNTIME_MODE:live --var IMA_PROVIDER_OPENAI:true --var IMA_PROVIDER_PLACES:false --var IMA_PROVIDER_ROUTES:false --var IMA_PROVIDER_LAST_TRAIN:false --var IMA_PROVIDER_HOTPEPPER:true",
+    "dev:llm": "wrangler dev --config wrangler.runtime-dev-fixture-test.jsonc --env-file .dev.vars.llm --local --port 8787 --var IMA_RUNTIME_MODE:live --var IMA_PROVIDER_OPENAI:true --var IMA_PROVIDER_PLACES:false --var IMA_PROVIDER_HOTPEPPER:true",
     "typecheck": "tsc -p tsconfig.business.json --noEmit && tsc --noEmit && tsc -p tsconfig.tests.json --noEmit && tsc -p tooling/tsconfig.json --noEmit",
     "build": "wrangler deploy --dry-run"
   },

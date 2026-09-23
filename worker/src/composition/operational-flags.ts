@@ -4,8 +4,6 @@ export const OperationalFlagsSchema = v.strictObject({
   mode: v.picklist(['live', 'fixture', 'disabled']),
   places: v.boolean(),
   hotpepper: v.boolean(),
-  lastTrain: v.boolean(),
-  routes: v.boolean(),
   openai: v.boolean(),
   shareLineScheme: v.boolean(),
   killSwitch: v.boolean(),
@@ -18,8 +16,6 @@ export const OPERATIONAL_FLAG_ENV = Object.freeze({
   mode: 'IMA_RUNTIME_MODE',
   places: 'IMA_PROVIDER_PLACES',
   hotpepper: 'IMA_PROVIDER_HOTPEPPER',
-  lastTrain: 'IMA_PROVIDER_LAST_TRAIN',
-  routes: 'IMA_PROVIDER_ROUTES',
   openai: 'IMA_PROVIDER_OPENAI',
   shareLineScheme: 'IMA_SHARE_LINE_SCHEME',
   killSwitch: 'IMA_KILL_SWITCH',
@@ -27,13 +23,7 @@ export const OPERATIONAL_FLAG_ENV = Object.freeze({
 } as const);
 
 export type OperationalFlagName =
-  | 'places'
-  | 'hotpepper'
-  | 'lastTrain'
-  | 'routes'
-  | 'openai'
-  | 'shareLineScheme'
-  | 'qualityEnvelope';
+  'places' | 'hotpepper' | 'openai' | 'shareLineScheme' | 'qualityEnvelope';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -71,8 +61,6 @@ export const resolveOperationalFlags = (env: unknown): OperationalFlags => {
     mode: modeValue(env),
     places: booleanValue(env, OPERATIONAL_FLAG_ENV.places),
     hotpepper: booleanValue(env, OPERATIONAL_FLAG_ENV.hotpepper),
-    lastTrain: booleanValue(env, OPERATIONAL_FLAG_ENV.lastTrain),
-    routes: booleanValue(env, OPERATIONAL_FLAG_ENV.routes),
     openai: booleanValue(env, OPERATIONAL_FLAG_ENV.openai),
     shareLineScheme: booleanValue(env, OPERATIONAL_FLAG_ENV.shareLineScheme),
     killSwitch: killSwitchValue(env),

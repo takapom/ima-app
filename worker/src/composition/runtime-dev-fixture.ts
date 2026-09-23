@@ -51,8 +51,6 @@ export const devFixtureEnvironmentFor = (env: unknown): Record<string, unknown> 
     ...env,
     ...(env.IMA_PROVIDER_OPENAI === undefined ? { IMA_PROVIDER_OPENAI: 'true' } : {}),
     ...(env.IMA_PROVIDER_PLACES === undefined ? { IMA_PROVIDER_PLACES: 'false' } : {}),
-    ...(env.IMA_PROVIDER_ROUTES === undefined ? { IMA_PROVIDER_ROUTES: 'false' } : {}),
-    ...(env.IMA_PROVIDER_LAST_TRAIN === undefined ? { IMA_PROVIDER_LAST_TRAIN: 'false' } : {}),
     ...(env.IMA_PROVIDER_HOTPEPPER === undefined ? { IMA_PROVIDER_HOTPEPPER: 'true' } : {}),
   };
 };

@@ -22,8 +22,6 @@
     "APP_ATTEST_ENVIRONMENT": "development",
     "IMA_PROVIDER_OPENAI": "false",
     "IMA_PROVIDER_PLACES": "false",
-    "IMA_PROVIDER_ROUTES": "false",
-    "IMA_PROVIDER_LAST_TRAIN": "false",
     "IMA_PROVIDER_HOTPEPPER": "false",
     "IMA_KILL_SWITCH": "false",
     "IMA_RUNTIME_FLAGS_CONNECTED": "0",

@@ -2,7 +2,7 @@ import type { TelemetryProvider } from '@worker/telemetry/schema';
 
 export type RuntimeProviderTransportProvider = Extract<
   TelemetryProvider,
-  'places' | 'routes' | 'hotpepper' | 'photo'
+  'places' | 'hotpepper' | 'photo'
 >;
 
 export type RuntimeProviderTransportCompletion =

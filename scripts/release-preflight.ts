@@ -128,16 +128,6 @@ const addExternalEvidence = (
       : 'internal distribution follows the existing staging preflight; external App Attest evidence is a separate gate',
   );
 
-  const journeyConfigured = configuredBoolean(env, 'IMA_PROVIDER_LAST_TRAIN');
-  addCheck(
-    checks,
-    'REAL_JOURNEY_EVIDENCE',
-    journeyConfigured ? 'unverified' : 'blocked',
-    journeyConfigured
-      ? 'configuration is present; verified source, freshness, and rollback evidence are still required'
-      : 'M33 verified last-train data is required; missing data must remain disabled',
-  );
-
   const liveMode = valueFor(env, 'IMA_RUNTIME_MODE') === 'live';
   for (const name of ['IMA_PROVIDER_OPENAI', 'IMA_PROVIDER_HOTPEPPER'] as const) {
     addCheck(
