@@ -1,7 +1,6 @@
 import { SELF } from 'cloudflare:test';
 import {
   CreateThreadResponseSchema,
-  ErrorResponseSchema,
   SearchResponseSchema,
   type ThreadTurnRequest,
 } from '@ima/contracts';
@@ -304,40 +303,5 @@ describe('keyless dev fixture graph', () => {
       hero.why.text,
     ];
     expect(customerText.join(' ')).not.toMatch(/Fixture|provider|開発用/u);
-  });
-
-  it('does not drop a hard walking constraint when no current location is available', async () => {
-    const createRequestId = `dev-fixture-constraint-create-${crypto.randomUUID()}`;
-    const create = await call('/v1/threads', createRequestId, {
-      method: 'POST',
-      body: JSON.stringify({
-        schemaVersion: 'v1',
-        requestId: createRequestId,
-        idempotencyKey: `dev-fixture-constraint-key-${crypto.randomUUID()}`,
-      }),
-    });
-    expect(create.status).toBe(201);
-    const created = v.safeParse(CreateThreadResponseSchema, await create.json());
-    expect(created.success).toBe(true);
-    if (!created.success) throw new Error('dev fixture constraint thread response was invalid');
-
-    const requestId = `dev-fixture-constraint-turn-${crypto.randomUUID()}`;
-    const input = turnInput(requestId);
-    const constrained = {
-      ...input,
-      text: '徒歩15分以内で探して',
-      prefs: { ...input.prefs, maxWalkMinutes: 15 },
-    };
-    const response = await call(`/v1/threads/${created.output.threadId}/turns`, requestId, {
-      method: 'POST',
-      body: JSON.stringify(constrained),
-    });
-    // The constraint cannot be evidenced, so every repair is rejected and the turn ends without
-    // cards. That is a spent turn budget, not an upstream outage, and the code says so.
-    expect(response.status).toBe(422);
-    const parsed = v.safeParse(ErrorResponseSchema, await response.json());
-    expect(parsed.success).toBe(true);
-    if (!parsed.success) throw new Error('constraint rejection response was invalid');
-    expect(parsed.output).toMatchObject({ status: 422, code: 'BUDGET_EXCEEDED' });
   });
 });

@@ -239,7 +239,6 @@ export class ThreadDO extends ProductionThreadDO {
           validationContext: ({ now }) => ({
             ...fixture.validationContext,
             serverNow: now,
-            departureAt: now,
           }),
           persistMessages: () =>
             Promise.resolve({ requestId: 'runtime-native-placeholder', status: 'completed' }),

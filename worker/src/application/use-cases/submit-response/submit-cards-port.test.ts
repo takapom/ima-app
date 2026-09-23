@@ -132,8 +132,7 @@ const execution = (threadId: string): ToolExecutionContext => ({
   revision: 1,
 });
 
-const messageFixture = () =>
-  makeFixture([], { originRef: null, maxWalkMinutes: null, requireLastOrderAtArrival: false });
+const messageFixture = () => makeFixture([], { requireLastOrderAtArrival: false });
 
 describe('submit cards application adapter', () => {
   it('passes runtime metadata to SubmitApplication and returns the legacy port shape', async () => {

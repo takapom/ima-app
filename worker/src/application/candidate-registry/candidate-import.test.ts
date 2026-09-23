@@ -49,9 +49,6 @@ const context: ObservationContext = {
   ...sourceScope,
   capabilityVersion: 'places-v1',
   locationRevision: 1,
-  originRef: null,
-  homeStationRef: null,
-  minimumStayMinutes: null,
   timeContext: 'now',
 };
 const retention = {

@@ -1,12 +1,6 @@
 import type { PhotoInfo } from '@ima/contracts';
 import type { ValidatedCard } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
-import type {
-  LastTrainInfo,
-  OpeningHours,
-  PlaceIdentity,
-  PriceInfo,
-  WalkingRoute,
-} from '@worker/domain/places/place-values';
+import type { OpeningHours, PlaceIdentity, PriceInfo } from '@worker/domain/places/place-values';
 
 type CorePhotoInfo = NonNullable<ValidatedCard['photos']>;
 type CoreFacilitiesInfo = NonNullable<ValidatedCard['facilities']>;
@@ -102,38 +96,4 @@ export const publicFacilities = (value: CoreFacilitiesInfo) => ({
   privateRoom: value.privateRoom,
   parking: value.parking,
   sourceText: value.sourceText,
-});
-
-export const publicWalkingRoute = (value: WalkingRoute) => ({
-  originRef: value.originRef,
-  destinationCandidateId: value.destinationCandidateId,
-  originRevision: value.originRevision,
-  evaluatedAt: value.evaluatedAt,
-  durationSeconds: value.durationSeconds,
-  distanceMeters: value.distanceMeters,
-  warnings: value.warnings.map((warning) => ({
-    code: warning.code,
-    message: warning.message,
-  })),
-});
-
-export const publicLastTrain = (value: LastTrainInfo) => ({
-  serviceDate: value.serviceDate,
-  fromStationRef: value.fromStationRef,
-  homeStationRef: value.homeStationRef,
-  journeyRef: value.journeyRef,
-  lastDepartureAt: value.lastDepartureAt,
-  arrivesHomeAt: value.arrivesHomeAt,
-  transfers: value.transfers.map((transfer) => ({
-    fromStationRef: transfer.fromStationRef,
-    toStationRef: transfer.toStationRef,
-    departureAt: transfer.departureAt,
-    arrivalAt: transfer.arrivalAt,
-  })),
-  placeToStationSeconds: value.placeToStationSeconds,
-  arrivePlaceAt: value.arrivePlaceAt,
-  leaveBy: value.leaveBy,
-  availableStaySeconds: value.availableStaySeconds,
-  minimumStayMinutes: value.minimumStayMinutes,
-  usable: value.usable,
 });

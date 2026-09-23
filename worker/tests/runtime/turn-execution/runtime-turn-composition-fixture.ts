@@ -119,23 +119,13 @@ export const modelContext: RuntimeCompositionModelContext = {
 export const validationContext: SubmitValidationContext = {
   scope: SCOPE,
   serverNow: NOW,
-  departureAt: NOW,
   expectedObservationContext: {
     ownerScopeRef: SCOPE.ownerScopeRef,
     threadId: SCOPE.threadId,
     capabilityVersion: 'runtime-composition-v1',
     locationRevision: 1,
-    originRef: null,
-    homeStationRef: null,
-    minimumStayMinutes: null,
     timeContext: 'now',
   },
-  preferences: {
-    maxWalkMinutes: null,
-    homeStationRef: null,
-    minimumStayMinutes: null,
-  },
-  travel: [],
   requireLastOrderAtArrival: false,
 };
 

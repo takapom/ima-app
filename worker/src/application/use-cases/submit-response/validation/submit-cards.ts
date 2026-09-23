@@ -6,7 +6,6 @@ import {
   PlaceIdentitySchema,
   PhotoInfoSchema,
   PriceInfoSchema,
-  WalkingRouteSchema,
 } from '@worker/domain/places/place-values';
 import {
   SubmitCardsInputSchema,
@@ -31,10 +30,7 @@ import {
   type ValidatedEvidenceText,
   type ValidatedMessageResponse,
 } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
-import {
-  validateArrivalAndOpening,
-  validateLastTrain,
-} from '@worker/application/use-cases/submit-response/validation/submit-cards-travel';
+import { validateOpening } from '@worker/application/use-cases/submit-response/validation/submit-cards-opening';
 
 export type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 
@@ -209,24 +205,7 @@ const validateCandidate = (
         selection.candidateId,
       ),
     );
-  issues.push(...validateArrivalAndOpening(selection.candidateId, path, context, byField));
-  const walkingObservation = byField.get('walking_route');
-  const walkingRoute =
-    walkingObservation === undefined
-      ? undefined
-      : parseObservationValue(walkingObservation.observation, WalkingRouteSchema);
-  if (walkingRoute === undefined && walkingObservation !== undefined)
-    issues.push(
-      issue(
-        'INVALID_EVIDENCE',
-        `${path}.evidenceIds`,
-        'walking observation value is invalid',
-        ['walking_route'],
-        selection.candidateId,
-      ),
-    );
-  const lastTrain = validateLastTrain(selection.candidateId, path, context, byField);
-  issues.push(...lastTrain.issues);
+  issues.push(...validateOpening(selection.candidateId, path, context, byField));
   const why = resolveEvidenceText(
     selection.why,
     selection.candidateId,
@@ -290,8 +269,6 @@ const validateCandidate = (
       price,
       photos,
       facilities,
-      walkingRoute: walkingRoute ?? null,
-      lastTrain: lastTrain.info,
       evidenceIds: [...selection.evidenceIds, ...attachedEvidenceIds],
       why: why.response,
       diff: diff === null ? null : diff.status === 'valid' ? diff.response : null,

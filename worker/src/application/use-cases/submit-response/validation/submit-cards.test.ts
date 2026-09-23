@@ -34,10 +34,9 @@ describe('submit-cards pure validation and card assembly', () => {
       expect(result.response.hero.identity.name).toBe('店 candidate-1');
       expect(result.response.hero.price?.rawLabel).toBe('¥¥');
       expect(result.response.hero.photos?.photos[0]?.photoRef).toBe('photo-candidate-1');
-      expect(result.response.hero.walkingRoute?.durationSeconds).toBe(600);
       expect(result.response.hero.why.text).toBe('理由 candidate-1');
       expect(result.response.message[0]?.evidence[0]?.observationId).toBe(idsFor(fixture).identity);
-      expect(fixture.registry.listObservations(fixture.context.scope)).toHaveLength(5);
+      expect(fixture.registry.listObservations(fixture.context.scope)).toHaveLength(4);
     }
   });
 
@@ -61,7 +60,7 @@ describe('submit-cards pure validation and card assembly', () => {
     // and facilities are display-only and must still reach the card.
     const selection = {
       ...makeSelection('candidate-1', ids),
-      evidenceIds: [ids.identity, ids.opening, ids.walking],
+      evidenceIds: [ids.identity, ids.opening],
     };
     const result = validateSubmitCards(makeInput([selection]), fixture.context, fixture.registry);
 
@@ -103,11 +102,7 @@ describe('submit-cards pure validation and card assembly', () => {
   });
 
   it('supports message-only and rejects an empty message', () => {
-    const fixture = makeFixture([], {
-      originRef: null,
-      maxWalkMinutes: null,
-      requireLastOrderAtArrival: false,
-    });
+    const fixture = makeFixture([], { requireLastOrderAtArrival: false });
     const message = {
       text: '条件を確認しました',
       evidenceIds: [],
@@ -119,43 +114,6 @@ describe('submit-cards pure validation and card assembly', () => {
     expect(
       validateMessage({ ...message, text: '' }, fixture.context, fixture.registry).status,
     ).toBe('invalid');
-  });
-
-  it('allows message-only clarification when home-station travel context is incomplete', () => {
-    const fixture = makeFixture(['candidate-1'], {
-      homeStationRef: 'home-1',
-      travel: [],
-    });
-    const ids = idsFor(fixture);
-    const result = validateMessage(
-      { text: '終電条件を確認します', evidenceIds: [ids.identity], basis: 'grounded' },
-      fixture.context,
-      fixture.registry,
-    );
-    expect(result.status).toBe('valid');
-  });
-
-  it('requires walking only when an explicit walk limit exists', () => {
-    const fixture = makeFixture();
-    const ids = idsFor(fixture);
-    const selection = makeSelection('candidate-1', ids);
-    selection.evidenceIds = selection.evidenceIds.filter((id) => id !== ids.walking);
-    const result = validateSubmitCards(makeInput([selection]), fixture.context, fixture.registry);
-    expect(result.status).toBe('invalid');
-    if (result.status === 'invalid') {
-      expect(result.issues.some((item) => item.code === 'MISSING_EVIDENCE')).toBe(true);
-    }
-
-    const noLimit = makeFixture(['candidate-1'], {
-      originRef: null,
-      maxWalkMinutes: null,
-      requireLastOrderAtArrival: false,
-    });
-    const noWalk = makeSelection('candidate-1', idsFor(noLimit));
-    noWalk.evidenceIds = noWalk.evidenceIds.filter((id) => id !== idsFor(noLimit).walking);
-    expect(validateSubmitCards(makeInput([noWalk]), noLimit.context, noLimit.registry).status).toBe(
-      'valid',
-    );
   });
 
   it('rejects stale evidence and registered conflicting values', () => {

@@ -83,9 +83,6 @@ export const hotPepperObservationContext = (context: HarnessContext): Observatio
   threadId: context.threadId,
   capabilityVersion: context.capabilities.version,
   locationRevision: context.location.revision,
-  originRef: null,
-  homeStationRef: context.preferences.homeStationRef,
-  minimumStayMinutes: context.preferences.minimumStayMinutes,
   timeContext: 'now',
 });
 

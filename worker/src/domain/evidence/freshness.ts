@@ -16,9 +16,6 @@ export const ObservationContextSchema = v.strictObject({
   threadId: ThreadIdSchema,
   capabilityVersion: CapabilityVersionSchema,
   locationRevision: LocationRevisionSchema,
-  originRef: v.nullable(OpaqueIdSchema),
-  homeStationRef: v.nullable(OpaqueIdSchema),
-  minimumStayMinutes: v.nullable(v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(180))),
   timeContext: Text(160),
 });
 export type ObservationContext = v.InferOutput<typeof ObservationContextSchema>;
@@ -39,9 +36,6 @@ function contextValues(context: ObservationContext, field: string): readonly str
     context.threadId,
     context.capabilityVersion,
     String(context.locationRevision),
-    context.originRef ?? '',
-    context.homeStationRef ?? '',
-    context.minimumStayMinutes === null ? '' : String(context.minimumStayMinutes),
     context.timeContext,
   ];
 }
