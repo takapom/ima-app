@@ -1,5 +1,4 @@
 export type RuntimeReadOperation = 'search_places' | 'get_place_details';
-export type RuntimeBudgetOperation = RuntimeReadOperation | 'walking_route';
 
 export type RuntimeBudgetConfig = {
   readonly wholeTurnMs: number;
@@ -9,7 +8,6 @@ export type RuntimeBudgetConfig = {
   readonly maxParallelReads: number;
   readonly maxProviderHttpRequests: number;
   readonly maxCostUnits: number;
-  readonly maxRouteElements: number;
   readonly maxReadRetries: number;
   readonly maxRepairAttempts: number;
   readonly searchTimeoutMs: number;
@@ -23,7 +21,6 @@ export type RuntimeBudgetSnapshot = {
   readonly activeReads: number;
   readonly providerHttpRequests: number;
   readonly costUnits: number;
-  readonly routeElements: number;
   readonly readRetries: number;
   readonly submitAttempts: number;
   readonly remainingRepairs: number;
@@ -53,10 +50,9 @@ export type RuntimeBudgetResult<T> =
 
 export type RuntimeReadReservationRequest = {
   readonly callId?: string;
-  readonly operation: RuntimeBudgetOperation;
+  readonly operation: RuntimeReadOperation;
   readonly costUnits: number;
   readonly providerHttpRequests: number;
-  readonly routeElements: number;
 };
 
 export type RuntimeRetryFailure =
@@ -71,20 +67,8 @@ export type RuntimeReservation = {
 };
 
 export type RuntimeReadReservation = RuntimeReservation & {
-  readonly operation: RuntimeBudgetOperation;
+  readonly operation: RuntimeReadOperation;
   readonly retry: (failure: RuntimeRetryFailure, retryAfterMs?: number) => RuntimeRetryResult;
-};
-
-/** A route matrix admission uses one read slot and reserves every provider element up front. */
-export type RuntimeRouteReservationRequest = Omit<RuntimeReadReservationRequest, 'operation'>;
-
-export type RuntimeRouteReservation = RuntimeReadReservation & {
-  readonly operation: 'walking_route';
-  readonly costUnits: number;
-  readonly providerHttpRequests: number;
-  readonly routeElements: number;
-  /** Claims this reservation for one route computation. */
-  readonly consume: () => RuntimeBudgetResult<void>;
 };
 
 export type RuntimeSubmitReservation = {

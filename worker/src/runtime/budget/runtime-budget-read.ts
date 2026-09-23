@@ -11,11 +11,7 @@ type ReadAccounting = {
   readonly request: RuntimeReadReservationRequest;
   readonly releaseActive: () => void;
   readonly checkAdmission: () => RuntimeBudgetDenial | undefined;
-  readonly fits: (
-    costUnits: number,
-    providerHttpRequests: number,
-    routeElements: number,
-  ) => boolean;
+  readonly fits: (costUnits: number, providerHttpRequests: number) => boolean;
   readonly finalReserveAtMs: number;
   readonly maxReadRetries: number;
   readonly readRetries: () => number;
@@ -28,11 +24,7 @@ type PendingReadAccounting = {
   readonly request: RuntimeReadReservationRequest;
   readonly releaseActive: () => void;
   readonly checkAdmission: () => RuntimeBudgetDenial | undefined;
-  readonly fits: (
-    costUnits: number,
-    providerHttpRequests: number,
-    routeElements: number,
-  ) => boolean;
+  readonly fits: (costUnits: number, providerHttpRequests: number) => boolean;
   readonly addCosts: (request: RuntimeReadReservationRequest) => void;
 };
 
@@ -57,7 +49,6 @@ export const createRuntimeReadReservation = ({
 }: ReadAccounting): RuntimeReadReservation => {
   const reservedCostUnits = request.costUnits;
   const reservedProviderHttpRequests = request.providerHttpRequests;
-  const reservedRouteElements = request.routeElements;
   let released = false;
   const release = (): void => {
     if (released) return;
@@ -88,7 +79,7 @@ export const createRuntimeReadReservation = ({
     if (readRetries() >= maxReadRetries) {
       return { ok: false, denial: denial('BUDGET_EXCEEDED', 'read retry budget is exhausted') };
     }
-    if (!fits(reservedCostUnits, reservedProviderHttpRequests, reservedRouteElements)) {
+    if (!fits(reservedCostUnits, reservedProviderHttpRequests)) {
       return {
         ok: false,
         denial: denial('BUDGET_EXCEEDED', 'provider HTTP request budget is exhausted'),
@@ -106,7 +97,6 @@ export const createRuntimeReadReservation = ({
       ...request,
       costUnits: reservedCostUnits,
       providerHttpRequests: reservedProviderHttpRequests,
-      routeElements: reservedRouteElements,
     });
     return { ok: true, delayMs: retryAfterMs };
   };
@@ -130,7 +120,7 @@ export const consumeRuntimePendingRead = (
     return { ok: false, denial: blocked };
   }
   const request = input.request;
-  if (!input.fits(request.costUnits, request.providerHttpRequests, request.routeElements)) {
+  if (!input.fits(request.costUnits, request.providerHttpRequests)) {
     input.removePending(input.callId);
     input.releaseActive();
     return {

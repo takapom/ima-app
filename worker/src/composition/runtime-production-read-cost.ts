@@ -60,6 +60,5 @@ export const resolveRuntimeProductionReadCost = (
   return {
     costUnits: providerRequests,
     providerHttpRequests: providerRequests,
-    routeElements: 0,
   };
 };

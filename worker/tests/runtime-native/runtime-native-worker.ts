@@ -234,7 +234,6 @@ export class ThreadDO extends ProductionThreadDO {
           resolveReadCost: () => ({
             costUnits: 1,
             providerHttpRequests: 1,
-            routeElements: 0,
           }),
           validationContext: ({ now }) => ({
             ...fixture.validationContext,

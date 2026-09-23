@@ -143,7 +143,7 @@ describe('runtime read attempt signal bridge', () => {
       const ports = createRuntimeReadPorts({
         budget,
         ports: { search, details },
-        resolveCost: () => ({ costUnits: 1, providerHttpRequests: 1, routeElements: 0 }),
+        resolveCost: () => ({ costUnits: 1, providerHttpRequests: 1 }),
         attemptSignalBridge: bridge,
       });
 
@@ -213,7 +213,7 @@ describe('runtime read attempt signal bridge', () => {
           search,
           details: { read: () => Promise.reject(new Error('details should not be called')) },
         },
-        resolveCost: () => ({ costUnits: 1, providerHttpRequests: 1, routeElements: 0 }),
+        resolveCost: () => ({ costUnits: 1, providerHttpRequests: 1 }),
         attemptSignalBridge: bridge,
       });
 
@@ -312,7 +312,7 @@ describe('runtime read attempt signal bridge', () => {
           search,
           details: { read: () => Promise.reject(new Error('details should not be called')) },
         },
-        resolveCost: () => ({ costUnits: 1, providerHttpRequests: 1, routeElements: 0 }),
+        resolveCost: () => ({ costUnits: 1, providerHttpRequests: 1 }),
         attemptSignalBridge: bridge,
       });
       const pending = ports.search.search(input, context, execution, cancellation);

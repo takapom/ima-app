@@ -2,7 +2,6 @@ import {
   consumeRuntimePendingRead,
   createRuntimeReadReservation,
 } from '@worker/runtime/budget/runtime-budget-read';
-import { createRuntimeRouteReservation } from '@worker/runtime/budget/runtime-budget-route';
 import type {
   RuntimeBudgetConfig,
   RuntimeBudgetDenial,
@@ -12,15 +11,12 @@ import type {
   RuntimeBudgetSnapshot,
   RuntimeReadReservation,
   RuntimeReadReservationRequest,
-  RuntimeRouteReservation,
-  RuntimeRouteReservationRequest,
   RuntimeSubmitReservation,
 } from '@worker/runtime/budget/runtime-budget-types';
 export type {
   RuntimeBudgetConfig,
   RuntimeBudgetDenial,
   RuntimeBudgetDenialCode,
-  RuntimeBudgetOperation,
   RuntimeBudgetOptions,
   RuntimeBudgetResult,
   RuntimeBudgetSnapshot,
@@ -30,8 +26,6 @@ export type {
   RuntimeReservation,
   RuntimeRetryFailure,
   RuntimeRetryResult,
-  RuntimeRouteReservation,
-  RuntimeRouteReservationRequest,
   RuntimeSubmitReservation,
 } from '@worker/runtime/budget/runtime-budget-types';
 
@@ -44,7 +38,6 @@ export const DEFAULT_RUNTIME_BUDGET: RuntimeBudgetConfig = Object.freeze({
   maxParallelReads: 2,
   maxProviderHttpRequests: 20,
   maxCostUnits: 20,
-  maxRouteElements: 8,
   maxReadRetries: 1,
   maxRepairAttempts: 2,
   searchTimeoutMs: 3_000,
@@ -63,8 +56,7 @@ const validRequest = (request: RuntimeReadReservationRequest): boolean =>
   request.operation.length > 0 &&
   (request.callId === undefined || request.callId.length > 0) &&
   validNonNegativeInteger(request.costUnits) &&
-  validNonNegativeInteger(request.providerHttpRequests) &&
-  validNonNegativeInteger(request.routeElements);
+  validNonNegativeInteger(request.providerHttpRequests);
 
 const denial = (code: RuntimeBudgetDenialCode, message: string): RuntimeBudgetDenial => ({
   code,
@@ -92,7 +84,6 @@ const assertConfig = (config: RuntimeBudgetConfig): RuntimeBudgetConfig => {
     !validLimit(config.finalReserveMs) ||
     config.finalReserveMs >= config.wholeTurnMs ||
     !validLimit(config.maxCostUnits) ||
-    !validLimit(config.maxRouteElements) ||
     !validLimit(config.maxReadRetries) ||
     config.maxReadRetries > 1 ||
     !validLimit(config.maxRepairAttempts) ||
@@ -123,7 +114,6 @@ export class RuntimeBudget {
   private activeReads = 0;
   private providerHttpRequests = 0;
   private costUnits = 0;
-  private routeElements = 0;
   private readRetries = 0;
   private submitAttempts = 0;
   private cancelledCode: 'CANCELLED' | 'STALE_TURN' | null = null;
@@ -170,7 +160,6 @@ export class RuntimeBudget {
       activeReads: this.activeReads,
       providerHttpRequests: this.providerHttpRequests,
       costUnits: this.costUnits,
-      routeElements: this.routeElements,
       readRetries: this.readRetries,
       submitAttempts: this.submitAttempts,
       remainingRepairs: Math.max(
@@ -229,7 +218,7 @@ export class RuntimeBudget {
         denial: denial('BUDGET_EXCEEDED', 'provider request requires an admitted read'),
       };
     }
-    if (!this.fits(1, 1, 0)) {
+    if (!this.fits(1, 1)) {
       return {
         ok: false,
         denial: denial('BUDGET_EXCEEDED', 'provider HTTP request budget is exhausted'),
@@ -313,7 +302,7 @@ export class RuntimeBudget {
     if (this.readCalls >= this.config.maxReadCalls) {
       return { ok: false, denial: denial('BUDGET_EXCEEDED', 'read call budget is exhausted') };
     }
-    if (!this.fits(request.costUnits, request.providerHttpRequests, request.routeElements)) {
+    if (!this.fits(request.costUnits, request.providerHttpRequests)) {
       return { ok: false, denial: denial('BUDGET_EXCEEDED', 'read cost budget is exhausted') };
     }
 
@@ -321,7 +310,6 @@ export class RuntimeBudget {
     this.activeReads += 1;
     this.costUnits += request.costUnits;
     this.providerHttpRequests += request.providerHttpRequests;
-    this.routeElements += request.routeElements;
     return {
       ok: true,
       value: this.readReservation(request, () => {
@@ -340,12 +328,10 @@ export class RuntimeBudget {
       request,
       releaseActive,
       checkAdmission: () => this.checkAdmission(false),
-      fits: (costUnits, providerHttpRequests, routeElements) =>
-        this.fits(costUnits, providerHttpRequests, routeElements),
+      fits: (costUnits, providerHttpRequests) => this.fits(costUnits, providerHttpRequests),
       addCosts: (costs) => {
         this.costUnits += costs.costUnits;
         this.providerHttpRequests += costs.providerHttpRequests;
-        this.routeElements += costs.routeElements;
       },
       removePending: (pendingCallId) => this.pendingReadSlots.delete(pendingCallId),
       readReservation: (pendingRequest, release) => this.readReservation(pendingRequest, release),
@@ -360,8 +346,7 @@ export class RuntimeBudget {
       request,
       releaseActive,
       checkAdmission: () => this.checkAdmission(false),
-      fits: (costUnits, providerHttpRequests, routeElements) =>
-        this.fits(costUnits, providerHttpRequests, routeElements),
+      fits: (costUnits, providerHttpRequests) => this.fits(costUnits, providerHttpRequests),
       finalReserveAtMs: this.finalReserveAtMs,
       maxReadRetries: this.config.maxReadRetries,
       readRetries: () => this.readRetries,
@@ -371,20 +356,9 @@ export class RuntimeBudget {
       addCosts: (costs) => {
         this.costUnits += costs.costUnits;
         this.providerHttpRequests += costs.providerHttpRequests;
-        this.routeElements += costs.routeElements;
       },
       monotonicTime: () => this.monotonicTime(),
     });
-  }
-
-  reserveRoute(
-    request: RuntimeRouteReservationRequest,
-  ): RuntimeBudgetResult<RuntimeRouteReservation> {
-    return createRuntimeRouteReservation(
-      request,
-      (readRequest) => this.reserveRead(readRequest),
-      () => this.checkAdmission(false),
-    );
   }
 
   reserveSubmit(): RuntimeBudgetResult<RuntimeSubmitReservation> {
@@ -403,11 +377,10 @@ export class RuntimeBudget {
     };
   }
 
-  private fits(costUnits: number, providerHttpRequests: number, routeElements: number): boolean {
+  private fits(costUnits: number, providerHttpRequests: number): boolean {
     return (
       this.providerHttpRequests + providerHttpRequests <= this.config.maxProviderHttpRequests &&
-      this.costUnits + costUnits <= this.config.maxCostUnits &&
-      this.routeElements + routeElements <= this.config.maxRouteElements
+      this.costUnits + costUnits <= this.config.maxCostUnits
     );
   }
 

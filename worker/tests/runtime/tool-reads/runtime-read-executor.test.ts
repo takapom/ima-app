@@ -24,7 +24,6 @@ const request = <T>(
   operation: 'search_places',
   costUnits: 1,
   providerHttpRequests: 1,
-  routeElements: 0,
   invoke,
   ...overrides,
 });
@@ -222,7 +221,7 @@ it('reserves before invoking and reports retry budget denial without a second ca
         calls += 1;
         throw new RuntimeReadFailure('server');
       },
-      { providerHttpRequests: 3, costUnits: 4, routeElements: 2 },
+      { providerHttpRequests: 3, costUnits: 4 },
     ),
   );
   expect(result).toMatchObject({
@@ -235,7 +234,6 @@ it('reserves before invoking and reports retry budget denial without a second ca
   expect(budget.snapshot()).toMatchObject({
     providerHttpRequests: 3,
     costUnits: 4,
-    routeElements: 2,
   });
 
   const deniedBudget = new RuntimeBudget({

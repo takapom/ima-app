@@ -259,7 +259,7 @@ export const createComposition = (
     registry,
     ports: createPorts(calls, registry),
     commit,
-    resolveReadCost: () => ({ costUnits: 1, providerHttpRequests: 1, routeElements: 0 }),
+    resolveReadCost: () => ({ costUnits: 1, providerHttpRequests: 1 }),
     validationContext,
     persistMessages,
     isFinalResponse: () => true,

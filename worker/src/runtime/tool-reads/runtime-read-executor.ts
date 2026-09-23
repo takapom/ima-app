@@ -33,7 +33,6 @@ export type RuntimeReadExecutionRequest<T> = {
   readonly operation: RuntimeReadOperation;
   readonly costUnits: number;
   readonly providerHttpRequests: number;
-  readonly routeElements: number;
   readonly invoke: (signal: AbortSignal) => Promise<T>;
 };
 
@@ -132,7 +131,6 @@ export class RuntimeReadExecutor<T> {
       operation: request.operation,
       costUnits: request.costUnits,
       providerHttpRequests: request.providerHttpRequests,
-      routeElements: request.routeElements,
     });
     if (!reservation.ok) return { ok: false, denial: reservation.denial, attempts: 0 };
 
