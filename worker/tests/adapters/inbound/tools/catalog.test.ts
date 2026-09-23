@@ -265,51 +265,21 @@ describe('public tool catalog', () => {
     expect(ports.details).toBe(0);
   });
 
-  it('rejects model-supplied travel constraints that differ from harness preferences', async () => {
+  it('rejects a model-supplied travel context as an unknown input property', async () => {
     const ports: Ports = { search: 0, details: 0, submit: 0, executions: [], contexts: [] };
     const dependencies = makeDependencies(ports);
     const result = await invokePublicTool(
       'get_place_details',
-      {
-        ...detailsInput,
-        travelContext: {
-          departure: 'now',
-          homeStationRef: 'station-forged',
-          minimumStayMinutes: context.preferences.minimumStayMinutes ?? 20,
-        },
-      },
+      { ...detailsInput, travelContext: { departure: 'now', minimumStayMinutes: 5 } },
       dependencies,
       invocation,
     );
 
     expect(result.status).toBe('error');
     if (result.status === 'error') {
-      expect(result.error.code).toBe('CONSTRAINT_VIOLATION');
-      expect(result.error.path).toBe('travelContext.homeStationRef');
+      expect(result.error.code).toBe('INVALID_ARGUMENT');
+      expect(result.error.path).toBe('input');
     }
-    expect(ports.details).toBe(0);
-  });
-
-  it('rejects a forged minimum stay even when the station matches', async () => {
-    const ports: Ports = { search: 0, details: 0, submit: 0, executions: [], contexts: [] };
-    const dependencies = makeDependencies(ports);
-    const result = await invokePublicTool(
-      'get_place_details',
-      {
-        ...detailsInput,
-        travelContext: {
-          departure: 'now',
-          homeStationRef: context.preferences.homeStationRef ?? undefined,
-          minimumStayMinutes: 5,
-        },
-      },
-      dependencies,
-      invocation,
-    );
-
-    expect(result.status).toBe('error');
-    if (result.status === 'error')
-      expect(result.error.path).toBe('travelContext.minimumStayMinutes');
     expect(ports.details).toBe(0);
   });
 

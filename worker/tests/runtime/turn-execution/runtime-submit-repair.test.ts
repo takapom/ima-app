@@ -39,7 +39,7 @@ describe('submit entry validation', () => {
       composition.dispose();
     },
   );
-  it('preserves the metadata issue and spends the existing repair budget before a Port call', async () => {
+  it('rejects legacy constraint metadata and spends the existing repair budget before a Port call', async () => {
     const calls = emptyPortCalls();
     const { factory } = createFactory(calls, { onSubmitRejected: () => undefined });
     const envelope = {
@@ -61,14 +61,10 @@ describe('submit entry validation', () => {
         status: 'invalid',
         repairable: remainingRepairs > 0,
         remainingRepairs,
-        issues: [
-          {
-            path: 'metadata.turnConstraints',
-          },
-        ],
+        issues: [{ code: 'INVALID_ARGUMENT' }],
       });
       if (result.status !== 'invalid') throw new Error('invalid metadata was accepted');
-      expect(result.issues[0]?.message).toContain('SOURCE_TURN_NOT_FOUND');
+      expect(result.issues[0]?.message).toContain('envelope is invalid');
     }
     expect(calls.submits).toHaveLength(0);
     expect(factory.hasUnresolvedSubmitFailure()).toBe(true);

@@ -1,5 +1,4 @@
 import type { TurnContext } from '@cloudflare/think';
-import { TurnConstraintError } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type { SubmitCardsPort } from '@worker/application/ports/submission';
 import { describe, expect, it } from 'vitest';
 import { RuntimeTurnFactoryError } from '@worker/runtime/turn-execution/runtime-turn-factory';
@@ -17,7 +16,6 @@ import {
   emptyPortCalls,
   envelope,
   submitInput,
-  withWalkingRoute,
   type PortCalls,
 } from '../../support/runtime-turn-factory-fixture';
 
@@ -69,102 +67,24 @@ describe('createRuntimeTurnFactory', () => {
     });
   });
 
-  it('applies validated turn conditions while preserving the base context and call snapshots', async () => {
-    const calls: PortCalls = emptyPortCalls();
-    // A walking constraint is only adoptable where walking-route evidence exists.
-    const { factory, applied } = createFactory(calls, withWalkingRoute());
-    const constraint = {
-      turnConstraints: {
-        changes: [
-          { maxWalkMinutes: 20, sourceTurnId: 'turn-source', quote: '最大徒歩を20分に変更する' },
-        ],
-      },
-    };
-    const first = await invokePublicToolEnvelope(
-      'search_places',
-      envelope(constraint),
-      factory.dependencies,
-      { toolCallId: 'sdk-search-1' },
-    );
-    expect(first.status).toBe('ok');
-    expect(calls.searches[0]?.preferences.maxWalkMinutes).toBe(20);
-    expect(factory.baseContext.preferences.maxWalkMinutes).toBe(15);
-    expect(factory.context.preferences.maxWalkMinutes).toBe(20);
-    expect(applied).toEqual([{ maxWalkMinutes: 20 }]);
-
-    const second = await invokePublicToolEnvelope(
-      'search_places',
-      envelope({
-        turnConstraints: {
-          changes: [
-            { maxWalkMinutes: 30, sourceTurnId: 'turn-source', quote: '最大徒歩を20分に変更する' },
-          ],
-        },
-      }),
-      factory.dependencies,
-      { toolCallId: 'sdk-search-2' },
-    );
-    expect(second.status).toBe('ok');
-    expect(calls.searches[1]?.preferences.maxWalkMinutes).toBe(30);
-
-    const replay = await invokePublicToolEnvelope(
-      'search_places',
-      envelope(constraint),
-      factory.dependencies,
-      { toolCallId: 'sdk-search-1' },
-    );
-    expect(replay.status).toBe('ok');
-    expect(calls.searches[2]?.preferences.maxWalkMinutes).toBe(20);
-    expect(factory.context.preferences.maxWalkMinutes).toBe(30);
-  });
-
-  it('drops a proposed constraint the connected providers cannot evidence', async () => {
-    const calls: PortCalls = emptyPortCalls();
-    // The fixture context reports walkingRoute: false and lastTrain: false.
-    const { factory, applied } = createFactory(calls);
-    const result = await invokePublicToolEnvelope(
-      'search_places',
-      envelope({
-        turnConstraints: {
-          changes: [
-            { maxWalkMinutes: 20, sourceTurnId: 'turn-source', quote: '最大徒歩を20分に変更する' },
-          ],
-        },
-      }),
-      factory.dependencies,
-      { toolCallId: 'sdk-search-denied' },
-    );
-
-    // The call still succeeds; only the unsatisfiable condition is left unchanged,
-    // so the turn cannot spend its repair budget failing every submit.
-    expect(result.status).toBe('ok');
-    expect(calls.searches[0]?.preferences.maxWalkMinutes).toBe(15);
-    expect(factory.context.preferences.maxWalkMinutes).toBe(15);
-    expect(applied).toEqual([{ maxWalkMinutes: 15 }]);
-  });
-
-  it('keeps a proposed minimum stay, which opening hours alone can evidence', async () => {
+  it('rejects legacy turn-constraint metadata before any Port or context change', async () => {
     const calls: PortCalls = emptyPortCalls();
     const { factory } = createFactory(calls);
     const result = await invokePublicToolEnvelope(
       'search_places',
       envelope({
         turnConstraints: {
-          changes: [
-            {
-              minimumStayMinutes: 45,
-              sourceTurnId: 'turn-source',
-              quote: '最大徒歩を20分に変更する',
-            },
-          ],
+          changes: [{ minimumStayMinutes: 45, sourceTurnId: 'turn-source', quote: '45分' }],
         },
       }),
       factory.dependencies,
-      { toolCallId: 'sdk-search-stay' },
+      { toolCallId: 'sdk-search-legacy-metadata' },
     );
 
-    expect(result.status).toBe('ok');
-    expect(calls.searches[0]?.preferences.minimumStayMinutes).toBe(45);
+    expect(result.status).toBe('error');
+    if (result.status === 'error') expect(result.error.code).toBe('INVALID_ARGUMENT');
+    expect(calls.searches).toHaveLength(0);
+    expect(factory.context.preferences).toEqual(context.preferences);
   });
 
   it('records why a submit was refused instead of leaving it invisible', async () => {
@@ -249,52 +169,7 @@ describe('createRuntimeTurnFactory', () => {
     if (conflict.status === 'error') expect(conflict.error.code).toBe('MISSING_CONTEXT');
     expect(calls.details).toHaveLength(0);
 
-    const metadataConflict = await invokePublicToolEnvelope(
-      'search_places',
-      envelope({
-        turnConstraints: {
-          changes: [
-            { maxWalkMinutes: 20, sourceTurnId: 'turn-source', quote: '最大徒歩を20分に変更する' },
-          ],
-        },
-      }),
-      factory.dependencies,
-      { toolCallId: 'sdk-call-1' },
-    );
-    expect(metadataConflict.status).toBe('error');
-    if (metadataConflict.status === 'error') {
-      expect(metadataConflict.error.code).toBe('MISSING_CONTEXT');
-    }
     expect(calls.searches).toHaveLength(2);
-  });
-
-  it('rejects a quoted constraint before applying conditions or invoking a Port', () => {
-    const calls: PortCalls = emptyPortCalls();
-    const { factory, applied } = createFactory(calls);
-    expect(() =>
-      factory.dependencies.runtime(
-        'search_places',
-        { toolCallId: 'sdk-invalid-quote' },
-        {
-          turnConstraints: {
-            changes: [
-              {
-                maxWalkMinutes: 20,
-                sourceTurnId: 'turn-source',
-                quote: 'この引用は元のturnに存在しない',
-              },
-            ],
-          },
-        },
-      ),
-    ).toThrowError(TurnConstraintError);
-    expect(factory.getConditions()).toEqual({
-      maxWalkMinutes: 15,
-      homeStationRef: 'station-tools',
-      minimumStayMinutes: 20,
-    });
-    expect(applied).toEqual([]);
-    expect(calls.searches).toHaveLength(0);
   });
 
   it('reserves and commits submit through the shared RuntimeBudget', async () => {
@@ -322,35 +197,22 @@ describe('createRuntimeTurnFactory', () => {
     expect(calls.submits).toHaveLength(1);
   });
 
-  it('builds the submit adapter with the latest clock and turn conditions', async () => {
+  it('builds the submit adapter with the latest clock', async () => {
     const calls: PortCalls = emptyPortCalls();
     let now = context.serverNow;
-    const built: Array<{ now: string; maxWalkMinutes: number | null }> = [];
+    const built: Array<{ now: string }> = [];
     const dynamicSubmit: SubmitCardsPort = {
       submit: () => Promise.resolve(committedResult),
     };
     const { factory } = createFactory(
       calls,
       {
-        ...withWalkingRoute(),
-        buildSubmitPort: ({ now: sampledNow, conditions }) => {
-          built.push({ now: sampledNow, maxWalkMinutes: conditions.maxWalkMinutes });
+        buildSubmitPort: ({ now: sampledNow }) => {
+          built.push({ now: sampledNow });
           return dynamicSubmit;
         },
       },
       () => now,
-    );
-    await invokePublicToolEnvelope(
-      'search_places',
-      envelope({
-        turnConstraints: {
-          changes: [
-            { maxWalkMinutes: 20, sourceTurnId: 'turn-source', quote: '最大徒歩を20分に変更する' },
-          ],
-        },
-      }),
-      factory.dependencies,
-      { toolCallId: 'sdk-search-for-submit' },
     );
     now = '2026-09-10T00:01:00Z';
     const result = await invokePublicToolEnvelope(
@@ -360,7 +222,7 @@ describe('createRuntimeTurnFactory', () => {
       { toolCallId: 'sdk-submit-fresh-context' },
     );
     expect(result).toEqual(committedResult);
-    expect(built).toEqual([{ now, maxWalkMinutes: 20 }]);
+    expect(built).toEqual([{ now }]);
   });
 
   it('propagates caller abort and dispose to the factory signal before a Port call', async () => {

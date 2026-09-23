@@ -5,7 +5,6 @@ import type {
   CommitRequest,
 } from '@worker/application/ports/commit';
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
-import type { ConstraintValidationContext } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type { HarnessContext } from '@worker/application/ports/context';
 import type {
   PlaceDetailsPort,
@@ -252,10 +251,6 @@ const runCancellationScenario = async (mode: CancellationMode) => {
     startedAtMs: 0,
     now: () => 1,
   });
-  const constraintContext: ConstraintValidationContext = {
-    threadId: context.threadId,
-    originalTurns: [],
-  };
   const requestMessages: UIMessage[] = [
     { id: 'runtime-cancel-user', role: 'user' as const, parts: [{ type: 'text', text: 'raw' }] },
   ];
@@ -295,7 +290,6 @@ const runCancellationScenario = async (mode: CancellationMode) => {
         commit: commits,
         resolveReadCost: () => ({ costUnits: 1, providerHttpRequests: 1, routeElements: 0 }),
         validationContext,
-        constraintContext,
         persistMessages,
         isFinalResponse: () => true,
         currentTurnStart: 1,

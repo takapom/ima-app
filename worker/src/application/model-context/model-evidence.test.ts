@@ -99,7 +99,6 @@ describe('LLM evidence use boundary', () => {
       userText: 'show evidence',
       history: [],
       cardSet: null,
-      conditions: { maxWalkMinutes: null, homeStationRef: null, minimumStayMinutes: null },
       evidence: [evidence],
       fieldPolicy: {
         evidence: {

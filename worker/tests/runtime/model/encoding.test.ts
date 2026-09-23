@@ -55,11 +55,9 @@ describe('model message encoding', () => {
     expect(MODEL_SYSTEM_PROMPT).toContain(
       'Toolを呼ぶstepには文章を書かないでください。「探します」のような前置きは破棄され、終端としては扱いません。終端を返すstepではToolを呼ばず、final_messageのenvelopeかsubmit_cardsのどちらかだけを出してください。空の応答で終わらないでください。',
     );
-    expect(MODEL_SYSTEM_PROMPT).toContain('徒歩経路と終電は現在の接続では取得できません');
-    expect(MODEL_SYSTEM_PROMPT).toContain('ユーザーがminimumStayMinutesを明示的に変更した場合だけ');
-    expect(MODEL_SYSTEM_PROMPT).toContain(
-      'maxWalkMinutes・homeStationRefをturnConstraintsへ提案しない',
-    );
+    expect(MODEL_SYSTEM_PROMPT).toContain('徒歩時間・終電・滞在可能時間は取得できません');
+    expect(MODEL_SYSTEM_PROMPT).not.toContain('turnConstraints');
+    expect(MODEL_SYSTEM_PROMPT).not.toContain('駅directory');
   });
 
   it('leaves provider search and card preparation instructions in tool descriptions', () => {
@@ -74,6 +72,6 @@ describe('model message encoding', () => {
       '{"kind":"final_message","message":{"text":"確認しました","evidenceIds":[],"basis":"conversational"},"metadata":{}}',
     );
     expect(system?.content).toContain('grounded、inference、conversational');
-    expect(system?.content).toContain('sourceTurnId');
+    expect(system?.content).not.toContain('sourceTurnId');
   });
 });

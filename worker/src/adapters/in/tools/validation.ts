@@ -4,7 +4,6 @@ import {
   ModelGetPlaceDetailsInputSchema,
   SearchPlacesInputSchema,
   SearchPlacesOutputSchema,
-  type GetPlaceDetailsInput,
   type GetPlaceDetailsOutput,
   type ModelGetPlaceDetailsInput,
   type SearchPlacesInput,
@@ -29,7 +28,6 @@ import {
 import { type CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import { type DetailField } from '@worker/domain/primitives';
 import { type Issue, type IssueCode } from '@worker/domain/issue';
-import { TurnConstraintError } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type {
   PublicToolInvocation,
   PublicToolName,
@@ -152,17 +150,7 @@ export const runtimeFor = (
   let supplied: unknown;
   try {
     supplied = factory(operation, invocation, metadata);
-  } catch (error: unknown) {
-    if (error instanceof TurnConstraintError) {
-      return {
-        ok: false,
-        error: issue(
-          'INVALID_ARGUMENT',
-          'metadata.turnConstraints',
-          `${error.code}: use the current thread turnId and an exact user quote; omit changes the user did not request`,
-        ),
-      };
-    }
+  } catch {
     return {
       ok: false,
       error: issue('MISSING_CONTEXT', null, 'tool execution context is unavailable'),
@@ -290,32 +278,6 @@ export const ownedCandidateIssue = (
     ) {
       return issue('UNKNOWN_CANDIDATE', path, 'candidate is not owned by this thread');
     }
-  }
-  return undefined;
-};
-
-/**
- * Travel constraints are harness-owned facts. The model may repeat them in a
- * details request, but it cannot replace the server-approved station or stay
- * requirement with a different value.
- */
-export const mismatchedTravelContext = (
-  context: HarnessContext,
-  input: { readonly travelContext?: GetPlaceDetailsInput['travelContext'] },
-): string | undefined => {
-  const requested = input.travelContext;
-  if (requested === undefined) return undefined;
-  if (
-    requested.homeStationRef !== undefined &&
-    requested.homeStationRef !== context.preferences.homeStationRef
-  ) {
-    return 'homeStationRef';
-  }
-  if (
-    requested.minimumStayMinutes !== undefined &&
-    requested.minimumStayMinutes !== context.preferences.minimumStayMinutes
-  ) {
-    return 'minimumStayMinutes';
   }
   return undefined;
 };

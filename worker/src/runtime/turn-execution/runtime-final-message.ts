@@ -5,11 +5,6 @@ import {
   type ModelActionMetadata,
 } from '@worker/domain/constraints/constraints';
 import { ModelDecisionSchema } from '@worker/application/ports/model';
-import {
-  validateModelActionMetadata,
-  type ConstraintValidationContext,
-  TurnConstraintError,
-} from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 
 const runtimeFinalMessageSchema = v.strictObject({
   kind: v.literal('final_message'),
@@ -24,8 +19,7 @@ export type RuntimeFinalMessage = {
   readonly metadata: ModelActionMetadata;
 };
 
-export type RuntimeFinalMessageErrorCode =
-  'INVALID_TEXT' | 'INVALID_JSON' | 'INVALID_ENVELOPE' | 'INVALID_METADATA';
+export type RuntimeFinalMessageErrorCode = 'INVALID_TEXT' | 'INVALID_JSON' | 'INVALID_ENVELOPE';
 
 const finalMessageErrors = new WeakSet<object>();
 
@@ -56,25 +50,16 @@ const parseJson = (text: string): unknown => {
 };
 
 /**
- * Parses the model's terminal text and validates metadata against the exact source turns.
- * Missing metadata is normalized to the Core action metadata empty object. No model text is
- * included in errors, and the returned message is only structurally validated until Core commit.
+ * Parses the model's terminal text. Missing metadata is normalized to the Core action metadata
+ * empty object. No model text is included in errors, and the returned message is only
+ * structurally validated until Core commit.
  */
-export const parseRuntimeFinalMessage = (
-  text: unknown,
-  constraintContext: ConstraintValidationContext,
-): RuntimeFinalMessage => {
+export const parseRuntimeFinalMessage = (text: unknown): RuntimeFinalMessage => {
   if (typeof text !== 'string') return invalid('INVALID_TEXT');
   const parsed = v.safeParse(runtimeFinalMessageSchema, parseJson(text));
   if (!parsed.success) return invalid('INVALID_ENVELOPE');
 
-  let metadata: ModelActionMetadata;
-  try {
-    metadata = validateModelActionMetadata(parsed.output.metadata ?? {}, constraintContext);
-  } catch (error: unknown) {
-    if (error instanceof TurnConstraintError) return invalid('INVALID_METADATA');
-    throw error;
-  }
+  const metadata: ModelActionMetadata = parsed.output.metadata ?? {};
 
   const decision = v.safeParse(ModelDecisionSchema, {
     actions: [{ kind: 'final_message', message: parsed.output.message }],

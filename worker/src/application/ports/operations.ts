@@ -170,7 +170,6 @@ export const ModelGetPlaceDetailsInputSchema = v.strictObject({
     ),
   ),
   freshness: v.picklist(['reuse_valid', 'refresh']),
-  travelContext: v.optional(TravelContextSchema),
 });
 export type ModelGetPlaceDetailsInput = v.InferOutput<typeof ModelGetPlaceDetailsInputSchema>;
 

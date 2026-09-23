@@ -197,7 +197,6 @@ const buildComposition = (
   persistMessages: RuntimeThinkPersistMessages,
   turnContext: HarnessContext = context,
 ): RuntimeThinkComposition<{ readonly responseId: string }> => {
-  const applied: Array<{ readonly maxWalkMinutes: number | null }> = [];
   const ports = createPorts();
   const turn = createRuntimeTurnFactory({
     createTools: createPublicToolSet,
@@ -210,8 +209,6 @@ const buildComposition = (
       })(),
     },
     ports,
-    constraintContext: { threadId: turnContext.threadId, originalTurns: [] },
-    applyMetadata: (_metadata, conditions) => applied.push(conditions),
     stopWhen: () => true,
     beforeStep: () => ({ activeTools: ['search_places', 'get_place_details', 'submit_cards'] }),
   });
@@ -224,9 +221,7 @@ const buildComposition = (
     isFinalResponse: () => true,
     onAccepted,
     getCommittedResponse: () => ({ responseId: 'response-runtime-connection' }),
-    dispose: () => {
-      expect(applied).toEqual([]);
-    },
+    dispose: () => undefined,
   };
 };
 

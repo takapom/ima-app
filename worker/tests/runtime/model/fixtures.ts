@@ -62,10 +62,5 @@ export const createModelContext = (): ProjectedModelContext =>
       },
     ],
     cardSet: null,
-    conditions: {
-      maxWalkMinutes: 15,
-      homeStationRef: 'station-shibuya',
-      minimumStayMinutes: 30,
-    },
     evidence: [],
   });

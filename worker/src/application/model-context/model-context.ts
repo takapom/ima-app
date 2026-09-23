@@ -16,10 +16,6 @@ import {
 } from '@worker/domain/primitives';
 import type { HarnessContext } from '@worker/application/ports/context';
 import { HarnessContextSchema } from '@worker/application/ports/context';
-import {
-  TurnConditionValuesSchema,
-  type TurnConditionValues,
-} from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import { ModelContextError } from '@worker/application/model-context/model-context-errors';
 import {
   ModelEvidenceSourceSchema,
@@ -100,31 +96,6 @@ const ModelCardSetSourceSchema = v.strictObject({
   candidates: v.pipe(v.array(ModelCandidateSourceSchema), v.maxLength(3)),
 });
 
-const ModelStationOptionSchema = v.strictObject({
-  stationRef: OpaqueIdSchema,
-  displayName: Text(160),
-});
-
-export const ModelStationDirectorySchema = v.union([
-  v.pipe(
-    v.strictObject({
-      status: v.literal('available'),
-      stations: v.pipe(v.array(ModelStationOptionSchema), v.minLength(1), v.maxLength(32)),
-    }),
-    v.check(
-      (directory) =>
-        new Set(directory.stations.map((station) => station.stationRef)).size ===
-        directory.stations.length,
-      'station directory references must be unique',
-    ),
-  ),
-  v.strictObject({
-    status: v.picklist(['unknown', 'unsupported']),
-    reason: Text(200),
-  }),
-]);
-export type ModelStationDirectory = v.InferOutput<typeof ModelStationDirectorySchema>;
-
 /** Model may select an owner-scoped reference, but never receives provider identity or payload. */
 export const ModelSavedReferenceSchema = v.strictObject({
   savedPlaceRef: SavedPlaceRefSchema,
@@ -147,11 +118,9 @@ export const ModelContextSourceSchema = v.strictObject({
   userText: Text(500),
   history: v.pipe(v.array(ModelHistoryEntrySchema), v.maxLength(32)),
   cardSet: v.nullable(ModelCardSetSourceSchema),
-  conditions: TurnConditionValuesSchema,
   evidence: v.pipe(v.array(ModelEvidenceSourceSchema), v.maxLength(64)),
   /** Optional for older callers; production supplies the current opaque owner references. */
   savedReferences: v.optional(ModelSavedReferencesSchema),
-  stationDirectory: v.optional(ModelStationDirectorySchema),
   /** Optional for older Core callers; Worker production composition supplies an explicit policy. */
   fieldPolicy: v.optional(ModelContextFieldPolicySchema),
 });
@@ -184,9 +153,7 @@ export type ProjectedModelContext = {
     readonly areaDescription: string | null;
   };
   readonly preferences: HarnessContext['preferences'];
-  readonly conditions: TurnConditionValues;
   readonly savedReferences: readonly ModelSavedReference[];
-  readonly stationDirectory: ModelStationDirectory;
   readonly history: readonly Omit<ModelHistoryEntry, 'threadId'>[];
   readonly cardSet: ModelCardSet | null;
   readonly evidence: readonly ModelEvidence[];
@@ -315,12 +282,7 @@ export const projectModelContext = (source: unknown): ProjectedModelContext => {
       areaDescription: harness.preferences.areaText,
     },
     preferences: harness.preferences,
-    conditions: value.conditions,
     savedReferences: value.savedReferences ?? [],
-    stationDirectory: value.stationDirectory ?? {
-      status: 'unknown',
-      reason: 'station directory was not supplied',
-    },
     history: modelContextFieldAllowed(fieldPolicy.history)
       ? value.history.map(({ threadId: _threadId, ...entry }) =>
           entry.evidenceIds.every((id) => usableEvidenceIds.has(id))

@@ -30,39 +30,11 @@ const detailFields: string[] = [
   'last_train',
 ];
 
-/**
- * Only constraints the connected providers can evidence are offered to the model.
- * `maxWalkMinutes` and `homeStationRef` need walking-route and last-train evidence,
- * so declaring them here would invite a proposal that every submit must then reject.
- */
+/** Tool metadata carries no values; it stays as an empty object until the envelope is removed. */
 const metadataJsonSchema: WireSchema = {
   type: 'object',
-  description:
-    'Use {} unless the user explicitly changes minimumStayMinutes. Walking limits and home stations are not supported conditions. Do not omit metadata or use null. Area and query belong in input.',
-  properties: {
-    turnConstraints: {
-      type: 'object',
-      properties: {
-        changes: {
-          type: 'array',
-          minItems: 1,
-          maxItems: 3,
-          items: {
-            type: 'object',
-            properties: {
-              minimumStayMinutes: { type: 'integer', minimum: 1, maximum: 180 },
-              sourceTurnId: opaqueId,
-              quote: { type: 'string', minLength: 1, maxLength: 300 },
-            },
-            required: ['sourceTurnId', 'quote', 'minimumStayMinutes'],
-            additionalProperties: false,
-          },
-        },
-      },
-      required: ['changes'],
-      additionalProperties: false,
-    },
-  },
+  description: 'Always {}. Area and query belong in input.',
+  properties: {},
   additionalProperties: false,
 };
 
@@ -166,16 +138,6 @@ const detailsJsonSchema: WireSchema = {
       },
     },
     freshness: { type: 'string', enum: ['reuse_valid', 'refresh'] },
-    travelContext: {
-      type: 'object',
-      properties: {
-        departure: { const: 'now' },
-        homeStationRef: opaqueId,
-        minimumStayMinutes: { type: 'integer', minimum: 1, maximum: 180 },
-      },
-      required: ['departure'],
-      additionalProperties: false,
-    },
   },
   required: ['requests', 'freshness'],
   additionalProperties: false,

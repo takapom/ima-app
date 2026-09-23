@@ -2,7 +2,6 @@ import * as v from 'valibot';
 import type { CardSetRecord } from '@worker/domain/candidates/continuity';
 import type { ModelContextSource } from '@worker/application/model-context/model-context';
 import type { ModelEvidenceSource } from '@worker/application/model-context/model-evidence';
-import type { OriginalTurn } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
 import { CardSetRecordSchema } from '@worker/domain/candidates/continuity';
 import {
@@ -37,11 +36,11 @@ const HistoryReferenceSchema = v.strictObject({
 });
 type HistoryReference = v.InferOutput<typeof HistoryReferenceSchema>;
 
-const OriginalTurnReferenceSchema = v.strictObject({
+/** Written before turn-constraint quoting was removed (#55); read and discarded on restore. */
+const LegacyOriginalTurnReferenceSchema = v.strictObject({
   threadId: OpaqueIdSchema,
   turnId: TurnIdSchema,
 });
-type OriginalTurnReference = v.InferOutput<typeof OriginalTurnReferenceSchema>;
 
 const EvidenceReferenceSchema = v.strictObject({
   observationId: ObservationIdSchema,
@@ -69,7 +68,7 @@ export const RuntimeProductionContextReferenceSchema = v.strictObject({
   /** Owner/thread-bound candidate IDs excluded before a later card-set replacement. */
   excludedCandidateIds: v.optional(v.pipe(v.array(OpaqueIdSchema), v.maxLength(50))),
   history: v.pipe(v.array(HistoryReferenceSchema), v.maxLength(32)),
-  originalTurns: v.pipe(v.array(OriginalTurnReferenceSchema), v.maxLength(32)),
+  originalTurns: v.optional(v.pipe(v.array(LegacyOriginalTurnReferenceSchema), v.maxLength(32))),
   cardSet: v.nullable(CardSetRecordSchema),
   evidence: v.pipe(v.array(EvidenceReferenceSchema), v.maxLength(64)),
   /** Session-only provider identities for the current card set; old snapshots omit this. */
@@ -89,7 +88,6 @@ export type RuntimeProductionContextPersistence = {
 
 export type RuntimeProductionContextStateForReference = {
   readonly history: readonly RetainedHistoryEntry[];
-  readonly originalTurns: readonly OriginalTurn[];
   readonly cardSet: CardSetSource | null;
   readonly evidence: readonly ModelEvidenceSource[];
   readonly savedPlaceRefs: readonly string[];
@@ -124,10 +122,6 @@ export const referenceSnapshotFor = (input: {
           : {}),
       }),
     ),
-    originalTurns: input.state.originalTurns.map(({ threadId, turnId }) => ({
-      threadId,
-      turnId,
-    })),
     cardSet,
     evidence: input.state.evidence.map(
       ({ observationId, candidateId, field, fetchedAt, freshUntil, expiresAt, retention }) => ({
@@ -154,11 +148,6 @@ const restoredHistory = (
     ? { ...reference, ...content }
     : { ...reference, basis: 'conversational', text: '[withheld]', evidenceIds: [] };
 
-const withheldOriginalTurn = (reference: OriginalTurnReference): OriginalTurn => ({
-  ...reference,
-  text: '[withheld]',
-});
-
 const withheldCardSet = (record: CardSetRecord): CardSetSource => ({
   record: {
     ...record,
@@ -179,16 +168,6 @@ export const stateFromReference = (snapshot: RuntimeProductionContextReference, 
   const history = snapshot.history.map((entry) => restoredHistory(entry, now));
   return {
     history,
-    originalTurns: snapshot.originalTurns.map((reference) => ({
-      ...withheldOriginalTurn(reference),
-      text:
-        history.find(
-          (entry) =>
-            entry.role === 'user' &&
-            entry.threadId === reference.threadId &&
-            entry.turnId === reference.turnId,
-        )?.text ?? '[withheld]',
-    })),
     cardSet: snapshot.cardSet === null ? null : withheldCardSet(snapshot.cardSet),
     evidence: [],
     savedPlaceRefs: [...snapshot.savedPlaceRefs],

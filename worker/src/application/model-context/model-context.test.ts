@@ -131,11 +131,6 @@ const source = {
     },
   ],
   cardSet,
-  conditions: {
-    maxWalkMinutes: 15,
-    homeStationRef: 'station-shibuya',
-    minimumStayMinutes: 30,
-  },
   evidence: [
     {
       ownerScopeRef: 'owner-1',
@@ -173,13 +168,6 @@ const source = {
     },
   ],
   fieldPolicy: allowModelContextFieldPolicy,
-  stationDirectory: {
-    status: 'available' as const,
-    stations: [
-      { stationRef: 'station-shibuya', displayName: '渋谷駅' },
-      { stationRef: 'station-shinjuku', displayName: '新宿駅' },
-    ],
-  },
 };
 
 const firstEvidence = source.evidence[0];
@@ -214,8 +202,8 @@ describe('model context projection', () => {
     ]);
     expect(projected.cardSet?.selectedCandidateId).toBe('candidate-2');
     expect(projected.cardSet?.excludedCandidateIds).toEqual(['candidate-3']);
-    expect(projected.conditions).toEqual(source.conditions);
-    expect(projected.stationDirectory).toEqual(source.stationDirectory);
+    expect(Object.keys(projected)).not.toContain('conditions');
+    expect(Object.keys(projected)).not.toContain('stationDirectory');
     const projectedEvidence = projected.evidence[0];
     expect(projectedEvidence?.status).toBe('known');
     if (projectedEvidence?.status !== 'known') throw new Error('expected known evidence');
@@ -443,24 +431,6 @@ describe('model context projection', () => {
       status: 'known',
       freshUntil: '2026-09-10T12:45:00Z',
     });
-  });
-
-  it('marks a missing station directory as unknown instead of treating an empty list as absence', () => {
-    const projected = projectModelContext({
-      ...source,
-      stationDirectory: { status: 'unknown', reason: 'station capability is not loaded' },
-    });
-    expect(projected.stationDirectory).toEqual({
-      status: 'unknown',
-      reason: 'station capability is not loaded',
-    });
-    expect(JSON.stringify(projected.stationDirectory)).not.toContain('stations":[]');
-    expect(() =>
-      projectModelContext({
-        ...source,
-        stationDirectory: { status: 'available', stations: [] },
-      }),
-    ).toThrowError(ModelContextError);
   });
 
   it('applies model input policy independently to evidence, history, card set, and names', () => {

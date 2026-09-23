@@ -6,11 +6,6 @@ import type { CandidateObservationRegistryPort } from '@worker/application/ports
 import type { ClockPort, HarnessContext, IdPort } from '@worker/application/ports/context';
 import type { CommitHashPort, CommitPort } from '@worker/application/ports/commit';
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
-import type {
-  ConstraintValidationContext,
-  TurnConditionValues,
-} from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
-import type { ModelActionMetadata } from '@worker/domain/constraints/constraints';
 import type { ModelContextSource } from '@worker/application/model-context/model-context';
 import type { SubmitCardsPort } from '@worker/application/ports/submission';
 import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
@@ -80,14 +75,10 @@ import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-se
 export type { RuntimePublicResponseDependencies } from '@worker/runtime/response/runtime-response';
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;
 
-export type RuntimeCompositionModelContext = Omit<ModelContextSource, 'harness' | 'conditions'>;
+export type RuntimeCompositionModelContext = Omit<ModelContextSource, 'harness'>;
 
 export type RuntimeCompositionValidationContext =
-  | SubmitValidationContext
-  | ((input: {
-      readonly now: string;
-      readonly conditions: TurnConditionValues;
-    }) => SubmitValidationContext);
+  SubmitValidationContext | ((input: { readonly now: string }) => SubmitValidationContext);
 
 export type RuntimeCompositionPersistMessages = RuntimeThinkPersistMessages;
 
@@ -109,10 +100,8 @@ type RuntimeTurnCompositionBaseOptions = {
   readonly commit: CommitPort;
   readonly resolveReadCost: RuntimeReadCostResolver;
   readonly validationContext: RuntimeCompositionValidationContext;
-  readonly constraintContext: ConstraintValidationContext;
   readonly persistMessages: RuntimeCompositionPersistMessages;
   readonly isFinalResponse?: (params: RuntimeModelGuardCallOptions) => boolean;
-  readonly applyMetadata?: (metadata: ModelActionMetadata, conditions: TurnConditionValues) => void;
   readonly stopWhen?: Exclude<TurnConfig['stopWhen'], undefined>;
   readonly beforeToolCall?: RuntimeBeforeToolCallDelegate;
   readonly currentTurnStart?: number;
@@ -175,26 +164,8 @@ const narrowRepairs = (budget: RuntimeBudget): 0 | 1 | 2 => {
 const validationAt = (
   value: RuntimeCompositionValidationContext,
   now: string,
-  conditions: TurnConditionValues,
-): SubmitValidationContext => {
-  if (typeof value === 'function') return value({ now, conditions });
-  return {
-    ...value,
-    serverNow: now,
-    departureAt: now,
-    expectedObservationContext: {
-      ...value.expectedObservationContext,
-      homeStationRef: conditions.homeStationRef,
-      minimumStayMinutes: conditions.minimumStayMinutes,
-    },
-    preferences: {
-      ...value.preferences,
-      maxWalkMinutes: conditions.maxWalkMinutes,
-      homeStationRef: conditions.homeStationRef,
-      minimumStayMinutes: conditions.minimumStayMinutes,
-    },
-  };
-};
+): SubmitValidationContext =>
+  typeof value === 'function' ? value({ now }) : { ...value, serverNow: now, departureAt: now };
 
 /**
  * Assembles one Think turn without owning the model loop. Every SDK-facing dependency is wired
@@ -283,17 +254,12 @@ export function createRuntimeTurnComposition(
       ? {}
       : { attemptSignalBridge: options.attemptSignalBridge }),
   });
-  const baseValidation = (at: { now: string; conditions: TurnConditionValues }) =>
-    validationAt(options.validationContext, at.now, at.conditions);
-  const makeSubmitPort = (at: {
-    readonly now: string;
-    readonly conditions: TurnConditionValues;
-  }): SubmitCardsPort => {
+  const makeSubmitPort = (at: { readonly now: string }): SubmitCardsPort => {
     const port = createSubmitCardsPort({
       application,
       registry: options.registry,
       scope: { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
-      validationContext: baseValidation(at),
+      validationContext: validationAt(options.validationContext, at.now),
       expectedTurnId: options.context.turnId,
       expectedRevision: options.context.revision,
       idempotencyKey: options.idempotencyKey ?? `${options.context.turnId}-submit`,
@@ -319,11 +285,6 @@ export function createRuntimeTurnComposition(
       },
     };
   };
-  const initialConditions: TurnConditionValues = {
-    maxWalkMinutes: options.context.preferences.maxWalkMinutes,
-    homeStationRef: options.context.preferences.homeStationRef,
-    minimumStayMinutes: options.context.preferences.minimumStayMinutes,
-  };
   const finalResponse = createRuntimeFinalResponseHooks({
     budget: options.budget,
     ...(options.isFinalResponse === undefined ? {} : { isFinalResponse: options.isFinalResponse }),
@@ -340,11 +301,9 @@ export function createRuntimeTurnComposition(
       search: readPorts.search,
       details: readPorts.details,
       readAdmission: readPorts.admission,
-      submit: makeSubmitPort({ now: options.context.serverNow, conditions: initialConditions }),
+      submit: makeSubmitPort({ now: options.context.serverNow }),
     },
     buildSubmitPort: makeSubmitPort,
-    constraintContext: options.constraintContext,
-    applyMetadata: options.applyMetadata ?? (() => undefined),
     ...(options.request.signal === undefined ? {} : { signal: options.request.signal }),
     ...(options.request.isStale === undefined ? {} : { isStale: options.request.isStale }),
     beforeStep: finalResponse.beforeStep,
@@ -357,15 +316,13 @@ export function createRuntimeTurnComposition(
   const projectStep = (step: PrepareStepContext, _serverNow: string) => {
     const projectionNow = now();
     const currentRetention = scope();
-    const conditions = turn.getConditions();
     const projected = projectModelContext(
-      modelSource(turn.context, options.modelContext, conditions, projectionNow, options.budget),
+      modelSource(turn.context, options.modelContext, projectionNow, options.budget),
     );
     currentTurnStart ??= Math.max(0, step.messages.length - options.request.messages.length);
     const expectedObservationContext = validationAt(
       options.validationContext,
       projectionNow,
-      conditions,
     ).expectedObservationContext;
     const fieldPolicy = options.modelContext.fieldPolicy;
     const projectToolOutput =
@@ -407,10 +364,9 @@ export function createRuntimeTurnComposition(
       throw new RuntimeTurnCompositionError('FINAL_COMMIT_INVALID');
     }
     // An unusable terminal commits nothing; the turn ends without a commit instead of failing.
-    const finalMessage = usableFinalMessage(acceptance, options.constraintContext);
+    const finalMessage = usableFinalMessage(acceptance);
     if (finalMessage === undefined) return;
     acceptedFinal = finalMessage;
-    turn.applyMetadata(finalMessage.metadata);
     finalResponse.accept(acceptance);
   };
 
@@ -431,7 +387,7 @@ export function createRuntimeTurnComposition(
         acceptedFinal = undefined;
         const result = await application.commitMessage(
           final.message,
-          validationAt(options.validationContext, now(), turn.getConditions()),
+          validationAt(options.validationContext, now()),
           options.registry,
           {
             scope: {

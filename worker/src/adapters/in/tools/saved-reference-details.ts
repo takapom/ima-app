@@ -335,7 +335,6 @@ export const resolveModelDetailsInput = async (
       : {
           requests: coreRequests,
           freshness: input.freshness,
-          ...(input.travelContext === undefined ? {} : { travelContext: input.travelContext }),
         };
   return {
     input: coreInput,

@@ -32,7 +32,7 @@ describe('safe tool validation feedback', () => {
         input,
         metadata: { turnConstraints: { changes: [{ sourceTurnId: 'turn-1', quote: CANARY }] } },
       },
-      'metadata.turnConstraints.changes.*',
+      'metadata.*',
     ],
   ])('identifies invalid fields without including values or unknown keys', async (value, field) => {
     const result = await validate(value);
@@ -55,25 +55,16 @@ describe('safe tool validation feedback', () => {
     ).toMatchObject({ success: true });
   });
 
-  it('advertises the required constraint change to the model and accepts a real change', async () => {
+  it('advertises metadata as an empty object and rejects any constraint change', async () => {
     const schema = asSchema(searchPlacesToolSchema);
-    // Only the constraint the connected providers can evidence is advertised.
     expect(await schema.jsonSchema).toMatchObject({
       required: ['input', 'metadata'],
-      properties: {
-        metadata: {
-          properties: {
-            turnConstraints: {
-              properties: {
-                changes: {
-                  items: { required: ['sourceTurnId', 'quote', 'minimumStayMinutes'] },
-                },
-              },
-            },
-          },
-        },
-      },
+      properties: { metadata: { properties: {}, additionalProperties: false } },
     });
+    const json = JSON.stringify(await schema.jsonSchema);
+    expect(json).not.toContain('turnConstraints');
+    expect(json).not.toContain('minimumStayMinutes');
+    expect(json).not.toContain('travelContext');
     expect(
       await validate({
         input,
@@ -83,27 +74,7 @@ describe('safe tool validation feedback', () => {
           },
         },
       }),
-    ).toMatchObject({ success: true });
-  });
-
-  it('does not advertise a constraint the providers cannot evidence', async () => {
-    const schema = asSchema(searchPlacesToolSchema);
-    const json = JSON.stringify(await schema.jsonSchema);
-    expect(json).not.toContain('maxWalkMinutes');
-    expect(json).not.toContain('homeStationRef');
-    // The wire schema only shapes what the model is offered. Core still parses the
-    // wider constraint contract, so capability enforcement belongs to the turn
-    // factory, which drops an unsupported change before it reaches the conditions.
-    expect(
-      await validate({
-        input,
-        metadata: {
-          turnConstraints: {
-            changes: [{ maxWalkMinutes: 15, sourceTurnId: 'turn-1', quote: '徒歩15分以内' }],
-          },
-        },
-      }),
-    ).toMatchObject({ success: true });
+    ).toMatchObject({ success: false });
   });
 
   it.each([

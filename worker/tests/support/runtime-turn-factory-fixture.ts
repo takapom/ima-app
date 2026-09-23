@@ -172,7 +172,6 @@ export const createFactory = (
   clock: () => string = () => context.serverNow,
 ) => {
   let call = 0;
-  const applied: Array<{ readonly maxWalkMinutes: number | null }> = [];
   const stopWhen: NonNullable<RuntimeTurnFactoryOptions['stopWhen']> = () => true;
   const factory = createRuntimeTurnFactory({
     createTools: createPublicToolSet,
@@ -180,28 +179,10 @@ export const createFactory = (
     budget: createBudget(),
     ids: { nextCallId: () => `server-call-${++call}` },
     ports: createPorts(calls, clock),
-    constraintContext: {
-      threadId: context.threadId,
-      originalTurns: [
-        {
-          threadId: context.threadId,
-          turnId: 'turn-source',
-          text: '最大徒歩を20分に変更する',
-        },
-      ],
-    },
-    applyMetadata: (_metadata, conditions) => {
-      applied.push({ maxWalkMinutes: conditions.maxWalkMinutes });
-    },
     stopWhen,
     ...overrides,
   });
-  return { factory, applied, stopWhen };
+  return { factory, stopWhen };
 };
-
-/** Capability-enabled variant for a constraint the base fixture intentionally denies. */
-export const withWalkingRoute = (): Partial<RuntimeTurnFactoryOptions> => ({
-  context: { ...context, capabilities: { ...context.capabilities, walkingRoute: true } },
-});
 
 export const envelope = (metadata: object = {}) => ({ input: searchInput, metadata });

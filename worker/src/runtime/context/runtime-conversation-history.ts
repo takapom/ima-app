@@ -4,10 +4,6 @@ import {
   ModelHistoryEntrySchema,
   type ModelHistoryEntry,
 } from '@worker/application/model-context/model-context';
-import {
-  OriginalTurnSchema,
-  type OriginalTurn,
-} from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import { RetentionMetadataSchema, type RetentionMetadata } from '@worker/domain/evidence/retention';
 import { type RegistryScope } from '@worker/domain/evidence/freshness';
 import { isRuntimeRetentionWindowOpen } from '@worker/runtime/retention/runtime-retention';
@@ -56,18 +52,6 @@ export const userHistoryFor = (
     text: input.text,
     evidenceIds: [],
     basis: 'conversational',
-  });
-  return parsed.success ? parsed.output : undefined;
-};
-
-export const originalTurnFor = (
-  input: ThreadTurnRequest,
-  scope: RegistryScope,
-): OriginalTurn | undefined => {
-  const parsed = v.safeParse(OriginalTurnSchema, {
-    threadId: scope.threadId,
-    turnId: input.turnId ?? input.requestId,
-    text: input.text,
   });
   return parsed.success ? parsed.output : undefined;
 };

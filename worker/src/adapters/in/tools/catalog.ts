@@ -26,7 +26,6 @@ import {
   cancellationError,
   invalidOutput,
   issue,
-  mismatchedTravelContext,
   mismatchedDetails,
   ownedCandidateIssue,
   parseDetailsInput,
@@ -141,16 +140,6 @@ const getPlaceDetails = async (
   if (unsupported !== undefined) {
     return resultError(
       issue('UNSUPPORTED_FIELD', 'requests.fields', 'requested field is unavailable'),
-    );
-  }
-  const mismatchedTravel = mismatchedTravelContext(checked.runtime.context, parsedInput.value);
-  if (mismatchedTravel !== undefined) {
-    return resultError(
-      issue(
-        'CONSTRAINT_VIOLATION',
-        `travelContext.${mismatchedTravel}`,
-        'requested travel context is not harness-approved',
-      ),
     );
   }
   const directCandidateIssue = ownedCandidateIssue(

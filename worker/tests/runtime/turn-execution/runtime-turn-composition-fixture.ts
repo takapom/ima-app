@@ -5,7 +5,6 @@ import type {
   CommitPortResult,
   CommitRequest,
 } from '@worker/application/ports/commit';
-import type { ConstraintValidationContext } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type { HarnessContext } from '@worker/application/ports/context';
 import type {
   PlaceDetailsPort,
@@ -138,11 +137,6 @@ export const validationContext: SubmitValidationContext = {
   },
   travel: [],
   requireLastOrderAtArrival: false,
-};
-
-export const constraintContext: ConstraintValidationContext = {
-  threadId: context.threadId,
-  originalTurns: [],
 };
 
 export const searchResult: Result<SearchPlacesOutput> = {
@@ -279,7 +273,6 @@ export const createComposition = (
     commit,
     resolveReadCost: () => ({ costUnits: 1, providerHttpRequests: 1, routeElements: 0 }),
     validationContext,
-    constraintContext,
     persistMessages,
     isFinalResponse: () => true,
     ...(currentTurnStart === undefined ? {} : { currentTurnStart }),

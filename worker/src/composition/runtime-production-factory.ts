@@ -166,7 +166,6 @@ const defaultPlan = (
       resolveCardEvidence: cardEvidence,
       ...(preparePhotoTokens === undefined ? {} : { preparePhotoTokens }),
     },
-    constraintContext: context.constraintContext,
     onCommitted: (response) => contextStore.commitTurn(input.runtimeInput, response),
   };
 };
@@ -288,10 +287,6 @@ const makeOptions = (
       commit: input.commit,
       resolveReadCost: (read) => resolveRuntimeProductionReadCost(read, plan.registry),
       validationContext: plan.validationContext,
-      constraintContext:
-        prepared === undefined
-          ? plan.constraintContext
-          : { threadId: request.threadId, originalTurns: [] },
       persistMessages: () => Promise.resolve({ requestId: request.turnId, status: 'completed' }),
       stopWhen: () => budget.snapshot().completed,
       idempotencyKey: runtimeInput.idempotencyKey,
