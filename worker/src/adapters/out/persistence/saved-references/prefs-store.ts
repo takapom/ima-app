@@ -18,12 +18,12 @@ export type OwnerPrefsStore = {
   readonly put: (input: unknown) => OwnerPrefsPutResult;
 };
 
+/** Walking and last-train columns written before #55; dropped on initialization. */
+const LEGACY_TRAVEL_COLUMNS = ['home_station_ref', 'max_walk_minutes', 'minimum_stay_minutes'];
+
 type PrefsRow = {
   readonly singleton: number;
   readonly revision: number;
-  readonly home_station_ref: string | null;
-  readonly max_walk_minutes: number | null;
-  readonly minimum_stay_minutes: number | null;
   readonly area_text: string | null;
   readonly budget: string | null;
 };
@@ -34,17 +34,10 @@ const invalidInput: { readonly ok: false; readonly code: 'INVALID_INPUT' } = {
 };
 
 const prefsEqual = (left: Preferences, right: Preferences): boolean =>
-  left.homeStationRef === right.homeStationRef &&
-  left.maxWalkMinutes === right.maxWalkMinutes &&
-  left.minimumStayMinutes === right.minimumStayMinutes &&
-  left.areaText === right.areaText &&
-  left.budget === right.budget;
+  left.areaText === right.areaText && left.budget === right.budget;
 
 const prefsFromRow = (row: PrefsRow): Preferences => {
   const parsed = v.safeParse(PreferencesSchema, {
-    homeStationRef: row.home_station_ref,
-    maxWalkMinutes: row.max_walk_minutes,
-    minimumStayMinutes: row.minimum_stay_minutes,
     areaText: row.area_text,
     budget: row.budget,
   });
@@ -55,7 +48,7 @@ const prefsFromRow = (row: PrefsRow): Preferences => {
 const prefsRow = (storage: DurableObjectStorage): PrefsRow | undefined =>
   storage.sql
     .exec<PrefsRow>(
-      `SELECT singleton, revision, home_station_ref, max_walk_minutes, minimum_stay_minutes, area_text, budget
+      `SELECT singleton, revision, area_text, budget
          FROM ${TABLE_NAME}
         WHERE singleton = ?`,
       PREFS_SINGLETON,
@@ -64,14 +57,10 @@ const prefsRow = (storage: DurableObjectStorage): PrefsRow | undefined =>
 
 const writePrefs = (storage: DurableObjectStorage, revision: number, prefs: Preferences): void => {
   storage.sql.exec(
-    `INSERT OR REPLACE INTO ${TABLE_NAME}
-       (singleton, revision, home_station_ref, max_walk_minutes, minimum_stay_minutes, area_text, budget)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO ${TABLE_NAME} (singleton, revision, area_text, budget)
+     VALUES (?, ?, ?, ?)`,
     PREFS_SINGLETON,
     revision,
-    prefs.homeStationRef,
-    prefs.maxWalkMinutes,
-    prefs.minimumStayMinutes,
     prefs.areaText,
     prefs.budget,
   );
@@ -82,13 +71,21 @@ export const initializeOwnerPrefsStore = (storage: DurableObjectStorage): void =
     CREATE TABLE IF NOT EXISTS ${TABLE_NAME} (
       singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
       revision INTEGER NOT NULL,
-      home_station_ref TEXT,
-      max_walk_minutes INTEGER,
-      minimum_stay_minutes INTEGER,
       area_text TEXT,
       budget TEXT
     )
   `);
+  const columns = new Set(
+    storage.sql
+      .exec<{ readonly name: string }>(`SELECT name FROM pragma_table_info('${TABLE_NAME}')`)
+      .toArray()
+      .map((column) => column.name),
+  );
+  // Explicit migration: the stored values are discarded with the columns, and the revision is
+  // kept so a client CAS against the current revision still succeeds.
+  for (const column of LEGACY_TRAVEL_COLUMNS) {
+    if (columns.has(column)) storage.sql.exec(`ALTER TABLE ${TABLE_NAME} DROP COLUMN ${column}`);
+  }
 };
 
 /** Singleton prefs row for one owner shard. station_label is not persisted. */

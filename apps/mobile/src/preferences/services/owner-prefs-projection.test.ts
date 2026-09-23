@@ -15,16 +15,10 @@ import type {
 import type { JourneyConditions } from '@mobile/preferences/state/conditions';
 
 const conditions: JourneyConditions = {
-  stationLabel: '恵比寿',
-  stationSupport: 'unknown',
-  maxWalkMinutes: 15,
   budget: 'normal',
 };
 
 const prefs: Preferences = {
-  homeStationRef: 'station-ebisu',
-  maxWalkMinutes: 20,
-  minimumStayMinutes: 30,
   areaText: '恵比寿',
   budget: 'cheap',
 };
@@ -174,9 +168,9 @@ afterEach(() => {
 });
 
 describe('owner prefs projection', () => {
-  it('hydrates server prefs into sqlite without replacing station_label', async () => {
+  it('hydrates server prefs into sqlite', async () => {
     const opened = openStore();
-    opened.store.savePreferences({ ...prefs, maxWalkMinutes: 8, stationLabel: '渋谷' });
+    opened.store.savePreferences({ areaText: null, budget: 'normal' });
     const projection = createOwnerPrefsProjection({
       api: apiFor(),
       sqlite: opened.store,
@@ -185,14 +179,11 @@ describe('owner prefs projection', () => {
     });
 
     await expect(projection.hydrate()).resolves.toEqual({ prefs: 'synced', saved: 'synced' });
-    expect(opened.store.readPreferences()).toMatchObject({
-      ...prefs,
-      stationLabel: '渋谷',
-    });
+    expect(opened.store.readPreferences()).toMatchObject(prefs);
     expect(projection.read(conditions)).toMatchObject({
       status: 'available',
       source: 'stored',
-      conditions: { ...conditions, stationLabel: '渋谷', maxWalkMinutes: 20, budget: 'cheap' },
+      conditions: { budget: 'cheap' },
     });
     const available = projection.read(conditions);
     expect(available.status === 'available' ? available.stale : 'missing').toBeUndefined();
@@ -200,7 +191,7 @@ describe('owner prefs projection', () => {
 
   it('keeps sqlite and marks stored prefs stale when GET prefs fails', async () => {
     const opened = openStore();
-    opened.store.savePreferences({ ...prefs, stationLabel: '渋谷' });
+    opened.store.savePreferences(prefs);
     const projection = createOwnerPrefsProjection({
       api: apiFor({
         getPrefs: () => Promise.resolve(internalFailure('request-get')),
@@ -210,12 +201,12 @@ describe('owner prefs projection', () => {
     });
 
     await expect(projection.hydrate()).resolves.toEqual({ prefs: 'stale', saved: 'synced' });
-    expect(opened.store.readPreferences()).toMatchObject({ ...prefs, stationLabel: '渋谷' });
+    expect(opened.store.readPreferences()).toMatchObject(prefs);
     expect(projection.read(conditions)).toMatchObject({
       status: 'available',
       source: 'stored',
       stale: true,
-      conditions: { ...conditions, stationLabel: '渋谷', maxWalkMinutes: 20, budget: 'cheap' },
+      conditions: { budget: 'cheap' },
     });
   });
 
@@ -284,9 +275,9 @@ describe('owner prefs projection', () => {
     });
   });
 
-  it('writes sqlite only after PUT succeeds and omits station_label from the body', async () => {
+  it('writes sqlite only after PUT succeeds', async () => {
     const opened = openStore();
-    opened.store.savePreferences({ ...prefs, stationLabel: '渋谷' });
+    opened.store.savePreferences(prefs);
     const bodies: unknown[] = [];
     const projection = createOwnerPrefsProjection({
       api: apiFor({
@@ -311,24 +302,9 @@ describe('owner prefs projection', () => {
     });
     await projection.hydrate();
 
-    await expect(
-      projection.save({
-        ...conditions,
-        maxWalkMinutes: 10,
-        budget: 'normal',
-        stationLabel: '新宿',
-      }),
-    ).resolves.toEqual({
+    await expect(projection.save({ budget: 'normal' })).resolves.toEqual({
       status: 'saved',
-      preferences: {
-        homeStationRef: 'station-ebisu',
-        // A walking limit no editor can reach is never written back to the owner
-        // record, otherwise it survives outside the user's control.
-        maxWalkMinutes: null,
-        minimumStayMinutes: 30,
-        areaText: '恵比寿',
-        budget: 'normal',
-      },
+      preferences: { areaText: '恵比寿', budget: 'normal' },
     });
     expect(bodies).toEqual([
       {
@@ -336,52 +312,17 @@ describe('owner prefs projection', () => {
         requestId: 'request-put',
         expectedRevision: 2,
         prefs: {
-          homeStationRef: 'station-ebisu',
-          maxWalkMinutes: null,
-          minimumStayMinutes: 30,
           areaText: '恵比寿',
           budget: 'normal',
         },
       },
     ]);
-    expect(opened.store.readPreferences()).toMatchObject({
-      maxWalkMinutes: null,
-      budget: 'normal',
-      stationLabel: '新宿',
-    });
+    expect(opened.store.readPreferences()).toMatchObject({ budget: 'normal' });
   });
 
-  it('clears a stored walking limit through the owner record on the next save', async () => {
+  it('skips PUT when the owner-visible prefs are unchanged', async () => {
     const opened = openStore();
-    opened.store.savePreferences({ ...prefs, maxWalkMinutes: 10, stationLabel: '渋谷' });
-    let puts = 0;
-    const put = { schemaVersion: 'v1' as const, requestId: 'request-put', revision: 4 };
-    const projection = createOwnerPrefsProjection({
-      api: apiFor({
-        putPrefs: () => {
-          puts += 1;
-          return Promise.resolve(success('request-put', put));
-        },
-      }),
-      sqlite: opened.store,
-      requestIdFactory: () => 'request-put',
-    });
-    await expect(projection.save({ ...conditions, stationLabel: '渋谷' })).resolves.toMatchObject({
-      preferences: { maxWalkMinutes: null },
-    });
-    expect(puts).toBe(1);
-    expect(opened.store.readPreferences()).toMatchObject({ maxWalkMinutes: null });
-  });
-
-  it('skips PUT when only the device station label changed', async () => {
-    const opened = openStore();
-    opened.store.savePreferences({
-      ...prefs,
-      // Already cleared; only the device-only station label differs below.
-      maxWalkMinutes: null,
-      budget: 'normal',
-      stationLabel: '渋谷',
-    });
+    opened.store.savePreferences({ ...prefs, budget: 'normal' });
     let puts = 0;
     const projection = createOwnerPrefsProjection({
       api: apiFor({
@@ -396,16 +337,15 @@ describe('owner prefs projection', () => {
       requestIdFactory: () => 'request-put',
     });
 
-    await expect(projection.save({ ...conditions, stationLabel: '新宿' })).resolves.toMatchObject({
-      status: 'saved',
+    await expect(projection.save({ budget: 'normal' })).resolves.toMatchObject({
+      status: 'unchanged',
     });
     expect(puts).toBe(0);
-    expect(opened.store.readPreferences()?.stationLabel).toBe('新宿');
   });
 
   it('retries a 409 once after GET and leaves sqlite unchanged when the retry fails', async () => {
     const opened = openStore();
-    opened.store.savePreferences({ ...prefs, stationLabel: '渋谷' });
+    opened.store.savePreferences(prefs);
     const puts: number[] = [];
     let putAttempts = 0;
     const projection = createOwnerPrefsProjection({
@@ -437,18 +377,18 @@ describe('owner prefs projection', () => {
     });
     await projection.hydrate();
 
-    await expect(projection.save({ ...conditions, budget: 'any' })).resolves.toEqual({
+    await expect(projection.save({ budget: 'any' })).resolves.toEqual({
       status: 'failed',
       reason: 'api',
     });
     expect(putAttempts).toBe(2);
     expect(puts).toEqual([1, 7]);
-    expect(opened.store.readPreferences()).toMatchObject({ budget: 'cheap', stationLabel: '渋谷' });
+    expect(opened.store.readPreferences()).toMatchObject({ budget: 'cheap' });
   });
 
   it('uses the refreshed revision on a successful 409 retry', async () => {
     const opened = openStore();
-    opened.store.savePreferences({ ...prefs, stationLabel: '渋谷' });
+    opened.store.savePreferences(prefs);
     const puts: number[] = [];
     let putAttempts = 0;
     const projection = createOwnerPrefsProjection({
@@ -488,7 +428,7 @@ describe('owner prefs projection', () => {
     });
     await projection.hydrate();
 
-    await expect(projection.save({ ...conditions, budget: 'any' })).resolves.toMatchObject({
+    await expect(projection.save({ budget: 'any' })).resolves.toMatchObject({
       status: 'saved',
       preferences: { budget: 'any' },
     });

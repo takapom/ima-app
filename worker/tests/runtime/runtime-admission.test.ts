@@ -30,9 +30,6 @@ const request = {
     capturedAt: null,
   },
   prefs: {
-    homeStationRef: null,
-    maxWalkMinutes: 15,
-    minimumStayMinutes: null,
     areaText: '恵比寿',
     budget: 'normal' as const,
   },
@@ -82,9 +79,6 @@ describe('thread runtime admission boundaries', () => {
       prefs: {
         budget: request.prefs.budget,
         areaText: request.prefs.areaText,
-        minimumStayMinutes: request.prefs.minimumStayMinutes,
-        maxWalkMinutes: request.prefs.maxWalkMinutes,
-        homeStationRef: request.prefs.homeStationRef,
       },
       location: {
         capturedAt: request.location.capturedAt,

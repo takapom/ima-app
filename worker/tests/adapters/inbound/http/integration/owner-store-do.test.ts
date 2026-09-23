@@ -1,7 +1,8 @@
-import { env, evictDurableObject } from 'cloudflare:test';
+import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import type { Preferences } from '@ima/contracts';
 import { createDurableOwnerStore } from '@worker/adapters/out/persistence/saved-references/durable-owner-store';
+import { createOwnerPrefsStore } from '@worker/adapters/out/persistence/saved-references/prefs-store';
 import {
   savedReferenceOwnerName,
   type SavedReferenceNamespace,
@@ -24,9 +25,6 @@ const savedNamespace = (): SavedReferenceNamespace => savedEnv(env).SAVED_REFERE
 const ownerFor = (label: string): string => `m37-owner-${label}-${crypto.randomUUID()}`;
 
 const PREFS: Preferences = {
-  homeStationRef: 'station-home',
-  maxWalkMinutes: 12,
-  minimumStayMinutes: 45,
   areaText: 'Shibuya',
   budget: 'normal',
 };
@@ -42,6 +40,44 @@ const identity = (recordRef: string) => ({
 });
 
 describe('durable OwnerStore adapter', () => {
+  it('drops the pre-#55 travel columns and keeps the revision and remaining prefs', async () => {
+    const owner = ownerFor('prefs-legacy');
+    const stub = savedNamespace().getByName(savedReferenceOwnerName(owner));
+    const result = await runInDurableObject(stub, (_instance, state) => {
+      state.storage.sql.exec('DROP TABLE owner_prefs');
+      state.storage.sql.exec(`
+        CREATE TABLE owner_prefs (
+          singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+          revision INTEGER NOT NULL,
+          home_station_ref TEXT,
+          max_walk_minutes INTEGER,
+          minimum_stay_minutes INTEGER,
+          area_text TEXT,
+          budget TEXT
+        )
+      `);
+      state.storage.sql.exec(
+        'INSERT INTO owner_prefs VALUES (1, 3, ?, 12, 45, ?, ?)',
+        'station-home',
+        'Shibuya',
+        'normal',
+      );
+      const read = createOwnerPrefsStore(state.storage).read();
+      const columns = state.storage.sql
+        .exec<{ readonly name: string }>("SELECT name FROM pragma_table_info('owner_prefs')")
+        .toArray()
+        .map((column) => column.name);
+      return { read, columns };
+    });
+
+    expect(result.read).toEqual({
+      ok: true,
+      revision: 3,
+      prefs: { areaText: 'Shibuya', budget: 'normal' },
+    });
+    expect(result.columns).toEqual(['singleton', 'revision', 'area_text', 'budget']);
+  });
+
   it('restores prefs after Durable Object eviction', async () => {
     const owner = ownerFor('prefs-evict');
     const namespace = savedNamespace();

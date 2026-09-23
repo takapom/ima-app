@@ -31,9 +31,6 @@ const context: HarnessContext = {
     revision: 1,
   },
   preferences: {
-    homeStationRef: null,
-    maxWalkMinutes: null,
-    minimumStayMinutes: null,
     areaText: '渋谷',
     budget: 'normal',
   },

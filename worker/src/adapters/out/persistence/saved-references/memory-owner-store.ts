@@ -57,11 +57,7 @@ const parseOwner = (ownerScopeRef: string): string | undefined => {
 };
 
 const prefsEqual = (left: Preferences, right: Preferences): boolean =>
-  left.homeStationRef === right.homeStationRef &&
-  left.maxWalkMinutes === right.maxWalkMinutes &&
-  left.minimumStayMinutes === right.minimumStayMinutes &&
-  left.areaText === right.areaText &&
-  left.budget === right.budget;
+  left.areaText === right.areaText && left.budget === right.budget;
 
 const identityKey = (provider: string, recordRef: string): string => `${provider}\0${recordRef}`;
 

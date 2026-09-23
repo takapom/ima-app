@@ -59,9 +59,6 @@ const requestFor = (turnId: string, revision: number, text: string): ThreadTurnR
     capturedAt: null,
   },
   prefs: {
-    homeStationRef: null,
-    maxWalkMinutes: null,
-    minimumStayMinutes: null,
     areaText: null,
     budget: 'normal',
   },

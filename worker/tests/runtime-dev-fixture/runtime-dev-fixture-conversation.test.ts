@@ -48,9 +48,6 @@ const turn = (requestId: string, revision: number): ConversationTurnRequest => (
     capturedAt: null,
   },
   prefs: {
-    homeStationRef: null,
-    maxWalkMinutes: null,
-    minimumStayMinutes: null,
     areaText: '恵比寿',
     budget: 'normal',
   },

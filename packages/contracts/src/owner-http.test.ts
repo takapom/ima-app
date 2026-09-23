@@ -12,9 +12,6 @@ import {
 } from '@contracts/owner-http';
 
 const prefs = {
-  homeStationRef: 'station-shibuya',
-  maxWalkMinutes: 15,
-  minimumStayMinutes: null,
   areaText: '恵比寿',
   budget: 'normal',
 };

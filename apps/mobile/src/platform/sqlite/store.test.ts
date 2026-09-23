@@ -83,9 +83,6 @@ const unknownRetention = (): RetentionMetadata => ({
 });
 
 const preferences: Preferences = {
-  homeStationRef: 'station-ebisu',
-  maxWalkMinutes: 20,
-  minimumStayMinutes: 30,
   areaText: '恵比寿',
   budget: 'normal',
 };

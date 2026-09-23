@@ -1,7 +1,6 @@
 import type { Preferences } from '@ima/contracts';
 import {
   createDefaultJourneyConditions,
-  MAX_STATION_LABEL_LENGTH,
   type JourneyConditions,
 } from '@mobile/preferences/state/conditions';
 import type { SqliteStore } from '@mobile/platform/sqlite/types';
@@ -24,7 +23,6 @@ export type JourneyPreferencesReadResult =
 export type JourneyPreferencesSaveResult =
   | {
       readonly status: 'saved' | 'unchanged';
-      /** Only the public Preferences fields are returned; local stationLabel stays device-only. */
       readonly preferences: Preferences;
     }
   | {
@@ -46,91 +44,36 @@ export type JourneyPreferencesService = {
 };
 
 const emptyPreferences = (): Preferences => ({
-  homeStationRef: null,
-  maxWalkMinutes: null,
-  minimumStayMinutes: null,
   areaText: null,
   budget: null,
 });
 
-type StoredPreferences = Pick<
-  Preferences,
-  'homeStationRef' | 'maxWalkMinutes' | 'minimumStayMinutes' | 'areaText' | 'budget'
-> & {
-  readonly stationLabel?: string | null;
-};
-
 const fallbackFor = (fallback: JourneyConditions | undefined): JourneyConditions =>
   fallback ?? createDefaultJourneyConditions();
 
-/** Projects device-only settings onto the caller's in-memory fallback. */
+/** Projects stored settings onto the caller's in-memory fallback. */
 export const journeyConditionsForPreferences = (
-  persisted:
-    | (Pick<Preferences, 'maxWalkMinutes' | 'budget'> & {
-        readonly stationLabel?: string | null;
-      })
-    | null,
+  persisted: Pick<Preferences, 'budget'> | null,
   fallback?: JourneyConditions,
 ): JourneyConditions => {
   const base = fallbackFor(fallback);
   if (persisted === null) return base;
-  const hasStationLabel = Object.prototype.hasOwnProperty.call(persisted, 'stationLabel');
-  return {
-    ...base,
-    stationLabel: hasStationLabel ? (persisted.stationLabel ?? '') : base.stationLabel,
-    stationSupport: hasStationLabel ? 'unknown' : base.stationSupport,
-    maxWalkMinutes: persisted.maxWalkMinutes,
-    budget: persisted.budget ?? 'any',
-  };
+  return { ...base, budget: persisted.budget ?? 'any' };
 };
 
 export const hasPersistedJourneyPreferenceChange = (changes: Partial<JourneyConditions>): boolean =>
-  Object.prototype.hasOwnProperty.call(changes, 'stationLabel') ||
-  Object.prototype.hasOwnProperty.call(changes, 'maxWalkMinutes') ||
   Object.prototype.hasOwnProperty.call(changes, 'budget');
 
-const preferencesFor = (
-  current: StoredPreferences,
-  conditions: JourneyConditions,
-): StoredPreferences & { readonly stationLabel: string } => ({
-  homeStationRef: current.homeStationRef,
-  // No editor writes a walking limit while walking-route evidence is unavailable.
-  // Persisting the projected value would keep a limit the user can neither see nor
-  // clear, so every save clears it instead. Restore this when that provider returns.
-  maxWalkMinutes: null,
-  minimumStayMinutes: current.minimumStayMinutes,
+const preferencesFor = (current: Preferences, conditions: JourneyConditions): Preferences => ({
   areaText: current.areaText,
   budget: conditions.budget,
-  stationLabel: conditions.stationLabel,
 });
 
 export const isValidJourneyConditions = (conditions: JourneyConditions): boolean =>
-  typeof conditions.stationLabel === 'string' &&
-  conditions.stationLabel.length <= MAX_STATION_LABEL_LENGTH &&
-  (conditions.maxWalkMinutes === null ||
-    (Number.isInteger(conditions.maxWalkMinutes) &&
-      conditions.maxWalkMinutes >= 1 &&
-      conditions.maxWalkMinutes <= 180)) &&
-  (conditions.budget === 'cheap' || conditions.budget === 'normal' || conditions.budget === 'any');
+  conditions.budget === 'cheap' || conditions.budget === 'normal' || conditions.budget === 'any';
 
-const normalizedStationLabel = (value: string | null | undefined): string | null =>
-  value === null || value === undefined || value.length === 0 ? null : value;
-
-const preferencesEqual = (left: StoredPreferences, right: StoredPreferences): boolean =>
-  left.homeStationRef === right.homeStationRef &&
-  left.maxWalkMinutes === right.maxWalkMinutes &&
-  left.minimumStayMinutes === right.minimumStayMinutes &&
-  left.areaText === right.areaText &&
-  left.budget === right.budget &&
-  normalizedStationLabel(left.stationLabel) === normalizedStationLabel(right.stationLabel);
-
-const publicPreferencesFor = (preferences: StoredPreferences): Preferences => ({
-  homeStationRef: preferences.homeStationRef,
-  maxWalkMinutes: preferences.maxWalkMinutes ?? null,
-  minimumStayMinutes: preferences.minimumStayMinutes ?? null,
-  areaText: preferences.areaText ?? null,
-  budget: preferences.budget ?? null,
-});
+const preferencesEqual = (left: Preferences, right: Preferences): boolean =>
+  left.areaText === right.areaText && left.budget === right.budget;
 
 export const createJourneyPreferencesService = (
   storage?: JourneyPreferencesStorage,
@@ -157,13 +100,16 @@ export const createJourneyPreferencesService = (
     if (storage === undefined) return { status: 'failed', reason: 'storage_unavailable' };
     try {
       const persisted = storage.readPreferences();
-      const current: StoredPreferences = persisted === null ? emptyPreferences() : persisted;
+      const current: Preferences =
+        persisted === null
+          ? emptyPreferences()
+          : { areaText: persisted.areaText, budget: persisted.budget };
       const next = preferencesFor(current, conditions);
       if (persisted !== null && preferencesEqual(current, next)) {
-        return { status: 'unchanged', preferences: publicPreferencesFor(next) };
+        return { status: 'unchanged', preferences: next };
       }
       storage.savePreferences(next);
-      return { status: 'saved', preferences: publicPreferencesFor(next) };
+      return { status: 'saved', preferences: next };
     } catch {
       return { status: 'failed', reason: 'storage_unavailable' };
     }

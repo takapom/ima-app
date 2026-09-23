@@ -42,9 +42,6 @@ const requestFor = (target: ThreadRuntimeTarget): ThreadRuntimeTurnInput => {
         capturedAt: null,
       },
       prefs: {
-        homeStationRef: null,
-        maxWalkMinutes: null,
-        minimumStayMinutes: null,
         areaText: 'SDKログ監査',
         budget: 'normal',
       },

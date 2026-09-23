@@ -36,9 +36,6 @@ const requestFor = (target: ThreadRuntimeTarget, text: string): ThreadRuntimeTur
       capturedAt: null,
     },
     prefs: {
-      homeStationRef: null,
-      maxWalkMinutes: null,
-      minimumStayMinutes: null,
       areaText: '候補数fixture',
       budget: 'normal',
     },

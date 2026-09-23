@@ -74,9 +74,6 @@ describe('LLM evidence use boundary', () => {
           revision: 1,
         },
         preferences: {
-          homeStationRef: null,
-          maxWalkMinutes: null,
-          minimumStayMinutes: null,
           areaText: null,
           budget: 'normal' as const,
         },

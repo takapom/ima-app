@@ -65,9 +65,6 @@ const searchInput: SearchRequest = {
     capturedAt: null,
   },
   prefs: {
-    homeStationRef: null,
-    maxWalkMinutes: null,
-    minimumStayMinutes: null,
     areaText: null,
     budget: 'any',
   },

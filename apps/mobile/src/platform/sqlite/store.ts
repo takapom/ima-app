@@ -17,13 +17,11 @@ import type {
   ThreadTurnRecord,
 } from '@mobile/platform/sqlite/types';
 import {
-  isStationLabel,
   iso,
   number,
   opaqueId,
   readPreferences,
   readSnapshot,
-  stationLabelFrom,
   text,
 } from '@mobile/platform/sqlite/rows';
 
@@ -236,50 +234,15 @@ export const createSqliteStore = (
   };
 
   const savePreferences = (preferences: SqlitePreferencesInput): void => {
-    const stationLabelInput = preferences.stationLabel;
-    if (stationLabelInput !== undefined && !isStationLabel(stationLabelInput)) {
-      throw new Error('SQLITE_INVALID_PREFERENCES');
-    }
-    const current = database.prepare('SELECT station_label FROM prefs WHERE id = 1').get();
-    const rawStoredStationLabel = current?.station_label;
-    const storedStationLabelInvalid =
-      current !== undefined &&
-      rawStoredStationLabel !== null &&
-      rawStoredStationLabel !== undefined &&
-      !isStationLabel(rawStoredStationLabel);
-    if (stationLabelInput === undefined && storedStationLabelInvalid) {
-      throw new Error('SQLITE_INVALID_PREFERENCES');
-    }
-    const storedStationLabel =
-      stationLabelInput === undefined
-        ? stationLabelFrom(current ?? {})
-        : stationLabelInput.length === 0
-          ? null
-          : stationLabelInput;
     database
       .prepare(
-        `INSERT INTO prefs (
-          id, home_station_ref, max_walk_minutes, minimum_stay_minutes, area_text, budget,
-          station_label, updated_at
-        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO prefs (id, area_text, budget, updated_at) VALUES (1, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
-          home_station_ref = excluded.home_station_ref,
-          max_walk_minutes = excluded.max_walk_minutes,
-          minimum_stay_minutes = excluded.minimum_stay_minutes,
           area_text = excluded.area_text,
           budget = excluded.budget,
-          station_label = excluded.station_label,
           updated_at = excluded.updated_at`,
       )
-      .run(
-        preferences.homeStationRef,
-        preferences.maxWalkMinutes,
-        preferences.minimumStayMinutes,
-        preferences.areaText,
-        preferences.budget,
-        storedStationLabel,
-        currentIso(options.clock),
-      );
+      .run(preferences.areaText, preferences.budget, currentIso(options.clock));
   };
 
   const readPreferencesForStore = (): SqlitePreferences | null => {

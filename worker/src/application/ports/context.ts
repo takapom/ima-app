@@ -45,9 +45,6 @@ export const LocationContextSchema = v.pipe(
 export type LocationContext = v.InferOutput<typeof LocationContextSchema>;
 
 export const PreferencesContextSchema = v.strictObject({
-  homeStationRef: v.nullable(OpaqueIdSchema),
-  maxWalkMinutes: v.nullable(v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(180))),
-  minimumStayMinutes: v.nullable(v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(180))),
   areaText: v.nullable(v.pipe(v.string(), v.maxLength(160))),
   budget: v.nullable(v.picklist(['cheap', 'normal', 'any'])),
 });

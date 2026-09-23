@@ -39,9 +39,6 @@ export type OwnerPrefsProjectionOptions = {
 };
 
 const emptyPreferences = (): Preferences => ({
-  homeStationRef: null,
-  maxWalkMinutes: null,
-  minimumStayMinutes: null,
   areaText: null,
   budget: null,
 });
@@ -76,22 +73,12 @@ const isRevisionConflict = (error: ApiError): boolean =>
   error.kind === 'http' && error.status === 409;
 
 const publicEqual = (left: Preferences, right: Preferences): boolean =>
-  left.homeStationRef === right.homeStationRef &&
-  left.maxWalkMinutes === right.maxWalkMinutes &&
-  left.minimumStayMinutes === right.minimumStayMinutes &&
-  left.areaText === right.areaText &&
-  left.budget === right.budget;
+  left.areaText === right.areaText && left.budget === right.budget;
 
 const publicPreferencesFrom = (
   stored: ReturnType<OwnerPrefsSqlite['readPreferences']>,
   conditions: JourneyConditions,
 ): Preferences => ({
-  homeStationRef: stored?.homeStationRef ?? null,
-  // Mirrors the device save: a walking limit the editor cannot show must not be
-  // written back to the owner record, otherwise it survives out of the user's reach
-  // and reappears when walking-route evidence is reconnected.
-  maxWalkMinutes: null,
-  minimumStayMinutes: stored?.minimumStayMinutes ?? null,
   areaText: stored?.areaText ?? null,
   budget: conditions.budget,
 });
@@ -99,15 +86,7 @@ const publicPreferencesFrom = (
 const storedPublicPreferences = (
   stored: ReturnType<OwnerPrefsSqlite['readPreferences']>,
 ): Preferences =>
-  stored === null
-    ? emptyPreferences()
-    : {
-        homeStationRef: stored.homeStationRef,
-        maxWalkMinutes: stored.maxWalkMinutes,
-        minimumStayMinutes: stored.minimumStayMinutes,
-        areaText: stored.areaText,
-        budget: stored.budget,
-      };
+  stored === null ? emptyPreferences() : { areaText: stored.areaText, budget: stored.budget };
 
 export const createOwnerPrefsProjection = (
   options: OwnerPrefsProjectionOptions,

@@ -14,9 +14,6 @@ import type { ApiResult, JourneyApiClient } from '@mobile/platform/http/api';
 
 const contextFor = (savedPlaceRefs: readonly string[]): JourneyApiSubmitContext => ({
   conditions: {
-    stationLabel: '新宿',
-    stationSupport: 'supported',
-    maxWalkMinutes: 12,
     budget: 'normal',
   },
   removedChipLabels: [],

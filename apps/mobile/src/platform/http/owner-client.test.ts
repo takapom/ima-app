@@ -5,9 +5,6 @@ import type { ApiClientOptions, ApiFetch } from '@mobile/platform/http/api';
 
 const ownerCredential = `${'A'.repeat(42)}A`;
 const prefs = {
-  homeStationRef: 'station-ebisu',
-  maxWalkMinutes: 15,
-  minimumStayMinutes: null,
   areaText: '恵比寿',
   budget: 'normal' as const,
 };
@@ -128,7 +125,7 @@ describe('owner prefs API client', () => {
         schemaVersion: 'v1',
         requestId: 'request-put',
         expectedRevision: 0,
-        prefs: { ...prefs, stationLabel: '恵比寿' },
+        prefs: { ...prefs, stationLabel: '恵比寿' } as typeof prefs,
       }),
     ).resolves.toMatchObject({
       ok: false,

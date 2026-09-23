@@ -12,9 +12,6 @@ import * as v from 'valibot';
 const APP_TOKEN = 'test-app-token';
 
 const prefs: Preferences = {
-  homeStationRef: 'station-shibuya',
-  maxWalkMinutes: 15,
-  minimumStayMinutes: null,
   areaText: '恵比寿',
   budget: 'normal',
 };

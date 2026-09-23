@@ -8,13 +8,29 @@ import {
   Text,
 } from '@contracts/common';
 
-export const PreferencesSchema = v.strictObject({
-  homeStationRef: v.nullable(OpaqueIdSchema),
-  maxWalkMinutes: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(180))),
-  minimumStayMinutes: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(180))),
-  areaText: v.nullable(v.pipe(v.string(), v.maxLength(160))),
-  budget: v.nullable(v.picklist(['cheap', 'normal', 'any'])),
-});
+const LegacyMinutesSchema = v.nullable(
+  v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(180)),
+);
+
+/**
+ * App builds released before walking and last-train conditions were removed (#55) still send
+ * these keys, and turn inputs stored by those builds carry them. They are validated and dropped
+ * so the output never contains them; new clients must not send them.
+ */
+const LegacyTravelPreferenceEntries = {
+  homeStationRef: v.optional(v.nullable(OpaqueIdSchema)),
+  maxWalkMinutes: v.optional(LegacyMinutesSchema),
+  minimumStayMinutes: v.optional(LegacyMinutesSchema),
+};
+
+export const PreferencesSchema = v.pipe(
+  v.strictObject({
+    areaText: v.nullable(v.pipe(v.string(), v.maxLength(160))),
+    budget: v.nullable(v.picklist(['cheap', 'normal', 'any'])),
+    ...LegacyTravelPreferenceEntries,
+  }),
+  v.transform(({ areaText, budget }) => ({ areaText, budget })),
+);
 export type Preferences = v.InferOutput<typeof PreferencesSchema>;
 
 export const LocationSnapshotSchema = v.pipe(

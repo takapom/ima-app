@@ -155,9 +155,6 @@ export const buildEvaluationTurnRequest = (input: {
     clientNow: seed.clientNow ?? evaluationCase.context.now,
     location: locationFor(evaluationCase.context, seed.clientNow ?? evaluationCase.context.now),
     prefs: {
-      homeStationRef: null,
-      maxWalkMinutes: null,
-      minimumStayMinutes: null,
       areaText: evaluationCase.context.areaText,
       budget,
     },

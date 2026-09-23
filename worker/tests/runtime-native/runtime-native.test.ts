@@ -45,9 +45,6 @@ const requestFor = (
       capturedAt: null,
     },
     prefs: {
-      homeStationRef: null,
-      maxWalkMinutes: null,
-      minimumStayMinutes: null,
       areaText: 'runtime native fixture',
       budget: 'normal',
     },

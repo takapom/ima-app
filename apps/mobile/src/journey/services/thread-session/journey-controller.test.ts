@@ -54,9 +54,6 @@ const location: LocationSnapshot = {
   capturedAt: null,
 };
 const prefs: Preferences = {
-  homeStationRef: null,
-  maxWalkMinutes: null,
-  minimumStayMinutes: null,
   areaText: null,
   budget: null,
 };

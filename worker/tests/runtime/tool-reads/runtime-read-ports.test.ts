@@ -45,9 +45,6 @@ const context = (revision = 1): HarnessContext => ({
     revision,
   },
   preferences: {
-    homeStationRef: 'station-read',
-    maxWalkMinutes: 15,
-    minimumStayMinutes: 20,
     areaText: '渋谷',
     budget: 'normal',
   },
