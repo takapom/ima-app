@@ -33,7 +33,7 @@ export function ConditionEditor({
     <View style={styles.container}>
       <Text style={styles.title}>条件</Text>
       <Text style={styles.description}>
-        この検索だけの条件と、次回も使う設定を分けて編集できます。徒歩時間と終電はまだ対応していません。
+        この検索だけの条件と、次回も使う設定を分けて編集できます。徒歩時間と終電は扱っていません。
       </Text>
       {scope === 'saved' && notice !== null ? <Text style={styles.notice}>{notice}</Text> : null}
       <View accessibilityRole="tablist" style={styles.scopeTabs}>
