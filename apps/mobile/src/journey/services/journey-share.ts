@@ -1,7 +1,5 @@
 export type JourneyShareCandidate = {
   readonly name: string;
-  /** A route value already returned by the public response, in seconds. */
-  readonly walkingDurationSeconds: number | null;
   /** A trusted HTTPS map link; this module does not geocode or invent one. */
   readonly mapUrl: string | null;
   readonly attributions: readonly JourneyShareAttribution[];
@@ -34,11 +32,6 @@ const isHttpsUrl = (value: string): boolean => {
   }
 };
 
-const formatWalking = (seconds: number | null): string | null => {
-  if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return null;
-  return `徒歩${Math.max(1, Math.round(seconds / 60))}分`;
-};
-
 export const prepareJourneyShare = (candidate: JourneyShareCandidate): SharePreparation => {
   const name = candidate.name.trim();
   if (name.length === 0) return { status: 'unavailable', reason: 'name_missing' };
@@ -46,10 +39,7 @@ export const prepareJourneyShare = (candidate: JourneyShareCandidate): SharePrep
     return { status: 'unavailable', reason: 'map_link_missing' };
   }
 
-  const lines = [name];
-  const walking = formatWalking(candidate.walkingDurationSeconds);
-  if (walking !== null) lines.push(walking);
-  lines.push(candidate.mapUrl);
+  const lines = [name, candidate.mapUrl];
   const seenAttributions = new Set<string>();
   for (const attribution of candidate.attributions) {
     const key = `${attribution.label}|${attribution.sourceLink ?? ''}`;

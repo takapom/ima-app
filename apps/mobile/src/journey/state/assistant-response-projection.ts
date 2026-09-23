@@ -116,12 +116,6 @@ const projectCard = (card: PublicCard, now: number): PublicCard => {
   if (facts.facilities !== undefined) {
     facts.facilities = projectField(facts.facilities, now);
   }
-  if (facts.walking_route !== undefined) {
-    facts.walking_route = projectField(facts.walking_route, now);
-  }
-  if (facts.last_train !== undefined) {
-    facts.last_train = projectField(facts.last_train, now);
-  }
 
   return {
     ...card,
@@ -158,8 +152,6 @@ const cardRetentions = (card: PublicCard): readonly RetentionMetadata[] => [
     card.facts.photos,
     card.facts.contact,
     card.facts.facilities,
-    card.facts.walking_route,
-    card.facts.last_train,
   ].flatMap((field) =>
     field?.status === 'known' ? field.evidence.map((item) => item.retention) : [],
   ),

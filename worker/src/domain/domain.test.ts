@@ -8,7 +8,6 @@ import {
 } from '@worker/domain/evidence/evidence';
 import {
   CandidateIdSchema,
-  CalendarDateSchema,
   HttpsUrlSchema,
   IsoTimestampSchema,
   RevisionSchema,
@@ -63,10 +62,9 @@ describe('core domain contracts', () => {
   });
 
   it('validates leap dates, years below 100, offsets, and safe external URLs', () => {
-    expect(v.safeParse(CalendarDateSchema, '0001-02-28').success).toBe(true);
-    expect(v.safeParse(CalendarDateSchema, '1900-02-29').success).toBe(false);
-    expect(v.safeParse(CalendarDateSchema, '2000-02-29').success).toBe(true);
     expect(v.safeParse(IsoTimestampSchema, '0001-02-28T23:59:59+00:00').success).toBe(true);
+    expect(v.safeParse(IsoTimestampSchema, '1900-02-29T00:00:00Z').success).toBe(false);
+    expect(v.safeParse(IsoTimestampSchema, '2000-02-29T00:00:00Z').success).toBe(true);
     expect(v.safeParse(IsoTimestampSchema, '2026-09-09T12:00:00+14:01').success).toBe(false);
     expect(v.safeParse(HttpsUrlSchema, 'https://example.com/path').success).toBe(true);
     expect(v.safeParse(HttpsUrlSchema, 'not-a-url').success).toBe(false);

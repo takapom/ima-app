@@ -3,7 +3,6 @@ import * as v from 'valibot';
 const idPattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 
 const isoDatePattern = /^(\d{4})-(\d{2})-(\d{2})T/;
-const calendarDatePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 const isoOffsetPattern = /([+-])(\d{2}):(\d{2})$/;
 const isLeapYear = (year: number) => year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 const validCalendarDateParts = (year: number, month: number, day: number) => {
@@ -17,12 +16,6 @@ const validCalendarDateParts = (year: number, month: number, day: number) => {
 
 const validIsoCalendarDate = (value: string) => {
   const match = isoDatePattern.exec(value);
-  return match === null
-    ? false
-    : validCalendarDateParts(Number(match[1]), Number(match[2]), Number(match[3]));
-};
-const validDateOnly = (value: string) => {
-  const match = calendarDatePattern.exec(value);
   return match === null
     ? false
     : validCalendarDateParts(Number(match[1]), Number(match[2]), Number(match[3]));
@@ -43,12 +36,6 @@ export const IsoTimestampSchema = v.pipe(
   v.check(validIsoOffset, 'timestamp contains an invalid UTC offset'),
 );
 export type IsoTimestamp = v.InferOutput<typeof IsoTimestampSchema>;
-
-export const CalendarDateSchema = v.pipe(
-  v.string(),
-  v.regex(calendarDatePattern),
-  v.check(validDateOnly, 'date contains an invalid calendar date'),
-);
 
 export const OpaqueIdSchema = v.pipe(
   v.string(),
@@ -95,8 +82,6 @@ export const DetailFieldSchema = v.picklist([
   'photos',
   'contact',
   'facilities',
-  'walking_route',
-  'last_train',
 ]);
 export type DetailField = v.InferOutput<typeof DetailFieldSchema>;
 

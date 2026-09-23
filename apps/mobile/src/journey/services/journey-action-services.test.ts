@@ -76,14 +76,13 @@ describe('journey action services', () => {
     if (map.status !== 'ready') return;
     const prepared = prepareJourneyShare({
       name: '夜カフェ',
-      walkingDurationSeconds: 12 * 60,
       mapUrl: map.url,
       attributions: [],
     });
 
     expect(prepared).toEqual({
       status: 'ready',
-      message: '夜カフェ\n徒歩12分\nhttps://maps.apple.com/?daddr=35.6467%2C139.71&dirflg=w',
+      message: '夜カフェ\nhttps://maps.apple.com/?daddr=35.6467%2C139.71&dirflg=w',
     });
   });
 
@@ -93,7 +92,6 @@ describe('journey action services', () => {
     };
     const result = await shareJourneyCandidate(service, {
       name: '夜カフェ',
-      walkingDurationSeconds: null,
       mapUrl: null,
       attributions: [],
     });
@@ -105,7 +103,6 @@ describe('journey action services', () => {
     expect(
       prepareJourneyShare({
         name: '夜カフェ',
-        walkingDurationSeconds: 0,
         mapUrl: 'http://example.com/map',
         attributions: [],
       }),
@@ -113,7 +110,6 @@ describe('journey action services', () => {
     expect(
       prepareJourneyShare({
         name: '夜カフェ',
-        walkingDurationSeconds: 0,
         mapUrl: 'https://',
         attributions: [],
       }),
@@ -121,13 +117,12 @@ describe('journey action services', () => {
     expect(
       prepareJourneyShare({
         name: '夜カフェ',
-        walkingDurationSeconds: 0,
         mapUrl: 'https://example.com/map',
         attributions: [],
       }),
     ).toEqual({
       status: 'ready',
-      message: '夜カフェ\n徒歩1分\nhttps://example.com/map',
+      message: '夜カフェ\nhttps://example.com/map',
     });
   });
 
@@ -144,7 +139,6 @@ describe('journey action services', () => {
     };
     const candidate = {
       name: '夜カフェ',
-      walkingDurationSeconds: null,
       mapUrl: 'https://example.com/map',
       attributions: [],
     };
@@ -163,7 +157,6 @@ describe('journey action services', () => {
     await expect(
       shareJourneyCandidate(service, {
         name: '夜カフェ',
-        walkingDurationSeconds: 60,
         mapUrl: 'https://example.com/map',
         attributions: [],
       }),
@@ -174,7 +167,6 @@ describe('journey action services', () => {
     expect(
       prepareJourneyShare({
         name: '夜カフェ',
-        walkingDurationSeconds: null,
         mapUrl: 'https://example.com/map',
         attributions: [
           { label: 'Maps', sourceLink: 'https://example.com/source' },

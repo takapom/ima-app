@@ -14,14 +14,6 @@ const usableIdentity = (card: PublicCard): { readonly name: string } | null => {
     : null;
 };
 
-const usableWalkingSeconds = (card: PublicCard): number | null => {
-  const field = card.facts.walking_route;
-  if (field?.status !== 'known') return null;
-  return field.evidence.every((item) => item.retention.displayPolicyStatus === 'available')
-    ? field.value.durationSeconds
-    : null;
-};
-
 /**
  * A contact map link stays preferred, but a provider that withholds contact still
  * leaves the identity place page, so sharing never loses its destination link.
@@ -44,7 +36,7 @@ const usableMapUrl = (card: PublicCard): string | null => {
 const usableAttributions = (card: PublicCard): readonly JourneyShareAttribution[] => {
   const displayable = (evidence: readonly EvidenceRef[]): readonly EvidenceRef[] =>
     evidence.filter((item) => item.retention.displayPolicyStatus === 'available');
-  const fields = [card.facts.identity, card.facts.walking_route, card.facts.contact];
+  const fields = [card.facts.identity, card.facts.contact];
   const facts = fields.flatMap((field) =>
     field?.status === 'known' ? [displayable(field.evidence)] : [],
   );
@@ -57,7 +49,6 @@ const usableAttributions = (card: PublicCard): readonly JourneyShareAttribution[
 
 export const journeyShareInputFor = (card: PublicCard): JourneyShareCandidate => ({
   name: usableIdentity(card)?.name ?? '',
-  walkingDurationSeconds: usableWalkingSeconds(card),
   mapUrl: usableMapUrl(card),
   attributions: usableAttributions(card),
 });

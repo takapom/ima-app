@@ -2,7 +2,6 @@ import * as v from 'valibot';
 
 const idPattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 const isoDatePattern = /^(\d{4})-(\d{2})-(\d{2})T/;
-const calendarDatePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 const isoOffsetPattern = /([+-])(\d{2}):(\d{2})$/;
 
 const isLeapYear = (year: number) => year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
@@ -16,13 +15,6 @@ const isCalendarDateParts = (year: number, month: number, day: number) => {
 
 const isIsoCalendarDate = (value: string) => {
   const match = isoDatePattern.exec(value);
-  return (
-    match !== null && isCalendarDateParts(Number(match[1]), Number(match[2]), Number(match[3]))
-  );
-};
-
-const isCalendarDate = (value: string) => {
-  const match = calendarDatePattern.exec(value);
   return (
     match !== null && isCalendarDateParts(Number(match[1]), Number(match[2]), Number(match[3]))
   );
@@ -44,12 +36,6 @@ export const IsoTimestampSchema = v.pipe(
   v.check(isIsoOffset, 'timestamp contains an invalid UTC offset'),
 );
 export type IsoTimestamp = v.InferOutput<typeof IsoTimestampSchema>;
-
-export const CalendarDateSchema = v.pipe(
-  v.string(),
-  v.regex(calendarDatePattern),
-  v.check(isCalendarDate, 'date contains an invalid calendar date'),
-);
 
 export const OpaqueIdSchema = v.pipe(
   v.string(),

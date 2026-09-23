@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as v from 'valibot';
 import {
-  CalendarDateSchema,
   HttpsUrlSchema,
   IsoTimestampSchema,
   OpaqueIdSchema,
@@ -68,8 +67,6 @@ describe('public contract primitives', () => {
     expect(v.safeParse(IsoTimestampSchema, '2023-02-29T12:00:00Z').success).toBe(false);
     expect(v.safeParse(IsoTimestampSchema, '2026-02-31T12:00:00Z').success).toBe(false);
     expect(v.safeParse(IsoTimestampSchema, '2026-09-09T12:00:00+15:00').success).toBe(false);
-    expect(v.safeParse(CalendarDateSchema, '0096-02-29').success).toBe(true);
-    expect(v.safeParse(CalendarDateSchema, '2023-02-29').success).toBe(false);
   });
 
   it('keeps schema version, IDs, and revisions bounded', () => {

@@ -329,19 +329,6 @@ describe('card fact lines', () => {
     expect(toCardViewModel(card(), NOW).access).toBe('JR恵比寿駅 西口から徒歩3分');
   });
 
-  it('prefers a measured walking route over the listed access text', () => {
-    const route = known({
-      originRef: 'origin-1',
-      destinationCandidateId: 'candidate-1',
-      originRevision: 1,
-      evaluatedAt: at(11),
-      durationSeconds: 260,
-      distanceMeters: 300,
-      warnings: [],
-    });
-    expect(toCardViewModel(card({ walking_route: route }), NOW).access).toBe('恵比寿駅から徒歩4分');
-  });
-
   it('omits the line entirely when nothing about access is known', () => {
     const bare = card({
       identity: known({
