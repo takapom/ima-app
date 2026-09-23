@@ -6,16 +6,7 @@ import type {
   TurnConfig,
   TurnContext,
 } from '@cloudflare/think';
-import {
-  applyTurnConstraintsForTurn,
-  validateModelActionMetadata,
-} from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
-import type {
-  ConstraintValidationContext,
-  TurnConditionValues,
-} from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type { HarnessContext, IdPort } from '@worker/application/ports/context';
-import type { ModelActionMetadata } from '@worker/domain/constraints/constraints';
 import type { SubmitCardsInvalid, SubmitCardsPort } from '@worker/application/ports/submission';
 import {
   observeRuntimeSubmitRejection,
@@ -49,15 +40,8 @@ export type RuntimeTurnFactoryOptions = {
   readonly budget: RuntimeBudget;
   readonly ids: Pick<IdPort, 'nextCallId'>;
   readonly ports: RuntimeTurnPortDependencies;
-  /** Rebuilds the submit adapter with the current clock and effective conditions for each call. */
-  readonly buildSubmitPort?: (input: {
-    readonly now: string;
-    readonly conditions: TurnConditionValues;
-  }) => SubmitCardsPort;
-  /** Original user turns used by Core to validate quoted turn-constraint proposals. */
-  readonly constraintContext: ConstraintValidationContext;
-  /** M07 applies validated metadata and the resulting effective conditions to this turn. */
-  readonly applyMetadata: (metadata: ModelActionMetadata, conditions: TurnConditionValues) => void;
+  /** Rebuilds the submit adapter with the current clock for each call. */
+  readonly buildSubmitPort?: (input: { readonly now: string }) => SubmitCardsPort;
   /** Observes rejected submits; the default writer logs the structural diagnostic. */
   readonly onSubmitRejected?: RuntimeSubmitRejectionWriter;
   /** Observes the turn's operation shape at dispose; the default writer logs it. */
@@ -92,13 +76,8 @@ export type RuntimeThinkHooks = {
 };
 
 export type RuntimeTurnHandle = {
-  /** Base preferences remain unchanged; use `context`/`getConditions` for this turn's values. */
-  readonly baseContext: HarnessContext;
   readonly context: HarnessContext;
-  readonly getConditions: () => TurnConditionValues;
   readonly hasUnresolvedSubmitFailure: () => boolean;
-  /** Applies one already parsed metadata envelope through the same turn update path as Tools. */
-  readonly applyMetadata: (metadata: ModelActionMetadata) => ModelActionMetadata;
   readonly budget: RuntimeBudget;
   readonly signal: AbortSignal;
   readonly dependencies: ToolBindingDependencies;
@@ -137,42 +116,6 @@ const sameNames = (names: readonly string[]): boolean =>
   PUBLIC_TOOL_NAMES.every((name) => names.includes(name));
 
 const cloneContext = (context: HarnessContext): HarnessContext => structuredClone(context);
-
-const conditionsFromContext = (context: HarnessContext): TurnConditionValues => ({
-  maxWalkMinutes: context.preferences.maxWalkMinutes,
-  homeStationRef: context.preferences.homeStationRef,
-  minimumStayMinutes: context.preferences.minimumStayMinutes,
-});
-
-/**
- * Keeps a model proposal from adopting a constraint no connected provider can
- * evidence. Such a constraint cannot be satisfied by any candidate, so accepting it
- * only spends the repair budget and commits nothing. The user's own stored settings
- * are never touched here: the rejected value is the model's suggestion for this turn.
- */
-const supportedConditions = (
-  capabilities: HarnessContext['capabilities'],
-  current: TurnConditionValues,
-  proposed: TurnConditionValues,
-): TurnConditionValues => ({
-  maxWalkMinutes: capabilities.walkingRoute ? proposed.maxWalkMinutes : current.maxWalkMinutes,
-  homeStationRef: capabilities.lastTrain ? proposed.homeStationRef : current.homeStationRef,
-  minimumStayMinutes: proposed.minimumStayMinutes,
-});
-
-const contextWithConditions = (
-  base: HarnessContext,
-  conditions: TurnConditionValues,
-): HarnessContext => {
-  const next = cloneContext(base);
-  next.preferences = {
-    ...next.preferences,
-    maxWalkMinutes: conditions.maxWalkMinutes,
-    homeStationRef: conditions.homeStationRef,
-    minimumStayMinutes: conditions.minimumStayMinutes,
-  };
-  return next;
-};
 
 const budgetRepairCount = (budget: RuntimeBudget): 0 | 1 | 2 => {
   const remaining = budget.snapshot().remainingRepairs;
@@ -244,14 +187,12 @@ const toolSetMismatch = (context: TurnContext): RuntimeTurnFactoryError | undefi
  * Creates the per-turn boundary consumed by a Think subclass.
  *
  * This is an adapter, not an agent loop: Think owns model steps and tool dispatch. The adapter
- * supplies one immutable server context, server call IDs, cancellation, metadata application,
- * and the exact public tool set. Model reservation/buffering and retention projection remain
+ * supplies one immutable server context, server call IDs, cancellation, and the exact public
+ * tool set. Model reservation/buffering and retention projection remain
  * injected delegates owned by their respective runtime units.
  */
 export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): RuntimeTurnHandle => {
-  const baseContext = cloneContext(options.context);
-  let context = cloneContext(baseContext);
-  let conditions = conditionsFromContext(baseContext);
+  const context = cloneContext(options.context);
   const disposeController = new AbortController();
   let disposed = false;
   const serverCalls = new Map<
@@ -291,28 +232,6 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     options.isStale?.() === true ||
     options.budget.isCancelled();
 
-  const applyMetadataToTurn = (metadata: ModelActionMetadata): ModelActionMetadata => {
-    if (isCancelled())
-      throw new RuntimeTurnFactoryError(factoryErrorCode(disposed, options.isStale));
-    const validatedMetadata = validateModelActionMetadata(metadata, options.constraintContext);
-    let nextConditions = conditions;
-    if (validatedMetadata.turnConstraints !== undefined) {
-      nextConditions = supportedConditions(
-        baseContext.capabilities,
-        conditions,
-        applyTurnConstraintsForTurn(
-          conditions,
-          validatedMetadata.turnConstraints,
-          options.constraintContext,
-        ),
-      );
-    }
-    options.applyMetadata(validatedMetadata, nextConditions);
-    conditions = nextConditions;
-    context = contextWithConditions(baseContext, conditions);
-    return validatedMetadata;
-  };
-
   const runtime: ToolRuntimeFactory = (operation, invocation, metadata) => {
     if (isCancelled(invocation.abortSignal)) {
       throw new RuntimeTurnFactoryError(factoryErrorCode(disposed, options.isStale));
@@ -342,7 +261,6 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
         remainingRepairs: budgetRepairCount(options.budget),
       };
     }
-    applyMetadataToTurn(metadata);
     const callId = options.ids.nextCallId();
     if (isCancelled(invocation.abortSignal)) {
       throw new RuntimeTurnFactoryError(factoryErrorCode(disposed, options.isStale));
@@ -367,11 +285,7 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
   };
 
   const submit = budgetedSubmit(
-    () =>
-      options.buildSubmitPort?.({
-        now: options.ports.clock(),
-        conditions: { ...conditions },
-      }) ?? options.ports.submit,
+    () => options.buildSubmitPort?.({ now: options.ports.clock() }) ?? options.ports.submit,
     options.budget,
     reportSubmitRejection,
     () => {
@@ -441,15 +355,10 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
   };
 
   const handle: RuntimeTurnHandle = {
-    get baseContext() {
-      return cloneContext(baseContext);
-    },
     get context() {
       return cloneContext(context);
     },
-    getConditions: () => ({ ...conditions }),
     hasUnresolvedSubmitFailure: () => unresolvedSubmitFailure,
-    applyMetadata: applyMetadataToTurn,
     budget: options.budget,
     signal: disposeController.signal,
     dependencies,

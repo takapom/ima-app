@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AssistantResponse, ThreadTurnRequest } from '@ima/contracts';
 import { denyModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
-import { validateModelActionMetadata } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import { createRuntimeProductionContextStore } from '@worker/runtime/context/runtime-production-context';
 import type { RuntimeProductionContextReference } from '@worker/runtime/context/runtime-production-context-reference';
 import { createToolRegistry } from '../../adapters/inbound/tools/registry-fixture';
@@ -80,6 +79,11 @@ const fixture = () => {
     });
   return {
     reopen,
+    /** Replaces the persisted payload, e.g. with a snapshot written by an older Worker. */
+    withSnapshot: (value: unknown) => {
+      snapshot = value as RuntimeProductionContextReference;
+      return reopen();
+    },
     payload: () => JSON.stringify(snapshot),
     setNow: (value: string) => {
       now = value;
@@ -90,32 +94,25 @@ const fixture = () => {
 const policy = { ...denyModelContextFieldPolicy, history: 'allow' as const };
 
 describe('conversation context', () => {
-  it('validates a current utterance before committing it and still rejects a forged quote', () => {
-    const store = fixture().reopen();
-    const input = request('turn-current', '最低20分は滞在したい');
-    const context = store.beginTurn(input, SCOPE, policy).constraintContext;
-    const change = { minimumStayMinutes: 20, sourceTurnId: 'turn-current', quote: input.text };
-    const metadata = { turnConstraints: { changes: [change] } };
-    expect(validateModelActionMetadata(metadata, context)).toEqual(metadata);
-    expect(() =>
-      validateModelActionMetadata(
-        { turnConstraints: { changes: [{ ...change, quote: '最低60分' }] } },
-        context,
-      ),
-    ).toThrow('quote is not an exact source substring');
-    expect(() =>
-      validateModelActionMetadata(
-        { turnConstraints: { changes: [{ ...change, sourceTurnId: 'another-thread-turn' }] } },
-        context,
-      ),
-    ).toThrow('source turn is not in this thread');
-    expect(store.snapshot().originalTurns).toEqual([]);
-    const current = context.originalTurns[0];
-    if (current === undefined) throw new Error('current turn missing');
-    current.text = 'mutated projection';
-    expect(store.beginTurn(input, SCOPE, policy).constraintContext.originalTurns[0]?.text).toBe(
-      input.text,
-    );
+  it('restores a snapshot written with legacy quoted turns without keeping them', () => {
+    const f = fixture();
+    const first = request('turn-question', '甘いものを食べたい');
+    const store = f.reopen();
+    store.beginTurn(first, SCOPE, policy);
+    store.commitTurn(first, response(first, 'どのエリアで探しますか？'));
+    const written = JSON.parse(f.payload()) as Record<string, unknown>;
+    expect(written).not.toHaveProperty('originalTurns');
+
+    const legacy = f.withSnapshot({
+      ...written,
+      originalTurns: [{ threadId: SCOPE.threadId, turnId: 'turn-question' }],
+    });
+    const next = legacy.beginTurn(request('turn-answer', '恵比寿', 2), SCOPE, policy);
+    expect(next.modelContext.history.map((entry) => entry.text)).toEqual([
+      first.text,
+      'どのエリアで探しますか？',
+    ]);
+    expect(legacy.snapshot()).not.toHaveProperty('originalTurns');
   });
 
   it('restores the question and previous answer so a short reply has meaning', () => {

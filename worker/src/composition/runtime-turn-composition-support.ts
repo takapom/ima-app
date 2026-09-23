@@ -1,8 +1,4 @@
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
-import type {
-  ConstraintValidationContext,
-  TurnConditionValues,
-} from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type { HarnessContext } from '@worker/application/ports/context';
 import type { ModelContextSource } from '@worker/application/model-context/model-context';
 import type { ObservationContext } from '@worker/domain/evidence/freshness';
@@ -100,14 +96,13 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  */
 export const usableFinalMessage = (
   acceptance: Pick<RuntimeModelGuardAcceptance, 'finalText' | 'emptyFinal'>,
-  constraintContext: ConstraintValidationContext,
 ): RuntimeFinalMessage | undefined => {
   if (acceptance.emptyFinal || acceptance.finalText === null) {
     observeRuntimeTerminalFormatFailure('EMPTY_FINAL');
     return undefined;
   }
   try {
-    return parseRuntimeFinalMessage(acceptance.finalText, constraintContext);
+    return parseRuntimeFinalMessage(acceptance.finalText);
   } catch (error: unknown) {
     if (!isRuntimeFinalMessageError(error)) throw error;
     observeRuntimeTerminalFormatFailure(error.code);
@@ -239,8 +234,7 @@ export const currentBudget = (budget: RuntimeBudget): HarnessContext['budget'] =
 
 export const modelSource = (
   context: HarnessContext,
-  source: Omit<ModelContextSource, 'harness' | 'conditions'>,
-  conditions: TurnConditionValues,
+  source: Omit<ModelContextSource, 'harness'>,
   serverNow: string,
   budget: RuntimeBudget,
 ): ModelContextSource => ({
@@ -248,9 +242,7 @@ export const modelSource = (
   userText: source.userText,
   history: source.history,
   cardSet: source.cardSet,
-  conditions,
   evidence: source.evidence,
   savedReferences: source.savedReferences ?? [],
-  ...(source.stationDirectory === undefined ? {} : { stationDirectory: source.stationDirectory }),
   ...(source.fieldPolicy === undefined ? {} : { fieldPolicy: source.fieldPolicy }),
 });

@@ -20,7 +20,6 @@ const snapshot = {
   savedPlaceRefs: [],
   excludedCandidateIds: ['candidate-excluded'],
   history: [],
-  originalTurns: [],
   cardSet: {
     cardSetId: 'card-set-current',
     scope,
@@ -101,7 +100,6 @@ describe('saved candidate identity reference', () => {
   it('drops identities outside the replacement card set and fails closed for old snapshots', () => {
     const state = {
       history: [],
-      originalTurns: [],
       cardSet: candidateState('candidate-current') as NonNullable<ModelContextSource['cardSet']>,
       evidence: [],
       savedPlaceRefs: [],

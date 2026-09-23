@@ -47,7 +47,6 @@ const source = (savedReferences: unknown) => ({
   userText: '保存した店を確認',
   history: [],
   cardSet: null,
-  conditions: { maxWalkMinutes: null, homeStationRef: null, minimumStayMinutes: null },
   evidence: [],
   savedReferences,
 });

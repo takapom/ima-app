@@ -120,7 +120,6 @@ const referenceFor = (
   sessionExpiresAt: '2026-09-10T23:00:00.000Z',
   savedPlaceRefs: [],
   history: [],
-  originalTurns: [],
   cardSet: {
     cardSetId: 'card-set-1',
     scope: cardSetScope,
@@ -179,10 +178,9 @@ describe('runtime production context store', () => {
     store.beginTurn(canceled, scope, denyModelContextFieldPolicy);
 
     // A canceled runtime turn is intentionally modeled as a non-response value: only a
-    // schema-valid AssistantResponse can advance history or originalTurns.
+    // schema-valid AssistantResponse can advance history.
     store.commitTurn(canceled, { status: 'cancelled' });
     expect(store.snapshot().history).toHaveLength(0);
-    expect(store.snapshot().originalTurns).toHaveLength(0);
 
     const superseded = requestFor('context-superseded', 2, '置き換えられた原文');
     const next = requestFor('context-next', 3, '次の有効な条件');
@@ -198,9 +196,6 @@ describe('runtime production context store', () => {
     expect(snapshot.history.map((entry) => entry.text)).toEqual([
       '次の有効な条件',
       '確認しました。',
-    ]);
-    expect(snapshot.originalTurns).toEqual([
-      { threadId: scope.threadId, turnId: next.turnId, text: next.text },
     ]);
   });
 

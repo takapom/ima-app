@@ -4,7 +4,6 @@ import type { ThreadTurnRequest } from '@ima/contracts';
 import type { CandidateRecord } from '@worker/domain/candidates/registry';
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import type { CommitHashPort, CommitPort } from '@worker/application/ports/commit';
-import type { ConstraintValidationContext } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type { HarnessContext, IdPort } from '@worker/application/ports/context';
 import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
 import type { PlaceDetailsPort, PlaceSearchPort } from '@worker/application/ports/operations';
@@ -41,7 +40,6 @@ export type RuntimeProductionTurnPlan = {
   readonly details: PlaceDetailsPort;
   readonly retention: RuntimeRetentionContext;
   readonly modelContext: RuntimeCompositionModelContext;
-  readonly constraintContext: ConstraintValidationContext;
   readonly validationContext: RuntimeCompositionValidationContext;
   readonly ids: Pick<IdPort, 'nextCallId' | 'nextResponseId'>;
   readonly hashes: CommitHashPort;

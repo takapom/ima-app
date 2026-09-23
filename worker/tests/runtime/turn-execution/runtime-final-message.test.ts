@@ -8,7 +8,6 @@ import {
   type CommitRecord,
   type CommitRequest,
 } from '@worker/application/ports/commit';
-import { type ConstraintValidationContext } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import { type RegistryIdPort } from '@worker/application/ports/context';
 import {
   type SubmitValidationContext,
@@ -32,17 +31,6 @@ import {
 
 const now = '2026-09-10T12:00:00Z';
 const scope = { ownerScopeRef: 'owner-final', threadId: 'thread-final' };
-const constraintContext: ConstraintValidationContext = {
-  threadId: scope.threadId,
-  originalTurns: [
-    {
-      threadId: scope.threadId,
-      turnId: 'turn-source',
-      text: '最大徒歩を20分に変更する',
-    },
-  ],
-};
-
 const validationContext: SubmitValidationContext = {
   scope,
   serverNow: now,
@@ -131,21 +119,9 @@ const finalText = (
     ...(metadata === undefined ? {} : { metadata }),
   });
 
-const validMetadata = {
-  turnConstraints: {
-    changes: [
-      {
-        maxWalkMinutes: 20,
-        sourceTurnId: 'turn-source',
-        quote: '最大徒歩を20分に変更する',
-      },
-    ],
-  },
-};
-
 describe('runtime final message boundary', () => {
-  it('strictly parses a final envelope and validates source-turn metadata', () => {
-    const parsed = parseRuntimeFinalMessage(finalText(undefined, validMetadata), constraintContext);
+  it('strictly parses a final envelope with empty metadata', () => {
+    const parsed = parseRuntimeFinalMessage(finalText(undefined, {}));
     expect(parsed).toEqual({
       kind: 'final_message',
       message: {
@@ -153,12 +129,12 @@ describe('runtime final message boundary', () => {
         evidenceIds: [],
         basis: 'conversational',
       },
-      metadata: validMetadata,
+      metadata: {},
     });
   });
 
-  it('rejects arbitrary text, extra fields, and non-matching source quotes with typed errors', () => {
-    expect(() => parseRuntimeFinalMessage('自由文', constraintContext)).toThrowError(
+  it('rejects arbitrary text, extra fields, and legacy constraint metadata with typed errors', () => {
+    expect(() => parseRuntimeFinalMessage('自由文')).toThrowError(
       new RuntimeFinalMessageError('INVALID_JSON'),
     );
     expect(() =>
@@ -172,7 +148,6 @@ describe('runtime final message boundary', () => {
             providerSecret: 'must-not-pass',
           },
         }),
-        constraintContext,
       ),
     ).toThrowError(new RuntimeFinalMessageError('INVALID_ENVELOPE'));
     expect(() =>
@@ -188,9 +163,8 @@ describe('runtime final message boundary', () => {
             ],
           },
         }),
-        constraintContext,
       ),
-    ).toThrowError(new RuntimeFinalMessageError('INVALID_METADATA'));
+    ).toThrowError(new RuntimeFinalMessageError('INVALID_ENVELOPE'));
   });
 
   it('passes only the parsed message to Core commit and returns no body on invalid evidence', async () => {
@@ -201,7 +175,6 @@ describe('runtime final message boundary', () => {
         evidenceIds: ['missing-observation'],
         basis: 'grounded',
       }),
-      constraintContext,
     );
     const result = await fixture.application.commitMessage(
       parsed.message,
@@ -222,7 +195,7 @@ describe('runtime final message boundary', () => {
 
   it('commits a structurally valid conversational message without exposing its body in the result', async () => {
     const fixture = makeApplication();
-    const parsed = parseRuntimeFinalMessage(finalText(), constraintContext);
+    const parsed = parseRuntimeFinalMessage(finalText());
     const result = await fixture.application.commitMessage(
       parsed.message,
       validationContext,

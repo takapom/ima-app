@@ -15,10 +15,7 @@ import {
 } from '@worker/domain/primitives';
 import { IssueSchema } from '@worker/domain/issue';
 import { LastTrainInfoSchema } from '@worker/domain/places/place-values';
-import {
-  ModelActionMetadataSchema,
-  TurnConstraintsSchema,
-} from '@worker/domain/constraints/constraints';
+import { ModelActionMetadataSchema } from '@worker/domain/constraints/constraints';
 import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
 
 const timestamp = '2026-09-09T12:00:00Z';
@@ -269,37 +266,13 @@ describe('core domain contracts', () => {
     ).toBe(true);
   });
 
-  it('accepts only attributed turn constraint metadata with explicit source text', () => {
-    const valid = {
-      changes: [
-        {
-          maxWalkMinutes: 15,
-          sourceTurnId: 'turn-1',
-          quote: '徒歩15分以内がいい',
+  it('accepts only empty model action metadata now that turn constraints are removed', () => {
+    expect(v.safeParse(ModelActionMetadataSchema, {}).success).toBe(true);
+    expect(
+      v.safeParse(ModelActionMetadataSchema, {
+        turnConstraints: {
+          changes: [{ minimumStayMinutes: 20, sourceTurnId: 'turn-1', quote: '20分' }],
         },
-        {
-          homeStationRef: 'station-shibuya',
-          minimumStayMinutes: 20,
-          sourceTurnId: 'turn-2',
-          quote: '渋谷駅に帰れるようにして',
-        },
-      ],
-    };
-    expect(v.safeParse(TurnConstraintsSchema, valid).success).toBe(true);
-    expect(v.safeParse(ModelActionMetadataSchema, { turnConstraints: valid }).success).toBe(true);
-    expect(
-      v.safeParse(TurnConstraintsSchema, {
-        changes: [{ sourceTurnId: 'turn-1', quote: '条件を解除して' }],
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(TurnConstraintsSchema, {
-        changes: [{ ...valid.changes[0], unknown: true }],
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(TurnConstraintsSchema, {
-        changes: [valid.changes[0], valid.changes[0]],
       }).success,
     ).toBe(false);
   });

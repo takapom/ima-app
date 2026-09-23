@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TurnConstraintError } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type {
   CancellationToken,
   HarnessContext,
@@ -398,18 +397,8 @@ describe('runtime read Port adapter', () => {
     ).resolves.toMatchObject({ status: 'error', error: { code: 'CANCELLED' } });
   });
 
-  it('maps only TurnConstraintError from runtimeFor to INVALID_ARGUMENT', () => {
+  it('maps a runtime factory failure from runtimeFor to MISSING_CONTEXT', () => {
     const metadata: ModelActionMetadata = {};
-    const constraint = runtimeFor(
-      () => {
-        throw new TurnConstraintError('INVALID_PROPOSAL', 'invalid metadata');
-      },
-      'search_places',
-      { toolCallId: 'sdk-read-constraint' },
-      metadata,
-    );
-    expect(constraint).toMatchObject({ ok: false, error: { code: 'INVALID_ARGUMENT' } });
-
     const other = runtimeFor(
       () => {
         throw new Error('runtime failure');

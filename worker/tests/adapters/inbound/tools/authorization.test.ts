@@ -203,18 +203,21 @@ describe('tool candidate authorization', () => {
         return base.runtime(operation, invocation, metadata);
       },
     });
-    const envelope = {
-      input: searchInput,
-      metadata: {
-        turnConstraints: {
-          changes: [{ maxWalkMinutes: 15, sourceTurnId: 'turn-1', quote: '滞在' }],
-        },
-      },
-    };
+    const envelope = { input: searchInput, metadata: {} };
     const schema = asSchema(tools.search_places.inputSchema);
     if (schema.validate === undefined) throw new Error('search schema validator is missing');
     const accepted = await schema.validate(envelope);
     expect(accepted?.success).toBe(true);
+    expect(
+      await schema.validate({
+        input: searchInput,
+        metadata: {
+          turnConstraints: {
+            changes: [{ minimumStayMinutes: 15, sourceTurnId: 'turn-1', quote: '滞在' }],
+          },
+        },
+      }),
+    ).toMatchObject({ success: false });
     expect(await schema.validate(searchInput)).toMatchObject({
       success: false,
     });

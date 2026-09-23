@@ -2,10 +2,6 @@ import * as v from 'valibot';
 import type { AssistantResponse, ThreadTurnRequest } from '@ima/contracts';
 import { AssistantResponseSchema } from '@ima/contracts';
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
-import type {
-  ConstraintValidationContext,
-  OriginalTurn,
-} from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
 import type {
   ModelContextSource,
@@ -16,7 +12,6 @@ import type { RegistryScope } from '@worker/domain/evidence/freshness';
 import { CardSetRecordSchema } from '@worker/domain/candidates/continuity';
 import { DetailFieldSchema } from '@worker/domain/primitives';
 import { ModelEvidenceSourceSchema } from '@worker/application/model-context/model-evidence';
-import { OriginalTurnSchema } from '@worker/application/use-cases/update-turn-constraints/turn-constraints';
 import type { RuntimeThinkComposition } from '@worker/runtime/turn-execution/runtime-think-connection';
 import {
   referenceSnapshotFor,
@@ -34,7 +29,6 @@ import {
 } from '@worker/runtime/context/runtime-production-display-context';
 
 import {
-  originalTurnFor,
   userHistoryFor,
   responseHistory,
   projectConversationHistory,
@@ -56,7 +50,6 @@ export type RuntimeProductionModelContext = Pick<
 
 type ProductionContextState = {
   readonly history: readonly RetainedHistoryEntry[];
-  readonly originalTurns: readonly OriginalTurn[];
   readonly cardSet: CardSetSource | null;
   readonly cardSetReferenceOnly: boolean;
   readonly evidence: readonly ModelEvidenceSource[];
@@ -80,12 +73,10 @@ export type RuntimeProductionContextStore = {
     fieldPolicy: ModelContextFieldPolicy,
   ): {
     readonly modelContext: RuntimeProductionModelContext;
-    readonly constraintContext: ConstraintValidationContext;
   };
   commitTurn(input: ThreadTurnRequest, response: unknown): void;
   snapshot(): {
     readonly history: readonly ModelHistoryEntry[];
-    readonly originalTurns: readonly OriginalTurn[];
     readonly cardSet: CardSetSource | null;
     readonly evidence: readonly ModelEvidenceSource[];
     readonly savedPlaceRefs: readonly string[];
@@ -145,7 +136,6 @@ const copyCardSet = (cardSet: CardSetSource | null): CardSetSource | null =>
 
 const copyState = (state: ProductionContextState): ProductionContextState => ({
   history: structuredClone(state.history),
-  originalTurns: structuredClone(state.originalTurns),
   cardSet: copyCardSet(state.cardSet),
   cardSetReferenceOnly: state.cardSetReferenceOnly,
   evidence: structuredClone(state.evidence),
@@ -244,12 +234,6 @@ const cardSetFromResponse = (
   return cardSetFor(registry, scope, parsed.output);
 };
 
-const replaceByTurn = (turns: readonly OriginalTurn[], next: OriginalTurn): OriginalTurn[] =>
-  [
-    ...turns.filter((turn) => !(turn.threadId === next.threadId && turn.turnId === next.turnId)),
-    next,
-  ].slice(-32);
-
 export const createRuntimeProductionContextStore = (input: {
   readonly registry: CandidateObservationRegistryPort;
   readonly persistence?: RuntimeProductionContextPersistence;
@@ -259,7 +243,6 @@ export const createRuntimeProductionContextStore = (input: {
   const scopeFor = (scope: RegistryScope): RegistryScope => ({ ...scope });
   let state: ProductionContextState = {
     history: [],
-    originalTurns: [],
     cardSet: null,
     cardSetReferenceOnly: false,
     evidence: [],
@@ -360,22 +343,6 @@ export const createRuntimeProductionContextStore = (input: {
         savedReferences: request.savedPlaceRefs.map((savedPlaceRef) => ({ savedPlaceRef })),
         fieldPolicy,
       },
-      constraintContext: {
-        threadId: safeScope.threadId,
-        originalTurns: replaceByTurn(
-          state.originalTurns.map((turn) => ({
-            ...turn,
-            text:
-              history.find((entry) => entry.role === 'user' && entry.turnId === turn.turnId)
-                ?.text ?? '[withheld]',
-          })),
-          v.parse(OriginalTurnSchema, {
-            threadId: safeScope.threadId,
-            turnId: request.turnId ?? request.requestId,
-            text: request.text,
-          }),
-        ),
-      },
     };
   };
 
@@ -414,8 +381,7 @@ export const createRuntimeProductionContextStore = (input: {
         : responseCardSet;
     if (parsed.output.kind === 'cards' && nextCardSet === null) return;
     const userHistory = userHistoryFor(active.input, active.scope);
-    const originalTurn = originalTurnFor(active.input, active.scope);
-    if (userHistory === undefined || originalTurn === undefined) return;
+    if (userHistory === undefined) return;
     const assistantHistory = responseHistory(parsed.output);
     const evidence = responseEvidenceIds(parsed.output)
       .map((observationId) => evidenceSourceFor(input.registry, active.scope, observationId))
@@ -459,7 +425,6 @@ export const createRuntimeProductionContextStore = (input: {
         [{ ...userHistory, retention: parsed.output.message[0]?.retention }, ...assistantHistory],
         32,
       ),
-      originalTurns: replaceByTurn(active.base.originalTurns, originalTurn),
       cardSet: nextCardSet,
       cardSetReferenceOnly:
         parsed.output.kind === 'cards' ? false : active.base.cardSetReferenceOnly,
@@ -477,7 +442,6 @@ export const createRuntimeProductionContextStore = (input: {
     commitTurn,
     snapshot: () => ({
       history: structuredClone(state.history),
-      originalTurns: structuredClone(state.originalTurns),
       cardSet: copyCardSet(state.cardSet),
       evidence: structuredClone(state.evidence),
       savedPlaceRefs: [...state.savedPlaceRefs],
