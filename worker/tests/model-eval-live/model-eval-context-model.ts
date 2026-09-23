@@ -287,7 +287,6 @@ export const fixtureModel = (
               mode: 'search',
               query: searchQueryFor(profile()),
               area: { kind: 'named_area', name: '渋谷' },
-              openNow: false,
               limit: 3,
               excludeCandidateIds: [],
             }),

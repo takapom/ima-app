@@ -126,7 +126,6 @@ const searchInput: Extract<SearchPlacesInput, { mode: 'search' }> = {
   mode: 'search',
   query: 'coffee',
   area: { kind: 'named_area', name: 'Fixture area' },
-  openNow: true,
   limit: 3,
   excludeCandidateIds: [],
 };

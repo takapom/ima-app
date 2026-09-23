@@ -46,7 +46,6 @@ describe('createRuntimeTurnComposition', () => {
         mode: 'search',
         query: 'カフェ',
         area: { kind: 'named_area', name: '渋谷' },
-        openNow: true,
         limit: 1,
         excludeCandidateIds: [],
       },

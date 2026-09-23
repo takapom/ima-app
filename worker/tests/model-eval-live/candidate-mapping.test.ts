@@ -279,7 +279,6 @@ describe('model-eval candidate identity mapping', () => {
           mode: 'search',
           query: 'カフェ',
           area: { kind: 'named_area', name: '渋谷' },
-          openNow: false,
           limit: 1,
           excludeCandidateIds: [],
         },

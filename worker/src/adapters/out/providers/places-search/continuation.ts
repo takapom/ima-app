@@ -44,7 +44,6 @@ const copyBinding = (binding: PlacesSearchCursorBinding): PlacesSearchCursorBind
     binding.area.kind === 'named_area'
       ? { kind: 'named_area', name: binding.area.name }
       : { kind: 'current_location', radiusMeters: binding.area.radiusMeters },
-  openNow: binding.openNow,
   limit: binding.limit,
   excludeCandidateIds: [...binding.excludeCandidateIds],
   locationRevision: binding.locationRevision,

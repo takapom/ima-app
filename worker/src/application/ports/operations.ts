@@ -39,7 +39,6 @@ export const SearchPlacesInputSchema = v.union([
     mode: v.literal('search'),
     query: Text(200),
     area: v.union([CurrentLocationAreaSchema, NamedAreaSchema]),
-    openNow: v.boolean(),
     limit: v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(10)),
     excludeCandidateIds: v.pipe(
       v.array(CandidateIdSchema),
@@ -70,7 +69,6 @@ export const SearchPlacesOutputSchema = v.pipe(
     ),
     applied: v.strictObject({
       areaDescription: Text(160),
-      openNow: v.boolean(),
       excludedCount: NonNegativeSafeIntegerSchema,
     }),
     nextCursor: v.nullable(Text(512)),

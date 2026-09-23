@@ -204,7 +204,7 @@ const searchResultFor = (candidateId: string): Result<SearchPlacesOutput> => ({
         price: { status: 'unknown', reason: 'fixture has no price value' },
       },
     ],
-    applied: { areaDescription: '渋谷', openNow: true, excludedCount: 0 },
+    applied: { areaDescription: '渋谷', excludedCount: 0 },
     nextCursor: null,
     coverage: 'provider_results',
   },

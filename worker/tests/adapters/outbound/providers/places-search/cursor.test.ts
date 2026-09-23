@@ -13,7 +13,6 @@ const binding = (): PlacesSearchCursorBinding => ({
   threadId: 'thread-places',
   query: '静かなカフェ',
   area: { kind: 'named_area', name: '渋谷' },
-  openNow: true,
   limit: 2,
   excludeCandidateIds: ['candidate-2', 'candidate-1'],
   locationRevision: 4,
@@ -61,6 +60,20 @@ describe('Places search cursor store', () => {
     await expect(store.resolve(token, reorderedArea)).resolves.toMatchObject({ ok: true });
   });
 
+  it('rejects a v1 cursor issued before openNow left the binding', async () => {
+    const store = createPlacesSearchCursorStore({
+      secret: 'a sufficiently long cursor secret',
+      now: () => 100,
+      nonceFactory: () => nonce(3),
+    });
+    const token = await store.issue(state());
+    expect(token.startsWith('v2.')).toBe(true);
+    await expect(store.resolve(`v1.${token.slice('v2.'.length)}`, binding())).resolves.toEqual({
+      ok: false,
+      code: 'INVALID_CURSOR',
+    });
+  });
+
   it('rejects tampering and every changed cursor binding', async () => {
     const store = createPlacesSearchCursorStore({
       secret: 'a sufficiently long cursor secret',
@@ -80,7 +93,6 @@ describe('Places search cursor store', () => {
       { ...binding(), ownerScopeRef: 'owner-other' },
       { ...binding(), threadId: 'thread-other' },
       { ...binding(), query: '別の検索' },
-      { ...binding(), openNow: false },
       { ...binding(), limit: 3 },
       { ...binding(), locationRevision: 5 },
       { ...binding(), area: { kind: 'named_area', name: '新宿' } },

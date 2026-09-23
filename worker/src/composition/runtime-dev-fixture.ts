@@ -239,7 +239,6 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
         mode: 'search',
         query: 'カフェ',
         area: { kind: 'named_area', name: '恵比寿' },
-        openNow: false,
         limit: 1,
         excludeCandidateIds: [],
       },

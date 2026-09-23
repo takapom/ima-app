@@ -66,7 +66,6 @@ const searchInput: SearchPlacesInput = {
   mode: 'search',
   query: '静かなカフェ',
   area: { kind: 'named_area', name: '渋谷' },
-  openNow: true,
   limit: 2,
   excludeCandidateIds: [],
 };
@@ -91,7 +90,7 @@ const searchResult: Result<SearchPlacesOutput> = {
   data: {
     searchId: 'search-1',
     candidates: [],
-    applied: { areaDescription: '渋谷', openNow: true, excludedCount: 0 },
+    applied: { areaDescription: '渋谷', excludedCount: 0 },
     nextCursor: null,
     coverage: 'provider_results',
   },
@@ -194,7 +193,7 @@ describe('public tool catalog', () => {
     expect(tools.search_places.description).toContain('地域名もqueryと同じkeywordへ連結');
     expect(tools.search_places.description).toContain('ジャンル語へ置き換えて');
     expect(tools.search_places.description).toContain('0件のときは語を減らす');
-    expect(tools.search_places.description).toContain('openNow=false');
+    expect(tools.search_places.description).not.toContain('openNow');
     expect(tools.get_place_details.description).toContain('まとめて1回のget_place_details');
     expect(tools.get_place_details.description).toContain(
       'fieldsへidentity、opening_hours、price、photos、facilities',
@@ -258,6 +257,20 @@ describe('public tool catalog', () => {
     expect(result.status).toBe('error');
     if (result.status === 'error') expect(result.error.code).toBe('UNSUPPORTED_FIELD');
     expect(ports.details).toBe(0);
+  });
+
+  it('rejects the removed openNow search argument instead of ignoring it', async () => {
+    const ports: Ports = { search: 0, details: 0, submit: 0, executions: [], contexts: [] };
+    const result = await invokePublicTool(
+      'search_places',
+      { ...searchInput, openNow: false },
+      makeDependencies(ports),
+      invocation,
+    );
+
+    expect(result.status).toBe('error');
+    if (result.status === 'error') expect(result.error.code).toBe('INVALID_ARGUMENT');
+    expect(ports.search).toBe(0);
   });
 
   it('rejects a model-supplied travel context as an unknown input property', async () => {

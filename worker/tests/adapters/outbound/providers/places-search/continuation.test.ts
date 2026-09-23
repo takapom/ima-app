@@ -15,7 +15,6 @@ const binding = (): PlacesSearchCursorBinding => ({
   threadId: 'thread-continuation',
   query: '静かなカフェ',
   area: { kind: 'named_area', name: '渋谷' },
-  openNow: true,
   limit: 2,
   excludeCandidateIds: [],
   locationRevision: 1,

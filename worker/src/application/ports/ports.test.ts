@@ -51,7 +51,6 @@ const search = {
   mode: 'search',
   query: '静かなカフェ',
   area: { kind: 'current_location', radiusMeters: 100 },
-  openNow: true,
   limit: 1,
   excludeCandidateIds: [],
 };
@@ -379,7 +378,7 @@ describe('core port contracts', () => {
     const output = {
       searchId: 'search-1',
       candidates: [candidate],
-      applied: { areaDescription: '恵比寿', openNow: true, excludedCount: 0 },
+      applied: { areaDescription: '恵比寿', excludedCount: 0 },
       nextCursor: null,
       coverage: 'provider_results',
     };

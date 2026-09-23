@@ -291,7 +291,6 @@ const projectSearchData = (value: JsonRecord, policy: ModelContextFieldPolicy): 
     !Array.isArray(value.candidates) ||
     !isRecord(applied) ||
     typeof applied.areaDescription !== 'string' ||
-    typeof applied.openNow !== 'boolean' ||
     typeof applied.excludedCount !== 'number' ||
     (value.nextCursor !== null && typeof value.nextCursor !== 'string') ||
     value.coverage !== 'provider_results'
@@ -319,7 +318,6 @@ const projectSearchData = (value: JsonRecord, policy: ModelContextFieldPolicy): 
     candidates: safeCandidates,
     applied: {
       areaDescription: applied.areaDescription,
-      openNow: applied.openNow,
       excludedCount: applied.excludedCount,
     },
     nextCursor: value.nextCursor,

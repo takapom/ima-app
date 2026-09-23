@@ -14,7 +14,6 @@ export type PlacesSearchCursorBinding = {
   readonly threadId: string;
   readonly query: string;
   readonly area: PlacesSearchArea;
-  readonly openNow: boolean;
   readonly limit: number;
   readonly excludeCandidateIds: readonly string[];
   readonly locationRevision: number;
