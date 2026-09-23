@@ -98,8 +98,6 @@ export const card: ValidatedCard = {
       },
     ],
   },
-  walkingRoute: null,
-  lastTrain: null,
   evidenceIds: ['obs-identity', 'obs-opening', 'obs-photos'],
   why: {
     text: '営業中の候補です',

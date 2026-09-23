@@ -75,22 +75,13 @@ export const retention: RetentionMetadata = {
 export type EvidenceIds = {
   identity: string;
   opening: string;
-  walking: string;
   price: string;
   photos: string;
-  lastTrain?: string;
 };
 
 type FixtureOptions = {
-  originRef?: string | null;
-  maxWalkMinutes?: number | null;
-  homeStationRef?: string | null;
-  minimumStayMinutes?: number | null;
   requireLastOrderAtArrival?: boolean;
-  travel?: SubmitValidationContext['travel'];
   lastOrderAt?: IsoTimestamp;
-  lastTrainVariant?: 'valid' | 'bad-arithmetic';
-  walkingDurationSeconds?: number;
   openingStartAt?: IsoTimestamp;
   openingEndAt?: IsoTimestamp | null;
 };
@@ -101,34 +92,18 @@ export type SubmitCardsFixture = {
   ids: ReadonlyMap<CandidateId, EvidenceIds>;
 };
 
-export const makeContext = (options: FixtureOptions = {}): SubmitValidationContext => {
-  const originRef = options.originRef === undefined ? 'origin-1' : options.originRef;
-  const homeStationRef = options.homeStationRef === undefined ? null : options.homeStationRef;
-  const minimumStayMinutes =
-    options.minimumStayMinutes === undefined ? null : options.minimumStayMinutes;
-  return {
-    scope,
-    serverNow: now,
-    departureAt: now,
-    expectedObservationContext: {
-      ownerScopeRef: scope.ownerScopeRef,
-      threadId: scope.threadId,
-      capabilityVersion: 'fixture-v1',
-      locationRevision: 1,
-      originRef,
-      homeStationRef,
-      minimumStayMinutes,
-      timeContext: 'now',
-    },
-    preferences: {
-      maxWalkMinutes: options.maxWalkMinutes === undefined ? 15 : options.maxWalkMinutes,
-      homeStationRef,
-      minimumStayMinutes,
-    },
-    travel: options.travel ?? [],
-    requireLastOrderAtArrival: options.requireLastOrderAtArrival ?? true,
-  };
-};
+export const makeContext = (options: FixtureOptions = {}): SubmitValidationContext => ({
+  scope,
+  serverNow: now,
+  expectedObservationContext: {
+    ownerScopeRef: scope.ownerScopeRef,
+    threadId: scope.threadId,
+    capabilityVersion: 'fixture-v1',
+    locationRevision: 1,
+    timeContext: 'now',
+  },
+  requireLastOrderAtArrival: options.requireLastOrderAtArrival ?? true,
+});
 
 const registerFixtureObservation = (
   registry: CandidateObservationRegistry,
@@ -143,7 +118,7 @@ const registerFixtureObservation = (
     candidateId,
     field,
     value,
-    basis: field === 'walking_route' || field === 'last_train' ? 'computed' : 'provider_reported',
+    basis: 'provider_reported',
     sourceUpdatedAt: null,
     freshUntil: '2026-09-10T13:00:00Z',
     expiresAt: '2026-09-10T14:00:00Z',
@@ -183,17 +158,7 @@ export const makeFixture = (
   candidateIds: readonly CandidateId[] = ['candidate-1'],
   options: FixtureOptions = {},
 ): SubmitCardsFixture => {
-  const homeStationRef = options.homeStationRef === undefined ? null : options.homeStationRef;
-  const travel =
-    options.travel ??
-    (homeStationRef === null
-      ? []
-      : candidateIds.map((candidateId) => ({
-          candidateId,
-          serviceDate: '2026-09-10',
-          fromStationRef: 'station-from',
-        })));
-  const context = makeContext({ ...options, travel });
+  const context = makeContext(options);
   const registry = new CandidateObservationRegistry(new FixedClock(now), new FixedIds());
   const ids = new Map<CandidateId, EvidenceIds>();
   for (const requestedCandidateId of candidateIds) {
@@ -230,15 +195,6 @@ export const makeFixture = (
       lastOrderAt: options.lastOrderAt ?? '2026-09-10T14:00:00Z',
       lastOrderRaw: '14:00',
     });
-    const walking = registerFixtureObservation(registry, context, candidateId, 'walking_route', {
-      originRef: 'origin-1',
-      destinationCandidateId: candidateId,
-      originRevision: 1,
-      evaluatedAt: now,
-      durationSeconds: options.walkingDurationSeconds ?? 600,
-      distanceMeters: 800,
-      warnings: [],
-    });
     const price = registerFixtureObservation(registry, context, candidateId, 'price', {
       level: 2,
       range: null,
@@ -247,36 +203,7 @@ export const makeFixture = (
     const photos = registerFixtureObservation(registry, context, candidateId, 'photos', {
       photos: [{ photoRef: `photo-${candidateId}`, attributions: [], sourceUrl: null }],
     });
-    const home = context.preferences.homeStationRef;
-    const lastTrain =
-      home === null
-        ? undefined
-        : registerFixtureObservation(registry, context, candidateId, 'last_train', {
-            serviceDate: '2026-09-10',
-            fromStationRef: 'station-from',
-            homeStationRef: home,
-            journeyRef: `journey-${candidateId}`,
-            lastDepartureAt: '2026-09-10T23:00:00Z',
-            arrivesHomeAt: '2026-09-10T23:30:00Z',
-            transfers: [],
-            placeToStationSeconds: 600,
-            arrivePlaceAt: '2026-09-10T12:10:00Z',
-            leaveBy:
-              options.lastTrainVariant === 'bad-arithmetic'
-                ? '2026-09-10T22:46:00Z'
-                : '2026-09-10T22:47:00Z',
-            availableStaySeconds: options.lastTrainVariant === 'bad-arithmetic' ? 38160 : 38220,
-            minimumStayMinutes: context.preferences.minimumStayMinutes ?? 20,
-            usable: true,
-          });
-    ids.set(candidateId, {
-      identity,
-      opening,
-      walking,
-      price,
-      photos,
-      ...(lastTrain === undefined ? {} : { lastTrain }),
-    });
+    ids.set(candidateId, { identity, opening, price, photos });
   }
   return { context, registry, ids };
 };
@@ -287,14 +214,7 @@ export const makeSelection = (
   alternative = false,
 ): CardSelection => ({
   candidateId,
-  evidenceIds: [
-    ids.identity,
-    ids.opening,
-    ids.walking,
-    ids.price,
-    ids.photos,
-    ...(ids.lastTrain === undefined ? [] : [ids.lastTrain]),
-  ],
+  evidenceIds: [ids.identity, ids.opening, ids.price, ids.photos],
   why: { text: `理由 ${candidateId}`, evidenceIds: [ids.identity], basis: 'grounded' },
   ...(alternative
     ? {

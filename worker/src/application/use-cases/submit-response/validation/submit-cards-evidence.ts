@@ -10,76 +10,41 @@ import {
 import {
   ContactInfoSchema,
   FacilitiesInfoSchema,
-  LastTrainInfoSchema,
   OpeningHoursSchema,
   PlaceIdentitySchema,
   PriceInfoSchema,
   PhotoInfoSchema,
-  WalkingRouteSchema,
-  type LastTrainInfo,
   type OpeningHours,
   type PlaceIdentity,
   type PriceInfo,
-  type WalkingRoute,
 } from '@worker/domain/places/place-values';
-import {
-  CalendarDateSchema,
-  CandidateIdSchema,
-  IsoTimestampSchema,
-  OpaqueIdSchema,
-  SafeIntegerSchema,
-} from '@worker/domain/primitives';
+import { IsoTimestampSchema } from '@worker/domain/primitives';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import type { SubmitIssue } from '@worker/application/ports/submission';
 import type { ReadonlyStoredObservation } from '@worker/domain/candidates/registry';
 
-const PositiveMinutesSchema = v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(180));
 type PhotoInfo = v.InferOutput<typeof PhotoInfoSchema>;
 type FacilitiesInfo = v.InferOutput<typeof FacilitiesInfoSchema>;
 
 /**
  * Conditions supplied by the Harness/Application. They are deliberately separate from model
- * input so the model cannot disable the current-arrival opening check or widen a hard limit.
+ * input so the model cannot disable the current-time opening check.
  */
 export const SubmitValidationContextSchema = v.pipe(
   v.strictObject({
     scope: RegistryScopeSchema,
     serverNow: IsoTimestampSchema,
-    departureAt: IsoTimestampSchema,
     expectedObservationContext: ObservationContextSchema,
-    preferences: v.strictObject({
-      maxWalkMinutes: v.nullable(PositiveMinutesSchema),
-      homeStationRef: v.nullable(OpaqueIdSchema),
-      minimumStayMinutes: v.nullable(PositiveMinutesSchema),
-    }),
-    travel: v.pipe(
-      v.array(
-        v.strictObject({
-          candidateId: CandidateIdSchema,
-          serviceDate: CalendarDateSchema,
-          fromStationRef: OpaqueIdSchema,
-        }),
-      ),
-      v.maxLength(3),
-      v.check(
-        (items) => new Set(items.map((item) => item.candidateId)).size === items.length,
-        'travel context candidate IDs must be unique',
-      ),
-    ),
     requireLastOrderAtArrival: v.boolean(),
     allowUnknownOpening: v.optional(v.boolean()),
   }),
   v.check((context) => {
     const expected = context.expectedObservationContext;
-    const sameInstant = Date.parse(context.serverNow) === Date.parse(context.departureAt);
-    const scopeMatches =
+    return (
       expected.ownerScopeRef === context.scope.ownerScopeRef &&
-      expected.threadId === context.scope.threadId;
-    const preferencesMatch =
-      expected.homeStationRef === context.preferences.homeStationRef &&
-      expected.minimumStayMinutes === context.preferences.minimumStayMinutes;
-    return sameInstant && scopeMatches && preferencesMatch;
+      expected.threadId === context.scope.threadId
+    );
   }, 'submit validation context is inconsistent'),
 );
 export type SubmitValidationContext = v.InferOutput<typeof SubmitValidationContextSchema>;
@@ -91,8 +56,6 @@ const KnownObservationFieldSchema = v.picklist([
   'photos',
   'contact',
   'facilities',
-  'walking_route',
-  'last_train',
 ]);
 export type KnownObservationField = v.InferOutput<typeof KnownObservationFieldSchema>;
 
@@ -130,8 +93,6 @@ export type ValidatedCard = {
   price: PriceInfo | null;
   photos: PhotoInfo | null;
   facilities: FacilitiesInfo | null;
-  walkingRoute: WalkingRoute | null;
-  lastTrain: LastTrainInfo | null;
   evidenceIds: readonly string[];
   why: ValidatedEvidenceText;
   diff: ValidatedEvidenceText | null;
@@ -193,10 +154,6 @@ const observationSchema = (field: KnownObservationField): v.GenericSchema => {
       return ContactInfoSchema;
     case 'facilities':
       return FacilitiesInfoSchema;
-    case 'walking_route':
-      return WalkingRouteSchema;
-    case 'last_train':
-      return LastTrainInfoSchema;
   }
 };
 

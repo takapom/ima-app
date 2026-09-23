@@ -165,7 +165,7 @@ const validationAt = (
   value: RuntimeCompositionValidationContext,
   now: string,
 ): SubmitValidationContext =>
-  typeof value === 'function' ? value({ now }) : { ...value, serverNow: now, departureAt: now };
+  typeof value === 'function' ? value({ now }) : { ...value, serverNow: now };
 
 /**
  * Assembles one Think turn without owning the model loop. Every SDK-facing dependency is wired

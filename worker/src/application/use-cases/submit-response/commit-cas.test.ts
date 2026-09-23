@@ -137,8 +137,6 @@ const message = (text: string) => ({
 describe('BarrierCommit CAS', () => {
   it('does not commit when response preparation fails', async () => {
     const fixture = makeFixture([], {
-      originRef: null,
-      maxWalkMinutes: null,
       requireLastOrderAtArrival: false,
     });
     const commits = new InMemoryCommitPort();
@@ -168,8 +166,6 @@ describe('BarrierCommit CAS', () => {
   });
   it('allows only one side of a same-revision concurrent submit to commit', async () => {
     const fixture = makeFixture([], {
-      originRef: null,
-      maxWalkMinutes: null,
       requireLastOrderAtArrival: false,
     });
     const commits = new InMemoryCommitPort();

@@ -16,11 +16,9 @@ import { type RetentionMetadata } from '@worker/domain/evidence/retention';
 import {
   publicFacilities,
   publicIdentity,
-  publicLastTrain,
   publicOpeningHours,
   publicPhotos,
   publicPrice,
-  publicWalkingRoute,
 } from '@worker/runtime/response/runtime-response-values';
 type EvidenceLink = ValidatedEvidenceText['evidence'][number];
 
@@ -308,22 +306,6 @@ const publicCard = (card: ValidatedCard, options: RuntimePublicResponseOptions) 
           facilities: known(
             publicFacilities(card.facilities),
             cardEvidence(card, 'facilities', options),
-          ),
-        }),
-    ...(card.walkingRoute === null
-      ? {}
-      : {
-          walking_route: known(
-            publicWalkingRoute(card.walkingRoute),
-            cardEvidence(card, 'walking_route', options),
-          ),
-        }),
-    ...(card.lastTrain === null
-      ? {}
-      : {
-          last_train: known(
-            publicLastTrain(card.lastTrain),
-            cardEvidence(card, 'last_train', options),
           ),
         }),
   };

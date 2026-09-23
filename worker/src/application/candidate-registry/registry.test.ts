@@ -81,9 +81,6 @@ const context: ObservationContext = {
   ...scope,
   capabilityVersion: 'places-v1',
   locationRevision: 3,
-  originRef: 'origin-1',
-  homeStationRef: 'station-1',
-  minimumStayMinutes: 20,
   timeContext: 'now',
 };
 const retention: RetentionMetadata = {
@@ -380,9 +377,6 @@ describe('candidate and observation registry', () => {
     const changedContexts: ObservationContext[] = [
       { ...context, capabilityVersion: 'places-v2' },
       { ...context, locationRevision: 4 },
-      { ...context, originRef: 'origin-2' },
-      { ...context, homeStationRef: 'station-2' },
-      { ...context, minimumStayMinutes: 30 },
       { ...context, timeContext: 'service-date:2026-09-10' },
       { ...context, threadId: 'thread-2' },
       { ...context, ownerScopeRef: 'owner-2' },
@@ -431,9 +425,6 @@ describe('candidate and observation registry', () => {
       ...longScope,
       capabilityVersion: `cap-${'z'.repeat(60)}`,
       locationRevision: 3,
-      originRef: `origin-${'o'.repeat(121)}`,
-      homeStationRef: `station-${'s'.repeat(120)}`,
-      minimumStayMinutes: 20,
       timeContext: `time-${'日本語|%'.repeat(25)}`,
     };
     const { registry } = createRegistry();

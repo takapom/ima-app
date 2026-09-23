@@ -93,23 +93,13 @@ const context: HarnessContext = {
 const validationContext: SubmitValidationContext = {
   scope,
   serverNow: NOW,
-  departureAt: NOW,
   expectedObservationContext: {
     ownerScopeRef: scope.ownerScopeRef,
     threadId: scope.threadId,
     capabilityVersion: 'runtime-cancel-v1',
     locationRevision: 1,
-    originRef: null,
-    homeStationRef: null,
-    minimumStayMinutes: null,
     timeContext: 'now',
   },
-  preferences: {
-    maxWalkMinutes: null,
-    homeStationRef: null,
-    minimumStayMinutes: null,
-  },
-  travel: [],
   requireLastOrderAtArrival: false,
 };
 

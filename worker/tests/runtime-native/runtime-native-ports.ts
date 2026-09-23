@@ -151,23 +151,13 @@ const nativeContext = (
 const validationContext = (scope: RegistryScope, serverNow: string): SubmitValidationContext => ({
   scope,
   serverNow,
-  departureAt: serverNow,
   expectedObservationContext: {
     ownerScopeRef: scope.ownerScopeRef,
     threadId: scope.threadId,
     capabilityVersion: 'runtime-native-v1',
     locationRevision: 1,
-    originRef: null,
-    homeStationRef: null,
-    minimumStayMinutes: null,
     timeContext: 'now',
   },
-  preferences: {
-    maxWalkMinutes: null,
-    homeStationRef: null,
-    minimumStayMinutes: null,
-  },
-  travel: [],
   requireLastOrderAtArrival: false,
 });
 

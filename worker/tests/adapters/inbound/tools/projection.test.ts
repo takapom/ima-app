@@ -99,9 +99,6 @@ const observationContext: ObservationContext = {
   threadId: context.threadId,
   capabilityVersion: context.capabilities.version,
   locationRevision: context.location.revision,
-  originRef: 'gps-secret',
-  homeStationRef: context.preferences.homeStationRef,
-  minimumStayMinutes: context.preferences.minimumStayMinutes,
   timeContext: 'db-secret',
 };
 

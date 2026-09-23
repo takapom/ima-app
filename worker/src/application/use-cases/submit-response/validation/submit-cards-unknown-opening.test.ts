@@ -8,16 +8,8 @@ import {
   now,
 } from '@worker/application/use-cases/submit-response/tests/submit-cards-fixtures';
 
-const fixtureFor = (
-  listedOpenAtEvaluation: boolean | null = null,
-  minimumStayMinutes: number | null = null,
-) => {
-  const fixture = makeFixture(['candidate-1'], {
-    originRef: null,
-    maxWalkMinutes: null,
-    minimumStayMinutes,
-    requireLastOrderAtArrival: false,
-  });
+const fixtureFor = (listedOpenAtEvaluation: boolean | null = null) => {
+  const fixture = makeFixture(['candidate-1'], { requireLastOrderAtArrival: false });
   const ids = fixture.ids.get('candidate-1');
   if (ids === undefined) throw new Error('Fixture missing');
   fixture.registry.invalidateObservationReuse(
@@ -64,12 +56,6 @@ describe('unconfirmed opening status', () => {
   });
   it('still rejects an explicitly closed shop', () => {
     const f = fixtureFor(false);
-    expect(
-      validateSubmitCards(f.input, { ...f.context, allowUnknownOpening: true }, f.registry).status,
-    ).toBe('invalid');
-  });
-  it('does not waive an unverified minimum stay requirement', () => {
-    const f = fixtureFor(null, 20);
     expect(
       validateSubmitCards(f.input, { ...f.context, allowUnknownOpening: true }, f.registry).status,
     ).toBe('invalid');
