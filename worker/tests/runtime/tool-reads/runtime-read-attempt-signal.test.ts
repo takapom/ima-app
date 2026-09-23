@@ -60,7 +60,6 @@ const input: SearchPlacesInput = {
   mode: 'search',
   query: 'signal test',
   area: { kind: 'named_area', name: '渋谷' },
-  openNow: true,
   limit: 1,
   excludeCandidateIds: [],
 };
@@ -243,7 +242,7 @@ describe('runtime read attempt signal bridge', () => {
         data: {
           searchId: 'search-attempt-signal',
           candidates: [],
-          applied: { areaDescription: '渋谷', openNow: true, excludedCount: 0 },
+          applied: { areaDescription: '渋谷', excludedCount: 0 },
           nextCursor: null,
           coverage: 'provider_results',
         },

@@ -123,11 +123,10 @@ export const createHotPepperSearchAdapter = (options: SearchOptions): PlaceSearc
         }
         start = Number(cursor.providerPageToken.slice('hotpepper:'.length));
       } else {
-        const { query, area, openNow, limit, excludeCandidateIds } = parsed.output;
+        const { query, area, limit, excludeCandidateIds } = parsed.output;
         binding = {
           query,
           area,
-          openNow,
           limit,
           excludeCandidateIds,
           ownerScopeRef: context.ownerScopeRef,
@@ -135,15 +134,6 @@ export const createHotPepperSearchAdapter = (options: SearchOptions): PlaceSearc
           locationRevision: context.location.revision,
         };
       }
-      if (binding.openNow)
-        return {
-          status: 'error',
-          error: hotPepperIssue(
-            'UNSUPPORTED_FIELD',
-            'openNow',
-            'Hot Pepper cannot filter open-now; use openNow=false and report opening status as unknown',
-          ),
-        };
       if (
         binding.area.kind === 'current_location' &&
         (context.location.status !== 'available' || context.location.coordinates === null)
@@ -219,7 +209,7 @@ export const createHotPepperSearchAdapter = (options: SearchOptions): PlaceSearc
       const data = v.parse(SearchPlacesOutputSchema, {
         searchId: options.nextSearchId(),
         candidates,
-        applied: { areaDescription: area, openNow: false, excludedCount },
+        applied: { areaDescription: area, excludedCount },
         nextCursor,
         coverage: 'provider_results',
       });

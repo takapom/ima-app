@@ -191,7 +191,7 @@ describe('runtime field policy', () => {
               },
             },
           ],
-          applied: { areaDescription: '検索結果の地域', openNow: true, excludedCount: 0 },
+          applied: { areaDescription: '検索結果の地域', excludedCount: 0 },
           nextCursor: null,
           coverage: 'provider_results',
         },

@@ -16,7 +16,6 @@ const searchInput = {
   mode: 'search',
   query: 'カフェ',
   area: { kind: 'named_area', name: '恵比寿' },
-  openNow: false,
   limit: 1,
   excludeCandidateIds: [],
 };
@@ -258,12 +257,8 @@ describe('Hot Pepper primary provider composition', () => {
     failed.composition.dispose();
   });
 
-  it('rejects open-now and missing location without an upstream call', async () => {
+  it('rejects missing location without an upstream call', async () => {
     const f = await setup();
-    expect(await f.search({ ...searchInput, openNow: true })).toMatchObject({
-      status: 'error',
-      error: { code: 'UNSUPPORTED_FIELD' },
-    });
     expect(
       await f.search({ ...searchInput, area: { kind: 'current_location', radiusMeters: 500 } }),
     ).toMatchObject({ status: 'error', error: { code: 'LOCATION_REQUIRED' } });

@@ -5,7 +5,8 @@ import type {
 } from '@worker/adapters/out/providers/places-search/types';
 
 export const PLACES_SEARCH_CURSOR_TTL_MS = 5 * 60 * 1_000;
-const CURSOR_VERSION = 'v1';
+/** v2 dropped openNow from the binding (#54); v1 tokens are rejected as invalid. */
+const CURSOR_VERSION = 'v2';
 const NONCE_BYTES = 16;
 const MAX_CURSOR_LENGTH = 512;
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u;
@@ -97,7 +98,7 @@ const isValidBinding = (binding: PlacesSearchCursorBinding): boolean => {
     }
     ids.add(candidateId);
   }
-  return typeof binding.openNow === 'boolean';
+  return true;
 };
 
 const bindingKey = (binding: PlacesSearchCursorBinding): string | undefined => {
@@ -112,7 +113,6 @@ const bindingKey = (binding: PlacesSearchCursorBinding): string | undefined => {
       threadId: binding.threadId,
       query: binding.query,
       area,
-      openNow: binding.openNow,
       limit: binding.limit,
       excludeCandidateIds: [...binding.excludeCandidateIds].sort(),
       locationRevision: binding.locationRevision,
@@ -130,7 +130,6 @@ const copyBinding = (binding: PlacesSearchCursorBinding): PlacesSearchCursorBind
     binding.area.kind === 'named_area'
       ? { kind: 'named_area', name: binding.area.name }
       : { kind: 'current_location', radiusMeters: binding.area.radiusMeters },
-  openNow: binding.openNow,
   limit: binding.limit,
   excludeCandidateIds: [...binding.excludeCandidateIds],
   locationRevision: binding.locationRevision,

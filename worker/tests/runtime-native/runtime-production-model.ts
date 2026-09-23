@@ -75,7 +75,6 @@ const searchInput = {
   mode: 'search' as const,
   query: '静かなカフェ',
   area: { kind: 'named_area' as const, name: '渋谷' },
-  openNow: false,
   limit: 2,
   excludeCandidateIds: [],
 };

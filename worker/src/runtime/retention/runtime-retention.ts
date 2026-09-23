@@ -40,7 +40,6 @@ export function redactedRuntimeToolInput(toolName: RuntimeRetentionToolName): JS
           mode: 'search',
           query: 'WITHHELD',
           area: { kind: 'named_area', name: 'WITHHELD' },
-          openNow: false,
           limit: 1,
           excludeCandidateIds: [],
         },

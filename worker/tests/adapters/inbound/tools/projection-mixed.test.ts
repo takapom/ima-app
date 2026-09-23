@@ -50,7 +50,7 @@ const mixedResult: Result<SearchPlacesOutput> = {
         price: { status: 'not_applicable', reason: 'PRICE_PROVIDER_CANARY' },
       },
     ],
-    applied: { areaDescription: '渋谷', openNow: true, excludedCount: 0 },
+    applied: { areaDescription: '渋谷', excludedCount: 0 },
     nextCursor: null,
     coverage: 'provider_results',
   },

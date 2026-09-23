@@ -9,7 +9,6 @@ const currentLocationSearchInput = {
   mode: 'search' as const,
   query: '近くの店',
   area: { kind: 'current_location' as const, radiusMeters: 1000 },
-  openNow: false,
   limit: 3,
   excludeCandidateIds: [],
 };

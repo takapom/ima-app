@@ -129,7 +129,7 @@ export const searchResult: Result<SearchPlacesOutput> = {
   data: {
     searchId: 'search-composition',
     candidates: [],
-    applied: { areaDescription: '渋谷', openNow: true, excludedCount: 0 },
+    applied: { areaDescription: '渋谷', excludedCount: 0 },
     nextCursor: null,
     coverage: 'provider_results',
   },

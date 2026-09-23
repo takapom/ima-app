@@ -67,11 +67,10 @@ const searchJsonSchema: WireSchema = {
             },
           ],
         },
-        openNow: { type: 'boolean' },
         limit: { type: 'integer', minimum: 1, maximum: 10 },
         excludeCandidateIds: { type: 'array', items: opaqueId, maxItems: 50 },
       },
-      required: ['mode', 'query', 'area', 'openNow', 'limit', 'excludeCandidateIds'],
+      required: ['mode', 'query', 'area', 'limit', 'excludeCandidateIds'],
       additionalProperties: false,
     },
     {

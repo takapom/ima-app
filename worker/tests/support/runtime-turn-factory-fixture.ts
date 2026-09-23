@@ -60,7 +60,6 @@ export const searchInput: SearchPlacesInput = {
   mode: 'search',
   query: '静かなカフェ',
   area: { kind: 'named_area', name: '渋谷' },
-  openNow: true,
   limit: 2,
   excludeCandidateIds: [],
 };
@@ -85,7 +84,7 @@ export const searchResult = {
   data: {
     searchId: 'search-1',
     candidates: [],
-    applied: { areaDescription: '渋谷', openNow: true, excludedCount: 0 },
+    applied: { areaDescription: '渋谷', excludedCount: 0 },
     nextCursor: null,
     coverage: 'provider_results' as const,
   },

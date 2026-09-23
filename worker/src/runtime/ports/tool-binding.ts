@@ -164,7 +164,6 @@ export type SafeSearchPlacesOutput = {
   }[];
   readonly applied: {
     readonly areaDescription: string;
-    readonly openNow: boolean;
     readonly excludedCount: number;
   };
   readonly nextCursor: string | null;

@@ -11,7 +11,6 @@ const input = {
   mode: 'search',
   query: CANARY,
   area: { kind: 'named_area', name: CANARY },
-  openNow: false,
   limit: 5,
   excludeCandidateIds: [],
 };

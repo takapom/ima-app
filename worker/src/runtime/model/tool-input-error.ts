@@ -9,7 +9,6 @@ const FIELD_NAMES = new Set([
   'kind',
   'name',
   'radiusMeters',
-  'openNow',
   'limit',
   'excludeCandidateIds',
   'cursor',
