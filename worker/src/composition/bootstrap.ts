@@ -53,8 +53,6 @@ export type BootstrapEnv = {
   readonly APP_ATTEST_ENVIRONMENT?: string;
   readonly IMA_PROVIDER_PLACES?: string;
   readonly IMA_PROVIDER_HOTPEPPER?: string;
-  readonly IMA_PROVIDER_LAST_TRAIN?: string;
-  readonly IMA_PROVIDER_ROUTES?: string;
   readonly IMA_PROVIDER_OPENAI?: string;
   readonly IMA_SHARE_LINE_SCHEME?: string;
   readonly IMA_KILL_SWITCH?: string;

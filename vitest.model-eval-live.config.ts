@@ -17,8 +17,6 @@ export default defineConfig({
           IMA_RUNTIME_MODE: liveRequested ? 'live' : 'fixture',
           IMA_PROVIDER_OPENAI: 'true',
           IMA_PROVIDER_PLACES: 'false',
-          IMA_PROVIDER_ROUTES: 'false',
-          IMA_PROVIDER_LAST_TRAIN: 'false',
           IMA_PROVIDER_HOTPEPPER: 'true',
           IMA_KILL_SWITCH: 'false',
         },

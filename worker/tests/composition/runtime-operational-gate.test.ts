@@ -7,8 +7,6 @@ import {
 const providerCapabilities: readonly RuntimeProviderCapability[] = [
   'openai',
   'places',
-  'routes',
-  'lastTrain',
   'hotpepper',
 ];
 
@@ -32,15 +30,11 @@ describe('runtime operational gate', () => {
       IMA_RUNTIME_MODE: 'live',
       IMA_PROVIDER_OPENAI: 'true',
       IMA_PROVIDER_PLACES: 'true',
-      IMA_PROVIDER_ROUTES: 'false',
-      IMA_PROVIDER_LAST_TRAIN: 'true',
       IMA_PROVIDER_HOTPEPPER: 'true',
     });
     expect(gate.mode).toBe('live');
     expect(gate.modeFor('openai')).toBe('live');
     expect(gate.modeFor('places')).toBe('live');
-    expect(gate.modeFor('routes')).toBe('disabled');
-    expect(gate.modeFor('lastTrain')).toBe('live');
     expect(gate.modeFor('hotpepper')).toBe('live');
   });
 
@@ -49,8 +43,6 @@ describe('runtime operational gate', () => {
       IMA_RUNTIME_MODE: 'live',
       IMA_PROVIDER_OPENAI: 'true',
       IMA_PROVIDER_PLACES: 'true',
-      IMA_PROVIDER_ROUTES: 'true',
-      IMA_PROVIDER_LAST_TRAIN: 'true',
       IMA_PROVIDER_HOTPEPPER: 'true',
       IMA_KILL_SWITCH: 'true',
     });
@@ -66,6 +58,6 @@ describe('runtime operational gate', () => {
     });
     expect(gate.modeFor('openai')).toBe('fixture');
     expect(gate.modeFor('places')).toBe('fixture');
-    expect(gate.modeFor('routes')).toBe('disabled');
+    expect(gate.modeFor('hotpepper')).toBe('disabled');
   });
 });
