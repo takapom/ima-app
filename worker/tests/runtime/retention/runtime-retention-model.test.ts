@@ -104,8 +104,8 @@ describe('runtime model-input projection', () => {
     ['error-json', CANARY, 'Tool call failed. Check the tool arguments before retrying.'],
     [
       'error-text',
-      'Tool input validation failed. Invalid fields: metadata',
-      'Tool input validation failed. Invalid fields: metadata',
+      'Tool input validation failed. Invalid fields: input',
+      'Tool input validation failed. Invalid fields: input',
     ],
   ] as const)(
     'preserves a current-turn %s failure without returning its raw error to the model',

@@ -67,16 +67,12 @@ describe('createRuntimeTurnFactory', () => {
     });
   });
 
-  it('rejects legacy turn-constraint metadata before any Port or context change', async () => {
+  it('rejects the removed metadata field before any Port or context change', async () => {
     const calls: PortCalls = emptyPortCalls();
     const { factory } = createFactory(calls);
     const result = await invokePublicToolEnvelope(
       'search_places',
-      envelope({
-        turnConstraints: {
-          changes: [{ minimumStayMinutes: 45, sourceTurnId: 'turn-source', quote: '45分' }],
-        },
-      }),
+      envelope({ metadata: {} }),
       factory.dependencies,
       { toolCallId: 'sdk-search-legacy-metadata' },
     );
@@ -112,12 +108,9 @@ describe('createRuntimeTurnFactory', () => {
       onSubmitRejected: (rejection) => rejections.push(rejection),
     });
 
-    await invokePublicToolEnvelope(
-      'submit_cards',
-      { input: submitInput, metadata: {} },
-      factory.dependencies,
-      { toolCallId: 'sdk-submit-refused' },
-    );
+    await invokePublicToolEnvelope('submit_cards', { input: submitInput }, factory.dependencies, {
+      toolCallId: 'sdk-submit-refused',
+    });
 
     expect(rejections).toHaveLength(1);
     expect(rejections[0]).toMatchObject({
@@ -161,7 +154,7 @@ describe('createRuntimeTurnFactory', () => {
 
     const conflict = await invokePublicToolEnvelope(
       'get_place_details',
-      { input: detailsInput, metadata: {} },
+      { input: detailsInput },
       factory.dependencies,
       { toolCallId: 'sdk-call-1' },
     );
@@ -177,7 +170,7 @@ describe('createRuntimeTurnFactory', () => {
     const { factory } = createFactory(calls);
     const first = await invokePublicToolEnvelope(
       'submit_cards',
-      { input: submitInput, metadata: {} },
+      { input: submitInput },
       factory.dependencies,
       { toolCallId: 'sdk-submit-1' },
     );
@@ -186,7 +179,7 @@ describe('createRuntimeTurnFactory', () => {
 
     const second = await invokePublicToolEnvelope(
       'submit_cards',
-      { input: submitInput, metadata: {} },
+      { input: submitInput },
       factory.dependencies,
       { toolCallId: 'sdk-submit-2' },
     );
@@ -217,7 +210,7 @@ describe('createRuntimeTurnFactory', () => {
     now = '2026-09-10T00:01:00Z';
     const result = await invokePublicToolEnvelope(
       'submit_cards',
-      { input: submitInput, metadata: {} },
+      { input: submitInput },
       factory.dependencies,
       { toolCallId: 'sdk-submit-fresh-context' },
     );
@@ -243,7 +236,7 @@ describe('createRuntimeTurnFactory', () => {
     factory.dispose();
     expect(factory.isDisposed()).toBe(true);
     expect(() =>
-      factory.dependencies.runtime('search_places', { toolCallId: 'sdk-after-dispose' }, {}),
+      factory.dependencies.runtime('search_places', { toolCallId: 'sdk-after-dispose' }),
     ).toThrow(RuntimeTurnFactoryError);
   });
 });

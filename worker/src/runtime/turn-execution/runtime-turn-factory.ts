@@ -203,7 +203,6 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
       readonly context: HarnessContext;
     }
   >();
-  const metadataByCall = new Map<string, string>();
   const operationCounts = new Map<PublicToolName, number>();
   let committed = false;
   let unresolvedSubmitFailure = false;
@@ -232,20 +231,14 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     options.isStale?.() === true ||
     options.budget.isCancelled();
 
-  const runtime: ToolRuntimeFactory = (operation, invocation, metadata) => {
+  const runtime: ToolRuntimeFactory = (operation, invocation) => {
     if (isCancelled(invocation.abortSignal)) {
       throw new RuntimeTurnFactoryError(factoryErrorCode(disposed, options.isStale));
     }
     operationCounts.set(operation, (operationCounts.get(operation) ?? 0) + 1);
-    const metadataJson = JSON.stringify(metadata);
     const prior = serverCalls.get(invocation.toolCallId);
     if (prior !== undefined) {
-      if (
-        prior.operation !== operation ||
-        metadataByCall.get(invocation.toolCallId) !== metadataJson
-      ) {
-        throw new RuntimeTurnFactoryError('CALL_ID_CONFLICT');
-      }
+      if (prior.operation !== operation) throw new RuntimeTurnFactoryError('CALL_ID_CONFLICT');
       return {
         context: cloneContext(prior.context),
         execution: {
@@ -267,7 +260,6 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     }
     const callContext = cloneContext(context);
     serverCalls.set(invocation.toolCallId, { operation, callId, context: callContext });
-    metadataByCall.set(invocation.toolCallId, metadataJson);
     return {
       context: cloneContext(callContext),
       execution: {
@@ -377,7 +369,6 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
       disposeController.abort();
       options.signal?.removeEventListener('abort', onParentAbort);
       serverCalls.clear();
-      metadataByCall.clear();
       operationCounts.clear();
       options.budget.cancel();
       options.ports.onTurnDispose?.();

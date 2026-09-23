@@ -1,6 +1,5 @@
 import * as v from 'valibot';
 import { EvidenceTextSchema } from '@worker/domain/evidence/evidence';
-import { ModelActionMetadataSchema } from '@worker/domain/constraints/constraints';
 import { CandidateIdSchema, ObservationIdSchema, Text } from '@worker/domain/primitives';
 import { ModelContextSchema } from '@worker/application/ports/context';
 import {
@@ -61,7 +60,6 @@ export const ModelDecisionSchema = v.pipe(
   v.strictObject({
     /** One SDK step may contain several independent reads before a submit/final action. */
     actions: v.pipe(v.array(ModelActionSchema), v.minLength(1), v.maxLength(8)),
-    metadata: ModelActionMetadataSchema,
   }),
   v.check(
     (decision) =>

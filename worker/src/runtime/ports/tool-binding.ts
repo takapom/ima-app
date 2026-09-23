@@ -16,7 +16,6 @@ import type {
 } from '@worker/application/ports/operations';
 import type { Issue } from '@worker/domain/issue';
 import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
-import type { ModelActionMetadata } from '@worker/domain/constraints/constraints';
 import type { Result } from '@worker/domain/result';
 import type { SubmitCardsInput } from '@worker/application/ports/model';
 import type {
@@ -75,17 +74,18 @@ export type ToolRuntime = {
   readonly remainingRepairs: number;
 };
 
-/** Metadata is validated at the envelope boundary; M10 owns applying it to this turn. */
+/** Supplies the server context for one tool invocation; M10 owns the per-turn state. */
 export type ToolRuntimeFactory = (
   operation: PublicToolName,
   invocation: PublicToolInvocation,
-  metadata: ModelActionMetadata,
 ) => unknown;
 
-/** Model-facing tool arguments follow the M04 action envelope. */
+/**
+ * Model-facing tool arguments wrap the input in one object, because provider function
+ * parameters must be a root object while search input is a union of modes.
+ */
 export type PublicToolEnvelope<Input> = {
   readonly input: Input;
-  readonly metadata: ModelActionMetadata;
 };
 
 export type SearchToolEnvelope = PublicToolEnvelope<SearchPlacesInput>;

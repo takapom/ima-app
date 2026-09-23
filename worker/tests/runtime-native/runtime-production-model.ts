@@ -225,7 +225,7 @@ const observedProviderOptions = (
   };
 };
 
-const envelope = (input: unknown): string => JSON.stringify({ input, metadata: {} });
+const envelope = (input: unknown): string => JSON.stringify({ input });
 
 const toolParts = (
   call: number,

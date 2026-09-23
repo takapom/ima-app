@@ -176,7 +176,7 @@ describe('tool candidate authorization', () => {
     expect(calls.search).toBe(0);
   });
 
-  it('requires the M04 action envelope on the public AI SDK tool', async () => {
+  it('requires the input envelope on the public AI SDK tool', async () => {
     const fixture = createToolRegistry();
     const calls = { details: 0, search: 0 };
     const base = makeDependencies(fixture.registry, calls);
@@ -194,30 +194,15 @@ describe('tool candidate authorization', () => {
           warnings: [],
         }),
     };
-    let receivedMetadata: unknown;
-    const tools = createPublicToolSet({
-      ...base,
-      search: successfulSearch,
-      runtime: (operation, invocation, metadata) => {
-        receivedMetadata = metadata;
-        return base.runtime(operation, invocation, metadata);
-      },
-    });
-    const envelope = { input: searchInput, metadata: {} };
+    const tools = createPublicToolSet({ ...base, search: successfulSearch });
+    const envelope = { input: searchInput };
     const schema = asSchema(tools.search_places.inputSchema);
     if (schema.validate === undefined) throw new Error('search schema validator is missing');
     const accepted = await schema.validate(envelope);
     expect(accepted?.success).toBe(true);
-    expect(
-      await schema.validate({
-        input: searchInput,
-        metadata: {
-          turnConstraints: {
-            changes: [{ minimumStayMinutes: 15, sourceTurnId: 'turn-1', quote: '滞在' }],
-          },
-        },
-      }),
-    ).toMatchObject({ success: false });
+    expect(await schema.validate({ input: searchInput, metadata: {} })).toMatchObject({
+      success: false,
+    });
     expect(await schema.validate(searchInput)).toMatchObject({
       success: false,
     });
@@ -236,7 +221,6 @@ describe('tool candidate authorization', () => {
       resultStatus = result.status;
     }
     expect(resultStatus).toBe('ok');
-    expect(receivedMetadata).toEqual(envelope.metadata);
   });
 
   it('rejects a search Port result whose candidate is outside the registry scope', async () => {

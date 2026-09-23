@@ -15,7 +15,6 @@ import {
 } from '@worker/domain/primitives';
 import { IssueSchema } from '@worker/domain/issue';
 import { LastTrainInfoSchema } from '@worker/domain/places/place-values';
-import { ModelActionMetadataSchema } from '@worker/domain/constraints/constraints';
 import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
 
 const timestamp = '2026-09-09T12:00:00Z';
@@ -264,16 +263,5 @@ describe('core domain contracts', () => {
         usable: false,
       }).success,
     ).toBe(true);
-  });
-
-  it('accepts only empty model action metadata now that turn constraints are removed', () => {
-    expect(v.safeParse(ModelActionMetadataSchema, {}).success).toBe(true);
-    expect(
-      v.safeParse(ModelActionMetadataSchema, {
-        turnConstraints: {
-          changes: [{ minimumStayMinutes: 20, sourceTurnId: 'turn-1', quote: '20分' }],
-        },
-      }).success,
-    ).toBe(false);
   });
 });

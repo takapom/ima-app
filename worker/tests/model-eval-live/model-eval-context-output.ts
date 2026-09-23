@@ -46,7 +46,7 @@ export const toolParts = (
   input: SearchPlacesInput | ModelGetPlaceDetailsInput | SubmitCardsInput,
 ): RuntimeGateModelStreamPart[] => {
   const id = `model-eval-fixture-${toolName}-${call}`;
-  const encoded = JSON.stringify({ input, metadata: {} });
+  const encoded = JSON.stringify({ input });
   return [
     { type: 'stream-start', warnings: [] },
     { type: 'tool-input-start', id, toolName },

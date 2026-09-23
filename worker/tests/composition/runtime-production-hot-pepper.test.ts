@@ -63,12 +63,9 @@ const setup = async (
   const composition = await factory.buildTurn({ ...buildRequest, runtimeInput });
   let calls = 0;
   const search = (input: unknown = searchInput) =>
-    invokePublicToolEnvelope(
-      'search_places',
-      { input, metadata: {} },
-      composition.turn.dependencies,
-      { toolCallId: `search-${++calls}` },
-    );
+    invokePublicToolEnvelope('search_places', { input }, composition.turn.dependencies, {
+      toolCallId: `search-${++calls}`,
+    });
   const details = (
     candidateId: string,
     fields = ['identity', 'opening_hours', 'price'],
@@ -76,7 +73,7 @@ const setup = async (
   ) =>
     invokePublicToolEnvelope(
       'get_place_details',
-      { input: { requests: [{ candidateId, fields }], freshness }, metadata: {} },
+      { input: { requests: [{ candidateId, fields }], freshness } },
       composition.turn.dependencies,
       { toolCallId: `details-${++calls}` },
     );

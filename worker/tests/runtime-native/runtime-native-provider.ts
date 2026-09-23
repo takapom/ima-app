@@ -131,7 +131,7 @@ const rewriteToolInputs = (
         throw new RuntimeNativeProviderError('EXTRA_MODEL_CALL');
       }
       actionIndex += 1;
-      const encoded = JSON.stringify({ input: action.input, metadata: {} });
+      const encoded = JSON.stringify({ input: action.input });
       encodedById.set(part.id, encoded);
       return part;
     }

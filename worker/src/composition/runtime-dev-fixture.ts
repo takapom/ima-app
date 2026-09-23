@@ -210,7 +210,7 @@ const toolHasName = (value: unknown, name: string): boolean => {
   return Object.values(value).some((item) => toolHasName(item, name));
 };
 
-const envelope = (input: unknown): string => JSON.stringify({ input, metadata: {} });
+const envelope = (input: unknown): string => JSON.stringify({ input });
 
 const toolParts = (
   call: number,

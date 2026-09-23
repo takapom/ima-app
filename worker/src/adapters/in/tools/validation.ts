@@ -16,7 +16,6 @@ import {
   type HarnessContext,
   type ToolExecutionContext,
 } from '@worker/application/ports/context';
-import { type ModelActionMetadata } from '@worker/domain/constraints/constraints';
 import { ResultSchema, type Result } from '@worker/domain/result';
 import { SubmitCardsInputSchema, type SubmitCardsInput } from '@worker/application/ports/model';
 import {
@@ -145,11 +144,10 @@ export const runtimeFor = (
   factory: ToolRuntimeFactory,
   operation: PublicToolName,
   invocation: PublicToolInvocation,
-  metadata: ModelActionMetadata,
 ): RuntimeCheck => {
   let supplied: unknown;
   try {
-    supplied = factory(operation, invocation, metadata);
+    supplied = factory(operation, invocation);
   } catch {
     return {
       ok: false,

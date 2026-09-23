@@ -44,7 +44,6 @@ export function redactedRuntimeToolInput(toolName: RuntimeRetentionToolName): JS
           limit: 1,
           excludeCandidateIds: [],
         },
-        metadata: {},
       };
     case 'get_place_details':
       return {
@@ -52,7 +51,6 @@ export function redactedRuntimeToolInput(toolName: RuntimeRetentionToolName): JS
           requests: [{ candidateId: 'candidate-withheld', fields: ['identity'] }],
           freshness: 'reuse_valid',
         },
-        metadata: {},
       };
     case 'submit_cards':
       return {
@@ -65,7 +63,6 @@ export function redactedRuntimeToolInput(toolName: RuntimeRetentionToolName): JS
           },
           alts: [],
         },
-        metadata: {},
       };
   }
 }
