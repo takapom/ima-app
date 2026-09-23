@@ -98,14 +98,9 @@ MODEL_EVAL_LIVE=1 bunx vitest run --config vitest.model-eval-live.config.ts
 [評価runner](../worker/tests/model-eval-live)は実モデル＋固定Providerを使うため、実店舗APIの検収ではない。`MODEL_EVAL_LIVE=0`はProvider呼出し前に停止する検証経路であり、実モデル成功に数えない。
 profile・反復・候補identity対応・人手レビューのcoverageを確認する。候補対応の欠落、不正response、未計測費用は未評価または失敗として残し、0や成功で補わない。
 
-## 終電datasetの管理
+## 撤去済みのDO
 
-[JourneyDatasetDO](../worker/src/adapters/out/persistence/last-train/dataset-do.ts)が固定名`m14-last-train-v1`でactive revisionと履歴を所有する。
-管理入口`/internal/m14/last-train`は通常のowner認証と別の管理credentialを使い、`import`・`update`・`rollback`・`expire`をstrict schemaとrevision CASで実行する。通常のturnから更新しない。
-
-実時刻表を検証してから投入し、生成fixtureを本番seedにしない。期限切れや空datasetはdisabled。検証時刻から7日未満を条件とし、alarmと利用前検証の両方で期限を扱う。
-alarm同期失敗は適用済みrevision付き`alarm_failed`になり得るため、旧revisionを盲目的に再送せず、現在のrevisionを踏まえて再同期する。
-時刻計算・駅の連結・運行日の契約は[Domain](../worker/src/domain)と[終電Adapter](../worker/src/adapters/out/providers/last-train)を参照する。
+終電dataset用の`JourneyDatasetDO`と管理入口`/internal/m14/last-train`は撤去した（#55）。[Wrangler設定](../worker/wrangler.jsonc)のmigration `v7`が`deleted_classes`でクラスを削除し、デプロイ時に保存済みのdatasetも消える。デプロイ前にdry-runで対象環境のmigrationを確認する。
 
 ## デプロイと復旧
 

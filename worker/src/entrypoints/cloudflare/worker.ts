@@ -5,19 +5,11 @@ import {
   type BootstrapEnv,
 } from '@worker/composition/bootstrap';
 import { routeRequest } from '@worker/adapters/in/http/router';
-import {
-  handleJourneyDatasetManagement,
-  type JourneyDatasetNamespace,
-} from '@worker/adapters/in/http/journey-dataset-management';
-import { JourneyDatasetDO } from '@worker/adapters/out/persistence/last-train/dataset-do';
 import { RateLimitDO, ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 import { TelemetryDO } from '@worker/adapters/out/persistence/telemetry/telemetry-do';
 import { AppIntegrityDO } from '@worker/adapters/out/persistence/security/app-integrity-do';
 
-type IndexEnv = BootstrapEnv & {
-  readonly JOURNEY_DATASETS?: JourneyDatasetNamespace;
-  readonly JOURNEY_DATASET_ADMIN_TOKEN?: string;
-};
+type IndexEnv = BootstrapEnv;
 
 type HealthResponse = {
   readonly status: 'ok';
@@ -34,13 +26,6 @@ export default {
       const body: HealthResponse = { status: 'ok' };
       return Response.json(body);
     }
-    const managementResponse = await handleJourneyDatasetManagement(request, {
-      ...(env.JOURNEY_DATASETS === undefined ? {} : { namespace: env.JOURNEY_DATASETS }),
-      ...(env.JOURNEY_DATASET_ADMIN_TOKEN === undefined
-        ? {}
-        : { adminToken: env.JOURNEY_DATASET_ADMIN_TOKEN }),
-    });
-    if (managementResponse !== null) return managementResponse;
     const ownership = createApplicationScopeAuthorizer(
       createThreadScopeAuthorizer(env.THREADS),
       env.SAVED_REFERENCES,
@@ -55,7 +40,7 @@ export default {
   },
 } satisfies ExportedHandler<IndexEnv>;
 
-export { AppIntegrityDO, JourneyDatasetDO, RateLimitDO, TelemetryDO, ThreadDO };
+export { AppIntegrityDO, RateLimitDO, TelemetryDO, ThreadDO };
 export { SavedReferenceDO } from '@worker/adapters/out/persistence/saved-references/saved-reference-do';
 
 export { ConversationHistoryDO } from '@worker/entrypoints/cloudflare/conversation-history-do';
