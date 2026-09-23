@@ -1,7 +1,7 @@
 export const MAX_QUERY_LENGTH = 500 as const;
 export const MAX_CHIPS = 4 as const;
 
-/** Walking and last-train terms stay out until those providers are connected. */
+/** Walking and last-train terms are not offered; the product does not handle them (#55). */
 export const DEFAULT_SUGGESTIONS = ['食後', '静か', '屋内', '甘いもの'] as const;
 
 const normalizedTerm = (term: string): string => term.trim().replace(/\s+/g, ' ');
@@ -45,8 +45,8 @@ export const suggestionsFor = (
 };
 
 /**
- * Walking and last-train phrases are not turned into chips: the connected providers
- * cannot evidence them, so a chip would imply a filter that is never applied.
+ * Walking and last-train phrases are not turned into chips: nothing applies them, so a chip
+ * would imply a filter that does not exist.
  */
 const queryChipCandidates = (query: string): string[] => {
   const candidates: string[] = [];

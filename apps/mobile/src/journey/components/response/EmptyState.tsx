@@ -5,7 +5,6 @@ type EmptyStateProps = {
   readonly onExample: (query: string) => void;
 };
 
-/** Walking and last-train conditions are omitted until those providers are connected. */
 const EXAMPLES = [
   '恵比寿、ご飯終わり。静かめで甘いもの。',
   '雨だから屋内。まだ話していたい。高すぎない二軒目。',
