@@ -91,8 +91,6 @@ describe('LLM evidence use boundary', () => {
         capabilities: {
           version: 'evidence-test',
           detailFields: ['identity'] as const,
-          walkingRoute: false,
-          lastTrain: false,
           supportedScopes: ['evidence-test'],
         },
       },
@@ -108,8 +106,6 @@ describe('LLM evidence use boundary', () => {
           photos: 'deny' as const,
           contact: 'deny' as const,
           facilities: 'deny' as const,
-          walking_route: 'deny' as const,
-          last_train: 'deny' as const,
         },
         history: 'deny' as const,
         cardSet: 'deny' as const,

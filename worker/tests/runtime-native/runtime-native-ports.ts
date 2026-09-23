@@ -142,8 +142,6 @@ const nativeContext = (
   capabilities: {
     version: 'runtime-native-v1',
     detailFields: ['identity', 'opening_hours', 'price'],
-    walkingRoute: false,
-    lastTrain: false,
     supportedScopes: ['runtime-native'],
   },
 });
@@ -233,12 +231,8 @@ const detailsFields = (
       fields.photos = unknown();
     } else if (field === 'contact') {
       fields.contact = unknown();
-    } else if (field === 'facilities') {
-      fields.facilities = unknown();
-    } else if (field === 'walking_route') {
-      fields.walking_route = unknown();
     } else {
-      fields.last_train = unknown();
+      fields.facilities = unknown();
     }
   }
   return fields;

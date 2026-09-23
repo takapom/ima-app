@@ -46,8 +46,6 @@ const modelContext = {
   capabilities: {
     version: 'fixture-v1',
     detailFields: ['identity'],
-    walkingRoute: false,
-    lastTrain: false,
     supportedScopes: ['fixture'],
   },
 };

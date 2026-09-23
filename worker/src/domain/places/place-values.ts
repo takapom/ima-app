@@ -1,14 +1,9 @@
 import * as v from 'valibot';
 import {
-  CandidateIdSchema,
-  CalendarDateSchema,
   HttpsUrlSchema,
   IsoTimestampSchema,
   NonNegativeFiniteNumberSchema,
   NonNegativeSafeIntegerSchema,
-  OpaqueIdSchema,
-  RevisionSchema,
-  SafeIntegerSchema,
   Text,
 } from '@worker/domain/primitives';
 
@@ -99,50 +94,3 @@ export const FacilitiesInfoSchema = v.strictObject({
   parking: v.picklist(['yes', 'no', 'partial', 'unknown']),
   sourceText: v.array(Text(300)),
 });
-
-export const WalkingRouteSchema = v.strictObject({
-  originRef: OpaqueIdSchema,
-  destinationCandidateId: CandidateIdSchema,
-  originRevision: RevisionSchema,
-  evaluatedAt: IsoTimestampSchema,
-  durationSeconds: NonNegativeSafeIntegerSchema,
-  distanceMeters: NonNegativeFiniteNumberSchema,
-  warnings: v.array(v.strictObject({ code: Text(80), message: Text(300) })),
-});
-export type WalkingRoute = v.InferOutput<typeof WalkingRouteSchema>;
-
-export const LastTrainTransferSchema = v.pipe(
-  v.strictObject({
-    fromStationRef: OpaqueIdSchema,
-    toStationRef: OpaqueIdSchema,
-    departureAt: IsoTimestampSchema,
-    arrivalAt: IsoTimestampSchema,
-  }),
-  v.check(
-    (transfer) => Date.parse(transfer.departureAt) <= Date.parse(transfer.arrivalAt),
-    'transfer must arrive at or after departure',
-  ),
-);
-
-export const LastTrainInfoSchema = v.pipe(
-  v.strictObject({
-    serviceDate: CalendarDateSchema,
-    fromStationRef: OpaqueIdSchema,
-    homeStationRef: OpaqueIdSchema,
-    journeyRef: OpaqueIdSchema,
-    lastDepartureAt: IsoTimestampSchema,
-    arrivesHomeAt: IsoTimestampSchema,
-    transfers: v.array(LastTrainTransferSchema),
-    placeToStationSeconds: NonNegativeSafeIntegerSchema,
-    arrivePlaceAt: IsoTimestampSchema,
-    leaveBy: IsoTimestampSchema,
-    availableStaySeconds: SafeIntegerSchema,
-    minimumStayMinutes: v.pipe(NonNegativeSafeIntegerSchema, v.minValue(1), v.maxValue(180)),
-    usable: v.boolean(),
-  }),
-  v.check(
-    (info) => !info.usable || info.availableStaySeconds >= info.minimumStayMinutes * 60,
-    'usable last train must satisfy minimum stay',
-  ),
-);
-export type LastTrainInfo = v.InferOutput<typeof LastTrainInfoSchema>;

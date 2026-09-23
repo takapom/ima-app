@@ -43,8 +43,6 @@ const context: HarnessContext = {
   capabilities: {
     version: 'tools-clock-v1',
     detailFields: ['identity'],
-    walkingRoute: false,
-    lastTrain: false,
     supportedScopes: ['clock-fixture'],
   },
 };

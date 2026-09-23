@@ -182,8 +182,6 @@ export const productionCapabilities = ({
 }: ProductionCapabilityOptions): CapabilitySnapshot => ({
   version: 'runtime-production-v1',
   detailFields: placesEnabled ? ['identity', 'opening_hours', 'price'] : [],
-  walkingRoute: false,
-  lastTrain: false,
   supportedScopes: placesEnabled ? ['runtime-production'] : [],
 });
 

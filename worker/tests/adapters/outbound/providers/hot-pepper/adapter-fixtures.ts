@@ -90,8 +90,6 @@ export const context: HarnessContext = {
   capabilities: {
     version: 'places-details-v1',
     detailFields: ['identity', 'opening_hours', 'price', 'photos', 'contact'],
-    walkingRoute: false,
-    lastTrain: false,
     supportedScopes: ['thread'],
   },
 };

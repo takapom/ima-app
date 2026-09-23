@@ -45,8 +45,6 @@ const context: HarnessContext = {
   capabilities: {
     version: 'tools-v1',
     detailFields: ['identity'],
-    walkingRoute: false,
-    lastTrain: false,
     supportedScopes: ['tools-fixture'],
   },
 };
@@ -86,8 +84,6 @@ const modelInputOnlyPolicy: ModelContextFieldPolicy = {
     photos: 'deny',
     contact: 'deny',
     facilities: 'deny',
-    walking_route: 'deny',
-    last_train: 'deny',
   },
   history: 'deny',
   cardSet: 'deny',

@@ -8,12 +8,10 @@ import {
 import {
   ContactInfoSchema,
   FacilitiesInfoSchema,
-  LastTrainInfoSchema,
   OpeningHoursSchema,
   PhotoInfoSchema,
   PlaceIdentitySchema,
   PriceInfoSchema,
-  WalkingRouteSchema,
 } from '@worker/domain/places/place-values';
 import { IssueCodeSchema } from '@worker/domain/issue';
 import {
@@ -90,8 +88,6 @@ export const toModelContextFieldPolicy = (
     photos: modelDecision(input.evidence.photos, mode),
     contact: modelDecision(input.evidence.contact, mode),
     facilities: modelDecision(input.evidence.facilities, mode),
-    walking_route: modelDecision(input.evidence.walking_route, mode),
-    last_train: modelDecision(input.evidence.last_train, mode),
   },
   history: modelDecision(input.history, mode),
   cardSet: modelDecision(input.cardSet, mode),
@@ -120,8 +116,6 @@ export const defaultRuntimeModelProjectionPolicy: RuntimeModelProjectionPolicyIn
     photos: disabledUses(),
     contact: disabledUses(),
     facilities: disabledUses(),
-    walking_route: disabledUses(),
-    last_train: disabledUses(),
   },
   history: disabledUses(),
   cardSet: disabledUses(),
@@ -144,9 +138,7 @@ const isDetailField = (value: string): value is DetailField =>
   value === 'price' ||
   value === 'photos' ||
   value === 'contact' ||
-  value === 'facilities' ||
-  value === 'walking_route' ||
-  value === 'last_train';
+  value === 'facilities';
 
 const schemaForField = (field: DetailField): v.GenericSchema => {
   switch (field) {
@@ -162,10 +154,6 @@ const schemaForField = (field: DetailField): v.GenericSchema => {
       return ContactInfoSchema;
     case 'facilities':
       return FacilitiesInfoSchema;
-    case 'walking_route':
-      return WalkingRouteSchema;
-    case 'last_train':
-      return LastTrainInfoSchema;
   }
 };
 
@@ -346,8 +334,6 @@ const DETAIL_FIELDS: readonly DetailField[] = [
   'photos',
   'contact',
   'facilities',
-  'walking_route',
-  'last_train',
 ];
 
 const projectDetailsData = (value: JsonRecord, policy: ModelContextFieldPolicy): JSONValue => {

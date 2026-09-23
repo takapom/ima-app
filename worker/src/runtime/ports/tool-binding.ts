@@ -178,8 +178,6 @@ export type SafePlaceFields = {
   readonly photos?: ModelSafeFieldResult<DetailsFieldValue<'photos'>>;
   readonly contact?: ModelSafeFieldResult<DetailsFieldValue<'contact'>>;
   readonly facilities?: ModelSafeFieldResult<DetailsFieldValue<'facilities'>>;
-  readonly walking_route?: ModelSafeFieldResult<DetailsFieldValue<'walking_route'>>;
-  readonly last_train?: ModelSafeFieldResult<DetailsFieldValue<'last_train'>>;
 };
 
 export type SafeDetailsTarget =

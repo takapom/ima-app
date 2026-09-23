@@ -38,8 +38,6 @@ export const ALLOW_MODEL_CONTEXT_FIELDS: ModelContextFieldPolicy = {
     photos: 'allow',
     contact: 'allow',
     facilities: 'allow',
-    walking_route: 'allow',
-    last_train: 'allow',
   },
   history: 'deny',
   cardSet: 'deny',

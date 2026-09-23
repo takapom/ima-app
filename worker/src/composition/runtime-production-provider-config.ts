@@ -17,8 +17,6 @@ export const capabilitiesWithProviders = (
   detailFields: availability.placesEnabled
     ? ['identity', 'opening_hours', 'price', 'facilities', 'photos']
     : [],
-  walkingRoute: false,
-  lastTrain: false,
 });
 
 export const cardEvidenceResolver =

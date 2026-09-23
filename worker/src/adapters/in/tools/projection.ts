@@ -179,8 +179,6 @@ const projectDetailsFields = (
     photos?: ModelSafeFieldResult<DetailsFieldValue<'photos'>>;
     contact?: ModelSafeFieldResult<DetailsFieldValue<'contact'>>;
     facilities?: ModelSafeFieldResult<DetailsFieldValue<'facilities'>>;
-    walking_route?: ModelSafeFieldResult<DetailsFieldValue<'walking_route'>>;
-    last_train?: ModelSafeFieldResult<DetailsFieldValue<'last_train'>>;
   } = {};
   const project = <T>(result: FieldResult<T>, field: DetailField): ModelSafeFieldResult<T> =>
     projectFieldResult(result, candidateId, field, context, registry, now, fieldPolicy);
@@ -193,12 +191,6 @@ const projectDetailsFields = (
   if (fields.contact !== undefined) projected.contact = project(fields.contact, 'contact');
   if (fields.facilities !== undefined) {
     projected.facilities = project(fields.facilities, 'facilities');
-  }
-  if (fields.walking_route !== undefined) {
-    projected.walking_route = project(fields.walking_route, 'walking_route');
-  }
-  if (fields.last_train !== undefined) {
-    projected.last_train = project(fields.last_train, 'last_train');
   }
   return projected;
 };

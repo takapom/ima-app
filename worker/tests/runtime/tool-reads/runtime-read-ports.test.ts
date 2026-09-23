@@ -62,8 +62,6 @@ const context = (revision = 1): HarnessContext => ({
   capabilities: {
     version: 'tools-v1',
     detailFields: ['identity'],
-    walkingRoute: false,
-    lastTrain: false,
     supportedScopes: ['read-fixture'],
   },
 });
