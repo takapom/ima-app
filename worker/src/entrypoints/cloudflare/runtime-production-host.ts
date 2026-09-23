@@ -31,7 +31,6 @@ import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnResult,
 } from '@worker/runtime/threads/admission';
-import { type JourneyDatasetRuntimeNamespace } from '@worker/adapters/out/persistence/last-train/dataset-binding';
 
 type RuntimeRetentionAnchorRow = { readonly thread_created_at: string };
 type RuntimeTelemetryEnv = {
@@ -69,8 +68,7 @@ const durableThreadCreatedAt = (ctx: DurableObjectState): string => {
  * Model/provider/registry construction stays in the Worker-owned production factory.
  */
 export abstract class RuntimeProductionThinkHost<
-  Env extends Cloudflare.Env & { readonly JOURNEY_DATASETS?: JourneyDatasetRuntimeNamespace } =
-    Cloudflare.Env & { readonly JOURNEY_DATASETS?: JourneyDatasetRuntimeNamespace },
+  Env extends Cloudflare.Env = Cloudflare.Env,
 > extends RuntimeThinkHost<Env> {
   private readonly productionEnv: Env;
   private readonly productionContextPersistence: ReturnType<

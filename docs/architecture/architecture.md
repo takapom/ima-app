@@ -124,7 +124,6 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 | 会話一覧・発言・送信状態               | owner単位の`ConversationHistoryDO` | ユーザー原文は削除まで、回答は保持判定付き      |
 | 今夜の会話実行・確定参照               | `ThreadDO`                         | session期限と保存前制御を適用する               |
 | 端末prefs・保存一覧・決定時刻          | SQLiteの投影                       | サーバー再取得で更新し、失敗時のstaleを明示する |
-| 終電dataset                            | `JourneyDatasetDO`                 | revision CASと検証期限を持つ共有データ          |
 | 運用イベント                           | `TelemetryDO`                      | 固定項目のみ。本文・秘密・生座標を記録しない    |
 
 [OwnerStore](../../worker/src/application/ports/owner-store.ts)はCoreが所有するasync Port。HTTP AdapterとCore Applicationは[DO Adapter](../../worker/src/adapters/out/persistence/saved-references/durable-owner-store.ts)経由で永続化する。
