@@ -19,8 +19,6 @@ export type RuntimeGateScenario =
   | 'two-submit'
   | 'final-tool'
   | 'final-tool-calls'
-  | 'constraints-missing'
-  | 'constraints-changed'
   | 'unknown-part'
   | 'unknown-tool'
   | 'invalid-arguments'
@@ -133,49 +131,22 @@ const searchInput: Extract<SearchPlacesInput, { mode: 'search' }> = {
   excludeCandidateIds: [],
 };
 
-export const TURN_CONSTRAINTS = {
-  changes: [
-    {
-      maxWalkMinutes: 15,
-      homeStationRef: 'home-stn',
-      minimumStayMinutes: 30,
-      sourceTurnId: 'turn-1',
-      quote: '15分以内',
-    },
-  ],
-};
-
 export const PUBLIC_TOOLS = ['search_places', 'get_place_details', 'submit_cards'] as const;
 export const DENIED_MARKER = 'M04_PROVIDER_FIELD_DENIED';
 /** Audit-only marker used to prove a previous native input is not re-injected. */
 export const STALE_NATIVE_CONTENT_CANARY = 'M04_NATIVE_CONTENT_OLD_CANARY';
 
-function stepEnvelope(
-  input: RuntimeGateModelInput,
-  constraintMode: 'valid' | 'missing' | 'changed' = 'valid',
-): Record<string, unknown> {
-  if (constraintMode === 'missing') return { input };
-  return {
-    input,
-    metadata: {
-      turnConstraints:
-        constraintMode === 'changed'
-          ? {
-              changes: [{ ...TURN_CONSTRAINTS.changes[0], maxWalkMinutes: 99 }],
-            }
-          : TURN_CONSTRAINTS,
-    },
-  };
+function stepEnvelope(input: RuntimeGateModelInput): Record<string, unknown> {
+  return { input };
 }
 
 function stepToolParts(
   call: number,
   toolName: string,
   input: RuntimeGateModelInput,
-  constraintMode: 'valid' | 'missing' | 'changed' = 'valid',
 ): RuntimeGateModelStreamPart[] {
   const id = `step-${toolName}-${call}`;
-  const encoded = JSON.stringify(stepEnvelope(input, constraintMode));
+  const encoded = JSON.stringify(stepEnvelope(input));
   return [
     { type: 'tool-input-start', id, toolName },
     { type: 'tool-input-delta', id, delta: encoded },
@@ -192,7 +163,6 @@ function stepFinalParts(text: string = 'Fixture final answer.'): RuntimeGateMode
       evidenceIds: [identityObservationId('candidate-1')],
       basis: 'grounded',
     },
-    metadata: { turnConstraints: TURN_CONSTRAINTS },
   });
   return [
     { type: 'text-start', id: 'step-final' },
@@ -280,20 +250,6 @@ function nextParts(scenario: RuntimeGateScenario, call: number): RuntimeGateMode
         usage,
         finishReason: scenario === 'final-tool' ? stopFinish : toolFinish,
       },
-    ];
-  }
-  if (scenario === 'constraints-missing') {
-    return [
-      { type: 'stream-start', warnings: [] },
-      ...stepToolParts(call, 'search_places', searchInput, 'missing'),
-      { type: 'finish', usage, finishReason: toolFinish },
-    ];
-  }
-  if (scenario === 'constraints-changed') {
-    return [
-      { type: 'stream-start', warnings: [] },
-      ...stepToolParts(call, 'search_places', searchInput, 'changed'),
-      { type: 'finish', usage, finishReason: toolFinish },
     ];
   }
   if (scenario === 'unknown-part') {
@@ -413,8 +369,6 @@ export function normalizeScenario(value: string | null): RuntimeGateScenario {
     value === 'two-submit' ||
     value === 'final-tool' ||
     value === 'final-tool-calls' ||
-    value === 'constraints-missing' ||
-    value === 'constraints-changed' ||
     value === 'unknown-part' ||
     value === 'unknown-tool' ||
     value === 'invalid-arguments' ||

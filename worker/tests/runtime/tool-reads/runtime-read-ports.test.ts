@@ -12,7 +12,6 @@ import type {
   SearchPlacesInput,
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
-import type { ModelActionMetadata } from '@worker/domain/constraints/constraints';
 import type { Result } from '@worker/domain/result';
 import {
   DEFAULT_RUNTIME_BUDGET,
@@ -398,14 +397,12 @@ describe('runtime read Port adapter', () => {
   });
 
   it('maps a runtime factory failure from runtimeFor to MISSING_CONTEXT', () => {
-    const metadata: ModelActionMetadata = {};
     const other = runtimeFor(
       () => {
         throw new Error('runtime failure');
       },
       'search_places',
       { toolCallId: 'sdk-read-other' },
-      metadata,
     );
     expect(other).toMatchObject({ ok: false, error: { code: 'MISSING_CONTEXT' } });
   });

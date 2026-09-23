@@ -111,9 +111,8 @@ const openAIResponse = async (
   );
   const call = parts.find((part) => part.type === 'tool-call');
   if (call === undefined) throw new Error('TEST_TOOL_CALL_MISSING');
-  const validArguments: unknown = JSON.parse(call.input);
-  const envelope = v.parse(v.object({ input: v.unknown() }), validArguments);
-  const argumentsJson = invalidInput ? JSON.stringify({ input: envelope.input }) : call.input;
+  v.parse(v.object({ input: v.unknown() }), JSON.parse(call.input));
+  const argumentsJson = invalidInput ? JSON.stringify({}) : call.input;
   const item = {
     type: 'function_call',
     id: `fc_${crypto.randomUUID()}`,
@@ -171,7 +170,7 @@ describe('development HTTP with OpenAI and Hot Pepper transports', () => {
         if (invalidInput && modelInputs.length === 2) {
           const retry = v.parse(OpenAIRequestSchema, await request.clone().json());
           expect(retry.input.find((item) => item.type === 'function_call_output')?.output).toBe(
-            'Tool input validation failed. Invalid fields: metadata',
+            'Tool input validation failed. Invalid fields: input',
           );
         }
         const result = await openAIResponse(request, invalidInput && modelInputs.length === 1);

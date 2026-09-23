@@ -1,6 +1,5 @@
 import { jsonSchema, type FlexibleSchema } from 'ai';
 import * as v from 'valibot';
-import { ModelActionMetadataSchema } from '@worker/domain/constraints/constraints';
 import {
   ModelGetPlaceDetailsInputSchema,
   SearchPlacesInputSchema,
@@ -29,14 +28,6 @@ const detailFields: string[] = [
   'walking_route',
   'last_train',
 ];
-
-/** Tool metadata carries no values; it stays as an empty object until the envelope is removed. */
-const metadataJsonSchema: WireSchema = {
-  type: 'object',
-  description: 'Always {}. Area and query belong in input.',
-  properties: {},
-  additionalProperties: false,
-};
 
 const evidenceText = (maxLength: number): WireSchema => ({
   type: 'object',
@@ -195,14 +186,14 @@ const envelopeSchema = <T>(
   inputSchema: v.GenericSchema<unknown, T>,
   inputWire: WireSchema,
 ): FlexibleSchema<PublicToolEnvelope<T>> =>
-  standardSchema(v.strictObject({ input: inputSchema, metadata: ModelActionMetadataSchema }), {
+  standardSchema(v.strictObject({ input: inputSchema }), {
     type: 'object',
-    properties: { input: inputWire, metadata: metadataJsonSchema },
-    required: ['input', 'metadata'],
+    properties: { input: inputWire },
+    required: ['input'],
     additionalProperties: false,
   });
 
-/** AI SDK tools use the same root action envelope as the M04 runtime gate. */
+/** AI SDK tools use the same root input envelope as the runtime gate. */
 export const searchPlacesToolSchema = envelopeSchema(SearchPlacesInputSchema, searchJsonSchema);
 export const getPlaceDetailsToolSchema = envelopeSchema(
   ModelGetPlaceDetailsInputSchema,

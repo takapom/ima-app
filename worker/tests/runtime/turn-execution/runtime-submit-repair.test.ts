@@ -28,7 +28,6 @@ describe('submit entry validation', () => {
           finalText: JSON.stringify({
             kind: 'final_message',
             message: { text: '条件を変えて探しますか？', basis: 'conversational', evidenceIds: [] },
-            metadata: {},
           }),
           emptyFinal: false,
           partCount: 1,
@@ -39,17 +38,10 @@ describe('submit entry validation', () => {
       composition.dispose();
     },
   );
-  it('rejects legacy constraint metadata and spends the existing repair budget before a Port call', async () => {
+  it('rejects the removed metadata field and spends the existing repair budget before a Port call', async () => {
     const calls = emptyPortCalls();
     const { factory } = createFactory(calls, { onSubmitRejected: () => undefined });
-    const envelope = {
-      input: submitInput,
-      metadata: {
-        turnConstraints: {
-          changes: [{ minimumStayMinutes: 20, sourceTurnId: 'missing-turn', quote: '最低20分' }],
-        },
-      },
-    };
+    const envelope = { input: submitInput, metadata: {} };
     for (const remainingRepairs of [2, 1, 0]) {
       const result = await invokePublicToolEnvelope(
         'submit_cards',
@@ -70,7 +62,7 @@ describe('submit entry validation', () => {
     expect(factory.hasUnresolvedSubmitFailure()).toBe(true);
     const result = await invokePublicToolEnvelope(
       'submit_cards',
-      { input: submitInput, metadata: {} },
+      { input: submitInput },
       factory.dependencies,
       { toolCallId: 'too-late' },
     );
@@ -94,7 +86,7 @@ describe('submit entry validation', () => {
     expect(factory.hasUnresolvedSubmitFailure()).toBe(true);
     const result = await invokePublicToolEnvelope(
       'submit_cards',
-      { input: submitInput, metadata: {} },
+      { input: submitInput },
       factory.dependencies,
       { toolCallId: 'corrected' },
     );
@@ -117,7 +109,6 @@ describe('submit entry validation', () => {
         finalText: JSON.stringify({
           kind: 'final_message',
           message: { text: '候補を確認しました。', basis: 'conversational', evidenceIds: [] },
-          metadata: {},
         }),
         emptyFinal: false,
         partCount: 1,

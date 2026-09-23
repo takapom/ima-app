@@ -185,4 +185,4 @@ export const createFactory = (
   return { factory, stopWhen };
 };
 
-export const envelope = (metadata: object = {}) => ({ input: searchInput, metadata });
+export const envelope = (extra: object = {}) => ({ input: searchInput, ...extra });

@@ -3,7 +3,6 @@ import type { BaseIssue } from 'valibot';
 // Only contract field names may survive SDK error redaction, never input values or unknown keys.
 const FIELD_NAMES = new Set([
   'input',
-  'metadata',
   'mode',
   'query',
   'area',

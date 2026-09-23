@@ -288,7 +288,6 @@ describe('model-eval candidate identity mapping', () => {
           limit: 1,
           excludeCandidateIds: [],
         },
-        metadata: {},
       },
       composition.turn.dependencies,
       { toolCallId: 'model-eval-search-1' },

@@ -69,9 +69,10 @@ describe('model message encoding', () => {
   it('describes the final message JSON envelope and evidence basis enum', () => {
     const [system] = encodeModelContext(createModelContext());
     expect(system?.content).toContain(
-      '{"kind":"final_message","message":{"text":"確認しました","evidenceIds":[],"basis":"conversational"},"metadata":{}}',
+      '{"kind":"final_message","message":{"text":"確認しました","evidenceIds":[],"basis":"conversational"}}',
     );
     expect(system?.content).toContain('grounded、inference、conversational');
     expect(system?.content).not.toContain('sourceTurnId');
+    expect(system?.content).not.toContain('metadata');
   });
 });

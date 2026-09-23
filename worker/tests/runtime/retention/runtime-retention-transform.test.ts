@@ -107,7 +107,7 @@ describe('runtime retention AI SDK stream transform', () => {
               toolName: 'search_places',
               toolCallId: 'invalid-envelope',
               input: {},
-              error: `Invalid input for tool search_places: ${CANARY}. Tool input validation failed. Invalid fields: metadata`,
+              error: `Invalid input for tool search_places: ${CANARY}. Tool input validation failed. Invalid fields: input`,
             },
             {
               type: 'error',
@@ -158,7 +158,7 @@ describe('runtime retention AI SDK stream transform', () => {
             event: 'runtime_upstream_failure',
             stage: 'tool',
             tool: 'search_places',
-            fields: ['metadata'],
+            fields: ['input'],
             kind: 'invalid_tool_input',
           },
           {
@@ -179,7 +179,7 @@ describe('runtime retention AI SDK stream transform', () => {
         expect(output[0]).toEqual({ type: 'error', error: 'UPSTREAM_UNAVAILABLE' });
         expect(output[2]).toMatchObject({
           type: 'tool-error',
-          error: 'Tool input validation failed. Invalid fields: metadata',
+          error: 'Tool input validation failed. Invalid fields: input',
         });
       } finally {
         warn.mockRestore();
@@ -278,7 +278,6 @@ describe('runtime retention AI SDK stream transform', () => {
           limit: 1,
           excludeCandidateIds: [],
         },
-        metadata: {},
       },
     });
     expect(output).toContainEqual({
@@ -294,7 +293,6 @@ describe('runtime retention AI SDK stream transform', () => {
           limit: 1,
           excludeCandidateIds: [],
         },
-        metadata: {},
       },
       output: { type: 'json', value: { status: 'withheld' } },
       preliminary: true,
@@ -312,7 +310,6 @@ describe('runtime retention AI SDK stream transform', () => {
           limit: 1,
           excludeCandidateIds: [],
         },
-        metadata: {},
       },
       error: 'UPSTREAM_UNAVAILABLE',
     });

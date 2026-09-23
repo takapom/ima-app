@@ -120,8 +120,11 @@ const finalText = (
   });
 
 describe('runtime final message boundary', () => {
-  it('strictly parses a final envelope with empty metadata', () => {
-    const parsed = parseRuntimeFinalMessage(finalText(undefined, {}));
+  it('strictly parses a final envelope and rejects the removed metadata field', () => {
+    expect(() => parseRuntimeFinalMessage(finalText(undefined, {}))).toThrowError(
+      new RuntimeFinalMessageError('INVALID_ENVELOPE'),
+    );
+    const parsed = parseRuntimeFinalMessage(finalText());
     expect(parsed).toEqual({
       kind: 'final_message',
       message: {
@@ -129,7 +132,6 @@ describe('runtime final message boundary', () => {
         evidenceIds: [],
         basis: 'conversational',
       },
-      metadata: {},
     });
   });
 

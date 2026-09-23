@@ -1,10 +1,6 @@
 import { isPublicToolName } from '@worker/runtime/ports/tool-binding';
 import { tool, type ToolExecutionOptions } from 'ai';
 import * as v from 'valibot';
-import {
-  ModelActionMetadataSchema,
-  type ModelActionMetadata,
-} from '@worker/domain/constraints/constraints';
 import { matchesDetailsRequest } from '@worker/application/ports/operations';
 import { type CancellationToken } from '@worker/application/ports/context';
 import type {
@@ -58,15 +54,8 @@ const invocationOf = (options: ToolExecutionOptions): PublicToolInvocation => ({
   ...(options.abortSignal === undefined ? {} : { abortSignal: options.abortSignal }),
 });
 
-const EMPTY_METADATA: ModelActionMetadata = {};
-
-const parseEnvelope = (
-  input: unknown,
-): { readonly input: unknown; readonly metadata: ModelActionMetadata } | undefined => {
-  const parsed = v.safeParse(
-    v.strictObject({ input: v.unknown(), metadata: ModelActionMetadataSchema }),
-    input,
-  );
+const parseEnvelope = (input: unknown): { readonly input: unknown } | undefined => {
+  const parsed = v.safeParse(v.strictObject({ input: v.unknown() }), input);
   return parsed.success ? parsed.output : undefined;
 };
 
@@ -74,13 +63,12 @@ const searchPlaces = async (
   input: unknown,
   invocation: PublicToolInvocation,
   dependencies: ToolBindingDependencies,
-  metadata: ModelActionMetadata,
 ): Promise<SearchToolResult> => {
   const parsedInput = parseSearchInput(input);
   if (!parsedInput.ok) {
     return resultError(issue('INVALID_ARGUMENT', 'input', 'search_places input is invalid'));
   }
-  const checked = runtimeFor(dependencies.runtime, 'search_places', invocation, metadata);
+  const checked = runtimeFor(dependencies.runtime, 'search_places', invocation);
   if (!checked.ok) return resultError(checked.error);
   const excludedCandidateIssue =
     parsedInput.value.mode === 'search'
@@ -128,13 +116,12 @@ const getPlaceDetails = async (
   input: unknown,
   invocation: PublicToolInvocation,
   dependencies: ToolBindingDependencies,
-  metadata: ModelActionMetadata,
 ): Promise<DetailsToolResult> => {
   const parsedInput = parseDetailsInput(input);
   if (!parsedInput.ok) {
     return resultError(issue('INVALID_ARGUMENT', 'input', 'get_place_details input is invalid'));
   }
-  const checked = runtimeFor(dependencies.runtime, 'get_place_details', invocation, metadata);
+  const checked = runtimeFor(dependencies.runtime, 'get_place_details', invocation);
   if (!checked.ok) return resultError(checked.error);
   const unsupported = unsupportedDetailField(checked.runtime.context, parsedInput.value);
   if (unsupported !== undefined) {
@@ -248,9 +235,8 @@ const submitCards = async (
   input: unknown,
   invocation: PublicToolInvocation,
   dependencies: ToolBindingDependencies,
-  metadata: ModelActionMetadata,
 ): Promise<SubmitToolResult> => {
-  const checked = runtimeFor(dependencies.runtime, 'submit_cards', invocation, metadata);
+  const checked = runtimeFor(dependencies.runtime, 'submit_cards', invocation);
   if (!checked.ok) {
     const result = submitInvalid('INVALID_ARGUMENT', checked.error.path, checked.error.message, 0);
     return dependencies.rejectSubmitInput?.(result) ?? result;
@@ -305,11 +291,9 @@ export function invokePublicTool(
   dependencies: ToolBindingDependencies,
   invocation: PublicToolInvocation,
 ): Promise<PublicToolResult> {
-  if (name === 'search_places')
-    return searchPlaces(input, invocation, dependencies, EMPTY_METADATA);
-  if (name === 'get_place_details')
-    return getPlaceDetails(input, invocation, dependencies, EMPTY_METADATA);
-  if (name === 'submit_cards') return submitCards(input, invocation, dependencies, EMPTY_METADATA);
+  if (name === 'search_places') return searchPlaces(input, invocation, dependencies);
+  if (name === 'get_place_details') return getPlaceDetails(input, invocation, dependencies);
+  if (name === 'submit_cards') return submitCards(input, invocation, dependencies);
   return Promise.resolve(resultError<never>(issue('INVALID_ARGUMENT', null, 'unknown tool name')));
 }
 
@@ -354,12 +338,12 @@ export function invokePublicToolEnvelope(
       : Promise.resolve(resultError<SafeGetPlaceDetailsOutput>(error));
   }
   if (name === 'search_places') {
-    return searchPlaces(parsed.input, invocation, dependencies, parsed.metadata);
+    return searchPlaces(parsed.input, invocation, dependencies);
   }
   if (name === 'get_place_details') {
-    return getPlaceDetails(parsed.input, invocation, dependencies, parsed.metadata);
+    return getPlaceDetails(parsed.input, invocation, dependencies);
   }
-  return submitCards(parsed.input, invocation, dependencies, parsed.metadata);
+  return submitCards(parsed.input, invocation, dependencies);
 }
 
 export const invokePublicToolByName = (
@@ -373,11 +357,9 @@ export const invokePublicToolByName = (
       resultError<never>(issue('INVALID_ARGUMENT', null, 'unknown tool name')),
     );
   }
-  if (name === 'search_places')
-    return searchPlaces(input, invocation, dependencies, EMPTY_METADATA);
-  if (name === 'get_place_details')
-    return getPlaceDetails(input, invocation, dependencies, EMPTY_METADATA);
-  return submitCards(input, invocation, dependencies, EMPTY_METADATA);
+  if (name === 'search_places') return searchPlaces(input, invocation, dependencies);
+  if (name === 'get_place_details') return getPlaceDetails(input, invocation, dependencies);
+  return submitCards(input, invocation, dependencies);
 };
 
 export const createPublicToolSet = (dependencies: ToolBindingDependencies): PublicToolSet =>

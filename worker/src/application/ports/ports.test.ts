@@ -172,7 +172,6 @@ describe('core port contracts', () => {
         { kind: 'search_places', input: search },
         { kind: 'get_place_details', input: details },
       ],
-      metadata: {},
     };
     expect(v.safeParse(ModelDecisionSchema, decision).success).toBe(true);
     expect(

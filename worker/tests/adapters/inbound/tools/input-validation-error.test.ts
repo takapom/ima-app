@@ -23,16 +23,16 @@ const validate = async (value: unknown) => {
 
 describe('safe tool validation feedback', () => {
   it.each([
-    [{ input }, 'metadata'],
-    [{ input: { ...input, limit: 100 }, metadata: {} }, 'input.limit'],
-    [{ input: { ...input, area: { kind: 'named_area' } }, metadata: {} }, 'input.area.name'],
-    [{ input, metadata: {}, [CANARY]: CANARY }, '*'],
+    [{}, 'input'],
+    [{ input: { ...input, limit: 100 } }, 'input.limit'],
+    [{ input: { ...input, area: { kind: 'named_area' } } }, 'input.area.name'],
+    [{ input, [CANARY]: CANARY }, '*'],
     [
       {
         input,
         metadata: { turnConstraints: { changes: [{ sourceTurnId: 'turn-1', quote: CANARY }] } },
       },
-      'metadata.*',
+      '*',
     ],
   ])('identifies invalid fields without including values or unknown keys', async (value, field) => {
     const result = await validate(value);
@@ -49,32 +49,23 @@ describe('safe tool validation feedback', () => {
   });
 
   it('accepts both search and continuation envelopes', async () => {
-    expect(await validate({ input, metadata: {} })).toMatchObject({ success: true });
-    expect(
-      await validate({ input: { mode: 'continue', cursor: 'cursor-1' }, metadata: {} }),
-    ).toMatchObject({ success: true });
+    expect(await validate({ input })).toMatchObject({ success: true });
+    expect(await validate({ input: { mode: 'continue', cursor: 'cursor-1' } })).toMatchObject({
+      success: true,
+    });
   });
 
-  it('advertises metadata as an empty object and rejects any constraint change', async () => {
+  it('advertises only the input envelope and rejects the removed metadata field', async () => {
     const schema = asSchema(searchPlacesToolSchema);
     expect(await schema.jsonSchema).toMatchObject({
-      required: ['input', 'metadata'],
-      properties: { metadata: { properties: {}, additionalProperties: false } },
+      required: ['input'],
+      additionalProperties: false,
     });
     const json = JSON.stringify(await schema.jsonSchema);
+    expect(json).not.toContain('metadata');
     expect(json).not.toContain('turnConstraints');
-    expect(json).not.toContain('minimumStayMinutes');
     expect(json).not.toContain('travelContext');
-    expect(
-      await validate({
-        input,
-        metadata: {
-          turnConstraints: {
-            changes: [{ minimumStayMinutes: 45, sourceTurnId: 'turn-1', quote: '45分は居たい' }],
-          },
-        },
-      }),
-    ).toMatchObject({ success: false });
+    expect(await validate({ input, metadata: {} })).toMatchObject({ success: false });
   });
 
   it.each([
