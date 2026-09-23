@@ -172,7 +172,6 @@ const makeOptions = (
 const fixedCost = (): ReturnType<RuntimeReadPortOptions['resolveCost']> => ({
   costUnits: 1,
   providerHttpRequests: 1,
-  routeElements: 0,
 });
 
 describe('runtime read Port adapter', () => {
@@ -187,7 +186,7 @@ describe('runtime read Port adapter', () => {
     };
     const details: PlaceDetailsPort = { read: () => Promise.resolve(detailsSuccess()) };
     const budget = new RuntimeBudget({
-      config: budgetConfig({ maxRouteElements: 1 }),
+      config: budgetConfig(),
       startedAtMs: 0,
       now: () => 1,
     });
@@ -196,7 +195,7 @@ describe('runtime read Port adapter', () => {
         { search, details },
         (request) => {
           requests.push(request);
-          return { costUnits: 1, providerHttpRequests: 1, routeElements: 1 };
+          return { costUnits: 1, providerHttpRequests: 1 };
         },
         { budget },
       ),
@@ -216,7 +215,6 @@ describe('runtime read Port adapter', () => {
       readCalls: 1,
       providerHttpRequests: 1,
       costUnits: 1,
-      routeElements: 1,
     });
   });
 
@@ -231,7 +229,7 @@ describe('runtime read Port adapter', () => {
     const ports = createRuntimeReadPorts(
       makeOptions(
         { search, details: { read: () => Promise.resolve(detailsSuccess()) } },
-        () => ({ costUnits: 2, providerHttpRequests: 1, routeElements: 0 }),
+        () => ({ costUnits: 2, providerHttpRequests: 1 }),
         { budget: new RuntimeBudget({ config: budgetConfig({ maxCostUnits: 1 }) }) },
       ),
     );

@@ -26,7 +26,6 @@ import { RuntimeSingleFlightError } from '@worker/runtime/tool-reads/runtime-sin
 export type RuntimeReadCost = {
   readonly costUnits: number;
   readonly providerHttpRequests: number;
-  readonly routeElements: number;
 };
 
 export type RuntimeReadCostRequest =

@@ -276,7 +276,7 @@ const runCancellationScenario = async (mode: CancellationMode) => {
         registry: ports.registry,
         ports,
         commit: commits,
-        resolveReadCost: () => ({ costUnits: 1, providerHttpRequests: 1, routeElements: 0 }),
+        resolveReadCost: () => ({ costUnits: 1, providerHttpRequests: 1 }),
         validationContext,
         persistMessages,
         isFinalResponse: () => true,

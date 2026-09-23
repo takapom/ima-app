@@ -14,7 +14,6 @@ const readRequest = {
   operation: 'search_places' as const,
   costUnits: 1,
   providerHttpRequests: 1,
-  routeElements: 0,
 };
 
 describe('RuntimeBudget', () => {
@@ -97,7 +96,6 @@ describe('RuntimeBudget', () => {
       operation: 'get_place_details',
       costUnits: 0,
       providerHttpRequests: 0,
-      routeElements: 0,
     });
     expect(reservation.ok).toBe(true);
     expect(budget.snapshot()).toMatchObject({
@@ -149,7 +147,6 @@ describe('RuntimeBudget', () => {
       readRetries: 1,
       providerHttpRequests: 2,
       costUnits: 2,
-      routeElements: 0,
     });
     reservation.value.release();
     expect(reservation.value.retry('server')).toMatchObject({
@@ -177,7 +174,6 @@ describe('RuntimeBudget', () => {
       config: config({
         maxProviderHttpRequests: 6,
         maxCostUnits: 12,
-        maxRouteElements: 8,
       }),
       startedAtMs: 0,
       now: () => 1,
@@ -186,7 +182,6 @@ describe('RuntimeBudget', () => {
       operation: 'search_places' as const,
       costUnits: 4,
       providerHttpRequests: 3,
-      routeElements: 2,
     };
     const reservation = budget.reserveRead(expensiveRequest);
     expect(reservation.ok).toBe(true);
@@ -194,12 +189,10 @@ describe('RuntimeBudget', () => {
 
     expensiveRequest.costUnits = 0;
     expensiveRequest.providerHttpRequests = 0;
-    expensiveRequest.routeElements = 0;
     expect(reservation.value.retry('server')).toEqual({ ok: true, delayMs: 0 });
     expect(budget.snapshot()).toMatchObject({
       providerHttpRequests: 6,
       costUnits: 8,
-      routeElements: 4,
       readRetries: 1,
     });
 
@@ -212,7 +205,6 @@ describe('RuntimeBudget', () => {
       ...expensiveRequest,
       costUnits: 4,
       providerHttpRequests: 3,
-      routeElements: 2,
     });
     expect(overBudgetReservation.ok).toBe(true);
     if (!overBudgetReservation.ok) throw new Error('over-budget reservation setup failed');
