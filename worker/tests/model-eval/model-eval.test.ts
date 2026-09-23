@@ -68,7 +68,6 @@ const validRun = (evaluationCase: EvaluationCase): EvaluationRun => ({
     forbiddenBehaviors: [],
     modelLocationExposed: false,
     selectedCandidateIds: evaluationCase.expected.requiredCandidateIds,
-    resolvedSavedPlaceRefs: evaluationCase.expected.requiredSavedPlaceRefs,
     preservedConditionFields: evaluationCase.expected.preserveConditionFields,
     candidateSetChanges: [],
   },
@@ -96,8 +95,8 @@ const validRun = (evaluationCase: EvaluationCase): EvaluationRun => ({
 const allValidRuns = (): readonly EvaluationRun[] => expandEvaluationDataset().map(validRun);
 
 describe('M25 model evaluation dataset', () => {
-  it('contains eight response patterns and six cross-cutting scenarios', () => {
-    expect(MODEL_EVALUATION_SCENARIOS).toHaveLength(14);
+  it('contains eight response patterns and five cross-cutting scenarios', () => {
+    expect(MODEL_EVALUATION_SCENARIOS).toHaveLength(13);
     expect(new Set(MODEL_EVALUATION_SCENARIOS.map((scenario) => scenario.pattern)).size).toBe(8);
     expect(MODEL_EVALUATION_SCENARIOS.map((scenario) => scenario.id)).toEqual([
       'new-search',
@@ -113,20 +112,18 @@ describe('M25 model evaluation dataset', () => {
       'continuity',
       'repair',
       'gps-refusal',
-      'saved-place-reference',
     ]);
     const continuity = MODEL_EVALUATION_SCENARIOS.find((scenario) => scenario.id === 'continuity');
     if (continuity === undefined) throw new Error('continuity scenario missing');
     expect(continuity.context.orderedCandidateIds[1]).toBe('candidate-b');
     expect(continuity.context.selectedCandidateId).toBe('candidate-a');
-    expect(continuity.context.savedPlaceRefs).toEqual([]);
     expect(continuity.expected.requiredCandidateIds).toEqual(['candidate-b']);
   });
 
   it('expands every scenario to exactly three independently identified repeats', () => {
     const cases = expandEvaluationDataset();
-    expect(cases).toHaveLength(42);
-    expect(new Set(cases.map((evaluationCase) => evaluationCase.caseId)).size).toBe(42);
+    expect(cases).toHaveLength(39);
+    expect(new Set(cases.map((evaluationCase) => evaluationCase.caseId)).size).toBe(39);
     for (const scenario of MODEL_EVALUATION_SCENARIOS) {
       const repeats = cases
         .filter((evaluationCase) => evaluationCase.id === scenario.id)
@@ -231,7 +228,6 @@ describe('M25 model evaluation rubric', () => {
         forbiddenBehaviors: [{ kind: 'prompt-injection-followed', detail: 'fixture annotation' }],
         modelLocationExposed: false,
         selectedCandidateIds: [],
-        resolvedSavedPlaceRefs: [],
         preservedConditionFields: [],
         candidateSetChanges: [],
       },
@@ -309,7 +305,7 @@ describe('M25 model evaluation rubric', () => {
 });
 
 describe('M25 model evaluation aggregation', () => {
-  it('passes the 14-scenario, three-repeat gate with grounded human reviews', () => {
+  it('passes the 13-scenario, three-repeat gate with grounded human reviews', () => {
     const report = aggregateEvaluationRuns(allValidRuns());
     expect(report.coverage.complete).toBe(true);
     expect(report.gates.passed).toBe(true);
@@ -326,7 +322,7 @@ describe('M25 model evaluation aggregation', () => {
     runs[0] = withoutReview;
     const report = aggregateEvaluationRuns(runs);
     expect(report.gates.humanReview).toBe(false);
-    expect(report.gates.humanReviewCount).toBe(41);
+    expect(report.gates.humanReviewCount).toBe(38);
     expect(report.gates.failures).toContain('HUMAN_REVIEW_INCOMPLETE');
   });
 
@@ -341,7 +337,7 @@ describe('M25 model evaluation aggregation', () => {
       };
     }
     const report = aggregateEvaluationRuns(runs);
-    expect(report.gates.humanReviewPassRate).toBeCloseTo(39 / 42);
+    expect(report.gates.humanReviewPassRate).toBeCloseTo(36 / 39);
     expect(report.gates.humanReview).toBe(true);
     expect(report.gates.passed).toBe(true);
   });
@@ -427,9 +423,9 @@ describe('M25 model evaluation aggregation', () => {
     }));
     const report = aggregateEvaluationRuns(runs);
     expect(report.metrics.latencyMs.samples).toBe(0);
-    expect(report.metrics.latencyMs.unknown).toBe(42);
+    expect(report.metrics.latencyMs.unknown).toBe(39);
     expect(report.metrics.costUsd.knownSamples).toBe(0);
-    expect(report.metrics.costUsd.unknownSamples).toBe(42);
+    expect(report.metrics.costUsd.unknownSamples).toBe(39);
     expect(report.metrics.costUsd.totalUsd).toBeNull();
   });
 
@@ -437,12 +433,12 @@ describe('M25 model evaluation aggregation', () => {
     const report = aggregateEvaluationRuns(allValidRuns());
     expect(report.metrics.latencyMs.p50).toBe(102);
     expect(report.metrics.latencyMs.p95).toBe(103);
-    expect(report.metrics.modelCalls.total).toBe(42);
+    expect(report.metrics.modelCalls.total).toBe(39);
     expect(report.metrics.toolCalls.total).toBe(0);
     expect(report.metrics.upstreamCalls.total).toBe(0);
-    expect(report.metrics.inputTokens.total).toBe(4200);
-    expect(report.metrics.outputTokens.total).toBe(840);
-    expect(report.metrics.costUsd.totalUsd).toBeCloseTo(0.042);
+    expect(report.metrics.inputTokens.total).toBe(3900);
+    expect(report.metrics.outputTokens.total).toBe(780);
+    expect(report.metrics.costUsd.totalUsd).toBeCloseTo(0.039);
     expect(report.versions.modelVersions).toEqual(['fixture-model-v1']);
     expect(report.versions.promptVersions).toEqual(['fixture-prompt-v1']);
   });

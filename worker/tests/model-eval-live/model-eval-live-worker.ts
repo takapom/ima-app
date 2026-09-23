@@ -17,7 +17,6 @@ import {
   wrapModelForLiveEvaluation,
   type LiveTraceSnapshot,
 } from '../../tooling/model-eval/live';
-import type { LiveSavedReferenceBinding } from '../../tooling/model-eval/saved-reference-live';
 import {
   fixtureModel,
   type ModelEvalFixturePhase,
@@ -109,10 +108,6 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
   configureModelEvalRequestCapture(enabled: boolean): void {
     this.captureRuntimeInput = enabled;
     this.capturedRuntimeInput = null;
-  }
-
-  configureModelEvalSavedReference(binding: LiveSavedReferenceBinding | null): void {
-    this.liveTrace.configureSavedReferenceBindings(binding === null ? [] : [binding]);
   }
 
   getModelEvalRequestCapture(): ThreadRuntimeTurnInput | null {
@@ -276,9 +271,6 @@ export class ModelEvalFixtureLiveThreadDO extends ModelEvalThreadDO {
         () => undefined,
         () => undefined,
         () => 'clarify',
-        () => undefined,
-        () => undefined,
-        () => undefined,
         () => undefined,
         () => undefined,
       ),

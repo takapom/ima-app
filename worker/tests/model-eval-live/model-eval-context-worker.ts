@@ -9,7 +9,6 @@ import {
   type ModelEvalPlacesResponseMode,
 } from './model-eval-place-fixture';
 import { LiveTraceRecorder } from '../../tooling/model-eval/live';
-import type { LiveSavedReferenceBinding } from '../../tooling/model-eval/saved-reference-live';
 import { fixtureModel } from './model-eval-context-model';
 import {
   type ModelEvalFixtureDisplayNamePolicy,
@@ -17,7 +16,6 @@ import {
   type ModelEvalFixtureOptions,
   type ModelEvalFixturePhase,
   type ModelEvalFixtureProfile,
-  type ModelEvalFixtureSavedReference,
   type ModelEvalFixtureStep,
 } from './model-eval-context-model';
 import type { ModelEvalFixtureEvidenceSnapshot } from './model-eval-context-output';
@@ -31,7 +29,6 @@ export type {
   ModelEvalFixtureOptions,
   ModelEvalFixturePhase,
   ModelEvalFixtureProfile,
-  ModelEvalFixtureSavedReference,
   ModelEvalFixtureStep,
 } from './model-eval-context-model';
 export type { ModelEvalFixtureEvidenceSnapshot } from './model-eval-context-output';
@@ -77,11 +74,6 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
   private readonly fixtureSearchQueries: string[] = [];
   private readonly fixtureEvidenceSnapshots: ModelEvalFixtureEvidenceSnapshot[] = [];
   private readonly fixturePromptInjectionAudits: ModelEvalPromptInjectionAudit[] = [];
-  private fixtureSavedReference: ModelEvalFixtureSavedReference | undefined;
-  private readonly fixtureSavedReferenceRequests: string[] = [];
-  private readonly fixtureResolvedSavedPlaceRefs: string[] = [];
-  private readonly fixtureResolvedSavedPlaceCandidateIds: string[] = [];
-  private readonly fixtureResolvedSavedPlaceEvidenceIds: string[] = [];
 
   configureModelEvalFixture(
     phase: ModelEvalFixturePhase,
@@ -99,21 +91,12 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
     this.fixturePlaceDisplayNameMode = options.placeDisplayNameMode ?? 'normal';
     this.fixturePlacePayloadMode = options.placePayloadMode ?? 'normal';
     this.fixtureDisplayNamePolicy = options.displayNamePolicy ?? 'visible';
-    this.fixtureSavedReference = options.savedReference;
     this.fixtureThreadCreatedAt = options.threadCreatedAt;
     this.fixtureToolErrorCodes.length = 0;
     this.fixtureModelLocationExposed = false;
     this.fixturePrivateUpstreamBodyExposed = false;
     this.fixtureSearchQueries.length = 0;
     this.fixturePromptInjectionAudits.length = 0;
-    this.fixtureSavedReferenceRequests.length = 0;
-    this.fixtureResolvedSavedPlaceRefs.length = 0;
-    this.fixtureResolvedSavedPlaceCandidateIds.length = 0;
-    this.fixtureResolvedSavedPlaceEvidenceIds.length = 0;
-  }
-
-  configureModelEvalSavedReference(binding: LiveSavedReferenceBinding | null): void {
-    this.fixtureTrace.configureSavedReferenceBindings(binding === null ? [] : [binding]);
   }
 
   protected override runtimeProductionNow(): string {
@@ -121,12 +104,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
   }
 
   getModelEvalFixtureTrace() {
-    return {
-      ...this.fixtureTrace.snapshot(),
-      resolvedSavedPlaceRefs: [...this.fixtureResolvedSavedPlaceRefs],
-      resolvedSavedPlaceCandidateIds: [...this.fixtureResolvedSavedPlaceCandidateIds],
-      resolvedSavedPlaceEvidenceIds: [...this.fixtureResolvedSavedPlaceEvidenceIds],
-    };
+    return this.fixtureTrace.snapshot();
   }
 
   getModelEvalFixtureSteps(): readonly ModelEvalFixtureStep[] {
@@ -143,10 +121,6 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
 
   getModelEvalFixtureDetailsRequests(): readonly (readonly string[])[] {
     return this.fixtureDetailsRequests.map((candidateIds) => [...candidateIds]);
-  }
-
-  getModelEvalFixtureSavedReferenceRequests(): readonly string[] {
-    return [...this.fixtureSavedReferenceRequests];
   }
 
   getModelEvalFixtureSearchQueries(): readonly string[] {
@@ -210,29 +184,6 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
           this.fixturePrivateUpstreamBodyExposed = true;
         },
         (audit) => this.fixturePromptInjectionAudits.push(audit),
-        () => this.fixtureSavedReference,
-        (semanticRef) => this.fixtureSavedReferenceRequests.push(semanticRef),
-        (semanticRef, candidateId, evidenceIds) => {
-          if (!this.fixtureResolvedSavedPlaceRefs.includes(semanticRef)) {
-            this.fixtureResolvedSavedPlaceRefs.push(semanticRef);
-          }
-          if (!this.fixtureResolvedSavedPlaceCandidateIds.includes(candidateId)) {
-            this.fixtureResolvedSavedPlaceCandidateIds.push(candidateId);
-          }
-          for (const evidenceId of evidenceIds) {
-            if (!this.fixtureResolvedSavedPlaceEvidenceIds.includes(evidenceId)) {
-              this.fixtureResolvedSavedPlaceEvidenceIds.push(evidenceId);
-            }
-          }
-          const binding = this.fixtureSavedReference;
-          if (binding !== undefined) {
-            this.fixtureTrace.observeCandidateIdentity({
-              provider: binding.provider,
-              recordRef: binding.recordRef,
-              candidateId,
-            });
-          }
-        },
       ),
       modelContextFieldPolicy: modelContextFieldPolicyFor(
         this.fixtureDisplayNamePolicy === 'withheld' ? 'deny' : 'allow',

@@ -22,11 +22,6 @@ import type {
   ThreadRuntimeTurnInput,
 } from '@worker/runtime/threads/admission';
 import {
-  createOwnerSavedReferenceRpc,
-  type SavedReferenceNamespace,
-} from '@worker/adapters/out/persistence/saved-references/saved-reference-do';
-import type { LiveSavedReferenceBinding } from '../../tooling/model-eval/saved-reference-live';
-import {
   MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,
   MODEL_EVAL_CONTEXT_NOW,
   MODEL_EVAL_NOW,
@@ -38,7 +33,6 @@ type LiveTestEnv = Cloudflare.Env & {
   readonly MODEL_EVAL_LIVE?: string;
   readonly OPENAI_API_KEY?: string;
   readonly MODEL_EVAL_THREADS: DurableObjectNamespace<ModelEvalThreadDO>;
-  readonly SAVED_REFERENCES: SavedReferenceNamespace;
 };
 
 const liveEnv = (): LiveTestEnv => {
@@ -48,42 +42,13 @@ const liveEnv = (): LiveTestEnv => {
 
 const safeId = (value: string): string => value.replace(/[^a-zA-Z0-9_-]/gu, '_');
 
-const savedReferenceFor = async (
-  workerEnv: LiveTestEnv,
-  ownerScopeRef: string,
-): Promise<LiveSavedReferenceBinding> => {
-  const rpc = createOwnerSavedReferenceRpc(workerEnv.SAVED_REFERENCES, ownerScopeRef);
-  const initialized = await rpc.initialize();
-  if (!initialized.ok) throw new Error('SAVED_REFERENCE_INITIALIZE_FAILED');
-  const registered = await rpc.register({ provider: 'google_places', recordRef: 'eval-place-a' });
-  if (!registered.ok) throw new Error('SAVED_REFERENCE_REGISTER_FAILED');
-  return {
-    semanticRef: 'saved-place-a',
-    runtimeRef: registered.reference.savedPlaceRef,
-    provider: registered.reference.provider,
-    recordRef: registered.reference.recordRef,
-  };
-};
-
 const requestFor = (
   evaluationCase: EvaluationCase,
   seed: EvaluationTurnSeed,
   cardContext?: Parameters<typeof buildEvaluationTurnRequest>[0]['cardContext'],
-  savedPlaceRef?: string,
 ): ThreadRuntimeTurnInput => {
-  const requestCase =
-    evaluationCase.id === 'saved-place-reference'
-      ? savedPlaceRef === undefined
-        ? (() => {
-            throw new Error('SAVED_REFERENCE_RUNTIME_REF_MISSING');
-          })()
-        : {
-            ...evaluationCase,
-            context: { ...evaluationCase.context, savedPlaceRefs: [savedPlaceRef] },
-          }
-      : evaluationCase;
   const built = buildEvaluationTurnRequest({
-    evaluationCase: requestCase,
+    evaluationCase,
     seed,
     ...(cardContext === undefined ? {} : { cardContext }),
   });
@@ -99,7 +64,6 @@ const requestFor = (
 const portsForCase = (
   workerEnv: LiveTestEnv,
   evaluationCase: EvaluationCase,
-  savedReferenceRefs: Set<string>,
 ): LiveCoordinatorCasePorts => {
   const threadId = `model-eval-${safeId(evaluationCase.caseId)}-${crypto.randomUUID()}`;
   const target: ThreadRuntimeTarget = {
@@ -117,24 +81,17 @@ const portsForCase = (
       : profile === 'prompt-injection'
         ? { payloadMode: 'store-instruction' as const }
         : {};
-  let runtimeSavedPlaceRef: string | undefined;
   return {
     target,
     ports: {
       initialize: async () => {
-        if (profile === 'saved-place-reference') {
-          const savedReference = await savedReferenceFor(workerEnv, target.ownerScopeRef);
-          runtimeSavedPlaceRef = savedReference.runtimeRef;
-          savedReferenceRefs.add(savedReference.runtimeRef);
-          await stub.configureModelEvalSavedReference(savedReference);
-        }
         await stub.configureModelEvalLiveProfile(temporalProfile);
         await stub.configureModelEvalLiveProvider(providerConfig);
         const initialized = await stub.initialize(target.ownerScopeRef, target.threadId);
         return { ok: initialized.ok === true };
       },
       runTurn: (seed, cardContext) =>
-        stub.runRuntimeTurn(requestFor(evaluationCase, seed, cardContext, runtimeSavedPlaceRef)),
+        stub.runRuntimeTurn(requestFor(evaluationCase, seed, cardContext)),
       readTrace: () => stub.getModelEvalTrace(),
       readProfile: () => stub.getModelEvalProfile(),
     },
@@ -197,12 +154,11 @@ describe('opt-in live model evaluation runner', () => {
       (scenario) => liveEvaluationProfileFor({ id: scenario.id }) !== null,
     );
     const workerEnv = liveEnv();
-    const savedReferenceRefs = new Set<string>();
     const artifacts = await runLiveEvaluationProfiles({
       scenarios,
       expectedIdentities: MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES,
       timingForCase,
-      portsForCase: (evaluationCase) => portsForCase(workerEnv, evaluationCase, savedReferenceRefs),
+      portsForCase: (evaluationCase) => portsForCase(workerEnv, evaluationCase),
     });
     let hasRuntimeFailure = false;
     for (const artifact of artifacts) {
@@ -214,9 +170,6 @@ describe('opt-in live model evaluation runner', () => {
       const serializedArtifact = artifactLines.join('\n');
       if (workerEnv.OPENAI_API_KEY !== undefined && workerEnv.OPENAI_API_KEY.length > 0) {
         expect(serializedArtifact).not.toContain(workerEnv.OPENAI_API_KEY);
-      }
-      for (const runtimeRef of savedReferenceRefs) {
-        expect(serializedArtifact).not.toContain(runtimeRef);
       }
       expect(artifact.schemaVersion).toBe('m25.live.v1');
       expect(artifact.attempts).toHaveLength(3);
@@ -244,7 +197,6 @@ describe('opt-in live model evaluation runner', () => {
       'continuity',
       'repair',
       'gps-refusal',
-      'saved-place-reference',
     ]);
     if (hasRuntimeFailure) throw new Error('M25_LIVE_RUNTIME_FAILED');
     expect(artifacts.every((artifact) => artifact.status === 'unverified')).toBe(true);

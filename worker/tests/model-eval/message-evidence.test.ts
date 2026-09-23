@@ -31,10 +31,10 @@ const usage = {
   outputTokens: { total: 1 },
 } as const;
 
-const savedCase = () => {
-  const scenario = MODEL_EVALUATION_SCENARIOS.find((item) => item.id === 'saved-place-reference');
-  if (scenario === undefined) throw new Error('saved scenario missing');
-  return { ...scenario, caseId: 'saved-place-reference:test', repeat: 1 as const };
+const specificPlaceCase = () => {
+  const scenario = MODEL_EVALUATION_SCENARIOS.find((item) => item.id === 'specific-place');
+  if (scenario === undefined) throw new Error('specific-place scenario missing');
+  return { ...scenario, caseId: 'specific-place:test', repeat: 1 as const };
 };
 
 const identityMapping = () => {
@@ -235,12 +235,9 @@ describe('model-eval message evidence conversion', () => {
       recordRef: 'eval-place-a',
       candidateId: 'runtime-candidate-a',
     });
-    const trace = {
-      ...recorder.snapshot(),
-      resolvedSavedPlaceRefs: ['saved-place-a'],
-    };
+    const trace = recorder.snapshot();
     const converted = buildEvaluationRunFromResponse(
-      savedCase(),
+      specificPlaceCase(),
       messageResponse(),
       trace,
       undefined,
@@ -258,15 +255,10 @@ describe('model-eval message evidence conversion', () => {
       },
     ]);
     expect(converted.run.trace.selectedCandidateIds).toEqual(['candidate-a']);
-    expect(converted.run.trace.resolvedSavedPlaceRefs).toEqual(['saved-place-a']);
 
-    const savedScenario = MODEL_EVALUATION_SCENARIOS.find(
-      (scenario) => scenario.id === 'saved-place-reference',
-    );
-    if (savedScenario === undefined) throw new Error('saved scenario missing');
     const report = aggregateEvaluationRuns(
       ([1, 2, 3] as const).map((repeat) => ({ ...converted.run, repeat })),
-      [savedScenario],
+      [specificPlaceCase()],
     );
     expect(report.coverage.complete).toBe(true);
     expect(report.assessments.every((assessment) => assessment.passed)).toBe(true);
@@ -296,10 +288,10 @@ describe('model-eval message evidence conversion', () => {
         },
       ],
     };
-    const trace = { ...recorder.snapshot(), resolvedSavedPlaceRefs: ['saved-place-a'] };
+    const trace = recorder.snapshot();
     expect(
       buildEvaluationRunFromResponse(
-        savedCase(),
+        specificPlaceCase(),
         unknownEvidence,
         trace,
         undefined,
@@ -309,7 +301,7 @@ describe('model-eval message evidence conversion', () => {
     ).toMatchObject({ ok: false, code: 'MESSAGE_EVIDENCE_MAPPING_UNAVAILABLE' });
     expect(
       buildEvaluationRunFromResponse(
-        savedCase(),
+        specificPlaceCase(),
         messageResponse('inference'),
         trace,
         undefined,

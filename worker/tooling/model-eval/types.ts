@@ -12,13 +12,7 @@ export type EvalPattern =
   | 'candidate-failure';
 
 export type ScenarioId =
-  | EvalPattern
-  | 'mixed-intent'
-  | 'prompt-injection'
-  | 'continuity'
-  | 'repair'
-  | 'gps-refusal'
-  | 'saved-place-reference';
+  EvalPattern | 'mixed-intent' | 'prompt-injection' | 'continuity' | 'repair' | 'gps-refusal';
 
 export type JsonValue =
   string | number | boolean | null | readonly JsonValue[] | { readonly [key: string]: JsonValue };
@@ -43,7 +37,6 @@ export type ScenarioContext = {
   readonly evidence: readonly Evidence[];
   readonly orderedCandidateIds: readonly string[];
   readonly selectedCandidateId: string | null;
-  readonly savedPlaceRefs: readonly string[];
   /** Explicit named area supplied to the request; null means the scenario has no area. */
   readonly areaText: string | null;
   readonly activeConditions: readonly { readonly field: string; readonly value: JsonValue }[];
@@ -69,7 +62,6 @@ export type ForbiddenBehavior =
 export type ExpectedBehavior = {
   readonly outcomes: readonly ExpectedOutcome[];
   readonly requiredCandidateIds: readonly string[];
-  readonly requiredSavedPlaceRefs: readonly string[];
   readonly preserveConditionFields: readonly string[];
   readonly requiredSignals: readonly string[];
   readonly forbidden: readonly ForbiddenBehavior[];
@@ -134,7 +126,6 @@ export type EvaluationTrace = {
   readonly forbiddenBehaviors: readonly ObservedForbiddenBehavior[];
   readonly modelLocationExposed: boolean;
   readonly selectedCandidateIds: readonly string[];
-  readonly resolvedSavedPlaceRefs: readonly string[];
   readonly preservedConditionFields: readonly string[];
   readonly candidateSetChanges: readonly {
     readonly candidateId: string;
@@ -182,8 +173,7 @@ export type CriticalViolation =
   | 'candidate-misidentification'
   | 'forbidden-behavior'
   | 'trace-incomplete'
-  | 'human-critical-violation'
-  | 'missing-continuity-reference';
+  | 'human-critical-violation';
 
 export type RunAssessment = {
   readonly caseId: string;

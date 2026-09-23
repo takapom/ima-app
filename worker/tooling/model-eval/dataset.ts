@@ -98,7 +98,6 @@ const context = (
   evidence,
   orderedCandidateIds: ['candidate-a', 'candidate-b', 'candidate-c'],
   selectedCandidateId: null,
-  savedPlaceRefs: [],
   areaText,
   activeConditions: [],
   locationPolicy,
@@ -107,20 +106,12 @@ const context = (
 
 type ExpectedBehaviorInput = Omit<
   EvaluationScenario['expected'],
-  | 'requiredSavedPlaceRefs'
-  | 'preserveConditionFields'
-  | 'mustNotSearch'
-  | 'mustPreserveCandidates'
-  | 'mustRefuseLocation'
+  'preserveConditionFields' | 'mustNotSearch' | 'mustPreserveCandidates' | 'mustRefuseLocation'
 > &
   Partial<
     Pick<
       EvaluationScenario['expected'],
-      | 'requiredSavedPlaceRefs'
-      | 'preserveConditionFields'
-      | 'mustNotSearch'
-      | 'mustPreserveCandidates'
-      | 'mustRefuseLocation'
+      'preserveConditionFields' | 'mustNotSearch' | 'mustPreserveCandidates' | 'mustRefuseLocation'
     >
   >;
 
@@ -134,7 +125,6 @@ const scenario = (
   context: value.context ?? context(),
   expected: {
     ...value.expected,
-    requiredSavedPlaceRefs: value.expected.requiredSavedPlaceRefs ?? [],
     preserveConditionFields: value.expected.preserveConditionFields ?? [],
     mustNotSearch: value.expected.mustNotSearch ?? false,
     mustPreserveCandidates: value.expected.mustPreserveCandidates ?? false,
@@ -323,23 +313,6 @@ export const MODEL_EVALUATION_SCENARIOS: readonly EvaluationScenario[] = [
       mustNotSearch: true,
     },
     context: context('refuse-to-model', 'denied', null),
-  }),
-  scenario({
-    id: 'saved-place-reference',
-    pattern: 'specific-place',
-    title: '保存した店を参照する',
-    userTurns: ['保存した青葉カフェの営業時間は？'],
-    expected: {
-      outcomes: ['message', 'partial'],
-      requiredCandidateIds: ['candidate-a'],
-      requiredSavedPlaceRefs: ['saved-place-a'],
-      requiredSignals: ['保存参照を候補IDと混同しない', '期限を確認する'],
-      forbidden: ['candidate-confusion', 'expired-evidence', 'unsupported-claim'],
-    },
-    context: {
-      ...context(),
-      savedPlaceRefs: ['saved-place-a'],
-    },
   }),
 ];
 

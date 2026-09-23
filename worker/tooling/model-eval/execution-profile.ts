@@ -4,11 +4,7 @@ export type EvaluationExecutionProfile =
   | {
       readonly status: 'fixture_ready';
       readonly kind:
-        | 'card_context'
-        | 'same_do_continuity'
-        | 'condition_context'
-        | 'failure_response'
-        | 'saved_reference';
+        'card_context' | 'same_do_continuity' | 'condition_context' | 'failure_response';
       readonly requiresApiKey: false;
     }
   | {
@@ -25,8 +21,7 @@ export type EvaluationExecutionProfile =
         | 'EXPIRED_EVIDENCE_NOT_SEEDED'
         | 'FAILURE_PROFILE_NOT_CONFIGURED'
         | 'PROMPT_INJECTION_PROFILE_NOT_CONFIGURED'
-        | 'LOCATION_POLICY_NOT_WIRED'
-        | 'SAVED_REFERENCE_RESOLVER_NOT_WIRED';
+        | 'LOCATION_POLICY_NOT_WIRED';
       readonly requiresApiKey: false;
     };
 
@@ -82,11 +77,6 @@ const profiles: Record<ScenarioId, EvaluationExecutionProfile> = {
   'gps-refusal': {
     status: 'unavailable',
     reason: 'LOCATION_POLICY_NOT_WIRED',
-    requiresApiKey: false,
-  },
-  'saved-place-reference': {
-    status: 'fixture_ready',
-    kind: 'saved_reference',
     requiresApiKey: false,
   },
 };

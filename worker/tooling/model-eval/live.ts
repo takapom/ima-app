@@ -23,12 +23,7 @@ import {
   messageSelectionsForEvaluation,
   observeStructuredEvidenceReferences,
 } from './message-evidence';
-import { savedRefsFor } from './saved-reference';
 import { LIVE_MODEL_VERSION, LIVE_PROMPT_VERSION } from './live-cli';
-import {
-  savedReferenceObservationsFromPrompt,
-  type LiveSavedReferenceBinding,
-} from './saved-reference-live';
 import type {
   LiveProbeArtifact,
   LiveProbeAttempt,
@@ -94,32 +89,14 @@ export class LiveTraceRecorder {
   private readonly names: string[] = [];
   private readonly candidateIdentityCapture = createCandidateIdentityCapture();
   private readonly evidenceReferenceCapture = createEvidenceReferenceCapture();
-  private savedReferenceBindings: readonly LiveSavedReferenceBinding[] = [];
-  private readonly resolvedSavedPlaceRefs = new Set<string>();
   private locationExposed = false;
   private upstream = 0;
-
-  configureSavedReferenceBindings(bindings: readonly LiveSavedReferenceBinding[]): void {
-    this.savedReferenceBindings = [...bindings];
-    this.resolvedSavedPlaceRefs.clear();
-  }
 
   begin(prompt: unknown): void {
     this.startedCalls += 1;
     this.startedAt = performance.now();
     this.locationExposed ||= containsRestrictedLocation(prompt);
     observeStructuredEvidenceReferences(prompt, this.evidenceReferenceCapture);
-    for (const observation of savedReferenceObservationsFromPrompt(
-      prompt,
-      this.savedReferenceBindings,
-    )) {
-      this.resolvedSavedPlaceRefs.add(observation.semanticRef);
-      this.candidateIdentityCapture.observe({
-        provider: observation.provider,
-        recordRef: observation.recordRef,
-        candidateId: observation.candidateId,
-      });
-    }
   }
 
   finish(usage: unknown): void {
@@ -186,7 +163,6 @@ export class LiveTraceRecorder {
       candidateIdentityMapAvailable: this.candidateIdentityCapture.isUsable(),
       evidenceReferences: this.evidenceReferenceCapture.snapshot(),
       evidenceReferenceMapAvailable: this.evidenceReferenceCapture.isUsable(),
-      resolvedSavedPlaceRefs: [...this.resolvedSavedPlaceRefs],
     };
   }
 }
@@ -422,7 +398,6 @@ export const buildEvaluationRunFromResponse = (
         forbiddenBehaviors,
         modelLocationExposed: trace.modelLocationExposed,
         selectedCandidateIds: selections.map((selection) => selection.candidateId),
-        resolvedSavedPlaceRefs: savedRefsFor(trace, evaluationCase.expected.requiredSavedPlaceRefs),
         preservedConditionFields: trace.preservedConditionFields,
         candidateSetChanges: [],
       },
