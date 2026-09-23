@@ -38,7 +38,7 @@ bun run dev:web
 表示されたWeb URLを開き、新規検索で「カフェ」と入力する。設定変更後はExpoを再起動する。
 「アプリ設定を確認してください」が出る場合は`.env.local`、通信エラーならWorkerの8787番での起動を確認する。
 
-fixtureはホットペッパー形式の合成店舗1件を返す。写真・徒歩経路・終電は提供しない。徒歩や最低滞在などの必須条件は根拠不足のまま成功へ補正しない。
+fixtureはホットペッパー形式の合成店舗1件を返す。写真は提供しない。
 
 Dev Clientは`bun run dev:mobile`で起動する。同一マシンのWeb/Simulatorはlocalhostを使えるが、実機はHTTPS endpointを必要とし、LAN IPへの平文HTTPは許可しない。fixture設定は配布buildへ使わない。
 実環境の設定は[運用](../operations.md)を参照する。

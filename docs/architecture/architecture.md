@@ -49,7 +49,7 @@ worker/
 └── wrangler*.jsonc
 ```
 
-WorkerのAdapterは`worker/src/adapters/`へ集約する。`in/http`はHTTP入口、`in/tools`はLLMのTool入口。`out/providers`はHot Pepper・OpenAI・終電の接続と変換、`out/persistence`はDO・SQL・メモリストアの具体実装、`out/security`は写真トークンの署名実装を持つ。テストも`worker/tests/adapters/`で同じ分類を使い、HTTP配下の`integration/`はworkerdで実行する。
+WorkerのAdapterは`worker/src/adapters/`へ集約する。`in/http`はHTTP入口、`in/tools`はLLMのTool入口。`out/providers`はHot Pepper・OpenAIの接続と変換、`out/persistence`はDO・SQL・メモリストアの具体実装、`out/security`は写真トークンの署名実装を持つ。テストも`worker/tests/adapters/`で同じ分類を使い、HTTP配下の`integration/`はworkerdで実行する。
 
 CoreのPortは`worker/src/application/ports/`に置く。OwnerStoreと保存参照の契約もCoreが所有し、保存・決定の手順は`src/application/saved-references/`が担う。HTTP Adapterは公開DTOとエラーの変換を担当する。実行基盤固有のPortは`src/runtime/ports/`や`src/security/`・`src/telemetry/`が所有し、Coreの業務Portと区別する。
 

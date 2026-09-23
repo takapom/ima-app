@@ -38,7 +38,7 @@ bun scripts/release-preflight.ts --track external
 `IMA_ENV`も対象に一致させる。環境preflightの終了コードは`0=ready`、`1=blocked`、`2=partial/unverified`。`ready`は値の形式・存在を示すだけで、実アカウント・API・署名の成功ではない。
 [environment-preflight](../scripts/environment-preflight.ts)の`runtimeVerified`と[release-preflight](../scripts/release-preflight.ts)の`releaseAllowed`は現行コードでfalse。変数を設定するだけでは実行・配布の検収を完了できない。
 
-外部配布はApp Attest、実機、EAS成果物、署名、Provider利用条件、検証済み終電データ、プライバシー公開、限定品質範囲を別々に検収する。知人への招待も明示的な許可を必要とする。進捗・証跡は[配布Issue](https://github.com/takapom/ima-app/issues/31)へ記録する。
+外部配布はApp Attest、実機、EAS成果物、署名、Provider利用条件、プライバシー公開、限定品質範囲を別々に検収する。知人への招待も明示的な許可を必要とする。進捗・証跡は[配布Issue](https://github.com/takapom/ima-app/issues/31)へ記録する。
 
 ## 実Provider検証
 
