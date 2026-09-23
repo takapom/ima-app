@@ -16,9 +16,6 @@ const baseEnv = {
 
 const context = {
   conditions: {
-    stationLabel: '新宿',
-    stationSupport: 'supported' as const,
-    maxWalkMinutes: 12,
     budget: 'normal' as const,
   },
   removedChipLabels: [],
@@ -44,11 +41,7 @@ describe('mobile journey runtime composition', () => {
     });
 
     expect(request.text).toBe('駅の近くで静かな店');
-    expect(request.prefs).toMatchObject({ budget: 'normal' });
-    // Walking and last-train constraints cannot be evidenced by the connected
-    // providers, so the request never carries one even if a condition holds it.
-    expect(request.prefs.maxWalkMinutes).toBeNull();
-    expect(request.prefs.homeStationRef).toBeNull();
+    expect(request.prefs).toEqual({ areaText: null, budget: 'normal' });
     expect(request.cardSetId).toBe('card-set-1');
     expect(request.promotedCandidateId).toBe('candidate-2');
     expect(request.selectedCandidateId).toBe('candidate-2');

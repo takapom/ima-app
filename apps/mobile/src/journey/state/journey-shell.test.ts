@@ -74,7 +74,7 @@ describe('journey shell state', () => {
     const thread = journeyShellReducer(initial, {
       type: 'conditionChanged',
       scope: 'thread',
-      changes: { stationLabel: '渋谷', maxWalkMinutes: 10 },
+      changes: { budget: 'normal' },
     });
     const saved = journeyShellReducer(thread, {
       type: 'conditionChanged',
@@ -82,16 +82,16 @@ describe('journey shell state', () => {
       changes: { budget: 'cheap' },
     });
 
-    expect(thread.conditions.stationLabel).toBe('渋谷');
+    expect(thread.conditions.budget).toBe('normal');
+    expect(thread.savedConditions.budget).toBe('any');
     expect(saved.savedConditions.budget).toBe('cheap');
-    expect(saved.conditions.budget).toBe('any');
+    expect(saved.conditions.budget).toBe('normal');
   });
 
   it('preserves saved settings through reset and can seed a new thread', () => {
     const savedSettings = {
       ...createJourneyShellState().savedConditions,
-      stationLabel: '渋谷',
-      maxWalkMinutes: 10,
+      budget: 'cheap' as const,
     };
     const initial = createJourneyShellState(savedSettings);
     const reset = journeyShellReducer(initial, { type: 'reset' });

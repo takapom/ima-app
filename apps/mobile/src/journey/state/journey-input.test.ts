@@ -42,20 +42,11 @@ describe('journey input helpers', () => {
 
   it('never chips a walking or last-train phrase the providers cannot apply', () => {
     expect(mergeChipLabels([], '静か。徒歩10分。終電まで')).toEqual(['静か']);
-    expect(
-      preferenceChipLabels({
-        ...createDefaultJourneyConditions(),
-        stationLabel: '渋谷',
-        maxWalkMinutes: 10,
-      }),
-    ).toEqual([]);
+    expect(preferenceChipLabels(createDefaultJourneyConditions())).toEqual([]);
   });
 
   it('does not invent a location while creating editable conditions', () => {
     expect(createDefaultJourneyConditions()).toEqual({
-      stationLabel: '',
-      stationSupport: 'unknown',
-      maxWalkMinutes: null,
       budget: 'any',
     });
   });
@@ -63,8 +54,6 @@ describe('journey input helpers', () => {
   it('turns a removed preference chip into an effective condition change', () => {
     const conditions = {
       ...createDefaultJourneyConditions(),
-      stationLabel: '渋谷',
-      maxWalkMinutes: 10,
       budget: 'normal' as const,
     };
 

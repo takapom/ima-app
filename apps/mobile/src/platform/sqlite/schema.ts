@@ -1,6 +1,14 @@
 import type { SqliteConnection } from '@mobile/platform/sqlite/types';
 
-export const SQLITE_SCHEMA_VERSION = 2;
+export const SQLITE_SCHEMA_VERSION = 3;
+
+/** Walking, last-train and station columns written before #55; dropped by the v3 migration. */
+const LEGACY_PREFS_COLUMNS = [
+  'home_station_ref',
+  'max_walk_minutes',
+  'minimum_stay_minutes',
+  'station_label',
+] as const;
 
 const schemaSql = `
   CREATE TABLE IF NOT EXISTS thread (
@@ -30,14 +38,8 @@ const schemaSql = `
   );
   CREATE TABLE IF NOT EXISTS prefs (
     id INTEGER PRIMARY KEY CHECK (id = 1),
-    home_station_ref TEXT,
-    max_walk_minutes INTEGER CHECK (max_walk_minutes IS NULL OR (max_walk_minutes BETWEEN 1 AND 180)),
-    minimum_stay_minutes INTEGER CHECK (
-      minimum_stay_minutes IS NULL OR (minimum_stay_minutes BETWEEN 1 AND 180)
-    ),
     area_text TEXT,
     budget TEXT CHECK (budget IS NULL OR budget IN ('cheap', 'normal', 'any')),
-    station_label TEXT,
     updated_at TEXT NOT NULL
   );
   CREATE TABLE IF NOT EXISTS saved_place (
@@ -63,6 +65,19 @@ const schemaSql = `
   );
 `;
 
+/** Discards the stored values with their columns; budget and area text are kept. */
+const dropLegacyPrefsColumns = (database: SqliteConnection): void => {
+  const columns = new Set(
+    database
+      .prepare('SELECT name FROM pragma_table_info(?)')
+      .all('prefs')
+      .map((column) => column.name),
+  );
+  for (const column of LEGACY_PREFS_COLUMNS) {
+    if (columns.has(column)) database.exec(`ALTER TABLE prefs DROP COLUMN ${column}`);
+  }
+};
+
 /** Migrations are deliberately SDK-neutral; Expo opens the same schema later. */
 export const migrateSqlite = (database: SqliteConnection): void => {
   database.exec('PRAGMA foreign_keys = ON');
@@ -73,8 +88,8 @@ export const migrateSqlite = (database: SqliteConnection): void => {
     if (version > SQLITE_SCHEMA_VERSION) throw new Error('SQLITE_UNSUPPORTED_SCHEMA_VERSION');
     if (version === 0) {
       database.exec(schemaSql);
-    } else if (version === 1) {
-      database.exec('ALTER TABLE prefs ADD COLUMN station_label TEXT');
+    } else if (version === 1 || version === 2) {
+      dropLegacyPrefsColumns(database);
     } else if (version !== SQLITE_SCHEMA_VERSION) {
       throw new Error('SQLITE_UNSUPPORTED_SCHEMA_VERSION');
     }

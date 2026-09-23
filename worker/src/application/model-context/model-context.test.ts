@@ -35,9 +35,6 @@ const harness = {
     revision: 2,
   },
   preferences: {
-    homeStationRef: 'station-shibuya',
-    maxWalkMinutes: 15,
-    minimumStayMinutes: 30,
     areaText: '恵比寿',
     budget: 'normal' as const,
   },

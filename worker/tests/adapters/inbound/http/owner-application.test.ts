@@ -13,9 +13,6 @@ const OWNER = 'owner-a';
 const REQUEST_ID = 'request-1';
 
 const PREFS: Preferences = {
-  homeStationRef: 'station-home',
-  maxWalkMinutes: 12,
-  minimumStayMinutes: 45,
   areaText: 'Shibuya',
   budget: 'normal',
 };

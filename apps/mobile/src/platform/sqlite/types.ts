@@ -114,11 +114,9 @@ export type ThreadTurnRecord = {
   readonly timestamp: string;
 };
 
-/** Local-only input; stationLabel is never sent as a canonical station reference. */
-export type SqlitePreferencesInput = Preferences & { readonly stationLabel?: string };
+export type SqlitePreferencesInput = Preferences;
 
 export type SqlitePreferences = Preferences & {
-  readonly stationLabel: string | null;
   readonly updatedAt: string;
 };
 

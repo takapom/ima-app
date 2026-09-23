@@ -37,9 +37,6 @@ const modelContext = {
     precise: false,
   },
   preferences: {
-    homeStationRef: null,
-    maxWalkMinutes: 15,
-    minimumStayMinutes: null,
     areaText: '恵比寿',
     budget: 'normal',
   },

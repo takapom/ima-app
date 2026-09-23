@@ -27,9 +27,6 @@ const request = (turnId: string, text: string, revision = 1): ThreadTurnRequest 
     capturedAt: null,
   },
   prefs: {
-    homeStationRef: null,
-    maxWalkMinutes: null,
-    minimumStayMinutes: null,
     areaText: null,
     budget: 'normal',
   },

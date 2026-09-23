@@ -67,9 +67,6 @@ const context: HarnessContext = {
     revision: 1,
   },
   preferences: {
-    homeStationRef: null,
-    maxWalkMinutes: null,
-    minimumStayMinutes: null,
     areaText: null,
     budget: 'normal',
   },

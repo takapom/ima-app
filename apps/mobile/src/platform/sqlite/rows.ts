@@ -4,16 +4,6 @@ import type {
   SnapshotRecord,
   SqlitePreferences,
 } from '@mobile/platform/sqlite/types';
-import { MAX_STATION_LABEL_LENGTH } from '@mobile/preferences/state/conditions';
-
-export const isStationLabel = (value: unknown): value is string =>
-  typeof value === 'string' && value.length <= MAX_STATION_LABEL_LENGTH;
-
-export const stationLabelFrom = (row: Record<string, unknown>): string | null => {
-  const value = row.station_label;
-  if (value === null || value === undefined) return null;
-  return isStationLabel(value) && value.length > 0 ? value : null;
-};
 
 export const text = (row: Record<string, unknown>, key: string): string | null => {
   const value = row[key];
@@ -150,45 +140,21 @@ export const readPreferences = (
   row: Record<string, unknown>,
   updatedAt: string,
 ): SqlitePreferences | null => {
-  const maxWalkMinutes = number(row, 'max_walk_minutes');
-  const minimumStayMinutes = number(row, 'minimum_stay_minutes');
   const areaText = row.area_text;
   const budget = row.budget;
-  const rawHomeStationRef = row.home_station_ref;
-  const rawStationLabel = row.station_label;
-  const homeStationRef = text(row, 'home_station_ref');
-  const stationLabel = stationLabelFrom(row);
-  const homeStationRefValid =
-    rawHomeStationRef === null ||
-    rawHomeStationRef === undefined ||
-    (typeof rawHomeStationRef === 'string' && opaqueId(rawHomeStationRef) !== null);
-  const stationLabelValid =
-    rawStationLabel === null || rawStationLabel === undefined || isStationLabel(rawStationLabel);
   if (
-    (maxWalkMinutes !== null &&
-      (!Number.isInteger(maxWalkMinutes) || maxWalkMinutes < 1 || maxWalkMinutes > 180)) ||
-    (minimumStayMinutes !== null &&
-      (!Number.isInteger(minimumStayMinutes) ||
-        minimumStayMinutes < 1 ||
-        minimumStayMinutes > 180)) ||
     (areaText !== null && areaText !== undefined && typeof areaText !== 'string') ||
     (budget !== null &&
       budget !== undefined &&
       budget !== 'cheap' &&
       budget !== 'normal' &&
-      budget !== 'any') ||
-    !homeStationRefValid ||
-    !stationLabelValid
+      budget !== 'any')
   ) {
     return null;
   }
   return {
-    homeStationRef,
-    maxWalkMinutes,
-    minimumStayMinutes,
     areaText: typeof areaText === 'string' ? areaText : null,
     budget: budget === 'cheap' || budget === 'normal' || budget === 'any' ? budget : null,
-    stationLabel,
     updatedAt,
   };
 };

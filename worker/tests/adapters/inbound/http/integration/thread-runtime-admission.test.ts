@@ -44,9 +44,6 @@ function runtimeInput(target: ThreadRuntimeTarget, text = '静かな店'): Threa
         capturedAt: null,
       },
       prefs: {
-        homeStationRef: null,
-        maxWalkMinutes: 15,
-        minimumStayMinutes: null,
         areaText: '恵比寿',
         budget: 'normal',
       },

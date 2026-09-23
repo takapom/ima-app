@@ -125,9 +125,6 @@ const nativeContext = (
     revision: 1,
   },
   preferences: {
-    homeStationRef: null,
-    maxWalkMinutes: null,
-    minimumStayMinutes: null,
     areaText: 'runtime native fixture',
     budget: 'normal',
   },

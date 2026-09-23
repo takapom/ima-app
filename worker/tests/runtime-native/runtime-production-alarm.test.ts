@@ -68,9 +68,6 @@ const requestFor = (
       capturedAt: null,
     },
     prefs: {
-      homeStationRef: null,
-      maxWalkMinutes: null,
-      minimumStayMinutes: null,
       areaText: '現在地周辺',
       budget: 'normal',
     },

@@ -66,9 +66,6 @@ export const turnBody = (
     capturedAt: null,
   },
   prefs: {
-    homeStationRef: null,
-    maxWalkMinutes: null,
-    minimumStayMinutes: null,
     areaText: '渋谷',
     budget: 'normal',
   },

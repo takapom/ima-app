@@ -49,9 +49,6 @@ const requestFor = (target: ThreadRuntimeTarget): ThreadRuntimeTurnInput => {
       capturedAt: null,
     },
     prefs: {
-      homeStationRef: null,
-      maxWalkMinutes: null,
-      minimumStayMinutes: null,
       areaText: '渋谷',
       budget: 'normal' as const,
     },

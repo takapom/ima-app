@@ -262,9 +262,6 @@ describe('model-eval candidate identity mapping', () => {
           capturedAt: null,
         },
         prefs: {
-          homeStationRef: null,
-          maxWalkMinutes: null,
-          minimumStayMinutes: 20,
           areaText: '渋谷',
           budget: 'normal',
         },

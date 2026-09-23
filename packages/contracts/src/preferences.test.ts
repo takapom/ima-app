@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
-import { SearchRequestSchema } from '@contracts/preferences';
+import { PreferencesSchema, SearchRequestSchema } from '@contracts/preferences';
 
 const baseRequest = {
   schemaVersion: 'v1',
@@ -19,9 +19,6 @@ const baseRequest = {
     capturedAt: null,
   },
   prefs: {
-    homeStationRef: null,
-    maxWalkMinutes: null,
-    minimumStayMinutes: null,
     areaText: null,
     budget: 'normal',
   },
@@ -50,5 +47,30 @@ describe('display context request fields', () => {
         candidateOrder: ['candidate-1', 'candidate-1'],
       }).success,
     ).toBe(false);
+  });
+});
+
+describe('legacy travel preference keys', () => {
+  const legacy = {
+    homeStationRef: 'station-shibuya',
+    maxWalkMinutes: 15,
+    minimumStayMinutes: null,
+    areaText: '恵比寿',
+    budget: 'normal',
+  };
+
+  it('accepts keys sent by builds before #55 and drops them from the output', () => {
+    const parsed = v.safeParse(PreferencesSchema, legacy);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.output).toEqual({ areaText: '恵比寿', budget: 'normal' });
+    const request = v.safeParse(SearchRequestSchema, { ...baseRequest, prefs: legacy });
+    expect(request.success).toBe(true);
+    if (request.success)
+      expect(request.output.prefs).toEqual({ areaText: '恵比寿', budget: 'normal' });
+  });
+
+  it('still rejects invalid legacy values and unrelated keys', () => {
+    expect(v.safeParse(PreferencesSchema, { ...legacy, maxWalkMinutes: 0 }).success).toBe(false);
+    expect(v.safeParse(PreferencesSchema, { ...legacy, stationLabel: '渋谷' }).success).toBe(false);
   });
 });

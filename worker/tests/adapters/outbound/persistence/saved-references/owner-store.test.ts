@@ -8,9 +8,6 @@ const OWNER_B = 'owner-b';
 const INVALID_OWNER = 'owner space';
 
 const PREFS: Preferences = {
-  homeStationRef: 'station-home',
-  maxWalkMinutes: 12,
-  minimumStayMinutes: 45,
   areaText: 'Shibuya',
   budget: 'normal',
 };

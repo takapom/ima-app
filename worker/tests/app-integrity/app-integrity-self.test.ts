@@ -64,9 +64,6 @@ const searchBody = (requestId: string, threadId: string): Json => ({
     capturedAt: null,
   },
   prefs: {
-    homeStationRef: null,
-    maxWalkMinutes: 15,
-    minimumStayMinutes: null,
     areaText: '恵比寿',
     budget: 'normal',
   },

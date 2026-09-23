@@ -73,12 +73,6 @@ const saveFailure = (): JourneyPreferencesSaveResult => ({
   reason: 'storage_unavailable',
 });
 
-/**
- * Dormant while no editor writes a station label. It stays because the branch must
- * return with the station resolver rather than be rediscovered, and it is still
- * reachable through this module's own contract.
- */
-const stationNotice = '駅名は端末に保存されません。';
 const sessionOnlyNotice = '条件は端末に保存されません。';
 const saveFailureNotice = '条件を保存できませんでした。もう一度試してください。';
 
@@ -89,7 +83,6 @@ export const journeyPreferenceChangeFor = (
   save: ((conditions: JourneyConditions) => JourneyPreferencesSaveResult) | undefined,
 ): JourneyPreferencesChangeResult => {
   if (scope !== 'saved') return { applied: true, saveResult: null, notice: null };
-  const stationChanged = Object.prototype.hasOwnProperty.call(changes, 'stationLabel');
   const persists = hasPersistedJourneyPreferenceChange(changes);
   if (persists && save !== undefined) {
     const result = save({ ...currentSavedConditions, ...changes });
@@ -100,7 +93,7 @@ export const journeyPreferenceChangeFor = (
   return {
     applied: true,
     saveResult: null,
-    notice: stationChanged ? stationNotice : persists ? sessionOnlyNotice : null,
+    notice: persists ? sessionOnlyNotice : null,
   };
 };
 
@@ -129,21 +122,11 @@ type HookState = {
 export const useJourneyPreferences = (
   options: UseJourneyPreferencesOptions = {},
 ): UseJourneyPreferencesResult => {
-  const initialStationLabel = options.initialSavedConditions?.stationLabel;
-  const initialStationSupport = options.initialSavedConditions?.stationSupport;
-  const initialMaxWalkMinutes = options.initialSavedConditions?.maxWalkMinutes;
   const initialBudget = options.initialSavedConditions?.budget;
   const fallback = useMemo<JourneyConditions>(
     () =>
-      initialStationLabel === undefined
-        ? createDefaultJourneyConditions()
-        : {
-            stationLabel: initialStationLabel,
-            stationSupport: initialStationSupport ?? 'unknown',
-            maxWalkMinutes: initialMaxWalkMinutes ?? null,
-            budget: initialBudget ?? 'any',
-          },
-    [initialBudget, initialMaxWalkMinutes, initialStationLabel, initialStationSupport],
+      initialBudget === undefined ? createDefaultJourneyConditions() : { budget: initialBudget },
+    [initialBudget],
   );
   const [hydrateGeneration, setHydrateGeneration] = useState(0);
   const readResult = useMemo(() => {

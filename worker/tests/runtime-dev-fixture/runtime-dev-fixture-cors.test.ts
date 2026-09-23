@@ -149,9 +149,6 @@ describe('keyless dev fixture CORS boundary', () => {
             capturedAt: null,
           },
           prefs: {
-            homeStationRef: null,
-            maxWalkMinutes: null,
-            minimumStayMinutes: null,
             areaText: null,
             budget: null,
           },

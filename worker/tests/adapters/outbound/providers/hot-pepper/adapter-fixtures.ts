@@ -73,9 +73,6 @@ export const context: HarnessContext = {
     revision: 4,
   },
   preferences: {
-    homeStationRef: 'station-details',
-    maxWalkMinutes: 15,
-    minimumStayMinutes: 20,
     areaText: null,
     budget: 'normal',
   },

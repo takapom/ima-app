@@ -58,9 +58,6 @@ export const requestInput: ThreadTurnRequest = {
     capturedAt: null,
   },
   prefs: {
-    homeStationRef: null,
-    maxWalkMinutes: null,
-    minimumStayMinutes: null,
     areaText: null,
     budget: 'normal',
   },

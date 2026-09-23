@@ -64,9 +64,6 @@ export const searchRequest = {
     capturedAt: null,
   },
   prefs: {
-    homeStationRef: 'station-shibuya',
-    maxWalkMinutes: 15,
-    minimumStayMinutes: null,
     areaText: '恵比寿',
     budget: 'normal',
   },

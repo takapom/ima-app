@@ -200,9 +200,6 @@ export const searchRequestFor = (binding: JourneyApiControllerBinding, revision 
     query: '静かな店',
     context: {
       conditions: {
-        stationLabel: '',
-        stationSupport: 'unknown',
-        maxWalkMinutes: null,
         budget: 'any',
       },
       removedChipLabels: [],
