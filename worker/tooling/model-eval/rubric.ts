@@ -130,8 +130,6 @@ const isEvaluationRunShape = (value: unknown): value is EvaluationRun => {
     typeof value.trace.modelLocationExposed !== 'boolean' ||
     !Array.isArray(value.trace.selectedCandidateIds) ||
     !value.trace.selectedCandidateIds.every((id) => typeof id === 'string') ||
-    !Array.isArray(value.trace.resolvedSavedPlaceRefs) ||
-    !value.trace.resolvedSavedPlaceRefs.every((ref) => typeof ref === 'string') ||
     !Array.isArray(value.trace.preservedConditionFields) ||
     !value.trace.preservedConditionFields.every((field) => typeof field === 'string') ||
     !Array.isArray(value.trace.candidateSetChanges) ||
@@ -364,20 +362,6 @@ export const evaluateRun = (evaluationCase: EvaluationCase, value: unknown): Run
     )
   ) {
     addViolation(violations, 'candidate-misidentification');
-  }
-  if (
-    evaluationCase.expected.requiredSavedPlaceRefs.some(
-      (ref) => !run.trace.resolvedSavedPlaceRefs.includes(ref),
-    )
-  ) {
-    addViolation(violations, 'missing-continuity-reference');
-  }
-  if (
-    evaluationCase.expected.requiredSavedPlaceRefs.some(
-      (ref) => !evaluationCase.context.savedPlaceRefs.includes(ref),
-    )
-  ) {
-    addViolation(violations, 'schema-invalid');
   }
   const activeConditionFields = new Set(
     evaluationCase.context.activeConditions.map((condition) => condition.field),

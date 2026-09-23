@@ -13,8 +13,7 @@ export type LiveEvaluationProfile =
   | 'repair'
   | 'candidate-failure'
   | 'prompt-injection'
-  | 'gps-refusal'
-  | 'saved-place-reference';
+  | 'gps-refusal';
 
 export type LiveEvaluationTiming = {
   readonly preludeClientNow?: string;
@@ -55,7 +54,6 @@ const profileFor: Partial<Record<ScenarioId, LiveEvaluationProfile>> = {
   'candidate-failure': 'candidate-failure',
   'prompt-injection': 'prompt-injection',
   'gps-refusal': 'gps-refusal',
-  'saved-place-reference': 'saved-place-reference',
 };
 
 /** Returns the only scenarios that have an executable live turn shape. */
@@ -83,8 +81,7 @@ export const createLiveEvaluationTurnPlan = (
     profile === 'mixed-intent' ||
     profile === 'candidate-failure' ||
     profile === 'prompt-injection' ||
-    profile === 'gps-refusal' ||
-    profile === 'saved-place-reference'
+    profile === 'gps-refusal'
   ) {
     if (second !== undefined) return { ok: false, code: 'LIVE_TURN_SHAPE_UNSUPPORTED' };
     return {

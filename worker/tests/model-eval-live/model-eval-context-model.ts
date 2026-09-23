@@ -43,12 +43,6 @@ import {
 } from './model-eval-prompt-injection';
 import { safeModelPartsFor } from './model-eval-safe-model';
 import { specificPlacePartsFor } from './model-eval-specific-place';
-import {
-  savedReferencePartsFor,
-  type ModelEvalFixtureSavedReference,
-} from './model-eval-saved-reference';
-
-export type { ModelEvalFixtureSavedReference } from './model-eval-saved-reference';
 
 export type ModelEvalFixturePhase = 'cards' | 'message';
 export type ModelEvalFixtureLocationProbe = 'clarify' | 'current-location';
@@ -66,13 +60,11 @@ export type ModelEvalFixtureProfile =
   | 'prompt-injection'
   | 'gps-refusal'
   | 'repair'
-  | 'saved-place-reference'
   | ModelEvalConditionFixtureProfile;
 export type ModelEvalFixtureOptions = {
   readonly placeDisplayNameMode?: ModelEvalPlaceDisplayNameMode;
   readonly placePayloadMode?: ModelEvalPlacePayloadMode;
   readonly displayNamePolicy?: ModelEvalFixtureDisplayNamePolicy;
-  readonly savedReference?: ModelEvalFixtureSavedReference;
   readonly threadCreatedAt?: string;
 };
 
@@ -89,13 +81,6 @@ export const fixtureModel = (
   locationProbe: () => ModelEvalFixtureLocationProbe,
   privateUpstreamBodyExposed: () => void,
   promptInjectionAudit: (audit: ModelEvalPromptInjectionAudit) => void,
-  savedReference: () => ModelEvalFixtureSavedReference | undefined,
-  savedReferenceRequested: (semanticRef: string) => void,
-  savedReferenceResolved: (
-    semanticRef: string,
-    candidateId: string,
-    evidenceIds: readonly string[],
-  ) => void,
 ): RuntimeGateModel => {
   let call = 0;
   let previousPhase: ModelEvalFixturePhase | undefined;
@@ -136,20 +121,6 @@ export const fixtureModel = (
       });
       if (safeParts !== undefined) {
         return Promise.resolve({ stream: streamOf(safeParts) });
-      }
-      if (currentPhase === 'message' && profile() === 'saved-place-reference') {
-        return Promise.resolve({
-          stream: streamOf(
-            savedReferencePartsFor({
-              prompt,
-              currentCall,
-              savedReference: savedReference(),
-              step,
-              requested: savedReferenceRequested,
-              resolved: savedReferenceResolved,
-            }),
-          ),
-        });
       }
       const finalResponse =
         Object.keys(options.tools ?? {}).length === 0 || options.toolChoice?.type === 'none';
