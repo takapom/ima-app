@@ -2,30 +2,23 @@ import * as v from 'valibot';
 import {
   CandidateIdSchema,
   DetailFieldSchema,
-  FiniteNumberSchema,
   NonNegativeFiniteNumberSchema,
   NonNegativeSafeIntegerSchema,
   OpaqueIdSchema,
-  RevisionSchema,
   SavedPlaceRefSchema,
   SafeIntegerSchema,
   Text,
 } from '@worker/domain/primitives';
 import { FieldResultSchema } from '@worker/domain/result';
 import type { Result } from '@worker/domain/result';
-import type { SourceRef } from '@worker/domain/evidence/evidence';
 import {
-  LastTrainInfoSchema,
   OpeningHoursSchema,
   PlaceIdentitySchema,
   PriceInfoSchema,
   PhotoInfoSchema,
   ContactInfoSchema,
   FacilitiesInfoSchema,
-  WalkingRouteSchema,
 } from '@worker/domain/places/place-values';
-import type { IsoTimestamp } from '@worker/domain/primitives';
-import type { LastTrainInfo, WalkingRoute } from '@worker/domain/places/place-values';
 import type {
   CancellationToken,
   HarnessContext,
@@ -129,12 +122,6 @@ export const ModelDetailsRequestSchema = v.union([
 ]);
 export type ModelDetailsRequest = v.InferOutput<typeof ModelDetailsRequestSchema>;
 
-export const TravelContextSchema = v.strictObject({
-  departure: v.literal('now'),
-  homeStationRef: v.optional(OpaqueIdSchema),
-  minimumStayMinutes: v.optional(v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(180))),
-});
-
 export const GetPlaceDetailsInputSchema = v.strictObject({
   requests: v.pipe(
     v.array(DetailsRequestSchema),
@@ -147,7 +134,6 @@ export const GetPlaceDetailsInputSchema = v.strictObject({
     ),
   ),
   freshness: v.picklist(['reuse_valid', 'refresh']),
-  travelContext: v.optional(TravelContextSchema),
 });
 export type GetPlaceDetailsInput = v.InferOutput<typeof GetPlaceDetailsInputSchema>;
 
@@ -180,8 +166,6 @@ const DetailValuesSchema = v.strictObject({
   photos: v.optional(FieldResultSchema(PhotoInfoSchema)),
   contact: v.optional(FieldResultSchema(ContactInfoSchema)),
   facilities: v.optional(FieldResultSchema(FacilitiesInfoSchema)),
-  walking_route: v.optional(FieldResultSchema(WalkingRouteSchema)),
-  last_train: v.optional(FieldResultSchema(LastTrainInfoSchema)),
 });
 
 export const GetPlaceDetailsOutputSchema = v.pipe(
@@ -231,29 +215,6 @@ export const matchesDetailsRequest = (input: unknown, output: unknown): boolean 
   });
 };
 
-const CoordinatesSchema = v.strictObject({
-  lat: v.pipe(FiniteNumberSchema, v.minValue(-90), v.maxValue(90)),
-  lng: v.pipe(FiniteNumberSchema, v.minValue(-180), v.maxValue(180)),
-});
-
-/** Internal port input; Harness injects coordinates after model validation. */
-export const WalkingRouteInputSchema = v.strictObject({
-  originRef: OpaqueIdSchema,
-  originCoordinates: CoordinatesSchema,
-  originRevision: RevisionSchema,
-  destinationCandidateId: CandidateIdSchema,
-});
-export type WalkingRouteInput = v.InferOutput<typeof WalkingRouteInputSchema>;
-
-export const LastTrainJourneyInputSchema = v.strictObject({
-  candidateId: CandidateIdSchema,
-  fromStationRef: OpaqueIdSchema,
-  homeStationRef: OpaqueIdSchema,
-  departure: v.literal('now'),
-  minimumStayMinutes: v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(180)),
-});
-export type LastTrainJourneyInput = v.InferOutput<typeof LastTrainJourneyInputSchema>;
-
 export interface PlaceSearchPort {
   search(
     input: SearchPlacesInput,
@@ -270,43 +231,4 @@ export interface PlaceDetailsPort {
     execution: ToolExecutionContext,
     cancellation: CancellationToken,
   ): Promise<Result<GetPlaceDetailsOutput>>;
-}
-
-export interface WalkingRoutePort {
-  compute(
-    input: WalkingRouteInput,
-    context: HarnessContext,
-    execution: ToolExecutionContext,
-    cancellation: CancellationToken,
-  ): Promise<Result<WalkingRoute>>;
-}
-
-export type LastTrainJourneyError = Extract<Result<LastTrainInfo>, { status: 'error' }>;
-
-export type LastTrainJourneySuccess = Extract<
-  Result<LastTrainInfo>,
-  { status: 'ok' | 'partial' }
-> & {
-  /** The validated timetable source selected for this journey. */
-  source: SourceRef;
-  /** The source verification time used to establish the journey. */
-  verifiedAt: IsoTimestamp;
-};
-
-export type LastTrainJourneyResult =
-  | LastTrainJourneySuccess
-  | LastTrainJourneyError
-  | {
-      status: 'not_applicable';
-      reason: 'same_station';
-      walkingVerificationRequired: true;
-    };
-
-export interface LastTrainJourneyPort {
-  read(
-    input: LastTrainJourneyInput,
-    context: HarnessContext,
-    execution: ToolExecutionContext,
-    cancellation: CancellationToken,
-  ): Promise<LastTrainJourneyResult>;
 }

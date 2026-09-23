@@ -76,8 +76,6 @@ export const CapabilitySnapshotSchema = v.strictObject({
     v.maxLength(8),
     v.check((fields) => new Set(fields).size === fields.length, 'duplicate capability field'),
   ),
-  walkingRoute: v.boolean(),
-  lastTrain: v.boolean(),
   supportedScopes: v.pipe(v.array(Text(120)), v.maxLength(32)),
 });
 export type CapabilitySnapshot = v.InferOutput<typeof CapabilitySnapshotSchema>;
@@ -99,13 +97,7 @@ export type HarnessContext = v.InferOutput<typeof HarnessContextSchema>;
 /** Harness-issued identity for one operation invocation; model output cannot provide it. */
 export const ToolExecutionContextSchema = v.strictObject({
   callId: CallIdSchema,
-  operation: v.picklist([
-    'search_places',
-    'get_place_details',
-    'submit_cards',
-    'walking_route',
-    'last_train',
-  ]),
+  operation: v.picklist(['search_places', 'get_place_details', 'submit_cards']),
   threadId: OpaqueIdSchema,
   turnId: TurnIdSchema,
   revision: RevisionSchema,

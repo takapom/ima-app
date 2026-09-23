@@ -84,8 +84,6 @@ const context: HarnessContext = {
   capabilities: {
     version: 'saved-reference-test',
     detailFields: ['identity'],
-    walkingRoute: false,
-    lastTrain: false,
     supportedScopes: ['saved-reference-test'],
   },
 };

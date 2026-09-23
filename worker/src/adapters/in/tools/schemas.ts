@@ -25,8 +25,6 @@ const detailFields: string[] = [
   'photos',
   'contact',
   'facilities',
-  'walking_route',
-  'last_train',
 ];
 
 const evidenceText = (maxLength: number): WireSchema => ({

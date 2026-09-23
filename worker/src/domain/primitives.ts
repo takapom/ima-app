@@ -99,8 +99,6 @@ export const DetailFieldSchema = v.picklist([
   'photos',
   'contact',
   'facilities',
-  'walking_route',
-  'last_train',
 ]);
 export type DetailField = v.InferOutput<typeof DetailFieldSchema>;
 

@@ -55,8 +55,6 @@ const context: HarnessContext = {
   capabilities: {
     version: 'attempt-signal-test-v1',
     detailFields: ['identity'],
-    walkingRoute: false,
-    lastTrain: false,
     supportedScopes: ['attempt-signal-test'],
   },
 };

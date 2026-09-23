@@ -61,8 +61,6 @@ const FIXTURE_MODEL_CONTEXT_FIELD_POLICY: ModelContextFieldPolicy = {
     photos: 'allow',
     contact: 'allow',
     facilities: 'allow',
-    walking_route: 'allow',
-    last_train: 'allow',
   },
   history: 'deny',
   cardSet: 'deny',

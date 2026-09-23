@@ -111,8 +111,7 @@ const fieldValue = (
       };
     }
     case 'identity': {
-      // Station and access are listed route text, never a measured walking route. They are carried
-      // for display only; a walking constraint still needs walking_route evidence.
+      // Station and access are listed route text, never a measured walking route.
       const stationName = boundedIdentityText(shop.station_name, 160);
       const accessText = boundedIdentityText(shop.access, 500);
       return {

@@ -13,8 +13,6 @@ describe('Hot Pepper capabilities', () => {
       expect(capabilities.detailFields).toEqual(
         placesEnabled ? ['identity', 'opening_hours', 'price', 'facilities', 'photos'] : [],
       );
-      expect(capabilities.walkingRoute).toBe(false);
-      expect(capabilities.lastTrain).toBe(false);
     },
   );
 });

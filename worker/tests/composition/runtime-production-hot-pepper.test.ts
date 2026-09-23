@@ -166,7 +166,7 @@ describe('Hot Pepper primary provider composition', () => {
       stationName: '恵比寿',
       accessText: 'ＪＲ 恵比寿駅 西口 徒歩3分',
     });
-    expect(await f.details(id, ['photos', 'walking_route'])).toMatchObject({
+    expect(await f.details(id, ['photos', 'contact'])).toMatchObject({
       status: 'error',
       error: { code: 'UNSUPPORTED_FIELD' },
     });

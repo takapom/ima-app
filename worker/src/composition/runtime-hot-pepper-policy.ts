@@ -19,8 +19,6 @@ export const hotPepperModelContextPolicy: ModelContextFieldPolicy = {
     facilities: 'allow',
     photos: 'allow',
     contact: 'deny',
-    walking_route: 'deny',
-    last_train: 'deny',
   },
   history: 'allow',
   cardSet: 'allow',

@@ -36,8 +36,6 @@ const harness = {
   capabilities: {
     version: 'saved-v1',
     detailFields: ['identity'] as const,
-    walkingRoute: false,
-    lastTrain: false,
     supportedScopes: ['saved-fixture'] as const,
   },
 };

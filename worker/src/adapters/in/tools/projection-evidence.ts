@@ -15,12 +15,10 @@ import { type ReadonlyStoredObservation } from '@worker/domain/candidates/regist
 import {
   ContactInfoSchema,
   FacilitiesInfoSchema,
-  LastTrainInfoSchema,
   OpeningHoursSchema,
   PhotoInfoSchema,
   PlaceIdentitySchema,
   PriceInfoSchema,
-  WalkingRouteSchema,
 } from '@worker/domain/places/place-values';
 import type { ModelSafeObservation } from '@worker/runtime/ports/tool-binding';
 
@@ -91,10 +89,6 @@ const schemaForField = (field: DetailField): v.GenericSchema => {
       return ContactInfoSchema;
     case 'facilities':
       return FacilitiesInfoSchema;
-    case 'walking_route':
-      return WalkingRouteSchema;
-    case 'last_train':
-      return LastTrainInfoSchema;
   }
 };
 

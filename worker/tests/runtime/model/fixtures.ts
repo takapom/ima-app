@@ -37,8 +37,6 @@ export const createModelContext = (): ProjectedModelContext =>
       capabilities: {
         version: 'places-v1',
         detailFields: ['identity', 'opening_hours'],
-        walkingRoute: true,
-        lastTrain: true,
         supportedScopes: ['fixture'],
       },
     },

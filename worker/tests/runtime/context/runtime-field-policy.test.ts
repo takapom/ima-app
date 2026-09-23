@@ -34,8 +34,6 @@ const allFields = (policy: RuntimeFieldUsePolicy): Record<DetailField, RuntimeFi
   photos: policy,
   contact: policy,
   facilities: policy,
-  walking_route: policy,
-  last_train: policy,
 });
 
 describe('runtime field policy', () => {

@@ -55,8 +55,6 @@ export const context: HarnessContext = {
   capabilities: {
     version: 'runtime-turn-factory-v1',
     detailFields: ['identity'],
-    walkingRoute: false,
-    lastTrain: false,
     supportedScopes: ['runtime-fixture'],
   },
 };

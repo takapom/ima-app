@@ -48,8 +48,6 @@ const context: HarnessContext = {
   capabilities: {
     version: 'saved-details-v1',
     detailFields: ['identity'],
-    walkingRoute: false,
-    lastTrain: false,
     supportedScopes: ['saved-details-fixture'],
   },
 };

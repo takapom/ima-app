@@ -75,8 +75,6 @@ const modelPolicy: ModelContextFieldPolicy = {
     photos: 'deny',
     contact: 'deny',
     facilities: 'deny',
-    walking_route: 'deny',
-    last_train: 'deny',
   },
   history: 'allow',
   cardSet: 'allow',

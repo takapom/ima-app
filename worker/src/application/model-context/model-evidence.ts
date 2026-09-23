@@ -6,12 +6,10 @@ import { type RegistryJsonValue } from '@worker/domain/candidates/registry';
 import {
   ContactInfoSchema,
   FacilitiesInfoSchema,
-  LastTrainInfoSchema,
   OpeningHoursSchema,
   PhotoInfoSchema,
   PlaceIdentitySchema,
   PriceInfoSchema,
-  WalkingRouteSchema,
 } from '@worker/domain/places/place-values';
 import {
   CandidateIdSchema,
@@ -193,10 +191,6 @@ const schemaForField = (field: DetailField): v.GenericSchema => {
       return ContactInfoSchema;
     case 'facilities':
       return FacilitiesInfoSchema;
-    case 'walking_route':
-      return WalkingRouteSchema;
-    case 'last_train':
-      return LastTrainInfoSchema;
   }
 };
 

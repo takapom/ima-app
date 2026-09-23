@@ -14,7 +14,6 @@ import {
   RevisionSchema,
 } from '@worker/domain/primitives';
 import { IssueSchema } from '@worker/domain/issue';
-import { LastTrainInfoSchema } from '@worker/domain/places/place-values';
 import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
 
 const timestamp = '2026-09-09T12:00:00Z';
@@ -236,32 +235,5 @@ describe('core domain contracts', () => {
         retention: denyRetention(),
       }).success,
     ).toBe(false);
-  });
-
-  it('rejects an unusable last-train result that cannot satisfy minimum stay', () => {
-    const lastTrain = {
-      serviceDate: '2026-09-09',
-      fromStationRef: 'station-a',
-      homeStationRef: 'station-home',
-      journeyRef: 'journey-1',
-      lastDepartureAt: timestamp,
-      arrivesHomeAt: '2026-09-09T13:00:00Z',
-      transfers: [],
-      placeToStationSeconds: 300,
-      arrivePlaceAt: timestamp,
-      leaveBy: '2026-09-09T12:30:00Z',
-      availableStaySeconds: 1_199,
-      minimumStayMinutes: 20,
-      usable: true,
-    };
-    expect(v.safeParse(LastTrainInfoSchema, lastTrain).success).toBe(false);
-    expect(v.safeParse(LastTrainInfoSchema, { ...lastTrain, usable: false }).success).toBe(true);
-    expect(
-      v.safeParse(LastTrainInfoSchema, {
-        ...lastTrain,
-        availableStaySeconds: -1,
-        usable: false,
-      }).success,
-    ).toBe(true);
   });
 });

@@ -247,8 +247,6 @@ export const unsupportedDetailField = (
   const fields = new Set(context.capabilities.detailFields);
   for (const request of input.requests) {
     for (const field of request.fields) {
-      if (field === 'walking_route' && !context.capabilities.walkingRoute) return field;
-      if (field === 'last_train' && !context.capabilities.lastTrain) return field;
       if (!fields.has(field)) return field;
     }
   }

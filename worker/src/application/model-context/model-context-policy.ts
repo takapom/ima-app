@@ -12,8 +12,6 @@ const ModelEvidenceFieldPolicySchema = v.strictObject({
   photos: ModelContextFieldDecisionSchema,
   contact: ModelContextFieldDecisionSchema,
   facilities: ModelContextFieldDecisionSchema,
-  walking_route: ModelContextFieldDecisionSchema,
-  last_train: ModelContextFieldDecisionSchema,
 });
 
 export const ModelContextFieldPolicySchema = v.strictObject({
@@ -39,8 +37,6 @@ export const denyModelContextFieldPolicy: ModelContextFieldPolicy = {
     photos: DENY,
     contact: DENY,
     facilities: DENY,
-    walking_route: DENY,
-    last_train: DENY,
   },
   history: DENY,
   cardSet: DENY,

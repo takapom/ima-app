@@ -14,8 +14,6 @@ const allowModelContextFieldPolicy: ModelContextFieldPolicy = {
     photos: 'allow',
     contact: 'allow',
     facilities: 'allow',
-    walking_route: 'allow',
-    last_train: 'allow',
   },
   history: 'allow',
   cardSet: 'allow',
@@ -54,8 +52,6 @@ const harness = {
   capabilities: {
     version: 'places-v1',
     detailFields: ['identity', 'opening_hours'] as const,
-    walkingRoute: true,
-    lastTrain: true,
     supportedScopes: ['fixture'] as const,
   },
 };
