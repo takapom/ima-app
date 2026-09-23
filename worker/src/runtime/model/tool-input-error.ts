@@ -14,7 +14,6 @@ const FIELD_NAMES = new Set([
   'cursor',
   'requests',
   'candidateId',
-  'savedPlaceRef',
   'fields',
   'freshness',
   'message',

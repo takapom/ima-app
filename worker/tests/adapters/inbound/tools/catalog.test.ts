@@ -273,6 +273,20 @@ describe('public tool catalog', () => {
     expect(ports.search).toBe(0);
   });
 
+  it('rejects a saved-reference details target instead of ignoring it', async () => {
+    const ports: Ports = { search: 0, details: 0, submit: 0, executions: [], contexts: [] };
+    const result = await invokePublicTool(
+      'get_place_details',
+      { ...detailsInput, requests: [{ savedPlaceRef: 'saved-1', fields: ['identity'] }] },
+      makeDependencies(ports),
+      invocation,
+    );
+
+    expect(result.status).toBe('error');
+    if (result.status === 'error') expect(result.error.code).toBe('INVALID_ARGUMENT');
+    expect(ports.details).toBe(0);
+  });
+
   it('rejects a model-supplied travel context as an unknown input property', async () => {
     const ports: Ports = { search: 0, details: 0, submit: 0, executions: [], contexts: [] };
     const dependencies = makeDependencies(ports);

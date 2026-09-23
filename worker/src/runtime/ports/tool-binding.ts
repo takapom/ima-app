@@ -4,11 +4,11 @@ import type {
   HarnessContext,
   ToolExecutionContext,
 } from '@worker/application/ports/context';
-import type { CandidateId, DetailField } from '@worker/domain/primitives';
+import type { DetailField } from '@worker/domain/primitives';
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import type {
+  GetPlaceDetailsInput,
   GetPlaceDetailsOutput,
-  ModelGetPlaceDetailsInput,
   PlaceDetailsPort,
   PlaceSearchPort,
   SearchPlacesInput,
@@ -23,7 +23,6 @@ import type {
   SubmitCardsPort,
   SubmitCardsPortResult,
 } from '@worker/application/ports/submission';
-import type { SavedPlaceRef } from '@worker/domain/primitives';
 
 export const PUBLIC_TOOL_NAMES = ['search_places', 'get_place_details', 'submit_cards'] as const;
 
@@ -31,31 +30,7 @@ export type PublicToolName = (typeof PUBLIC_TOOL_NAMES)[number];
 
 export type PublicToolInvocation = Pick<ToolExecutionOptions, 'toolCallId' | 'abortSignal'>;
 
-/** Worker-owned async boundary for resolving one model-selected saved reference. */
-export type SavedPlaceReferenceResolutionRequest = {
-  readonly savedPlaceRef: SavedPlaceRef;
-  /** Fields selected for this reference; the Worker may use them for the fresh provider read. */
-  readonly fields: readonly DetailField[];
-  readonly context: HarnessContext;
-  readonly execution: ToolExecutionContext;
-  readonly cancellation: CancellationToken;
-  readonly signal?: AbortSignal;
-};
-
-export type SavedPlaceReferenceResolution =
-  | {
-      readonly status: 'ok';
-      readonly candidateId: CandidateId;
-      readonly warnings?: readonly Issue[];
-    }
-  | { readonly status: 'error'; readonly error: Issue };
-
-/** The Worker RPC result is untrusted until the tool boundary validates this shape. */
-export type SavedPlaceReferenceResolver = (
-  request: SavedPlaceReferenceResolutionRequest,
-) => Promise<unknown>;
-
-/** Reserves a Details read slot before a saved-reference resolver can perform provider I/O. */
+/** Reserves a Details read slot and its abort signal before the tool boundary calls the read Port. */
 export type ToolReadAdmission = {
   readonly reserve: (input: {
     readonly callId: string;
@@ -89,7 +64,7 @@ export type PublicToolEnvelope<Input> = {
 };
 
 export type SearchToolEnvelope = PublicToolEnvelope<SearchPlacesInput>;
-export type DetailsToolEnvelope = PublicToolEnvelope<ModelGetPlaceDetailsInput>;
+export type DetailsToolEnvelope = PublicToolEnvelope<GetPlaceDetailsInput>;
 export type SubmitToolEnvelope = PublicToolEnvelope<SubmitCardsInput>;
 
 export type ToolBindingDependencies = {
@@ -103,8 +78,6 @@ export type ToolBindingDependencies = {
   /** Charges and reports submit failures rejected before the Application Port is reached. */
   readonly rejectSubmitInput?: (result: SubmitCardsInvalid) => SubmitCardsInvalid;
   readonly readAdmission?: ToolReadAdmission;
-  /** Optional Worker-owned boundary for one model-selected saved reference. */
-  readonly savedPlaceReferenceResolver?: SavedPlaceReferenceResolver;
   /** Host-evaluated policy for the SDK model-input surface. Omitted means deny by default. */
   readonly modelContextFieldPolicy?: ModelContextFieldPolicy;
   readonly runtime: ToolRuntimeFactory;
@@ -179,22 +152,11 @@ export type SafePlaceFields = {
   readonly facilities?: ModelSafeFieldResult<DetailsFieldValue<'facilities'>>;
 };
 
-export type SafeDetailsTarget =
-  | { readonly candidateId: string; readonly savedPlaceRef?: SavedPlaceRef }
-  | { readonly savedPlaceRef: SavedPlaceRef; readonly candidateId?: never };
-
 export type SafeGetPlaceDetailsOutput = {
-  readonly items: (
-    | {
-        readonly candidateId: string;
-        readonly savedPlaceRef?: SavedPlaceRef;
-        readonly fields: SafePlaceFields;
-      }
-    | {
-        readonly savedPlaceRef: SavedPlaceRef;
-        readonly fields: SafePlaceFields;
-      }
-  )[];
+  readonly items: {
+    readonly candidateId: string;
+    readonly fields: SafePlaceFields;
+  }[];
 };
 
 export type SearchToolResult = Result<SafeSearchPlacesOutput>;
@@ -208,7 +170,7 @@ export type PublicToolSet = {
   readonly submit_cards: Tool<SubmitToolEnvelope, SubmitToolResult>;
 };
 
-export type PublicToolInput = SearchPlacesInput | ModelGetPlaceDetailsInput | SubmitCardsInput;
+export type PublicToolInput = SearchPlacesInput | GetPlaceDetailsInput | SubmitCardsInput;
 
 export const isPublicToolName = (name: string): name is PublicToolName =>
   name === 'search_places' || name === 'get_place_details' || name === 'submit_cards';

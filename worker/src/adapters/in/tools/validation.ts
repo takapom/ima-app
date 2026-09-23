@@ -1,11 +1,11 @@
 import * as v from 'valibot';
 import {
   GetPlaceDetailsOutputSchema,
-  ModelGetPlaceDetailsInputSchema,
+  GetPlaceDetailsInputSchema,
   SearchPlacesInputSchema,
   SearchPlacesOutputSchema,
   type GetPlaceDetailsOutput,
-  type ModelGetPlaceDetailsInput,
+  type GetPlaceDetailsInput,
   type SearchPlacesInput,
   type SearchPlacesOutput,
 } from '@worker/application/ports/operations';
@@ -103,8 +103,8 @@ export const parseSearchInput = (
 
 export const parseDetailsInput = (
   value: unknown,
-): { readonly ok: true; readonly value: ModelGetPlaceDetailsInput } | { readonly ok: false } => {
-  const parsed = v.safeParse(ModelGetPlaceDetailsInputSchema, value);
+): { readonly ok: true; readonly value: GetPlaceDetailsInput } | { readonly ok: false } => {
+  const parsed = v.safeParse(GetPlaceDetailsInputSchema, value);
   return parsed.success ? { ok: true, value: parsed.output } : { ok: false };
 };
 

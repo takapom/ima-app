@@ -245,7 +245,7 @@ describe('runtime field policy', () => {
     );
   });
 
-  it('keeps direct and saved reference targets distinct while sanitizing saved failures', () => {
+  it('sanitizes failed details fields before they reach the model', () => {
     const policy = toModelContextFieldPolicy(
       {
         evidence: allFields(uses()),
@@ -265,24 +265,7 @@ describe('runtime field policy', () => {
               fields: { identity: { status: 'unknown', reason: 'direct unavailable' } },
             },
             {
-              candidateId: 'candidate-policy-saved',
-              savedPlaceRef: 'saved-policy',
-              fields: {
-                identity: {
-                  status: 'error',
-                  error: {
-                    code: 'UPSTREAM_UNAVAILABLE',
-                    path: 'provider.secret',
-                    retryable: false,
-                    retryAfterMs: null,
-                    message: 'RAW_PROVIDER_SENTINEL',
-                    missingFields: ['identity'],
-                  },
-                },
-              },
-            },
-            {
-              savedPlaceRef: 'saved-failure',
+              candidateId: 'candidate-policy-failed',
               fields: {
                 identity: {
                   status: 'error',
@@ -307,18 +290,14 @@ describe('runtime field policy', () => {
     expect(projected).toMatchObject({
       status: 'partial',
       data: {
-        items: [
-          { candidateId: 'candidate-policy' },
-          { candidateId: 'candidate-policy-saved', savedPlaceRef: 'saved-policy' },
-          { savedPlaceRef: 'saved-failure' },
-        ],
+        items: [{ candidateId: 'candidate-policy' }, { candidateId: 'candidate-policy-failed' }],
       },
     });
     expect(JSON.stringify(projected)).not.toContain('RAW_PROVIDER_SENTINEL');
     expect(JSON.stringify(projected)).not.toContain('provider.secret');
   });
 
-  it('withholds details with missing or ambiguous opaque targets', () => {
+  it('withholds details without a candidate target, including pre-#54 saved-reference items', () => {
     const policy = toModelContextFieldPolicy(defaultRuntimeModelProjectionPolicy, 'fixture');
     const malformed = [
       {
@@ -326,9 +305,8 @@ describe('runtime field policy', () => {
         data: {
           items: [
             {
-              candidateId: 'candidate-policy',
-              savedPlaceRef: 'provider/raw',
-              fields: { identity: { status: 'unknown', reason: 'ambiguous' } },
+              savedPlaceRef: 'saved-policy',
+              fields: { identity: { status: 'unknown', reason: 'saved target' } },
             },
           ],
         },

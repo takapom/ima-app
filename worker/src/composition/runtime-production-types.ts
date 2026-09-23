@@ -21,7 +21,6 @@ import type { RuntimeModelGuardModel } from '@worker/runtime/turn-execution/runt
 import type { RuntimeModelTraceSink } from '@worker/runtime/tracing/runtime-model-trace';
 import type { RuntimeThinkTurnBuildRequest } from '@worker/runtime/turn-execution/runtime-think-connection';
 import type { RuntimeProviderTraceSink } from '@worker/runtime/tracing/runtime-provider-trace';
-import type { SavedPlaceReferenceResolver } from '@worker/runtime/ports/tool-binding';
 
 export type ProductionBuildInput = {
   readonly request: RuntimeThinkTurnBuildRequest;
@@ -44,7 +43,6 @@ export type RuntimeProductionTurnPlan = {
   readonly ids: Pick<IdPort, 'nextCallId' | 'nextResponseId'>;
   readonly hashes: CommitHashPort;
   readonly publicResponse?: RuntimePublicResponseDependencies;
-  readonly savedPlaceReferenceResolver?: SavedPlaceReferenceResolver;
   readonly onCommitted?: (response: unknown) => void;
 };
 

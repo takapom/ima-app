@@ -4,7 +4,6 @@ import {
   DetailsRequestSchema,
   GetPlaceDetailsInputSchema,
   GetPlaceDetailsOutputSchema,
-  ModelGetPlaceDetailsInputSchema,
   matchesDetailsRequest,
   SearchPlacesInputSchema,
   SearchPlacesOutputSchema,
@@ -118,44 +117,11 @@ describe('core port contracts', () => {
     ).toBe(false);
   });
 
-  it('keeps saved references on the model-facing side of the details boundary', () => {
-    const saved = {
-      requests: [{ savedPlaceRef: 'saved-1', fields: ['identity'] }],
-      freshness: 'refresh',
-    };
-    expect(v.safeParse(ModelGetPlaceDetailsInputSchema, saved).success).toBe(true);
-    expect(v.safeParse(GetPlaceDetailsInputSchema, saved).success).toBe(false);
+  it('rejects saved references on the details boundary', () => {
     expect(
-      v.safeParse(ModelGetPlaceDetailsInputSchema, {
-        ...saved,
-        requests: [
-          { candidateId: 'candidate-1', fields: ['identity'] },
-          { savedPlaceRef: 'saved-1', fields: ['price'] },
-        ],
-      }).success,
-    ).toBe(true);
-    expect(
-      v.safeParse(ModelGetPlaceDetailsInputSchema, {
-        ...saved,
-        requests: [
-          { savedPlaceRef: 'saved-1', fields: ['identity'] },
-          { savedPlaceRef: 'saved-1', fields: ['price'] },
-        ],
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(ModelGetPlaceDetailsInputSchema, {
-        ...saved,
-        requests: Array.from({ length: 6 }, (_, index) => ({
-          savedPlaceRef: `saved-${index + 1}`,
-          fields: ['identity'],
-        })),
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(ModelGetPlaceDetailsInputSchema, {
-        ...saved,
-        requests: [{ savedPlaceRef: 'saved-1', candidateId: 'candidate-1', fields: ['identity'] }],
+      v.safeParse(GetPlaceDetailsInputSchema, {
+        requests: [{ savedPlaceRef: 'saved-1', fields: ['identity'] }],
+        freshness: 'refresh',
       }).success,
     ).toBe(false);
   });
