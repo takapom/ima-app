@@ -5,7 +5,6 @@ import {
   NonNegativeFiniteNumberSchema,
   NonNegativeSafeIntegerSchema,
   OpaqueIdSchema,
-  SavedPlaceRefSchema,
   SafeIntegerSchema,
   Text,
 } from '@worker/domain/primitives';
@@ -113,13 +112,6 @@ export const DetailsRequestSchema = v.strictObject({
 });
 export type DetailsRequest = v.InferOutput<typeof DetailsRequestSchema>;
 
-/** Model-facing details target. Saved references are resolved by the Worker adapter. */
-export const ModelDetailsRequestSchema = v.union([
-  v.strictObject({ candidateId: CandidateIdSchema, fields: DetailFieldsSchema }),
-  v.strictObject({ savedPlaceRef: SavedPlaceRefSchema, fields: DetailFieldsSchema }),
-]);
-export type ModelDetailsRequest = v.InferOutput<typeof ModelDetailsRequestSchema>;
-
 export const GetPlaceDetailsInputSchema = v.strictObject({
   requests: v.pipe(
     v.array(DetailsRequestSchema),
@@ -134,28 +126,6 @@ export const GetPlaceDetailsInputSchema = v.strictObject({
   freshness: v.picklist(['reuse_valid', 'refresh']),
 });
 export type GetPlaceDetailsInput = v.InferOutput<typeof GetPlaceDetailsInputSchema>;
-
-/** Model input is deliberately separate from the candidate-only Core Port input. */
-export const ModelGetPlaceDetailsInputSchema = v.strictObject({
-  requests: v.pipe(
-    v.array(ModelDetailsRequestSchema),
-    v.minLength(1),
-    v.maxLength(5),
-    v.check(
-      (requests) =>
-        new Set(
-          requests.map((request) =>
-            'candidateId' in request
-              ? `candidate:${request.candidateId}`
-              : `saved:${request.savedPlaceRef}`,
-          ),
-        ).size === requests.length,
-      'details references must be unique',
-    ),
-  ),
-  freshness: v.picklist(['reuse_valid', 'refresh']),
-});
-export type ModelGetPlaceDetailsInput = v.InferOutput<typeof ModelGetPlaceDetailsInputSchema>;
 
 const DetailValuesSchema = v.strictObject({
   identity: v.optional(FieldResultSchema(PlaceIdentitySchema)),

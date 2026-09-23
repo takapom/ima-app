@@ -1,7 +1,7 @@
 import { jsonSchema, type FlexibleSchema } from 'ai';
 import * as v from 'valibot';
 import {
-  ModelGetPlaceDetailsInputSchema,
+  GetPlaceDetailsInputSchema,
   SearchPlacesInputSchema,
 } from '@worker/application/ports/operations';
 import { SubmitCardsInputSchema } from '@worker/application/ports/model';
@@ -93,36 +93,18 @@ const detailsJsonSchema: WireSchema = {
       minItems: 1,
       maxItems: 5,
       items: {
-        oneOf: [
-          {
-            type: 'object',
-            properties: {
-              candidateId: opaqueId,
-              fields: {
-                type: 'array',
-                minItems: 1,
-                maxItems: 8,
-                items: { type: 'string', enum: detailFields },
-              },
-            },
-            required: ['candidateId', 'fields'],
-            additionalProperties: false,
+        type: 'object',
+        properties: {
+          candidateId: opaqueId,
+          fields: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 8,
+            items: { type: 'string', enum: detailFields },
           },
-          {
-            type: 'object',
-            properties: {
-              savedPlaceRef: opaqueId,
-              fields: {
-                type: 'array',
-                minItems: 1,
-                maxItems: 8,
-                items: { type: 'string', enum: detailFields },
-              },
-            },
-            required: ['savedPlaceRef', 'fields'],
-            additionalProperties: false,
-          },
-        ],
+        },
+        required: ['candidateId', 'fields'],
+        additionalProperties: false,
       },
     },
     freshness: { type: 'string', enum: ['reuse_valid', 'refresh'] },
@@ -193,7 +175,7 @@ const envelopeSchema = <T>(
 /** AI SDK tools use the same root input envelope as the runtime gate. */
 export const searchPlacesToolSchema = envelopeSchema(SearchPlacesInputSchema, searchJsonSchema);
 export const getPlaceDetailsToolSchema = envelopeSchema(
-  ModelGetPlaceDetailsInputSchema,
+  GetPlaceDetailsInputSchema,
   detailsJsonSchema,
 );
 export const submitCardsToolSchema = envelopeSchema(SubmitCardsInputSchema, submitJsonSchema);

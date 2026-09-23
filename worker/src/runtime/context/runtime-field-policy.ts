@@ -1,10 +1,6 @@
 import type { JSONValue } from 'ai';
 import * as v from 'valibot';
-import {
-  CandidateIdSchema,
-  SavedPlaceRefSchema,
-  type DetailField,
-} from '@worker/domain/primitives';
+import { CandidateIdSchema, type DetailField } from '@worker/domain/primitives';
 import {
   ContactInfoSchema,
   FacilitiesInfoSchema,
@@ -339,22 +335,12 @@ const projectDetailsData = (value: JsonRecord, policy: ModelContextFieldPolicy):
   const items = value.items.map((item) => {
     const fieldsValue = isRecord(item) ? item.fields : undefined;
     const candidateId = isRecord(item) ? item.candidateId : undefined;
-    const savedPlaceRef = isRecord(item) ? item.savedPlaceRef : undefined;
     const candidateIdValue = typeof candidateId === 'string' ? candidateId : undefined;
-    const savedPlaceRefValue = typeof savedPlaceRef === 'string' ? savedPlaceRef : undefined;
-    const candidate =
-      candidateIdValue !== undefined && v.safeParse(CandidateIdSchema, candidateIdValue).success;
-    const saved =
-      savedPlaceRefValue !== undefined &&
-      v.safeParse(SavedPlaceRefSchema, savedPlaceRefValue).success;
-    const candidateProperty = isRecord(item) && 'candidateId' in item;
-    const savedProperty = isRecord(item) && 'savedPlaceRef' in item;
     if (
       !isRecord(item) ||
       !isRecord(fieldsValue) ||
-      (candidateProperty && !candidate) ||
-      (savedProperty && !saved) ||
-      (!candidate && !saved)
+      candidateIdValue === undefined ||
+      !v.safeParse(CandidateIdSchema, candidateIdValue).success
     ) {
       return undefined;
     }
@@ -363,14 +349,7 @@ const projectDetailsData = (value: JsonRecord, policy: ModelContextFieldPolicy):
       const fieldValue = fieldsValue[field];
       if (fieldValue !== undefined) fields[field] = projectFieldResult(fieldValue, field, policy);
     }
-    if (candidate) {
-      return {
-        candidateId: candidateIdValue,
-        ...(saved ? { savedPlaceRef: savedPlaceRefValue } : {}),
-        fields,
-      };
-    }
-    return { savedPlaceRef: savedPlaceRefValue, fields };
+    return { candidateId: candidateIdValue, fields };
   });
   return items.some((item): item is undefined => item === undefined)
     ? MODEL_INPUT_WITHHELD

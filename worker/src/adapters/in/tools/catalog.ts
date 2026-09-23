@@ -43,11 +43,6 @@ import {
   submitCardsToolSchema,
 } from '@worker/adapters/in/tools/schemas';
 import { projectDetailsResult, projectSearchResult } from '@worker/adapters/in/tools/projection';
-import {
-  detailsResultForSavedFailures,
-  mergeSavedDetailsFailures,
-  resolveModelDetailsInput,
-} from '@worker/adapters/in/tools/saved-reference-details';
 
 const invocationOf = (options: ToolExecutionOptions): PublicToolInvocation => ({
   toolCallId: options.toolCallId,
@@ -129,15 +124,13 @@ const getPlaceDetails = async (
       issue('UNSUPPORTED_FIELD', 'requests.fields', 'requested field is unavailable'),
     );
   }
-  const directCandidateIssue = ownedCandidateIssue(
+  const candidateIssue = ownedCandidateIssue(
     dependencies.registry,
     checked.runtime.context,
-    parsedInput.value.requests.flatMap((request) =>
-      'candidateId' in request ? [request.candidateId] : [],
-    ),
+    parsedInput.value.requests.map((request) => request.candidateId),
     'requests.candidateId',
   );
-  if (directCandidateIssue !== undefined) return resultError(directCandidateIssue);
+  if (candidateIssue !== undefined) return resultError(candidateIssue);
 
   const callId = checked.runtime.execution.callId;
   const admission = dependencies.readAdmission;
@@ -159,37 +152,16 @@ const getPlaceDetails = async (
             checked.runtime.cancellation.isCancelled() || admissionSignal?.aborted === true,
         };
 
-  let resolved;
-  try {
-    resolved = await resolveModelDetailsInput(
-      parsedInput.value,
-      checked.runtime.context,
-      checked.runtime.execution,
-      readCancellation,
-      {
-        registry: dependencies.registry,
-        resolver: dependencies.savedPlaceReferenceResolver,
-      },
-      admissionSignal,
-    );
-  } catch (error: unknown) {
-    admission?.release(callId);
-    throw error;
-  }
   const cancelled = cancellationError<SafeGetPlaceDetailsOutput>(checked.runtime);
-  if (cancelled !== undefined || readCancellation.isCancelled() || resolved.cancelled) {
+  if (cancelled !== undefined || readCancellation.isCancelled()) {
     admission?.release(callId);
     return cancelled ?? resultError(issue('CANCELLED', null, 'tool execution was cancelled'));
-  }
-  if (resolved.input === undefined) {
-    admission?.release(callId);
-    return detailsResultForSavedFailures(resolved.failures, resolved.warnings);
   }
 
   let returned: unknown;
   try {
     returned = await dependencies.details.read(
-      resolved.input,
+      parsedInput.value,
       checked.runtime.context,
       checked.runtime.execution,
       readCancellation,
@@ -214,21 +186,18 @@ const getPlaceDetails = async (
       dependencies.registry,
       dependencies.clock(),
       dependencies.modelContextFieldPolicy,
-      resolved.targetForCandidate,
     );
   }
-  if (!matchesDetailsRequest(resolved.input, result.data)) {
+  if (!matchesDetailsRequest(parsedInput.value, result.data)) {
     return resultError(mismatchedDetails());
   }
-  const projected = projectDetailsResult(
+  return projectDetailsResult(
     result,
     checked.runtime.context,
     dependencies.registry,
     dependencies.clock(),
     dependencies.modelContextFieldPolicy,
-    resolved.targetForCandidate,
   );
-  return mergeSavedDetailsFailures(projected, resolved.failures, resolved.warnings);
 };
 
 const submitCards = async (

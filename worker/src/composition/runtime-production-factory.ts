@@ -276,9 +276,6 @@ const makeOptions = (
         search: plan.search,
         details: plan.details,
         submit: unavailableSubmit(),
-        ...(plan.savedPlaceReferenceResolver === undefined
-          ? {}
-          : { savedPlaceReferenceResolver: plan.savedPlaceReferenceResolver }),
         ...(plan.modelContext.fieldPolicy === undefined
           ? {}
           : { modelContextFieldPolicy: plan.modelContext.fieldPolicy }),

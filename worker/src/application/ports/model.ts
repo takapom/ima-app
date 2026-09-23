@@ -3,7 +3,7 @@ import { EvidenceTextSchema } from '@worker/domain/evidence/evidence';
 import { CandidateIdSchema, ObservationIdSchema, Text } from '@worker/domain/primitives';
 import { ModelContextSchema } from '@worker/application/ports/context';
 import {
-  ModelGetPlaceDetailsInputSchema,
+  GetPlaceDetailsInputSchema,
   SearchPlacesInputSchema,
 } from '@worker/application/ports/operations';
 
@@ -44,7 +44,7 @@ export type SubmitCardsInput = v.InferOutput<typeof SubmitCardsInputSchema>;
 
 export const ModelActionSchema = v.union([
   v.strictObject({ kind: v.literal('search_places'), input: SearchPlacesInputSchema }),
-  v.strictObject({ kind: v.literal('get_place_details'), input: ModelGetPlaceDetailsInputSchema }),
+  v.strictObject({ kind: v.literal('get_place_details'), input: GetPlaceDetailsInputSchema }),
   v.strictObject({ kind: v.literal('submit_cards'), input: SubmitCardsInputSchema }),
   v.strictObject({ kind: v.literal('final_message'), message: EvidenceTextSchema(300) }),
 ]);
