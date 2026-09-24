@@ -41,10 +41,15 @@ describe('Hot Pepper listing text', () => {
     expect(listingTextFor(shopWith({}))).toBeNull();
   });
 
-  it('drops control and bidi characters and stops at the limit', () => {
+  it('drops control, bidi and zero-width characters and stops at the limit', () => {
     expect(listingTextFor(shopWith({ catch: 'ゆっくり\u0007話せる‮お店' }))).toBe(
       'ゆっくり話せるお店',
     );
+    expect(
+      listingTextFor(
+        shopWith({ catch: '\uFEFF静か\u200Bな\u2060お\u061C店\u200E', other_memo: '行1\n行2' }),
+      ),
+    ).toBe('静かなお店\n行1\n行2');
     const long = listingTextFor(
       shopWith({ catch: 'あ'.repeat(500), shop_detail_memo: 'い'.repeat(500) }),
     );
