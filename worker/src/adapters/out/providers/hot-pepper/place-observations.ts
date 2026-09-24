@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import {
   FacilitiesInfoSchema,
+  LISTING_TEXT_MAX_LENGTH,
   OpeningHoursSchema,
   PhotoInfoSchema,
   PlaceIdentitySchema,
@@ -28,6 +29,20 @@ const boundedIdentityText = (
   if (value === undefined || value === null) return undefined;
   const trimmed = value.trim();
   return trimmed.length === 0 || trimmed.length > maxLength ? undefined : trimmed;
+};
+
+// C0/C1 controls other than line breaks, and bidi overrides, carry no listing meaning.
+const LISTING_NOISE = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F\u202A-\u202E\u2066-\u2069]/gu;
+
+/** Joins the listed catch copy and memos, dropping empty or repeated parts, within the limit. */
+export const listingTextFor = (shop: HotPepperShopWire): string | null => {
+  const parts: string[] = [];
+  for (const raw of [shop.catch, shop.shop_detail_memo, shop.other_memo]) {
+    const text = raw?.replace(LISTING_NOISE, '').trim();
+    if (text !== undefined && text.length > 0 && !parts.includes(text)) parts.push(text);
+  }
+  const joined = [...parts.join('\n')].slice(0, LISTING_TEXT_MAX_LENGTH).join('');
+  return joined.length === 0 ? null : joined;
 };
 
 export const hotPepperFieldSchemas = {
@@ -123,6 +138,7 @@ const fieldValue = (
         accessText: accessText ?? null,
         businessStatus: 'unknown',
         sourceUrl: hotPepperSourceFor(shop).publicUrl,
+        listingText: listingTextFor(shop),
       };
     }
     case 'opening_hours': {

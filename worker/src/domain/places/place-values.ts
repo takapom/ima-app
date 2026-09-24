@@ -7,6 +7,8 @@ import {
   Text,
 } from '@worker/domain/primitives';
 
+export const LISTING_TEXT_MAX_LENGTH = 600;
+
 export const PlaceIdentitySchema = v.strictObject({
   name: Text(160),
   area: Text(160),
@@ -22,6 +24,13 @@ export const PlaceIdentitySchema = v.strictObject({
     'unknown',
   ]),
   sourceUrl: v.nullable(v.pipe(HttpsUrlSchema, v.maxLength(2048))),
+  /**
+   * The shop's own listing copy: material for guessing atmosphere, never a guarantee of quiet,
+   * seats or mood. Absent on observations registered before it was collected.
+   */
+  listingText: v.exactOptional(
+    v.nullable(v.pipe(v.string(), v.maxLength(LISTING_TEXT_MAX_LENGTH))),
+  ),
 });
 export type PlaceIdentity = v.InferOutput<typeof PlaceIdentitySchema>;
 
