@@ -76,8 +76,7 @@ export type ToolBindingDependencies = {
   readonly details: PlaceDetailsPort;
   readonly respond: RespondPort;
   /** Charges and reports respond failures rejected before the Application Port is reached. */
-  /** `input` is the unparsed respond input, so the runtime can tell which kind was refused. */
-  readonly rejectRespondInput?: (result: RespondInvalid, input: unknown) => RespondInvalid;
+  readonly rejectRespondInput?: (result: RespondInvalid) => RespondInvalid;
   readonly readAdmission?: ToolReadAdmission;
   /** Host-evaluated policy for the SDK model-input surface. Omitted means deny by default. */
   readonly modelContextFieldPolicy?: ModelContextFieldPolicy;

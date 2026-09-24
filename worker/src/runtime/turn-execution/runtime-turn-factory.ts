@@ -78,8 +78,6 @@ export type RuntimeThinkHooks = {
 
 export type RuntimeTurnHandle = {
   readonly context: HarnessContext;
-  /** A proposal was refused as malformed or over budget, and no respond has committed since. */
-  readonly hasUnresolvedProposalFailure: () => boolean;
   readonly budget: RuntimeBudget;
   readonly signal: AbortSignal;
   readonly dependencies: ToolBindingDependencies;
@@ -143,23 +141,17 @@ const submitDenial = (denial: {
   };
 };
 
-const isMessageRespond = (input: unknown): boolean =>
-  typeof input === 'object' &&
-  input !== null &&
-  'kind' in input &&
-  (input.kind === 'ask' || input.kind === 'answer');
-
 const budgetedRespond = (
   currentPort: () => RespondPort,
   budget: RuntimeBudget,
-  observeRejection: (result: RespondInvalid, input: unknown) => void,
+  observeRejection: (result: RespondInvalid) => void,
   onCommitted: (kind: RespondKind) => void,
 ): RespondPort => ({
   async respond(input, execution, cancellation) {
     const reservation = budget.reserveSubmit();
     if (!reservation.ok) {
       const result = submitDenial(reservation.denial);
-      observeRejection(result, input);
+      observeRejection(result);
       return result;
     }
     if (cancellation.isCancelled()) {
@@ -169,7 +161,7 @@ const budgetedRespond = (
     if (result.status === 'committed') {
       budget.markCommitted();
       onCommitted(result.kind);
-    } else observeRejection(result, input);
+    } else observeRejection(result);
     return result;
   },
 });
@@ -213,14 +205,7 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
   >();
   const operationCounts = new Map<PublicToolName, number>();
   let committed: RespondKind | undefined;
-  let unresolvedProposalFailure = false;
-  const reportSubmitRejection = (result: RespondInvalid, input: unknown): void => {
-    // A refused question or answer may simply be retried; only a refused proposal is unresolved.
-    if (!isMessageRespond(input)) {
-      unresolvedProposalFailure = result.issues.some((issue) =>
-        ['INVALID_ARGUMENT', 'SCHEMA_MISMATCH', 'BUDGET_EXCEEDED'].includes(issue.code),
-      );
-    }
+  const reportSubmitRejection = (result: RespondInvalid): void => {
     observeRuntimeSubmitRejection(result, options.onSubmitRejected);
   };
 
@@ -293,14 +278,13 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     reportSubmitRejection,
     (kind) => {
       committed = kind;
-      unresolvedProposalFailure = false;
     },
   );
   const dependencies: ToolBindingDependencies = Object.freeze({
     ...options.ports,
     respond,
     runtime,
-    rejectRespondInput: (result: RespondInvalid, input: unknown): RespondInvalid => {
+    rejectRespondInput: (result: RespondInvalid): RespondInvalid => {
       const reservation = options.budget.reserveSubmit();
       const rejected = reservation.ok
         ? {
@@ -309,7 +293,7 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
             remainingRepairs: reservation.value.remainingRepairs,
           }
         : submitDenial(reservation.denial);
-      reportSubmitRejection(rejected, input);
+      reportSubmitRejection(rejected);
       return rejected;
     },
   });
@@ -361,7 +345,6 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     get context() {
       return cloneContext(context);
     },
-    hasUnresolvedProposalFailure: () => unresolvedProposalFailure,
     budget: options.budget,
     signal: disposeController.signal,
     dependencies,

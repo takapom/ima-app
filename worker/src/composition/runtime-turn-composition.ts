@@ -62,7 +62,6 @@ import {
   observedWindow,
   RuntimeTurnCompositionError,
   prepareConversationCommit,
-  unresolvedProposalRefusal,
 } from '@worker/composition/runtime-turn-composition-support';
 import { observeRuntimeTerminalFormatFailure } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 import {
@@ -289,9 +288,6 @@ export function createRuntimeTurnComposition(
     const cardSetId = options.publicResponse?.cardSetId;
     return {
       respond: async (input, execution, cancellation) => {
-        if (input.kind !== 'propose' && turn.hasUnresolvedProposalFailure()) {
-          return unresolvedProposalRefusal;
-        }
         if (input.kind === 'propose' && cardSetId !== undefined) {
           registerRuntimeCardSetId(
             options.commit,
