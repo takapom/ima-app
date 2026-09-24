@@ -71,7 +71,7 @@ import {
 import { projectRuntimeToolResultForModel } from '@worker/runtime/context/runtime-field-policy';
 import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-session-config';
 import { createRuntimePresentedInputs } from '@worker/runtime/response/runtime-presented-inputs';
-import { recordPresentedContext } from '@worker/composition/runtime-presented-context';
+import { recordPresentedContext } from '@worker/runtime/response/runtime-presented-context';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import {
   runtimeTurnObserverWriters,

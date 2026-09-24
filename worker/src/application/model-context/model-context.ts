@@ -51,6 +51,9 @@ export { ModelContextError } from '@worker/application/model-context/model-conte
 export type { ModelContextErrorCode } from '@worker/application/model-context/model-context-errors';
 
 /** A quoted utterance. Generated text carries no citations; its retention is tracked by the harness. */
+/** Replaces a card name the model input policy denies; the name was then not shown. */
+export const MODEL_CONTEXT_WITHHELD_NAME = '[withheld]';
+
 export const ModelHistoryEntrySchema = v.strictObject({
   threadId: OpaqueIdSchema,
   turnId: TurnIdSchema,
@@ -152,7 +155,7 @@ const projectCardSet = (
       candidateId: candidate.candidateId,
       displayName: modelContextFieldAllowed(displayNameDecision)
         ? candidate.displayName
-        : '[withheld]',
+        : MODEL_CONTEXT_WITHHELD_NAME,
       status: candidate.status,
     };
   });
