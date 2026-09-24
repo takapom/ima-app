@@ -13,7 +13,7 @@ import {
 
 describe('submit entry validation', () => {
   it.each([false, true])(
-    'only accepts an answer after a failed read is repaired: %s',
+    'lets an answer explain a failed read, repaired or not: %s',
     async (repaired) => {
       const { composition } = createComposition();
       await captureToolResult(composition, {
@@ -26,22 +26,13 @@ describe('submit entry validation', () => {
           data: { candidates: [] },
           warnings: [],
         });
-      const result = await respondWith(composition, {
-        kind: 'ask',
-        message: '条件を変えて探しますか？',
-      });
-      if (repaired) expect(result).toMatchObject({ status: 'committed', kind: 'ask' });
-      else {
-        expect(result).toMatchObject({
-          status: 'invalid',
-          repairable: false,
-          issues: [{ code: 'CONSTRAINT_VIOLATION', path: 'kind' }],
-        });
-        await expect(composition.getCommittedResponse()).resolves.toBeUndefined();
-      }
+      await expect(
+        respondWith(composition, { kind: 'answer', message: '候補を取得できませんでした。' }),
+      ).resolves.toMatchObject({ status: 'committed', kind: 'answer' });
       composition.dispose();
     },
   );
+
   it('rejects the removed metadata field and spends the existing repair budget before a Port call', async () => {
     const calls = emptyPortCalls();
     const { factory } = createFactory(calls, { onSubmitRejected: () => undefined });

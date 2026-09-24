@@ -2,10 +2,7 @@ import type { CandidateObservationRegistryPort } from '@worker/application/ports
 import type { HarnessContext } from '@worker/application/ports/context';
 import type { ModelContextSource } from '@worker/application/model-context/model-context';
 import type { ObservationContext } from '@worker/domain/evidence/freshness';
-import type {
-  RuntimeRetentionContext,
-  RuntimeRetentionEphemeralToolResult,
-} from '@worker/runtime/retention/runtime-retention';
+import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
 import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
 import type { RespondInvalid } from '@worker/application/ports/submission';
 import type { CommitPort, CommitRecord } from '@worker/application/ports/commit';
@@ -81,47 +78,23 @@ type ObservationExpiry = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** Refuses a question or answer while a read failure or a refused proposal is unresolved. */
-export const unresolvedFailureRefusal: RespondInvalid = {
+/**
+ * Refuses a question or answer while a refused proposal is unresolved, so it cannot paper over
+ * cards the Core rejected. A failed read is different: explaining it is exactly what an answer is
+ * for, and the prompt tells the model not to report it as zero results.
+ */
+export const unresolvedProposalRefusal: RespondInvalid = {
   status: 'invalid',
   issues: [
     {
       code: 'CONSTRAINT_VIOLATION',
       path: 'kind',
-      message: 'a failed read or refused proposal is still unresolved',
+      message: 'a refused proposal is still unresolved',
       missingFields: [],
     },
   ],
   repairable: false,
   remainingRepairs: 0,
-};
-
-/** A later successful retry clears that operation's failure; a missing search is not zero results. */
-export const hasUnresolvedReadFailure = (
-  results: Iterable<RuntimeRetentionEphemeralToolResult>,
-): boolean => {
-  const failed = new Map<string, boolean>();
-  for (const { toolName, output: raw } of results) {
-    if (toolName === 'respond') continue;
-    const output = isRecord(raw) && raw.type === 'json' ? raw.value : raw;
-    failed.set(
-      toolName,
-      isRecord(output) &&
-        output.status === 'error' &&
-        isRecord(output.error) &&
-        typeof output.error.code === 'string' &&
-        [
-          'INVALID_ARGUMENT',
-          'MISSING_CONTEXT',
-          'TIMEOUT',
-          'RATE_LIMITED',
-          'UPSTREAM_UNAVAILABLE',
-          'BUDGET_EXCEEDED',
-          'SCHEMA_MISMATCH',
-        ].includes(output.error.code),
-    );
-  }
-  return [...failed.values()].some(Boolean);
 };
 
 const findObservationExpiries = (value: unknown): ObservationExpiry[] => {
