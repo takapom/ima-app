@@ -410,7 +410,8 @@ describe('production factory through a real Think Durable Object', () => {
       llmInputCanarySeen: true,
       deniedFieldCanarySeen: false,
     });
-    expect(report?.observationIdsSeen.some((ids) => ids.length > 0)).toBe(true);
+    // The model judges from summaries; observation IDs stay with the harness (#57).
+    expect(report?.observationIdsSeen.every((ids) => ids.length === 0)).toBe(true);
   });
 
   it('keeps the durable 05:00 JST anchor across eviction and rejects corruption', async () => {

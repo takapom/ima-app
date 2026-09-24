@@ -7,7 +7,7 @@ import type {
 import {
   DENIED_FIELD_CANARY,
   LLM_INPUT_CANARY,
-  observationIdsForCandidateIn,
+  detailsShownFor,
   type ProductionProviderFixtureReport,
   type ProductionScenario,
 } from './runtime-production-provider-fixture';
@@ -230,8 +230,7 @@ export const modelForProduction = (
       const twoCandidates =
         scenario() === 'two-results' ? uniqueCandidateIds.slice(-2) : ([] as string[]);
       // A candidate is committable once its details were read into the prompt.
-      const wasRead = (candidate: string): boolean =>
-        observationIdsForCandidateIn(prompt, candidate).length > 0;
+      const wasRead = (candidate: string): boolean => detailsShownFor(prompt, candidate);
       const candidateId = twoCandidates.at(-1) ?? candidateIds.at(-1) ?? 'missing-candidate';
       let input: unknown;
       let toolName: string;

@@ -10,6 +10,7 @@ import {
   PriceInfoSchema,
 } from '@worker/domain/places/place-values';
 import { IssueCodeSchema } from '@worker/domain/issue';
+import { summarizeFieldForModel } from '@worker/runtime/model/model-field-summary';
 import {
   modelContextFieldAllowed,
   modelEvidenceFieldDecision,
@@ -191,54 +192,23 @@ const safeIssue = (value: JSONValue): JSONValue => {
   };
 };
 
-const safeSource = (value: JSONValue): JSONValue | undefined => {
-  if (!isRecord(value)) return undefined;
-  if (
-    typeof value.provider !== 'string' ||
-    (value.attribution !== null && typeof value.attribution !== 'string') ||
-    (value.publicUrl !== null && typeof value.publicUrl !== 'string')
-  ) {
-    return undefined;
-  }
-  return {
-    provider: value.provider,
-    attribution: value.attribution,
-    publicUrl: value.publicUrl,
-  };
-};
+type ShownObservation = { readonly observationId: string; readonly value: JSONValue };
 
-const safeObservation = (value: JSONValue, field: DetailField): JSONValue | undefined => {
-  if (!isRecord(value) || value.field !== field) return undefined;
-  const sourceValues = Array.isArray(value.sources) ? value.sources.map(safeSource) : undefined;
-  const sources =
-    sourceValues?.filter((source): source is JSONValue => source !== undefined) ?? undefined;
+/** Checks the internal observation shape; only its value is summarized for the model. */
+const shownObservation = (value: JSONValue, field: DetailField): ShownObservation | undefined => {
   if (
+    !isRecord(value) ||
+    value.field !== field ||
     typeof value.observationId !== 'string' ||
     typeof value.candidateId !== 'string' ||
     typeof value.fetchedAt !== 'string' ||
     typeof value.expiresAt !== 'string' ||
-    (value.sourceUpdatedAt !== null && typeof value.sourceUpdatedAt !== 'string') ||
-    (value.freshUntil !== null && typeof value.freshUntil !== 'string') ||
-    sources === undefined ||
-    sourceValues === undefined ||
-    sources.length !== sourceValues.length ||
-    value.value === undefined
+    value.value === undefined ||
+    !v.safeParse(schemaForField(field), value.value).success
   ) {
     return undefined;
   }
-  if (!v.safeParse(schemaForField(field), value.value).success) return undefined;
-  return {
-    observationId: value.observationId,
-    candidateId: value.candidateId,
-    field,
-    value: value.value,
-    basis: value.basis === 'computed' ? 'computed' : 'provider_reported',
-    fetchedAt: value.fetchedAt,
-    sourceUpdatedAt: value.sourceUpdatedAt,
-    expiresAt: value.expiresAt,
-    freshUntil: value.freshUntil,
-    sources,
-  };
+  return { observationId: value.observationId, value: value.value };
 };
 
 const unavailableField = (value: JsonRecord): JSONValue | undefined => {
@@ -272,15 +242,17 @@ const projectFieldResult = (
       return MODEL_INPUT_WITHHELD;
     }
     const observations = value.observations.map((observation) =>
-      safeObservation(observation, field),
+      shownObservation(observation, field),
     );
-    if (!observations.every((observation): observation is JSONValue => observation !== undefined))
+    // Providers return one observation per field; the model sees only its summary.
+    const shown = observations.at(-1);
+    if (shown === undefined || !observations.every((observation) => observation !== undefined)) {
       return MODEL_INPUT_WITHHELD;
-    for (const observation of observations) {
-      if (isRecord(observation) && typeof observation.observationId === 'string')
-        presented?.(observation.observationId);
     }
-    return { status: 'known', observations };
+    const summary = summarizeFieldForModel(field, shown.value);
+    if (summary === undefined) return MODEL_INPUT_WITHHELD;
+    presented?.(shown.observationId);
+    return { status: 'known', ...summary };
   }
   if (value.status === 'error') {
     return { status: 'error', error: safeIssue(value.error ?? null) };

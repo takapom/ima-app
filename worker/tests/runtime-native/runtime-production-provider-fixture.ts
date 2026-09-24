@@ -37,9 +37,11 @@ export const productionScenarioFor = (value: unknown): ProductionScenario => {
   return 'default';
 };
 
-export const observationIdsForCandidateIn = (prompt: string, candidateId: string): string[] => {
-  const ids = new Set<string>();
+/** True once a details result for the candidate reached the model (the item carries `fields`). */
+export const detailsShownFor = (prompt: string, candidateId: string): boolean => {
+  let shown = false;
   const visit = (value: unknown): void => {
+    if (shown) return;
     if (Array.isArray(value)) {
       value.forEach(visit);
       return;
@@ -55,17 +57,15 @@ export const observationIdsForCandidateIn = (prompt: string, candidateId: string
       return;
     }
     const record = value as Record<string, unknown>;
-    if (record.candidateId === candidateId && typeof record.observationId === 'string') {
-      ids.add(record.observationId);
-    }
+    if (record.candidateId === candidateId && typeof record.fields === 'object') shown = true;
     Object.values(record).forEach(visit);
   };
   try {
     visit(JSON.parse(prompt));
   } catch {
-    return [];
+    return false;
   }
-  return [...ids];
+  return shown;
 };
 
 const placeFor = (id: string) => ({
