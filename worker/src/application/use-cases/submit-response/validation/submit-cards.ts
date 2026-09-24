@@ -35,50 +35,56 @@ import { validateOpening } from '@worker/application/use-cases/submit-response/v
 export type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 
 /**
- * Fields the card renders but the model never reasons over. The model's citations stay
- * authoritative for the claims it makes (identity and opening hours remain required and
- * model-cited); these are selected by the Application so a card's appearance does not
- * depend on the model remembering to cite an asset. Each one still passes the same
- * `resolveObservation` checks — scope, candidate, context, freshness, retention, reuse —
- * so nothing unverified reaches a card.
+ * Fields a card renders. The Core selects their observations from the registry instead of the
+ * model copying observation IDs: each candidate passes the same `resolveObservation` checks
+ * (scope, candidate, context, freshness, retention, reuse) and the newest valid one wins.
  */
-const DISPLAY_ONLY_FIELDS = ['price', 'photos', 'facilities'] as const;
+const CARD_FIELDS = ['identity', 'opening_hours', 'price', 'photos', 'facilities'] as const;
+type CardField = (typeof CARD_FIELDS)[number];
 
-/**
- * Attaches display-only observations the model did not cite. A field that fails validation
- * is simply left off the card: it is never the model's error and must not block the commit.
- * Returns the observation ids attached, so card evidence and attribution stay complete.
- */
-const attachDisplayObservations = (
+/** A card cannot be committed without these; the other fields are simply left off the card. */
+const REQUIRED_CARD_FIELDS: readonly CardField[] = ['identity', 'opening_hours'];
+
+type AttachedCardObservations = {
+  readonly byField: Map<KnownObservationField, ResolvedObservation>;
+  readonly evidenceIds: readonly string[];
+  /** The newest rejected observation per field, reported when a required field has none. */
+  readonly rejected: ReadonlyMap<CardField, SubmitValidationIssue>;
+};
+
+const attachCardObservations = (
   candidateId: string,
-  byField: Map<KnownObservationField, ResolvedObservation>,
   path: string,
   context: SubmitValidationContext,
   registry: CandidateObservationRegistryPort,
-): readonly string[] => {
-  const attached: string[] = [];
-  for (const field of DISPLAY_ONLY_FIELDS) {
-    if (byField.has(field)) continue;
-    const stored = registry
-      .listObservations(context.scope, candidateId)
+): AttachedCardObservations => {
+  const byField = new Map<KnownObservationField, ResolvedObservation>();
+  const evidenceIds: string[] = [];
+  const rejected = new Map<CardField, SubmitValidationIssue>();
+  const stored = registry.listObservations(context.scope, candidateId);
+  for (const field of CARD_FIELDS) {
+    const newestFirst = stored
       .filter((observation) => observation.field === field)
-      .slice()
       .sort((left, right) => Date.parse(right.fetchedAt) - Date.parse(left.fetchedAt));
-    for (const observation of stored) {
+    for (const observation of newestFirst) {
       const resolved = resolveObservation(
         observation.observationId,
         candidateId,
-        path,
+        `${path}.${field}`,
         context,
         registry,
       );
-      if (resolved.issue !== undefined || resolved.resolved === undefined) continue;
+      if (resolved.issue !== undefined) {
+        if (!rejected.has(field)) rejected.set(field, resolved.issue);
+        continue;
+      }
+      if (resolved.resolved === undefined) continue;
       byField.set(field, resolved.resolved);
-      attached.push(observation.observationId);
+      evidenceIds.push(observation.observationId);
       break;
     }
   }
-  return attached;
+  return { byField, evidenceIds, rejected };
 };
 
 const validateCandidate = (
@@ -111,55 +117,24 @@ const validateCandidate = (
       ),
     );
   }
-  const byId = new Map<string, ResolvedObservation>();
-  const byField = new Map<KnownObservationField, ResolvedObservation>();
+  const attached = attachCardObservations(selection.candidateId, path, context, registry);
+  const byField = attached.byField;
   const issues: SubmitValidationIssue[] = [];
-  for (const [evidenceIndex, id] of selection.evidenceIds.entries()) {
-    const resolved = resolveObservation(
-      id,
-      selection.candidateId,
-      `${path}.evidenceIds[${evidenceIndex}]`,
-      context,
-      registry,
+  for (const field of REQUIRED_CARD_FIELDS) {
+    if (byField.has(field)) continue;
+    issues.push(
+      attached.rejected.get(field) ??
+        issue(
+          'MISSING_EVIDENCE',
+          `${path}.${field}`,
+          `no usable ${field} observation is registered for this candidate`,
+          [field],
+          selection.candidateId,
+        ),
     );
-    if (resolved.issue !== undefined) {
-      issues.push(resolved.issue);
-    } else if (resolved.resolved !== undefined) {
-      byId.set(id, resolved.resolved);
-      if (!byField.has(resolved.resolved.evidence.field)) {
-        byField.set(resolved.resolved.evidence.field, resolved.resolved);
-      }
-    }
   }
-  const attachedEvidenceIds = attachDisplayObservations(
-    selection.candidateId,
-    byField,
-    path,
-    context,
-    registry,
-  );
   const identityObservation = byField.get('identity');
   const openingObservation = byField.get('opening_hours');
-  if (identityObservation === undefined)
-    issues.push(
-      issue(
-        'MISSING_EVIDENCE',
-        `${path}.evidenceIds`,
-        'identity evidence is required',
-        ['identity'],
-        selection.candidateId,
-      ),
-    );
-  if (openingObservation === undefined)
-    issues.push(
-      issue(
-        'MISSING_EVIDENCE',
-        `${path}.evidenceIds`,
-        'opening-hours evidence is required',
-        ['opening_hours'],
-        selection.candidateId,
-      ),
-    );
   const identity =
     identityObservation === undefined
       ? undefined
@@ -168,7 +143,7 @@ const validateCandidate = (
     issues.push(
       issue(
         'INVALID_EVIDENCE',
-        `${path}.evidenceIds`,
+        `${path}.identity`,
         'identity observation value is invalid',
         ['identity'],
         selection.candidateId,
@@ -199,7 +174,7 @@ const validateCandidate = (
     issues.push(
       issue(
         'INVALID_EVIDENCE',
-        `${path}.evidenceIds`,
+        `${path}.openingHours`,
         'opening-hours observation value is invalid',
         ['opening_hours'],
         selection.candidateId,
@@ -212,7 +187,7 @@ const validateCandidate = (
     `${path}.why`,
     context,
     registry,
-    byId,
+    new Map(),
   );
   if (why.status === 'invalid') issues.push(...why.issues);
   const diff =
@@ -224,7 +199,7 @@ const validateCandidate = (
           `${path}.diff`,
           context,
           registry,
-          byId,
+          new Map(),
         );
   if (diff?.status === 'invalid') issues.push(...diff.issues);
   if (
@@ -269,7 +244,7 @@ const validateCandidate = (
       price,
       photos,
       facilities,
-      evidenceIds: [...selection.evidenceIds, ...attachedEvidenceIds],
+      evidenceIds: attached.evidenceIds,
       why: why.response,
       diff: diff === null ? null : diff.status === 'valid' ? diff.response : null,
     },

@@ -1,21 +1,15 @@
 import * as v from 'valibot';
 import { EvidenceTextSchema } from '@worker/domain/evidence/evidence';
-import { CandidateIdSchema, ObservationIdSchema, Text } from '@worker/domain/primitives';
+import { CandidateIdSchema, Text } from '@worker/domain/primitives';
 import { ModelContextSchema } from '@worker/application/ports/context';
 import {
   GetPlaceDetailsInputSchema,
   SearchPlacesInputSchema,
 } from '@worker/application/ports/operations';
 
-const EvidenceIdsSchema = v.pipe(
-  v.array(ObservationIdSchema),
-  v.maxLength(16),
-  v.check((ids) => new Set(ids).size === ids.length, 'duplicate evidence ID'),
-);
-
+/** Card facts are attached by the Core from the registry; the model only picks and explains. */
 export const CardSelectionSchema = v.strictObject({
   candidateId: CandidateIdSchema,
-  evidenceIds: EvidenceIdsSchema,
   why: EvidenceTextSchema(80),
   diff: v.optional(EvidenceTextSchema(40)),
 });

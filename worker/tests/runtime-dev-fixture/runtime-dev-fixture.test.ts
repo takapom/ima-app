@@ -215,7 +215,10 @@ describe('keyless dev fixture graph', () => {
       },
     ]);
     expect(submitInput).toMatchObject({
-      hero: { candidateId: 'candidate-from-result', evidenceIds: ['observation-from-result'] },
+      hero: {
+        candidateId: 'candidate-from-result',
+        why: { evidenceIds: ['observation-from-result'] },
+      },
     });
   });
 

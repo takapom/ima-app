@@ -73,7 +73,6 @@ export const submitInput: SubmitCardsInput = {
   message: [{ text: '候補です', evidenceIds: [], basis: 'conversational' }],
   hero: {
     candidateId: 'candidate-1',
-    evidenceIds: [],
     why: { text: '候補です', evidenceIds: [], basis: 'conversational' },
   },
   alts: [],

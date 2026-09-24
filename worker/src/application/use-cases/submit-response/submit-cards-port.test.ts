@@ -183,9 +183,7 @@ describe('submit cards application adapter', () => {
       getRemainingRepairs: () => repairs,
     });
     const invalidInput = makeInput([makeSelection('candidate-1', ids)]);
-    invalidInput.hero.evidenceIds = invalidInput.hero.evidenceIds.filter(
-      (id) => id !== ids.opening,
-    );
+    invalidInput.hero.why.evidenceIds = ['unregistered-observation'];
 
     const first = await port.submit(invalidInput, execution(fixture.context.scope.threadId), token);
     repairs = 1;

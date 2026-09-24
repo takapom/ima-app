@@ -395,7 +395,6 @@ export const createRuntimeNativePortFixture = (
     ],
     hero: {
       candidateId: candidate.candidateId,
-      evidenceIds: [identity, opening],
       why: {
         text: 'Identity and opening hours are registered.',
         evidenceIds: [identity, opening],
@@ -406,7 +405,10 @@ export const createRuntimeNativePortFixture = (
   };
   const invalidSubmit: SubmitCardsInput = {
     ...validSubmit,
-    hero: { ...validSubmit.hero, evidenceIds: [identity] },
+    hero: {
+      ...validSubmit.hero,
+      why: { ...validSubmit.hero.why, evidenceIds: ['unregistered-observation'] },
+    },
   };
   const details: GetPlaceDetailsInput = {
     requests: [{ candidateId: candidate.candidateId, fields: ['identity', 'opening_hours'] }],

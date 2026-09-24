@@ -286,7 +286,6 @@ export const modelForProduction = (
           ],
           hero: {
             candidateId,
-            evidenceIds,
             why: {
               text: '検索結果と詳細を確認しました。',
               evidenceIds,
@@ -297,7 +296,6 @@ export const modelForProduction = (
             ? [
                 {
                   candidateId: alternativeCandidateId,
-                  evidenceIds: alternativeEvidenceIds,
                   why: {
                     text: 'もう一つの候補です。',
                     evidenceIds: alternativeEvidenceIds,

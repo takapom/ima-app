@@ -71,7 +71,7 @@ bun run dev:worker:llm
 
 `kind: "invalid_tool_input"`はProvider呼出し前のTool引数検証エラー。`fields`に値を含まない契約上の項目名を出し、LLMにも同じ項目名を返して修正を促す。HTTP 200は会話応答の成功を示し、店舗検索やカード提示の成功を保証しない。
 
-カードが出ない場合はまず`event: "turn_outcome"`の行を見る。`committed`が確定の有無、`operations`がそのturnで呼ばれた公開Toolと回数を示す。`submit_cards`が0ならモデルは確定へ進んでおらず、原因は検索結果か指示の側にある。確定を試みた場合は`event: "submit_cards_invalid"`の行を見る。確定が検証で拒否されるとissueの`code`・`path`・`missingFields`・Core側の`message`と、影響した候補数・修復残数を出力する。候補ID・観測ID・生成文・Provider内容は含まない。`missingFields`に`identity`や`opening_hours`が出る場合は、モデルが`submit_cards`の前に`get_place_details`でその根拠を取得していない。この行がなく候補も出ないときは、確定まで到達せず検索が0件だった場合を疑う。
+カードが出ない場合はまず`event: "turn_outcome"`の行を見る。`committed`が確定の有無、`operations`がそのturnで呼ばれた公開Toolと回数を示す。`submit_cards`が0ならモデルは確定へ進んでおらず、原因は検索結果か指示の側にある。確定を試みた場合は`event: "submit_cards_invalid"`の行を見る。確定が検証で拒否されるとissueの`code`・`path`・`missingFields`・Core側の`message`と、影響した候補数・修復残数を出力する。候補ID・観測ID・生成文・Provider内容は含まない。カードの店名・営業時間などの根拠はCoreがレジストリから付ける。`missingFields`に`identity`や`opening_hours`が出る場合は、その候補の有効な観測がレジストリにない（`get_place_details`で未取得、または期限切れ・競合）。この行がなく候補も出ないときは、確定まで到達せず検索が0件だった場合を疑う。
 
 ## 品質検査
 

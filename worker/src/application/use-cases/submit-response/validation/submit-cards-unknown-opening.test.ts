@@ -36,8 +36,7 @@ const fixtureFor = (listedOpenAtEvaluation: boolean | null = null) => {
   fixture.registry.restoreObservationReuse(fixture.context.scope, 'candidate-1', 'opening_hours', [
     opening,
   ]);
-  const selection = makeSelection('candidate-1', { ...ids, opening });
-  const input = makeInput([{ ...selection, evidenceIds: [ids.identity, opening] }]);
+  const input = makeInput([makeSelection('candidate-1', { ...ids, opening })]);
   return { ...fixture, input };
 };
 
