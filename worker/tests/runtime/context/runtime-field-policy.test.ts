@@ -203,6 +203,13 @@ describe('runtime field policy', () => {
     );
     // Only values that reach the model bound the generated text; the withheld price does not.
     expect(presented).toEqual(['observation-identity']);
+    // The model judges from a summary; IDs, times and sources stay with the harness.
+    expect(projected).toMatchObject({
+      data: { candidates: [{ identity: { status: 'known', name: 'Cafe', area: '渋谷' } }] },
+    });
+    for (const internal of ['observation-identity', 'fetchedAt', 'freshUntil', 'google_places']) {
+      expect(JSON.stringify(projected)).not.toContain(internal);
+    }
 
     expect(JSON.stringify(projected)).toContain('Cafe');
     expect(JSON.stringify(projected)).not.toContain('secret-price');

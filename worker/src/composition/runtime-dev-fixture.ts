@@ -110,7 +110,7 @@ const streamOf = (
     },
   });
 
-const idsInPrompt = (prompt: unknown, key: 'candidateId' | 'observationId'): string[] => {
+const idsInPrompt = (prompt: unknown, key: 'candidateId'): string[] => {
   const ids = new Set<string>();
   const seen = new WeakSet<object>();
   const visitJson = (value: unknown, depth: number): void => {
@@ -158,37 +158,6 @@ const idsInPrompt = (prompt: unknown, key: 'candidateId' | 'observationId'): str
   return [...ids];
 };
 
-const containsStructuredField = (value: unknown, field: string, depth = 0): boolean => {
-  if (depth > 12) return false;
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return false;
-    try {
-      return containsStructuredField(JSON.parse(trimmed) as unknown, field, depth + 1);
-    } catch {
-      return false;
-    }
-  }
-  if (Array.isArray(value))
-    return value.some((item) => containsStructuredField(item, field, depth + 1));
-  if (!isRecord(value)) return false;
-  if (value.field === field) return true;
-  return Object.values(value).some((item) => containsStructuredField(item, field, depth + 1));
-};
-
-const toolHasStructuredField = (value: unknown, field: string): boolean => {
-  if (Array.isArray(value)) return value.some((item) => toolHasStructuredField(item, field));
-  if (!isRecord(value)) return false;
-  if (value.role === 'user' || value.role === 'system') return false;
-  if (value.role === 'tool') {
-    return containsStructuredField(value.content, field);
-  }
-  if (value.type === 'tool-result') return containsStructuredField(value.output, field);
-  if (value.type === 'tool-call' || value.type === 'text') return false;
-  if (value.role === 'assistant') return toolHasStructuredField(value.content, field);
-  return Object.values(value).some((item) => toolHasStructuredField(item, field));
-};
-
 const toolHasName = (value: unknown, name: string): boolean => {
   if (Array.isArray(value)) return value.some((item) => toolHasName(item, name));
   if (!isRecord(value)) return false;
@@ -231,7 +200,6 @@ const toolParts = (
 
 const nextTool = (prompt: unknown): { readonly name: string; readonly input: unknown } => {
   const candidates = [...new Set(idsInPrompt(prompt, 'candidateId'))];
-  const observations = [...new Set(idsInPrompt(prompt, 'observationId'))];
   if (candidates.length === 0) {
     return {
       name: 'search_places',
@@ -245,12 +213,8 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
     };
   }
   const candidateId = candidates.at(-1) ?? 'missing-candidate';
-  const hasPhotoObservation = toolHasStructuredField(prompt, 'photos');
-  const detailsRequested = toolHasName(prompt, 'get_place_details');
-  if (
-    !detailsRequested &&
-    (observations.length === 0 || (toolHasName(prompt, 'search_places') && !hasPhotoObservation))
-  ) {
+  // The model sees summaries without observation IDs, so the fixture reads details once.
+  if (!toolHasName(prompt, 'get_place_details')) {
     return {
       name: 'get_place_details',
       input: {

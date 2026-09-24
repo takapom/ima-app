@@ -73,4 +73,89 @@ describe('model message encoding', () => {
     expect(system?.content).not.toContain('sourceTurnId');
     expect(system?.content).not.toContain('metadata');
   });
+
+  it('orders the envelope from stable to volatile and summarizes evidence without internals', () => {
+    const context = createModelContext();
+    const known = {
+      status: 'known' as const,
+      observationId: 'observation-secret',
+      candidateId: 'candidate-1',
+      field: 'identity' as const,
+      value: {
+        name: '店A',
+        area: '恵比寿',
+        address: null,
+        category: 'cafe',
+        stationName: '恵比寿',
+        accessText: '徒歩3分',
+        businessStatus: 'operational',
+        sourceUrl: 'https://example.com/shop',
+      },
+      fetchedAt: '2026-09-10T11:00:00Z',
+      freshUntil: '2026-09-10T12:30:00Z',
+      expiresAt: '2026-09-10T20:00:00Z',
+      sources: [{ provider: 'fixture-provider', attribution: null, publicUrl: null }],
+    };
+    const stale = {
+      status: 'stale' as const,
+      observationId: 'observation-stale',
+      candidateId: 'candidate-1',
+      field: 'opening_hours' as const,
+      reason: 'expired',
+      freshUntil: '2026-09-10T11:30:00Z',
+    };
+    const [, user] = encodeModelContext({
+      ...context,
+      history: [
+        { turnId: 'turn-1', role: 'user', text: '静かで甘いものがある店' },
+        { turnId: 'turn-2', role: 'assistant', text: '候補を3つ出しました。' },
+      ],
+      evidence: [known, stale],
+    });
+    if (typeof user?.content !== 'string') throw new Error('context message must be text');
+    const serialized = user.content;
+    const envelope = JSON.parse(serialized) as {
+      readonly context: Record<string, unknown>;
+    };
+    expect(Object.keys(envelope)).toEqual(['kind', 'context', 'originalUserText']);
+    expect(Object.keys(envelope.context)).toEqual([
+      'capabilities',
+      'preferences',
+      'history',
+      'cardSet',
+      'evidence',
+      'location',
+      'serverNow',
+      'budget',
+    ]);
+    expect(envelope.context.evidence).toEqual([
+      {
+        candidateId: 'candidate-1',
+        field: 'identity',
+        status: 'known',
+        name: '店A',
+        category: 'cafe',
+        area: '恵比寿',
+        address: null,
+        stationName: '恵比寿',
+        accessText: '徒歩3分',
+        businessStatus: 'operational',
+      },
+      { candidateId: 'candidate-1', field: 'opening_hours', status: 'stale' },
+    ]);
+    expect(envelope.context.history).toEqual([
+      { role: 'user', text: '静かで甘いものがある店' },
+      { role: 'assistant', text: '候補を3つ出しました。' },
+    ]);
+    for (const internal of [
+      'observation-secret',
+      'fetchedAt',
+      'fixture-provider',
+      'example.com/shop',
+      'turn-4',
+      'thread-1',
+    ]) {
+      expect(serialized).not.toContain(internal);
+    }
+  });
 });
