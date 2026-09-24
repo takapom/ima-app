@@ -11,7 +11,7 @@ import type { SubmitCardsPort } from '@worker/application/ports/submission';
 import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import { projectModelContext } from '@worker/application/model-context/model-context';
 import { SubmitApplication } from '@worker/application/use-cases/submit-response/submit-application';
-import { createSubmitCardsPort } from '@worker/application/use-cases/submit-response/submit-cards-port';
+import { createSubmitCardsPort } from '@worker/application/use-cases/submit-response/respond-port';
 import { encodeModelContext } from '@worker/runtime/model/encoding';
 import type {
   RuntimeThinkComposition,
