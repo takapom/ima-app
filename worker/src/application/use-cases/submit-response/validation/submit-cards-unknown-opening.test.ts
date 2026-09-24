@@ -9,7 +9,7 @@ import {
 } from '@worker/application/use-cases/submit-response/tests/submit-cards-fixtures';
 
 const fixtureFor = (listedOpenAtEvaluation: boolean | null = null) => {
-  const fixture = makeFixture(['candidate-1'], { requireLastOrderAtArrival: false });
+  const fixture = makeFixture(['candidate-1'], { requireLastOrder: false });
   const ids = fixture.ids.get('candidate-1');
   if (ids === undefined) throw new Error('Fixture missing');
   fixture.registry.invalidateObservationReuse(

@@ -60,7 +60,7 @@ export type RuntimePhotoPreparationErrorObserver = (
 ) => void;
 
 export type RuntimePublicResponseOptions = RuntimePublicResponseMetadata & {
-  /** The generated text policy; the final contracts schema checks it against every source. */
+  /** Retention for generated text, already narrowed to what the model was shown this turn. */
   readonly textRetention: RetentionMetadata;
   /** Re-resolves the committed card evidence before publishing cards. */
   readonly resolveCardEvidence?: RuntimeCardEvidenceResolver;

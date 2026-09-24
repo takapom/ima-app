@@ -52,7 +52,7 @@ export type RuntimeTurnFactoryOptions = {
   readonly beforeTurn?: RuntimeBeforeTurnDelegate;
   readonly beforeStep?: RuntimeBeforeStepDelegate;
   readonly beforeToolCall?: RuntimeBeforeToolCallDelegate;
-  /** Supplied by the model guard so successful commit can stop the native loop. */
+  /** Stops the native loop once the budget records a committed respond. */
   readonly stopWhen: RuntimeStopWhen;
   /** Supplied by the retention adapter; no persistence policy is created here. */
   readonly experimentalTransform?: TurnConfig['experimental_transform'];

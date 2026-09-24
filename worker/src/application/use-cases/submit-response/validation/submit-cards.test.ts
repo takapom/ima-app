@@ -120,7 +120,7 @@ describe('submit-cards pure validation and card assembly', () => {
   });
 
   it('supports message-only and rejects an empty message', () => {
-    const fixture = makeFixture([], { requireLastOrderAtArrival: false });
+    const fixture = makeFixture([], { requireLastOrder: false });
     const result = validateMessage({ kind: 'ask', message: '条件を確認しました' }, fixture.context);
     expect(result).toMatchObject({
       status: 'valid',

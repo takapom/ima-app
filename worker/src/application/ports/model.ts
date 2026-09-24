@@ -29,7 +29,7 @@ const candidatesAreUnique = (input: CardsPayload): boolean =>
 
 export const SubmitCardsInputSchema = v.pipe(
   SubmitCardsPayloadSchema,
-  v.check(altsExplainDifferences, 'alternative cards require diff evidence'),
+  v.check(altsExplainDifferences, 'alternative cards require a diff'),
   v.check(candidatesAreUnique, 'hero and alternative candidates must be unique'),
 );
 export type SubmitCardsInput = v.InferOutput<typeof SubmitCardsInputSchema>;
@@ -47,7 +47,7 @@ export const RespondInputSchema = v.pipe(
   ]),
   v.check(
     (input) => input.kind !== 'propose' || altsExplainDifferences(input),
-    'alternative cards require diff evidence',
+    'alternative cards require a diff',
   ),
   v.check(
     (input) => input.kind !== 'propose' || candidatesAreUnique(input),

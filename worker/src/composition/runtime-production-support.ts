@@ -277,7 +277,7 @@ export const validationContextFor = (
     locationRevision: context.location.revision,
     timeContext: 'now',
   },
-  requireLastOrderAtArrival: false,
+  requireLastOrder: false,
 });
 
 export const productionHash: CommitHashPort = {

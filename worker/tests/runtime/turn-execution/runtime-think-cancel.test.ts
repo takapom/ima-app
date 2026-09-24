@@ -12,7 +12,6 @@ import type {
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
 import type { Result } from '@worker/domain/result';
-import type { RespondPort, RespondPortResult } from '@worker/application/ports/submission';
 import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
@@ -96,7 +95,7 @@ const validationContext: SubmitValidationContext = {
     locationRevision: 1,
     timeContext: 'now',
   },
-  requireLastOrderAtArrival: false,
+  requireLastOrder: false,
 };
 
 const errorResult = <T>(): Result<T> => ({
@@ -117,16 +116,7 @@ const createPorts = () => {
     search: () => Promise.resolve(errorResult<SearchPlacesOutput>()),
   };
   const details: PlaceDetailsPort = { read: () => Promise.resolve(errorResult<never>()) };
-  const respond: RespondPort = {
-    respond: (): Promise<RespondPortResult> =>
-      Promise.resolve({
-        status: 'invalid',
-        issues: [],
-        repairable: false,
-        remainingRepairs: 0,
-      }),
-  };
-  return { registry, clock: () => NOW, search, details, respond };
+  return { registry, clock: () => NOW, search, details };
 };
 
 class RecordingCommit implements CommitPort {

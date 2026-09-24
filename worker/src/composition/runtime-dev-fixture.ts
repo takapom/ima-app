@@ -213,7 +213,8 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
     };
   }
   const candidateId = candidates.at(-1) ?? 'missing-candidate';
-  // The model sees summaries without observation IDs, so the fixture reads details once.
+  // Search already registers every card field; one details read keeps the optional re-read in
+  // the keyless dev loop.
   if (!toolHasName(prompt, 'get_place_details')) {
     return {
       name: 'get_place_details',

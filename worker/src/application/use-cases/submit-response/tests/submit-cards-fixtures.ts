@@ -80,7 +80,7 @@ export type EvidenceIds = {
 };
 
 type FixtureOptions = {
-  requireLastOrderAtArrival?: boolean;
+  requireLastOrder?: boolean;
   lastOrderAt?: IsoTimestamp;
   openingStartAt?: IsoTimestamp;
   openingEndAt?: IsoTimestamp | null;
@@ -102,7 +102,7 @@ export const makeContext = (options: FixtureOptions = {}): SubmitValidationConte
     locationRevision: 1,
     timeContext: 'now',
   },
-  requireLastOrderAtArrival: options.requireLastOrderAtArrival ?? true,
+  requireLastOrder: options.requireLastOrder ?? true,
 });
 
 const registerFixtureObservation = (

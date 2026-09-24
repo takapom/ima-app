@@ -133,7 +133,7 @@ const message = (text: string) => ({ kind: 'answer' as const, message: text });
 describe('BarrierCommit CAS', () => {
   it('does not commit when response preparation fails', async () => {
     const fixture = makeFixture([], {
-      requireLastOrderAtArrival: false,
+      requireLastOrder: false,
     });
     const commits = new InMemoryCommitPort();
     commits.startTurn(fixture.context.scope, 'turn', 1);
@@ -162,7 +162,7 @@ describe('BarrierCommit CAS', () => {
   });
   it('allows only one side of a same-revision concurrent submit to commit', async () => {
     const fixture = makeFixture([], {
-      requireLastOrderAtArrival: false,
+      requireLastOrder: false,
     });
     const commits = new InMemoryCommitPort();
     commits.startTurn(fixture.context.scope, 'cas-turn', 1);

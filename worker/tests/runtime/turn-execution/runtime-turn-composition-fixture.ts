@@ -12,7 +12,6 @@ import type {
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
 import type { Result } from '@worker/domain/result';
-import type { RespondPort } from '@worker/application/ports/submission';
 import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { JSONValue, TextStreamPart, ToolResultPart, ToolSet } from 'ai';
 import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';
@@ -122,7 +121,7 @@ export const validationContext: SubmitValidationContext = {
     locationRevision: 1,
     timeContext: 'now',
   },
-  requireLastOrderAtArrival: false,
+  requireLastOrder: false,
 };
 
 export const searchResult: Result<SearchPlacesOutput> = {
@@ -167,7 +166,7 @@ const createBudget = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudg
 const createPorts = (
   calls: { readonly search: number[] },
   registry: CandidateObservationRegistryPort,
-): RuntimeTurnPortDependencies => {
+): Omit<RuntimeTurnPortDependencies, 'respond'> => {
   const search: PlaceSearchPort = {
     search: (_input, _context, _execution, cancellation) => {
       if (cancellation.isCancelled()) {
@@ -201,23 +200,7 @@ const createPorts = (
         },
       }),
   };
-  const respond: RespondPort = {
-    respond: () =>
-      Promise.resolve({
-        status: 'invalid',
-        issues: [
-          {
-            code: 'INVALID_ARGUMENT',
-            path: 'respond',
-            message: 'raw respond should not be called',
-            missingFields: [],
-          },
-        ],
-        repairable: false,
-        remainingRepairs: 0,
-      }),
-  };
-  return { registry, clock: () => NOW, search, details, respond };
+  return { registry, clock: () => NOW, search, details };
 };
 
 export const createComposition = (

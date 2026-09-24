@@ -73,7 +73,7 @@ export const validateOpening = (
       ),
     );
   }
-  if (context.requireLastOrderAtArrival) {
+  if (context.requireLastOrder) {
     if (hours.lastOrderAt === null) {
       issues.push(
         issue(

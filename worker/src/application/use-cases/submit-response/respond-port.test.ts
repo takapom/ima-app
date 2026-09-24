@@ -132,7 +132,7 @@ const execution = (threadId: string): ToolExecutionContext => ({
   revision: 1,
 });
 
-const messageFixture = () => makeFixture([], { requireLastOrderAtArrival: false });
+const messageFixture = () => makeFixture([], { requireLastOrder: false });
 
 describe('respond application adapter', () => {
   it('commits a proposal through SubmitApplication and reports its kind', async () => {

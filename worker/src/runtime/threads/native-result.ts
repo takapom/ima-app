@@ -44,7 +44,7 @@ export const threadRuntimeResultFromNative = (
   isStale: () => boolean,
 ): ThreadRuntimeTurnResult => {
   if (nativeResult.status === 'completed') {
-    // The turn ran to completion but committed neither cards nor a final message. That is a
+    // The turn ran to completion but committed no respond. That is a
     // distinct situation from an upstream failure, so it keeps its own code.
     if (nativeResult.response === null || nativeResult.response === undefined) {
       return runtimeFailure(

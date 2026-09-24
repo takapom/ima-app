@@ -102,7 +102,8 @@ type RuntimeTurnCompositionBaseOptions = {
   readonly ids: Pick<IdPort, 'nextCallId' | 'nextResponseId'>;
   readonly hashes: CommitHashPort;
   readonly registry: CandidateObservationRegistryPort;
-  readonly ports: RuntimeTurnPortDependencies;
+  /** The composition builds the respond port itself, on the Core application it owns. */
+  readonly ports: Omit<RuntimeTurnPortDependencies, 'respond'>;
   /** Optional bridge shared with provider adapters so timeout abort reaches the actual fetch. */
   readonly attemptSignalBridge?: RuntimeReadAttemptSignalBridge;
   readonly commit: CommitPort;
@@ -282,7 +283,7 @@ export function createRuntimeTurnComposition(
       validationContext: validationAt(options.validationContext, at.now),
       expectedTurnId: options.context.turnId,
       expectedRevision: options.context.revision,
-      idempotencyKey: options.idempotencyKey ?? `${options.context.turnId}-submit`,
+      idempotencyKey: submitIdempotencyKey,
       getRemainingRepairs: () => narrowRepairs(options.budget),
     });
     const cardSetId = options.publicResponse?.cardSetId;

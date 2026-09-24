@@ -390,7 +390,7 @@ const projectIssueResult = (value: JsonRecord): JSONValue => ({
   error: safeIssue(value.error ?? null),
 });
 
-/** Strictly projects validated search/details/submit result shapes at the SDK model boundary. */
+/** Strictly projects validated search, details and respond result shapes at the SDK model boundary. */
 export const projectRuntimeToolResultForModel = (
   value: JSONValue,
   policy: ModelContextFieldPolicy,
