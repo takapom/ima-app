@@ -172,6 +172,7 @@ const withinLegacyCitations = (
       Date.parse(retention.sessionExpiresAt) <= Date.parse(source.sessionExpiresAt) &&
       (source.displayPolicyStatus === 'available' ||
         retention.displayPolicyStatus !== 'available') &&
+      (source.restoreMode === 'full' || retention.restoreMode !== 'full') &&
       noLaterThanOrAbsent(retention.freshUntil, source.freshUntil) &&
       noLaterThanOrAbsent(retention.displayUntil, source.displayUntil) &&
       (retention.retentionDecision !== 'allow' ||
