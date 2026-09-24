@@ -38,23 +38,13 @@ const card: PublicCard = {
       businessStatus: 'unknown',
     }),
   },
-  why: { text: '希望に合う候補', evidenceIds: [], evidence: [], basis: 'grounded', retention },
+  why: { text: '希望に合う候補', retention },
 };
 
 describe('result credits', () => {
-  it('collects photo and explanation credits as well as the place source', () => {
+  it('collects photo credits as well as the place source; explanations cite nothing', () => {
     const withCredits: PublicCard = {
       ...card,
-      why: {
-        ...card.why,
-        evidence: [
-          {
-            ...evidence,
-            evidenceId: 'reason',
-            attribution: { label: '提案の出典', sourceLink: 'https://example.com/reason' },
-          },
-        ],
-      },
       facts: {
         ...card.facts,
         photos: known({
@@ -69,11 +59,10 @@ describe('result credits', () => {
       },
     };
     expect(cardAttributions(withCredits).map((credit) => credit.label)).toEqual([
-      '提案の出典',
       '店舗情報',
       '写真の撮影者',
     ]);
-    expect(resultAttributions([withCredits, withCredits])).toHaveLength(3);
+    expect(resultAttributions([withCredits, withCredits])).toHaveLength(2);
   });
 
   it('does not make one shared footer label link to the wrong shop', () => {

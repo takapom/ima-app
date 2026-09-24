@@ -47,9 +47,6 @@ const response = (input: ThreadTurnRequest, text: string, allow = true): Assista
   message: [
     {
       text,
-      basis: 'conversational',
-      evidence: [],
-      evidenceIds: [],
       retention: allow ? allowRetention.retention : retention.retention,
     },
   ],

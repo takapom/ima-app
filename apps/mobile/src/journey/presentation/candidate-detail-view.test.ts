@@ -70,7 +70,7 @@ const card = (facts: Partial<PublicCard['facts']> = {}): PublicCard => ({
     }),
     ...facts,
   },
-  why: { text: '寄りやすい', evidenceIds: [], evidence: [], basis: 'grounded', retention },
+  why: { text: '寄りやすい', retention },
 });
 
 const photos = known({ photos: [{ photoToken: 'token-1', attributions: [], sourceUrl: null }] });
@@ -295,16 +295,6 @@ describe('candidate detail facts', () => {
       });
     },
   );
-
-  it('does not use explanation credits to enable a sheet without fact credits', () => {
-    const base = card({ identity: { status: 'unknown', reason: 'absent' } });
-    expect(
-      toCandidateDetailViewModel(
-        { ...base, why: { ...base.why, evidence: [evidence('why')] } },
-        NOW,
-      ).attributions,
-    ).toEqual([]);
-  });
 
   it('deduplicates fact credits while preserving photo author attribution', () => {
     const view = toCandidateDetailViewModel(

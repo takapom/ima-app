@@ -157,9 +157,6 @@ describe('model-eval live opt-in boundary', () => {
       message: [
         {
           text: '青葉カフェを候補にしました。',
-          evidenceIds: ['ev-a-name'],
-          evidence: [evidence],
-          basis: 'grounded' as const,
           retention,
         },
       ],
@@ -184,9 +181,6 @@ describe('model-eval live opt-in boundary', () => {
           },
           why: {
             text: '候補として提示します。',
-            evidenceIds: ['ev-a-name'],
-            evidence: [evidence],
-            basis: 'grounded' as const,
             retention,
           },
         },

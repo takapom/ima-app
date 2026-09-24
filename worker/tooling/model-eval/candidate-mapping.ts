@@ -32,23 +32,6 @@ export type CandidateIdentityMappingFailure = {
   readonly code: 'CANDIDATE_ID_MAPPING_UNAVAILABLE' | 'CANDIDATE_ID_MAPPING_CONFLICT';
 };
 
-/**
- * Safe evidence join data captured from the model-visible projection. Values,
- * provider payloads, and display text are intentionally absent.
- */
-export type RuntimeEvidenceReference = {
-  readonly observationId: string;
-  readonly candidateId: string;
-  readonly field: string;
-  readonly freshUntil?: string | null;
-};
-
-export type EvidenceReferenceCapture = {
-  observe(value: unknown): void;
-  snapshot(): readonly RuntimeEvidenceReference[];
-  isUsable(): boolean;
-};
-
 export type CandidateIdentityCapture = {
   observe(value: unknown): void;
   snapshot(): readonly RuntimeCandidateIdentity[];
@@ -66,16 +49,6 @@ const isIdentity = (value: unknown): value is RuntimeCandidateIdentity =>
   value.recordRef.length > 0 &&
   typeof value.candidateId === 'string' &&
   value.candidateId.length > 0;
-
-const isBoundedText = (value: unknown, maxLength: number): value is string =>
-  typeof value === 'string' && value.length > 0 && value.length <= maxLength;
-
-const isEvidenceReference = (value: unknown): value is RuntimeEvidenceReference =>
-  isRecord(value) &&
-  isBoundedText(value.observationId, 128) &&
-  isBoundedText(value.candidateId, 128) &&
-  isBoundedText(value.field, 64) &&
-  (!('freshUntil' in value) || value.freshUntil === null || isBoundedText(value.freshUntil, 64));
 
 const identityKey = (provider: string, recordRef: string): string =>
   JSON.stringify([provider, recordRef]);
@@ -115,51 +88,6 @@ export const createCandidateIdentityCapture = (): CandidateIdentityCapture => {
     },
     isUsable(): boolean {
       return !invalid && byIdentity.size > 0;
-    },
-  };
-};
-
-/** Keeps only owner-bound observation identity; malformed observations stay unusable. */
-export const createEvidenceReferenceCapture = (): EvidenceReferenceCapture => {
-  const byObservation = new Map<string, RuntimeEvidenceReference>();
-  let invalid = false;
-
-  return {
-    observe(value: unknown): void {
-      if (!isEvidenceReference(value)) {
-        invalid = true;
-        return;
-      }
-      const existing = byObservation.get(value.observationId);
-      if (
-        existing !== undefined &&
-        (existing.candidateId !== value.candidateId || existing.field !== value.field)
-      ) {
-        invalid = true;
-        return;
-      }
-      if (
-        existing?.freshUntil !== undefined &&
-        value.freshUntil !== undefined &&
-        existing.freshUntil !== value.freshUntil
-      ) {
-        invalid = true;
-        return;
-      }
-      byObservation.set(value.observationId, {
-        observationId: value.observationId,
-        candidateId: value.candidateId,
-        field: value.field,
-        ...(value.freshUntil === undefined && existing?.freshUntil === undefined
-          ? {}
-          : { freshUntil: value.freshUntil ?? existing?.freshUntil ?? null }),
-      });
-    },
-    snapshot(): readonly RuntimeEvidenceReference[] {
-      return [...byObservation.values()];
-    },
-    isUsable(): boolean {
-      return !invalid && byObservation.size > 0;
     },
   };
 };

@@ -23,9 +23,6 @@ export const evidence = {
 };
 export const message = {
   text: '徒歩で行きやすい候補です',
-  evidenceIds: ['obs-1'],
-  evidence: [evidence],
-  basis: 'grounded',
   retention,
 };
 export const identity = {

@@ -10,7 +10,7 @@ import {
 import {
   AttributionSchema,
   DisplayFieldSchema,
-  PublicEvidenceTextSchema,
+  PublicTextSchema,
   RetentionMetadataSchema,
 } from '@contracts/public';
 
@@ -163,120 +163,47 @@ describe('public contract primitives', () => {
     ).toBe(false);
   });
 
-  it('requires explicit evidence and retention on generated text', () => {
-    const textSchema = PublicEvidenceTextSchema(300);
-    expect(
-      v.safeParse(textSchema, {
-        text: '候補です',
-        evidenceIds: ['obs-1'],
-        evidence: [evidence],
-        basis: 'grounded',
-        retention: allowedRetention(),
-      }).success,
-    ).toBe(true);
-    expect(
-      v.safeParse(textSchema, {
-        text: 'source allow, target deny',
-        evidenceIds: ['obs-1'],
-        evidence: [evidence],
-        basis: 'grounded',
-        retention: deniedRetention(),
-      }).success,
-    ).toBe(true);
+  it('carries generated text with retention only, and reads legacy citations within limits', () => {
+    const textSchema = PublicTextSchema(300);
+    const plain = { text: '候補です', retention: allowedRetention() };
+    expect(v.parse(textSchema, plain)).toEqual(plain);
+    expect(v.safeParse(textSchema, { text: '保持情報なし' }).success).toBe(false);
+    expect(v.safeParse(textSchema, { ...plain, text: '' }).success).toBe(false);
+
+    // Stored before #61: the citations are dropped, never mistaken for all the model was shown.
+    const legacy = (retention: unknown, cited: { readonly evidenceId: string } = evidence) => ({
+      text: '以前の回答',
+      // Legacy citation keys, kept verbatim as older payloads stored them.
+      evidenceIds: [cited.evidenceId],
+      evidence: [cited],
+      basis: 'grounded',
+      retention,
+    });
+    expect(v.parse(textSchema, legacy(allowedRetention()))).toEqual({
+      text: '以前の回答',
+      retention: allowedRetention(),
+    });
     const unknownSource = {
       ...evidence,
       retention: deniedRetention({ retentionDecision: 'unknown' }),
     };
+    expect(v.safeParse(textSchema, legacy(allowedRetention(), unknownSource)).success).toBe(false);
+    const deniedSource = { ...evidence, retention: deniedRetention() };
     expect(
-      v.safeParse(textSchema, {
-        text: 'provider由来',
-        evidenceIds: ['obs-1'],
-        evidence: [unknownSource],
-        basis: 'grounded',
-        retention: allowedRetention(),
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(textSchema, {
-        text: 'provider由来の一時表示',
-        evidenceIds: ['obs-1'],
-        evidence: [unknownSource],
-        basis: 'grounded',
-        retention: deniedRetention({ retentionDecision: 'unknown' }),
-      }).success,
-    ).toBe(true);
-    const unknownSourceWithLongerTarget = {
-      ...evidence,
-      retention: deniedRetention(),
-    };
-    expect(
-      v.safeParse(textSchema, {
-        text: '表示期限を延長',
-        evidenceIds: ['obs-1'],
-        evidence: [unknownSourceWithLongerTarget],
-        basis: 'grounded',
-        retention: deniedRetention({
-          sessionExpiresAt: '2026-09-10T05:00:00+09:00',
-          displayUntil: '2026-09-09T14:00:00Z',
-        }),
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(textSchema, {
-        text: 'セッション期限を延長',
-        evidenceIds: ['obs-1'],
-        evidence: [unknownSourceWithLongerTarget],
-        basis: 'grounded',
-        retention: deniedRetention({ sessionExpiresAt: '2026-09-10T05:00:00+09:00' }),
-      }).success,
+      v.safeParse(
+        textSchema,
+        legacy(deniedRetention({ sessionExpiresAt: '2026-09-10T05:00:00+09:00' }), deniedSource),
+      ).success,
     ).toBe(false);
     const hiddenSource = {
       ...evidence,
       retention: deniedRetention({ displayPolicyStatus: 'disabled_m35' }),
     };
     expect(
-      v.safeParse(textSchema, {
-        text: '表示禁止source',
-        evidenceIds: ['obs-1'],
-        evidence: [hiddenSource],
-        basis: 'grounded',
-        retention: deniedRetention({ displayPolicyStatus: 'available' }),
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(textSchema, {
-        text: '根拠なし',
-        evidenceIds: [],
-        evidence: [],
-        basis: 'conversational',
-        retention: deniedRetention(),
-      }).success,
-    ).toBe(true);
-    expect(
-      v.safeParse(textSchema, {
-        text: '根拠なし',
-        evidenceIds: ['obs-1'],
-        evidence: [],
-        basis: 'grounded',
-        retention: allowedRetention(),
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(textSchema, {
-        text: '保持情報なし',
-        evidenceIds: ['obs-1'],
-        evidence: [evidence],
-        basis: 'grounded',
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(textSchema, {
-        text: '未参照の根拠メタデータ',
-        evidenceIds: ['obs-1'],
-        evidence: [evidence, { ...evidence, evidenceId: 'obs-2' }],
-        basis: 'grounded',
-        retention: allowedRetention(),
-      }).success,
+      v.safeParse(
+        textSchema,
+        legacy(deniedRetention({ displayPolicyStatus: 'available' }), hiddenSource),
+      ).success,
     ).toBe(false);
   });
 

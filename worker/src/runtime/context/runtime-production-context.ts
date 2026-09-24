@@ -160,13 +160,11 @@ const candidateIdentitiesFor = (
   });
 };
 
+/** Card facts carry the evidence a later turn may discuss; generated text cites nothing. */
 const responseEvidenceIds = (response: AssistantResponse): readonly string[] => {
   const ids: string[] = [];
-  for (const message of response.message) ids.push(...message.evidenceIds);
-  if (response.kind !== 'cards') return unique(ids);
+  if (response.kind !== 'cards') return ids;
   for (const card of [response.cards.hero, ...response.cards.alts]) {
-    ids.push(...card.why.evidenceIds);
-    if (card.diff !== undefined) ids.push(...card.diff.evidenceIds);
     for (const field of Object.values(card.facts)) {
       if (field?.status === 'known') {
         ids.push(...field.evidence.map((evidence) => evidence.evidenceId));

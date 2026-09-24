@@ -2,9 +2,6 @@ import type { PublicMessage } from '@ima/contracts';
 
 export const message = {
   text: '候補を確認しました',
-  evidenceIds: [],
-  evidence: [],
-  basis: 'conversational',
   retention: {
     retentionDecision: 'deny',
     retentionMode: 'session_only',

@@ -68,9 +68,6 @@ const setup = async () => {
     message: [
       {
         text: '保存する回答',
-        basis: 'conversational',
-        evidenceIds: [],
-        evidence: [],
         retention: {
           retentionDecision: 'allow',
           retentionMode: 'session_only',

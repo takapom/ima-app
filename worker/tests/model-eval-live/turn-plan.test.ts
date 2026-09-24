@@ -24,9 +24,6 @@ const previousResponse = {
   message: [
     {
       text: '青葉カフェを確認しました。',
-      evidenceIds: [],
-      evidence: [],
-      basis: 'conversational' as const,
       retention: {
         retentionDecision: 'deny' as const,
         retentionMode: 'none' as const,

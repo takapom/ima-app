@@ -6,10 +6,10 @@ import {
   SchemaVersionSchema,
   Text,
 } from '@contracts/common';
-import { PublicEvidenceTextSchema } from '@contracts/public';
+import { PublicTextSchema } from '@contracts/public';
 import { CardsDataSchema } from '@contracts/values';
 
-export const PublicMessageSchema = PublicEvidenceTextSchema(300);
+export const PublicMessageSchema = PublicTextSchema(300);
 export type PublicMessage = v.InferOutput<typeof PublicMessageSchema>;
 export const PublicMessageListSchema = v.pipe(
   v.array(PublicMessageSchema),

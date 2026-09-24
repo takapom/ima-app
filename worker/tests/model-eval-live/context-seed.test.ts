@@ -160,7 +160,6 @@ describe('model-eval formal context through one Think Durable Object', () => {
     expect(message.threadId).toBe(target.threadId);
     expect(message.revision).toBe(cards.revision + 1);
     if (message.kind !== 'message') return;
-    expect(message.message[0]?.evidenceIds.length).toBeGreaterThan(0);
     const after = await stub.getModelEvalFixtureTrace();
     const stepsAfter = await stub.getModelEvalFixtureSteps();
     expect(after.upstreamCalls).toBe(before.upstreamCalls + 1);
@@ -218,7 +217,6 @@ describe('model-eval formal context through one Think Durable Object', () => {
     expect(second.revision).toBe(first.revision + 1);
     if (second.kind !== 'message') return;
     expect(second.message[0]?.text).toContain(secondCard.candidateId);
-    expect(second.message[0]?.evidenceIds).toHaveLength(3);
     const after = await stub.getModelEvalFixtureTrace();
     const stepsAfter = await stub.getModelEvalFixtureSteps();
     expect(after.upstreamCalls).toBe(before.upstreamCalls + 1);
@@ -262,7 +260,7 @@ describe('model-eval formal context through one Think Durable Object', () => {
     }
     expect(refreshedOpening.observationId).not.toBe(previousOpening.observationId);
     expect(refreshedSnapshot?.evidenceIds).toContain(refreshedOpening.observationId);
-    expect(second.message[0]?.evidenceIds).toContain(refreshedOpening.observationId);
+    expect(JSON.stringify(second)).not.toContain(previousOpening.observationId);
   });
 
   it('rejects a follow-up whose card set is absent from the committed response', async () => {

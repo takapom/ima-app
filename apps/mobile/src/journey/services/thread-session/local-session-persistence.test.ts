@@ -61,7 +61,6 @@ type FakeController = {
 const stateWithResponse = (
   revision = 1,
   overrides: Partial<RetentionMetadata> = {},
-  evidenceRetention: RetentionMetadata | null = null,
 ): AssistantResponseState => ({
   ...createAssistantResponseState('thread-1'),
   revision,
@@ -78,12 +77,6 @@ const stateWithResponse = (
       messages: [
         {
           text: 'モデル本文 PRIVATE_MODEL_TEXT',
-          evidenceIds: evidenceRetention === null ? [] : ['evidence-short'],
-          evidence:
-            evidenceRetention === null
-              ? []
-              : [{ evidenceId: 'evidence-short', attribution: null, retention: evidenceRetention }],
-          basis: 'conversational',
           retention: { ...retention, ...overrides },
         },
       ],
@@ -163,7 +156,8 @@ describe('local session persistence', () => {
   it('stores only current response references and the shortest future retention bounds', () => {
     const opened = openStore(() => nowValue);
     databases.push(opened.raw);
-    const controller = createController(stateWithResponse(1, {}, shorterRetention));
+    // The Worker bounds generated text by what the model was shown; the snapshot keeps it.
+    const controller = createController(stateWithResponse(1, shorterRetention));
     const persistence = createLocalSessionPersistence({
       controller: controller.controller,
       store: opened.store,

@@ -26,9 +26,6 @@ const retention = {
 };
 const message = {
   text: '候補を確認しました',
-  evidenceIds: [],
-  evidence: [],
-  basis: 'conversational' as const,
   retention,
 };
 

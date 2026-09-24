@@ -79,9 +79,6 @@ const messageFor = (request: ThreadTurnRequest): AssistantResponse => ({
   message: [
     {
       text: '確認しました。',
-      evidenceIds: [],
-      evidence: [],
-      basis: 'conversational',
       retention: {
         retentionDecision: 'deny',
         retentionMode: 'session_only',

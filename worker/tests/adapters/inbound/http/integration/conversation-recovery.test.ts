@@ -92,9 +92,6 @@ describe('conversation recovery and bounded memory', () => {
               message: [
                 {
                   text: '静かな店を探します',
-                  basis: 'conversational',
-                  evidenceIds: [],
-                  evidence: [],
                   retention,
                 },
               ],

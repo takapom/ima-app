@@ -40,11 +40,7 @@ const usableAttributions = (card: PublicCard): readonly JourneyShareAttribution[
   const facts = fields.flatMap((field) =>
     field?.status === 'known' ? [displayable(field.evidence)] : [],
   );
-  const text = [card.why, card.diff]
-    .filter((value): value is NonNullable<typeof value> => value !== undefined)
-    .filter((value) => value.retention.displayPolicyStatus === 'available')
-    .map((value) => displayable(value.evidence));
-  return collectAttributions([...facts, ...text]);
+  return collectAttributions(facts);
 };
 
 export const journeyShareInputFor = (card: PublicCard): JourneyShareCandidate => ({

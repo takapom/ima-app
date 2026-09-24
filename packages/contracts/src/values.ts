@@ -6,7 +6,7 @@ import {
   NullableText,
   Text,
 } from '@contracts/common';
-import { DisplayFieldSchema, PublicEvidenceTextSchema } from '@contracts/public';
+import { DisplayFieldSchema, PublicTextSchema } from '@contracts/public';
 
 const HttpsLink = (maxLength: number) => v.pipe(HttpsUrlSchema, v.maxLength(maxLength));
 const finiteNumber = v.pipe(
@@ -136,8 +136,8 @@ export const PublicCardFieldsSchema = v.strictObject({
 export const PublicCardSchema = v.strictObject({
   candidateId: CandidateIdSchema,
   facts: PublicCardFieldsSchema,
-  why: PublicEvidenceTextSchema(80),
-  diff: v.optional(PublicEvidenceTextSchema(40)),
+  why: PublicTextSchema(80),
+  diff: v.optional(PublicTextSchema(40)),
 });
 export type PublicCard = v.InferOutput<typeof PublicCardSchema>;
 

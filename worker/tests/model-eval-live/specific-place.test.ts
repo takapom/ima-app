@@ -195,16 +195,10 @@ describe('specific-place formal card resolution through one fixture DO', () => {
           .map((observation) => observation.observationId),
       );
     expect(new Set(aOpeningIds).size).toBeGreaterThanOrEqual(2);
-    const refreshedOpeningId = aOpeningIds.at(-1);
-    if (refreshedOpeningId === undefined) throw new Error('M25_SPECIFIC_PLACE_OPENING_MISSING');
-    expect(targetTurn.response.message[0]?.evidenceIds).toContain(refreshedOpeningId);
-    const evidenceRef = targetTurn.response.message[0]?.evidence.find(
-      (item) => item.evidenceId === refreshedOpeningId,
-    );
-    expect(evidenceRef).toBeDefined();
-    expect(Date.parse(evidenceRef?.retention.freshUntil ?? '')).toBeGreaterThan(
-      Date.parse(MODEL_EVAL_NOW),
-    );
+    // The answer cites nothing; it is generated after the refresh and never exposes the old ID.
+    const [previousOpeningId] = aOpeningIds;
+    if (previousOpeningId === undefined) throw new Error('M25_SPECIFIC_PLACE_OPENING_MISSING');
+    expect(JSON.stringify(targetTurn.response)).not.toContain(previousOpeningId);
   });
 
   it.each([
@@ -236,8 +230,6 @@ describe('specific-place formal card resolution through one fixture DO', () => {
     expect(targetTurn.response.kind).toBe('message');
     if (targetTurn.response.kind !== 'message') return;
     expect(targetTurn.response.message[0]?.text).toContain('特定できない');
-    expect(targetTurn.response.message[0]?.basis).toBe('conversational');
-    expect(targetTurn.response.message[0]?.evidenceIds).toEqual([]);
     expect(await prepared.stub.getModelEvalFixtureDetailsRequests()).toEqual(detailsBefore);
     expect((await prepared.stub.getModelEvalFixtureTrace()).upstreamCalls).toBe(
       before.upstreamCalls,
@@ -274,7 +266,6 @@ describe('specific-place formal card resolution through one fixture DO', () => {
     expect(targetTurn.response.kind).toBe('message');
     if (targetTurn.response.kind !== 'message') return;
     expect(targetTurn.response.message[0]?.text).toContain('特定できない');
-    expect(targetTurn.response.message[0]?.evidenceIds).toEqual([]);
     expect(await prepared.stub.getModelEvalFixtureDetailsRequests()).toEqual(detailsBefore);
     expect((await prepared.stub.getModelEvalFixtureTrace()).upstreamCalls).toBe(
       before.upstreamCalls,

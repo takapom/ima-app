@@ -258,7 +258,7 @@ const resolveAmenities = (facilities: FacilitiesInfo | null): readonly string[] 
 
 const resolveDiff = (diff: PublicCard['diff']): string | null => {
   if (diff === undefined || diff.retention.displayPolicyStatus !== 'available') return null;
-  return diff.basis === 'inference' ? `推定: ${diff.text}` : diff.text;
+  return diff.text;
 };
 
 const resolveVisual = (card: PublicCard): CardVisual => {

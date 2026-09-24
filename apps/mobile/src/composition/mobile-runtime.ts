@@ -233,11 +233,7 @@ const responseSessionExpiryFor = (
   if (cards !== null) {
     for (const card of [cards.hero, ...cards.alts]) {
       values.push(card.why.retention.sessionExpiresAt);
-      values.push(...card.why.evidence.map((item) => item.retention.sessionExpiresAt));
-      if (card.diff !== undefined) {
-        values.push(card.diff.retention.sessionExpiresAt);
-        values.push(...card.diff.evidence.map((item) => item.retention.sessionExpiresAt));
-      }
+      if (card.diff !== undefined) values.push(card.diff.retention.sessionExpiresAt);
       for (const field of Object.values(card.facts)) {
         if (field?.status === 'known') {
           values.push(...field.evidence.map((item) => item.retention.sessionExpiresAt));
@@ -248,7 +244,6 @@ const responseSessionExpiryFor = (
   for (const record of responseState.responseRecords) {
     for (const message of record.messages) {
       values.push(message.retention.sessionExpiresAt);
-      values.push(...message.evidence.map((item) => item.retention.sessionExpiresAt));
     }
   }
   return earliestExpiry(...values);

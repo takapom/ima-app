@@ -11,9 +11,6 @@ const initialState = createAssistantResponseState('thread-1');
 
 const message = {
   text: '候補を確認しました',
-  evidenceIds: [],
-  evidence: [],
-  basis: 'conversational' as const,
   retention: {
     retentionDecision: 'deny' as const,
     retentionMode: 'session_only' as const,

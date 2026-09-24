@@ -39,10 +39,10 @@ export type FactPresentation = {
   readonly evidence: readonly EvidenceRef[];
 };
 
-export type EvidenceTextPresentation = {
+/** Generated text cites nothing; uncertainty is stated in the text itself, not by a label. */
+export type GeneratedTextPresentation = {
   readonly status: 'available' | 'expired' | 'unavailable';
   readonly text: string;
-  readonly evidence: readonly EvidenceRef[];
 };
 
 const fieldStatusLabel: Record<UnavailableField['status'], string> = {
@@ -88,7 +88,7 @@ export const presentFact = <T>(
   return { status: 'known', label: format(field.value), evidence: field.evidence };
 };
 
-export const presentEvidenceText = (value: PublicCard['why']): EvidenceTextPresentation => {
+export const presentGeneratedText = (value: PublicCard['why']): GeneratedTextPresentation => {
   const displayPolicyStatus = value.retention.displayPolicyStatus;
   if (displayPolicyStatus !== 'available') {
     return {
@@ -97,15 +97,10 @@ export const presentEvidenceText = (value: PublicCard['why']): EvidenceTextPrese
         displayPolicyStatus === 'expired'
           ? 'この説明は表示期限を過ぎています。'
           : 'この説明は現在表示できません。',
-      evidence: [],
     };
   }
 
-  return {
-    status: 'available',
-    text: value.basis === 'inference' ? `推定: ${value.text}` : value.text,
-    evidence: value.evidence,
-  };
+  return { status: 'available', text: value.text };
 };
 
 const formatAtZone = (value: string, timeZone: string): string => {

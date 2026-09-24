@@ -7,14 +7,12 @@ import {
 import {
   collectPhotoAttributions,
   presentFact,
-  presentEvidenceText,
 } from '@mobile/journey/components/candidates/candidate-card-model';
 
 /** Photo attribution repeats the provider the other fields already cite; key on unique sources. */
 export const cardAttributions = (card: PublicCard): readonly AttributionPresentation[] =>
   dedupeAttributions([
     ...collectAttributions([
-      presentEvidenceText(card.why).evidence,
       presentFact(card.facts.identity, (value) => value.name).evidence,
       presentFact(card.facts.opening_hours, () => '').evidence,
       presentFact(card.facts.price, () => '').evidence,

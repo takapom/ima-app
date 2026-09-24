@@ -6,7 +6,7 @@ import {
   collectPhotoAttributions,
   formatOpeningHours,
   presentCardFacts,
-  presentEvidenceText,
+  presentGeneratedText,
   presentFact,
   shouldShowPhotoRegion,
 } from '@mobile/journey/components/candidates/candidate-card-model';
@@ -55,16 +55,10 @@ const card = (overrides: Partial<PublicCard['facts']> = {}): PublicCard => ({
   },
   why: {
     text: '駅から近い',
-    evidenceIds: [],
-    evidence: [],
-    basis: 'grounded',
     retention,
   },
   diff: {
     text: '静かな別案',
-    evidenceIds: [],
-    evidence: [],
-    basis: 'inference',
     retention,
   },
 });
@@ -135,7 +129,7 @@ describe('candidate card model', () => {
     ).toContain('確認時点では営業中 · 平日 10:00–20:00 · L.O. 19:30 · 営業時間の切替');
   });
 
-  it('marks inference text and preserves the fact-specific source attribution', () => {
+  it('shows generated text as written and keeps the fact-specific source attribution', () => {
     const facts = presentCardFacts(
       card({
         price: {
@@ -147,11 +141,12 @@ describe('candidate card model', () => {
     );
     const cardData = card();
     if (cardData.diff === undefined) throw new Error('fixture diff is required');
-    const text = presentEvidenceText(cardData.diff);
+    const text = presentGeneratedText(cardData.diff);
 
     expect(facts.price).toMatchObject({ status: 'known', label: '価格帯レベル 2' });
-    expect(text.text).toBe('推定: 静かな別案');
-    expect(collectAttributions([facts.price.evidence, text.evidence])).toEqual([
+    // No automatic label: uncertainty is stated in the text itself.
+    expect(text.text).toBe('静かな別案');
+    expect(collectAttributions([facts.price.evidence])).toEqual([
       { label: '価格情報', sourceLink: 'https://example.com/price-1' },
     ]);
   });
@@ -212,7 +207,7 @@ describe('candidate card model', () => {
       },
       String,
     );
-    const hiddenText = presentEvidenceText({
+    const hiddenText = presentGeneratedText({
       ...card().why,
       retention: { ...retention, displayPolicyStatus: 'expired', policyStatus: 'expired' },
     });
