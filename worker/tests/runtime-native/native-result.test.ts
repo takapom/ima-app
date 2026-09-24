@@ -70,8 +70,8 @@ describe('threadRuntimeResultFromNative', () => {
     expect(guardCode('MODEL_STREAM_LIMIT')).toBe('BUDGET_EXCEEDED');
     expect(guardCode('DEADLINE')).toBe('MODEL_TIMEOUT');
     expect(guardCode('MODEL_STREAM_TIMEOUT')).toBe('MODEL_TIMEOUT');
-    expect(guardCode('FINAL_WITH_TOOL')).toBe('MIXED_TERMINAL_ACTION');
-    expect(guardCode('MULTIPLE_SUBMIT')).toBe('MIXED_TERMINAL_ACTION');
+    expect(guardCode('READ_IN_FINAL_STEP')).toBe('MIXED_TERMINAL_ACTION');
+    expect(guardCode('MULTIPLE_RESPOND')).toBe('MIXED_TERMINAL_ACTION');
     expect(guardCode('TOOL_FINISH_WITHOUT_TOOL')).toBe('NO_TERMINAL_ACTION');
     expect(guardCode('UNSUPPORTED_PART')).toBe('RUNTIME_FAILED');
     expect(guardCode('FINISH_COUNT')).toBe('RUNTIME_FAILED');

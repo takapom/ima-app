@@ -10,6 +10,7 @@ import {
   retention,
   searchResult,
   RecordingCommit,
+  respondWith,
 } from './runtime-turn-composition-fixture';
 import { denyModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
 import { observedWindow } from '@worker/composition/runtime-turn-composition-support';
@@ -28,8 +29,8 @@ describe('createRuntimeTurnComposition', () => {
     const { composition, calls, model } = createComposition();
     expect(Object.keys(composition.turn.tools).sort()).toEqual([
       'get_place_details',
+      'respond',
       'search_places',
-      'submit_cards',
     ]);
     expect(composition.retention.transform).toBeDefined();
     const turnContext: TurnContext = {
@@ -90,22 +91,16 @@ describe('createRuntimeTurnComposition', () => {
     composition.dispose();
   });
 
-  it('awaits the Core commit started by the accepted final message', async () => {
+  it('commits an answer through respond and keeps the displayed cards', async () => {
     const commit = new RecordingCommit();
     const { composition } = createComposition(commit);
-    composition.onAccepted({
-      terminal: 'message',
-      finalText: JSON.stringify({
-        kind: 'final_message',
-        message: '確認しました',
-      }),
-      emptyFinal: false,
-      partCount: 3,
-      bytes: 100,
-    });
+    await expect(
+      respondWith(composition, { kind: 'answer', message: '確認しました' }),
+    ).resolves.toMatchObject({ status: 'committed', kind: 'answer', presentation: 'keep' });
     const response = await composition.getCommittedResponse();
     expect(response).toMatchObject({
       presentation: 'keep',
+      kind: 'answer',
       message: '確認しました',
     });
     expect(commit.requests).toHaveLength(1);
@@ -114,30 +109,18 @@ describe('createRuntimeTurnComposition', () => {
   });
 
   it.each([
-    ['text that is not the envelope', '確認しました', false],
-    ['a truncated envelope', '{"kind":"final_message"', false],
-    ['an empty terminal', '', true],
-  ] as const)(
-    'degrades %s to no commit instead of failing the turn',
-    async (_name, finalText, emptyFinal) => {
-      const commit = new RecordingCommit();
-      const { composition } = createComposition(commit);
-
-      expect(() =>
-        composition.onAccepted({
-          terminal: 'message',
-          finalText,
-          emptyFinal,
-          partCount: 1,
-          bytes: 32,
-        }),
-      ).not.toThrow();
-
-      await expect(composition.getCommittedResponse()).resolves.toBeUndefined();
-      expect(commit.requests).toHaveLength(0);
-      composition.dispose();
-    },
-  );
+    ['text written instead of respond', 'TEXT_WITHOUT_RESPOND'],
+    ['an empty step', 'EMPTY_STEP'],
+  ] as const)('commits nothing for %s instead of failing the turn', async (_name, reason) => {
+    const commit = new RecordingCommit();
+    const { composition } = createComposition(commit);
+    expect(() =>
+      composition.onAccepted({ terminal: 'none', missingRespond: reason, partCount: 1, bytes: 32 }),
+    ).not.toThrow();
+    await expect(composition.getCommittedResponse()).resolves.toBeUndefined();
+    expect(commit.requests).toHaveLength(0);
+    composition.dispose();
+  });
 
   it('maps the committed response with the receipt identity when public dependencies are injected', async () => {
     const commit = new RecordingCommit('receipt-public-response');
@@ -149,16 +132,7 @@ describe('createRuntimeTurnComposition', () => {
       { digest: () => 'composition-digest' },
       { textRetention: retention.retention },
     );
-    composition.onAccepted({
-      terminal: 'message',
-      finalText: JSON.stringify({
-        kind: 'final_message',
-        message: '公開応答',
-      }),
-      emptyFinal: false,
-      partCount: 2,
-      bytes: 64,
-    });
+    await respondWith(composition, { kind: 'answer', message: '公開応答' });
     const response = await composition.getCommittedResponse();
     expect(response).toMatchObject({
       kind: 'message',
@@ -205,16 +179,7 @@ describe('createRuntimeTurnComposition', () => {
         { steps: [], stepNumber: 0, model, messages: [], experimental_context: undefined },
         NOW,
       );
-      composition.onAccepted({
-        terminal: 'message',
-        finalText: JSON.stringify({
-          kind: 'final_message',
-          message: '前の回答を踏まえました',
-        }),
-        emptyFinal: false,
-        partCount: 2,
-        bytes: 64,
-      });
+      await respondWith(composition, { kind: 'answer', message: '前の回答を踏まえました' });
       const response = await composition.getCommittedResponse();
       composition.dispose();
       return response !== undefined && 'responseId' in response
@@ -256,16 +221,7 @@ describe('createRuntimeTurnComposition', () => {
         },
       },
     );
-    composition.onAccepted({
-      terminal: 'message',
-      finalText: JSON.stringify({
-        kind: 'final_message',
-        message: '遅延写真',
-      }),
-      emptyFinal: false,
-      partCount: 2,
-      bytes: 64,
-    });
+    await respondWith(composition, { kind: 'answer', message: '遅延写真' });
     const pending = composition.getCommittedResponse();
     await preparationEntered;
     composition.dispose();

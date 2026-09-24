@@ -8,10 +8,10 @@ import type {
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import type { CancellationToken, ToolExecutionContext } from '@worker/application/ports/context';
 import {
-  SubmitCardsPortInputSchema,
-  type SubmitCardsPort,
-  type SubmitCardsPortInput,
-  type SubmitCardsPortResult,
+  RespondPortInputSchema,
+  type RespondPort,
+  type RespondPortInput,
+  type RespondPortResult,
   type SubmitIssue,
 } from '@worker/application/ports/submission';
 import type {
@@ -19,7 +19,7 @@ import type {
   SubmitValidationIssue,
 } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 
-export type SubmitCardsPortFactoryOptions = {
+export type RespondPortFactoryOptions = {
   application: SubmitApplication;
   registry: CandidateObservationRegistryPort;
   scope: RegistryScope;
@@ -30,21 +30,22 @@ export type SubmitCardsPortFactoryOptions = {
   getRemainingRepairs: () => 0 | 1 | 2;
 };
 
-export class SubmitApplicationSubmitCardsPort implements SubmitCardsPort {
-  constructor(private readonly options: SubmitCardsPortFactoryOptions) {}
+/** Commits the model's one terminal action: a question or answer keeps cards, a proposal replaces them. */
+export class SubmitApplicationRespondPort implements RespondPort {
+  constructor(private readonly options: RespondPortFactoryOptions) {}
 
-  async submit(
-    input: SubmitCardsPortInput,
+  async respond(
+    input: RespondPortInput,
     execution: ToolExecutionContext,
     cancellation: CancellationToken,
-  ): Promise<SubmitCardsPortResult> {
+  ): Promise<RespondPortResult> {
     if (cancellation.isCancelled()) return this.cancelled();
-    if (execution.operation !== 'submit_cards') {
+    if (execution.operation !== 'respond') {
       return this.invalid([
         {
           code: 'INVALID_ARGUMENT',
           path: 'operation',
-          message: 'submit cards port received another operation',
+          message: 'respond port received another operation',
           missingFields: [],
         },
       ]);
@@ -66,30 +67,39 @@ export class SubmitApplicationSubmitCardsPort implements SubmitCardsPort {
         true,
       );
     }
-    const parsedInput = v.safeParse(SubmitCardsPortInputSchema, input);
+    const parsedInput = v.safeParse(RespondPortInputSchema, input);
     if (!parsedInput.success) {
       return this.invalid([
         {
           code: 'INVALID_ARGUMENT',
           path: 'input',
-          message: 'submit cards input is invalid',
+          message: 'respond input is invalid',
           missingFields: [],
         },
       ]);
     }
     if (cancellation.isCancelled()) return this.cancelled();
-    const result = await this.options.application.commitCards(
-      parsedInput.output,
-      this.options.validationContext,
-      this.options.registry,
-      {
-        scope: this.options.scope,
-        turnId: this.options.expectedTurnId,
-        expectedRevision: this.options.expectedRevision,
-        idempotencyKey: this.options.idempotencyKey,
-      },
-    );
-    return this.toPortResult(result, parsedInput.output);
+    const request = {
+      scope: this.options.scope,
+      turnId: this.options.expectedTurnId,
+      expectedRevision: this.options.expectedRevision,
+      idempotencyKey: this.options.idempotencyKey,
+    };
+    const parsed = parsedInput.output;
+    const result =
+      parsed.kind === 'propose'
+        ? await this.options.application.commitCards(
+            { message: parsed.message, hero: parsed.hero, alts: parsed.alts },
+            this.options.validationContext,
+            this.options.registry,
+            request,
+          )
+        : await this.options.application.commitMessage(
+            { kind: parsed.kind, message: parsed.message },
+            this.options.validationContext,
+            request,
+          );
+    return this.toPortResult(result, parsed.kind);
   }
 
   getCommittedResponse(
@@ -106,15 +116,15 @@ export class SubmitApplicationSubmitCardsPort implements SubmitCardsPort {
 
   private toPortResult(
     result: CommitApplicationResult,
-    input: SubmitCardsPortInput,
-  ): SubmitCardsPortResult {
+    kind: RespondPortInput['kind'],
+  ): RespondPortResult {
     if (result.status === 'committed') {
       return {
         status: 'committed',
         responseId: result.receipt.responseId,
         revision: result.receipt.revision,
-        presentation: 'replace',
-        cards: input,
+        kind,
+        presentation: kind === 'propose' ? 'replace' : 'keep',
       };
     }
     if (result.status === 'conflict') {
@@ -139,14 +149,14 @@ export class SubmitApplicationSubmitCardsPort implements SubmitCardsPort {
     return this.invalid(result.issues, terminal);
   }
 
-  private cancelled(): SubmitCardsPortResult {
+  private cancelled(): RespondPortResult {
     return {
       status: 'invalid',
       issues: [
         {
           code: 'CANCELLED',
           path: null,
-          message: 'submit was cancelled',
+          message: 'respond was cancelled',
           missingFields: [],
         },
       ],
@@ -155,10 +165,7 @@ export class SubmitApplicationSubmitCardsPort implements SubmitCardsPort {
     };
   }
 
-  private invalid(
-    issues: readonly SubmitValidationIssue[],
-    terminal = false,
-  ): SubmitCardsPortResult {
+  private invalid(issues: readonly SubmitValidationIssue[], terminal = false): RespondPortResult {
     const normalized = issues.map((item): SubmitIssue => ({
       code: item.code,
       path: item.path,
@@ -178,6 +185,6 @@ export class SubmitApplicationSubmitCardsPort implements SubmitCardsPort {
   }
 }
 
-export const createSubmitCardsPort = (
-  options: SubmitCardsPortFactoryOptions,
-): SubmitApplicationSubmitCardsPort => new SubmitApplicationSubmitCardsPort(options);
+export const createRespondPort = (
+  options: RespondPortFactoryOptions,
+): SubmitApplicationRespondPort => new SubmitApplicationRespondPort(options);

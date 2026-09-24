@@ -12,9 +12,10 @@ import type {
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
 import type { Result } from '@worker/domain/result';
-import type { SubmitCardsPort } from '@worker/application/ports/submission';
+import type { RespondPort } from '@worker/application/ports/submission';
 import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { JSONValue, TextStreamPart, ToolResultPart, ToolSet } from 'ai';
+import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';
 import { createToolRegistry } from '../../adapters/inbound/tools/registry-fixture';
 import { modelFor } from '../../support/runtime-model-fixture';
 import {
@@ -200,15 +201,15 @@ const createPorts = (
         },
       }),
   };
-  const submit: SubmitCardsPort = {
-    submit: () =>
+  const respond: RespondPort = {
+    respond: () =>
       Promise.resolve({
         status: 'invalid',
         issues: [
           {
             code: 'INVALID_ARGUMENT',
-            path: 'submit',
-            message: 'raw submit should not be called',
+            path: 'respond',
+            message: 'raw respond should not be called',
             missingFields: [],
           },
         ],
@@ -216,7 +217,7 @@ const createPorts = (
         remainingRepairs: 0,
       }),
   };
-  return { registry, clock: () => NOW, search, details, submit };
+  return { registry, clock: () => NOW, search, details, respond };
 };
 
 export const createComposition = (
@@ -282,6 +283,13 @@ export const createComposition = (
     currentCandidateId: fixture.currentCandidateId,
   };
 };
+
+/** Commits through the respond tool, the only path a model has to a response. */
+export const respondWith = (
+  composition: ReturnType<typeof createComposition>['composition'],
+  input: unknown,
+  toolCallId = 'respond-call',
+) => invokePublicToolEnvelope('respond', { input }, composition.turn.dependencies, { toolCallId });
 
 export type CompositionPart = TextStreamPart<ToolSet>;
 

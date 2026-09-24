@@ -1,6 +1,6 @@
 import type { CommitHashPort } from '@worker/application/ports/commit';
 import type { ObservationRegistration } from '@worker/domain/candidates/registry';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   NOW,
   SCOPE,
@@ -9,6 +9,7 @@ import {
   stepMessages,
   captureToolResult,
   RecordingCommit,
+  respondWith,
   retention,
   validationContext,
 } from './runtime-turn-composition-fixture';
@@ -112,22 +113,12 @@ describe('Runtime turn composition retention boundaries', () => {
     };
     const commit = new RecordingCommit();
     const { composition } = createComposition(commit, 1, retention, () => NOW, hashes);
-    composition.onAccepted({
-      terminal: 'message',
-      finalText: JSON.stringify({
-        kind: 'final_message',
-        message: 'cancel me',
-      }),
-      emptyFinal: false,
-      partCount: 1,
-      bytes: 32,
-    });
-    const pending = composition.getCommittedResponse();
-    await Promise.resolve();
-    expect(started).toBe(true);
+    const pending = respondWith(composition, { kind: 'answer', message: 'cancel me' });
+    await vi.waitFor(() => expect(started).toBe(true));
     composition.dispose();
     resolveDigest?.('composition-digest');
-    await expect(pending).resolves.toBeUndefined();
+    await expect(pending).resolves.not.toMatchObject({ status: 'committed' });
+    await expect(composition.getCommittedResponse()).resolves.toBeUndefined();
     expect(commit.requests).toHaveLength(0);
   });
 });

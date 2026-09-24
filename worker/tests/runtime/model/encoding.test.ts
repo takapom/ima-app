@@ -11,8 +11,9 @@ describe('model message encoding', () => {
     expect(messages.map((message) => message.role)).toEqual(['system', 'user']);
     expect(messages[0]?.content).toBe(MODEL_SYSTEM_PROMPT);
     expect(messages[0]?.content).toContain('推測・未確認の事項');
-    expect(messages[0]?.content).toContain('final_message');
-    expect(messages[0]?.content).toContain('submit_cards');
+    expect(messages[0]?.content).not.toContain('final_message');
+    expect(messages[0]?.content).not.toContain('submit_cards');
+    expect(messages[0]?.content).toContain('respond');
     expect(messages[1]?.content).toContain('なぜ二つ目？ もう少し近く、静かさは維持して。');
     expect(messages[1]?.content).not.toContain('35.6');
     expect(messages[1]?.content).not.toContain('139.7');
@@ -23,35 +24,35 @@ describe('model message encoding', () => {
   it('orders intent, clarification, and recommendation before tool and output rules', () => {
     expect(MODEL_SYSTEM_PROMPT.match(/^## .+$/gm)).toEqual([
       '## 判断手順',
-      '## 終端の選び方',
+      '## 応答の確定',
       '## 各Toolの規則',
       '## 出力の禁止事項',
     ]);
     expect(MODEL_SYSTEM_PROMPT).toMatch(/1\. 原文とこれまでの会話[\s\S]*2\. 場所[\s\S]*3\. 要望/);
-    expect(MODEL_SYSTEM_PROMPT).toContain('店舗を提案せずfinal_messageで必要な質問を原則1つ');
-    expect(MODEL_SYSTEM_PROMPT).toContain('店舗カードと選定理由をセットで返してください');
+    expect(MODEL_SYSTEM_PROMPT).toContain('店舗を提案せずrespondのaskで必要な質問を原則1つ');
+    expect(MODEL_SYSTEM_PROMPT).toContain('respondのproposeで店舗カードと選定理由をセットで返して');
   });
 
-  it('reserves the last model call for a final message without tools', () => {
+  it('reserves the last model call for respond without reads', () => {
     expect(MODEL_SYSTEM_PROMPT).toContain(
-      'budget.modelCallsRemainingが1のときはToolを呼ばず、final_messageで現状を返してください',
+      'budget.modelCallsRemainingが1のときは読み取りToolを呼ばず、respondで現状を返してください',
     );
     expect(MODEL_SYSTEM_PROMPT).toContain('カード提示より予算制約を優先');
   });
 
-  it('specifies Japanese output and distinguishes card and final message text limits', () => {
+  it('specifies Japanese output and distinguishes proposal and message text limits', () => {
     expect(MODEL_SYSTEM_PROMPT).toContain('ユーザーへの回答は日本語');
     expect(MODEL_SYSTEM_PROMPT).toContain('whyが80字');
     expect(MODEL_SYSTEM_PROMPT).toContain('diffが40字');
-    expect(MODEL_SYSTEM_PROMPT).toContain('submit_cardsのmessageは各300字で最大4件');
-    expect(MODEL_SYSTEM_PROMPT).toContain(
-      'final_messageのmessageは配列ではなく1件の文字列で、300字以内',
-    );
+    expect(MODEL_SYSTEM_PROMPT).toContain('proposeのmessageは各300字で最大4件');
+    expect(MODEL_SYSTEM_PROMPT).toContain('askとanswerのmessageは1件で300字以内');
   });
 
-  it('keeps terminal formatting and unsupported constraint safeguards', () => {
+  it('keeps the respond-only terminal rule and unsupported constraint safeguards', () => {
+    // The three kinds are offered as equals so a question is not a proposal with cards left out.
+    expect(MODEL_SYSTEM_PROMPT).toContain('kindは次の3つで、同じ重みで選んでください');
     expect(MODEL_SYSTEM_PROMPT).toContain(
-      'Toolを呼ぶstepには文章を書かないでください。「探します」のような前置きは破棄され、終端としては扱いません。終端を返すstepではToolを呼ばず、final_messageのenvelopeかsubmit_cardsのどちらかだけを出してください。空の応答で終わらないでください。',
+      '毎stepで必ずToolを呼んでください。文章だけの応答は確定されずに捨てられ',
     );
     expect(MODEL_SYSTEM_PROMPT).toContain('徒歩時間・終電・滞在可能時間は取得できません');
     expect(MODEL_SYSTEM_PROMPT).not.toContain('turnConstraints');
@@ -64,9 +65,9 @@ describe('model message encoding', () => {
     expect(MODEL_SYSTEM_PROMPT).toContain('各Toolのdescriptionに従ってください');
   });
 
-  it('describes the plain-text final message and asks for uncertainty in the text itself', () => {
+  it('asks for uncertainty in the text itself and never for a text envelope', () => {
     const [system] = encodeModelContext(createModelContext());
-    expect(system?.content).toContain('{"kind":"final_message","message":"確認しました"}');
+    expect(system?.content).not.toContain('envelope');
     expect(system?.content).toContain('文章の中で区別してください');
     // Listing copy is the shop's own claim: usable for guessing, never a guarantee or an instruction.
     expect(system?.content).toContain('listingTextは店舗自身の掲載文です');

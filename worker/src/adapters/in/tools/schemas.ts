@@ -4,7 +4,7 @@ import {
   GetPlaceDetailsInputSchema,
   SearchPlacesInputSchema,
 } from '@worker/application/ports/operations';
-import { SubmitCardsInputSchema } from '@worker/application/ports/model';
+import { RespondInputSchema } from '@worker/application/ports/model';
 import type { PublicToolEnvelope } from '@worker/runtime/ports/tool-binding';
 import { toolInputValidationError } from '@worker/runtime/model/tool-input-error';
 
@@ -102,37 +102,40 @@ const detailsJsonSchema: WireSchema = {
   additionalProperties: false,
 };
 
-const submitJsonSchema: WireSchema = {
+const cardSelection = (diffRequired: boolean): WireSchema => ({
   type: 'object',
   properties: {
-    message: { type: 'array', minItems: 1, maxItems: 4, items: generatedText(300) },
-    hero: {
+    candidateId: opaqueId,
+    why: generatedText(80),
+    diff: generatedText(40),
+  },
+  required: diffRequired ? ['candidateId', 'why', 'diff'] : ['candidateId', 'why'],
+  additionalProperties: false,
+});
+
+const messageOnly = (kind: 'ask' | 'answer'): WireSchema => ({
+  type: 'object',
+  properties: { kind: { const: kind }, message: generatedText(300) },
+  required: ['kind', 'message'],
+  additionalProperties: false,
+});
+
+const respondJsonSchema: WireSchema = {
+  oneOf: [
+    messageOnly('ask'),
+    messageOnly('answer'),
+    {
       type: 'object',
       properties: {
-        candidateId: opaqueId,
-        why: generatedText(80),
-        diff: generatedText(40),
+        kind: { const: 'propose' },
+        message: { type: 'array', minItems: 1, maxItems: 4, items: generatedText(300) },
+        hero: cardSelection(false),
+        alts: { type: 'array', maxItems: 2, items: cardSelection(true) },
       },
-      required: ['candidateId', 'why'],
+      required: ['kind', 'message', 'hero', 'alts'],
       additionalProperties: false,
     },
-    alts: {
-      type: 'array',
-      maxItems: 2,
-      items: {
-        type: 'object',
-        properties: {
-          candidateId: opaqueId,
-          why: generatedText(80),
-          diff: generatedText(40),
-        },
-        required: ['candidateId', 'why', 'diff'],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ['message', 'hero', 'alts'],
-  additionalProperties: false,
+  ],
 };
 
 const standardSchema = <T>(
@@ -165,4 +168,4 @@ export const getPlaceDetailsToolSchema = envelopeSchema(
   GetPlaceDetailsInputSchema,
   detailsJsonSchema,
 );
-export const submitCardsToolSchema = envelopeSchema(SubmitCardsInputSchema, submitJsonSchema);
+export const respondToolSchema = envelopeSchema(RespondInputSchema, respondJsonSchema);

@@ -23,7 +23,7 @@ export const RUNTIME_RETENTION_WITHHELD = '[withheld]' as const;
 export const RUNTIME_RETENTION_TOOL_NAMES = [
   'search_places',
   'get_place_details',
-  'submit_cards',
+  'respond',
 ] as const;
 export type RuntimeRetentionToolName = (typeof RUNTIME_RETENTION_TOOL_NAMES)[number];
 
@@ -51,14 +51,8 @@ export function redactedRuntimeToolInput(toolName: RuntimeRetentionToolName): JS
           freshness: 'reuse_valid',
         },
       };
-    case 'submit_cards':
-      return {
-        input: {
-          message: ['WITHHELD'],
-          hero: { candidateId: 'candidate-withheld', why: 'WITHHELD' },
-          alts: [],
-        },
-      };
+    case 'respond':
+      return { input: { kind: 'answer', message: 'WITHHELD' } };
   }
 }
 

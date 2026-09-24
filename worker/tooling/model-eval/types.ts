@@ -105,7 +105,7 @@ export type CandidateSelection = {
 };
 
 export type ToolCall = {
-  readonly name: 'search_places' | 'get_place_details' | 'submit_cards';
+  readonly name: 'search_places' | 'get_place_details' | 'respond';
   readonly candidateIds: readonly string[];
 };
 

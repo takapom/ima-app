@@ -1,4 +1,4 @@
-import type { SubmitCardsInvalid } from '@worker/application/ports/submission';
+import type { RespondInvalid } from '@worker/application/ports/submission';
 import { describe, expect, it } from 'vitest';
 import {
   observeRuntimeSubmitRejection,
@@ -6,7 +6,7 @@ import {
   type RuntimeSubmitRejection,
 } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 
-const invalid: SubmitCardsInvalid = {
+const invalid: RespondInvalid = {
   status: 'invalid',
   repairable: true,
   remainingRepairs: 2,
@@ -62,7 +62,7 @@ describe('submit rejection diagnostic', () => {
   });
 
   it('counts only distinct candidates and tolerates issues without one', () => {
-    const budgetDenial: SubmitCardsInvalid = {
+    const budgetDenial: RespondInvalid = {
       status: 'invalid',
       repairable: false,
       remainingRepairs: 0,

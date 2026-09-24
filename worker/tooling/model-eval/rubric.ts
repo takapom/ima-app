@@ -51,7 +51,7 @@ const isToolCall = (value: unknown): boolean => {
   return (
     (value.name === 'search_places' ||
       value.name === 'get_place_details' ||
-      value.name === 'submit_cards') &&
+      value.name === 'respond') &&
     Array.isArray(value.candidateIds) &&
     value.candidateIds.every((id) => typeof id === 'string')
   );

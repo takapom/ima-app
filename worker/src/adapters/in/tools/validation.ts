@@ -17,12 +17,12 @@ import {
   type ToolExecutionContext,
 } from '@worker/application/ports/context';
 import { ResultSchema, type Result } from '@worker/domain/result';
-import { SubmitCardsInputSchema, type SubmitCardsInput } from '@worker/application/ports/model';
+import { RespondInputSchema, type RespondInput } from '@worker/application/ports/model';
 import {
-  SubmitCardsPortResultSchema,
-  type SubmitCardsInvalid,
+  RespondPortResultSchema,
+  type RespondInvalid,
   type SubmitIssueSchema,
-  type SubmitCardsPortResult,
+  type RespondPortResult,
 } from '@worker/application/ports/submission';
 import { type CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import { type DetailField } from '@worker/domain/primitives';
@@ -71,12 +71,12 @@ export const resultError = <T>(error: Issue): Result<T> => ({
   error,
 });
 
-export const submitInvalid = (
+export const respondInvalid = (
   code: SubmitIssue['code'],
   path: string | null,
   message: string,
   remainingRepairs: number,
-): SubmitCardsInvalid => {
+): RespondInvalid => {
   const terminal = code === 'CANCELLED' || code === 'BUDGET_EXCEEDED';
   const boundedRepairs = Math.max(0, Math.min(2, remainingRepairs));
   return {
@@ -108,10 +108,10 @@ export const parseDetailsInput = (
   return parsed.success ? { ok: true, value: parsed.output } : { ok: false };
 };
 
-export const parseSubmitInput = (
+export const parseRespondInput = (
   value: unknown,
-): { readonly ok: true; readonly value: SubmitCardsInput } | { readonly ok: false } => {
-  const parsed = v.safeParse(SubmitCardsInputSchema, value);
+): { readonly ok: true; readonly value: RespondInput } | { readonly ok: false } => {
+  const parsed = v.safeParse(RespondInputSchema, value);
   return parsed.success ? { ok: true, value: parsed.output } : { ok: false };
 };
 
@@ -125,8 +125,8 @@ export const parseDetailsResult = (value: unknown): Result<GetPlaceDetailsOutput
   return parsed.success ? parsed.output : undefined;
 };
 
-export const parseSubmitResult = (value: unknown): SubmitCardsPortResult | undefined => {
-  const parsed = v.safeParse(SubmitCardsPortResultSchema, value);
+export const parseRespondResult = (value: unknown): RespondPortResult | undefined => {
+  const parsed = v.safeParse(RespondPortResultSchema, value);
   return parsed.success ? parsed.output : undefined;
 };
 
@@ -170,7 +170,7 @@ export const runtimeFor = (
   if (!('remainingRepairs' in supplied) || typeof supplied.remainingRepairs !== 'number') {
     return {
       ok: false,
-      error: issue('MISSING_CONTEXT', null, 'submit repair budget is unavailable'),
+      error: issue('MISSING_CONTEXT', null, 'respond repair budget is unavailable'),
     };
   }
   const suppliedCancellation = supplied.cancellation;
@@ -206,7 +206,7 @@ export const runtimeFor = (
   ) {
     return {
       ok: false,
-      error: issue('MISSING_CONTEXT', null, 'submit repair budget is invalid'),
+      error: issue('MISSING_CONTEXT', null, 'respond repair budget is invalid'),
     };
   }
 
@@ -235,9 +235,9 @@ export const cancellationError = <T>(runtime: ToolRuntime): Result<T> | undefine
     ? resultError(issue('CANCELLED', null, 'tool execution was cancelled'))
     : undefined;
 
-export const submitCancellationError = (runtime: ToolRuntime): SubmitCardsPortResult | undefined =>
+export const respondCancellationError = (runtime: ToolRuntime): RespondPortResult | undefined =>
   runtime.cancellation.isCancelled()
-    ? submitInvalid('CANCELLED', null, 'tool execution was cancelled', runtime.remainingRepairs)
+    ? respondInvalid('CANCELLED', null, 'tool execution was cancelled', runtime.remainingRepairs)
     : undefined;
 
 export const unsupportedDetailField = (

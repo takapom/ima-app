@@ -35,25 +35,23 @@ describe('wrapRuntimeModelGuard', () => {
     await readAll(result.stream);
 
     expect(script.calls.stream).toBe(1);
-    expect(accepted).toEqual([
-      expect.objectContaining({ terminal: 'none', finalText: null, emptyFinal: false }),
-    ]);
+    expect(accepted).toEqual([expect.objectContaining({ terminal: 'none', missingRespond: null })]);
   });
 
   it.each([
     [
-      'read and submit',
-      [...toolParts('search_places'), ...toolParts('submit_cards'), finish('tool-calls')],
+      'read and respond',
+      [...toolParts('search_places'), ...toolParts('respond'), finish('tool-calls')],
       'MIXED_TERMINAL_ACTION',
     ],
     [
-      'multiple submit',
+      'multiple respond',
       [
-        ...toolParts('submit_cards', 'submit-1'),
-        ...toolParts('submit_cards', 'submit-2'),
+        ...toolParts('respond', 'submit-1'),
+        ...toolParts('respond', 'submit-2'),
         finish('tool-calls'),
       ],
-      'MULTIPLE_SUBMIT',
+      'MULTIPLE_RESPOND',
     ],
     ['unknown tool', [...toolParts('delete_everything'), finish('tool-calls')], 'UNKNOWN_TOOL'],
   ] as const)('rejects %s before acceptance', async (_name, parts, code) => {
@@ -68,7 +66,7 @@ describe('wrapRuntimeModelGuard', () => {
   it('rejects a mixed provider step before AI SDK tools or step metadata run', async () => {
     const script = modelScript([
       ...toolParts('search_places'),
-      ...toolParts('submit_cards'),
+      ...toolParts('respond'),
       finish('tool-calls'),
     ]);
     const effects: string[] = [];
@@ -90,10 +88,10 @@ describe('wrapRuntimeModelGuard', () => {
             return { ok: true };
           },
         }),
-        submit_cards: tool<unknown, { ok: boolean }>({
+        respond: tool<unknown, { ok: boolean }>({
           inputSchema: z.object({}),
           execute: () => {
-            effects.push('submit_cards');
+            effects.push('respond');
             return { ok: true };
           },
         }),
@@ -158,7 +156,7 @@ describe('wrapRuntimeModelGuard', () => {
     await expectGuardCode(guarded(sourceScript).doGenerate({ prompt: [] }), 'UNSUPPORTED_PART');
   });
 
-  it('accepts an empty final and keeps retry configuration at zero', async () => {
+  it('accepts an empty final step as a missing respond and keeps retry configuration at zero', async () => {
     const script = modelScript([{ type: 'stream-start', warnings: [] }, finish('stop')]);
     const accepted: RuntimeModelGuardAcceptance[] = [];
     const finalFlags: boolean[] = [];
@@ -176,11 +174,11 @@ describe('wrapRuntimeModelGuard', () => {
     expect(RUNTIME_MODEL_MAX_RETRIES).toBe(0);
     expect(finalFlags).toEqual([true]);
     expect(accepted).toEqual([
-      expect.objectContaining({ terminal: 'message', finalText: '', emptyFinal: true }),
+      expect.objectContaining({ terminal: 'none', missingRespond: 'EMPTY_STEP' }),
     ]);
   });
 
-  it('captures only validated terminal text for stream and generate acceptance', async () => {
+  it('never treats text as a terminal action for stream or generate acceptance', async () => {
     const streamAccepted: RuntimeModelGuardAcceptance[] = [];
     const streamScript = modelScript([
       { type: 'reasoning-start', id: 'reasoning-1' },
@@ -210,10 +208,19 @@ describe('wrapRuntimeModelGuard', () => {
     });
     await generateModel.doGenerate({ prompt: [] });
 
-    expect(streamAccepted[0]).toMatchObject({ terminal: 'message', finalText: 'stream final' });
+    expect(streamAccepted[0]).toMatchObject({
+      terminal: 'none',
+      missingRespond: 'TEXT_WITHOUT_RESPOND',
+    });
+    expect(Object.keys(streamAccepted[0] ?? {}).sort()).toEqual([
+      'bytes',
+      'missingRespond',
+      'partCount',
+      'terminal',
+    ]);
     expect(generatedAccepted[0]).toMatchObject({
-      terminal: 'message',
-      finalText: 'generated final',
+      terminal: 'none',
+      missingRespond: 'TEXT_WITHOUT_RESPOND',
     });
     expect(streamAccepted[0]).not.toHaveProperty('reasoning');
     expect(generatedAccepted[0]).not.toHaveProperty('provider');

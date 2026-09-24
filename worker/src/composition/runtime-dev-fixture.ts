@@ -229,8 +229,9 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
     };
   }
   return {
-    name: 'submit_cards',
+    name: 'respond',
     input: {
+      kind: 'propose',
       message: ['掲載営業時間は24時間、予算目安は1,200〜2,400円です。現在の営業状況は未確認です。'],
       hero: {
         candidateId,

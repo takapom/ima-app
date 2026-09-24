@@ -8,7 +8,7 @@ import type {
 } from '@worker/application/ports/operations';
 import type { HarnessContext } from '@worker/application/ports/context';
 import type { Result } from '@worker/domain/result';
-import type { SubmitCardsPort, SubmitCardsPortResult } from '@worker/application/ports/submission';
+import type { RespondPort, RespondPortResult } from '@worker/application/ports/submission';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
@@ -126,8 +126,8 @@ const createPorts = () => {
   const details: PlaceDetailsPort = {
     read: (): Promise<Result<GetPlaceDetailsOutput>> => Promise.resolve(errorResult()),
   };
-  const submit: SubmitCardsPort = {
-    submit: (): Promise<SubmitCardsPortResult> =>
+  const respond: RespondPort = {
+    respond: (): Promise<RespondPortResult> =>
       Promise.resolve({
         status: 'invalid',
         issues: [],
@@ -135,7 +135,7 @@ const createPorts = () => {
         remainingRepairs: 0,
       }),
   };
-  return { registry, clock: () => NOW, search, details, submit };
+  return { registry, clock: () => NOW, search, details, respond };
 };
 
 const createBudget = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudget =>
@@ -201,7 +201,7 @@ const buildComposition = (
     },
     ports,
     stopWhen: () => true,
-    beforeStep: () => ({ activeTools: ['search_places', 'get_place_details', 'submit_cards'] }),
+    beforeStep: () => ({ activeTools: ['search_places', 'get_place_details', 'respond'] }),
   });
   return {
     model: modelFor('message', { calls: 0, requests: [] }),
@@ -300,7 +300,7 @@ describe('RuntimeThinkConnection', () => {
         expect(request.runtimeInput).toBe(runtimeInput);
         const composition = buildComposition(
           (acceptance) => {
-            if (acceptance.finalText !== null) accepted.push(acceptance.finalText);
+            accepted.push(acceptance.terminal);
           },
           (_step, serverNow) => {
             projectedAt.push(serverNow);
@@ -335,8 +335,8 @@ describe('RuntimeThinkConnection', () => {
       status: 'completed',
       response: { responseId: 'response-runtime-connection' },
     });
-    expect(accepted).toHaveLength(1);
-    expect(accepted[0]).toContain('Fixture message completed.');
+    // The scripted step ends the turn with respond, the only terminal action.
+    expect(accepted).toEqual(['respond']);
     expect(projectedAt).toEqual([NOW]);
     expect(saved).toHaveLength(1);
     expect(saved[0]?.parts).toEqual([{ type: 'text', text: RUNTIME_RETENTION_WITHHELD }]);

@@ -12,10 +12,11 @@ import type {
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
 import type { Result } from '@worker/domain/result';
-import type { SubmitCardsPort, SubmitCardsPortResult } from '@worker/application/ports/submission';
+import type { RespondPort, RespondPortResult } from '@worker/application/ports/submission';
 import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
+import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';
 import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
 import {
   createRuntimeThinkConnection,
@@ -116,8 +117,8 @@ const createPorts = () => {
     search: () => Promise.resolve(errorResult<SearchPlacesOutput>()),
   };
   const details: PlaceDetailsPort = { read: () => Promise.resolve(errorResult<never>()) };
-  const submit: SubmitCardsPort = {
-    submit: (): Promise<SubmitCardsPortResult> =>
+  const respond: RespondPort = {
+    respond: (): Promise<RespondPortResult> =>
       Promise.resolve({
         status: 'invalid',
         issues: [],
@@ -125,7 +126,7 @@ const createPorts = () => {
         remainingRepairs: 0,
       }),
   };
-  return { registry, clock: () => NOW, search, details, submit };
+  return { registry, clock: () => NOW, search, details, respond };
 };
 
 class RecordingCommit implements CommitPort {
@@ -179,27 +180,28 @@ class DeferredHash implements CommitHashPort {
 type FinalResponse = CommittedResponse;
 type Connection = RuntimeThinkConnection<FinalResponse>;
 
+const finalAnswer = { kind: 'answer', message: '取消前の最終文' } as const;
+
 const modelFor = (): RuntimeModelGuardModel => {
   type Part = RuntimeModelGuardStreamPart;
   const usage: Extract<Part, { type: 'finish' }>['usage'] = {
     inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
     outputTokens: { total: 1, text: 1, reasoning: 0 },
   };
-  const envelope = JSON.stringify({
-    kind: 'final_message',
-    message: '取消前の最終文',
-  });
+  const toolCallId = 'runtime-cancel-respond';
+  const envelope = JSON.stringify({ input: finalAnswer });
   const stream = (): ReadableStream<Part> =>
     new ReadableStream({
       start(controller) {
         controller.enqueue({ type: 'stream-start', warnings: [] });
-        controller.enqueue({ type: 'text-start', id: 'runtime-cancel-final' });
-        controller.enqueue({ type: 'text-delta', id: 'runtime-cancel-final', delta: envelope });
-        controller.enqueue({ type: 'text-end', id: 'runtime-cancel-final' });
+        controller.enqueue({ type: 'tool-input-start', id: toolCallId, toolName: 'respond' });
+        controller.enqueue({ type: 'tool-input-delta', id: toolCallId, delta: envelope });
+        controller.enqueue({ type: 'tool-input-end', id: toolCallId });
+        controller.enqueue({ type: 'tool-call', toolCallId, toolName: 'respond', input: envelope });
         controller.enqueue({
           type: 'finish',
           usage,
-          finishReason: { unified: 'stop', raw: 'stop' },
+          finishReason: { unified: 'tool-calls', raw: 'tool-calls' },
         });
         controller.close();
       },
@@ -251,6 +253,15 @@ const runCancellationScenario = async (mode: CancellationMode) => {
     }
     const result = await connection.getModel().doStream({ prompt: [] });
     await drain(result.stream);
+    // Think executes the accepted respond call; its commit waits on the deferred hash.
+    const composition = holder.composition;
+    if (composition === undefined) throw new Error('cancel fixture composition is missing');
+    await invokePublicToolEnvelope(
+      'respond',
+      { input: finalAnswer },
+      composition.turn.dependencies,
+      { toolCallId: 'runtime-cancel-respond' },
+    );
     return { requestId: 'runtime-cancel-persist', status: 'completed' };
   };
   const connection = createRuntimeThinkConnection<FinalResponse>({

@@ -13,14 +13,14 @@ const CANARY = `provider-secret-${crypto.randomUUID()}`;
 type TestTools = {
   search_places: Tool<JSONValue, JSONValue>;
   get_place_details: Tool<JSONValue, JSONValue>;
-  submit_cards: Tool<JSONValue, JSONValue>;
+  respond: Tool<JSONValue, JSONValue>;
 };
 type Part = TextStreamPart<TestTools>;
 const TEST_SCHEMA = jsonSchema<JSONValue>({ type: 'object', additionalProperties: true });
 const TEST_TOOLS = {
   search_places: { inputSchema: TEST_SCHEMA, outputSchema: TEST_SCHEMA },
   get_place_details: { inputSchema: TEST_SCHEMA, outputSchema: TEST_SCHEMA },
-  submit_cards: { inputSchema: TEST_SCHEMA, outputSchema: TEST_SCHEMA },
+  respond: { inputSchema: TEST_SCHEMA, outputSchema: TEST_SCHEMA },
 } satisfies TestTools;
 
 const USAGE: LanguageModelUsage = {
@@ -66,14 +66,12 @@ async function runTransform(
   }
 }
 
-function inputProjector(
-  _toolName: 'search_places' | 'get_place_details' | 'submit_cards',
-): JSONValue {
+function inputProjector(_toolName: 'search_places' | 'get_place_details' | 'respond'): JSONValue {
   return { placeRef: 'place-server-1' };
 }
 
 function outputProjector(
-  _toolName: 'search_places' | 'get_place_details' | 'submit_cards',
+  _toolName: 'search_places' | 'get_place_details' | 'respond',
 ): RuntimeRetentionToolOutputProjection {
   return {
     output: { placeName: 'Cafe server' },

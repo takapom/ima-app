@@ -17,4 +17,30 @@ describe('runtime final-response gate', () => {
     expect(first).toEqual({ ok: true, value: undefined });
     expect(second).toMatchObject({ ok: false, denial: { code: 'BUDGET_EXCEEDED' } });
   });
+
+  it('requires a tool on every step and offers only respond inside the final reserve', async () => {
+    const hooksAt = (nowMs: number) =>
+      createRuntimeFinalResponseHooks({
+        budget: new RuntimeBudget({
+          config: DEFAULT_RUNTIME_BUDGET,
+          startedAtMs: 0,
+          now: () => nowMs,
+        }),
+      });
+    const call = (hooks: ReturnType<typeof hooksAt>, toolName: string) =>
+      hooks.beforeToolCall({ toolName, toolCallId: 'call', input: {}, messages: [] } as never);
+
+    // Outside the reserve every step is a normal step, including one after a refused respond.
+    const early = hooksAt(1);
+    expect(early.beforeStep({} as never)).toEqual({ toolChoice: 'required' });
+    await expect(call(early, 'search_places')).resolves.toBeUndefined();
+
+    const reserve = hooksAt(DEFAULT_RUNTIME_BUDGET.wholeTurnMs - 1_000);
+    expect(reserve.beforeStep({} as never)).toEqual({
+      activeTools: ['respond'],
+      toolChoice: 'required',
+    });
+    await expect(call(reserve, 'search_places')).resolves.toMatchObject({ action: 'block' });
+    await expect(call(reserve, 'respond')).resolves.toBeUndefined();
+  });
 });

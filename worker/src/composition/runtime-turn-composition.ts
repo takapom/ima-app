@@ -7,11 +7,11 @@ import type { ClockPort, HarnessContext, IdPort } from '@worker/application/port
 import type { CommitHashPort, CommitPort } from '@worker/application/ports/commit';
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
 import type { ModelContextSource } from '@worker/application/model-context/model-context';
-import type { SubmitCardsPort } from '@worker/application/ports/submission';
+import type { RespondPort } from '@worker/application/ports/submission';
 import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import { projectModelContext } from '@worker/application/model-context/model-context';
 import { SubmitApplication } from '@worker/application/use-cases/submit-response/submit-application';
-import { createSubmitCardsPort } from '@worker/application/use-cases/submit-response/respond-port';
+import { createRespondPort } from '@worker/application/use-cases/submit-response/respond-port';
 import { encodeModelContext } from '@worker/runtime/model/encoding';
 import type {
   RuntimeThinkComposition,
@@ -37,7 +37,6 @@ import {
   type RuntimeReadAttemptSignalBridge,
   type RuntimeReadCostResolver,
 } from '@worker/runtime/tool-reads/runtime-read-ports';
-import type { RuntimeFinalMessage } from '@worker/runtime/turn-execution/runtime-final-message';
 import {
   createRuntimeTurnFactory,
   type RuntimeBeforeToolCallDelegate,
@@ -62,10 +61,11 @@ import {
   observationResultIsReusable,
   observationIdsIn,
   observedWindow,
-  usableFinalMessage,
   RuntimeTurnCompositionError,
   prepareConversationCommit,
+  unresolvedFailureRefusal,
 } from '@worker/composition/runtime-turn-composition-support';
+import { observeRuntimeTerminalFormatFailure } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 import {
   clearRuntimeCardSetId,
   registerRuntimeCardSetId,
@@ -235,7 +235,6 @@ export function createRuntimeTurnComposition(
   const results = new Map<string, RuntimeRetentionEphemeralToolResult>();
   let responseId: string | undefined;
   let responseRevision: number | undefined;
-  let acceptedFinal: RuntimeFinalMessage | undefined;
   const photoPreparation = createRuntimePhotoPreparationState();
   const scope = (): RuntimeRetentionContext => {
     const current = retentionContext(options.retention);
@@ -272,8 +271,8 @@ export function createRuntimeTurnComposition(
       ? {}
       : { attemptSignalBridge: options.attemptSignalBridge }),
   });
-  const makeSubmitPort = (at: { readonly now: string }): SubmitCardsPort => {
-    const port = createSubmitCardsPort({
+  const makeRespondPort = (at: { readonly now: string }): RespondPort => {
+    const port = createRespondPort({
       application,
       registry: options.registry,
       scope: { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
@@ -285,8 +284,16 @@ export function createRuntimeTurnComposition(
     });
     const cardSetId = options.publicResponse?.cardSetId;
     return {
-      submit: async (input, execution, cancellation) => {
-        if (cardSetId !== undefined) {
+      respond: async (input, execution, cancellation) => {
+        // As before this tool existed, a question or answer may not paper over a failed read or
+        // a refused proposal: the turn ends without a commit instead.
+        if (
+          input.kind !== 'propose' &&
+          (turn.hasUnresolvedSubmitFailure() || hasUnresolvedReadFailure(results.values()))
+        ) {
+          return unresolvedFailureRefusal;
+        }
+        if (input.kind === 'propose' && cardSetId !== undefined) {
           registerRuntimeCardSetId(
             options.commit,
             { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
@@ -294,7 +301,7 @@ export function createRuntimeTurnComposition(
             cardSetId,
           );
         }
-        const result = await port.submit(input, execution, cancellation);
+        const result = await port.respond(input, execution, cancellation);
         if (result.status === 'committed') {
           responseId = result.responseId;
           responseRevision = result.revision;
@@ -319,9 +326,9 @@ export function createRuntimeTurnComposition(
       search: readPorts.search,
       details: readPorts.details,
       readAdmission: readPorts.admission,
-      submit: makeSubmitPort({ now: options.context.serverNow }),
+      respond: makeRespondPort({ now: options.context.serverNow }),
     },
-    buildSubmitPort: makeSubmitPort,
+    buildRespondPort: makeRespondPort,
     ...(options.request.signal === undefined ? {} : { signal: options.request.signal }),
     ...(options.request.isStale === undefined ? {} : { isStale: options.request.isStale }),
     beforeStep: finalResponse.beforeStep,
@@ -387,20 +394,10 @@ export function createRuntimeTurnComposition(
   };
 
   const onAccepted = (acceptance: RuntimeModelGuardAcceptance): void => {
-    if (acceptance.finalText === null || acceptance.terminal !== 'message') return;
-    if (
-      acceptedFinal !== undefined ||
-      responseId !== undefined ||
-      turn.hasUnresolvedSubmitFailure() ||
-      hasUnresolvedReadFailure(results.values())
-    ) {
-      throw new RuntimeTurnCompositionError('FINAL_COMMIT_INVALID');
+    // A step without respond commits nothing; the reason is the only record of it.
+    if (acceptance.missingRespond !== null) {
+      observeRuntimeTerminalFormatFailure(acceptance.missingRespond);
     }
-    // An unusable terminal commits nothing; the turn ends without a commit instead of failing.
-    const finalMessage = usableFinalMessage(acceptance);
-    if (finalMessage === undefined) return;
-    acceptedFinal = finalMessage;
-    finalResponse.accept(acceptance);
   };
 
   return {
@@ -418,35 +415,7 @@ export function createRuntimeTurnComposition(
     projectStep,
     persistMessages: options.persistMessages,
     getCommittedResponse: async () => {
-      if (disposed) {
-        acceptedFinal = undefined;
-        return undefined;
-      }
-      const final = acceptedFinal;
-      if (final !== undefined) {
-        acceptedFinal = undefined;
-        const result = await application.commitMessage(
-          // The text envelope cannot say whether it asks or answers.
-          { kind: 'answer', message: final.message },
-          validationAt(options.validationContext, now()),
-          {
-            scope: {
-              ownerScopeRef: options.context.ownerScopeRef,
-              threadId: options.context.threadId,
-            },
-            turnId: options.context.turnId,
-            expectedRevision: options.context.revision,
-            idempotencyKey: options.idempotencyKey ?? `${options.context.turnId}-final`,
-          },
-        );
-        if (disposed) return undefined;
-        if (result.status !== 'committed') {
-          throw new RuntimeTurnCompositionError('FINAL_COMMIT_INVALID');
-        }
-        responseId = result.receipt.responseId;
-        responseRevision = result.receipt.revision;
-        options.budget.markCommitted();
-      }
+      if (disposed) return undefined;
       if (responseId === undefined || responseRevision === undefined) return undefined;
       const committed = application.getCommittedResponse(
         { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
@@ -480,7 +449,6 @@ export function createRuntimeTurnComposition(
       );
       calls.clear();
       results.clear();
-      acceptedFinal = undefined;
       resetRuntimePhotoPreparationState(photoPreparation);
       application.clearTurn(
         { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },

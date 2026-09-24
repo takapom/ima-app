@@ -7,13 +7,7 @@ import type {
   RuntimeRetentionEphemeralToolResult,
 } from '@worker/runtime/retention/runtime-retention';
 import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
-import {
-  isRuntimeFinalMessageError,
-  parseRuntimeFinalMessage,
-  type RuntimeFinalMessage,
-} from '@worker/runtime/turn-execution/runtime-final-message';
-import { observeRuntimeTerminalFormatFailure } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
-import type { RuntimeModelGuardAcceptance } from '@worker/runtime/turn-execution/runtime-model-guard';
+import type { RespondInvalid } from '@worker/application/ports/submission';
 import type { CommitPort, CommitRecord } from '@worker/application/ports/commit';
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
 import { prepareRuntimeConversationResponse } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
@@ -42,8 +36,7 @@ export const prepareConversationCommit = (
   );
 };
 
-export type RuntimeTurnCompositionErrorCode =
-  'CONTEXT_MISMATCH' | 'RETENTION_MISMATCH' | 'FINAL_COMMIT_INVALID';
+export type RuntimeTurnCompositionErrorCode = 'CONTEXT_MISMATCH' | 'RETENTION_MISMATCH';
 
 export class RuntimeTurnCompositionError extends Error {
   readonly code: RuntimeTurnCompositionErrorCode;
@@ -88,26 +81,19 @@ type ObservationExpiry = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/**
- * Returns the final message only when the model's terminal text is usable. An empty terminal, or
- * one that is not the required envelope, commits nothing; failing the turn over it would also
- * discard the reads the turn already paid for. The turn instead ends without a commit, and the
- * boundary reports that situation. The reason is recorded because nothing else would show it.
- */
-export const usableFinalMessage = (
-  acceptance: Pick<RuntimeModelGuardAcceptance, 'finalText' | 'emptyFinal'>,
-): RuntimeFinalMessage | undefined => {
-  if (acceptance.emptyFinal || acceptance.finalText === null) {
-    observeRuntimeTerminalFormatFailure('EMPTY_FINAL');
-    return undefined;
-  }
-  try {
-    return parseRuntimeFinalMessage(acceptance.finalText);
-  } catch (error: unknown) {
-    if (!isRuntimeFinalMessageError(error)) throw error;
-    observeRuntimeTerminalFormatFailure(error.code);
-    return undefined;
-  }
+/** Refuses a question or answer while a read failure or a refused proposal is unresolved. */
+export const unresolvedFailureRefusal: RespondInvalid = {
+  status: 'invalid',
+  issues: [
+    {
+      code: 'CONSTRAINT_VIOLATION',
+      path: 'kind',
+      message: 'a failed read or refused proposal is still unresolved',
+      missingFields: [],
+    },
+  ],
+  repairable: false,
+  remainingRepairs: 0,
 };
 
 /** A later successful retry clears that operation's failure; a missing search is not zero results. */
@@ -116,7 +102,7 @@ export const hasUnresolvedReadFailure = (
 ): boolean => {
   const failed = new Map<string, boolean>();
   for (const { toolName, output: raw } of results) {
-    if (toolName === 'submit_cards') continue;
+    if (toolName === 'respond') continue;
     const output = isRecord(raw) && raw.type === 'json' ? raw.value : raw;
     failed.set(
       toolName,

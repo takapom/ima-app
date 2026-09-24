@@ -15,7 +15,7 @@ import {
   CommitAdapterError,
   SubmitApplication,
 } from '@worker/application/use-cases/submit-response/submit-application';
-import { createSubmitCardsPort } from '@worker/application/use-cases/submit-response/respond-port';
+import { createRespondPort } from '@worker/application/use-cases/submit-response/respond-port';
 import {
   makeFixture,
   makeInput,
@@ -126,7 +126,7 @@ const token: CancellationToken = { isCancelled: () => false };
 
 const execution = (threadId: string): ToolExecutionContext => ({
   callId: 'port-call-1',
-  operation: 'submit_cards',
+  operation: 'respond',
   threadId,
   turnId: 'port-turn-1',
   revision: 1,
@@ -134,13 +134,13 @@ const execution = (threadId: string): ToolExecutionContext => ({
 
 const messageFixture = () => makeFixture([], { requireLastOrderAtArrival: false });
 
-describe('submit cards application adapter', () => {
-  it('passes runtime metadata to SubmitApplication and returns the legacy port shape', async () => {
+describe('respond application adapter', () => {
+  it('commits a proposal through SubmitApplication and reports its kind', async () => {
     const fixture = makeFixture();
     const ids = fixture.ids.get('candidate-1');
     if (ids === undefined) throw new Error('fixture candidate missing');
     const commit = new FixedCommit();
-    const port = createSubmitCardsPort({
+    const port = createRespondPort({
       application: new SubmitApplication(commit, new FixedResponseIds(), new FixedHash()),
       registry: fixture.registry,
       scope: fixture.context.scope,
@@ -151,12 +151,12 @@ describe('submit cards application adapter', () => {
       getRemainingRepairs: () => 2,
     });
 
-    const input = makeInput([makeSelection('candidate-1')]);
-    const result = await port.submit(input, execution(fixture.context.scope.threadId), token);
+    const input = { kind: 'propose' as const, ...makeInput([makeSelection('candidate-1')]) };
+    const result = await port.respond(input, execution(fixture.context.scope.threadId), token);
 
     expect(result.status).toBe('committed');
     if (result.status !== 'committed') return;
-    expect(result.cards).toEqual(input);
+    expect(result).toMatchObject({ kind: 'propose', presentation: 'replace' });
     expect(commit.records[0]?.idempotencyKey).toBe('port-idempotency');
     const response = port.getCommittedResponse(
       fixture.context.scope,
@@ -166,13 +166,42 @@ describe('submit cards application adapter', () => {
     expect(response?.presentation).toBe('replace');
   });
 
+  it.each(['ask', 'answer'] as const)(
+    'commits %s as a message that keeps the cards on screen',
+    async (kind) => {
+      const fixture = messageFixture();
+      const commit = new FixedCommit();
+      const port = createRespondPort({
+        application: new SubmitApplication(commit, new FixedResponseIds(), new FixedHash()),
+        registry: fixture.registry,
+        scope: fixture.context.scope,
+        validationContext: fixture.context,
+        expectedTurnId: 'port-turn-1',
+        expectedRevision: 1,
+        idempotencyKey: `port-${kind}`,
+        getRemainingRepairs: () => 2,
+      });
+      const result = await port.respond(
+        { kind, message: 'どのエリアで探しますか？' },
+        execution(fixture.context.scope.threadId),
+        token,
+      );
+      expect(result).toMatchObject({ status: 'committed', kind, presentation: 'keep' });
+      if (result.status !== 'committed') return;
+      expect(
+        port.getCommittedResponse(fixture.context.scope, 'port-turn-1', result.responseId),
+      ).toEqual({ presentation: 'keep', kind, message: 'どのエリアで探しますか？' });
+      expect(commit.records[0]?.presentation).toBe('keep');
+    },
+  );
+
   it('uses the injected repair snapshot and never commits invalid cards', async () => {
     const fixture = makeFixture();
     const ids = fixture.ids.get('candidate-1');
     if (ids === undefined) throw new Error('fixture candidate missing');
     const commit = new FixedCommit();
     let repairs: 0 | 1 | 2 = 2;
-    const port = createSubmitCardsPort({
+    const port = createRespondPort({
       application: new SubmitApplication(commit, new FixedResponseIds(), new FixedHash()),
       registry: fixture.registry,
       scope: fixture.context.scope,
@@ -182,11 +211,18 @@ describe('submit cards application adapter', () => {
       idempotencyKey: 'port-invalid',
       getRemainingRepairs: () => repairs,
     });
-    const invalidInput = makeInput([makeSelection('candidate-unregistered')]);
+    const invalidInput = {
+      kind: 'propose' as const,
+      ...makeInput([makeSelection('candidate-unregistered')]),
+    };
 
-    const first = await port.submit(invalidInput, execution(fixture.context.scope.threadId), token);
+    const first = await port.respond(
+      invalidInput,
+      execution(fixture.context.scope.threadId),
+      token,
+    );
     repairs = 1;
-    const second = await port.submit(
+    const second = await port.respond(
       invalidInput,
       execution(fixture.context.scope.threadId),
       token,
@@ -207,7 +243,7 @@ describe('submit cards application adapter', () => {
     const ids = fixture.ids.get('candidate-1');
     if (ids === undefined) throw new Error('fixture candidate missing');
     const commit = new FixedCommit();
-    const port = createSubmitCardsPort({
+    const port = createRespondPort({
       application: new SubmitApplication(commit, new FixedResponseIds(), new FixedHash()),
       registry: fixture.registry,
       scope: fixture.context.scope,
@@ -217,11 +253,11 @@ describe('submit cards application adapter', () => {
       idempotencyKey: 'port-cancel',
       getRemainingRepairs: () => 2,
     });
-    const input = makeInput([makeSelection('candidate-1')]);
-    const cancelled = await port.submit(input, execution(fixture.context.scope.threadId), {
+    const input = { kind: 'propose' as const, ...makeInput([makeSelection('candidate-1')]) };
+    const cancelled = await port.respond(input, execution(fixture.context.scope.threadId), {
       isCancelled: () => true,
     });
-    const drifted = await port.submit(
+    const drifted = await port.respond(
       input,
       { ...execution(fixture.context.scope.threadId), revision: 2 },
       token,

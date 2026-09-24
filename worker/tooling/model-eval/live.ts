@@ -309,7 +309,7 @@ export const buildEvaluationRunFromResponse = (
   const claims: EvidenceClaim[] = [];
   const selections: CandidateSelection[] = [];
   const toolCalls: ToolCall[] = trace.toolNames.flatMap((name) =>
-    name === 'search_places' || name === 'get_place_details' || name === 'submit_cards'
+    name === 'search_places' || name === 'get_place_details' || name === 'respond'
       ? [{ name, candidateIds: [] }]
       : [],
   );

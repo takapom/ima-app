@@ -210,7 +210,7 @@ describe('development HTTP with OpenAI and Hot Pepper transports', () => {
       expect(JSON.stringify(body)).not.toContain(PHOTO_URL);
       expect(tools).toContain('search_places');
       expect(tools).toContain('get_place_details');
-      expect(tools.filter((tool) => tool === 'submit_cards')).toHaveLength(1);
+      expect(tools.filter((tool) => tool === 'respond')).toHaveLength(1);
       expect(upstream).toHaveBeenCalledTimes(tools.length + 2);
       const photoUrl = `https://ima.dev/v1/photos/${photos.value.photos[0]?.photoToken}`;
       const image = await SELF.fetch(photoUrl, { headers: requestHeaders(crypto.randomUUID()) });

@@ -32,7 +32,8 @@ export type RuntimeModelGuardErrorCode =
   | 'MODEL_STREAM_LIMIT'
   | 'MODEL_STREAM_ABORTED'
   | 'UNSUPPORTED_PART'
-  | 'FINISH_COUNT';
+  | 'FINISH_COUNT'
+  | 'READ_IN_FINAL_STEP';
 
 const guardErrors = new WeakSet<object>();
 
@@ -51,10 +52,9 @@ export const isRuntimeModelGuardError = (value: unknown): value is RuntimeModelG
   typeof value === 'object' && value !== null && guardErrors.has(value);
 
 export type RuntimeModelGuardAcceptance = {
-  readonly terminal: 'none' | 'message' | 'submit';
-  /** Batch-validated final text; Core message and evidence validation are still required. */
-  readonly finalText: string | null;
-  readonly emptyFinal: boolean;
+  readonly terminal: 'none' | 'respond';
+  /** Set when the step ended without any tool call, which commits nothing. */
+  readonly missingRespond: 'TEXT_WITHOUT_RESPOND' | 'EMPTY_STEP' | null;
   readonly partCount: number;
   readonly bytes: number;
 };
@@ -133,8 +133,11 @@ const validateActions = (
   actions: readonly RuntimeBatchAction[],
   finalResponse = false,
 ): Extract<RuntimeBatchResult, { readonly ok: true }> => {
-  if (finalResponse && actions.some((action) => action.kind === 'tool')) {
-    throw new RuntimeModelGuardError('FINAL_WITH_TOOL');
+  if (
+    finalResponse &&
+    actions.some((action) => action.kind === 'tool' && action.operation !== 'respond')
+  ) {
+    throw new RuntimeModelGuardError('READ_IN_FINAL_STEP');
   }
   const batch = validateRuntimeBatch(actions);
   if (!batch.ok) throw guardErrorForBatch(batch);
@@ -143,13 +146,12 @@ const validateActions = (
 
 type ValidatedModelStep = {
   readonly batch: Extract<RuntimeBatchResult, { readonly ok: true }>;
-  readonly finalText: string | null;
 };
 
 /**
  * Text emitted alongside tool calls is a conversational preamble, not a terminal action: it is
  * never shown to the user and never persisted, so accepting it would deny the whole step — and
- * with it the turn — for a habit that commits nothing. A final-only step still rejects tools.
+ * with it the turn — for a habit that commits nothing. Only respond ends a turn with an answer.
  */
 const endsTurn = (
   actions: readonly RuntimeBatchAction[],
@@ -196,10 +198,9 @@ const actionsFromStream = (
   const finish = finishes[0];
   if (finish === undefined) throw new RuntimeModelGuardError('FINISH_COUNT');
   if (endsTurn(actions, hasText, finish.finishReason.unified === 'tool-calls')) {
-    actions.push({ kind: 'final', text });
+    actions.push({ kind: 'text', text });
   }
-  const batch = validateActions(actions, finalResponse);
-  return { batch, finalText: batch.terminal === 'message' ? text : null };
+  return { batch: validateActions(actions, finalResponse) };
 };
 
 const actionsFromGenerate = (
@@ -230,10 +231,9 @@ const actionsFromGenerate = (
     }
   }
   if (endsTurn(actions, hasText, result.finishReason.unified === 'tool-calls')) {
-    actions.push({ kind: 'final', text });
+    actions.push({ kind: 'text', text });
   }
-  const batch = validateActions(actions, finalResponse);
-  return { batch, finalText: batch.terminal === 'message' ? text : null };
+  return { batch: validateActions(actions, finalResponse) };
 };
 
 const jsonBytes = (value: unknown): number => {
@@ -406,8 +406,7 @@ const accepted = (
   bytes: number,
 ): RuntimeModelGuardAcceptance => ({
   terminal: step.batch.terminal,
-  finalText: step.finalText,
-  emptyFinal: step.batch.emptyFinal,
+  missingRespond: step.batch.missingRespond,
   partCount,
   bytes,
 });

@@ -23,6 +23,9 @@ export type RuntimeProductionReport = {
   readonly observationIdsSeen: readonly (readonly string[])[];
   readonly modelCandidateCounts: readonly number[];
   readonly finalResponseFlags: readonly boolean[];
+  /** What each step offered the provider: the SDK's tool choice and the active tool names. */
+  readonly toolChoices: readonly string[];
+  readonly offeredTools: readonly (readonly string[])[];
   readonly fetchUrls: readonly string[];
   readonly searchResultCounts: readonly number[];
   readonly llmInputCanarySeen: boolean;
@@ -53,6 +56,8 @@ export type MutableRuntimeProductionReport = ProductionProviderFixtureReport & {
   observationIdsSeen: string[][];
   modelCandidateCounts: number[];
   finalResponseFlags: boolean[];
+  toolChoices: string[];
+  offeredTools: string[][];
   llmInputCanarySeen: boolean;
   deniedFieldCanarySeen: boolean;
   modelHistorySeen: boolean;
@@ -67,7 +72,6 @@ const usage = {
 } as const;
 
 const toolFinish = { unified: 'tool-calls', raw: 'tool-calls' } as const;
-const stopFinish = { unified: 'stop', raw: 'stop' } as const;
 
 const searchInput = {
   mode: 'search' as const,
@@ -151,16 +155,8 @@ const streamOf = (
     },
   });
 
-const finalMessageParts = (text = '条件を確認しました。'): RuntimeGateModelStreamPart[] => {
-  const envelope = JSON.stringify({ kind: 'final_message', message: text });
-  return [
-    { type: 'stream-start', warnings: [] },
-    { type: 'text-start', id: 'production-final' },
-    { type: 'text-delta', id: 'production-final', delta: envelope },
-    { type: 'text-end', id: 'production-final' },
-    { type: 'finish', usage, finishReason: stopFinish },
-  ];
-};
+const answerParts = (call: number, message = '条件を確認しました。') =>
+  toolParts(call, 'respond', { kind: 'answer', message });
 
 export const modelForProduction = (
   report: MutableRuntimeProductionReport,
@@ -182,23 +178,24 @@ export const modelForProduction = (
       report.modelHistoryTextSeen ||= prompt.includes('[m16-multiturn] 静かなカフェを探して');
       report.modelCardSetSeen ||= prompt.includes('cardSet\\":{');
       report.modelCardSetSnapshots.push(...modelCardSetSnapshotsIn(prompt));
-      const finalOnly =
-        Object.keys(options.tools ?? {}).length === 0 || options.toolChoice?.type === 'none';
+      const offered = (options.tools ?? []).map((tool) => tool.name).sort();
+      report.offeredTools.push(offered);
+      report.toolChoices.push(options.toolChoice?.type ?? 'unset');
+      const finalOnly = offered.length === 1 && offered[0] === 'respond';
       report.finalResponseFlags.push(finalOnly);
-      if (finalOnly && (scenario() === 'late-tool' || scenario() === 'late-submit')) {
-        const toolName = scenario() === 'late-submit' ? 'submit_cards' : 'search_places';
+      if (finalOnly && scenario() === 'late-tool') {
         report.calls += 1;
         report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
-        report.toolNames.push(toolName);
+        report.toolNames.push('search_places');
         return Promise.resolve({
-          stream: streamOf(toolParts(report.calls, toolName, searchInput)),
+          stream: streamOf(toolParts(report.calls, 'search_places', searchInput)),
         });
       }
       if (finalOnly) {
         report.calls += 1;
         report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
-        report.toolNames.push('final_message');
-        return Promise.resolve({ stream: streamOf(finalMessageParts()) });
+        report.toolNames.push('respond');
+        return Promise.resolve({ stream: streamOf(answerParts(report.calls)) });
       }
       const candidateIds = candidateIdsIn(prompt);
       const observationIds = observationIdsIn(prompt);
@@ -207,24 +204,24 @@ export const modelForProduction = (
       if (scenario() === 'zero-results' && report.calls > 0) {
         report.calls += 1;
         report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
-        report.toolNames.push('final_message');
+        report.toolNames.push('respond');
         return Promise.resolve({
-          stream: streamOf(finalMessageParts('条件に合う候補は見つかりませんでした。')),
+          stream: streamOf(answerParts(report.calls, '条件に合う候補は見つかりませんでした。')),
         });
       }
       if (scenario() === 'follow-up') {
         report.calls += 1;
         report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
-        report.toolNames.push('final_message');
+        report.toolNames.push('respond');
         return Promise.resolve({
-          stream: streamOf(finalMessageParts('前の候補を維持します。')),
+          stream: streamOf(answerParts(report.calls, '前の候補を維持します。')),
         });
       }
       if (finalAfterDetails && report.calls >= 2) {
         report.calls += 1;
         report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
-        report.toolNames.push('final_message');
-        return Promise.resolve({ stream: streamOf(finalMessageParts()) });
+        report.toolNames.push('respond');
+        return Promise.resolve({ stream: streamOf(answerParts(report.calls)) });
       }
       const uniqueCandidateIds = [...new Set(candidateIds)];
       const twoCandidates =
@@ -255,13 +252,14 @@ export const modelForProduction = (
           freshness: 'refresh',
         };
       } else {
-        toolName = 'submit_cards';
+        toolName = 'respond';
         const alternativeCandidateId = twoCandidates.find((id) => id !== candidateId);
         const bothRead =
           alternativeCandidateId !== undefined &&
           wasRead(candidateId) &&
           wasRead(alternativeCandidateId);
         input = {
+          kind: 'propose',
           message: ['渋谷の候補です。'],
           hero: { candidateId, why: '検索結果と詳細を確認しました。' },
           alts: bothRead

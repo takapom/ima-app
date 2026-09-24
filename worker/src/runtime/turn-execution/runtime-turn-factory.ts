@@ -7,7 +7,8 @@ import type {
   TurnContext,
 } from '@cloudflare/think';
 import type { HarnessContext, IdPort } from '@worker/application/ports/context';
-import type { SubmitCardsInvalid, SubmitCardsPort } from '@worker/application/ports/submission';
+import type { RespondInvalid, RespondPort } from '@worker/application/ports/submission';
+import type { RespondKind } from '@worker/application/ports/model';
 import {
   observeRuntimeSubmitRejection,
   observeRuntimeTurnOutcome,
@@ -40,9 +41,9 @@ export type RuntimeTurnFactoryOptions = {
   readonly budget: RuntimeBudget;
   readonly ids: Pick<IdPort, 'nextCallId'>;
   readonly ports: RuntimeTurnPortDependencies;
-  /** Rebuilds the submit adapter with the current clock for each call. */
-  readonly buildSubmitPort?: (input: { readonly now: string }) => SubmitCardsPort;
-  /** Observes rejected submits; the default writer logs the structural diagnostic. */
+  /** Rebuilds the respond adapter with the current clock for each call. */
+  readonly buildRespondPort?: (input: { readonly now: string }) => RespondPort;
+  /** Observes rejected responds; the default writer logs the structural diagnostic. */
   readonly onSubmitRejected?: RuntimeSubmitRejectionWriter;
   /** Observes the turn's operation shape at dispose; the default writer logs it. */
   readonly onTurnOutcome?: RuntimeTurnOutcomeWriter;
@@ -126,7 +127,7 @@ const budgetRepairCount = (budget: RuntimeBudget): 0 | 1 | 2 => {
 const submitDenial = (denial: {
   readonly code: string;
   readonly message: string;
-}): SubmitCardsInvalid => {
+}): RespondInvalid => {
   const code =
     denial.code === 'CANCELLED'
       ? ('CANCELLED' as const)
@@ -135,19 +136,19 @@ const submitDenial = (denial: {
         : ('BUDGET_EXCEEDED' as const);
   return {
     status: 'invalid',
-    issues: [{ code, path: 'submit', message: denial.message, missingFields: [] }],
+    issues: [{ code, path: 'respond', message: denial.message, missingFields: [] }],
     repairable: false,
     remainingRepairs: 0,
   };
 };
 
-const budgetedSubmit = (
-  currentPort: () => SubmitCardsPort,
+const budgetedRespond = (
+  currentPort: () => RespondPort,
   budget: RuntimeBudget,
-  observeRejection: (result: SubmitCardsInvalid) => void,
-  onCommitted: () => void,
-): SubmitCardsPort => ({
-  async submit(input, execution, cancellation) {
+  observeRejection: (result: RespondInvalid) => void,
+  onCommitted: (kind: RespondKind) => void,
+): RespondPort => ({
+  async respond(input, execution, cancellation) {
     const reservation = budget.reserveSubmit();
     if (!reservation.ok) {
       const result = submitDenial(reservation.denial);
@@ -155,12 +156,12 @@ const budgetedSubmit = (
       return result;
     }
     if (cancellation.isCancelled()) {
-      return submitDenial({ code: 'CANCELLED', message: 'submit was cancelled' });
+      return submitDenial({ code: 'CANCELLED', message: 'respond was cancelled' });
     }
-    const result = await currentPort().submit(input, execution, cancellation);
+    const result = await currentPort().respond(input, execution, cancellation);
     if (result.status === 'committed') {
       budget.markCommitted();
-      onCommitted();
+      onCommitted(result.kind);
     } else observeRejection(result);
     return result;
   },
@@ -204,9 +205,9 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     }
   >();
   const operationCounts = new Map<PublicToolName, number>();
-  let committed = false;
+  let committed: RespondKind | undefined;
   let unresolvedSubmitFailure = false;
-  const reportSubmitRejection = (result: SubmitCardsInvalid): void => {
+  const reportSubmitRejection = (result: RespondInvalid): void => {
     unresolvedSubmitFailure = result.issues.some((issue) =>
       ['INVALID_ARGUMENT', 'SCHEMA_MISMATCH', 'BUDGET_EXCEEDED'].includes(issue.code),
     );
@@ -276,20 +277,20 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     };
   };
 
-  const submit = budgetedSubmit(
-    () => options.buildSubmitPort?.({ now: options.ports.clock() }) ?? options.ports.submit,
+  const respond = budgetedRespond(
+    () => options.buildRespondPort?.({ now: options.ports.clock() }) ?? options.ports.respond,
     options.budget,
     reportSubmitRejection,
-    () => {
-      committed = true;
+    (kind) => {
+      committed = kind;
       unresolvedSubmitFailure = false;
     },
   );
   const dependencies: ToolBindingDependencies = Object.freeze({
     ...options.ports,
-    submit,
+    respond,
     runtime,
-    rejectSubmitInput: (result: SubmitCardsInvalid): SubmitCardsInvalid => {
+    rejectRespondInput: (result: RespondInvalid): RespondInvalid => {
       const reservation = options.budget.reserveSubmit();
       const rejected = reservation.ok
         ? {
@@ -361,8 +362,9 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
       if (disposed) return;
       disposed = true;
       const outcome = {
-        committed,
+        committed: committed !== undefined,
         operations: Object.fromEntries(operationCounts),
+        ...(committed === undefined ? {} : { kind: committed }),
       };
       if (options.onTurnOutcome === undefined) observeRuntimeTurnOutcome(outcome);
       else observeRuntimeTurnOutcome(outcome, options.onTurnOutcome);

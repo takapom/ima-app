@@ -72,7 +72,7 @@ describe('production candidate cardinality through the real Think Durable Object
 
     await expect(stub.getRuntimeProductionReport()).resolves.toMatchObject({
       calls: 2,
-      toolNames: ['search_places', 'final_message'],
+      toolNames: ['search_places', 'respond'],
       searchResultCounts: [0],
       modelCandidateCounts: [0, 0],
       fetchUrls: ['https://webservice.recruit.co.jp/hotpepper/gourmet/v1/'],

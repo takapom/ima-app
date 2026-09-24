@@ -78,15 +78,15 @@ const setup = async (
       composition.turn.dependencies,
       { toolCallId: `details-${++calls}` },
     );
-  const submit = (input: unknown) =>
-    invokePublicToolEnvelope('submit_cards', { input }, composition.turn.dependencies, {
-      toolCallId: `submit-${++calls}`,
+  const respond = (input: unknown) =>
+    invokePublicToolEnvelope('respond', { input }, composition.turn.dependencies, {
+      toolCallId: `respond-${++calls}`,
     });
   return {
     composition,
     search,
     details,
-    submit,
+    respond,
     requests,
     traces,
     fetcher,
@@ -192,7 +192,8 @@ describe('Hot Pepper primary provider composition', () => {
     expect(candidate).not.toHaveProperty('photos');
     const why = '駅から近いカフェです。';
     expect(
-      await f.submit({
+      await f.respond({
+        kind: 'propose',
         message: [why],
         hero: { candidateId: candidate.candidateId, why },
         alts: [],

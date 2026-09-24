@@ -14,11 +14,8 @@ import {
   type SearchPlacesOutput,
 } from '@worker/application/ports/operations';
 import { type Result } from '@worker/domain/result';
-import { type SubmitCardsInput } from '@worker/application/ports/model';
-import {
-  type SubmitCardsPort,
-  type SubmitCardsPortResult,
-} from '@worker/application/ports/submission';
+import { type RespondInput } from '@worker/application/ports/model';
+import { type RespondPort, type RespondPortResult } from '@worker/application/ports/submission';
 import * as v from 'valibot';
 import {
   createPublicToolSet,
@@ -75,7 +72,8 @@ const detailsInput: GetPlaceDetailsInput = {
   freshness: 'reuse_valid',
 };
 
-const submitInput: SubmitCardsInput = {
+const submitInput: RespondInput = {
+  kind: 'propose',
   message: ['候補です'],
   hero: { candidateId: 'candidate-1', why: '候補です' },
   alts: [],
@@ -106,12 +104,12 @@ const detailsResult: Result<GetPlaceDetailsOutput> = {
   warnings: [],
 };
 
-const committedResult: SubmitCardsPortResult = {
+const committedResult: RespondPortResult = {
   status: 'committed',
   responseId: 'response-1',
   revision: 1,
+  kind: 'propose',
   presentation: 'replace',
-  cards: submitInput,
 };
 
 type Ports = {
@@ -144,8 +142,8 @@ const makeDependencies = (
       return Promise.resolve(detailsResult);
     },
   };
-  const submit: SubmitCardsPort = {
-    submit: (_input, execution) => {
+  const respond: RespondPort = {
+    respond: (_input, execution) => {
       ports.submit += 1;
       ports.executions.push(execution);
       return Promise.resolve(committedResult);
@@ -156,7 +154,7 @@ const makeDependencies = (
     clock: () => context.serverNow,
     search,
     details,
-    submit,
+    respond,
     runtime: (operation, _invocation): ToolRuntime => ({
       context,
       execution: {
@@ -180,26 +178,26 @@ describe('public tool catalog', () => {
     const dependencies = makeDependencies(ports);
     const tools = createPublicToolSet(dependencies);
 
-    expect(Object.keys(tools).sort()).toEqual([
-      'get_place_details',
-      'search_places',
-      'submit_cards',
-    ]);
+    expect(Object.keys(tools).sort()).toEqual(['get_place_details', 'respond', 'search_places']);
     expect(tools.search_places.description).toContain('空白区切りのAND検索');
     expect(tools.search_places.description).toContain('地域名もqueryと同じkeywordへ連結');
     expect(tools.search_places.description).toContain('ジャンル語へ置き換えて');
     expect(tools.search_places.description).toContain('0件のときは語を減らす');
     expect(tools.search_places.description).not.toContain('openNow');
-    expect(tools.search_places.description).toContain('そのままsubmit_cardsで提案できます');
+    expect(tools.search_places.description).toContain('そのままrespondのproposeで提案できます');
     expect(tools.get_place_details.description).toContain('通常は不要です');
     expect(tools.get_place_details.description).toContain('requests配列で1回にまとめます');
     expect(tools.get_place_details.description).toContain('写真や価格が無い店舗でも提案できます');
-    expect(tools.submit_cards.description).toContain('検索で得た候補はそのまま確定できます');
-    expect(tools.submit_cards.description).not.toContain('2nd step');
-    expect(tools.submit_cards.description).toContain('システムが付けます');
-    expect(tools.submit_cards.description).not.toContain('observationId');
+    expect(tools.respond.description).toContain('検索で得た候補はそのまま提案できます');
+    // The three kinds are presented as equal choices, not as cards with optional extras.
+    for (const kind of ['ask:', 'answer:', 'propose:']) {
+      expect(tools.respond.description).toContain(kind);
+    }
+    expect(tools.respond.description).toContain('同じ重みで選んでください');
+    expect(tools.respond.description).toContain('システムが付けます');
+    expect(tools.respond.description).not.toContain('observationId');
     expect(tools.get_place_details.description).not.toContain('observationId');
-    expect(tools.submit_cards.description).toContain('読み取りと確定は同じstepにできません');
+    expect(tools.respond.description).toContain('読み取りと確定は同じstepにできません');
     expect(getPublicTool(tools, 'walking_route')).toBeUndefined();
     const result = await invokePublicToolByName(
       'walking_route',
@@ -393,7 +391,7 @@ describe('public tool catalog', () => {
     const [search, details, submit] = await Promise.all([
       invokePublicTool('search_places', searchInput, dependencies, invocation),
       invokePublicTool('get_place_details', detailsInput, dependencies, invocation),
-      invokePublicTool('submit_cards', submitInput, dependencies, invocation),
+      invokePublicTool('respond', submitInput, dependencies, invocation),
     ]);
 
     expect(search.status).toBe('error');
@@ -413,7 +411,7 @@ describe('public tool catalog', () => {
     const ports: Ports = { search: 0, details: 0, submit: 0, executions: [], contexts: [] };
     const dependencies = makeDependencies(ports, undefined, 1);
     const result = await invokePublicTool(
-      'submit_cards',
+      'respond',
       { ...submitInput, unexpected: true },
       dependencies,
       invocation,
@@ -440,7 +438,7 @@ describe('public tool catalog', () => {
       { ...dependencies, search: alternateSearch },
       invocation,
     );
-    const submit = await invokePublicTool('submit_cards', submitInput, dependencies, invocation);
+    const submit = await invokePublicTool('respond', submitInput, dependencies, invocation);
 
     expect(alternate).toEqual(searchResult);
     expect(submit).toEqual(committedResult);

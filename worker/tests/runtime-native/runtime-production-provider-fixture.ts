@@ -9,7 +9,6 @@ export type ProductionScenario =
   | 'condition-change'
   | 'final-reserve'
   | 'late-tool'
-  | 'late-submit'
   | 'exhausted-budget'
   | 'zero-results'
   | 'two-results';
@@ -28,7 +27,6 @@ export const productionScenarioFor = (value: unknown): ProductionScenario => {
   if (input.text.includes('[m24-zero-results]')) return 'zero-results';
   if (input.text.includes('[m24-two-results]')) return 'two-results';
   if (input.text.includes('[m16-exhausted-budget]')) return 'exhausted-budget';
-  if (input.text.includes('[m16-late-submit]')) return 'late-submit';
   if (input.text.includes('[m16-late-tool]')) return 'late-tool';
   if (input.text.includes('[m16-final-reserve]')) return 'final-reserve';
   if (input.text.includes('[m16-follow-up]')) return 'follow-up';

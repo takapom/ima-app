@@ -14,8 +14,8 @@ import type {
   SafeSearchPlacesOutput,
   SearchToolEnvelope,
   SearchToolResult,
-  SubmitToolEnvelope,
-  SubmitToolResult,
+  RespondToolEnvelope,
+  RespondToolResult,
   ToolBindingDependencies,
 } from '@worker/runtime/ports/tool-binding';
 import {
@@ -28,19 +28,19 @@ import {
   parseDetailsResult,
   parseSearchInput,
   parseSearchResult,
-  parseSubmitInput,
-  parseSubmitResult,
+  parseRespondInput,
+  parseRespondResult,
   resultError,
   runtimeFor,
-  submitCancellationError,
-  submitInvalid,
+  respondCancellationError,
+  respondInvalid,
   unsupportedDetailField,
   upstreamError,
 } from '@worker/adapters/in/tools/validation';
 import {
   getPlaceDetailsToolSchema,
   searchPlacesToolSchema,
-  submitCardsToolSchema,
+  respondToolSchema,
 } from '@worker/adapters/in/tools/schemas';
 import { projectDetailsResult, projectSearchResult } from '@worker/adapters/in/tools/projection';
 
@@ -200,37 +200,37 @@ const getPlaceDetails = async (
   );
 };
 
-const submitCards = async (
+const respond = async (
   input: unknown,
   invocation: PublicToolInvocation,
   dependencies: ToolBindingDependencies,
-): Promise<SubmitToolResult> => {
-  const checked = runtimeFor(dependencies.runtime, 'submit_cards', invocation);
+): Promise<RespondToolResult> => {
+  const checked = runtimeFor(dependencies.runtime, 'respond', invocation);
   if (!checked.ok) {
-    const result = submitInvalid('INVALID_ARGUMENT', checked.error.path, checked.error.message, 0);
-    return dependencies.rejectSubmitInput?.(result) ?? result;
+    const result = respondInvalid('INVALID_ARGUMENT', checked.error.path, checked.error.message, 0);
+    return dependencies.rejectRespondInput?.(result) ?? result;
   }
-  const parsedInput = parseSubmitInput(input);
+  const parsedInput = parseRespondInput(input);
   if (!parsedInput.ok) {
-    const result = submitInvalid(
+    const result = respondInvalid(
       'INVALID_ARGUMENT',
       'input',
-      'submit_cards input is invalid',
+      'respond input is invalid',
       checked.runtime.remainingRepairs,
     );
-    return dependencies.rejectSubmitInput?.(result) ?? result;
+    return dependencies.rejectRespondInput?.(result) ?? result;
   }
-  const cancelled = submitCancellationError(checked.runtime);
+  const cancelled = respondCancellationError(checked.runtime);
   if (cancelled !== undefined) return cancelled;
 
-  const returned = await dependencies.submit.submit(
+  const returned = await dependencies.respond.respond(
     parsedInput.value,
     checked.runtime.execution,
     checked.runtime.cancellation,
   );
-  const result = parseSubmitResult(returned);
+  const result = parseRespondResult(returned);
   if (result === undefined) {
-    throw new Error('submit_cards application returned an invalid result');
+    throw new Error('respond application returned an invalid result');
   }
   return result;
 };
@@ -249,11 +249,11 @@ export function invokePublicTool(
   invocation: PublicToolInvocation,
 ): Promise<DetailsToolResult>;
 export function invokePublicTool(
-  name: 'submit_cards',
+  name: 'respond',
   input: unknown,
   dependencies: ToolBindingDependencies,
   invocation: PublicToolInvocation,
-): Promise<SubmitToolResult>;
+): Promise<RespondToolResult>;
 export function invokePublicTool(
   name: PublicToolName,
   input: unknown,
@@ -262,7 +262,7 @@ export function invokePublicTool(
 ): Promise<PublicToolResult> {
   if (name === 'search_places') return searchPlaces(input, invocation, dependencies);
   if (name === 'get_place_details') return getPlaceDetails(input, invocation, dependencies);
-  if (name === 'submit_cards') return submitCards(input, invocation, dependencies);
+  if (name === 'respond') return respond(input, invocation, dependencies);
   return Promise.resolve(resultError<never>(issue('INVALID_ARGUMENT', null, 'unknown tool name')));
 }
 
@@ -279,11 +279,11 @@ export function invokePublicToolEnvelope(
   invocation: PublicToolInvocation,
 ): Promise<DetailsToolResult>;
 export function invokePublicToolEnvelope(
-  name: 'submit_cards',
+  name: 'respond',
   envelope: unknown,
   dependencies: ToolBindingDependencies,
   invocation: PublicToolInvocation,
-): Promise<SubmitToolResult>;
+): Promise<RespondToolResult>;
 export function invokePublicToolEnvelope(
   name: string,
   envelope: unknown,
@@ -297,9 +297,9 @@ export function invokePublicToolEnvelope(
   }
   const parsed = parseEnvelope(envelope);
   if (parsed === undefined) {
-    if (name === 'submit_cards') {
-      const result = submitInvalid('INVALID_ARGUMENT', null, 'tool action envelope is invalid', 0);
-      return Promise.resolve(dependencies.rejectSubmitInput?.(result) ?? result);
+    if (name === 'respond') {
+      const result = respondInvalid('INVALID_ARGUMENT', null, 'tool action envelope is invalid', 0);
+      return Promise.resolve(dependencies.rejectRespondInput?.(result) ?? result);
     }
     const error = issue('INVALID_ARGUMENT', null, 'tool action envelope is invalid');
     return name === 'search_places'
@@ -312,7 +312,7 @@ export function invokePublicToolEnvelope(
   if (name === 'get_place_details') {
     return getPlaceDetails(parsed.input, invocation, dependencies);
   }
-  return submitCards(parsed.input, invocation, dependencies);
+  return respond(parsed.input, invocation, dependencies);
 }
 
 export const invokePublicToolByName = (
@@ -328,7 +328,7 @@ export const invokePublicToolByName = (
   }
   if (name === 'search_places') return searchPlaces(input, invocation, dependencies);
   if (name === 'get_place_details') return getPlaceDetails(input, invocation, dependencies);
-  return submitCards(input, invocation, dependencies);
+  return respond(input, invocation, dependencies);
 };
 
 export const createPublicToolSet = (dependencies: ToolBindingDependencies): PublicToolSet =>
@@ -339,7 +339,7 @@ export const createPublicToolSet = (dependencies: ToolBindingDependencies): Publ
         'queryには掲載情報に現れる短い語だけを使い、「甘いもの」「まったり」のような要望表現はスイーツ・カフェ・居酒屋などのジャンル語へ置き換えてください。',
         '0件のときは語を減らすか別のジャンル語で再検索し、検索していない状態を候補なしと断定しないでください。',
         '営業中で絞り込む検索はありません。営業時間は掲載文であり、今の営業・到着時の営業・空席を保証しません。未確認と明示してください。徒歩・終電の条件も保証しません。',
-        '各候補には店名・営業時間の掲載文・予算・設備が含まれ、そのままsubmit_cardsで提案できます。',
+        '各候補には店名・営業時間の掲載文・予算・設備が含まれ、そのままrespondのproposeで提案できます。',
       ].join('\n'),
       inputSchema: searchPlacesToolSchema,
       execute: (input, options) =>
@@ -356,15 +356,17 @@ export const createPublicToolSet = (dependencies: ToolBindingDependencies): Publ
       execute: (input, options) =>
         invokePublicToolEnvelope('get_place_details', input, dependencies, invocationOf(options)),
     }),
-    submit_cards: tool<SubmitToolEnvelope, SubmitToolResult>({
+    respond: tool<RespondToolEnvelope, RespondToolResult>({
       description: [
-        '選んだ候補とmessageを検証し、1回だけ確定します。',
-        'カードの店名・営業時間・価格・写真・設備は、取得済みの情報からシステムが付けます。各カードにはcandidateIdと理由(why)、別案には比較(diff)を書いてください。',
-        '検索で得た候補はそのまま確定できます。店名か営業時間が古くなった候補は確定できないので、get_place_detailsで取り直してください。読み取りと確定は同じstepにできません。',
+        'ターンの応答を1回だけ確定します。kindは次の3つで、同じ重みで選んでください。',
+        'ask: 場所や選択に不可欠な希望が足りないとき、質問を原則1つ返します。表示中のカードは維持されます。',
+        'answer: 説明・比較・候補が見つからなかった報告・予算が尽きたときの状況説明を返します。表示中のカードは維持されます。',
+        'propose: 候補カードをhero1件とalts0〜2件で提案し、messageを1〜4件付けます。各カードにはcandidateIdと理由(why)、別案には比較(diff)を書いてください。カードの店名・営業時間・価格・写真・設備は取得済みの情報からシステムが付けます。',
+        '検索で得た候補はそのまま提案できます。店名か営業時間が古くなった候補は確定できないので、get_place_detailsで取り直してください。読み取りと確定は同じstepにできません。',
       ].join('\n'),
-      inputSchema: submitCardsToolSchema,
+      inputSchema: respondToolSchema,
       execute: (input, options) =>
-        invokePublicToolEnvelope('submit_cards', input, dependencies, invocationOf(options)),
+        invokePublicToolEnvelope('respond', input, dependencies, invocationOf(options)),
     }),
   }) satisfies PublicToolSet;
 
