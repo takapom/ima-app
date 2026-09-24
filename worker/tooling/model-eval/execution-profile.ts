@@ -25,8 +25,19 @@ export type EvaluationExecutionProfile =
       readonly requiresApiKey: false;
     };
 
+const liveSearch: EvaluationExecutionProfile = {
+  status: 'live_only',
+  kind: 'new_search',
+  requiresApiKey: true,
+};
+
 const profiles: Record<ScenarioId, EvaluationExecutionProfile> = {
-  'new-search': { status: 'live_only', kind: 'new_search', requiresApiKey: true },
+  'new-search': liveSearch,
+  // Mood and many-candidate requests are judged only against a real model.
+  'mood-after-dinner': liveSearch,
+  'mood-rainy-second': liveSearch,
+  'mood-tired': liveSearch,
+  'many-candidates': liveSearch,
   'condition-change': {
     status: 'fixture_ready',
     kind: 'condition_context',

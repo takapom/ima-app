@@ -18,10 +18,15 @@ const trace = (changes: Partial<LiveTraceSnapshot> = {}): LiveTraceSnapshot => (
   modelCalls: 0,
   proposedToolCalls: 0,
   executedToolCalls: null,
+  executedTools: null,
+  respondInvalid: 0,
+  respondKinds: [],
   toolNames: [],
   upstreamCalls: 0,
   latencyMs: null,
+  turnMs: null,
   inputTokens: null,
+  cachedInputTokens: null,
   outputTokens: null,
   measuredCostUsd: null,
   modelLocationExposed: false,
@@ -85,6 +90,7 @@ describe('model-eval live coordinator boundaries', () => {
         modelCalls: 1,
         proposedToolCalls: 1,
         executedToolCalls: 1,
+        executedTools: { search_places: 1, get_place_details: 0, respond: 0 },
         toolNames: ['search_places'],
         upstreamCalls: 2,
         latencyMs: 20,
@@ -102,7 +108,38 @@ describe('model-eval live coordinator boundaries', () => {
       inputTokens: 4,
       outputTokens: 5,
       executedToolCalls: 1,
+      executedTools: { search_places: 1, get_place_details: 0, respond: 0 },
     });
+
+    // Executed tools, refused responds and committed kinds are per turn, not per DO.
+    const second = liveTraceDelta(
+      trace({
+        modelCalls: 3,
+        executedTools: { search_places: 1, get_place_details: 1, respond: 2 },
+        respondInvalid: 1,
+        respondKinds: ['propose', 'answer'],
+      }),
+      trace({
+        modelCalls: 1,
+        executedTools: { search_places: 1, get_place_details: 0, respond: 1 },
+        respondKinds: ['propose'],
+      }),
+    );
+    expect(second).toMatchObject({
+      ok: true,
+      trace: {
+        executedTools: { search_places: 0, get_place_details: 1, respond: 1 },
+        executedToolCalls: 2,
+        respondInvalid: 1,
+        respondKinds: ['answer'],
+      },
+    });
+    expect(
+      liveTraceDelta(
+        trace({ executedTools: { search_places: 0, get_place_details: 0, respond: 0 } }),
+        trace({ executedTools: { search_places: 1, get_place_details: 0, respond: 0 } }),
+      ),
+    ).toEqual({ ok: false, code: 'TRACE_DELTA_INVALID' });
 
     const unknown = liveTraceDelta(
       trace({ complete: true, modelCalls: 2, latencyMs: 30, inputTokens: 10, outputTokens: 11 }),

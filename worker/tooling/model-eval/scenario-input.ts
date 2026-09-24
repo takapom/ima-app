@@ -39,12 +39,9 @@ const budgetFor = (
   conditions: readonly { readonly field: string; readonly value: JsonValue }[],
 ): ThreadTurnRequest['prefs']['budget'] | null => {
   if (conditions.length === 0) return 'normal';
-  if (conditions.length !== 1 || conditions[0]?.field !== 'priceLevel') return null;
+  if (conditions.length !== 1 || conditions[0]?.field !== 'budget') return null;
   const value = conditions[0].value;
-  if (value === 'inexpensive' || value === 'cheap') return 'cheap';
-  if (value === 'moderate' || value === 'normal') return 'normal';
-  if (value === 'any') return 'any';
-  return null;
+  return value === 'cheap' || value === 'normal' || value === 'any' ? value : null;
 };
 
 const cardContextIsValid = (context: EvaluationCardContext): boolean => {

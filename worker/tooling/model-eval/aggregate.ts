@@ -1,6 +1,13 @@
 import { expandEvaluationDataset, MODEL_EVALUATION_SCENARIOS } from './dataset';
 import { evaluateRun } from './rubric';
-import type { EvaluationReport, EvaluationRun, EvaluationScenario, MetricSummary } from './types';
+import {
+  MODEL_EVAL_SCHEMA_VERSION,
+  type EvaluationReport,
+  type EvaluationRun,
+  type EvaluationScenario,
+  type MetricSummary,
+  type PublicToolName,
+} from './types';
 
 const numericOrUnknown = (value: number | null): number | null =>
   value !== null && Number.isFinite(value) && value >= 0 ? value : null;
@@ -91,12 +98,30 @@ export const aggregateEvaluationRuns = (
       ),
   };
 
+  const executed = (name: PublicToolName) =>
+    metricSummary(runs.map((run) => run.metrics.executedTools?.[name] ?? null));
+  const kindCount = (kind: EvaluationRun['metrics']['respondKind']) =>
+    runs.filter((run) => run.metrics.respondKind === kind).length;
   const metrics = {
     latencyMs: metricSummary(runs.map((run) => run.metrics.latencyMs)),
+    turnMs: metricSummary(runs.map((run) => run.metrics.turnMs)),
     modelCalls: metricSummary(runs.map((run) => run.metrics.modelCalls)),
     toolCalls: metricSummary(runs.map((run) => run.metrics.toolCalls)),
+    executedTools: {
+      search_places: executed('search_places'),
+      get_place_details: executed('get_place_details'),
+      respond: executed('respond'),
+    },
+    respondInvalid: metricSummary(runs.map((run) => run.metrics.respondInvalid)),
+    respondKinds: {
+      ask: kindCount('ask'),
+      answer: kindCount('answer'),
+      propose: kindCount('propose'),
+      unknown: kindCount(null),
+    },
     upstreamCalls: metricSummary(runs.map((run) => run.metrics.upstreamCalls)),
     inputTokens: metricSummary(runs.map((run) => run.metrics.inputTokens)),
+    cachedInputTokens: metricSummary(runs.map((run) => run.metrics.cachedInputTokens)),
     outputTokens: metricSummary(runs.map((run) => run.metrics.outputTokens)),
     costUsd: costSummary(runs.map((run) => run.metrics.measuredCostUsd)),
   };
@@ -130,7 +155,7 @@ export const aggregateEvaluationRuns = (
   ];
 
   return {
-    schemaVersion: 'm25.v1',
+    schemaVersion: MODEL_EVAL_SCHEMA_VERSION,
     coverage,
     assessments,
     metrics,

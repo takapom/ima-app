@@ -106,10 +106,86 @@ describe('model-eval live opt-in boundary', () => {
     expect(modelToolErrorCodeIn(textOnly, 'LOCATION_REQUIRED')).toBe(false);
   });
 
+  it('records executed tools, refused responds, committed kinds, cached tokens and budget', () => {
+    const recorder = new LiveTraceRecorder();
+    expect(recorder.snapshot()).toMatchObject({ executedTools: null, executedToolCalls: null });
+    recorder.begin([
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              kind: 'ima_turn_context',
+              context: { preferences: { areaText: '渋谷', budget: 'normal' } },
+            }),
+          },
+        ],
+      },
+    ]);
+    recorder.finish({ inputTokens: { total: 10, cacheRead: 4 }, outputTokens: { total: 2 } });
+    recorder.observeRespondRejection();
+    recorder.observeTurnOutcome({
+      committed: true,
+      operations: { search_places: 1, respond: 2 },
+      kind: 'ask',
+    });
+    recorder.observeTurnOutcome({ committed: false, operations: { respond: 1 } });
+    expect(recorder.snapshot()).toMatchObject({
+      executedTools: { search_places: 1, get_place_details: 0, respond: 3 },
+      executedToolCalls: 4,
+      respondInvalid: 1,
+      respondKinds: ['ask', null],
+      inputTokens: 10,
+      cachedInputTokens: 4,
+      preservedConditionFields: ['budget'],
+    });
+  });
+
+  it('maps an ask to a clarification even though the public DTO only says message', () => {
+    const evaluationCase = expandEvaluationDataset().find(
+      (candidate) => candidate.id === 'mood-tired' && candidate.repeat === 1,
+    );
+    if (evaluationCase === undefined) throw new Error('mood-tired fixture is missing');
+    const retention = {
+      retentionDecision: 'deny' as const,
+      retentionMode: 'session_only' as const,
+      sessionExpiresAt: '2026-09-11T00:00:00.000Z',
+      freshUntil: null,
+      displayUntil: null,
+      retentionUntil: null,
+      deletionScheduledAt: null,
+      attribution: null,
+      restoreMode: 'reference_only' as const,
+      policyStatus: 'policy_withheld' as const,
+      displayPolicyStatus: 'policy_withheld' as const,
+    };
+    const response = {
+      schemaVersion: 'v1',
+      threadId: 'thread-ask',
+      turnId: 'turn-ask',
+      responseId: 'response-ask',
+      revision: 2,
+      kind: 'message' as const,
+      presentation: 'keep' as const,
+      cardSetId: null,
+      message: [{ text: 'どのあたりで探しますか？', retention }],
+    };
+    const recorder = new LiveTraceRecorder();
+    recorder.begin([]);
+    recorder.finish({ inputTokens: { total: 1 }, outputTokens: { total: 1 } });
+    recorder.observeTurnOutcome({ committed: true, operations: { respond: 1 }, kind: 'ask' });
+    const converted = buildEvaluationRunFromResponse(evaluationCase, response, recorder.snapshot());
+    expect(converted.ok).toBe(true);
+    if (!converted.ok) return;
+    expect(converted.run.response.outcome.kind).toBe('clarification');
+    expect(converted.run.metrics.respondKind).toBe('ask');
+  });
+
   it('retains only exact candidate identity fields in the host trace', () => {
     const recorder = new LiveTraceRecorder();
     recorder.observeCandidateIdentity({
-      provider: 'google_places',
+      provider: 'hotpepper',
       recordRef: 'eval-place-a',
       candidateId: 'runtime-candidate-1',
       displayName: '店舗名は評価キーではない',
@@ -117,7 +193,7 @@ describe('model-eval live opt-in boundary', () => {
     const snapshot = recorder.snapshot();
     expect(snapshot.candidateIdentities).toEqual([
       {
-        provider: 'google_places',
+        provider: 'hotpepper',
         recordRef: 'eval-place-a',
         candidateId: 'runtime-candidate-1',
       },
@@ -144,7 +220,7 @@ describe('model-eval live opt-in boundary', () => {
       policyStatus: 'available' as const,
       displayPolicyStatus: 'available' as const,
     };
-    const evidence = { evidenceId: 'ev-a-name', attribution: null, retention };
+    const evidence = { evidenceId: 'observation-identity', attribution: null, retention };
     const response = {
       schemaVersion: 'v1',
       threadId: 'thread-live-contract',
@@ -191,11 +267,16 @@ describe('model-eval live opt-in boundary', () => {
       complete: true,
       modelCalls: 1,
       proposedToolCalls: 2,
-      executedToolCalls: null,
-      toolNames: ['search_places', 'submit_cards'],
+      executedToolCalls: 2,
+      executedTools: { search_places: 1, get_place_details: 0, respond: 1 },
+      respondInvalid: 0,
+      respondKinds: ['propose'],
+      toolNames: ['search_places', 'respond'],
       upstreamCalls: 1,
       latencyMs: 10,
+      turnMs: 25,
       inputTokens: 1,
+      cachedInputTokens: 0,
       outputTokens: 1,
       measuredCostUsd: null,
       modelLocationExposed: false,
@@ -214,24 +295,24 @@ describe('model-eval live opt-in boundary', () => {
     const mapping = resolveCandidateIdentityMapping(
       [
         {
-          provider: 'google_places',
+          provider: 'hotpepper',
           recordRef: 'eval-place-a',
           candidateId: 'runtime-candidate-1',
         },
       ],
       [
         {
-          provider: 'google_places',
+          provider: 'hotpepper',
           recordRef: 'eval-place-a',
           evaluationCandidateId: 'candidate-a',
         },
         {
-          provider: 'google_places',
+          provider: 'hotpepper',
           recordRef: 'eval-place-b',
           evaluationCandidateId: 'candidate-b',
         },
         {
-          provider: 'google_places',
+          provider: 'hotpepper',
           recordRef: 'eval-place-c',
           evaluationCandidateId: 'candidate-c',
         },
@@ -245,7 +326,7 @@ describe('model-eval live opt-in boundary', () => {
         ...trace,
         candidateIdentities: [
           {
-            provider: 'google_places',
+            provider: 'hotpepper',
             recordRef: 'eval-place-a',
             candidateId: 'runtime-candidate-1',
           },
@@ -259,6 +340,21 @@ describe('model-eval live opt-in boundary', () => {
     expect(evaluated.ok).toBe(true);
     if (evaluated.ok) {
       expect(evaluated.run.response.selections[0]?.candidateId).toBe('candidate-a');
+      // The listed name on the card is checked against the dataset's identity evidence.
+      expect(evaluated.run.response.claims).toEqual([
+        expect.objectContaining({
+          field: 'identity',
+          assertedValue: { name: '青葉カフェ' },
+          evidenceIds: ['ev-a-identity'],
+        }),
+      ]);
+      expect(evaluated.run.response.outcome.kind).toBe('cards');
+      expect(evaluated.run.metrics).toMatchObject({
+        turnMs: 25,
+        toolCalls: 2,
+        respondKind: 'propose',
+        executedTools: { search_places: 1, get_place_details: 0, respond: 1 },
+      });
     }
 
     const unmappedCard = {
@@ -276,7 +372,7 @@ describe('model-eval live opt-in boundary', () => {
           ...trace,
           candidateIdentities: [
             {
-              provider: 'google_places',
+              provider: 'hotpepper',
               recordRef: 'eval-place-a',
               candidateId: 'runtime-candidate-1',
             },

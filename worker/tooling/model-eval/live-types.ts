@@ -1,18 +1,28 @@
 import type { AssistantResponse } from '@ima/contracts';
 import type { RuntimeCandidateIdentity } from './candidate-mapping';
 import type { LiveEvaluationProfile } from './live-plan';
-import type { EvaluationReport, EvaluationRun } from './types';
+import type { EvaluationReport, EvaluationRun, PublicToolName, RespondKind } from './types';
 
 export type LiveTraceSnapshot = {
   readonly complete: boolean;
   readonly modelCalls: number;
   /** Tool calls proposed by the model; execution count is intentionally separate. */
   readonly proposedToolCalls: number;
+  /** Operations the runtime reported executing; null until a turn outcome is observed. */
   readonly executedToolCalls: number | null;
+  readonly executedTools: Readonly<Record<PublicToolName, number>> | null;
+  /** Responds the Core refused as invalid input. */
+  readonly respondInvalid: number;
+  /** One entry per finished turn: the committed kind, or null when nothing was committed. */
+  readonly respondKinds: readonly (RespondKind | null)[];
   readonly toolNames: readonly string[];
   readonly upstreamCalls: number;
+  /** Model time summed over calls. */
   readonly latencyMs: number | null;
+  /** Whole-turn time including tools, measured by the coordinator around one turn. */
+  readonly turnMs: number | null;
   readonly inputTokens: number | null;
+  readonly cachedInputTokens: number | null;
   readonly outputTokens: number | null;
   readonly measuredCostUsd: null;
   readonly modelLocationExposed: boolean;
@@ -47,7 +57,7 @@ export type LiveProbeFailure = {
 };
 
 export type LiveProbeArtifact = {
-  readonly schemaVersion: 'm25.live.v1';
+  readonly schemaVersion: 'm25.live.v2';
   readonly profile: LiveProbeProfile;
   readonly status: 'evaluated' | 'unverified' | 'runtime_failed';
   readonly attempts: readonly LiveProbeAttempt[];
