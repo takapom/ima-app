@@ -42,7 +42,6 @@ import type {
   RuntimeThinkTurnBuildRequest,
 } from '@worker/runtime/turn-execution/runtime-think-connection';
 import { defaultRuntimeModelContextPolicy } from '@worker/runtime/context/runtime-field-policy';
-import { unavailableRespond } from '@worker/composition/runtime-production-respond';
 import { resolveRuntimeProductionReadCost } from '@worker/composition/runtime-production-read-cost';
 import { createRuntimeProductionPlacePorts } from '@worker/composition/runtime-production-place-ports';
 import { createFactoryContinuation } from '@worker/composition/runtime-production-continuation';
@@ -278,7 +277,6 @@ const makeOptions = (
         clock,
         search: plan.search,
         details: plan.details,
-        respond: unavailableRespond(),
         ...(plan.modelContext.fieldPolicy === undefined
           ? {}
           : { modelContextFieldPolicy: plan.modelContext.fieldPolicy }),
@@ -288,7 +286,6 @@ const makeOptions = (
       resolveReadCost: (read) => resolveRuntimeProductionReadCost(read, plan.registry),
       validationContext: plan.validationContext,
       persistMessages: () => Promise.resolve({ requestId: request.turnId, status: 'completed' }),
-      stopWhen: () => budget.snapshot().completed,
       idempotencyKey: runtimeInput.idempotencyKey,
       ...(overrides.turnObserver === undefined ? {} : { turnObserver: overrides.turnObserver }),
     };

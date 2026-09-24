@@ -150,7 +150,7 @@ const validationContext = (scope: RegistryScope, serverNow: string): SubmitValid
     locationRevision: 1,
     timeContext: 'now',
   },
-  requireLastOrderAtArrival: false,
+  requireLastOrder: false,
 });
 
 const registerObservation = (

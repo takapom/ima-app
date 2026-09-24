@@ -49,7 +49,7 @@ describe('submit-cards opening validation at the server time', () => {
         'current time is after last order',
       );
     expect(
-      statusFor(makeFixture(['candidate-1'], { ...late, requireLastOrderAtArrival: false })).status,
+      statusFor(makeFixture(['candidate-1'], { ...late, requireLastOrder: false })).status,
     ).toBe('valid');
   });
 
@@ -68,9 +68,8 @@ describe('submit-cards opening validation at the server time', () => {
     if (!result.success) throw new Error('open-ended hours should satisfy Core schema');
     expect(openIntervalAt(result.output, '2026-09-11T23:59:00Z')?.endAt).toBeNull();
     expect(
-      statusFor(
-        makeFixture(['candidate-1'], { openingEndAt: null, requireLastOrderAtArrival: false }),
-      ).status,
+      statusFor(makeFixture(['candidate-1'], { openingEndAt: null, requireLastOrder: false }))
+        .status,
     ).toBe('valid');
   });
 });

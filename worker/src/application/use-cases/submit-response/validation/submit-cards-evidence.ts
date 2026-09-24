@@ -36,7 +36,7 @@ export const SubmitValidationContextSchema = v.pipe(
     scope: RegistryScopeSchema,
     serverNow: IsoTimestampSchema,
     expectedObservationContext: ObservationContextSchema,
-    requireLastOrderAtArrival: v.boolean(),
+    requireLastOrder: v.boolean(),
     allowUnknownOpening: v.optional(v.boolean()),
   }),
   v.check((context) => {
