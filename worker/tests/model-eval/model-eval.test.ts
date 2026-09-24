@@ -5,99 +5,13 @@ import {
 } from '../../tooling/model-eval/dataset';
 import { aggregateEvaluationRuns } from '../../tooling/model-eval/aggregate';
 import { evaluateRun } from '../../tooling/model-eval/rubric';
-import type {
-  EvaluationCase,
-  EvaluationRun,
-  EvidenceClaim,
-  ExpectedOutcome,
-} from '../../tooling/model-eval/types';
-
-const evidenceForCandidate = (candidateId: string): readonly string[] => {
-  switch (candidateId) {
-    case 'candidate-a':
-      return ['ev-a-name'];
-    case 'candidate-b':
-      return ['ev-b-name'];
-    case 'candidate-c':
-      return ['ev-c-name'];
-  }
-  throw new Error(`unknown candidate: ${candidateId}`);
-};
-
-const claimForCandidate = (candidateId: string): EvidenceClaim => ({
-  id: `claim-${candidateId}`,
-  subjectId: candidateId,
-  field: 'name',
-  assertedValue:
-    candidateId === 'candidate-a'
-      ? '青葉カフェ'
-      : candidateId === 'candidate-b'
-        ? '川辺食堂'
-        : '駅前ベーカリー',
-  evidenceIds: [evidenceForCandidate(candidateId)[0] ?? 'missing-evidence'],
-  text: '観測された候補名',
-});
-
-const outcomeFor = (evaluationCase: EvaluationCase): ExpectedOutcome => {
-  const outcome = evaluationCase.expected.outcomes[0];
-  if (outcome === undefined) throw new Error(`scenario has no outcome: ${evaluationCase.id}`);
-  return outcome;
-};
-
-const validRun = (evaluationCase: EvaluationCase): EvaluationRun => ({
-  schemaVersion: 'm25.v1',
-  scenarioId: evaluationCase.id,
-  repeat: evaluationCase.repeat,
-  modelVersion: 'fixture-model-v1',
-  promptVersion: 'fixture-prompt-v1',
-  response: {
-    outcome: {
-      kind: outcomeFor(evaluationCase),
-      text: `回答 ${evaluationCase.title}`,
-    },
-    claims: evaluationCase.expected.requiredCandidateIds.map(claimForCandidate),
-    selections: evaluationCase.expected.requiredCandidateIds.map((candidateId) => ({
-      candidateId,
-      evidenceIds: evidenceForCandidate(candidateId),
-      why: '観測された情報に基づく候補',
-    })),
-  },
-  trace: {
-    complete: true,
-    toolCalls: [],
-    forbiddenBehaviors: [],
-    modelLocationExposed: false,
-    selectedCandidateIds: evaluationCase.expected.requiredCandidateIds,
-    preservedConditionFields: evaluationCase.expected.preserveConditionFields,
-    candidateSetChanges: [],
-  },
-  metrics: {
-    latencyMs: 100 + evaluationCase.repeat,
-    modelCalls: 1,
-    toolCalls: 0,
-    upstreamCalls: 0,
-    inputTokens: 100,
-    outputTokens: 20,
-    measuredCostUsd: 0.001,
-  },
-  humanReview: {
-    requestSatisfied: 5,
-    groundedness: 5,
-    clarity: 5,
-    requiredSignals: evaluationCase.expected.requiredSignals.map((signal) => ({
-      signal,
-      satisfied: true,
-    })),
-    criticalViolations: [],
-  },
-});
-
-const allValidRuns = (): readonly EvaluationRun[] => expandEvaluationDataset().map(validRun);
+import type { EvaluationRun } from '../../tooling/model-eval/types';
+import { allValidRuns, validRun } from './model-eval-fixture';
 
 describe('M25 model evaluation dataset', () => {
-  it('contains eight response patterns and five cross-cutting scenarios', () => {
-    expect(MODEL_EVALUATION_SCENARIOS).toHaveLength(13);
-    expect(new Set(MODEL_EVALUATION_SCENARIOS.map((scenario) => scenario.pattern)).size).toBe(8);
+  it('contains nine response patterns, cross-cutting, mood and many-candidate scenarios', () => {
+    expect(MODEL_EVALUATION_SCENARIOS).toHaveLength(17);
+    expect(new Set(MODEL_EVALUATION_SCENARIOS.map((scenario) => scenario.pattern)).size).toBe(9);
     expect(MODEL_EVALUATION_SCENARIOS.map((scenario) => scenario.id)).toEqual([
       'new-search',
       'condition-change',
@@ -112,6 +26,10 @@ describe('M25 model evaluation dataset', () => {
       'continuity',
       'repair',
       'gps-refusal',
+      'mood-after-dinner',
+      'mood-rainy-second',
+      'mood-tired',
+      'many-candidates',
     ]);
     const continuity = MODEL_EVALUATION_SCENARIOS.find((scenario) => scenario.id === 'continuity');
     if (continuity === undefined) throw new Error('continuity scenario missing');
@@ -122,8 +40,8 @@ describe('M25 model evaluation dataset', () => {
 
   it('expands every scenario to exactly three independently identified repeats', () => {
     const cases = expandEvaluationDataset();
-    expect(cases).toHaveLength(39);
-    expect(new Set(cases.map((evaluationCase) => evaluationCase.caseId)).size).toBe(39);
+    expect(cases).toHaveLength(51);
+    expect(new Set(cases.map((evaluationCase) => evaluationCase.caseId)).size).toBe(51);
     for (const scenario of MODEL_EVALUATION_SCENARIOS) {
       const repeats = cases
         .filter((evaluationCase) => evaluationCase.id === scenario.id)
@@ -154,10 +72,29 @@ describe('M25 model evaluation rubric', () => {
       ...run,
       response: {
         ...run.response,
-        claims: [{ ...claim, assertedValue: '別の店' }],
+        claims: [{ ...claim, assertedValue: { name: '別の店' } }],
       },
     };
     expect(evaluateRun(evaluationCase, altered).criticalViolations).toContain('unsupported-claim');
+  });
+
+  it('leaves the candidates an answer discusses to human review', () => {
+    const evaluationCase = expandEvaluationDataset().find((entry) => entry.id === 'compare');
+    if (evaluationCase === undefined) throw new Error('compare case missing');
+    const run = validRun(evaluationCase);
+    const answer: EvaluationRun = {
+      ...run,
+      response: { outcome: { kind: 'message', text: '比較しました' }, claims: [], selections: [] },
+      trace: { ...run.trace, selectedCandidateIds: [] },
+    };
+    expect(evaluateRun(evaluationCase, answer).criticalViolations).toEqual([]);
+    const cards: EvaluationRun = {
+      ...answer,
+      response: { ...answer.response, outcome: { kind: 'cards', text: '候補です' } },
+    };
+    expect(evaluateRun(evaluationCase, cards).criticalViolations).toContain(
+      'candidate-misidentification',
+    );
   });
 
   it('rejects expired evidence even when its ID exists', () => {
@@ -172,9 +109,9 @@ describe('M25 model evaluation rubric', () => {
           {
             id: 'claim-expired',
             subjectId: 'candidate-a',
-            field: 'openUntil',
-            assertedValue: '23:00',
-            evidenceIds: ['ev-expired-open'],
+            field: 'opening_hours',
+            assertedValue: { weeklyText: ['月～日: 9:00～23:00', '定休日: 無休'] },
+            evidenceIds: ['ev-a-opening_hours-expired'],
             text: '期限切れの営業時間',
           },
         ],
@@ -194,7 +131,7 @@ describe('M25 model evaluation rubric', () => {
         selections: [
           {
             candidateId: 'candidate-a',
-            evidenceIds: ['ev-b-name'],
+            evidenceIds: ['ev-b-identity'],
             why: '誤った候補根拠',
           },
         ],
@@ -205,13 +142,32 @@ describe('M25 model evaluation rubric', () => {
     );
   });
 
-  it('does not turn a provider description into a quietness fact', () => {
+  it('keeps listing copy as the shop claim in production field shapes, never a quietness fact', () => {
     const scenario = MODEL_EVALUATION_SCENARIOS.find((entry) => entry.id === 'condition-change');
     if (scenario === undefined) throw new Error('condition scenario missing');
-    const description = scenario.context.evidence.find((entry) => entry.id === 'ev-a-description');
-    if (description === undefined) throw new Error('description evidence missing');
-    expect(description.field).toBe('description');
-    expect(scenario.context.evidence.some((entry) => entry.field === 'quiet')).toBe(false);
+    const identity = scenario.context.evidence.find((entry) => entry.id === 'ev-a-identity');
+    expect(identity?.value).toMatchObject({
+      listingText: '窓際のソファ席でゆっくり過ごせるカフェ',
+    });
+    expect(
+      scenario.context.evidence.every((entry) =>
+        ['identity', 'opening_hours', 'price', 'facilities'].includes(entry.field),
+      ),
+    ).toBe(true);
+    expect(JSON.stringify(scenario.context)).not.toMatch(
+      /priceLevel|openUntil|description|PRICE_LEVEL/u,
+    );
+  });
+
+  it('offers eight or more candidates and asks only for the area when no place is known', () => {
+    const many = MODEL_EVALUATION_SCENARIOS.find((entry) => entry.id === 'many-candidates');
+    expect(many?.context.candidates.length).toBeGreaterThanOrEqual(8);
+    const tired = MODEL_EVALUATION_SCENARIOS.find((entry) => entry.id === 'mood-tired');
+    expect(tired?.context.areaText).toBeNull();
+    expect(tired?.expected).toMatchObject({ outcomes: ['clarification'], mustNotSearch: true });
+    expect(
+      MODEL_EVALUATION_SCENARIOS.filter((entry) => entry.pattern === 'mood').length,
+    ).toBeGreaterThanOrEqual(3);
   });
 
   it('requires a complete trace and records forbidden behavior as critical', () => {
@@ -305,7 +261,7 @@ describe('M25 model evaluation rubric', () => {
 });
 
 describe('M25 model evaluation aggregation', () => {
-  it('passes the 13-scenario, three-repeat gate with grounded human reviews', () => {
+  it('passes the 17-scenario, three-repeat gate with grounded human reviews', () => {
     const report = aggregateEvaluationRuns(allValidRuns());
     expect(report.coverage.complete).toBe(true);
     expect(report.gates.passed).toBe(true);
@@ -322,7 +278,7 @@ describe('M25 model evaluation aggregation', () => {
     runs[0] = withoutReview;
     const report = aggregateEvaluationRuns(runs);
     expect(report.gates.humanReview).toBe(false);
-    expect(report.gates.humanReviewCount).toBe(38);
+    expect(report.gates.humanReviewCount).toBe(50);
     expect(report.gates.failures).toContain('HUMAN_REVIEW_INCOMPLETE');
   });
 
@@ -337,14 +293,14 @@ describe('M25 model evaluation aggregation', () => {
       };
     }
     const report = aggregateEvaluationRuns(runs);
-    expect(report.gates.humanReviewPassRate).toBeCloseTo(36 / 39);
+    expect(report.gates.humanReviewPassRate).toBeCloseTo(48 / 51);
     expect(report.gates.humanReview).toBe(true);
     expect(report.gates.passed).toBe(true);
   });
 
   it('fails below 90 percent and fails any human critical violation independently', () => {
     const belowThreshold = [...allValidRuns()];
-    for (const index of [0, 1, 2, 3, 4]) {
+    for (const index of [0, 1, 2, 3, 4, 5]) {
       const run = belowThreshold[index];
       if (run === undefined || run.humanReview === undefined) throw new Error('review missing');
       belowThreshold[index] = {
@@ -413,19 +369,27 @@ describe('M25 model evaluation aggregation', () => {
       metrics: {
         ...run.metrics,
         latencyMs: null,
+        turnMs: null,
         modelCalls: null,
         toolCalls: null,
+        executedTools: null,
+        respondInvalid: null,
+        respondKind: null,
         upstreamCalls: null,
         inputTokens: null,
+        cachedInputTokens: null,
         outputTokens: null,
         measuredCostUsd: null,
       },
     }));
     const report = aggregateEvaluationRuns(runs);
     expect(report.metrics.latencyMs.samples).toBe(0);
-    expect(report.metrics.latencyMs.unknown).toBe(39);
+    expect(report.metrics.latencyMs.unknown).toBe(51);
+    expect(report.metrics.turnMs.unknown).toBe(51);
+    expect(report.metrics.executedTools.respond.unknown).toBe(51);
+    expect(report.metrics.respondKinds).toEqual({ ask: 0, answer: 0, propose: 0, unknown: 51 });
     expect(report.metrics.costUsd.knownSamples).toBe(0);
-    expect(report.metrics.costUsd.unknownSamples).toBe(39);
+    expect(report.metrics.costUsd.unknownSamples).toBe(51);
     expect(report.metrics.costUsd.totalUsd).toBeNull();
   });
 
@@ -433,12 +397,21 @@ describe('M25 model evaluation aggregation', () => {
     const report = aggregateEvaluationRuns(allValidRuns());
     expect(report.metrics.latencyMs.p50).toBe(102);
     expect(report.metrics.latencyMs.p95).toBe(103);
-    expect(report.metrics.modelCalls.total).toBe(39);
-    expect(report.metrics.toolCalls.total).toBe(0);
+    // Model time and whole-turn time are separate measurements.
+    expect(report.metrics.turnMs.p50).toBe(152);
+    expect(report.metrics.modelCalls.total).toBe(51);
+    expect(report.metrics.toolCalls.total).toBe(51);
+    expect(report.metrics.executedTools.respond.total).toBe(51);
+    expect(report.metrics.executedTools.search_places.total).toBe(0);
+    expect(report.metrics.respondInvalid.total).toBe(0);
+    const kinds = report.metrics.respondKinds;
+    expect(kinds.ask + kinds.answer + kinds.propose).toBe(51);
+    expect(kinds.ask).toBeGreaterThan(0);
     expect(report.metrics.upstreamCalls.total).toBe(0);
-    expect(report.metrics.inputTokens.total).toBe(3900);
-    expect(report.metrics.outputTokens.total).toBe(780);
-    expect(report.metrics.costUsd.totalUsd).toBeCloseTo(0.039);
+    expect(report.metrics.inputTokens.total).toBe(5100);
+    expect(report.metrics.cachedInputTokens.total).toBe(2040);
+    expect(report.metrics.outputTokens.total).toBe(1020);
+    expect(report.metrics.costUsd.totalUsd).toBeCloseTo(0.051);
     expect(report.versions.modelVersions).toEqual(['fixture-model-v1']);
     expect(report.versions.promptVersions).toEqual(['fixture-prompt-v1']);
   });

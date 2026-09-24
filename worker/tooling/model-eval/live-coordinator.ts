@@ -21,6 +21,9 @@ import {
   type EvaluationTurnTarget,
 } from './turn-plan';
 import { cardContextFromResponse, type EvaluationCardContext } from './scenario-input';
+import { liveTraceDelta } from './live-trace';
+
+export { liveTraceDelta, type LiveTraceDeltaResult } from './live-trace';
 import { validateLiveCardContext } from './card-context';
 import { createLiveEvaluationTurnPlan, type LiveEvaluationTurnPlan } from './live-plan';
 import { expandEvaluationDataset } from './dataset';
@@ -65,13 +68,6 @@ export type PreludeValidationResult =
       readonly code: 'CANDIDATE_ID_MAPPING_UNAVAILABLE' | 'PRELUDE_CARD_SET_UNAVAILABLE';
     };
 
-export type LiveTraceDeltaResult =
-  | { readonly ok: true; readonly trace: LiveTraceSnapshot }
-  | {
-      readonly ok: false;
-      readonly code: 'TRACE_DELTA_INVALID' | 'TRACE_DELTA_UNAVAILABLE';
-    };
-
 const safeFailureCodes = new Set([
   'CANDIDATE_ID_MAPPING_UNAVAILABLE',
   'INITIALIZE_FAILED',
@@ -104,102 +100,6 @@ const responseFrom = (result: LiveTurnExecution): AssistantResponse => {
   const parsed = v.safeParse(AssistantResponseSchema, result.response);
   if (!parsed.success) throw new Error('PUBLIC_RESPONSE_INVALID');
   return parsed.output;
-};
-
-const deltaNumber = (
-  after: number,
-  before: number,
-): { readonly ok: true; readonly value: number } | { readonly ok: false } => {
-  if (!Number.isFinite(after) || !Number.isFinite(before) || after < before) {
-    return { ok: false };
-  }
-  return { ok: true, value: after - before };
-};
-
-const deltaNullableNumber = (
-  after: number | null,
-  before: number | null,
-  beforeCalls: number,
-): { readonly ok: true; readonly value: number | null } | { readonly ok: false } => {
-  if (after === null) return { ok: true, value: null };
-  if (before === null) {
-    return beforeCalls === 0 ? { ok: true, value: after } : { ok: true, value: null };
-  }
-  return deltaNumber(after, before);
-};
-
-const suffixFor = (
-  after: readonly string[],
-  before: readonly string[],
-): readonly string[] | null => {
-  if (!before.every((value, index) => after[index] === value)) return null;
-  return after.slice(before.length);
-};
-
-/**
- * Computes target-turn metrics from cumulative host state. Identity observations
- * stay cumulative because a target card may refer to a prelude candidate.
- */
-export const liveTraceDelta = (
-  after: LiveTraceSnapshot,
-  before: LiveTraceSnapshot,
-): LiveTraceDeltaResult => {
-  const modelCalls = deltaNumber(after.modelCalls, before.modelCalls);
-  const proposedToolCalls = deltaNumber(after.proposedToolCalls, before.proposedToolCalls);
-  const upstreamCalls = deltaNumber(after.upstreamCalls, before.upstreamCalls);
-  const latencyMs = deltaNullableNumber(after.latencyMs, before.latencyMs, before.modelCalls);
-  const inputTokens = deltaNullableNumber(after.inputTokens, before.inputTokens, before.modelCalls);
-  const outputTokens = deltaNullableNumber(
-    after.outputTokens,
-    before.outputTokens,
-    before.modelCalls,
-  );
-  const executedToolCalls = deltaNullableNumber(
-    after.executedToolCalls,
-    before.executedToolCalls,
-    before.modelCalls,
-  );
-  const toolNames = suffixFor(after.toolNames, before.toolNames);
-  if (
-    !modelCalls.ok ||
-    !proposedToolCalls.ok ||
-    !upstreamCalls.ok ||
-    !latencyMs.ok ||
-    !inputTokens.ok ||
-    !outputTokens.ok ||
-    !executedToolCalls.ok ||
-    toolNames === null
-  ) {
-    return { ok: false, code: 'TRACE_DELTA_INVALID' };
-  }
-  if (before.modelLocationExposed && after.modelLocationExposed) {
-    return { ok: false, code: 'TRACE_DELTA_UNAVAILABLE' };
-  }
-  if (before.modelLocationExposed && !after.modelLocationExposed) {
-    return { ok: false, code: 'TRACE_DELTA_INVALID' };
-  }
-  const preservedConditionFields = suffixFor(
-    after.preservedConditionFields,
-    before.preservedConditionFields,
-  );
-  if (preservedConditionFields === null) return { ok: false, code: 'TRACE_DELTA_INVALID' };
-  return {
-    ok: true,
-    trace: {
-      ...after,
-      complete: after.complete && modelCalls.value > 0,
-      modelCalls: modelCalls.value,
-      proposedToolCalls: proposedToolCalls.value,
-      toolNames,
-      upstreamCalls: upstreamCalls.value,
-      latencyMs: latencyMs.value,
-      inputTokens: inputTokens.value,
-      outputTokens: outputTokens.value,
-      executedToolCalls: executedToolCalls.value,
-      modelLocationExposed: after.modelLocationExposed,
-      preservedConditionFields,
-    },
-  };
 };
 
 /** Checks prelude card order after exact provider-record to evaluation-ID mapping. */
@@ -278,6 +178,8 @@ export const executeLiveEvaluationCase = async (input: {
   readonly target: EvaluationTurnTarget;
   readonly ports: LiveCoordinatorPorts;
   readonly expectedIdentities: readonly EvaluationCandidateIdentity[];
+  /** Monotonic milliseconds for the whole-turn time; defaults to performance.now. */
+  readonly now?: () => number;
 }): Promise<LiveCaseExecution> => {
   let baseTrace: LiveTraceSnapshot | null = null;
   let preludeTrace: LiveTraceSnapshot | null = null;
@@ -340,12 +242,16 @@ export const executeLiveEvaluationCase = async (input: {
     }
 
     targetStarted = true;
+    const now = input.now ?? (() => performance.now());
+    const turnStartedAt = now();
     const targetResult = await input.ports.runTurn(targetSeed, cardContext);
+    const turnMs = Math.max(0, now() - turnStartedAt);
     const targetResponse = responseFrom(targetResult);
     const fullTrace = await input.ports.readTrace();
     if (fullTrace === null) throw new Error('TRACE_UNAVAILABLE');
-    const targetTraceResult = liveTraceDelta(fullTrace, preludeTrace ?? baseTrace);
-    if (!targetTraceResult.ok) throw new Error(targetTraceResult.code);
+    const delta = liveTraceDelta(fullTrace, preludeTrace ?? baseTrace);
+    if (!delta.ok) throw new Error(delta.code);
+    const targetTraceResult = { ...delta, trace: { ...delta.trace, turnMs } };
     const profile = await input.ports.readProfile();
     const mapping = resolveCandidateIdentityMapping(
       fullTrace.candidateIdentities,

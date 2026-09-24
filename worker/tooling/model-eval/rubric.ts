@@ -1,3 +1,4 @@
+import { MODEL_EVAL_SCHEMA_VERSION } from './types';
 import type {
   CriticalViolation,
   EvaluationCase,
@@ -105,6 +106,27 @@ const isHumanReview = (value: unknown): boolean => {
   );
 };
 
+const NUMERIC_METRICS = [
+  'latencyMs',
+  'turnMs',
+  'modelCalls',
+  'toolCalls',
+  'respondInvalid',
+  'upstreamCalls',
+  'inputTokens',
+  'cachedInputTokens',
+  'outputTokens',
+  'measuredCostUsd',
+] as const;
+
+const PUBLIC_TOOL_NAMES = ['search_places', 'get_place_details', 'respond'] as const;
+
+const isExecutedTools = (value: unknown): boolean =>
+  value === null ||
+  (isRecord(value) &&
+    Object.keys(value).length === PUBLIC_TOOL_NAMES.length &&
+    PUBLIC_TOOL_NAMES.every((name) => typeof value[name] === 'number'));
+
 const isEvaluationRunShape = (value: unknown): value is EvaluationRun => {
   if (!isRecord(value)) return false;
   if (
@@ -138,21 +160,16 @@ const isEvaluationRunShape = (value: unknown): value is EvaluationRun => {
   ) {
     return false;
   }
+  const metrics = value.metrics;
   return (
-    'latencyMs' in value.metrics &&
-    'modelCalls' in value.metrics &&
-    'toolCalls' in value.metrics &&
-    'upstreamCalls' in value.metrics &&
-    'inputTokens' in value.metrics &&
-    'outputTokens' in value.metrics &&
-    'measuredCostUsd' in value.metrics &&
-    isNumberOrNull(value.metrics.latencyMs) &&
-    isNumberOrNull(value.metrics.modelCalls) &&
-    isNumberOrNull(value.metrics.toolCalls) &&
-    isNumberOrNull(value.metrics.upstreamCalls) &&
-    isNumberOrNull(value.metrics.inputTokens) &&
-    isNumberOrNull(value.metrics.outputTokens) &&
-    isNumberOrNull(value.metrics.measuredCostUsd) &&
+    NUMERIC_METRICS.every((key) => key in metrics && isNumberOrNull(metrics[key])) &&
+    'executedTools' in metrics &&
+    isExecutedTools(metrics.executedTools) &&
+    'respondKind' in metrics &&
+    (metrics.respondKind === null ||
+      metrics.respondKind === 'ask' ||
+      metrics.respondKind === 'answer' ||
+      metrics.respondKind === 'propose') &&
     (!('humanReview' in value) ||
       value.humanReview === undefined ||
       isHumanReview(value.humanReview))
@@ -189,18 +206,43 @@ const validNonnegative = (value: number | null, integer: boolean): boolean =>
 
 const validMetrics = (run: EvaluationRun): boolean =>
   validNonnegative(run.metrics.latencyMs, false) &&
+  validNonnegative(run.metrics.turnMs, false) &&
   validNonnegative(run.metrics.modelCalls, true) &&
   validNonnegative(run.metrics.toolCalls, true) &&
+  validNonnegative(run.metrics.respondInvalid, true) &&
   validNonnegative(run.metrics.upstreamCalls, true) &&
   validNonnegative(run.metrics.inputTokens, true) &&
+  validNonnegative(run.metrics.cachedInputTokens, true) &&
   validNonnegative(run.metrics.outputTokens, true) &&
-  validNonnegative(run.metrics.measuredCostUsd, false);
+  validNonnegative(run.metrics.measuredCostUsd, false) &&
+  (run.metrics.executedTools === null ||
+    Object.values(run.metrics.executedTools).every((count) => validNonnegative(count, true)));
 
 const evidenceFor = (ids: readonly string[], evidence: readonly Evidence[]): readonly Evidence[] =>
   ids.flatMap((id) => {
     const found = evidence.find((entry) => entry.id === id);
     return found === undefined ? [] : [found];
   });
+
+/** A card states part of a field (the name, the listed price band); each stated key must match. */
+const evidenceSupports = (observed: JsonValue, asserted: JsonValue): boolean => {
+  if (!isJsonRecord(observed) || !isJsonRecord(asserted)) {
+    return canonicalJson(observed) === canonicalJson(asserted);
+  }
+  const keys = Object.keys(asserted);
+  return (
+    keys.length > 0 &&
+    keys.every((key) => {
+      const expected = observed[key];
+      const stated = asserted[key];
+      return (
+        expected !== undefined &&
+        stated !== undefined &&
+        canonicalJson(expected) === canonicalJson(stated)
+      );
+    })
+  );
+};
 
 const claimViolation = (
   claim: EvidenceClaim,
@@ -224,7 +266,7 @@ const claimViolation = (
     (reference) =>
       reference.subjectId === claim.subjectId &&
       reference.field === claim.field &&
-      canonicalJson(reference.value) === canonicalJson(claim.assertedValue),
+      evidenceSupports(reference.value, claim.assertedValue),
   );
   return matches ? undefined : 'unsupported-claim';
 };
@@ -302,7 +344,7 @@ export const evaluateRun = (evaluationCase: EvaluationCase, value: unknown): Run
   const run = value;
   const violations = new Set<CriticalViolation>();
   if (
-    run.schemaVersion !== 'm25.v1' ||
+    run.schemaVersion !== MODEL_EVAL_SCHEMA_VERSION ||
     run.scenarioId !== evaluationCase.id ||
     run.repeat !== evaluationCase.repeat ||
     run.modelVersion.trim().length === 0 ||
@@ -356,13 +398,8 @@ export const evaluateRun = (evaluationCase: EvaluationCase, value: unknown): Run
   // Cards name their candidates; message text cites nothing, so humans judge which it discusses.
   if (
     run.response.outcome.kind === 'cards' &&
-    evaluationCase.expected.requiredCandidateIds.some((id) => !observedSubjects.has(id))
-  ) {
-    addViolation(violations, 'candidate-misidentification');
-  }
-  if (
     evaluationCase.expected.requiredCandidateIds.some(
-      (id) => !run.trace.selectedCandidateIds.includes(id),
+      (id) => !observedSubjects.has(id) || !run.trace.selectedCandidateIds.includes(id),
     )
   ) {
     addViolation(violations, 'candidate-misidentification');

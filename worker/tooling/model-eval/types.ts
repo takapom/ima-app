@@ -1,4 +1,4 @@
-export const MODEL_EVAL_SCHEMA_VERSION = 'm25.v1' as const;
+export const MODEL_EVAL_SCHEMA_VERSION = 'm25.v2' as const;
 export const MODEL_EVAL_REPEATS = 3 as const;
 
 export type EvalPattern =
@@ -9,18 +9,31 @@ export type EvalPattern =
   | 'specific-place'
   | 'decide-action'
   | 'clarify-ambiguity'
-  | 'candidate-failure';
+  | 'candidate-failure'
+  | 'mood';
 
 export type ScenarioId =
-  EvalPattern | 'mixed-intent' | 'prompt-injection' | 'continuity' | 'repair' | 'gps-refusal';
+  | Exclude<EvalPattern, 'mood'>
+  | 'mixed-intent'
+  | 'prompt-injection'
+  | 'continuity'
+  | 'repair'
+  | 'gps-refusal'
+  | 'mood-after-dinner'
+  | 'mood-rainy-second'
+  | 'mood-tired'
+  | 'many-candidates';
 
 export type JsonValue =
   string | number | boolean | null | readonly JsonValue[] | { readonly [key: string]: JsonValue };
 
+/** The production detail fields; values use the shapes the public card and the model see. */
+export type EvidenceField = 'identity' | 'opening_hours' | 'price' | 'facilities';
+
 export type Evidence = {
   readonly id: string;
   readonly subjectId: string;
-  readonly field: string;
+  readonly field: EvidenceField;
   readonly value: JsonValue;
   readonly source: 'provider' | 'user' | 'system';
   readonly freshUntil: string | null;
@@ -104,10 +117,15 @@ export type CandidateSelection = {
   readonly why: string;
 };
 
+export type PublicToolName = 'search_places' | 'get_place_details' | 'respond';
+
 export type ToolCall = {
-  readonly name: 'search_places' | 'get_place_details' | 'respond';
+  readonly name: PublicToolName;
   readonly candidateIds: readonly string[];
 };
+
+/** The kind the model committed through respond. */
+export type RespondKind = 'ask' | 'answer' | 'propose';
 
 export type ObservedForbiddenBehavior = {
   readonly kind: ForbiddenBehavior;
@@ -134,12 +152,22 @@ export type EvaluationTrace = {
   }[];
 };
 
+/**
+ * Per-turn measurements. Null means the value was not observed; it is never filled with zero.
+ * `latencyMs` is the model time summed over calls and `turnMs` the whole turn including tools.
+ */
 export type EvaluationMetrics = {
   readonly latencyMs: number | null;
+  readonly turnMs: number | null;
   readonly modelCalls: number | null;
+  /** Tool operations the runtime executed, not the calls the model proposed. */
   readonly toolCalls: number | null;
+  readonly executedTools: Readonly<Record<PublicToolName, number>> | null;
+  readonly respondInvalid: number | null;
+  readonly respondKind: RespondKind | null;
   readonly upstreamCalls: number | null;
   readonly inputTokens: number | null;
+  readonly cachedInputTokens: number | null;
   readonly outputTokens: number | null;
   readonly measuredCostUsd: number | null;
 };
@@ -213,10 +241,16 @@ export type EvaluationReport = {
   readonly assessments: readonly RunAssessment[];
   readonly metrics: {
     readonly latencyMs: MetricSummary;
+    readonly turnMs: MetricSummary;
     readonly modelCalls: MetricSummary;
     readonly toolCalls: MetricSummary;
+    readonly executedTools: Readonly<Record<PublicToolName, MetricSummary>>;
+    readonly respondInvalid: MetricSummary;
+    /** Committed kinds; `unknown` counts turns whose kind was not observed. */
+    readonly respondKinds: Readonly<Record<RespondKind | 'unknown', number>>;
     readonly upstreamCalls: MetricSummary;
     readonly inputTokens: MetricSummary;
+    readonly cachedInputTokens: MetricSummary;
     readonly outputTokens: MetricSummary;
     readonly costUsd: CostSummary;
   };

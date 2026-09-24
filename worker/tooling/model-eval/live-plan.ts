@@ -2,6 +2,8 @@ import type { EvaluationCase, ScenarioId } from './types';
 
 export type LiveEvaluationProfile =
   | 'new-search'
+  | 'mood'
+  | 'many-candidates'
   | 'condition-change'
   | 'mixed-intent'
   | 'reason'
@@ -42,6 +44,10 @@ export type LiveEvaluationTurnPlanResult =
 
 const profileFor: Partial<Record<ScenarioId, LiveEvaluationProfile>> = {
   'new-search': 'new-search',
+  'mood-after-dinner': 'mood',
+  'mood-rainy-second': 'mood',
+  'mood-tired': 'mood',
+  'many-candidates': 'many-candidates',
   'condition-change': 'condition-change',
   'mixed-intent': 'mixed-intent',
   reason: 'reason',
@@ -77,6 +83,8 @@ export const createLiveEvaluationTurnPlan = (
   }
   if (
     profile === 'new-search' ||
+    profile === 'mood' ||
+    profile === 'many-candidates' ||
     profile === 'condition-change' ||
     profile === 'mixed-intent' ||
     profile === 'candidate-failure' ||

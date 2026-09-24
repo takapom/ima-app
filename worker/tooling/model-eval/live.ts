@@ -3,18 +3,23 @@ import * as v from 'valibot';
 import { AssistantResponseSchema, type AssistantResponse } from '@ima/contracts';
 import type { RuntimeModelGuardModel } from '@worker/runtime/turn-execution/runtime-model-guard';
 import type { RuntimeModelGuardStreamPart } from '@worker/runtime/turn-execution/runtime-model-guard';
-import type {
-  CandidateSelection,
-  EvaluationCase,
-  EvaluationRun,
-  EvidenceClaim,
-  HumanReview,
-  JsonValue,
-  ObservedForbiddenBehavior,
-  ToolCall,
+import {
+  MODEL_EVAL_SCHEMA_VERSION,
+  type CandidateSelection,
+  type EvaluationCase,
+  type EvaluationRun,
+  type EvidenceClaim,
+  type EvidenceField,
+  type ExpectedOutcome,
+  type HumanReview,
+  type JsonValue,
+  type ObservedForbiddenBehavior,
+  type RespondKind,
+  type ToolCall,
 } from './types';
 import { aggregateEvaluationRuns } from './aggregate';
-import { createCandidateIdentityCapture, type CandidateIdentityMapping } from './candidate-mapping';
+import type { CandidateIdentityMapping } from './candidate-mapping';
+import type { LiveTraceRecorder } from './live-trace';
 import { LIVE_MODEL_VERSION, LIVE_PROMPT_VERSION } from './live-cli';
 import type {
   LiveProbeArtifact,
@@ -24,6 +29,7 @@ import type {
   LiveTraceSnapshot,
 } from './live-types';
 
+export { LiveTraceRecorder } from './live-trace';
 export type {
   LiveProbeArtifact,
   LiveProbeAttempt,
@@ -42,118 +48,6 @@ export {
 
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
-
-const numericProperty = (value: unknown, key: string): number | null => {
-  if (!record(value)) return null;
-  const candidate = value[key];
-  return typeof candidate === 'number' && Number.isFinite(candidate) ? candidate : null;
-};
-
-const nestedNumber = (value: unknown, outer: string, inner: string): number | null => {
-  if (!record(value)) return null;
-  return numericProperty(value[outer], inner);
-};
-
-const restrictedLocationKey = /^(?:lat|lng|accuracyMeters|capturedAt|ownerScopeRef)$/u;
-const restrictedLocationText = /["'`](?:lat|lng|accuracyMeters|capturedAt|ownerScopeRef)["'`]\s*:/u;
-
-const containsRestrictedLocation = (value: unknown, seen = new Set<object>()): boolean => {
-  if (typeof value === 'string') return restrictedLocationText.test(value);
-  if (!record(value)) return false;
-  if (seen.has(value)) return false;
-  seen.add(value);
-  return Object.entries(value).some(
-    ([key, child]) => restrictedLocationKey.test(key) || containsRestrictedLocation(child, seen),
-  );
-};
-
-/** Host-only counters deliberately retain no prompt, response body, URL, or provider error. */
-export class LiveTraceRecorder {
-  private startedCalls = 0;
-  private completedCalls = 0;
-  private failed = false;
-  private startedAt = 0;
-  private elapsedMs = 0;
-  private inputTokenTotal = 0;
-  private outputTokenTotal = 0;
-  private inputTokenSamples = 0;
-  private outputTokenSamples = 0;
-  private readonly names: string[] = [];
-  private readonly candidateIdentityCapture = createCandidateIdentityCapture();
-  private locationExposed = false;
-  private upstream = 0;
-
-  begin(prompt: unknown): void {
-    this.startedCalls += 1;
-    this.startedAt = performance.now();
-    this.locationExposed ||= containsRestrictedLocation(prompt);
-  }
-
-  finish(usage: unknown): void {
-    this.elapsedMs += Math.max(0, performance.now() - this.startedAt);
-    this.completedCalls += 1;
-    const input = nestedNumber(usage, 'inputTokens', 'total');
-    const output = nestedNumber(usage, 'outputTokens', 'total');
-    if (input !== null) {
-      this.inputTokenTotal += input;
-      this.inputTokenSamples += 1;
-    }
-    if (output !== null) {
-      this.outputTokenTotal += output;
-      this.outputTokenSamples += 1;
-    }
-  }
-
-  fail(): void {
-    this.failed = true;
-    this.elapsedMs += Math.max(0, performance.now() - this.startedAt);
-  }
-
-  observePart(part: RuntimeModelGuardStreamPart): void {
-    if (part.type === 'tool-call') {
-      this.names.push(part.toolName);
-    }
-  }
-
-  observeGeneratePart(part: unknown): void {
-    if (record(part) && part.type === 'tool-call' && typeof part.toolName === 'string') {
-      this.names.push(part.toolName);
-    }
-  }
-
-  upstreamCall(): void {
-    this.upstream += 1;
-  }
-
-  observeCandidateIdentity(value: unknown): void {
-    this.candidateIdentityCapture.observe(value);
-  }
-
-  snapshot(): LiveTraceSnapshot {
-    return {
-      complete: !this.failed && this.startedCalls > 0 && this.completedCalls === this.startedCalls,
-      modelCalls: this.startedCalls,
-      proposedToolCalls: this.names.length,
-      executedToolCalls: null,
-      toolNames: [...this.names],
-      upstreamCalls: this.upstream,
-      latencyMs: this.startedCalls === 0 ? null : this.elapsedMs,
-      inputTokens:
-        this.inputTokenSamples === this.startedCalls && this.startedCalls > 0
-          ? this.inputTokenTotal
-          : null,
-      outputTokens:
-        this.outputTokenSamples === this.startedCalls && this.startedCalls > 0
-          ? this.outputTokenTotal
-          : null,
-      measuredCostUsd: null,
-      modelLocationExposed: this.locationExposed,
-      preservedConditionFields: [],
-      candidateIdentities: this.candidateIdentityCapture.snapshot(),
-      candidateIdentityMapAvailable: this.candidateIdentityCapture.isUsable(),
-    };
-  }
-}
 
 /** Wraps the actual provider model; Think and the SDK still own the loop and tool execution. */
 export const wrapModelForLiveEvaluation = (
@@ -218,28 +112,57 @@ export const wrapModelForLiveEvaluation = (
     },
   });
 
-const equalJson = (left: unknown, right: unknown): boolean =>
-  JSON.stringify(left) === JSON.stringify(right);
+const isJsonRecord = (value: JsonValue): value is { readonly [key: string]: JsonValue } =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
+/** Evidence whose value states the same keys as the card; the rubric then checks freshness. */
 const evidenceIdsFor = (
   evaluationCase: EvaluationCase,
   subjectId: string,
-  field: string,
-  value: JsonValue,
+  field: EvidenceField,
+  stated: { readonly [key: string]: JsonValue },
 ): readonly string[] =>
-  evaluationCase.context.evidence
-    .filter(
-      (evidence) =>
-        evidence.subjectId === subjectId &&
-        evidence.field === field &&
-        equalJson(evidence.value, value),
-    )
-    .map((evidence) => evidence.id);
+  evaluationCase.context.evidence.flatMap((evidence) => {
+    const observed = evidence.value;
+    if (evidence.subjectId !== subjectId || evidence.field !== field) return [];
+    if (!isJsonRecord(observed)) return [];
+    const matches = Object.entries(stated).every(
+      ([key, value]) => JSON.stringify(observed[key]) === JSON.stringify(value),
+    );
+    return matches ? [evidence.id] : [];
+  });
 
 const knownFact = (
   value: unknown,
 ): value is { readonly status: 'known'; readonly value: Record<string, unknown> } =>
   record(value) && value.status === 'known' && record(value.value);
+
+/** Card facts the dataset can check: the listed name, price band and opening text. */
+const statedFacts = (
+  facts: Record<string, unknown>,
+): readonly { readonly field: EvidenceField; readonly stated: Record<string, JsonValue> }[] => {
+  const stated: { field: EvidenceField; stated: Record<string, JsonValue> }[] = [];
+  const identity = facts.identity;
+  if (knownFact(identity) && typeof identity.value.name === 'string') {
+    stated.push({ field: 'identity', stated: { name: identity.value.name } });
+  }
+  const price = facts.price;
+  if (knownFact(price) && typeof price.value.rawLabel === 'string') {
+    stated.push({ field: 'price', stated: { rawLabel: price.value.rawLabel } });
+  }
+  const opening = facts.opening_hours;
+  if (
+    knownFact(opening) &&
+    Array.isArray(opening.value.weeklyText) &&
+    opening.value.weeklyText.every((line) => typeof line === 'string')
+  ) {
+    stated.push({
+      field: 'opening_hours',
+      stated: { weeklyText: opening.value.weeklyText },
+    });
+  }
+  return stated;
+};
 
 const claimsForCard = (
   evaluationCase: EvaluationCase,
@@ -248,34 +171,22 @@ const claimsForCard = (
 ): EvidenceClaim[] => {
   const facts = card.facts;
   if (!record(facts)) return [];
-  const claims: EvidenceClaim[] = [];
-  const identity = facts.identity;
-  if (knownFact(identity) && typeof identity.value.name === 'string') {
-    const ids = evidenceIdsFor(evaluationCase, candidateId, 'name', identity.value.name);
-    claims.push({
-      id: `${candidateId}:name`,
-      subjectId: candidateId,
-      field: 'name',
-      assertedValue: identity.value.name,
-      evidenceIds: ids,
-      text: identity.value.name,
-    });
-  }
-  const price = facts.price;
-  if (knownFact(price) && typeof price.value.level === 'number') {
-    const levels = ['unknown', 'inexpensive', 'moderate', 'expensive', 'very_expensive'];
-    const level = levels[price.value.level] ?? 'unknown';
-    const ids = evidenceIdsFor(evaluationCase, candidateId, 'priceLevel', level);
-    claims.push({
-      id: `${candidateId}:priceLevel`,
-      subjectId: candidateId,
-      field: 'priceLevel',
-      assertedValue: level,
-      evidenceIds: ids,
-      text: `price level ${level}`,
-    });
-  }
-  return claims;
+  return statedFacts(facts).map(({ field, stated }) => ({
+    id: `${candidateId}:${field}`,
+    subjectId: candidateId,
+    field,
+    assertedValue: stated,
+    evidenceIds: evidenceIdsFor(evaluationCase, candidateId, field, stated),
+    text: JSON.stringify(stated),
+  }));
+};
+
+/** The committed kind decides the outcome; the DTO shape is the fallback when it was not seen. */
+const outcomeKindFor = (kind: RespondKind | null, response: AssistantResponse): ExpectedOutcome => {
+  if (kind === 'ask') return 'clarification';
+  if (kind === 'answer') return 'message';
+  if (kind === 'propose') return 'cards';
+  return response.kind === 'cards' ? 'cards' : 'message';
 };
 
 const textFromResponse = (response: AssistantResponse): string =>
@@ -328,6 +239,7 @@ export const buildEvaluationRunFromResponse = (
       });
     }
   }
+  const respondKind = trace.respondKinds.at(-1) ?? null;
   // Message text cites nothing, so which candidates it discusses is left to human review.
   const forbiddenBehaviors: ObservedForbiddenBehavior[] = trace.modelLocationExposed
     ? [
@@ -347,14 +259,14 @@ export const buildEvaluationRunFromResponse = (
     ok: true,
     response: output,
     run: {
-      schemaVersion: 'm25.v1',
+      schemaVersion: MODEL_EVAL_SCHEMA_VERSION,
       scenarioId: evaluationCase.id,
       repeat: evaluationCase.repeat,
       modelVersion: versions.modelVersion ?? LIVE_MODEL_VERSION,
       promptVersion: versions.promptVersion ?? LIVE_PROMPT_VERSION,
       response: {
         outcome: {
-          kind: output.kind === 'cards' ? 'cards' : 'message',
+          kind: outcomeKindFor(respondKind, output),
           text: textFromResponse(output),
         },
         claims,
@@ -366,15 +278,20 @@ export const buildEvaluationRunFromResponse = (
         forbiddenBehaviors,
         modelLocationExposed: trace.modelLocationExposed,
         selectedCandidateIds: selections.map((selection) => selection.candidateId),
-        preservedConditionFields: trace.preservedConditionFields,
+        preservedConditionFields: [...new Set(trace.preservedConditionFields)],
         candidateSetChanges: [],
       },
       metrics: {
         latencyMs: trace.latencyMs,
+        turnMs: trace.turnMs,
         modelCalls: trace.modelCalls,
         toolCalls: trace.executedToolCalls,
+        executedTools: trace.executedTools,
+        respondInvalid: trace.respondInvalid,
+        respondKind,
         upstreamCalls: trace.upstreamCalls,
         inputTokens: trace.inputTokens,
+        cachedInputTokens: trace.cachedInputTokens,
         outputTokens: trace.outputTokens,
         measuredCostUsd: null,
       },
@@ -392,7 +309,7 @@ export const createLiveProbeArtifact = (input: {
 }): LiveProbeArtifact => {
   const report = aggregateEvaluationRuns(input.runs, input.scenarios);
   return {
-    schemaVersion: 'm25.live.v1',
+    schemaVersion: 'm25.live.v2',
     profile: input.profile,
     status: input.attempts.some((attempt) => attempt.status === 'runtime_failed')
       ? 'runtime_failed'
