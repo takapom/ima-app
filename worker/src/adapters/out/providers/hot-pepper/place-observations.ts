@@ -31,8 +31,9 @@ const boundedIdentityText = (
   return trimmed.length === 0 || trimmed.length > maxLength ? undefined : trimmed;
 };
 
-// C0/C1 controls other than line breaks, and bidi overrides, carry no listing meaning.
-const LISTING_NOISE = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F\u202A-\u202E\u2066-\u2069]/gu;
+// Controls other than line breaks and invisible format characters (bidi marks and overrides,
+// zero-width characters, the byte-order mark) carry no listing meaning and can hide text.
+const LISTING_NOISE = /(?!\n)[\p{Cc}\p{Cf}]/gu;
 
 /** Joins the listed catch copy and memos, dropping empty or repeated parts, within the limit. */
 export const listingTextFor = (shop: HotPepperShopWire): string | null => {
