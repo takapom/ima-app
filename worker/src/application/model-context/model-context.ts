@@ -6,13 +6,7 @@ import {
 import * as v from 'valibot';
 import { CandidateStatusSchema, type CandidateStatus } from '@worker/domain/candidates/registry';
 import { CardSetRecordSchema, type CardSetRecord } from '@worker/domain/candidates/continuity';
-import {
-  CandidateIdSchema,
-  ObservationIdSchema,
-  OpaqueIdSchema,
-  Text,
-  TurnIdSchema,
-} from '@worker/domain/primitives';
+import { CandidateIdSchema, OpaqueIdSchema, Text, TurnIdSchema } from '@worker/domain/primitives';
 import type { HarnessContext } from '@worker/application/ports/context';
 import { HarnessContextSchema } from '@worker/application/ports/context';
 import { ModelContextError } from '@worker/application/model-context/model-context-errors';
@@ -56,28 +50,13 @@ export type {
 export { ModelContextError } from '@worker/application/model-context/model-context-errors';
 export type { ModelContextErrorCode } from '@worker/application/model-context/model-context-errors';
 
-const EvidenceIdsSchema = v.pipe(
-  v.array(ObservationIdSchema),
-  v.maxLength(16),
-  v.check((ids) => new Set(ids).size === ids.length, 'duplicate evidence ID'),
-);
-
-const MessageBasisSchema = v.picklist(['grounded', 'inference', 'conversational']);
-
-export const ModelHistoryEntrySchema = v.pipe(
-  v.strictObject({
-    threadId: OpaqueIdSchema,
-    turnId: TurnIdSchema,
-    role: v.picklist(['user', 'assistant']),
-    text: Text(500),
-    evidenceIds: EvidenceIdsSchema,
-    basis: MessageBasisSchema,
-  }),
-  v.check(
-    (entry) => entry.basis !== 'grounded' || entry.evidenceIds.length > 0,
-    'grounded history requires evidence',
-  ),
-);
+/** A quoted utterance. Generated text carries no citations; its retention is tracked by the harness. */
+export const ModelHistoryEntrySchema = v.strictObject({
+  threadId: OpaqueIdSchema,
+  turnId: TurnIdSchema,
+  role: v.picklist(['user', 'assistant']),
+  text: Text(500),
+});
 export type ModelHistoryEntry = v.InferOutput<typeof ModelHistoryEntrySchema>;
 
 const ModelCandidateSourceSchema = v.strictObject({
@@ -229,11 +208,6 @@ export const projectModelContext = (source: unknown): ProjectedModelContext => {
           freshUntil: projected.freshUntil,
         };
   });
-  const usableEvidenceIds = new Set(
-    projectedEvidence.flatMap((evidence) =>
-      evidence.status === 'known' ? [evidence.observationId] : [],
-    ),
-  );
   return {
     threadId: harness.threadId,
     turnId: harness.turnId,
@@ -263,11 +237,7 @@ export const projectModelContext = (source: unknown): ProjectedModelContext => {
     },
     preferences: harness.preferences,
     history: modelContextFieldAllowed(fieldPolicy.history)
-      ? value.history.map(({ threadId: _threadId, ...entry }) =>
-          entry.evidenceIds.every((id) => usableEvidenceIds.has(id))
-            ? entry
-            : { ...entry, evidenceIds: [], basis: 'conversational' },
-        )
+      ? value.history.map(({ threadId: _threadId, ...entry }) => entry)
       : [],
     cardSet:
       value.cardSet === null || !modelContextFieldAllowed(fieldPolicy.cardSet)

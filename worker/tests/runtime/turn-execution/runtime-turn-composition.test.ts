@@ -6,10 +6,12 @@ import {
   allowRetention,
   context,
   createComposition,
+  modelContext,
   retention,
   searchResult,
   RecordingCommit,
 } from './runtime-turn-composition-fixture';
+import { denyModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
 import { observedWindow } from '@worker/composition/runtime-turn-composition-support';
 
 describe('createRuntimeTurnComposition', () => {
@@ -95,7 +97,7 @@ describe('createRuntimeTurnComposition', () => {
       terminal: 'message',
       finalText: JSON.stringify({
         kind: 'final_message',
-        message: { text: '確認しました', evidenceIds: [], basis: 'conversational' },
+        message: '確認しました',
       }),
       emptyFinal: false,
       partCount: 3,
@@ -104,7 +106,7 @@ describe('createRuntimeTurnComposition', () => {
     const response = await composition.getCommittedResponse();
     expect(response).toMatchObject({
       presentation: 'keep',
-      message: { text: '確認しました', evidenceIds: [] },
+      message: '確認しました',
     });
     expect(commit.requests).toHaveLength(1);
     expect(commit.requests[0]?.record.presentation).toBe('keep');
@@ -151,7 +153,7 @@ describe('createRuntimeTurnComposition', () => {
       terminal: 'message',
       finalText: JSON.stringify({
         kind: 'final_message',
-        message: { text: '公開応答', evidenceIds: [], basis: 'conversational' },
+        message: '公開応答',
       }),
       emptyFinal: false,
       partCount: 2,
@@ -167,6 +169,67 @@ describe('createRuntimeTurnComposition', () => {
       message: [{ text: '公開応答' }],
     });
     composition.dispose();
+  });
+
+  it('bounds generated text by the quoted history the model was shown', async () => {
+    const quoted = {
+      ...allowRetention.retention,
+      displayUntil: '2026-09-10T00:01:10Z',
+      retentionUntil: '2026-09-10T00:01:20Z',
+      deletionScheduledAt: '2026-09-10T00:01:20Z',
+      freshUntil: '2026-09-10T00:00:30Z',
+    };
+    const run = async (history: readonly { text: string }[]) => {
+      const { composition, model } = createComposition(
+        new RecordingCommit(),
+        1,
+        allowRetention,
+        () => NOW,
+        { digest: () => 'composition-digest' },
+        { textRetention: allowRetention.retention },
+        {
+          historyRetention: [quoted],
+          modelContext: {
+            ...modelContext,
+            history: history.map(({ text }) => ({
+              threadId: context.threadId,
+              turnId: 'turn-earlier',
+              role: 'assistant' as const,
+              text,
+            })),
+            fieldPolicy: { ...denyModelContextFieldPolicy, history: 'allow' },
+          },
+        },
+      );
+      await composition.projectStep(
+        { steps: [], stepNumber: 0, model, messages: [], experimental_context: undefined },
+        NOW,
+      );
+      composition.onAccepted({
+        terminal: 'message',
+        finalText: JSON.stringify({
+          kind: 'final_message',
+          message: '前の回答を踏まえました',
+        }),
+        emptyFinal: false,
+        partCount: 2,
+        bytes: 64,
+      });
+      const response = await composition.getCommittedResponse();
+      composition.dispose();
+      return response !== undefined && 'kind' in response
+        ? response.message[0]?.retention
+        : undefined;
+    };
+    expect(await run([{ text: '以前の回答' }])).toMatchObject({
+      retentionDecision: 'allow',
+      displayUntil: quoted.displayUntil,
+      retentionUntil: quoted.retentionUntil,
+      // Freshness belonged to the quoted turn; the new text keeps its own.
+      freshUntil: allowRetention.retention.freshUntil,
+    });
+    // History that was not shown does not bound the text.
+    expect(await run([])).toMatchObject({ displayUntil: allowRetention.retention.displayUntil });
   });
 
   it('does not restore a photo resolver after disposal during asynchronous preparation', async () => {
@@ -197,7 +260,7 @@ describe('createRuntimeTurnComposition', () => {
       terminal: 'message',
       finalText: JSON.stringify({
         kind: 'final_message',
-        message: { text: '遅延写真', evidenceIds: [], basis: 'conversational' },
+        message: '遅延写真',
       }),
       emptyFinal: false,
       partCount: 2,

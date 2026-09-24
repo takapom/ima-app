@@ -84,28 +84,14 @@ export const submitInputFor = (
   if (fallback === undefined) throw new Error('M25_FIXTURE_CONTEXT_MISSING');
   const selectionFor = (candidate: (typeof selections)[number]) => ({
     candidateId: candidate.candidateId,
-    why: {
-      text: '固定fixtureの公開根拠を確認しました。',
-      evidenceIds: [...candidate.evidenceIds],
-      basis: 'grounded' as const,
-    },
+    why: '固定fixtureの公開根拠を確認しました。',
   });
   const alternatives = selections.slice(1).map((candidate) => ({
     ...selectionFor(candidate),
-    diff: {
-      text: '別候補として比較できます。',
-      evidenceIds: [...candidate.evidenceIds],
-      basis: 'grounded' as const,
-    },
+    diff: '別候補として比較できます。',
   }));
   return {
-    message: [
-      {
-        text: '固定fixtureの候補を提示します。',
-        evidenceIds: [...fallback.evidenceIds],
-        basis: 'grounded',
-      },
-    ],
+    message: ['固定fixtureの候補を提示します。'],
     hero: selectionFor(fallback),
     alts: alternatives,
   };

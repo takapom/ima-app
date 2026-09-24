@@ -190,10 +190,7 @@ describe('Hot Pepper primary provider composition', () => {
     // The model sees the facilities it can talk about; the photo is only attached to the card.
     expect(candidate.facilities).toMatchObject({ status: 'known' });
     expect(candidate).not.toHaveProperty('photos');
-    if (candidate.identity.status !== 'known') throw new Error('Identity missing');
-    const identityId = candidate.identity.observations[0]?.observationId;
-    if (identityId === undefined) throw new Error('Identity observation missing');
-    const why = { text: '駅から近いカフェです。', evidenceIds: [identityId], basis: 'grounded' };
+    const why = '駅から近いカフェです。';
     expect(
       await f.submit({
         message: [why],

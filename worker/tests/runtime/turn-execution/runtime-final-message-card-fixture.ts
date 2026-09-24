@@ -1,6 +1,6 @@
 import type {
+  EvidenceLink,
   ValidatedCard,
-  ValidatedMessageResponse,
 } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 
 const now = '2026-09-10T12:00:00Z';
@@ -19,8 +19,6 @@ export const retention = {
   policyStatus: 'available' as const,
   displayPolicyStatus: 'available' as const,
 };
-
-type EvidenceLink = ValidatedMessageResponse['message']['evidence'][number];
 
 export const evidenceLink = (
   observationId: string,
@@ -99,11 +97,6 @@ export const card: ValidatedCard = {
     ],
   },
   evidenceIds: ['obs-identity', 'obs-opening', 'obs-photos'],
-  why: {
-    text: '営業中の候補です',
-    evidenceIds: ['obs-identity'],
-    basis: 'grounded',
-    evidence: [requireCardEvidenceLink('obs-identity')],
-  },
+  why: '営業中の候補です',
   diff: null,
 };

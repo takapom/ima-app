@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { type EvidenceBasis, type SourceRef } from '@worker/domain/evidence/evidence';
+import { type SourceRef } from '@worker/domain/evidence/evidence';
 import {
   contextKeyForObservation,
   matchesObservationContext,
@@ -79,13 +79,6 @@ export type EvidenceLink = {
   retention: RetentionMetadata;
 };
 
-export type ValidatedEvidenceText = {
-  text: string;
-  evidenceIds: readonly string[];
-  basis: EvidenceBasis;
-  evidence: readonly EvidenceLink[];
-};
-
 export type ValidatedCard = {
   candidateId: string;
   identity: PlaceIdentity;
@@ -94,20 +87,20 @@ export type ValidatedCard = {
   photos: PhotoInfo | null;
   facilities: FacilitiesInfo | null;
   evidenceIds: readonly string[];
-  why: ValidatedEvidenceText;
-  diff: ValidatedEvidenceText | null;
+  why: string;
+  diff: string | null;
 };
 
 export type ValidatedCardsResponse = {
   presentation: 'replace';
-  message: readonly ValidatedEvidenceText[];
+  message: readonly string[];
   hero: ValidatedCard;
   alts: readonly ValidatedCard[];
 };
 
 export type ValidatedMessageResponse = {
   presentation: 'keep';
-  message: ValidatedEvidenceText;
+  message: string;
 };
 
 export type SubmitValidationResult<T> =
@@ -325,52 +318,6 @@ export const resolveObservation = (
         sources: observation.sources,
         retention: observation.retention,
       },
-    },
-  };
-};
-
-export const resolveEvidenceText = (
-  text: { text: string; evidenceIds: readonly string[]; basis: EvidenceBasis },
-  candidateId: string | null,
-  path: string,
-  context: SubmitValidationContext,
-  registry: CandidateObservationRegistryPort,
-  cache: Map<string, ResolvedObservation>,
-): SubmitValidationResult<ValidatedEvidenceText> => {
-  const evidence: ResolvedObservation[] = [];
-  const issues: SubmitValidationIssue[] = [];
-  for (const [index, id] of text.evidenceIds.entries()) {
-    const cached = cache.get(id);
-    if (cached !== undefined) {
-      evidence.push(cached);
-      continue;
-    }
-    const resolved = resolveObservation(
-      id,
-      candidateId,
-      `${path}.evidenceIds[${index}]`,
-      context,
-      registry,
-    );
-    if (resolved.issue !== undefined) {
-      issues.push(resolved.issue);
-      continue;
-    }
-    if (resolved.resolved === undefined) {
-      issues.push(issue('INVALID_EVIDENCE', path, 'observation could not be resolved'));
-      continue;
-    }
-    cache.set(id, resolved.resolved);
-    evidence.push(resolved.resolved);
-  }
-  if (issues.length > 0) return invalid(...issues);
-  return {
-    status: 'valid',
-    response: {
-      text: text.text,
-      evidenceIds: text.evidenceIds,
-      basis: text.basis,
-      evidence: evidence.map((item) => item.evidence),
     },
   };
 };

@@ -54,11 +54,8 @@ export function redactedRuntimeToolInput(toolName: RuntimeRetentionToolName): JS
     case 'submit_cards':
       return {
         input: {
-          message: [{ text: 'WITHHELD', evidenceIds: [], basis: 'inference' }],
-          hero: {
-            candidateId: 'candidate-withheld',
-            why: { text: 'WITHHELD', evidenceIds: [], basis: 'inference' },
-          },
+          message: ['WITHHELD'],
+          hero: { candidateId: 'candidate-withheld', why: 'WITHHELD' },
           alts: [],
         },
       };

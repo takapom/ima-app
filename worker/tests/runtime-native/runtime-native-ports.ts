@@ -386,29 +386,14 @@ export const createRuntimeNativePortFixture = (
   );
   const observations: NativeObservationIds = { identity, opening };
   const validSubmit: SubmitCardsInput = {
-    message: [
-      {
-        text: 'Runtime native candidate is open now.',
-        evidenceIds: [identity],
-        basis: 'grounded',
-      },
-    ],
-    hero: {
-      candidateId: candidate.candidateId,
-      why: {
-        text: 'Identity and opening hours are registered.',
-        evidenceIds: [identity, opening],
-        basis: 'grounded',
-      },
-    },
+    message: ['Runtime native candidate is open now.'],
+    hero: { candidateId: candidate.candidateId, why: 'Identity and opening hours are registered.' },
     alts: [],
   };
+  // Repairable: the model picked a candidate that no search registered.
   const invalidSubmit: SubmitCardsInput = {
     ...validSubmit,
-    hero: {
-      ...validSubmit.hero,
-      why: { ...validSubmit.hero.why, evidenceIds: ['unregistered-observation'] },
-    },
+    hero: { ...validSubmit.hero, candidateId: 'candidate-unregistered' },
   };
   const details: GetPlaceDetailsInput = {
     requests: [{ candidateId: candidate.candidateId, fields: ['identity', 'opening_hours'] }],

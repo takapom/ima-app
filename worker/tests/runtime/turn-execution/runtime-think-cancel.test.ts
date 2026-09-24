@@ -187,7 +187,7 @@ const modelFor = (): RuntimeModelGuardModel => {
   };
   const envelope = JSON.stringify({
     kind: 'final_message',
-    message: { text: '取消前の最終文', evidenceIds: [], basis: 'conversational' },
+    message: '取消前の最終文',
   });
   const stream = (): ReadableStream<Part> =>
     new ReadableStream({

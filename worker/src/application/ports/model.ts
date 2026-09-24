@@ -1,5 +1,4 @@
 import * as v from 'valibot';
-import { EvidenceTextSchema } from '@worker/domain/evidence/evidence';
 import { CandidateIdSchema, Text } from '@worker/domain/primitives';
 import { ModelContextSchema } from '@worker/application/ports/context';
 import {
@@ -7,16 +6,19 @@ import {
   SearchPlacesInputSchema,
 } from '@worker/application/ports/operations';
 
-/** Card facts are attached by the Core from the registry; the model only picks and explains. */
+/**
+ * Card facts are attached by the Core from the registry; the model only picks and explains.
+ * Generated text is plain text: the harness, not the model, tracks what the model was shown.
+ */
 export const CardSelectionSchema = v.strictObject({
   candidateId: CandidateIdSchema,
-  why: EvidenceTextSchema(80),
-  diff: v.optional(EvidenceTextSchema(40)),
+  why: Text(80),
+  diff: v.optional(Text(40)),
 });
 export type CardSelection = v.InferOutput<typeof CardSelectionSchema>;
 
 export const SubmitCardsPayloadSchema = v.strictObject({
-  message: v.pipe(v.array(EvidenceTextSchema(300)), v.minLength(1), v.maxLength(4)),
+  message: v.pipe(v.array(Text(300)), v.minLength(1), v.maxLength(4)),
   hero: CardSelectionSchema,
   alts: v.pipe(v.array(CardSelectionSchema), v.maxLength(2)),
 });
@@ -40,7 +42,7 @@ export const ModelActionSchema = v.union([
   v.strictObject({ kind: v.literal('search_places'), input: SearchPlacesInputSchema }),
   v.strictObject({ kind: v.literal('get_place_details'), input: GetPlaceDetailsInputSchema }),
   v.strictObject({ kind: v.literal('submit_cards'), input: SubmitCardsInputSchema }),
-  v.strictObject({ kind: v.literal('final_message'), message: EvidenceTextSchema(300) }),
+  v.strictObject({ kind: v.literal('final_message'), message: Text(300) }),
 ]);
 export type ModelAction = v.InferOutput<typeof ModelActionSchema>;
 

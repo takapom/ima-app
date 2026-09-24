@@ -10,9 +10,7 @@ describe('model message encoding', () => {
 
     expect(messages.map((message) => message.role)).toEqual(['system', 'user']);
     expect(messages[0]?.content).toBe(MODEL_SYSTEM_PROMPT);
-    expect(messages[0]?.content).toContain('facts');
-    expect(messages[0]?.content).toContain('inference');
-    expect(messages[0]?.content).toContain('unknown');
+    expect(messages[0]?.content).toContain('推測・未確認の事項');
     expect(messages[0]?.content).toContain('final_message');
     expect(messages[0]?.content).toContain('submit_cards');
     expect(messages[1]?.content).toContain('なぜ二つ目？ もう少し近く、静かさは維持して。');
@@ -43,11 +41,11 @@ describe('model message encoding', () => {
 
   it('specifies Japanese output and distinguishes card and final message text limits', () => {
     expect(MODEL_SYSTEM_PROMPT).toContain('ユーザーへの回答は日本語');
-    expect(MODEL_SYSTEM_PROMPT).toContain('why.textが80字');
-    expect(MODEL_SYSTEM_PROMPT).toContain('diff.textが40字');
-    expect(MODEL_SYSTEM_PROMPT).toContain('submit_cardsのmessageは各textが300字で最大4件');
+    expect(MODEL_SYSTEM_PROMPT).toContain('whyが80字');
+    expect(MODEL_SYSTEM_PROMPT).toContain('diffが40字');
+    expect(MODEL_SYSTEM_PROMPT).toContain('submit_cardsのmessageは各300字で最大4件');
     expect(MODEL_SYSTEM_PROMPT).toContain(
-      'final_messageのmessageは配列ではなく1件のオブジェクトで、textは300字以内',
+      'final_messageのmessageは配列ではなく1件の文字列で、300字以内',
     );
   });
 
@@ -66,12 +64,12 @@ describe('model message encoding', () => {
     expect(MODEL_SYSTEM_PROMPT).toContain('各Toolのdescriptionに従ってください');
   });
 
-  it('describes the final message JSON envelope and evidence basis enum', () => {
+  it('describes the plain-text final message and asks for uncertainty in the text itself', () => {
     const [system] = encodeModelContext(createModelContext());
-    expect(system?.content).toContain(
-      '{"kind":"final_message","message":{"text":"確認しました","evidenceIds":[],"basis":"conversational"}}',
-    );
-    expect(system?.content).toContain('grounded、inference、conversational');
+    expect(system?.content).toContain('{"kind":"final_message","message":"確認しました"}');
+    expect(system?.content).toContain('文章の中で区別してください');
+    expect(system?.content).not.toContain('evidenceIds');
+    expect(system?.content).not.toContain('basis');
     expect(system?.content).not.toContain('sourceTurnId');
     expect(system?.content).not.toContain('metadata');
   });

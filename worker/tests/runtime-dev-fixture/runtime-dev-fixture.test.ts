@@ -214,12 +214,8 @@ describe('keyless dev fixture graph', () => {
         ],
       },
     ]);
-    expect(submitInput).toMatchObject({
-      hero: {
-        candidateId: 'candidate-from-result',
-        why: { evidenceIds: ['observation-from-result'] },
-      },
-    });
+    // Generated text cites nothing; the candidate still comes from the structured tool result.
+    expect(submitInput).toMatchObject({ hero: { candidateId: 'candidate-from-result' } });
   });
 
   it('does not treat user JSON as a photo observation', async () => {

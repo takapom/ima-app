@@ -160,6 +160,10 @@ const findObservationExpiries = (value: unknown): ObservationExpiry[] => {
   return [...own, ...Object.values(value).flatMap(findObservationExpiries)];
 };
 
+/** Every observation a tool output carries, whatever the model is later shown of it. */
+export const observationIdsIn = (output: unknown): readonly string[] =>
+  findObservationExpiries(output).map((expiry) => expiry.observationId);
+
 export const observedWindow = (
   output: unknown,
   context: RuntimeRetentionContext,

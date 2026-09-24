@@ -226,6 +226,9 @@ export const createComposition = (
   clock: () => string = () => NOW,
   hashes: CommitHashPort = { digest: () => 'composition-digest' },
   publicResponse?: RuntimePublicResponseDependencies,
+  input: Pick<RuntimeTurnCompositionCoreOptions, 'historyRetention'> & {
+    readonly modelContext?: RuntimeCompositionModelContext;
+  } = {},
 ) => {
   const calls = { search: [] as number[] };
   const fixture = createToolRegistry();
@@ -244,7 +247,8 @@ export const createComposition = (
     request,
     context,
     model,
-    modelContext,
+    modelContext: input.modelContext ?? modelContext,
+    ...(input.historyRetention === undefined ? {} : { historyRetention: input.historyRetention }),
     retention: retentionValue,
     budget: createBudget(),
     clock,

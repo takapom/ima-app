@@ -8,8 +8,8 @@ import {
 } from '@ima/contracts';
 import { type CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
 import {
+  type EvidenceLink,
   type ValidatedCard,
-  type ValidatedEvidenceText,
 } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import { type RetentionMetadata } from '@worker/domain/evidence/retention';
 
@@ -20,7 +20,6 @@ import {
   publicPhotos,
   publicPrice,
 } from '@worker/runtime/response/runtime-response-values';
-type EvidenceLink = ValidatedEvidenceText['evidence'][number];
 
 export type RuntimePublicResponseMetadata = {
   readonly threadId: string;
@@ -63,7 +62,7 @@ export type RuntimePhotoPreparationErrorObserver = (
 export type RuntimePublicResponseOptions = RuntimePublicResponseMetadata & {
   /** The generated text policy; the final contracts schema checks it against every source. */
   readonly textRetention: RetentionMetadata;
-  /** Re-resolves committed evidence before publishing cards or grounded messages. */
+  /** Re-resolves the committed card evidence before publishing cards. */
   readonly resolveCardEvidence?: RuntimeCardEvidenceResolver;
   /** M15 owns server-issued photo handles; Core photo references never cross this boundary. */
   readonly resolvePhotoToken?: RuntimePhotoTokenResolver;
@@ -184,56 +183,14 @@ const publicEvidence = (link: EvidenceLink): EvidenceRef => {
   };
 };
 
-const currentEvidenceLinkFor = (
-  link: EvidenceLink,
-  options: RuntimePublicResponseOptions,
-): EvidenceLink => {
-  if (options.resolveCardEvidence === undefined) return link;
-  const resolved = options.resolveCardEvidence(link.candidateId, link.observationId);
-  if (
-    resolved === undefined ||
-    resolved.observationId !== link.observationId ||
-    resolved.candidateId !== link.candidateId ||
-    resolved.field !== link.field
-  ) {
-    return invalid('CARD_EVIDENCE_MISSING');
-  }
-  return resolved;
-};
-
-const publicText = (
-  text: ValidatedEvidenceText,
-  options: RuntimePublicResponseOptions,
-): {
-  readonly text: string;
-  readonly evidenceIds: string[];
-  readonly evidence: EvidenceRef[];
-  readonly basis: ValidatedEvidenceText['basis'];
-  readonly retention: PublicRetentionMetadata;
-} => {
-  const evidenceIds = [...text.evidenceIds];
-  const links = text.evidence;
-  if (new Set(evidenceIds).size !== evidenceIds.length || links.length !== evidenceIds.length) {
-    return invalid('PUBLIC_RESPONSE_INVALID');
-  }
-  const byId = new Map<string, EvidenceRef>();
-  for (const link of links) {
-    const reference = publicEvidence(currentEvidenceLinkFor(link, options));
-    if (byId.has(reference.evidenceId)) return invalid('PUBLIC_RESPONSE_INVALID');
-    byId.set(reference.evidenceId, reference);
-  }
-  const evidence = evidenceIds.map((evidenceId) => {
-    const reference = byId.get(evidenceId);
-    return reference === undefined ? invalid('PUBLIC_RESPONSE_INVALID') : reference;
-  });
-  return {
-    text: text.text,
-    evidenceIds,
-    evidence,
-    basis: text.basis,
-    retention: publicRetention(options.textRetention),
-  };
-};
+/** Generated text cites nothing; its retention is derived from what the model was shown. */
+const publicText = (text: string, options: RuntimePublicResponseOptions) => ({
+  text,
+  evidenceIds: [],
+  evidence: [],
+  basis: 'conversational' as const,
+  retention: publicRetention(options.textRetention),
+});
 
 const cardEvidence = (
   card: ValidatedCard,

@@ -60,6 +60,7 @@ import {
   modelSource,
   hasUnresolvedReadFailure,
   observationResultIsReusable,
+  observationIdsIn,
   observedWindow,
   usableFinalMessage,
   RuntimeTurnCompositionError,
@@ -71,6 +72,9 @@ import {
 } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
 import { projectRuntimeToolResultForModel } from '@worker/runtime/context/runtime-field-policy';
 import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-session-config';
+import { createRuntimePresentedInputs } from '@worker/runtime/response/runtime-presented-inputs';
+import { recordPresentedContext } from '@worker/composition/runtime-presented-context';
+import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 
 export type { RuntimePublicResponseDependencies } from '@worker/runtime/response/runtime-response';
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;
@@ -88,6 +92,8 @@ type RuntimeTurnCompositionBaseOptions = {
   readonly model: RuntimeModelGuardModel;
   readonly providerOptions?: TurnConfig['providerOptions'];
   readonly modelContext: RuntimeCompositionModelContext;
+  /** Retention of the history bodies in `modelContext`; generated text inherits it. */
+  readonly historyRetention?: readonly RetentionMetadata[];
   readonly retention: RuntimeRetentionContext | (() => RuntimeRetentionContext);
   readonly budget: RuntimeBudget;
   readonly clock: ClockPort | (() => string);
@@ -206,12 +212,24 @@ export function createRuntimeTurnComposition(
       return options.commit.commit(request);
     },
   };
+  const presented = createRuntimePresentedInputs({
+    registry: options.registry,
+    scope: { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
+  });
+  // Generated text is bounded by everything shown to the model this turn, not by what it cites.
+  const publicResponse = (): RuntimePublicResponseDependencies | undefined =>
+    options.publicResponse === undefined
+      ? undefined
+      : {
+          ...options.publicResponse,
+          textRetention: presented.textRetention(options.publicResponse.textRetention),
+        };
   const application = new SubmitApplication(
     guardedCommit,
     { nextResponseId: options.ids.nextResponseId },
     options.hashes,
     (record, response) =>
-      prepareConversationCommit(options.commit, options.publicResponse, record, response),
+      prepareConversationCommit(options.commit, publicResponse(), record, response),
   );
   const calls = new Map<string, RuntimeRetentionEphemeralToolCall>();
   const results = new Map<string, RuntimeRetentionEphemeralToolResult>();
@@ -319,6 +337,12 @@ export function createRuntimeTurnComposition(
     const projected = projectModelContext(
       modelSource(turn.context, options.modelContext, projectionNow, options.budget),
     );
+    recordPresentedContext(
+      presented,
+      projected,
+      options.modelContext,
+      options.historyRetention ?? [],
+    );
     currentTurnStart ??= Math.max(0, step.messages.length - options.request.messages.length);
     const expectedObservationContext = validationAt(
       options.validationContext,
@@ -328,7 +352,8 @@ export function createRuntimeTurnComposition(
     const projectToolOutput =
       fieldPolicy === undefined
         ? undefined
-        : (output: JSONValue) => projectRuntimeToolResultForModel(output, fieldPolicy);
+        : (output: JSONValue) =>
+            projectRuntimeToolResultForModel(output, fieldPolicy, presented.observation);
     const retentionProjection: RuntimeRetentionModelProjectionOptions = {
       currentTurnStart,
       currentScope: scopeIdentity(currentRetention),
@@ -346,6 +371,14 @@ export function createRuntimeTurnComposition(
       ),
       ...(projectToolOutput === undefined ? {} : { projectToolOutput }),
     };
+    // Without a field policy the model receives tool outputs whole.
+    if (fieldPolicy === undefined) {
+      for (const entry of retentionProjection.toolResults.values()) {
+        for (const observationId of observationIdsIn(entry.output)) {
+          presented.observation(observationId);
+        }
+      }
+    }
     const safeHistory = projectRuntimeCurrentTurnMessages(step.messages, retentionProjection);
     return {
       messages: [...encodeModelContext(projected), ...safeHistory],
@@ -374,7 +407,14 @@ export function createRuntimeTurnComposition(
     model: options.model,
     ...(options.providerOptions === undefined ? {} : { providerOptions: options.providerOptions }),
     turn,
-    retention: { context: options.retention, transform },
+    // Stored SDK messages carry the generated text, so they take the same bound as its response.
+    retention: {
+      context: () => {
+        const current = retentionContext(options.retention);
+        return { ...current, retention: presented.textRetention(current.retention) };
+      },
+      transform,
+    },
     projectStep,
     persistMessages: options.persistMessages,
     getCommittedResponse: async () => {
@@ -388,7 +428,6 @@ export function createRuntimeTurnComposition(
         const result = await application.commitMessage(
           final.message,
           validationAt(options.validationContext, now()),
-          options.registry,
           {
             scope: {
               ownerScopeRef: options.context.ownerScopeRef,
@@ -413,10 +452,11 @@ export function createRuntimeTurnComposition(
         options.context.turnId,
         responseId,
       );
-      if (committed === undefined || options.publicResponse === undefined) return committed;
+      const dependencies = publicResponse();
+      if (committed === undefined || dependencies === undefined) return committed;
       return prepareAndMapRuntimeResponse({
         response: committed,
-        dependencies: options.publicResponse,
+        dependencies,
         metadata: {
           threadId: options.context.threadId,
           turnId: options.context.turnId,

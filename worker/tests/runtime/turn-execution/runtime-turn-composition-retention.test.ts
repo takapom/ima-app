@@ -116,7 +116,7 @@ describe('Runtime turn composition retention boundaries', () => {
       terminal: 'message',
       finalText: JSON.stringify({
         kind: 'final_message',
-        message: { text: 'cancel me', evidenceIds: [], basis: 'conversational' },
+        message: 'cancel me',
       }),
       emptyFinal: false,
       partCount: 1,

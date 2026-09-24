@@ -21,15 +21,10 @@ const opaqueId: WireSchema = {
 /** Fields the model may request. Contact stays a Core field but no connected provider has it. */
 const detailFields: string[] = ['identity', 'opening_hours', 'price', 'photos', 'facilities'];
 
-const evidenceText = (maxLength: number): WireSchema => ({
-  type: 'object',
-  properties: {
-    text: { type: 'string', minLength: 1, maxLength: maxLength },
-    evidenceIds: { type: 'array', items: opaqueId, maxItems: 16 },
-    basis: { type: 'string', enum: ['grounded', 'inference', 'conversational'] },
-  },
-  required: ['text', 'evidenceIds', 'basis'],
-  additionalProperties: false,
+const generatedText = (maxLength: number): WireSchema => ({
+  type: 'string',
+  minLength: 1,
+  maxLength,
 });
 
 const searchJsonSchema: WireSchema = {
@@ -110,13 +105,13 @@ const detailsJsonSchema: WireSchema = {
 const submitJsonSchema: WireSchema = {
   type: 'object',
   properties: {
-    message: { type: 'array', minItems: 1, maxItems: 4, items: evidenceText(300) },
+    message: { type: 'array', minItems: 1, maxItems: 4, items: generatedText(300) },
     hero: {
       type: 'object',
       properties: {
         candidateId: opaqueId,
-        why: evidenceText(80),
-        diff: evidenceText(40),
+        why: generatedText(80),
+        diff: generatedText(40),
       },
       required: ['candidateId', 'why'],
       additionalProperties: false,
@@ -128,8 +123,8 @@ const submitJsonSchema: WireSchema = {
         type: 'object',
         properties: {
           candidateId: opaqueId,
-          why: evidenceText(80),
-          diff: evidenceText(40),
+          why: generatedText(80),
+          diff: generatedText(40),
         },
         required: ['candidateId', 'why', 'diff'],
         additionalProperties: false,

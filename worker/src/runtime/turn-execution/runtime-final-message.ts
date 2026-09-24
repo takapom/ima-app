@@ -1,10 +1,10 @@
 import * as v from 'valibot';
-import { EvidenceTextSchema } from '@worker/domain/evidence/evidence';
+import { Text } from '@worker/domain/primitives';
 import { ModelDecisionSchema } from '@worker/application/ports/model';
 
 const runtimeFinalMessageSchema = v.strictObject({
   kind: v.literal('final_message'),
-  message: EvidenceTextSchema(300),
+  message: Text(300),
 });
 
 type RuntimeFinalMessageInput = v.InferOutput<typeof runtimeFinalMessageSchema>;

@@ -95,14 +95,7 @@ const makeApplication = () => {
   return { application, commits, registry };
 };
 
-const finalText = (
-  message: Record<string, unknown> = {
-    text: '条件を確認しました',
-    evidenceIds: [],
-    basis: 'conversational',
-  },
-  metadata?: unknown,
-): string =>
+const finalText = (message: unknown = '条件を確認しました', metadata?: unknown): string =>
   JSON.stringify({
     kind: 'final_message',
     message,
@@ -117,11 +110,7 @@ describe('runtime final message boundary', () => {
     const parsed = parseRuntimeFinalMessage(finalText());
     expect(parsed).toEqual({
       kind: 'final_message',
-      message: {
-        text: '条件を確認しました',
-        evidenceIds: [],
-        basis: 'conversational',
-      },
+      message: '条件を確認しました',
     });
   });
 
@@ -159,46 +148,23 @@ describe('runtime final message boundary', () => {
     ).toThrowError(new RuntimeFinalMessageError('INVALID_ENVELOPE'));
   });
 
-  it('passes only the parsed message to Core commit and returns no body on invalid evidence', async () => {
-    const fixture = makeApplication();
-    const parsed = parseRuntimeFinalMessage(
-      finalText({
-        text: '未登録根拠の本文',
-        evidenceIds: ['missing-observation'],
-        basis: 'grounded',
-      }),
-    );
-    const result = await fixture.application.commitMessage(
-      parsed.message,
-      validationContext,
-      fixture.registry,
-      {
-        scope,
-        turnId: 'turn-final',
-        expectedRevision: 1,
-        idempotencyKey: 'final-key',
-      },
-    );
-    expect(result.status).toBe('invalid');
-    expect(fixture.commits.records).toHaveLength(0);
-    expect(result).not.toHaveProperty('message');
-    expect(JSON.stringify(result)).not.toContain('未登録根拠の本文');
+  it('rejects the retired self-reported basis and citations instead of dropping them', () => {
+    expect(() =>
+      parseRuntimeFinalMessage(
+        finalText({ text: '確認しました', evidenceIds: [], basis: 'conversational' }),
+      ),
+    ).toThrowError(new RuntimeFinalMessageError('INVALID_ENVELOPE'));
   });
 
   it('commits a structurally valid conversational message without exposing its body in the result', async () => {
     const fixture = makeApplication();
     const parsed = parseRuntimeFinalMessage(finalText());
-    const result = await fixture.application.commitMessage(
-      parsed.message,
-      validationContext,
-      fixture.registry,
-      {
-        scope,
-        turnId: 'turn-final',
-        expectedRevision: 1,
-        idempotencyKey: 'final-commit',
-      },
-    );
+    const result = await fixture.application.commitMessage(parsed.message, validationContext, {
+      scope,
+      turnId: 'turn-final',
+      expectedRevision: 1,
+      idempotencyKey: 'final-commit',
+    });
     expect(result).toMatchObject({ status: 'committed' });
     expect(result).not.toHaveProperty('message');
     expect(fixture.commits.records[0]?.references).toEqual({
@@ -212,12 +178,7 @@ describe('Core committed response to public DTO mapping', () => {
   it('maps a message response through the public schema and strips Core-only evidence fields', () => {
     const response: ValidatedMessageResponse = {
       presentation: 'keep',
-      message: {
-        text: '条件を確認しました',
-        evidenceIds: [],
-        basis: 'conversational',
-        evidence: [],
-      },
+      message: '条件を確認しました',
     };
     const publicResponse = mapCommittedResponseToPublic(response, responseMetadata);
     expect(v.safeParse(AssistantResponseSchema, publicResponse).success).toBe(true);

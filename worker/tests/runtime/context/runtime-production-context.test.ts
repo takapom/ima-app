@@ -203,8 +203,6 @@ describe('runtime production context store', () => {
       turnId: 'caller-mutation',
       role: 'user',
       text: 'caller mutation',
-      evidenceIds: [],
-      basis: 'conversational',
     });
     store.commitTurn(first, messageFor(first));
 
