@@ -43,4 +43,24 @@ describe('runtime final-response gate', () => {
     await expect(call(reserve, 'search_places')).resolves.toMatchObject({ action: 'block' });
     await expect(call(reserve, 'respond')).resolves.toBeUndefined();
   });
+
+  it('makes the last step final when the step count runs out before the time does', () => {
+    const budget = new RuntimeBudget({
+      config: DEFAULT_RUNTIME_BUDGET,
+      startedAtMs: 0,
+      now: () => 1,
+    });
+    const hooks = createRuntimeFinalResponseHooks({ budget });
+    for (let step = 1; step < DEFAULT_RUNTIME_BUDGET.maxModelSteps; step += 1) {
+      expect(hooks.beforeStep({} as never)).toEqual({ toolChoice: 'required' });
+      expect(hooks.reserveModelStep(false)).toEqual({ ok: true, value: undefined });
+    }
+    // A read on the last step could never be followed by a respond.
+    expect(hooks.beforeStep({} as never)).toEqual({
+      activeTools: ['respond'],
+      toolChoice: 'required',
+    });
+    expect(hooks.isFinalResponse({} as never)).toBe(true);
+    expect(hooks.reserveModelStep(true)).toEqual({ ok: true, value: undefined });
+  });
 });

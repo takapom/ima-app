@@ -197,6 +197,15 @@ export const modelForProduction = (
         report.toolNames.push('respond');
         return Promise.resolve({ stream: streamOf(answerParts(report.calls)) });
       }
+      if (scenario() === 'read-loop') {
+        // Keeps reading until the harness offers respond alone.
+        report.calls += 1;
+        report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
+        report.toolNames.push('search_places');
+        return Promise.resolve({
+          stream: streamOf(toolParts(report.calls, 'search_places', searchInput)),
+        });
+      }
       const candidateIds = candidateIdsIn(prompt);
       const observationIds = observationIdsIn(prompt);
       report.modelCandidateCounts.push(new Set(candidateIds).size);

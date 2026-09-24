@@ -26,8 +26,8 @@ const finalToolBlock: ToolCallDecision = {
 
 /**
  * Every step must call a tool; the final step may only respond. A committed respond ends the
- * loop through the budget's stop condition, so a refused respond leaves the next step a normal
- * repair step.
+ * loop through the budget's stop condition. Before the final step a refused respond leaves the
+ * next step a normal repair step; inside it there is no further step, so the turn ends there.
  */
 const readStep = { toolChoice: 'required' as const };
 const finalStep = { activeTools: ['respond'], toolChoice: 'required' as const };
@@ -46,8 +46,14 @@ export const createRuntimeFinalResponseHooks = (
   let finalOnly = false;
   let finalReserved = false;
 
+  // The last step is final whether time or the step count runs out: a read there could never be
+  // followed by a respond.
   const enterFinalReserve = (): boolean => {
-    if (options.budget.checkAdmission(false)?.code === 'FINAL_RESERVE') finalOnly = true;
+    const lastStep =
+      options.budget.snapshot().modelSteps >= options.budget.limits.maxModelSteps - 1;
+    if (lastStep || options.budget.checkAdmission(false)?.code === 'FINAL_RESERVE') {
+      finalOnly = true;
+    }
     return finalOnly;
   };
 

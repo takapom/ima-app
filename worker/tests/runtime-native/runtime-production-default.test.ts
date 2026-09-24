@@ -2,6 +2,7 @@ import * as v from 'valibot';
 import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { AssistantResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_RUNTIME_BUDGET } from '@worker/runtime/budget/runtime-budget';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/adapters/out/providers/openai/provider-options';
 import { sessionExpiryAt } from '@worker/composition/runtime-production-support';
 import type {
@@ -288,6 +289,34 @@ describe('production factory through a real Think Durable Object', () => {
       offeredTools: [['respond']],
       fetchUrls: [],
     });
+  });
+
+  it('offers only respond on the last step when a model keeps reading', async () => {
+    const threadId = `m26-production-read-loop-${crypto.randomUUID()}`;
+    const target: ThreadRuntimeTarget = {
+      ownerScopeRef: 'owner-m26-production-read-loop',
+      threadId,
+      turnId: `turn-${crypto.randomUUID()}`,
+      revision: 1,
+    };
+    const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
+
+    await expect(stub.initialize(target.ownerScopeRef, target.threadId)).resolves.toMatchObject({
+      ok: true,
+    });
+    const result = await stub.runRuntimeTurn(requestFor(target, '[m26-read-loop] 探し続けて'));
+    expect(result.status).toBe('completed');
+    expect(result.response).toMatchObject({ kind: 'message', revision: 2 });
+
+    const report = await stub.getRuntimeProductionReport();
+    const steps = DEFAULT_RUNTIME_BUDGET.maxModelSteps;
+    expect(report?.calls).toBe(steps);
+    expect(report?.toolChoices).toEqual(Array.from({ length: steps }, () => 'required'));
+    expect(report?.offeredTools.at(-1)).toEqual(['respond']);
+    expect(report?.offeredTools.slice(0, -1)).toEqual(
+      Array.from({ length: steps - 1 }, () => ['get_place_details', 'respond', 'search_places']),
+    );
+    expect(report?.toolNames.at(-1)).toBe('respond');
   });
 
   it('returns a typed failure when final-only output tries to call a tool', async () => {
