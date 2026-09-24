@@ -18,14 +18,8 @@ const opaqueId: WireSchema = {
   pattern: '^[A-Za-z0-9][A-Za-z0-9_-]*$',
 };
 
-const detailFields: string[] = [
-  'identity',
-  'opening_hours',
-  'price',
-  'photos',
-  'contact',
-  'facilities',
-];
+/** Fields the model may request. Contact stays a Core field but no connected provider has it. */
+const detailFields: string[] = ['identity', 'opening_hours', 'price', 'photos', 'facilities'];
 
 const evidenceText = (maxLength: number): WireSchema => ({
   type: 'object',
@@ -70,7 +64,7 @@ const searchJsonSchema: WireSchema = {
         limit: { type: 'integer', minimum: 1, maximum: 10 },
         excludeCandidateIds: { type: 'array', items: opaqueId, maxItems: 50 },
       },
-      required: ['mode', 'query', 'area', 'limit', 'excludeCandidateIds'],
+      required: ['mode', 'query', 'area'],
       additionalProperties: false,
     },
     {

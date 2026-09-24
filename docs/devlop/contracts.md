@@ -38,15 +38,15 @@ thread ID、device ID、IPだけを所有者の認可根拠にしない。reques
 
 - `message`は既存カードを保持する`keep`、`cards`は主提案1件＋別案0〜2件へ置換する`replace`。候補0件はcardsにしない。
 - 端末は`responseId`と`revision`で重複配送・古い応答を処理する。再送用参照に本文がなければ`reference_only`または`unavailable`とし、本文を推測で補わない。
-- IDはowner/threadのscopeを持つ。別threadのcandidate ID・観測を自動流用しない。同じownerの保存参照から新しいcandidateを作り、現在のpolicyで再取得する。
+- IDはowner/threadのscopeを持つ。別threadのcandidate ID・観測を自動流用しない。保存参照をモデルの候補として読み込む経路は持たない（#54で撤去）。
 - schemaの追加property、不正なtimestamp、revision競合、冪等キーと本文の不一致を成功へ補正しない。時刻にはoffsetを含める。
 - `PublicError`は公開code・HTTP status・request ID・短いmessageを持ち、stack、秘密、他ownerの存在、Provider生エラーを漏らさない。
 
 ## 3操作と根拠
 
-`search_places`は新規検索またはopaque cursorによる継続。`get_place_details`はcandidateと要求fieldを指定した読み取り。`submit_cards`は根拠付きのmessage・hero・altsを検証して確定する。
+`search_places`は新規検索またはopaque cursorによる継続。`limit`（既定10）と`excludeCandidateIds`（既定なし）は省略でき、`null`は入力不正。`get_place_details`はcandidateと要求fieldを指定した読み取り。`submit_cards`は根拠付きのmessage・hero・altsを検証して確定する。
 
-詳細fieldはidentity、opening_hours、price、photos、contact、facilities。未要求の取得、未知fieldの黙殺、営業時間からの入店保証は行わない。
+詳細fieldはidentity、opening_hours、price、photos、contact、facilities。contactは接続中のProviderにないため、モデル向けスキーマには出さない。未要求の取得、未知fieldの黙殺、営業時間からの入店保証は行わない。
 モデルには必要な文脈を投影し、Providerの生ID、秘密、生レスポンス、不要な座標を渡さない。
 
 根拠はcandidate・field・実行文脈・鮮度・由来に結び付ける。読み取りと確定の混在などの実行制約は[アーキテクチャ](../architecture/architecture.md#ランタイムの制約)に従う。
