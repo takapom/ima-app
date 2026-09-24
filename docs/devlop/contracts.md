@@ -59,5 +59,5 @@ thread ID、device ID、IPだけを所有者の認可根拠にしない。reques
 写真は`GET /v1/photos/:token`から画像bytesを返す。成功はJSONではなく、許可されたContent-Type、Expires、request ID headerを持つ。失敗だけが公開JSONエラーになる。
 tokenはWorker発行のowner/deviceに結び付くopaque参照であり、Providerのphoto handleや署名URLを端末へ露出しない。写真ごとの帰属を表示する。
 
-schemaや保存形式の非互換変更は明示移行または失効で扱い、castで旧payloadを新契約に見せない。
+schemaや保存形式の非互換変更は明示移行または失効で扱い、castで旧payloadを新契約に見せない。#51の改修による公開DTO・prefs出力の変更は、アプリを先に配布してからWorkerを出す順序で移行する（[運用](../operations.md#デプロイと復旧)）。
 prefsの`homeStationRef`・`maxWalkMinutes`・`minimumStayMinutes`は#55で撤去した。旧版端末と保存済みturn入力のため、入力では値を検証して破棄する。出力には含めない。

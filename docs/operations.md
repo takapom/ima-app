@@ -105,6 +105,8 @@ profile・反復・候補identity対応・人手レビューのcoverageを確認
 
 ## デプロイと復旧
 
+#51の改修（#55・#61・#56）で公開DTOとprefsの出力が変わった。生成文は`{text, retention}`になり引用を持たず、prefsは`areaText`・`budget`だけを返す。新しいアプリは旧Workerの出力（引用付きの生成文、旧prefs項目）も読めるが、改修前のアプリは新Workerの出力を解析できない。このため、先に新しいアプリを配布して旧buildを更新し、その後にWorkerをデプロイする。旧buildが残る間はWorkerを先に出さない。
+
 [config dry-run CI](../.github/workflows/config-dry-run.yml)は型生成・bundle・設定・migrationを検査する。Cloudflareへの反映や実リソースの検収は行わない。
 
 実デプロイ時は次の順序で進める。
@@ -119,7 +121,7 @@ EASはdevelopment（Simulator/Dev Client）、internal（staging）、external�
 障害時は[flags](../worker/src/composition/operational-flags.ts)の対象Providerを停止し、必要なら`IMA_KILL_SWITCH=true`を適用する。未指定・不正なProvider flagは停止側。不正なkill switchは停止側だが、未指定のkill switchはfalseという互換既定があるため、環境設定に明示する。
 停止後に実際の外部呼出し停止を確認し、fixtureへ暗黙に切り替えない。
 
-復旧では対象環境のWorker version履歴から既知の版へ戻し、health、認証、DO migration互換性、保存期限、Provider停止状態を再確認する。DOを手作業で削除して復旧扱いにせず、データ変更が必要なら後方互換migrationを検証する。
+復旧では対象環境のWorker version履歴から既知の版へ戻し、health、認証、DO migration互換性、保存期限、Provider停止状態を再確認する。migration `v7`（`JourneyDatasetDO`の削除）を含む版より前へは戻さない。改修後の版が保存したthread文脈には旧版が必須とした項目（`savedPlaceRefs`・`originalTurns`・`basis`）がなく、旧版では文脈が読めずに破棄される。DOを手作業で削除して復旧扱いにせず、データ変更が必要なら後方互換migrationを検証する。
 EASは問題のbuild配布を停止し、利用可能なprofile/versionを記録する。復旧後はProviderを一つずつ再開する。
 
 ## 観測と証拠の範囲
