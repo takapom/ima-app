@@ -9,6 +9,7 @@ export const fixturePlace = (_clock: () => string): Record<string, unknown> => (
   lat: 35.6467,
   lng: 139.7102,
   genre: { name: 'カフェ' },
+  catch: '灯りを落とした静かなラウンジ（サンプル）',
   station_name: '恵比寿',
   access: 'ＪＲ 恵比寿駅 西口 徒歩3分',
   open: '24時間営業',

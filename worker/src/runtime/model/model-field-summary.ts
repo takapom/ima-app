@@ -26,7 +26,17 @@ export const summarizeFieldForModel = (
       if (!parsed.success) return undefined;
       const { name, category, area, address, stationName, accessText, businessStatus } =
         parsed.output;
-      return { name, category, area, address, stationName, accessText, businessStatus };
+      return {
+        name,
+        category,
+        area,
+        address,
+        stationName,
+        accessText,
+        businessStatus,
+        // Self-description by the shop; see the prompt for how it may be used.
+        listingText: parsed.output.listingText ?? null,
+      };
     }
     case 'opening_hours': {
       const parsed = v.safeParse(OpeningHoursSchema, value);
