@@ -7,6 +7,7 @@ import {
 
 const response: ValidatedMessageResponse = {
   presentation: 'keep',
+  kind: 'answer',
   message: '写真を含む応答の確定結果',
 };
 

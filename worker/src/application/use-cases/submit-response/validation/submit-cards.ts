@@ -228,7 +228,7 @@ export function validateSubmitCards(
   if (parsedContext.status === 'invalid') return parsedContext;
   const parsedInput = v.safeParse(SubmitCardsInputSchema, input);
   if (!parsedInput.success)
-    return invalid(issue('INVALID_ARGUMENT', null, 'submit_cards input is invalid'));
+    return invalid(issue('INVALID_ARGUMENT', null, 'proposal input is invalid'));
   const inputValue: SubmitCardsInput = parsedInput.output;
   const selections = [inputValue.hero, ...inputValue.alts];
   const cards: ValidatedCard[] = [];
@@ -267,14 +267,21 @@ export function validateSubmitCards(
   };
 }
 
+const MessageInputSchema = v.strictObject({
+  kind: v.picklist(['ask', 'answer']),
+  message: Text(300),
+});
+
 export function validateMessage(
   input: unknown,
   context: unknown,
 ): SubmitValidationResult<ValidatedMessageResponse> {
   const parsedContext = parseContext(context);
   if (parsedContext.status === 'invalid') return parsedContext;
-  const parsedMessage = v.safeParse(Text(300), input);
-  if (!parsedMessage.success)
-    return invalid(issue('INVALID_ARGUMENT', 'message', 'message is invalid'));
-  return { status: 'valid', response: { presentation: 'keep', message: parsedMessage.output } };
+  const parsed = v.safeParse(MessageInputSchema, input);
+  if (!parsed.success) return invalid(issue('INVALID_ARGUMENT', 'message', 'message is invalid'));
+  return {
+    status: 'valid',
+    response: { presentation: 'keep', kind: parsed.output.kind, message: parsed.output.message },
+  };
 }

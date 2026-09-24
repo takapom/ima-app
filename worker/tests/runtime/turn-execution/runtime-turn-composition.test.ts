@@ -217,7 +217,7 @@ describe('createRuntimeTurnComposition', () => {
       });
       const response = await composition.getCommittedResponse();
       composition.dispose();
-      return response !== undefined && 'kind' in response
+      return response !== undefined && 'responseId' in response
         ? response.message[0]?.retention
         : undefined;
     };
