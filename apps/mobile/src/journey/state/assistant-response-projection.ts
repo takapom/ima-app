@@ -38,33 +38,8 @@ const retentionExpired = (retention: RetentionMetadata, now: number): boolean =>
     retention.deletionScheduledAt,
   ].some((deadline) => displayExpired(deadline, now));
 
-const evidenceStatus = (
-  evidence: readonly EvidenceRef[],
-  now: number,
-): RetentionMetadata['displayPolicyStatus'] | null => {
-  const item = evidence.find(
-    (candidate) =>
-      candidate.retention.displayPolicyStatus !== 'available' ||
-      displayExpired(candidate.retention.displayUntil, now),
-  );
-  if (item === undefined) return null;
-  if (item.retention.displayPolicyStatus !== 'available') {
-    return item.retention.displayPolicyStatus;
-  }
-  return 'expired';
-};
-
-const projectRetention = (
-  retention: RetentionMetadata,
-  evidence: readonly EvidenceRef[],
-  now: number,
-): RetentionMetadata => {
+const projectRetention = (retention: RetentionMetadata, now: number): RetentionMetadata => {
   if (retention.displayPolicyStatus !== 'available') return retention;
-
-  const sourceStatus = evidenceStatus(evidence, now);
-  if (sourceStatus !== null) {
-    return { ...retention, displayPolicyStatus: sourceStatus };
-  }
   if (retentionExpired(retention, now)) {
     return { ...retention, displayPolicyStatus: 'expired' };
   }
@@ -72,7 +47,7 @@ const projectRetention = (
 };
 
 const projectEvidence = (value: EvidenceRef, now: number): EvidenceRef => {
-  const retention = projectRetention(value.retention, [], now);
+  const retention = projectRetention(value.retention, now);
   return retention === value.retention ? value : { ...value, retention };
 };
 
@@ -89,13 +64,10 @@ function projectField<T>(field: DisplayField<T> | undefined, now: number) {
     : { ...field, evidence };
 }
 
-const projectEvidenceText = (value: PublicCard['why'], now: number): PublicCard['why'] => {
-  const evidence = value.evidence.map((item) => projectEvidence(item, now));
-  const retention = projectRetention(value.retention, evidence, now);
-  const evidenceUnchanged = evidence.every((item, index) => item === value.evidence[index]);
-  return retention === value.retention && evidenceUnchanged
-    ? value
-    : { ...value, evidence, retention };
+/** Generated text carries one retention, already bounded by what the model was shown. */
+const projectText = (value: PublicCard['why'], now: number): PublicCard['why'] => {
+  const retention = projectRetention(value.retention, now);
+  return retention === value.retention ? value : { ...value, retention };
 };
 
 const projectCard = (card: PublicCard, now: number): PublicCard => {
@@ -120,8 +92,8 @@ const projectCard = (card: PublicCard, now: number): PublicCard => {
   return {
     ...card,
     facts,
-    why: projectEvidenceText(card.why, now),
-    ...(card.diff === undefined ? {} : { diff: projectEvidenceText(card.diff, now) }),
+    why: projectText(card.why, now),
+    ...(card.diff === undefined ? {} : { diff: projectText(card.diff, now) }),
   };
 };
 
@@ -137,14 +109,9 @@ const retentionDeadlines = (retention: RetentionMetadata): readonly (string | nu
   retention.deletionScheduledAt,
 ];
 
-const textRetentions = (value: PublicCard['why']): readonly RetentionMetadata[] => [
-  value.retention,
-  ...value.evidence.map((item) => item.retention),
-];
-
 const cardRetentions = (card: PublicCard): readonly RetentionMetadata[] => [
-  ...textRetentions(card.why),
-  ...(card.diff === undefined ? [] : textRetentions(card.diff)),
+  card.why.retention,
+  ...(card.diff === undefined ? [] : [card.diff.retention]),
   ...[
     card.facts.identity,
     card.facts.opening_hours,
@@ -158,12 +125,7 @@ const cardRetentions = (card: PublicCard): readonly RetentionMetadata[] => [
 ];
 
 const stateRetentions = (state: AssistantResponseState): readonly RetentionMetadata[] => [
-  ...state.responseRecords.flatMap((record) =>
-    record.messages.flatMap((message) => [
-      message.retention,
-      ...message.evidence.map((item) => item.retention),
-    ]),
-  ),
+  ...state.responseRecords.flatMap((record) => record.messages.map((message) => message.retention)),
   ...(state.cards === null
     ? []
     : [state.cards.hero, ...state.cards.alts].flatMap((card) => cardRetentions(card))),
@@ -202,7 +164,7 @@ export const projectAssistantResponseState = (
     ...state,
     responseRecords: state.responseRecords.map((record) => ({
       ...record,
-      messages: record.messages.map((message) => projectEvidenceText(message, milliseconds)),
+      messages: record.messages.map((message) => projectText(message, milliseconds)),
     })),
     cards: state.cards === null ? null : projectCards(state.cards, milliseconds),
   };

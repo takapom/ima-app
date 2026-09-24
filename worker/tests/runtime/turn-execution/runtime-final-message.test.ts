@@ -175,7 +175,7 @@ describe('runtime final message boundary', () => {
 });
 
 describe('Core committed response to public DTO mapping', () => {
-  it('maps a message response through the public schema and strips Core-only evidence fields', () => {
+  it('maps a message response to plain text with retention and no citations', () => {
     const response: ValidatedMessageResponse = {
       presentation: 'keep',
       message: '条件を確認しました',
@@ -186,8 +186,10 @@ describe('Core committed response to public DTO mapping', () => {
       kind: 'message',
       presentation: 'keep',
       cardSetId: null,
-      message: [{ text: '条件を確認しました', evidence: [], retention }],
+      message: [{ text: '条件を確認しました', retention }],
     });
+    expect(publicResponse.message[0]).not.toHaveProperty('evidenceIds');
+    expect(publicResponse.message[0]).not.toHaveProperty('basis');
     expect(JSON.stringify(publicResponse)).not.toContain('recordRef');
   });
 

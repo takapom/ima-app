@@ -28,15 +28,8 @@ const evidence = (id: string, displayUntil: string | null): EvidenceRef => ({
   retention: availableRetention(displayUntil),
 });
 
-const text = (
-  value: string,
-  displayUntil: string | null,
-  sourceEvidence: readonly EvidenceRef[] = [],
-): PublicMessage => ({
+const text = (value: string, displayUntil: string | null): PublicMessage => ({
   text: value,
-  evidenceIds: sourceEvidence.map((item) => item.evidenceId),
-  evidence: [...sourceEvidence],
-  basis: 'grounded',
   retention: availableRetention(displayUntil),
 });
 
@@ -44,7 +37,6 @@ const card = (): PublicCard => {
   const identityEvidence = evidence('identity', '2026-09-10T00:00:00Z');
   const priceEvidence = evidence('price', '2026-09-10T00:00:00Z');
   const photoEvidence = evidence('photo', '2026-09-10T00:00:00Z');
-  const explanationEvidence = evidence('why', '2026-09-10T00:00:00Z');
   return {
     candidateId: 'candidate-1',
     facts: {
@@ -81,8 +73,8 @@ const card = (): PublicCard => {
         evidence: [photoEvidence],
       },
     },
-    why: text('静かに話せます', '2026-09-10T00:00:00Z', [explanationEvidence]),
-    diff: text('駅から近い', '2026-09-10T00:00:00Z', [explanationEvidence]),
+    why: text('静かに話せます', '2026-09-10T00:00:00Z'),
+    diff: text('駅から近い', '2026-09-10T00:00:00Z'),
   };
 };
 
@@ -164,20 +156,15 @@ describe('assistant response expiry projection', () => {
     },
   );
 
-  it('expires a text when its evidence expires even if its own TTL is later', () => {
+  it('expires a text by its own retention, which the Worker already bounded by its inputs', () => {
     const raw = stateWithContent();
     const rawCards = raw.cards;
     if (rawCards === null) throw new Error('card fixture is required');
-    const cardWithLaterText = {
-      ...rawCards.hero,
-      why: text('根拠あり', '2026-09-11T00:00:00Z', [
-        evidence('why-early', '2026-09-10T00:00:00Z'),
-      ]),
-    };
-    const state = { ...raw, cards: { hero: cardWithLaterText, alts: [] } };
+    const laterText = { ...rawCards.hero, why: text('あとで失効', '2026-09-11T00:00:00Z') };
+    const state = { ...raw, cards: { hero: laterText, alts: [] } };
     const projected = projectAssistantResponseState(state, '2026-09-10T00:00:00Z');
 
-    expect(projected.cards?.hero.why.retention.displayPolicyStatus).toBe('expired');
+    expect(projected.cards?.hero.why.retention.displayPolicyStatus).toBe('available');
   });
 
   it('derives each view from raw state without mutating the retained payload', () => {

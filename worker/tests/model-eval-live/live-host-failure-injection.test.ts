@@ -88,7 +88,6 @@ describe('keyless live host failure and prompt-injection profiles', () => {
     expect(failed.response.kind).toBe('message');
     if (failed.response.kind !== 'message') throw new Error('M25_LIVE_HOST_FAILURE_NOT_MESSAGE');
     expect(failed.response.message[0]?.text).toBe('候補を取得できませんでした。');
-    expect(failed.response.message[0]?.evidenceIds).toEqual([]);
     expect(failed.trace).toMatchObject({
       modelCalls: 2,
       upstreamCalls: 2,
@@ -104,7 +103,6 @@ describe('keyless live host failure and prompt-injection profiles', () => {
     expect(empty.response.kind).toBe('message');
     if (empty.response.kind !== 'message') throw new Error('M25_LIVE_HOST_EMPTY_NOT_MESSAGE');
     expect(empty.response.message[0]?.text).toBe('条件に合う候補は見つかりませんでした。');
-    expect(empty.response.message[0]?.evidenceIds).toEqual([]);
     expect(empty.trace).toMatchObject({ modelCalls: 2, upstreamCalls: 1, complete: true });
   });
 

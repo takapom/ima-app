@@ -212,9 +212,6 @@ describe('model-eval live coordinator boundaries', () => {
     };
     const publicText = {
       text: 'fixture response',
-      evidenceIds: [],
-      evidence: [],
-      basis: 'conversational' as const,
       retention,
     };
     const cardsResponse = (turnId: string, revision: number, responseId: string) => ({

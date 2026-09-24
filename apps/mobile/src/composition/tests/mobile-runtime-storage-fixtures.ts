@@ -61,9 +61,6 @@ export const candidate: PublicCard = {
   },
   why: {
     text: '静かに話せる',
-    evidenceIds: [],
-    evidence: [],
-    basis: 'conversational',
     retention,
   },
 };
@@ -183,9 +180,6 @@ export const searchResponse = (requestId: string, revision = 2) => ({
     message: [
       {
         text: '候補を確認しました',
-        evidenceIds: [],
-        evidence: [],
-        basis: 'conversational' as const,
         retention,
       },
     ],

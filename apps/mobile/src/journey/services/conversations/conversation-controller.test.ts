@@ -16,9 +16,6 @@ import { conversationTranscriptEntries } from '@mobile/journey/services/conversa
 const liveAnswer = (): AssistantResponse => {
   const text = {
     text: 'その場で表示できる回答',
-    basis: 'conversational' as const,
-    evidence: [],
-    evidenceIds: [],
     retention: {
       retentionDecision: 'deny' as const,
       retentionMode: 'session_only' as const,

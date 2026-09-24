@@ -3,7 +3,7 @@ import type { RememberPhoto } from '@mobile/journey/state/photo-image-state';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { CardsData, PublicCard } from '@ima/contracts';
 import { CandidateCard } from '@mobile/journey/components/candidates/CandidateCard';
-import { presentEvidenceText } from '@mobile/journey/components/candidates/candidate-card-model';
+import { presentGeneratedText } from '@mobile/journey/components/candidates/candidate-card-model';
 import {
   buildMessageHistory,
   cardSetStatusLabel,
@@ -67,7 +67,7 @@ export function ResultsState({
     <View style={styles.container}>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       {statusLabel ? <Text style={styles.statusLabel}>{statusLabel}</Text> : null}
-      <MessageHistory items={messageHistory} fallback={presentEvidenceText(first.why).text} />
+      <MessageHistory items={messageHistory} fallback={presentGeneratedText(first.why).text} />
       <View style={styles.cards}>
         {displayCards.map((card) => (
           <CandidateCard

@@ -159,9 +159,9 @@ const threadCardsMeta = v.omit(AssistantCardsResponseSchema, ['schemaVersion', '
 const canRestoreFull = (retention: RetentionMetadata) =>
   retention.retentionDecision === 'allow' && retention.restoreMode === 'full';
 
+/** Generated text carries the retention derived from everything the model was shown. */
 const canRestoreText = (text: AssistantMessageResponse['message'][number]) =>
-  canRestoreFull(text.retention) &&
-  text.evidence.every((evidence) => canRestoreFull(evidence.retention));
+  canRestoreFull(text.retention);
 
 type CardFact =
   AssistantCardsResponse['cards']['hero']['facts'][keyof AssistantCardsResponse['cards']['hero']['facts']];

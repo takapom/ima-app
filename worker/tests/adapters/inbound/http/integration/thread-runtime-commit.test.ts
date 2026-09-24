@@ -72,9 +72,6 @@ const cardResponseFor = (
   message: [
     {
       text: '確認しました',
-      evidenceIds: [],
-      evidence: [],
-      basis: 'conversational',
       retention: {
         retentionDecision: 'deny',
         retentionMode: 'session_only',
@@ -96,9 +93,6 @@ const cardResponseFor = (
       facts: { identity: { status: 'unknown', reason: 'fixture' } },
       why: {
         text: '確認しました',
-        evidenceIds: [],
-        evidence: [],
-        basis: 'conversational',
         retention: {
           retentionDecision: 'deny',
           retentionMode: 'session_only',

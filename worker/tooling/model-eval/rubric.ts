@@ -353,7 +353,11 @@ export const evaluateRun = (evaluationCase: EvaluationCase, value: unknown): Run
     ...run.response.selections.map((selection) => selection.candidateId),
     ...run.response.claims.map((claim) => claim.subjectId),
   ]);
-  if (evaluationCase.expected.requiredCandidateIds.some((id) => !observedSubjects.has(id))) {
+  // Cards name their candidates; message text cites nothing, so humans judge which it discusses.
+  if (
+    run.response.outcome.kind === 'cards' &&
+    evaluationCase.expected.requiredCandidateIds.some((id) => !observedSubjects.has(id))
+  ) {
     addViolation(violations, 'candidate-misidentification');
   }
   if (

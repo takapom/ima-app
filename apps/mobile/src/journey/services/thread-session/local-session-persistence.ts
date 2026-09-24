@@ -53,25 +53,16 @@ const earliestDeadline = (
   return earliest === null ? null : new Date(earliest).toISOString();
 };
 
-const retentionsForText = (
-  value: Pick<PublicCard['why'], 'retention' | 'evidence'>,
-): readonly RetentionMetadata[] => [
-  value.retention,
-  ...value.evidence.map((evidence) => evidence.retention),
-];
-
 const retentionsForCard = (card: PublicCard): readonly RetentionMetadata[] => [
-  ...retentionsForText(card.why),
-  ...(card.diff === undefined ? [] : retentionsForText(card.diff)),
+  card.why.retention,
+  ...(card.diff === undefined ? [] : [card.diff.retention]),
   ...Object.values(card.facts).flatMap((field) =>
     field?.status === 'known' ? field.evidence.map((evidence) => evidence.retention) : [],
   ),
 ];
 
 const retentionsForState = (state: AssistantResponseState): readonly RetentionMetadata[] => [
-  ...state.responseRecords.flatMap((record) =>
-    record.messages.flatMap((message) => retentionsForText(message)),
-  ),
+  ...state.responseRecords.flatMap((record) => record.messages.map((message) => message.retention)),
   ...(state.cards === null
     ? []
     : [state.cards.hero, ...state.cards.alts].flatMap((card) => retentionsForCard(card))),

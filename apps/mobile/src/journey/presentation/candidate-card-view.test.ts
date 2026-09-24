@@ -66,7 +66,7 @@ const card = (facts: Partial<PublicCard['facts']> = {}): PublicCard => ({
     }),
     ...facts,
   },
-  why: { text: '寄りやすい', evidenceIds: [], evidence: [], basis: 'grounded', retention },
+  why: { text: '寄りやすい', retention },
 });
 
 const photos = known({ photos: [{ photoToken: 'token-1', attributions: [], sourceUrl: null }] });
@@ -384,9 +384,6 @@ describe('card fact lines', () => {
       ...base,
       diff: {
         text: 'もう少し遅くまで',
-        evidenceIds: [],
-        evidence: [],
-        basis: 'grounded',
         retention,
       },
     };
@@ -396,9 +393,6 @@ describe('card fact lines', () => {
       ...base,
       diff: {
         text: 'もう少し遅くまで',
-        evidenceIds: [],
-        evidence: [],
-        basis: 'grounded',
         retention: { ...retention, displayPolicyStatus: 'policy_withheld' },
       },
     };

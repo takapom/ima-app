@@ -243,8 +243,7 @@ describe('repair profile through one fixture DO', () => {
     expect(target.response.kind).toBe('message');
     if (target.response.kind !== 'message') return;
     expect(target.response.message[0]?.text).toBe('営業時間の根拠を更新しました。');
-    expect(target.response.message[0]?.evidenceIds).not.toContain(prepared.oldEvidenceId);
-    expect(target.response.message[0]?.evidenceIds.length).toBeGreaterThan(0);
+    expect(JSON.stringify(target.response)).not.toContain(prepared.oldEvidenceId);
     expect(await prepared.stub.getModelEvalFixtureSearchQueries()).toEqual([]);
     const details = await prepared.stub.getModelEvalFixtureDetailsRequests();
     expect(details).toHaveLength(beforeDetails.length + 1);
@@ -256,9 +255,7 @@ describe('repair profile through one fixture DO', () => {
       .filter((snapshot) => snapshot.candidateId === prepared.cardContext.candidateOrder[0])
       .flatMap((snapshot) => snapshot.evidenceIds)
       .filter((id) => id !== prepared.oldEvidenceId);
-    const responseEvidenceId = target.response.message[0]?.evidenceIds[0];
-    expect(responseEvidenceId).toBeDefined();
-    expect(refreshed).toContain(responseEvidenceId);
+    expect(refreshed.length).toBeGreaterThan(0);
   });
 
   it('does not revive old evidence when the provider refresh fails', async () => {
@@ -286,8 +283,6 @@ describe('repair profile through one fixture DO', () => {
     if (target.response.kind !== 'message') return;
     const message = target.response.message[0];
     expect(message?.text).toBe('営業時間を更新できませんでした。確認できた範囲では不明です。');
-    expect(message?.basis).toBe('conversational');
-    expect(message?.evidenceIds).toEqual([]);
     expect(JSON.stringify(target.response)).not.toContain(prepared.oldEvidenceId);
     expect(JSON.stringify(target.response)).not.toContain('M25_FIXTURE_PRIVATE_UPSTREAM_BODY');
     expect(await prepared.stub.getModelEvalFixtureSearchQueries()).toEqual([]);

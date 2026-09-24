@@ -65,9 +65,6 @@ const evidence = {
 
 const message = {
   text: '徒歩で行きやすい候補です',
-  evidenceIds: [evidence.evidenceId],
-  evidence: [evidence],
-  basis: 'grounded',
   retention,
 };
 

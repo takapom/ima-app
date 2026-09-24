@@ -74,7 +74,6 @@ export type LiveTraceDeltaResult =
 
 const safeFailureCodes = new Set([
   'CANDIDATE_ID_MAPPING_UNAVAILABLE',
-  'MESSAGE_EVIDENCE_MAPPING_UNAVAILABLE',
   'INITIALIZE_FAILED',
   'MODEL_STREAM_ABORTED',
   'MODEL_STREAM_TIMEOUT',
@@ -223,9 +222,7 @@ const executionFailure = (input: {
 }): LiveCaseExecution => {
   const code = safeFailureCode(input.code);
   const status =
-    code === 'CANDIDATE_ID_MAPPING_UNAVAILABLE' || code === 'MESSAGE_EVIDENCE_MAPPING_UNAVAILABLE'
-      ? 'unverified_mapping'
-      : 'runtime_failed';
+    code === 'CANDIDATE_ID_MAPPING_UNAVAILABLE' ? 'unverified_mapping' : 'runtime_failed';
   const versions = versionsFor(input.profile);
   const attempt: LiveProbeAttempt = {
     caseId: input.evaluationCase.caseId,

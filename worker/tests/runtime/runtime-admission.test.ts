@@ -50,9 +50,6 @@ const publicResponse = {
   message: [
     {
       text: '確認しました',
-      evidenceIds: [],
-      evidence: [],
-      basis: 'conversational' as const,
       retention: {
         retentionDecision: 'deny' as const,
         retentionMode: 'session_only' as const,

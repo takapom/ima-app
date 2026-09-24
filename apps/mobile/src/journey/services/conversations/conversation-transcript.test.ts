@@ -17,9 +17,6 @@ const saved: ConversationMessage = {
 };
 const message: PublicMessage = {
   text: 'その場で表示できる回答',
-  basis: 'conversational',
-  evidence: [],
-  evidenceIds: [],
   retention: {
     retentionDecision: 'deny',
     retentionMode: 'session_only',

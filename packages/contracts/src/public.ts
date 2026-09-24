@@ -146,50 +146,56 @@ export const DisplayFieldSchema = <T extends v.GenericSchema>(value: T) =>
     }),
   ]);
 
-/** Text shown on the device carries explicit evidence and retention policy. */
-export const PublicEvidenceTextSchema = (maxLength: number) =>
+/**
+ * Written before generated text stopped citing observations (#61). Such payloads are still read
+ * from stored responses and device caches, but only when the text was not kept longer than what
+ * it cited; the citations are then dropped. They never describe all the model was shown.
+ */
+const LegacyTextCitationEntries = {
+  evidenceIds: v.optional(v.array(OpaqueIdSchema)),
+  evidence: v.optional(OptionalEvidenceRefsSchema),
+  basis: v.optional(v.picklist(['grounded', 'inference', 'conversational'])),
+};
+
+/** The invariant legacy payloads were written under: text never outlived what it cited. */
+const withinLegacyCitations = (
+  retention: RetentionMetadata,
+  evidence: readonly EvidenceRef[],
+): boolean =>
+  evidence.every((item) => {
+    const source = item.retention;
+    const noLaterThan = (candidate: string | null, bound: string | null) =>
+      candidate === null || (bound !== null && Date.parse(candidate) <= Date.parse(bound));
+    const noLaterThanOrAbsent = (candidate: string | null, bound: string | null) =>
+      bound === null ? candidate === null : noLaterThan(candidate, bound);
+    return (
+      Date.parse(retention.sessionExpiresAt) <= Date.parse(source.sessionExpiresAt) &&
+      (source.displayPolicyStatus === 'available' ||
+        retention.displayPolicyStatus !== 'available') &&
+      noLaterThanOrAbsent(retention.freshUntil, source.freshUntil) &&
+      noLaterThanOrAbsent(retention.displayUntil, source.displayUntil) &&
+      (retention.retentionDecision !== 'allow' ||
+        (source.retentionDecision === 'allow' &&
+          noLaterThan(retention.retentionUntil, source.retentionUntil)))
+    );
+  });
+
+/**
+ * Generated text shown on the device. It cites nothing: its retention is derived by the Worker
+ * from everything the model was shown, and it is not a claim that the text is verified.
+ */
+export const PublicTextSchema = (maxLength: number) =>
   v.pipe(
     v.strictObject({
       text: Text(maxLength),
-      evidenceIds: v.array(OpaqueIdSchema),
-      evidence: OptionalEvidenceRefsSchema,
-      basis: v.picklist(['grounded', 'inference', 'conversational']),
       retention: RetentionMetadataSchema,
+      ...LegacyTextCitationEntries,
     }),
-    v.check((value) => {
-      const ids = new Set(value.evidence.map((item) => item.evidenceId));
-      const sourceAllowsPersistence = value.evidence.every(
-        (item) => item.retention.retentionDecision === 'allow',
-      );
-      const textDoesNotExceedSource = value.evidence.every((item) => {
-        const source = item.retention;
-        const noLaterThan = (candidate: string | null, bound: string | null) =>
-          candidate === null || (bound !== null && Date.parse(candidate) <= Date.parse(bound));
-        const noLaterThanOrAbsent = (candidate: string | null, bound: string | null) =>
-          bound === null ? candidate === null : noLaterThan(candidate, bound);
-        return (
-          Date.parse(value.retention.sessionExpiresAt) <= Date.parse(source.sessionExpiresAt) &&
-          (source.displayPolicyStatus === 'available' ||
-            value.retention.displayPolicyStatus !== 'available') &&
-          noLaterThanOrAbsent(value.retention.freshUntil, source.freshUntil) &&
-          noLaterThanOrAbsent(value.retention.displayUntil, source.displayUntil) &&
-          (value.retention.retentionDecision !== 'allow' ||
-            (source.retentionUntil !== null &&
-              value.retention.retentionUntil !== null &&
-              noLaterThan(value.retention.retentionUntil, source.retentionUntil)))
-        );
-      });
-      return (
-        new Set(value.evidenceIds).size === value.evidenceIds.length &&
-        value.evidenceIds.every((id) => ids.has(id)) &&
-        value.evidence.every((item) => value.evidenceIds.includes(item.evidenceId)) &&
-        (value.basis !== 'grounded' || value.evidenceIds.length > 0) &&
-        (value.evidence.length === 0 ||
-          value.retention.retentionDecision !== 'allow' ||
-          sourceAllowsPersistence) &&
-        (value.evidence.length === 0 || textDoesNotExceedSource)
-      );
-    }, 'message evidence IDs must reference its evidence metadata'),
+    v.check(
+      (value) => withinLegacyCitations(value.retention, value.evidence ?? []),
+      'legacy text outlives its cited evidence',
+    ),
+    v.transform(({ text, retention }) => ({ text, retention })),
   );
 
 export const PublicCandidateRefSchema = v.strictObject({

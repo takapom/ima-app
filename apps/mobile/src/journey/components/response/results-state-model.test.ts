@@ -12,9 +12,6 @@ import {
 
 const message = (text: string) => ({
   text,
-  evidenceIds: [],
-  evidence: [],
-  basis: 'conversational' as const,
   retention: {
     retentionDecision: 'deny' as const,
     retentionMode: 'session_only' as const,
@@ -48,7 +45,7 @@ describe('results state model', () => {
   const candidate = (candidateId: string): PublicCard => ({
     candidateId,
     facts: { identity: { status: 'unknown', reason: '表示順序のfixture' } },
-    why: { ...message('提案理由'), basis: 'grounded' },
+    why: message('提案理由'),
   });
   const cards: CardsData = {
     hero: candidate('first'),

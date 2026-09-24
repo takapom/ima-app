@@ -24,7 +24,7 @@
 8. 保存済み条件は`GET /v1/prefs`とrevision CAS付き`PUT /v1/prefs`で管理する。
 
 会話APIの正は[conversation-http.ts](../../packages/contracts/src/conversation-http.ts)と[conversation-routes.ts](../../packages/contracts/src/conversation-routes.ts)。会話一覧は更新日時＋IDのcursor、発言はsequenceのbeforeでページ取得する。ownerや全履歴を送信bodyへ入れない。別ownerの会話は404。会話revision競合・同時送信・同じ冪等キーの入力不一致は409。
-会話の送信キー・clientMessageIdは結果不明の再送でも維持する。未完了runは会話ごとに1つ。completedは履歴DBへの回答保存確認後に返る。表示用の完成DTOは短時間の配送用であり、DO再起動後は保存可能な本文と参照だけで復元する。
+会話の送信キー・clientMessageIdは結果不明の再送でも維持する。未完了runは会話ごとに1つ。completedは履歴DBへの回答保存確認後に返る。表示用の完成DTOは短時間の配送用であり、DO再起動後は保存可能な本文と参照だけで復元する。生成文（message・why・diff）は本文と保持条件だけを持ち、根拠IDや`basis`を持たない。旧形式で保存された応答は、本文の期限が引用先を超えない場合に限り読み込み、引用情報を捨てる（提示情報の全体とはみなさない）。カード項目の出典はfactsのevidenceが持つ。
 既存の`POST /v1/threads`・`POST /v1/threads/:threadId/turns`・read/replayはThread単位の入口として維持する。
 
 `cancel`・`resume`・`restart`・`end`はthreadのライフサイクル操作。`resume`は中断状態を継続し、`restart`は新turnを開始する。thread削除は保存一覧の削除と同義にしない。

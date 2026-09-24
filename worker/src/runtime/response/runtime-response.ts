@@ -186,9 +186,6 @@ const publicEvidence = (link: EvidenceLink): EvidenceRef => {
 /** Generated text cites nothing; its retention is derived from what the model was shown. */
 const publicText = (text: string, options: RuntimePublicResponseOptions) => ({
   text,
-  evidenceIds: [],
-  evidence: [],
-  basis: 'conversational' as const,
   retention: publicRetention(options.textRetention),
 });
 

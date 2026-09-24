@@ -57,9 +57,6 @@ const saveCard: PublicCard = {
   },
   why: {
     text: '静かに話せる',
-    evidenceIds: [],
-    evidence: [],
-    basis: 'conversational',
     retention,
   },
 };
