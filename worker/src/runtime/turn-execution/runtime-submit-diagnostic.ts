@@ -107,3 +107,26 @@ export const observeRuntimeSubmitRejection = (
     // Diagnostics are best effort and never alter the runtime operation.
   }
 };
+
+/** A host observer of each turn's diagnostics, such as the model evaluation. */
+export type RuntimeTurnObserver = {
+  readonly outcome?: (outcome: RuntimeTurnOutcome) => void;
+  readonly respondRejected?: (rejection: RuntimeSubmitRejection) => void;
+};
+
+/** Writers that keep the log lines and then hand the same records to the observer. */
+export const runtimeTurnObserverWriters = (
+  observer: RuntimeTurnObserver,
+): {
+  readonly onTurnOutcome: RuntimeTurnOutcomeWriter;
+  readonly onSubmitRejected: RuntimeSubmitRejectionWriter;
+} => ({
+  onTurnOutcome: (outcome) => {
+    writeRuntimeTurnOutcome(outcome);
+    observer.outcome?.(outcome);
+  },
+  onSubmitRejected: (rejection) => {
+    writeRuntimeSubmitRejection(rejection);
+    observer.respondRejected?.(rejection);
+  },
+});

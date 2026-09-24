@@ -1,6 +1,7 @@
 import type { TurnContext } from '@cloudflare/think';
 import type { ToolExecutionContext } from '@worker/application/ports/context';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type { RuntimeTurnOutcome } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 import {
   NOW,
   allowRetention,
@@ -106,6 +107,37 @@ describe('createRuntimeTurnComposition', () => {
     expect(commit.requests).toHaveLength(1);
     expect(commit.requests[0]?.record.presentation).toBe('keep');
     composition.dispose();
+  });
+
+  it('reports the turn outcome and refused responds to a host observer', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const outcomes: RuntimeTurnOutcome[] = [];
+    let refused = 0;
+    const { composition } = createComposition(
+      new RecordingCommit(),
+      1,
+      retention,
+      () => NOW,
+      { digest: () => 'composition-digest' },
+      undefined,
+      {
+        turnObserver: {
+          outcome: (outcome) => outcomes.push(outcome),
+          respondRejected: () => (refused += 1),
+        },
+      },
+    );
+    await respondWith(composition, { kind: 'answer', message: '' }, 'empty');
+    await respondWith(composition, { kind: 'answer', message: '確認しました' }, 'answer');
+    // The connection disposes the composition, then its turn, which reports the outcome.
+    composition.dispose();
+    composition.turn.dispose();
+
+    expect(refused).toBe(1);
+    expect(outcomes).toEqual([{ committed: true, operations: { respond: 2 }, kind: 'answer' }]);
+    info.mockRestore();
+    warn.mockRestore();
   });
 
   it.each([

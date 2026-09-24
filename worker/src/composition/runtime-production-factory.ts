@@ -290,6 +290,7 @@ const makeOptions = (
       persistMessages: () => Promise.resolve({ requestId: request.turnId, status: 'completed' }),
       stopWhen: () => budget.snapshot().completed,
       idempotencyKey: runtimeInput.idempotencyKey,
+      ...(overrides.turnObserver === undefined ? {} : { turnObserver: overrides.turnObserver }),
     };
     const composition =
       plan.publicResponse === undefined

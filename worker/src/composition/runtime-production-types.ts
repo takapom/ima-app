@@ -19,6 +19,7 @@ import type { RuntimeProductionContextPersistence } from '@worker/runtime/contex
 import type { ProductionRetentionSource } from '@worker/composition/runtime-production-support';
 import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
 import type { RuntimeModelGuardModel } from '@worker/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeTurnObserver } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 import type { RuntimeModelTraceSink } from '@worker/runtime/tracing/runtime-model-trace';
 import type { RuntimeThinkTurnBuildRequest } from '@worker/runtime/turn-execution/runtime-think-connection';
 import type { RuntimeProviderTraceSink } from '@worker/runtime/tracing/runtime-provider-trace';
@@ -62,6 +63,8 @@ export type RuntimeProductionOverrides = {
   readonly candidateIdentityObserver?: (
     record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,
   ) => void;
+  /** Optional host-owned observer of each turn's outcome and refused responds. */
+  readonly turnObserver?: RuntimeTurnObserver;
   readonly placesCursorSecret?: string;
   readonly fetcher?: typeof fetch;
   readonly observationPolicy?: PlacesSearchObservationPolicy;

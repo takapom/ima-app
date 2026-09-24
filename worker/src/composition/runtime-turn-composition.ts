@@ -74,6 +74,10 @@ import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-se
 import { createRuntimePresentedInputs } from '@worker/runtime/response/runtime-presented-inputs';
 import { recordPresentedContext } from '@worker/composition/runtime-presented-context';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import {
+  runtimeTurnObserverWriters,
+  type RuntimeTurnObserver,
+} from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 
 export type { RuntimePublicResponseDependencies } from '@worker/runtime/response/runtime-response';
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;
@@ -111,6 +115,7 @@ type RuntimeTurnCompositionBaseOptions = {
   readonly beforeToolCall?: RuntimeBeforeToolCallDelegate;
   readonly currentTurnStart?: number;
   readonly idempotencyKey?: string;
+  readonly turnObserver?: RuntimeTurnObserver;
 };
 
 export type RuntimeTurnCompositionCoreOptions = RuntimeTurnCompositionBaseOptions & {
@@ -329,6 +334,7 @@ export function createRuntimeTurnComposition(
     beforeToolCall: finalResponse.beforeToolCall,
     stopWhen: options.stopWhen ?? (() => options.budget.snapshot().completed),
     experimentalTransform: transform,
+    ...(options.turnObserver === undefined ? {} : runtimeTurnObserverWriters(options.turnObserver)),
   });
 
   let currentTurnStart = options.currentTurnStart;

@@ -227,7 +227,7 @@ export const createComposition = (
   clock: () => string = () => NOW,
   hashes: CommitHashPort = { digest: () => 'composition-digest' },
   publicResponse?: RuntimePublicResponseDependencies,
-  input: Pick<RuntimeTurnCompositionCoreOptions, 'historyRetention'> & {
+  input: Pick<RuntimeTurnCompositionCoreOptions, 'historyRetention' | 'turnObserver'> & {
     readonly modelContext?: RuntimeCompositionModelContext;
   } = {},
 ) => {
@@ -250,6 +250,7 @@ export const createComposition = (
     model,
     modelContext: input.modelContext ?? modelContext,
     ...(input.historyRetention === undefined ? {} : { historyRetention: input.historyRetention }),
+    ...(input.turnObserver === undefined ? {} : { turnObserver: input.turnObserver }),
     retention: retentionValue,
     budget: createBudget(),
     clock,
