@@ -98,9 +98,8 @@ export type DetailsFieldValue<Key extends keyof RawDetailsFields> = KnownValue<
   NonNullable<RawDetailsFields[Key]>
 >;
 
-type SearchFieldValue<Key extends 'identity' | 'openingHours' | 'price'> = KnownValue<
-  RawSearchCandidate[Key]
->;
+type SearchFieldValue<Key extends 'identity' | 'openingHours' | 'price' | 'facilities'> =
+  KnownValue<RawSearchCandidate[Key]>;
 
 export type ModelSafeObservation<T> = {
   readonly observationId: string;
@@ -134,6 +133,7 @@ export type SafeSearchPlacesOutput = {
     readonly identity: ModelSafeFieldResult<SearchFieldValue<'identity'>>;
     readonly openingHours: ModelSafeFieldResult<SearchFieldValue<'openingHours'>>;
     readonly price: ModelSafeFieldResult<SearchFieldValue<'price'>>;
+    readonly facilities: ModelSafeFieldResult<SearchFieldValue<'facilities'>>;
   }[];
   readonly applied: {
     readonly areaDescription: string;

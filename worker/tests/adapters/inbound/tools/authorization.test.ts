@@ -235,6 +235,7 @@ describe('tool candidate authorization', () => {
                 identity: { status: 'unknown', reason: 'fixture' },
                 openingHours: { status: 'unknown', reason: 'fixture' },
                 price: { status: 'unknown', reason: 'fixture' },
+                facilities: { status: 'unknown', reason: 'fixture' },
               },
             ],
             applied: { areaDescription: '渋谷', excludedCount: 0 },

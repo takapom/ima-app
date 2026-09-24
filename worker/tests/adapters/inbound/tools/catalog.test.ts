@@ -193,13 +193,12 @@ describe('public tool catalog', () => {
     expect(tools.search_places.description).toContain('ジャンル語へ置き換えて');
     expect(tools.search_places.description).toContain('0件のときは語を減らす');
     expect(tools.search_places.description).not.toContain('openNow');
-    expect(tools.get_place_details.description).toContain('まとめて1回のget_place_details');
-    expect(tools.get_place_details.description).toContain(
-      'fieldsへidentity、opening_hours、price、photos、facilities',
-    );
-    expect(tools.get_place_details.description).toContain('identityとopening_hoursは確定に必須');
+    expect(tools.search_places.description).toContain('そのままsubmit_cardsで提案できます');
+    expect(tools.get_place_details.description).toContain('通常は不要です');
+    expect(tools.get_place_details.description).toContain('requests配列で1回にまとめます');
     expect(tools.get_place_details.description).toContain('写真や価格が無い店舗でも提案できます');
-    expect(tools.submit_cards.description).toContain('2nd step');
+    expect(tools.submit_cards.description).toContain('検索で得た候補はそのまま確定できます');
+    expect(tools.submit_cards.description).not.toContain('2nd step');
     expect(tools.submit_cards.description).toContain('システムが付けます');
     expect(tools.submit_cards.description).not.toContain('observationId');
     expect(tools.get_place_details.description).not.toContain('observationId');

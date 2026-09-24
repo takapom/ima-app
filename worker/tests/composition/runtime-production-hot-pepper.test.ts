@@ -1,5 +1,6 @@
 import type { ThreadTurnRequest } from '@ima/contracts';
 import { describe, expect, it, vi } from 'vitest';
+import type { CommitPort, CommitRequest } from '@worker/application/ports/commit';
 import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';
 import { createRuntimeProductionConnectionOptions } from '@worker/composition/runtime-production-factory';
 import { createDevFixtureModel } from '@worker/composition/runtime-dev-fixture';
@@ -22,6 +23,7 @@ const searchInput = {
 const setup = async (
   response?: (request: URL) => Response,
   runtimeInput: ThreadTurnRequest = buildRequest.runtimeInput,
+  commit: CommitPort = readOnlyCommit,
 ) => {
   let current = NOW;
   const requests: URL[] = [];
@@ -44,7 +46,7 @@ const setup = async (
   });
   const factory = createRuntimeProductionConnectionOptions({
     env: FIXTURE_OPERATIONAL_ENV,
-    commit: readOnlyCommit,
+    commit,
     overrides: {
       modelForTurn: createDevFixtureModel(),
       hotPepperApiKey: 'hp-test-secret',
@@ -76,10 +78,15 @@ const setup = async (
       composition.turn.dependencies,
       { toolCallId: `details-${++calls}` },
     );
+  const submit = (input: unknown) =>
+    invokePublicToolEnvelope('submit_cards', { input }, composition.turn.dependencies, {
+      toolCallId: `submit-${++calls}`,
+    });
   return {
     composition,
     search,
     details,
+    submit,
     requests,
     traces,
     fetcher,
@@ -144,6 +151,63 @@ describe('Hot Pepper primary provider composition', () => {
     expect(f.traces.every((t) => t.provider === 'hotpepper')).toBe(true);
     expect(JSON.stringify(f.traces)).not.toContain('hp-test-secret');
     expect(f.composition.turn.budget.snapshot().providerHttpRequests).toBe(2);
+    f.composition.dispose();
+  });
+
+  it.each([
+    {
+      photo: { pc: { l: 'https://imgfp.hotp.jp/IMGH/00/01/P000000001/P000000001_480.jpg' } },
+      fields: ['facilities', 'identity', 'opening_hours', 'photos', 'price'],
+    },
+    // A shop without a photo is still committed; the card just has no image.
+    { photo: undefined, fields: ['facilities', 'identity', 'opening_hours', 'price'] },
+  ])('commits a card from one search without a detail read: $fields', async ({ photo, fields }) => {
+    const commits: CommitRequest[] = [];
+    const f = await setup(
+      () =>
+        Response.json({
+          results: {
+            shop: [{ ...fixturePlace(() => NOW), ...(photo === undefined ? {} : { photo }) }],
+            results_available: 1,
+          },
+        }),
+      undefined,
+      {
+        commit: (request) => {
+          commits.push(request);
+          const { responseId, revision, payloadDigest, presentation } = request.record;
+          return {
+            status: 'committed',
+            receipt: { responseId, revision, payloadDigest, presentation, replayed: false },
+          };
+        },
+      },
+    );
+    const searched = await f.search();
+    if (searched.status !== 'ok') throw new Error('Search failed');
+    const candidate = searched.data.candidates[0];
+    if (candidate === undefined) throw new Error('Candidate missing');
+    // The model sees the facilities it can talk about; the photo is only attached to the card.
+    expect(candidate.facilities).toMatchObject({ status: 'known' });
+    expect(candidate).not.toHaveProperty('photos');
+    if (candidate.identity.status !== 'known') throw new Error('Identity missing');
+    const identityId = candidate.identity.observations[0]?.observationId;
+    if (identityId === undefined) throw new Error('Identity observation missing');
+    const why = { text: '駅から近いカフェです。', evidenceIds: [identityId], basis: 'grounded' };
+    expect(
+      await f.submit({
+        message: [why],
+        hero: { candidateId: candidate.candidateId, why },
+        alts: [],
+      }),
+    ).toMatchObject({ status: 'committed' });
+    const scope = { ownerScopeRef: buildRequest.ownerScopeRef, threadId: buildRequest.threadId };
+    const committedFields = (commits[0]?.record.references.observationIds ?? [])
+      .map((id) => f.composition.turn.dependencies.registry.readObservation(scope, id)?.field)
+      .sort();
+    expect(committedFields).toEqual(fields);
+    expect(f.requests).toHaveLength(1);
+    expect(f.composition.turn.budget.snapshot().providerHttpRequests).toBe(1);
     f.composition.dispose();
   });
 

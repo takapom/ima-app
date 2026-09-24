@@ -202,6 +202,7 @@ const searchResultFor = (candidateId: string): Result<SearchPlacesOutput> => ({
         identity: { status: 'unknown', reason: 'fixture has no identity value' },
         openingHours: { status: 'unknown', reason: 'fixture has no opening hours value' },
         price: { status: 'unknown', reason: 'fixture has no price value' },
+        facilities: { status: 'unknown', reason: 'fixture has no facilities value' },
       },
     ],
     applied: { areaDescription: '渋谷', excludedCount: 0 },

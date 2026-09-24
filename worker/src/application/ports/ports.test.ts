@@ -342,6 +342,7 @@ describe('core port contracts', () => {
       identity: { status: 'known', observations: [observation] },
       openingHours: { status: 'unknown', reason: 'not requested' },
       price: { status: 'unsupported', reason: 'fixture' },
+      facilities: { status: 'unsupported', reason: 'fixture' },
     };
     const output = {
       searchId: 'search-1',

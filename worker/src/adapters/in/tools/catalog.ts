@@ -339,6 +339,7 @@ export const createPublicToolSet = (dependencies: ToolBindingDependencies): Publ
         'queryには掲載情報に現れる短い語だけを使い、「甘いもの」「まったり」のような要望表現はスイーツ・カフェ・居酒屋などのジャンル語へ置き換えてください。',
         '0件のときは語を減らすか別のジャンル語で再検索し、検索していない状態を候補なしと断定しないでください。',
         '営業中で絞り込む検索はありません。営業時間は掲載文であり、今の営業・到着時の営業・空席を保証しません。未確認と明示してください。徒歩・終電の条件も保証しません。',
+        '各候補には店名・営業時間の掲載文・予算・設備が含まれ、そのままsubmit_cardsで提案できます。',
       ].join('\n'),
       inputSchema: searchPlacesToolSchema,
       execute: (input, options) =>
@@ -346,10 +347,9 @@ export const createPublicToolSet = (dependencies: ToolBindingDependencies): Publ
     }),
     get_place_details: tool<DetailsToolEnvelope, DetailsToolResult>({
       description: [
-        '登録済み候補の要求したfieldsだけを取得します。未対応のfieldは推測せず未対応として扱ってください。',
-        'カード提示の1st step: 提案する候補をまとめて1回のget_place_detailsへ渡します。requestsは配列なので候補ごとに呼び分けず、各要素のfieldsへidentity、opening_hours、price、photos、facilitiesを指定してください。',
-        'identityとopening_hoursは確定に必須です。price、photos、facilitiesはカードの表示に使うので、利用可能なら同じ呼び出しで併せて取得してください。',
-        '確定は次のstepのsubmit_cardsで行います。読み取りと確定は同じstepにできません。',
+        '登録済み候補の要求したfieldsだけを取り直します。未対応のfieldは推測せず未対応として扱ってください。',
+        '検索結果だけで提案できるので通常は不要です。項目が古くなった（stale）ときの取り直しなど、必要な場合だけ使ってください。',
+        '複数の候補はrequests配列で1回にまとめます。読み取りと確定は同じstepにできません。',
         '取得できなかったfieldは未取得として扱い、そのまま提案を続けてください。写真や価格が無い店舗でも提案できます。',
       ].join('\n'),
       inputSchema: getPlaceDetailsToolSchema,
@@ -359,9 +359,8 @@ export const createPublicToolSet = (dependencies: ToolBindingDependencies): Publ
     submit_cards: tool<SubmitToolEnvelope, SubmitToolResult>({
       description: [
         '選んだ候補とmessageを検証し、1回だけ確定します。',
-        'カード提示の2nd step: 先のstepで提案する候補をまとめて1回のget_place_detailsへ渡し、各候補のidentityとopening_hoursを取得してください。',
         'カードの店名・営業時間・価格・写真・設備は、取得済みの情報からシステムが付けます。各カードにはcandidateIdと理由(why)、別案には比較(diff)を書いてください。',
-        'identityとopening_hoursを取得済みの候補だけが確定できます。読み取りと確定は同じstepにできません。',
+        '検索で得た候補はそのまま確定できます。店名か営業時間が古くなった候補は確定できないので、get_place_detailsで取り直してください。読み取りと確定は同じstepにできません。',
       ].join('\n'),
       inputSchema: submitCardsToolSchema,
       execute: (input, options) =>

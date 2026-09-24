@@ -48,6 +48,7 @@ const mixedResult: Result<SearchPlacesOutput> = {
         identity: { status: 'unknown', reason: 'IDENTITY_PROVIDER_CANARY' },
         openingHours: { status: 'unsupported', reason: 'HOURS_PROVIDER_CANARY' },
         price: { status: 'not_applicable', reason: 'PRICE_PROVIDER_CANARY' },
+        facilities: { status: 'unknown', reason: 'fixture' },
       },
     ],
     applied: { areaDescription: '渋谷', excludedCount: 0 },

@@ -66,6 +66,7 @@ export const SearchPlacesOutputSchema = v.pipe(
           identity: FieldResultSchema(PlaceIdentitySchema),
           openingHours: FieldResultSchema(OpeningHoursSchema),
           price: FieldResultSchema(PriceInfoSchema),
+          facilities: FieldResultSchema(FacilitiesInfoSchema),
         }),
       ),
       v.maxLength(20),
@@ -89,6 +90,7 @@ export const SearchPlacesOutputSchema = v.pipe(
         ['identity', candidate.identity],
         ['opening_hours', candidate.openingHours],
         ['price', candidate.price],
+        ['facilities', candidate.facilities],
       ] as const;
       return matches.every(([field, result]) => {
         if (result.status !== 'known') return true;
