@@ -101,23 +101,6 @@ export const ToolExecutionContextSchema = v.strictObject({
 });
 export type ToolExecutionContext = v.InferOutput<typeof ToolExecutionContextSchema>;
 
-export const ModelContextSchema = v.strictObject({
-  threadId: OpaqueIdSchema,
-  turnId: TurnIdSchema,
-  revision: RevisionSchema,
-  serverNow: IsoTimestampSchema,
-  location: v.strictObject({
-    status: v.picklist(['available', 'denied', 'reduced', 'timeout', 'unavailable']),
-    areaDescription: v.nullable(v.pipe(v.string(), v.maxLength(160))),
-    accuracyMeters: v.nullable(v.pipe(FiniteNumberSchema, v.minValue(0))),
-    capturedAt: v.nullable(IsoTimestampSchema),
-    precise: v.boolean(),
-  }),
-  preferences: PreferencesContextSchema,
-  capabilities: CapabilitySnapshotSchema,
-});
-export type ModelContext = v.InferOutput<typeof ModelContextSchema>;
-
 export interface CancellationToken {
   isCancelled(): boolean;
 }

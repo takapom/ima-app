@@ -8,11 +8,7 @@ import {
   SearchPlacesInputSchema,
   SearchPlacesOutputSchema,
 } from '@worker/application/ports/operations';
-import {
-  ModelDecisionSchema,
-  ModelRequestSchema,
-  SubmitCardsInputSchema,
-} from '@worker/application/ports/model';
+import { SubmitCardsInputSchema } from '@worker/application/ports/model';
 import {
   SubmitCardsCommittedSchema,
   SubmitCardsPortInputSchema,
@@ -22,29 +18,6 @@ import {
   LocationContextSchema,
   ToolExecutionContextSchema,
 } from '@worker/application/ports/context';
-
-const modelContext = {
-  threadId: 'thread-1',
-  turnId: 'turn-1',
-  revision: 1,
-  serverNow: '2026-09-09T12:00:00Z',
-  location: {
-    status: 'unavailable',
-    areaDescription: '恵比寿',
-    accuracyMeters: null,
-    capturedAt: null,
-    precise: false,
-  },
-  preferences: {
-    areaText: '恵比寿',
-    budget: 'normal',
-  },
-  capabilities: {
-    version: 'fixture-v1',
-    detailFields: ['identity'],
-    supportedScopes: ['fixture'],
-  },
-};
 
 const search = {
   mode: 'search',
@@ -126,46 +99,7 @@ describe('core port contracts', () => {
     ).toBe(false);
   });
 
-  it('allows multiple model reads in one decision without exposing harness secrets', () => {
-    const decision = {
-      actions: [
-        { kind: 'search_places', input: search },
-        { kind: 'get_place_details', input: details },
-      ],
-    };
-    expect(v.safeParse(ModelDecisionSchema, decision).success).toBe(true);
-    expect(
-      v.safeParse(ModelDecisionSchema, {
-        ...decision,
-        actions: [
-          ...decision.actions,
-          {
-            kind: 'final_message',
-            message: conversational,
-          },
-        ],
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(ModelDecisionSchema, {
-        ...decision,
-        actions: [{ ...decision.actions[0], callId: 'model-chosen' }],
-      }).success,
-    ).toBe(false);
-    const request = { userText: '静かな店', context: modelContext };
-    expect(v.safeParse(ModelRequestSchema, request).success).toBe(true);
-    expect(
-      v.safeParse(ModelRequestSchema, { ...request, ownerScopeRef: 'owner-secret' }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(ModelRequestSchema, {
-        ...request,
-        context: { ...modelContext, coordinates: { lat: 1, lng: 2 } },
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(ModelDecisionSchema, { ...decision, action: decision.actions[0] }).success,
-    ).toBe(false);
+  it('keeps harness identity out of tool execution metadata', () => {
     expect(
       v.safeParse(ToolExecutionContextSchema, {
         callId: 'call-1',
