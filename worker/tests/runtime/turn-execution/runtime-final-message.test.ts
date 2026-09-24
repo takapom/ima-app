@@ -143,12 +143,16 @@ describe('runtime final message boundary', () => {
   it('commits a structurally valid conversational message without exposing its body in the result', async () => {
     const fixture = makeApplication();
     const parsed = parseRuntimeFinalMessage(finalText());
-    const result = await fixture.application.commitMessage(parsed.message, validationContext, {
-      scope,
-      turnId: 'turn-final',
-      expectedRevision: 1,
-      idempotencyKey: 'final-commit',
-    });
+    const result = await fixture.application.commitMessage(
+      { kind: 'answer', message: parsed.message },
+      validationContext,
+      {
+        scope,
+        turnId: 'turn-final',
+        expectedRevision: 1,
+        idempotencyKey: 'final-commit',
+      },
+    );
     expect(result).toMatchObject({ status: 'committed' });
     expect(result).not.toHaveProperty('message');
     expect(fixture.commits.records[0]?.references).toEqual({

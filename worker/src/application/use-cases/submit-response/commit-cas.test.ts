@@ -128,7 +128,7 @@ class BarrierCommitPort implements CommitPort {
   }
 }
 
-const message = (text: string) => text;
+const message = (text: string) => ({ kind: 'answer' as const, message: text });
 
 describe('BarrierCommit CAS', () => {
   it('does not commit when response preparation fails', async () => {

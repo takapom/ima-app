@@ -20,6 +20,7 @@ describe('Core committed response to public DTO mapping', () => {
   it('maps a message response to plain text with retention and no citations', () => {
     const response: ValidatedMessageResponse = {
       presentation: 'keep',
+      kind: 'answer',
       message: '条件を確認しました',
     };
     const publicResponse = mapCommittedResponseToPublic(response, responseMetadata);

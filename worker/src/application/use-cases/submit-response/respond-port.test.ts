@@ -240,7 +240,7 @@ describe('submit cards application adapter', () => {
       expectedRevision: 1,
       idempotencyKey: 'error-key',
     };
-    const input = '確認しました';
+    const input = { kind: 'answer', message: '確認しました' };
     const wrongReceipt = new SubmitApplication(
       new WrongRevisionCommit(),
       new FixedResponseIds(),
@@ -265,12 +265,16 @@ describe('submit cards application adapter', () => {
     const hash = new DeferredHash();
     const commit = new FixedCommit();
     const application = new SubmitApplication(commit, new FixedResponseIds(), hash);
-    const pending = application.commitMessage('遅着', fixture.context, {
-      scope: fixture.context.scope,
-      turnId: 'port-turn-1',
-      expectedRevision: 1,
-      idempotencyKey: 'late-digest',
-    });
+    const pending = application.commitMessage(
+      { kind: 'answer', message: '遅着' },
+      fixture.context,
+      {
+        scope: fixture.context.scope,
+        turnId: 'port-turn-1',
+        expectedRevision: 1,
+        idempotencyKey: 'late-digest',
+      },
+    );
     application.clearTurn(fixture.context.scope, 'port-turn-1');
     hash.resolve();
     const result = await pending;
@@ -289,12 +293,16 @@ describe('submit cards application adapter', () => {
     const fixture = messageFixture();
     const commit = new DeferredCommit();
     const application = new SubmitApplication(commit, new FixedResponseIds(), new FixedHash());
-    const pending = application.commitMessage('遅着commit', fixture.context, {
-      scope: fixture.context.scope,
-      turnId: 'port-turn-1',
-      expectedRevision: 1,
-      idempotencyKey: 'late-commit',
-    });
+    const pending = application.commitMessage(
+      { kind: 'answer', message: '遅着commit' },
+      fixture.context,
+      {
+        scope: fixture.context.scope,
+        turnId: 'port-turn-1',
+        expectedRevision: 1,
+        idempotencyKey: 'late-commit',
+      },
+    );
     await Promise.resolve();
     application.clearTurn(fixture.context.scope, 'port-turn-1');
     commit.resolve();

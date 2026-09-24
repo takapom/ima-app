@@ -98,8 +98,10 @@ export type ValidatedCardsResponse = {
   alts: readonly ValidatedCard[];
 };
 
+/** `kind` separates a question from an answer for telemetry and evaluation; both keep cards. */
 export type ValidatedMessageResponse = {
   presentation: 'keep';
+  kind: 'ask' | 'answer';
   message: string;
 };
 

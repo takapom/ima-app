@@ -426,7 +426,8 @@ export function createRuntimeTurnComposition(
       if (final !== undefined) {
         acceptedFinal = undefined;
         const result = await application.commitMessage(
-          final.message,
+          // The text envelope cannot say whether it asks or answers.
+          { kind: 'answer', message: final.message },
           validationAt(options.validationContext, now()),
           {
             scope: {

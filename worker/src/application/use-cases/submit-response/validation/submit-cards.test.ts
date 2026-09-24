@@ -121,18 +121,26 @@ describe('submit-cards pure validation and card assembly', () => {
 
   it('supports message-only and rejects an empty message', () => {
     const fixture = makeFixture([], { requireLastOrderAtArrival: false });
-    const result = validateMessage('条件を確認しました', fixture.context);
+    const result = validateMessage({ kind: 'ask', message: '条件を確認しました' }, fixture.context);
     expect(result).toMatchObject({
       status: 'valid',
-      response: { presentation: 'keep', message: '条件を確認しました' },
+      response: { presentation: 'keep', kind: 'ask', message: '条件を確認しました' },
     });
-    expect(validateMessage('', fixture.context).status).toBe('invalid');
+    expect(validateMessage({ kind: 'answer', message: '' }, fixture.context).status).toBe(
+      'invalid',
+    );
+    // Cards are proposed through the card path only.
+    expect(validateMessage({ kind: 'propose', message: 'x' }, fixture.context).status).toBe(
+      'invalid',
+    );
   });
 
   it('rejects the retired self-reported basis and citations on generated text', () => {
     const fixture = makeFixture();
     const cited = { text: '理由', evidenceIds: [idsFor(fixture).identity], basis: 'grounded' };
-    expect(validateMessage(cited, fixture.context).status).toBe('invalid');
+    expect(validateMessage({ kind: 'answer', message: cited }, fixture.context).status).toBe(
+      'invalid',
+    );
     const selection = { ...makeSelection('candidate-1'), why: cited as unknown as string };
     expect(
       validateSubmitCards(makeInput([selection]), fixture.context, fixture.registry),
