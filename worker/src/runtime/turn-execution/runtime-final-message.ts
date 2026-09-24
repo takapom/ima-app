@@ -1,6 +1,5 @@
 import * as v from 'valibot';
 import { Text } from '@worker/domain/primitives';
-import { ModelDecisionSchema } from '@worker/application/ports/model';
 
 const runtimeFinalMessageSchema = v.strictObject({
   kind: v.literal('final_message'),
@@ -51,14 +50,5 @@ export const parseRuntimeFinalMessage = (text: unknown): RuntimeFinalMessage => 
   if (typeof text !== 'string') return invalid('INVALID_TEXT');
   const parsed = v.safeParse(runtimeFinalMessageSchema, parseJson(text));
   if (!parsed.success) return invalid('INVALID_ENVELOPE');
-
-  const decision = v.safeParse(ModelDecisionSchema, {
-    actions: [{ kind: 'final_message', message: parsed.output.message }],
-  });
-  if (!decision.success) return invalid('INVALID_ENVELOPE');
-  const action = decision.output.actions[0];
-  if (action === undefined || action.kind !== 'final_message') {
-    return invalid('INVALID_ENVELOPE');
-  }
-  return { kind: 'final_message', message: action.message };
+  return { kind: 'final_message', message: parsed.output.message };
 };
