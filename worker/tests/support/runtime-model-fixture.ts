@@ -3,29 +3,7 @@ import type { GetPlaceDetailsInput, SearchPlacesInput } from '@worker/applicatio
 import type { SubmitCardsInput } from '@worker/application/ports/model';
 import { identityObservationId, observationFor } from './runtime-model-observations';
 
-export type RuntimeGateScenario =
-  | 'sequence'
-  | 'invalid'
-  | 'search'
-  | 'message'
-  | 'repair-limit'
-  | 'message-switch'
-  | 'empty-final'
-  | 'cards-1'
-  | 'cards-2'
-  | 'cards-3'
-  | 'step-valid'
-  | 'read-submit'
-  | 'two-submit'
-  | 'final-tool'
-  | 'final-tool-calls'
-  | 'unknown-part'
-  | 'unknown-tool'
-  | 'invalid-arguments'
-  | 'structured'
-  | 'structured-error'
-  | 'timeout'
-  | 'cancel';
+export type RuntimeGateScenario = 'invalid' | 'search' | 'message' | 'empty-final' | 'read-submit';
 
 export type RuntimeGateModelRequest = {
   call: number;
@@ -77,25 +55,6 @@ const validSubmitInput: SubmitCardsInput = {
   alts: [],
 };
 
-const validAlt = (candidateId: string, text: string): SubmitCardsInput['hero'] => ({
-  candidateId,
-  why: 'Identity is confirmed by the fixture source.',
-  diff: text,
-});
-
-const validSubmitInputTwo: SubmitCardsInput = {
-  ...validSubmitInput,
-  alts: [validAlt('candidate-2', 'Alternative candidate.')],
-};
-
-const validSubmitInputThree: SubmitCardsInput = {
-  ...validSubmitInputTwo,
-  alts: [
-    validAlt('candidate-2', 'Alternative candidate.'),
-    validAlt('candidate-3', 'Another candidate.'),
-  ],
-};
-
 const searchInput: Extract<SearchPlacesInput, { mode: 'search' }> = {
   mode: 'search',
   query: 'coffee',
@@ -105,7 +64,6 @@ const searchInput: Extract<SearchPlacesInput, { mode: 'search' }> = {
 };
 
 export const PUBLIC_TOOLS = ['search_places', 'get_place_details', 'submit_cards'] as const;
-export const DENIED_MARKER = 'M04_PROVIDER_FIELD_DENIED';
 /** Audit-only marker used to prove a previous native input is not re-injected. */
 export const STALE_NATIVE_CONTENT_CANARY = 'M04_NATIVE_CONTENT_OLD_CANARY';
 
@@ -149,17 +107,6 @@ function streamOf(parts: RuntimeGateModelStreamPart[]): ReadableStream<RuntimeGa
   });
 }
 
-function pendingStream(): ReadableStream<RuntimeGateModelStreamPart> {
-  return new ReadableStream({
-    pull() {
-      return new Promise<void>(() => undefined);
-    },
-    cancel() {
-      return undefined;
-    },
-  });
-}
-
 function textParts(call: number, text: string): RuntimeGateModelStreamPart[] {
   return [
     { type: 'stream-start', warnings: [] },
@@ -186,13 +133,6 @@ function toolParts(
 }
 
 function nextParts(scenario: RuntimeGateScenario, call: number): RuntimeGateModelStreamPart[] {
-  if (scenario === 'step-valid') {
-    return [
-      { type: 'stream-start', warnings: [] },
-      ...stepFinalParts(),
-      { type: 'finish', usage, finishReason: stopFinish },
-    ];
-  }
   if (scenario === 'read-submit') {
     return [
       { type: 'stream-start', warnings: [] },
@@ -201,63 +141,6 @@ function nextParts(scenario: RuntimeGateScenario, call: number): RuntimeGateMode
       { type: 'finish', usage, finishReason: toolFinish },
     ];
   }
-  if (scenario === 'two-submit') {
-    return [
-      { type: 'stream-start', warnings: [] },
-      ...stepToolParts(call, 'submit_cards', validSubmitInput),
-      ...stepToolParts(call + 1, 'submit_cards', validSubmitInput),
-      { type: 'finish', usage, finishReason: toolFinish },
-    ];
-  }
-  if (scenario === 'final-tool' || scenario === 'final-tool-calls') {
-    return [
-      { type: 'stream-start', warnings: [] },
-      ...stepFinalParts(DENIED_MARKER),
-      ...stepToolParts(call, 'submit_cards', validSubmitInput),
-      {
-        type: 'finish',
-        usage,
-        finishReason: scenario === 'final-tool' ? stopFinish : toolFinish,
-      },
-    ];
-  }
-  if (scenario === 'unknown-part') {
-    return [
-      { type: 'stream-start', warnings: [] },
-      { type: 'error', error: DENIED_MARKER },
-      { type: 'finish', usage, finishReason: stopFinish },
-    ];
-  }
-  if (scenario === 'unknown-tool') {
-    return [
-      { type: 'stream-start', warnings: [] },
-      ...stepToolParts(call, 'bash', searchInput),
-      { type: 'finish', usage, finishReason: toolFinish },
-    ];
-  }
-  if (scenario === 'invalid-arguments') {
-    return call === 0
-      ? [
-          { type: 'stream-start', warnings: [] },
-          ...stepToolParts(call, 'search_places', { ...searchInput, limit: 0 }),
-          { type: 'finish', usage, finishReason: toolFinish },
-        ]
-      : textParts(call, '入力を補正できたため終了します。');
-  }
-  if (scenario === 'repair-limit') {
-    return [
-      { type: 'stream-start', warnings: [] },
-      ...toolParts(call, 'submit_cards', invalidSubmitInput),
-    ];
-  }
-  if (scenario === 'message-switch') {
-    return call === 0
-      ? [
-          { type: 'stream-start', warnings: [] },
-          ...toolParts(call, 'submit_cards', invalidSubmitInput),
-        ]
-      : textParts(call, '根拠がないため候補は変更しません。');
-  }
   if (scenario === 'empty-final') {
     return call === 0
       ? toolParts(call, 'submit_cards', validSubmitInput)
@@ -265,48 +148,6 @@ function nextParts(scenario: RuntimeGateScenario, call: number): RuntimeGateMode
           { type: 'stream-start', warnings: [] },
           { type: 'finish', usage, finishReason: stopFinish },
         ];
-  }
-  if (scenario === 'cards-1') {
-    return toolParts(call, 'submit_cards', validSubmitInput);
-  }
-  if (scenario === 'cards-2') {
-    return toolParts(call, 'submit_cards', validSubmitInputTwo);
-  }
-  if (scenario === 'cards-3') {
-    return toolParts(call, 'submit_cards', validSubmitInputThree);
-  }
-  if (scenario === 'timeout') {
-    return [
-      { type: 'stream-start', warnings: [] },
-      ...toolParts(call, 'search_places', searchInput),
-    ];
-  }
-  if (scenario === 'cancel') {
-    return [
-      { type: 'stream-start', warnings: [] },
-      ...toolParts(call, 'search_places', searchInput),
-    ];
-  }
-  if (scenario === 'structured' || scenario === 'structured-error') {
-    return call === 0
-      ? [
-          { type: 'stream-start', warnings: [] },
-          { type: 'text-start', id: `structured-${call}` },
-          {
-            type: 'text-delta',
-            id: `structured-${call}`,
-            delta: `provider generated ${DENIED_MARKER}`,
-          },
-          { type: 'text-end', id: `structured-${call}` },
-          ...toolParts(call, 'search_places', searchInput).slice(0, -1),
-          { type: 'finish', usage, finishReason: toolFinish },
-        ]
-      : textParts(call, `derived answer ${DENIED_MARKER}`);
-  }
-  if (scenario === 'sequence') {
-    return call === 0
-      ? toolParts(call, 'get_place_details', detailsInput)
-      : toolParts(call, 'submit_cards', validSubmitInput);
   }
   if (scenario === 'invalid') {
     if (call === 0) return toolParts(call, 'submit_cards', invalidSubmitInput);
@@ -319,36 +160,6 @@ function nextParts(scenario: RuntimeGateScenario, call: number): RuntimeGateMode
       : textParts(call, 'Fixture search completed.');
   }
   return textParts(call, 'Fixture message completed.');
-}
-
-export function normalizeScenario(value: string | null): RuntimeGateScenario {
-  if (
-    value === 'sequence' ||
-    value === 'invalid' ||
-    value === 'search' ||
-    value === 'message' ||
-    value === 'repair-limit' ||
-    value === 'message-switch' ||
-    value === 'empty-final' ||
-    value === 'cards-1' ||
-    value === 'cards-2' ||
-    value === 'cards-3' ||
-    value === 'step-valid' ||
-    value === 'read-submit' ||
-    value === 'two-submit' ||
-    value === 'final-tool' ||
-    value === 'final-tool-calls' ||
-    value === 'unknown-part' ||
-    value === 'unknown-tool' ||
-    value === 'invalid-arguments' ||
-    value === 'structured' ||
-    value === 'structured-error' ||
-    value === 'timeout' ||
-    value === 'cancel'
-  ) {
-    return value;
-  }
-  return 'sequence';
 }
 
 export function modelFor(
@@ -380,19 +191,7 @@ export function modelFor(
         sawNativeContent: currentNativeContent !== null && prompt.includes(currentNativeContent),
         sawStaleNativeContent: prompt.includes(STALE_NATIVE_CONTENT_CANARY),
       });
-      return Promise.resolve({
-        stream:
-          scenario === 'timeout' ? pendingStream() : streamOf(nextParts(scenario, currentCall)),
-      });
+      return Promise.resolve({ stream: streamOf(nextParts(scenario, currentCall)) });
     },
   };
 }
-
-export {
-  detailsInput,
-  invalidSubmitInput,
-  searchInput,
-  validSubmitInput,
-  validSubmitInputTwo,
-  validSubmitInputThree,
-};
