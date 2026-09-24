@@ -1,7 +1,8 @@
 import * as v from 'valibot';
+import { runInDurableObject } from 'cloudflare:test';
 import { SavedReferenceCreateResponseSchema, SearchResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import { call, createThread, turnBody } from './runtime-production-http-support';
+import { call, createThread, productionEnv, turnBody } from './runtime-production-http-support';
 
 describe('production saved-reference HTTP composition', () => {
   it('keeps saving and accepts savedPlaceRefs from older clients without using them', async () => {
@@ -47,5 +48,19 @@ describe('production saved-reference HTTP composition', () => {
     });
     expect(turnResponse.status).toBe(200);
     expect(v.safeParse(SearchResponseSchema, await turnResponse.json()).success).toBe(true);
+
+    // One more thread round trip gives the turn's post-response trace write time to finish
+    // before this file's runner RPC closes; ending on the turn left teardown waiting minutes.
+    const contextReference = await runInDurableObject(
+      productionEnv().THREADS.getByName(consumerThreadId),
+      (_instance, state) =>
+        state.storage.sql
+          .exec<{ readonly payload: string }>(
+            'SELECT payload FROM runtime_context_reference LIMIT 1',
+          )
+          .toArray()[0]?.payload ?? null,
+    );
+    expect(contextReference).not.toBeNull();
+    expect(contextReference).not.toContain(savedParsed.output.savedPlaceRef);
   });
 });
