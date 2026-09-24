@@ -1,9 +1,11 @@
 import type { RespondInvalid } from '@worker/application/ports/submission';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   observeRuntimeSubmitRejection,
   runtimeSubmitRejectionFor,
+  runtimeTurnObserverWriters,
   type RuntimeSubmitRejection,
+  type RuntimeTurnOutcome,
 } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 
 const invalid: RespondInvalid = {
@@ -93,5 +95,28 @@ describe('submit rejection diagnostic', () => {
     ).not.toThrow();
     observeRuntimeSubmitRejection(invalid, (rejection) => seen.push(rejection));
     expect(seen).toHaveLength(1);
+  });
+});
+
+describe('runtime turn observer', () => {
+  it('keeps the log lines and hands the same records to a host observer', () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const outcomes: RuntimeTurnOutcome[] = [];
+    const rejections: RuntimeSubmitRejection[] = [];
+    const writers = runtimeTurnObserverWriters({
+      outcome: (outcome) => outcomes.push(outcome),
+      respondRejected: (rejection) => rejections.push(rejection),
+    });
+    const outcome = { committed: true, operations: { respond: 1 }, kind: 'ask' } as const;
+    writers.onTurnOutcome(outcome);
+    writers.onSubmitRejected(runtimeSubmitRejectionFor(invalid));
+
+    expect(outcomes).toEqual([outcome]);
+    expect(rejections).toEqual([runtimeSubmitRejectionFor(invalid)]);
+    expect(info).toHaveBeenCalledWith(JSON.stringify({ event: 'turn_outcome', ...outcome }));
+    expect(warn).toHaveBeenCalledTimes(1);
+    info.mockRestore();
+    warn.mockRestore();
   });
 });
