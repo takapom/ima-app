@@ -265,7 +265,6 @@ describe('model-eval candidate identity mapping', () => {
           areaText: '渋谷',
           budget: 'normal',
         },
-        savedPlaceRefs: [],
         excludeCandidateIds: [],
         mode: 'search',
         idempotencyKey: 'model-eval-idempotency-1',

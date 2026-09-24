@@ -243,6 +243,5 @@ export const modelSource = (
   history: source.history,
   cardSet: source.cardSet,
   evidence: source.evidence,
-  savedReferences: source.savedReferences ?? [],
   ...(source.fieldPolicy === undefined ? {} : { fieldPolicy: source.fieldPolicy }),
 });

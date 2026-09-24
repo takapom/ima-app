@@ -11,18 +11,14 @@ type SavedPlacePreviewPanelProps = {
   readonly state: SavedPlacePreviewState;
   readonly onClose: () => void;
   readonly onRetry: () => void;
-  readonly onConsult: (savedPlaceRef: string) => void;
   readonly onSourcePress?: (sourceLink: string) => void;
-  readonly consultDisabled?: boolean;
 };
 
 export function SavedPlacePreviewPanel({
   state,
   onClose,
   onRetry,
-  onConsult,
   onSourcePress,
-  consultDisabled = false,
 }: SavedPlacePreviewPanelProps): React.JSX.Element | null {
   const selected = state.selected;
   if (selected === null) return null;
@@ -70,17 +66,6 @@ export function SavedPlacePreviewPanel({
           </Pressable>
         </View>
       ) : null}
-      {state.status === 'ready' && display !== null ? (
-        <Pressable
-          accessibilityLabel="この店で相談"
-          accessibilityRole="button"
-          disabled={consultDisabled}
-          onPress={() => onConsult(selected.serverSavedPlaceRef)}
-          style={({ pressed }) => [styles.consult, pressed && styles.pressed]}
-        >
-          <Text style={styles.consultText}>この店で相談</Text>
-        </Pressable>
-      ) : null}
     </View>
   );
 }
@@ -101,19 +86,6 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 24,
     lineHeight: 26,
-  },
-  consult: {
-    alignItems: 'center',
-    backgroundColor: colors.cream,
-    borderRadius: radii.button,
-    justifyContent: 'center',
-    marginTop: spacing.section,
-    minHeight: spacing.touch,
-  },
-  consultText: {
-    color: colors.ink,
-    fontSize: typography.button,
-    fontWeight: '700',
   },
   container: {
     backgroundColor: colors.surface,

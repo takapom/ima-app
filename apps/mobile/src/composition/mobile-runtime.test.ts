@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createJourneyApiRequestFactory,
   createMobileJourneyRuntime,
-  JourneyApiRequestFactoryError,
   mobileJourneyRuntimeMessage,
 } from '@mobile/composition/mobile-runtime';
 
@@ -46,7 +45,7 @@ describe('mobile journey runtime composition', () => {
     expect(request.promotedCandidateId).toBe('candidate-2');
     expect(request.selectedCandidateId).toBe('candidate-2');
     expect(request.candidateOrder).toEqual(['candidate-2', 'candidate-1']);
-    expect(request.savedPlaceRefs).toEqual([]);
+    expect(request).not.toHaveProperty('savedPlaceRefs');
     expect(request.excludeCandidateIds).toEqual(['candidate-3']);
   });
 
@@ -79,61 +78,6 @@ describe('mobile journey runtime composition', () => {
       location: locationService,
     });
     expect(runtime.binding?.location).toBe(locationService);
-  });
-
-  it('propagates explicit saved references without mapping them to candidate IDs', () => {
-    const requests = createJourneyApiRequestFactory({
-      now: () => '2026-09-10T10:00:00.000Z',
-      idFactory: (prefix) => `${prefix}-saved`,
-    });
-    const input = {
-      threadId: 'thread-1',
-      revision: 2,
-      query: '保存した候補を確認',
-      context: {
-        ...context,
-        savedPlaceRefs: ['saved-place-a', 'saved-place-b'],
-      },
-    };
-    const search = requests.search(input);
-    const turn = requests.turn({ ...input, turnId: 'turn-1' });
-
-    expect(search.savedPlaceRefs).toEqual(['saved-place-a', 'saved-place-b']);
-    expect(turn.savedPlaceRefs).toEqual(['saved-place-a', 'saved-place-b']);
-    expect(search.selectedCandidateId).toBe('candidate-2');
-    expect(search.candidateOrder).toEqual(['candidate-2', 'candidate-1']);
-  });
-
-  it('rejects invalid saved reference input instead of truncating or deduplicating it', () => {
-    const requests = createJourneyApiRequestFactory({
-      now: () => '2026-09-10T10:00:00.000Z',
-      idFactory: (prefix) => `${prefix}-saved-invalid`,
-    });
-    const expectIssue = (
-      savedPlaceRefs: readonly string[],
-      issue: JourneyApiRequestFactoryError['issue'],
-    ): void => {
-      let thrown: unknown;
-      try {
-        requests.search({
-          threadId: 'thread-1',
-          revision: 1,
-          query: '保存候補',
-          context: { ...context, savedPlaceRefs },
-        });
-      } catch (error) {
-        thrown = error;
-      }
-      expect(thrown).toBeInstanceOf(JourneyApiRequestFactoryError);
-      expect(thrown).toMatchObject({ code: 'INVALID_SAVED_PLACE_REFS', issue });
-    };
-
-    expectIssue(['saved-place-a', 'saved-place-a'], 'duplicate');
-    expectIssue(['saved place with spaces'], 'invalid_ref');
-    expectIssue(
-      Array.from({ length: 51 }, (_, index) => `saved-place-${index}`),
-      'too_many',
-    );
   });
 
   it('does not claim a runtime when mode or credentials are absent', () => {

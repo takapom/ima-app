@@ -62,7 +62,6 @@ const requestFor = (target: ThreadRuntimeTarget): ThreadRuntimeTurnInput => ({
       areaText: '現在地周辺',
       budget: 'normal',
     },
-    savedPlaceRefs: [],
     excludeCandidateIds: [],
     mode: 'search',
     idempotencyKey: `m16-retention-audit-${target.turnId}`,

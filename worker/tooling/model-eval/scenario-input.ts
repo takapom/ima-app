@@ -168,7 +168,6 @@ export const buildEvaluationTurnRequest = (input: {
             ? {}
             : { promotedCandidateId: cardContext.promotedCandidateId }),
         }),
-    savedPlaceRefs: [],
     excludeCandidateIds: [...(cardContext?.excludeCandidateIds ?? [])],
     mode: input.mode ?? 'search',
     idempotencyKey: `model-eval-${idSuffix}`,

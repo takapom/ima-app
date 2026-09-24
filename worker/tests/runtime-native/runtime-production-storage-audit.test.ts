@@ -40,7 +40,6 @@ const requestFor = (target: ThreadRuntimeTarget): ThreadRuntimeTurnInput => {
       areaText: '保存面監査',
       budget: 'normal',
     },
-    savedPlaceRefs: [],
     excludeCandidateIds: [],
     mode: 'search',
     idempotencyKey,

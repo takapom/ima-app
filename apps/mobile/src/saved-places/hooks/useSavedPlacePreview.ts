@@ -1,37 +1,28 @@
 import { AppState } from 'react-native';
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { JourneySavedPlacePreviewBinding } from '@mobile/journey/services/thread-session/journey-api-binding';
 import { subscribeToAssistantResponseResume } from '@mobile/journey/services/assistant-response-clock';
 import { createSavedPlacePreviewController } from '@mobile/saved-places/services/saved-place-preview-controller';
-import {
-  savedPlaceConsultationRefFor,
-  savedPlaceItemsFor,
-} from '@mobile/saved-places/presentation/saved-place-preview-view';
+import { savedPlaceItemsFor } from '@mobile/saved-places/presentation/saved-place-preview-view';
 import type { SavedPlaceItem } from '@mobile/journey/state/journey-shell';
 import type { SavedPlacePreviewState } from '@mobile/saved-places/state/saved-place-preview';
 
 export type SavedPlacePreviewUi = {
   readonly connected: boolean;
   readonly unavailable: boolean;
-  readonly consultDisabled: boolean;
   readonly items: readonly SavedPlaceItem[];
   readonly preview: SavedPlacePreviewState;
-  readonly pendingRefs: readonly string[];
-  readonly consult: (savedPlaceRef: string) => void;
-  readonly clearConsultation: () => void;
   readonly select: (savedPlaceRef: string) => boolean;
   readonly selectDrawerItem: (item: SavedPlaceItem) => void;
   readonly reload: () => void;
   readonly retry: () => void;
   readonly close: () => void;
-  readonly responseSettled: () => void;
   readonly reset: () => void;
 };
 
 export const useSavedPlacePreview = (
   binding: JourneySavedPlacePreviewBinding | undefined,
   onSavedPlaceSelect?: (item: SavedPlaceItem) => void,
-  consultDisabled = false,
 ): SavedPlacePreviewUi => {
   const listService = binding?.listService;
   const refreshService = binding?.refreshService;
@@ -61,26 +52,10 @@ export const useSavedPlacePreview = (
       controller.close();
     };
   }, [controller]);
-  const [pendingRefs, setPendingRefs] = useState<readonly string[]>([]);
   const items = useMemo(
     () => (binding === undefined ? [] : savedPlaceItemsFor(preview.list)),
     [binding, preview.list],
   );
-  const consult = useCallback(
-    (savedPlaceRef: string): void => {
-      if (binding === undefined || consultDisabled) {
-        return;
-      }
-      controller.recheck();
-      if (savedPlaceConsultationRefFor(controller.getState(), savedPlaceRef) === null) return;
-      setPendingRefs([savedPlaceRef]);
-      controller.close();
-    },
-    [binding, consultDisabled, controller],
-  );
-  const clearConsultation = useCallback((): void => {
-    setPendingRefs([]);
-  }, []);
   const select = useCallback(
     (savedPlaceRef: string): boolean =>
       binding === undefined ? false : controller.select(savedPlaceRef),
@@ -103,28 +78,19 @@ export const useSavedPlacePreview = (
   const close = useCallback((): void => {
     controller.close();
   }, [controller]);
-  const responseSettled = useCallback((): void => {
-    setPendingRefs([]);
-  }, []);
   const reset = useCallback((): void => {
-    setPendingRefs([]);
     controller.close();
   }, [controller]);
   return {
     connected: binding !== undefined,
     unavailable: binding !== undefined && preview.list.status === 'unavailable',
-    consultDisabled,
     items,
     preview,
-    pendingRefs,
-    consult,
-    clearConsultation,
     select,
     selectDrawerItem,
     reload,
     retry,
     close,
-    responseSettled,
     reset,
   };
 };

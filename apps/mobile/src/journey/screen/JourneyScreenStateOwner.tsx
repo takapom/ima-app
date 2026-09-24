@@ -74,11 +74,7 @@ export function JourneyScreenStateOwner({
   const followsLatest = useRef(true);
   const persistedPreferences = preferenceState;
   const journey = useJourneyShell(persistedPreferences.savedConditions);
-  const savedPlaceUi = useSavedPlacePreview(
-    savedPlacePreview,
-    onSavedPlaceSelect,
-    requestStatus === 'pending' || journey.phase === 'working',
-  );
+  const savedPlaceUi = useSavedPlacePreview(savedPlacePreview, onSavedPlaceSelect);
   const renderedResponse = useAssistantResponseProjection(responseState, now, responseClock);
   const [requestStartRevision, setRequestStartRevision] = useState<number | null>(null);
   const lastObservedResponseRevision = useRef(renderedResponse.revision);
@@ -97,17 +93,10 @@ export function JourneyScreenStateOwner({
       return;
     }
     journey.settleResponse();
-    savedPlaceUi.responseSettled();
     setRequestStartRevision((current) =>
       current !== null && renderedResponse.revision > current ? null : current,
     );
-  }, [
-    journey.settleResponse,
-    renderedResponse,
-    requestStartRevision,
-    requestStatus,
-    savedPlaceUi.responseSettled,
-  ]);
+  }, [journey.settleResponse, renderedResponse, requestStartRevision, requestStatus]);
   useEffect(() => {
     if (requestStatus === 'error' || requestStatus === 'cancelled') {
       setRequestStartRevision(null);
@@ -152,7 +141,6 @@ export function JourneyScreenStateOwner({
           conditions: journey.conditions,
           removedChipLabels: journey.removedChipLabels,
           cardSetId: renderedResponse.cardSetId,
-          savedPlaceRefs: savedPlaceUi.pendingRefs,
         },
         actionState,
         actions.candidateOrder,
@@ -164,7 +152,6 @@ export function JourneyScreenStateOwner({
     [
       actions.candidateOrder,
       actions.state,
-      savedPlaceUi.pendingRefs,
       journey.beginRequest,
       journey.conditions,
       journey.removedChipLabels,
@@ -182,7 +169,6 @@ export function JourneyScreenStateOwner({
         conditions: journey.conditions,
         removedChipLabels: journey.removedChipLabels,
         cardSetId: renderedResponse.cardSetId,
-        savedPlaceRefs: savedPlaceUi.pendingRefs,
       },
       actions.state,
       actions.candidateOrder,
@@ -202,7 +188,6 @@ export function JourneyScreenStateOwner({
     onSubmit,
     actions.candidateOrder,
     actions.state,
-    savedPlaceUi.pendingRefs,
   ]);
   const cancel = useCallback((): void => {
     setRequestStartRevision(null);

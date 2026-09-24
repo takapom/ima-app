@@ -1,10 +1,10 @@
 import * as v from 'valibot';
 import { SavedReferenceCreateResponseSchema, SearchResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import { call, createThread, productionEnv, turnBody } from './runtime-production-http-support';
+import { call, createThread, turnBody } from './runtime-production-http-support';
 
 describe('production saved-reference HTTP composition', () => {
-  it('preserves saving but does not fetch a saved reference through the removed provider handoff', async () => {
+  it('keeps saving and accepts savedPlaceRefs from older clients without using them', async () => {
     const sourceThreadId = await createThread();
     const searchRequestId = `runtime-production-http-saved-turn-search-${crypto.randomUUID()}`;
     const searchResponse = await call(`/v1/threads/${sourceThreadId}/turns`, searchRequestId, {
@@ -36,21 +36,16 @@ describe('production saved-reference HTTP composition', () => {
     if (!savedParsed.success) throw new Error('saved handoff reference was invalid');
 
     const consumerThreadId = await createThread();
-    const stub = productionEnv().THREADS.getByName(consumerThreadId);
-    const before = await stub.getRuntimeProductionReport();
     const turnRequestId = `runtime-production-http-saved-turn-${crypto.randomUUID()}`;
     const turnResponse = await call(`/v1/threads/${consumerThreadId}/turns`, turnRequestId, {
       method: 'POST',
       body: JSON.stringify(
-        turnBody(turnRequestId, 1, '[m29-saved-reference] 保存店の詳細を確認して', undefined, [
+        turnBody(turnRequestId, 1, '[m24-two-results] 保存店の詳細を確認して', undefined, [
           savedParsed.output.savedPlaceRef,
         ]),
       ),
     });
-    expect(turnResponse.status).toBe(502);
-    const after = await stub.getRuntimeProductionReport();
-    expect(after).not.toBeNull();
-    expect((after?.fetchUrls.length ?? 0) - (before?.fetchUrls.length ?? 0)).toBe(0);
-    expect(after?.savedReferenceCandidateIds).toHaveLength(0);
+    expect(turnResponse.status).toBe(200);
+    expect(v.safeParse(SearchResponseSchema, await turnResponse.json()).success).toBe(true);
   });
 });

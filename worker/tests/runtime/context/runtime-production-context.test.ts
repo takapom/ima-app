@@ -62,7 +62,6 @@ const requestFor = (turnId: string, revision: number, text: string): ThreadTurnR
     areaText: null,
     budget: 'normal',
   },
-  savedPlaceRefs: [],
   excludeCandidateIds: [],
   mode: 'search',
   idempotencyKey: `idempotency-${turnId}`,
@@ -115,7 +114,6 @@ const referenceFor = (
   ownerScopeRef: scope.ownerScopeRef,
   threadId: scope.threadId,
   sessionExpiresAt: '2026-09-10T23:00:00.000Z',
-  savedPlaceRefs: [],
   history: [],
   cardSet: {
     cardSetId: 'card-set-1',
@@ -251,7 +249,7 @@ describe('runtime production context store', () => {
         { candidateId: 'candidate-3', displayOrder: 2, role: 'alt' },
       ],
     });
-    expect(projected.modelContext.savedReferences).toEqual([{ savedPlaceRef: 'saved-1' }]);
+    expect(JSON.stringify(projected.modelContext)).not.toContain('saved-1');
   });
 
   it('rejects stale, foreign, duplicated, and excluded display references', () => {

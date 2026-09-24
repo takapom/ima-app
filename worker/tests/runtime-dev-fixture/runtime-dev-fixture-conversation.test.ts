@@ -51,7 +51,6 @@ const turn = (requestId: string, revision: number): ConversationTurnRequest => (
     areaText: '恵比寿',
     budget: 'normal',
   },
-  savedPlaceRefs: [],
   excludeCandidateIds: [],
   mode: 'search',
   idempotencyKey: `key-${requestId}`,

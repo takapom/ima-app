@@ -47,7 +47,6 @@ function runtimeInput(target: ThreadRuntimeTarget, text = '静かな店'): Threa
         areaText: '恵比寿',
         budget: 'normal',
       },
-      savedPlaceRefs: [],
       excludeCandidateIds: [],
       mode: 'search',
       idempotencyKey: `runtime-${target.turnId}`,

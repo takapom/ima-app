@@ -71,7 +71,6 @@ const requestFor = (
       areaText: '現在地周辺',
       budget: 'normal',
     },
-    savedPlaceRefs: [],
     excludeCandidateIds: [],
     mode: 'search',
     idempotencyKey: `m16-alarm-${target.turnId}`,

@@ -89,7 +89,6 @@ const requestFor = (
       areaText: '別地域へ誤フォールバックさせない',
       budget: 'normal',
     },
-    savedPlaceRefs: [],
     excludeCandidateIds: [],
     mode: 'search',
     idempotencyKey: `m16-production-${target.turnId}`,

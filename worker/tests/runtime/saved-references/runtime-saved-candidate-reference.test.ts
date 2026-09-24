@@ -17,7 +17,6 @@ const snapshot = {
   ownerScopeRef: scope.ownerScopeRef,
   threadId: scope.threadId,
   sessionExpiresAt: '2026-09-10T23:00:00.000Z',
-  savedPlaceRefs: [],
   excludedCandidateIds: ['candidate-excluded'],
   history: [],
   cardSet: {
@@ -102,7 +101,6 @@ describe('saved candidate identity reference', () => {
       history: [],
       cardSet: candidateState('candidate-current') as NonNullable<ModelContextSource['cardSet']>,
       evidence: [],
-      savedPlaceRefs: [],
       excludedCandidateIds: [],
       candidateIdentities: [
         ...snapshotCandidateIdentities,

@@ -33,8 +33,6 @@ export type JourneyApiSubmitContext = {
   readonly promotedCandidateId: string | null;
   readonly selectedCandidateId: string | null;
   readonly candidateOrder: readonly string[];
-  /** Explicit saved references selected for this request; provider IDs never substitute here. */
-  readonly savedPlaceRefs?: readonly string[];
   readonly excludeCandidateIds: readonly string[];
 };
 

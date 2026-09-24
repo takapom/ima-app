@@ -54,7 +54,6 @@ const runtimeInput = {
     areaText: '渋谷',
     budget: 'normal',
   },
-  savedPlaceRefs: [],
   excludeCandidateIds: [],
   mode: 'search',
   idempotencyKey: 'runtime-input-key',

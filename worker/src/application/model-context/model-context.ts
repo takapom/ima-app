@@ -10,7 +10,6 @@ import {
   CandidateIdSchema,
   ObservationIdSchema,
   OpaqueIdSchema,
-  SavedPlaceRefSchema,
   Text,
   TurnIdSchema,
 } from '@worker/domain/primitives';
@@ -96,22 +95,6 @@ const ModelCardSetSourceSchema = v.strictObject({
   candidates: v.pipe(v.array(ModelCandidateSourceSchema), v.maxLength(3)),
 });
 
-/** Model may select an owner-scoped reference, but never receives provider identity or payload. */
-export const ModelSavedReferenceSchema = v.strictObject({
-  savedPlaceRef: SavedPlaceRefSchema,
-});
-export type ModelSavedReference = v.InferOutput<typeof ModelSavedReferenceSchema>;
-
-const ModelSavedReferencesSchema = v.pipe(
-  v.array(ModelSavedReferenceSchema),
-  v.maxLength(50),
-  v.check(
-    (references) =>
-      new Set(references.map((reference) => reference.savedPlaceRef)).size === references.length,
-    'saved references must be unique',
-  ),
-);
-
 export const ModelContextSourceSchema = v.strictObject({
   harness: HarnessContextSchema,
   conversationMemory: v.optional(ConversationMemorySchema),
@@ -119,8 +102,6 @@ export const ModelContextSourceSchema = v.strictObject({
   history: v.pipe(v.array(ModelHistoryEntrySchema), v.maxLength(32)),
   cardSet: v.nullable(ModelCardSetSourceSchema),
   evidence: v.pipe(v.array(ModelEvidenceSourceSchema), v.maxLength(64)),
-  /** Optional for older callers; production supplies the current opaque owner references. */
-  savedReferences: v.optional(ModelSavedReferencesSchema),
   /** Optional for older Core callers; Worker production composition supplies an explicit policy. */
   fieldPolicy: v.optional(ModelContextFieldPolicySchema),
 });
@@ -153,7 +134,6 @@ export type ProjectedModelContext = {
     readonly areaDescription: string | null;
   };
   readonly preferences: HarnessContext['preferences'];
-  readonly savedReferences: readonly ModelSavedReference[];
   readonly history: readonly Omit<ModelHistoryEntry, 'threadId'>[];
   readonly cardSet: ModelCardSet | null;
   readonly evidence: readonly ModelEvidence[];
@@ -282,7 +262,6 @@ export const projectModelContext = (source: unknown): ProjectedModelContext => {
       areaDescription: harness.preferences.areaText,
     },
     preferences: harness.preferences,
-    savedReferences: value.savedReferences ?? [],
     history: modelContextFieldAllowed(fieldPolicy.history)
       ? value.history.map(({ threadId: _threadId, ...entry }) =>
           entry.evidenceIds.every((id) => usableEvidenceIds.has(id))

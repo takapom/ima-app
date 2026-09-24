@@ -67,7 +67,6 @@ export const searchRequest = {
     areaText: '恵比寿',
     budget: 'normal',
   },
-  savedPlaceRefs: [],
   excludeCandidateIds: [],
   mode: 'search',
   idempotencyKey: 'idem-1',
