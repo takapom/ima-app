@@ -78,7 +78,8 @@ export type RuntimeThinkHooks = {
 
 export type RuntimeTurnHandle = {
   readonly context: HarnessContext;
-  readonly hasUnresolvedSubmitFailure: () => boolean;
+  /** A proposal was refused as malformed or over budget, and no respond has committed since. */
+  readonly hasUnresolvedProposalFailure: () => boolean;
   readonly budget: RuntimeBudget;
   readonly signal: AbortSignal;
   readonly dependencies: ToolBindingDependencies;
@@ -142,17 +143,23 @@ const submitDenial = (denial: {
   };
 };
 
+const isMessageRespond = (input: unknown): boolean =>
+  typeof input === 'object' &&
+  input !== null &&
+  'kind' in input &&
+  (input.kind === 'ask' || input.kind === 'answer');
+
 const budgetedRespond = (
   currentPort: () => RespondPort,
   budget: RuntimeBudget,
-  observeRejection: (result: RespondInvalid) => void,
+  observeRejection: (result: RespondInvalid, input: unknown) => void,
   onCommitted: (kind: RespondKind) => void,
 ): RespondPort => ({
   async respond(input, execution, cancellation) {
     const reservation = budget.reserveSubmit();
     if (!reservation.ok) {
       const result = submitDenial(reservation.denial);
-      observeRejection(result);
+      observeRejection(result, input);
       return result;
     }
     if (cancellation.isCancelled()) {
@@ -162,7 +169,7 @@ const budgetedRespond = (
     if (result.status === 'committed') {
       budget.markCommitted();
       onCommitted(result.kind);
-    } else observeRejection(result);
+    } else observeRejection(result, input);
     return result;
   },
 });
@@ -206,11 +213,14 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
   >();
   const operationCounts = new Map<PublicToolName, number>();
   let committed: RespondKind | undefined;
-  let unresolvedSubmitFailure = false;
-  const reportSubmitRejection = (result: RespondInvalid): void => {
-    unresolvedSubmitFailure = result.issues.some((issue) =>
-      ['INVALID_ARGUMENT', 'SCHEMA_MISMATCH', 'BUDGET_EXCEEDED'].includes(issue.code),
-    );
+  let unresolvedProposalFailure = false;
+  const reportSubmitRejection = (result: RespondInvalid, input: unknown): void => {
+    // A refused question or answer may simply be retried; only a refused proposal is unresolved.
+    if (!isMessageRespond(input)) {
+      unresolvedProposalFailure = result.issues.some((issue) =>
+        ['INVALID_ARGUMENT', 'SCHEMA_MISMATCH', 'BUDGET_EXCEEDED'].includes(issue.code),
+      );
+    }
     observeRuntimeSubmitRejection(result, options.onSubmitRejected);
   };
 
@@ -283,14 +293,14 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     reportSubmitRejection,
     (kind) => {
       committed = kind;
-      unresolvedSubmitFailure = false;
+      unresolvedProposalFailure = false;
     },
   );
   const dependencies: ToolBindingDependencies = Object.freeze({
     ...options.ports,
     respond,
     runtime,
-    rejectRespondInput: (result: RespondInvalid): RespondInvalid => {
+    rejectRespondInput: (result: RespondInvalid, input: unknown): RespondInvalid => {
       const reservation = options.budget.reserveSubmit();
       const rejected = reservation.ok
         ? {
@@ -299,7 +309,7 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
             remainingRepairs: reservation.value.remainingRepairs,
           }
         : submitDenial(reservation.denial);
-      reportSubmitRejection(rejected);
+      reportSubmitRejection(rejected, input);
       return rejected;
     },
   });
@@ -351,7 +361,7 @@ export const createRuntimeTurnFactory = (options: RuntimeTurnFactoryOptions): Ru
     get context() {
       return cloneContext(context);
     },
-    hasUnresolvedSubmitFailure: () => unresolvedSubmitFailure,
+    hasUnresolvedProposalFailure: () => unresolvedProposalFailure,
     budget: options.budget,
     signal: disposeController.signal,
     dependencies,

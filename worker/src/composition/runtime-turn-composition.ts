@@ -285,11 +285,11 @@ export function createRuntimeTurnComposition(
     const cardSetId = options.publicResponse?.cardSetId;
     return {
       respond: async (input, execution, cancellation) => {
-        // As before this tool existed, a question or answer may not paper over a failed read or
-        // a refused proposal: the turn ends without a commit instead.
+        // A question or answer may not paper over a failed read or a refused proposal; a refused
+        // question or answer can still be retried.
         if (
           input.kind !== 'propose' &&
-          (turn.hasUnresolvedSubmitFailure() || hasUnresolvedReadFailure(results.values()))
+          (turn.hasUnresolvedProposalFailure() || hasUnresolvedReadFailure(results.values()))
         ) {
           return unresolvedFailureRefusal;
         }

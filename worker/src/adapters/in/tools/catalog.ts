@@ -208,7 +208,7 @@ const respond = async (
   const checked = runtimeFor(dependencies.runtime, 'respond', invocation);
   if (!checked.ok) {
     const result = respondInvalid('INVALID_ARGUMENT', checked.error.path, checked.error.message, 0);
-    return dependencies.rejectRespondInput?.(result) ?? result;
+    return dependencies.rejectRespondInput?.(result, input) ?? result;
   }
   const parsedInput = parseRespondInput(input);
   if (!parsedInput.ok) {
@@ -218,7 +218,7 @@ const respond = async (
       'respond input is invalid',
       checked.runtime.remainingRepairs,
     );
-    return dependencies.rejectRespondInput?.(result) ?? result;
+    return dependencies.rejectRespondInput?.(result, input) ?? result;
   }
   const cancelled = respondCancellationError(checked.runtime);
   if (cancelled !== undefined) return cancelled;
@@ -299,7 +299,11 @@ export function invokePublicToolEnvelope(
   if (parsed === undefined) {
     if (name === 'respond') {
       const result = respondInvalid('INVALID_ARGUMENT', null, 'tool action envelope is invalid', 0);
-      return Promise.resolve(dependencies.rejectRespondInput?.(result) ?? result);
+      const input =
+        typeof envelope === 'object' && envelope !== null && 'input' in envelope
+          ? envelope.input
+          : undefined;
+      return Promise.resolve(dependencies.rejectRespondInput?.(result, input) ?? result);
     }
     const error = issue('INVALID_ARGUMENT', null, 'tool action envelope is invalid');
     return name === 'search_places'

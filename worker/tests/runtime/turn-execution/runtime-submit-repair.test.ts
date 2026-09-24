@@ -60,7 +60,7 @@ describe('submit entry validation', () => {
       expect(result.issues[0]?.message).toContain('envelope is invalid');
     }
     expect(calls.submits).toHaveLength(0);
-    expect(factory.hasUnresolvedSubmitFailure()).toBe(true);
+    expect(factory.hasUnresolvedProposalFailure()).toBe(true);
     const result = await invokePublicToolEnvelope(
       'respond',
       { input: submitInput },
@@ -84,7 +84,7 @@ describe('submit entry validation', () => {
       factory.dependencies,
       { toolCallId: 'bad-envelope' },
     );
-    expect(factory.hasUnresolvedSubmitFailure()).toBe(true);
+    expect(factory.hasUnresolvedProposalFailure()).toBe(true);
     const result = await invokePublicToolEnvelope(
       'respond',
       { input: submitInput },
@@ -92,15 +92,31 @@ describe('submit entry validation', () => {
       { toolCallId: 'corrected' },
     );
     expect(result.status).toBe('committed');
-    expect(factory.hasUnresolvedSubmitFailure()).toBe(false);
+    expect(factory.hasUnresolvedProposalFailure()).toBe(false);
     expect(calls.submits).toHaveLength(1);
   });
 
-  it('does not replace an unresolved submit error with a successful conversation response', async () => {
+  it('lets a refused answer be retried with a corrected one', async () => {
     const { composition } = createComposition();
-    await invokePublicToolEnvelope('respond', { invalid: true }, composition.turn.dependencies, {
+    await expect(
+      respondWith(composition, { kind: 'answer', message: '' }, 'empty-answer'),
+    ).resolves.toMatchObject({ status: 'invalid', repairable: true });
+    expect(composition.turn.hasUnresolvedProposalFailure()).toBe(false);
+    await expect(
+      respondWith(composition, { kind: 'answer', message: '確認しました' }, 'answer'),
+    ).resolves.toMatchObject({ status: 'committed', kind: 'answer' });
+    composition.dispose();
+  });
+
+  it.each([
+    ['an unreadable envelope', { invalid: true }],
+    ['a malformed proposal', { input: { kind: 'propose', message: ['候補です'] } }],
+  ])('does not let an answer paper over %s', async (_name, envelope) => {
+    const { composition } = createComposition();
+    await invokePublicToolEnvelope('respond', envelope, composition.turn.dependencies, {
       toolCallId: 'invalid',
     });
+    expect(composition.turn.hasUnresolvedProposalFailure()).toBe(true);
     await expect(
       respondWith(composition, { kind: 'answer', message: '候補を確認しました。' }, 'answer'),
     ).resolves.toMatchObject({ status: 'invalid', repairable: false });
