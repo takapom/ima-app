@@ -113,3 +113,140 @@ export const retentionDoesNotExceed = (target: RetentionMetadata, source: Retent
         noLater(target.retentionUntil, source.retentionUntil)))
   );
 };
+
+const earliestOf = (values: readonly (string | null)[]): string | null => {
+  let earliest: string | null = null;
+  for (const value of values) {
+    if (value !== null && (earliest === null || Date.parse(value) < Date.parse(earliest))) {
+      earliest = value;
+    }
+  }
+  return earliest;
+};
+
+const firstRestricted = <Status extends string>(
+  values: readonly Status[],
+  open: Status,
+): Status | undefined => values.find((value) => value !== open);
+
+/** Fails closed: nothing may be stored, and the body is gone at the session end. */
+const denyRetentionUntil = (sessionExpiresAt: string): RetentionMetadata => ({
+  retentionDecision: 'deny',
+  retentionMode: 'session_only',
+  sessionExpiresAt,
+  freshUntil: null,
+  displayUntil: null,
+  retentionUntil: null,
+  deletionScheduledAt: null,
+  attribution: null,
+  restoreMode: 'unavailable',
+  policyStatus: 'policy_withheld',
+  displayPolicyStatus: 'policy_withheld',
+});
+
+/**
+ * The retention of text derived from several inputs: no deadline is later than any input's, it
+ * is stored only when every input may be stored, and it is displayable only when every input is.
+ * A `null` deadline means the input sets none, so it never widens another input's deadline.
+ */
+export const narrowRetention = (
+  base: RetentionMetadata,
+  sources: readonly RetentionMetadata[],
+): RetentionMetadata => {
+  const all = [base, ...sources];
+  const sessionExpiresAt =
+    earliestOf(all.map((item) => item.sessionExpiresAt)) ?? base.sessionExpiresAt;
+  const storable = all.every(
+    (item) =>
+      item.retentionDecision === 'allow' &&
+      item.retentionMode !== 'identifier_indefinite_owner_scoped' &&
+      item.retentionUntil !== null &&
+      item.deletionScheduledAt !== null,
+  );
+  const cap = (value: string | null, bound: string | null) => earliestOf([value, bound]) ?? value;
+  const retentionUntil = storable
+    ? cap(earliestOf(all.map((item) => item.retentionUntil)), sessionExpiresAt)
+    : null;
+  const deletionScheduledAt = storable
+    ? cap(earliestOf(all.map((item) => item.deletionScheduledAt)), retentionUntil)
+    : null;
+  const listedDisplayUntil = cap(
+    cap(earliestOf(all.map((item) => item.displayUntil)), retentionUntil),
+    sessionExpiresAt,
+  );
+  const freshUntil = cap(
+    cap(earliestOf(all.map((item) => item.freshUntil)), listedDisplayUntil),
+    sessionExpiresAt,
+  );
+  // A stored text with a freshness deadline also needs a display deadline.
+  const displayUntil =
+    storable && freshUntil !== null ? (listedDisplayUntil ?? retentionUntil) : listedDisplayUntil;
+  const displayPolicyStatus =
+    firstRestricted(
+      all.map((item) => item.displayPolicyStatus),
+      'available',
+    ) ?? 'available';
+  const narrowed: RetentionMetadata = storable
+    ? {
+        retentionDecision: 'allow',
+        retentionMode: all.some((item) => item.retentionMode === 'session_only')
+          ? 'session_only'
+          : 'provider_limited',
+        sessionExpiresAt,
+        freshUntil,
+        displayUntil,
+        retentionUntil,
+        deletionScheduledAt,
+        attribution:
+          base.attribution ??
+          sources.find((item) => item.attribution !== null)?.attribution ??
+          null,
+        restoreMode: all.some((item) => item.restoreMode !== 'full') ? 'reference_only' : 'full',
+        policyStatus: 'available',
+        displayPolicyStatus,
+      }
+    : {
+        retentionDecision: all.some((item) => item.retentionDecision === 'deny')
+          ? 'deny'
+          : all.some((item) => item.retentionDecision === 'unknown')
+            ? 'unknown'
+            : 'deny',
+        retentionMode: all.some((item) => item.retentionMode === 'none') ? 'none' : 'session_only',
+        sessionExpiresAt,
+        freshUntil,
+        displayUntil,
+        retentionUntil: null,
+        deletionScheduledAt: null,
+        attribution:
+          base.attribution ??
+          sources.find((item) => item.attribution !== null)?.attribution ??
+          null,
+        restoreMode: all.some((item) => item.restoreMode === 'unavailable')
+          ? 'unavailable'
+          : 'reference_only',
+        policyStatus:
+          firstRestricted(
+            all.map((item) => item.policyStatus),
+            'available',
+          ) ?? 'policy_withheld',
+        displayPolicyStatus,
+      };
+  const parsed = v.safeParse(RetentionMetadataSchema, narrowed);
+  return parsed.success ? parsed.output : denyRetentionUntil(sessionExpiresAt);
+};
+
+/** Ends every window of `retention` no later than `deadline`, e.g. a quoted message's expiry. */
+export const capRetention = (retention: RetentionMetadata, deadline: string): RetentionMetadata => {
+  const cap = (value: string | null) =>
+    value === null || Date.parse(value) <= Date.parse(deadline) ? value : deadline;
+  const sessionExpiresAt = cap(retention.sessionExpiresAt) ?? deadline;
+  const parsed = v.safeParse(RetentionMetadataSchema, {
+    ...retention,
+    sessionExpiresAt,
+    freshUntil: cap(retention.freshUntil),
+    displayUntil: cap(retention.displayUntil),
+    retentionUntil: cap(retention.retentionUntil),
+    deletionScheduledAt: cap(retention.deletionScheduledAt),
+  });
+  return parsed.success ? parsed.output : denyRetentionUntil(sessionExpiresAt);
+};
