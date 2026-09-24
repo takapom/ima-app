@@ -1,6 +1,7 @@
-import type {
-  ModelContextSource,
-  ProjectedModelContext,
+import {
+  MODEL_CONTEXT_WITHHELD_NAME,
+  type ModelContextSource,
+  type ProjectedModelContext,
 } from '@worker/application/model-context/model-context';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import type { RuntimePresentedInputs } from '@worker/runtime/response/runtime-presented-inputs';
@@ -24,7 +25,7 @@ export const recordPresentedContext = (
   }
   // A shown store name is provider data even when its identity evidence is no longer shown.
   for (const candidate of projected.cardSet?.candidates ?? []) {
-    if (candidate.displayName === '[withheld]') continue;
+    if (candidate.displayName === MODEL_CONTEXT_WITHHELD_NAME) continue;
     const identities = source.evidence.filter(
       (item) => item.candidateId === candidate.candidateId && item.field === 'identity',
     );
