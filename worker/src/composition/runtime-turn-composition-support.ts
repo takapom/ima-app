@@ -4,7 +4,6 @@ import type { ModelContextSource } from '@worker/application/model-context/model
 import type { ObservationContext } from '@worker/domain/evidence/freshness';
 import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
 import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
-import type { RespondInvalid } from '@worker/application/ports/submission';
 import type { CommitPort, CommitRecord } from '@worker/application/ports/commit';
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
 import { prepareRuntimeConversationResponse } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
@@ -77,25 +76,6 @@ type ObservationExpiry = {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
-
-/**
- * Refuses a question or answer while a refused proposal is unresolved, so it cannot paper over
- * cards the Core rejected. A failed read is different: explaining it is exactly what an answer is
- * for, and the prompt tells the model not to report it as zero results.
- */
-export const unresolvedProposalRefusal: RespondInvalid = {
-  status: 'invalid',
-  issues: [
-    {
-      code: 'CONSTRAINT_VIOLATION',
-      path: 'kind',
-      message: 'a refused proposal is still unresolved',
-      missingFields: [],
-    },
-  ],
-  repairable: false,
-  remainingRepairs: 0,
-};
 
 const findObservationExpiries = (value: unknown): ObservationExpiry[] => {
   if (Array.isArray(value)) return value.flatMap(findObservationExpiries);
