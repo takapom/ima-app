@@ -136,14 +136,7 @@ const formalRepairPrompt = (status: 'known' | 'stale') => [
               entries: [{ candidateId: 'runtime-a' }],
               candidates: [{ candidateId: 'runtime-a', displayName: '候補A' }],
             },
-            evidence: [
-              {
-                candidateId: 'runtime-a',
-                field: 'opening_hours',
-                observationId: `opening-${status}`,
-                status,
-              },
-            ],
+            evidence: [{ candidateId: 'runtime-a', field: 'opening_hours', status }],
           },
         }),
       },
@@ -208,7 +201,6 @@ describe('repair profile freshness and formal projection', () => {
     expect(repairTargetFor(formalRepairPrompt('stale'))).toEqual({
       ok: true,
       candidateId: 'runtime-a',
-      staleEvidenceIds: ['opening-stale'],
     });
     expect(repairTargetFor(formalRepairPrompt('known'))).toEqual({
       ok: false,
@@ -251,10 +243,11 @@ describe('repair profile through one fixture DO', () => {
     const afterTrace = await prepared.stub.getModelEvalFixtureTrace();
     expect(afterTrace.upstreamCalls).toBe(beforeTrace.upstreamCalls + 1);
     const snapshots = await prepared.stub.getModelEvalFixtureEvidenceSnapshots();
-    const refreshed = snapshots
-      .filter((snapshot) => snapshot.candidateId === prepared.cardContext.candidateOrder[0])
-      .flatMap((snapshot) => snapshot.evidenceIds)
-      .filter((id) => id !== prepared.oldEvidenceId);
+    const refreshed = snapshots.filter(
+      (snapshot) =>
+        snapshot.candidateId === prepared.cardContext.candidateOrder[0] &&
+        snapshot.knownFields.includes('opening_hours'),
+    );
     expect(refreshed.length).toBeGreaterThan(0);
   });
 

@@ -247,20 +247,22 @@ describe('model-eval formal context through one Think Durable Object', () => {
       .reverse()
       .find((snapshot) => snapshot.candidateId === secondCard.candidateId);
     expect(refreshedSnapshot?.candidateId).toBe(secondCard.candidateId);
-    const previousOpening = previousSnapshot?.observations.find(
-      (observation) =>
-        observation.candidateId === secondCard.candidateId && observation.field === 'opening_hours',
-    );
-    const refreshedOpening = refreshedSnapshot?.observations.find(
-      (observation) =>
-        observation.candidateId === secondCard.candidateId && observation.field === 'opening_hours',
-    );
-    if (previousOpening === undefined || refreshedOpening === undefined) {
+    expect(previousSnapshot).toBeDefined();
+    // The second answer rests on this turn's refreshed read, not on the first turn's card.
+    expect(refreshedSnapshot?.knownFields).toContain('opening_hours');
+    expect(refreshedSnapshot?.observations).toContainEqual({
+      candidateId: secondCard.candidateId,
+      field: 'opening_hours',
+      status: 'known',
+      source: 'details',
+    });
+    const previousOpening = secondCard.facts.opening_hours;
+    const previousOpeningId =
+      previousOpening?.status === 'known' ? previousOpening.evidence[0]?.evidenceId : undefined;
+    if (previousOpeningId === undefined) {
       throw new Error('M25_FIXTURE_OPENING_HOURS_EVIDENCE_MISSING');
     }
-    expect(refreshedOpening.observationId).not.toBe(previousOpening.observationId);
-    expect(refreshedSnapshot?.evidenceIds).toContain(refreshedOpening.observationId);
-    expect(JSON.stringify(second)).not.toContain(previousOpening.observationId);
+    expect(JSON.stringify(second)).not.toContain(previousOpeningId);
   });
 
   it('rejects a follow-up whose card set is absent from the committed response', async () => {
@@ -309,7 +311,7 @@ describe('model-eval formal context through one Think Durable Object', () => {
     expect(result.kind).toBe('message');
     if (result.kind !== 'message') return;
     expect(result.message[0]?.text).toContain('地域');
-    expect(await stub.getModelEvalFixtureSteps()).toEqual(['final_message']);
+    expect(await stub.getModelEvalFixtureSteps()).toEqual(['respond:ask']);
     const trace = await stub.getModelEvalFixtureTrace();
     expect(trace.modelCalls).toBe(1);
     expect(trace.upstreamCalls).toBe(0);
@@ -330,7 +332,7 @@ describe('model-eval formal context through one Think Durable Object', () => {
     expect(result.kind).toBe('message');
     if (result.kind !== 'message') return;
     expect(result.message[0]?.text).toContain('地域');
-    expect(await stub.getModelEvalFixtureSteps()).toEqual(['search_places', 'final_message']);
+    expect(await stub.getModelEvalFixtureSteps()).toEqual(['search_places', 'respond:ask']);
     expect(await stub.getModelEvalFixtureToolErrorCodes()).toEqual(['LOCATION_REQUIRED']);
     const trace = await stub.getModelEvalFixtureTrace();
     expect(trace.modelCalls).toBe(2);

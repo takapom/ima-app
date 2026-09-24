@@ -1,16 +1,10 @@
 import type { LiveTraceRecorder } from '../../tooling/model-eval/live';
+import { MODEL_EVAL_SHOPS, type ModelEvalShop } from '../../tooling/model-eval/fixture-shops';
 import { MODEL_EVAL_STORE_INSTRUCTION_TEXT } from './model-eval-prompt-injection';
 
 export const MODEL_EVAL_NOW = '2026-09-10T12:00:00.000Z';
 /** Context-seed profile runs at 19:00 JST so every fixture candidate is still open. */
 export const MODEL_EVAL_CONTEXT_NOW = '2026-09-10T10:00:00.000Z';
-
-type FixturePlace = {
-  readonly id: string;
-  readonly name: string;
-  readonly priceLevel: 'PRICE_LEVEL_INEXPENSIVE' | 'PRICE_LEVEL_MODERATE';
-  readonly closeHour: number;
-};
 
 export type ModelEvalPlacesResponseMode =
   'normal' | 'empty' | 'upstream-failure' | 'schema-failure';
@@ -19,44 +13,43 @@ export type ModelEvalPlacePayloadMode = 'normal' | 'store-instruction';
 
 export const MODEL_EVAL_PRIVATE_UPSTREAM_BODY_SENTINEL = 'M25_FIXTURE_PRIVATE_UPSTREAM_BODY';
 
-const fixturePlaces: readonly FixturePlace[] = [
-  { id: 'eval-place-a', name: '青葉カフェ', priceLevel: 'PRICE_LEVEL_MODERATE', closeHour: 22 },
-  { id: 'eval-place-b', name: '川辺食堂', priceLevel: 'PRICE_LEVEL_INEXPENSIVE', closeHour: 21 },
-  { id: 'eval-place-c', name: '駅前ベーカリー', priceLevel: 'PRICE_LEVEL_MODERATE', closeHour: 20 },
-];
-
 /** The evaluator joins these provider record identities to dataset IDs exactly. */
-export const MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES = [
-  { provider: 'hotpepper', recordRef: 'eval-place-a', evaluationCandidateId: 'candidate-a' },
-  { provider: 'hotpepper', recordRef: 'eval-place-b', evaluationCandidateId: 'candidate-b' },
-  { provider: 'hotpepper', recordRef: 'eval-place-c', evaluationCandidateId: 'candidate-c' },
-] as const;
+export const MODEL_EVAL_FIXTURE_CANDIDATE_IDENTITIES = MODEL_EVAL_SHOPS.map((shop) => ({
+  provider: 'hotpepper' as const,
+  recordRef: shop.wire.id,
+  evaluationCandidateId: shop.candidateId,
+}));
 
-const placeBody = (
-  place: FixturePlace,
-  _now: string,
-  displayName = place.name,
-  payloadMode: ModelEvalPlacePayloadMode = 'normal',
+/** The catalogue shop as the Gourmet Search API returns it; only the listing copy can vary. */
+const shopBody = (
+  shop: ModelEvalShop,
+  displayName: string,
+  payloadMode: ModelEvalPlacePayloadMode,
 ): Record<string, unknown> => ({
-  id: place.id,
+  ...shop.wire,
   name: displayName,
+  catch:
+    payloadMode === 'store-instruction' && shop.wire.id === 'eval-place-b'
+      ? `${shop.wire.catch}（${MODEL_EVAL_STORE_INSTRUCTION_TEXT}）`
+      : shop.wire.catch,
+  address: '東京都渋谷区',
   lat: 35.6595,
   lng: 139.7005,
-  address:
-    payloadMode === 'store-instruction' && place.id === 'eval-place-b'
-      ? `東京都渋谷区（${MODEL_EVAL_STORE_INSTRUCTION_TEXT}）`
-      : '東京都渋谷区',
-  genre: { name: 'カフェ' },
-  open: `毎日 9:00–${place.closeHour}:00`,
-  close: '無休',
-  budget: { average: place.priceLevel === 'PRICE_LEVEL_INEXPENSIVE' ? '1000円' : '2000円' },
-  urls: { pc: `https://www.hotpepper.jp/str${place.id}/` },
+  urls: { pc: `https://www.hotpepper.jp/str${shop.wire.id}/` },
 });
+
+const pageOf = (url: URL): { readonly start: number; readonly count: number } => {
+  const start = Number(url.searchParams.get('start') ?? '1');
+  const count = Number(url.searchParams.get('count') ?? '10');
+  return {
+    start: Number.isSafeInteger(start) && start >= 1 ? start : 1,
+    count: Number.isSafeInteger(count) && count >= 1 ? count : 10,
+  };
+};
 
 export const fixedPlacesFetcher =
   (
     trace: LiveTraceRecorder,
-    now = MODEL_EVAL_NOW,
     observeSearchQuery?: (query: string) => void,
     responseMode: ModelEvalPlacesResponseMode = 'normal',
     displayNameMode: ModelEvalPlaceDisplayNameMode = 'normal',
@@ -79,21 +72,25 @@ export const fixedPlacesFetcher =
       );
     if (responseMode === 'schema-failure')
       return Promise.resolve(Response.json({ results: { shop: 'invalid' } }));
-    const places =
+    const ids = id?.split(',') ?? null;
+    const matched =
       responseMode === 'empty'
         ? []
-        : fixturePlaces.filter((place) => id === null || place.id === id);
+        : MODEL_EVAL_SHOPS.filter((shop) => ids === null || ids.includes(shop.wire.id));
+    // Search honors the requested page like the API; a details read names its shops.
+    const { start, count } = pageOf(url);
+    const places = ids === null ? matched.slice(start - 1, start - 1 + count) : matched;
     return Promise.resolve(
       Response.json({
         results: {
-          results_available: places.length,
-          shop: places.map((place) =>
-            placeBody(
-              place,
-              now,
-              displayNameMode === 'duplicate' && place.id === 'eval-place-b'
-                ? fixturePlaces[0]?.name
-                : place.name,
+          results_available: matched.length,
+          results_start: start,
+          shop: places.map((shop) =>
+            shopBody(
+              shop,
+              displayNameMode === 'duplicate' && shop.wire.id === 'eval-place-b'
+                ? (MODEL_EVAL_SHOPS[0]?.wire.name ?? shop.wire.name)
+                : shop.wire.name,
               payloadMode,
             ),
           ),

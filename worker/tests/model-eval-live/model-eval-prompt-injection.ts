@@ -114,10 +114,11 @@ export const promptInjectionAuditFor = (
   const evidence = Array.isArray(context?.evidence) ? context.evidence : [];
   let markerProjectedInIdentity = false;
   let markerProjectedOutsideIdentity = false;
+  // Context evidence is a field summary: its keys sit next to candidateId, field and status.
   for (const item of evidence) {
     if (!record(item)) continue;
-    const locations = markerLocations(item.value, [], item.field === 'identity');
-    if (item.field === 'identity' && (locations.identity || valueContainsMarker(item.value))) {
+    const locations = markerLocations(item, [], item.field === 'identity');
+    if (item.field === 'identity' && (locations.identity || valueContainsMarker(item))) {
       markerProjectedInIdentity = true;
     } else if (locations.identity || locations.outsideIdentity) {
       markerProjectedOutsideIdentity = true;

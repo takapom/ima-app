@@ -10,8 +10,8 @@ import {
 import type { LiveTraceRecorder } from '../../tooling/model-eval/live';
 import {
   evidenceSnapshotFor,
-  finalParts,
   FIXTURE_USAGE,
+  messageParts,
   streamOf,
   submitInputFor,
   toolParts,
@@ -20,7 +20,7 @@ import {
 import {
   candidateOrderIn,
   candidateIdsIn,
-  evidenceFor,
+  knownFieldsFor,
   modelLocationIn,
   modelLocationProjectionHasCoordinates,
   modelPreferenceBudgetIn,
@@ -47,8 +47,9 @@ import { specificPlacePartsFor } from './model-eval-specific-place';
 export type ModelEvalFixturePhase = 'cards' | 'message';
 export type ModelEvalFixtureLocationProbe = 'clarify' | 'current-location';
 export type ModelEvalFixtureDisplayNamePolicy = 'visible' | 'withheld';
+/** Tool steps the fixture took; respond is qualified by the kind it committed. */
 export type ModelEvalFixtureStep =
-  'search_places' | 'get_place_details' | 'submit_cards' | 'final_message';
+  'search_places' | 'get_place_details' | 'respond:ask' | 'respond:answer' | 'respond:propose';
 export type ModelEvalFixtureProfile =
   | 'reason'
   | 'continuity'
@@ -122,13 +123,13 @@ export const fixtureModel = (
       if (safeParts !== undefined) {
         return Promise.resolve({ stream: streamOf(safeParts) });
       }
-      const finalResponse =
-        Object.keys(options.tools ?? {}).length === 0 || options.toolChoice?.type === 'none';
+      const offered = (options.tools ?? []).map((tool) => tool.name);
+      const finalResponse = offered.length === 1 && offered[0] === 'respond';
       const shouldRefreshMessage = currentPhase === 'message' && currentCall === 0;
       if (currentPhase === 'message' && profile() === 'clarify-ambiguity') {
-        step('final_message');
+        step('respond:ask');
         return Promise.resolve({
-          stream: streamOf(finalParts('どの候補を指していますか？', [], 'conversational')),
+          stream: streamOf(messageParts(currentCall, 'ask', 'どの候補を指していますか？')),
         });
       }
       if (currentPhase === 'message' && profile() === 'specific-place') {
@@ -154,7 +155,7 @@ export const fixtureModel = (
         });
       }
       if (!shouldRefreshMessage && (currentPhase === 'message' || finalResponse)) {
-        step('final_message');
+        step('respond:answer');
         const candidates =
           currentPhase === 'message' ? candidateOrderIn(prompt) : candidateIdsIn(prompt);
         const selectedCandidateId = selectedCandidateIdIn(prompt);
@@ -168,8 +169,8 @@ export const fixtureModel = (
           throw new Error('M25_FIXTURE_SELECTION_CONTEXT_MISSING');
         }
         const candidate = candidates
-          .map((candidateId) => ({ candidateId, evidenceIds: evidenceFor(prompt, candidateId) }))
-          .find((item) => item.evidenceIds.length > 0);
+          .map((candidateId) => ({ candidateId, known: knownFieldsFor(prompt, candidateId) }))
+          .find((item) => item.known.length > 0);
         const requestedCandidateId =
           currentPhase === 'message' && profile() === 'decide-action'
             ? selectedCandidateId
@@ -179,34 +180,30 @@ export const fixtureModel = (
                 return candidates[requestedIndex] ?? candidates[0];
               })();
         const requestedCandidate = candidates
-          .map((candidateId) => ({
-            candidateId,
-            evidenceIds: evidenceFor(prompt, candidateId),
-          }))
-          .find((item) => item.candidateId === requestedCandidateId && item.evidenceIds.length > 0);
+          .map((candidateId) => ({ candidateId, known: knownFieldsFor(prompt, candidateId) }))
+          .find((item) => item.candidateId === requestedCandidateId && item.known.length > 0);
         const selectedCandidate =
           currentPhase === 'message' ? requestedCandidate : (requestedCandidate ?? candidate);
         if (selectedCandidate === undefined) throw new Error('M25_FIXTURE_CONTEXT_MISSING');
         if (currentPhase === 'message' && profile() === 'compare') {
           const compared = candidates
             .slice(0, 2)
-            .map((candidateId) => ({
-              candidateId,
-              evidenceIds: evidenceFor(prompt, candidateId),
-            }))
-            .filter((item) => item.evidenceIds.length > 0);
+            .filter((candidateId) => knownFieldsFor(prompt, candidateId).length > 0);
           if (compared.length < 2) throw new Error('M25_FIXTURE_COMPARE_CONTEXT_MISSING');
-          compared.forEach((item) => finalEvidence(evidenceSnapshotFor(prompt, item.candidateId)));
-          const evidenceIds = compared.flatMap((item) => item.evidenceIds);
+          compared.forEach((candidateId) =>
+            finalEvidence(evidenceSnapshotFor(prompt, candidateId)),
+          );
           return Promise.resolve({
-            stream: streamOf(finalParts('青葉カフェと川辺食堂を比較しました。', evidenceIds)),
+            stream: streamOf(
+              messageParts(currentCall, 'answer', '青葉カフェと川辺食堂を比較しました。'),
+            ),
           });
         }
         const candidateId = selectedCandidate.candidateId;
         finalEvidence(evidenceSnapshotFor(prompt, candidateId));
         return Promise.resolve({
           stream: streamOf(
-            finalParts(`${candidateId}の公開根拠を確認しました。`, selectedCandidate.evidenceIds),
+            messageParts(currentCall, 'answer', `${candidateId}の公開根拠を確認しました。`),
           ),
         });
       }
@@ -280,18 +277,17 @@ export const fixtureModel = (
           ),
         });
       }
-      step('submit_cards');
+      step('respond:propose');
       const candidates = candidateIdsIn(prompt).slice(0, candidateLimitFor(profile()));
       for (const candidateId of candidates) {
-        const evidenceIds = evidenceFor(prompt, candidateId);
-        if (evidenceIds.length === 0) continue;
+        if (knownFieldsFor(prompt, candidateId).length === 0) continue;
         finalEvidence(evidenceSnapshotFor(prompt, candidateId));
       }
       return Promise.resolve({
         stream: streamOf(
           toolParts(
             currentCall,
-            'submit_cards',
+            'respond',
             submitInputFor(
               prompt,
               profile() === 'decide-action' || profile() === 'specific-place'

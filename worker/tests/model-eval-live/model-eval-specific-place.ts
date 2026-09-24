@@ -4,29 +4,29 @@ import type {
 } from '../support/runtime-model-fixture';
 import {
   evidenceSnapshotFor,
-  finalParts,
+  messageParts,
   streamOf,
   toolParts,
   type ModelEvalFixtureEvidenceSnapshot,
 } from './model-eval-context-output';
-import { candidateMentionedIn, evidenceFor } from './model-eval-context-values';
+import { candidateMentionedIn, knownFieldsFor } from './model-eval-context-values';
 
 /** Produces only the specific-place fixture's details refresh or clarification turn. */
 export const specificPlacePartsFor = (input: {
   readonly prompt: RuntimeGateModelCallOptions['prompt'];
   readonly currentCall: number;
-  readonly step: (name: 'get_place_details' | 'final_message') => void;
+  readonly step: (name: 'get_place_details' | 'respond:ask' | 'respond:answer') => void;
   readonly detailsRequest: (candidateIds: readonly string[]) => void;
   readonly finalEvidence: (snapshot: ModelEvalFixtureEvidenceSnapshot) => void;
 }): ReadableStream<RuntimeGateModelStreamPart> => {
   const resolution = candidateMentionedIn(input.prompt);
   if (!resolution.ok) {
-    input.step('final_message');
+    input.step('respond:ask');
     return streamOf(
-      finalParts(
+      messageParts(
+        input.currentCall,
+        'ask',
         'どの候補を指しているか特定できないため、候補を指定してください。',
-        [],
-        'conversational',
       ),
     );
   }
@@ -45,9 +45,10 @@ export const specificPlacePartsFor = (input: {
       }),
     );
   }
-  const evidenceIds = evidenceFor(input.prompt, resolution.candidateId);
-  if (evidenceIds.length === 0) throw new Error('M25_FIXTURE_SPECIFIC_PLACE_EVIDENCE_MISSING');
-  input.step('final_message');
+  if (!knownFieldsFor(input.prompt, resolution.candidateId).includes('opening_hours')) {
+    throw new Error('M25_FIXTURE_SPECIFIC_PLACE_EVIDENCE_MISSING');
+  }
+  input.step('respond:answer');
   input.finalEvidence(evidenceSnapshotFor(input.prompt, resolution.candidateId));
-  return streamOf(finalParts('営業時間を確認しました。', evidenceIds));
+  return streamOf(messageParts(input.currentCall, 'answer', '営業時間を確認しました。'));
 };

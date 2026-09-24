@@ -1,5 +1,6 @@
 import type { CandidateRecord } from '@worker/domain/candidates/registry';
-import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import { hotPepperModelContextPolicy } from '@worker/composition/runtime-hot-pepper-policy';
+import type { RuntimeTurnOutcome } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import { ThreadDO as ProductionThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 import { createLiveOpenAIProvider } from '@worker/adapters/out/providers/openai/model-provider';
@@ -60,25 +61,14 @@ const retentionFor = (sessionExpiresAt: string): RetentionMetadata => ({
   displayUntil: '2026-09-10T20:00:00.000Z',
   retentionUntil: '2026-09-10T22:00:00.000Z',
   deletionScheduledAt: '2026-09-10T22:00:00.000Z',
-  attribution: { label: 'Google Places', sourceLink: 'https://maps.google.com' },
+  attribution: {
+    label: 'Powered by ホットペッパーグルメ Webサービス',
+    sourceLink: 'https://webservice.recruit.co.jp/',
+  },
   restoreMode: 'full',
   policyStatus: 'available',
   displayPolicyStatus: 'available',
 });
-
-const modelPolicy: ModelContextFieldPolicy = {
-  evidence: {
-    identity: 'allow',
-    opening_hours: 'allow',
-    price: 'allow',
-    photos: 'deny',
-    contact: 'deny',
-    facilities: 'deny',
-  },
-  history: 'allow',
-  cardSet: 'allow',
-  displayName: 'allow',
-};
 
 export class ModelEvalThreadDO extends ProductionThreadDO {
   override maxSteps = 6;
@@ -180,10 +170,13 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
       candidateIdentityObserver: (
         record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,
       ) => this.liveTrace.observeCandidateIdentity(record),
+      turnObserver: {
+        outcome: (outcome: RuntimeTurnOutcome) => this.liveTrace.observeTurnOutcome(outcome),
+        respondRejected: () => this.liveTrace.observeRespondRejection(),
+      },
       fetcher: (...args: Parameters<typeof fetch>) =>
         fixedPlacesFetcher(
           this.liveTrace,
-          this.liveNow,
           undefined,
           this.livePlacesResponseMode,
           'normal',
@@ -193,7 +186,7 @@ export class ModelEvalThreadDO extends ProductionThreadDO {
       placesCursorSecret: 'model-eval-fixed-cursor-secret',
       observationPolicy: policy,
       detailsObservationPolicy: policy,
-      modelContextFieldPolicy: modelPolicy,
+      modelContextFieldPolicy: hotPepperModelContextPolicy,
       placesEnabled: true,
       retention,
       clock: () => this.liveNow,
@@ -249,7 +242,7 @@ export class ModelEvalFixtureLiveThreadDO extends ModelEvalThreadDO {
   getModelEvalFixtureEvidenceSnapshots(): readonly ModelEvalFixtureEvidenceSnapshot[] {
     return this.fixtureEvidenceSnapshots.map((snapshot) => ({
       candidateId: snapshot.candidateId,
-      evidenceIds: [...snapshot.evidenceIds],
+      knownFields: [...snapshot.knownFields],
       modelBudget: snapshot.modelBudget,
       observations: snapshot.observations.map((observation) => ({ ...observation })),
     }));

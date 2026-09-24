@@ -50,12 +50,12 @@ class FixedIds implements RegistryIdPort {
 
 const expected = [
   {
-    provider: 'google_places',
+    provider: 'hotpepper',
     recordRef: 'eval-place-a',
     evaluationCandidateId: 'candidate-a',
   },
   {
-    provider: 'google_places',
+    provider: 'hotpepper',
     recordRef: 'eval-place-b',
     evaluationCandidateId: 'candidate-b',
   },
@@ -64,8 +64,8 @@ const expected = [
 const fixtureEnv = {
   IMA_RUNTIME_MODE: 'fixture',
   IMA_PROVIDER_OPENAI: 'true',
-  IMA_PROVIDER_PLACES: 'true',
-  IMA_PROVIDER_HOTPEPPER: 'false',
+  IMA_PROVIDER_PLACES: 'false',
+  IMA_PROVIDER_HOTPEPPER: 'true',
   IMA_KILL_SWITCH: 'false',
 } as const;
 
@@ -81,14 +81,14 @@ const registryRecords = () => {
   return [
     registry.registerCandidate({
       ...scope,
-      provider: 'google_places',
+      provider: 'hotpepper',
       recordRef: 'eval-place-a',
       displayName: '同名カフェ',
       status: 'operational',
     }),
     registry.registerCandidate({
       ...scope,
-      provider: 'google_places',
+      provider: 'hotpepper',
       recordRef: 'eval-place-b',
       displayName: '同名カフェ',
       status: 'operational',
@@ -106,13 +106,13 @@ describe('model-eval candidate identity mapping', () => {
     if (!mapping.ok) return;
     expect(mapping.pairs).toEqual([
       {
-        provider: 'google_places',
+        provider: 'hotpepper',
         recordRef: 'eval-place-a',
         runtimeCandidateId: 'runtime-candidate-1',
         evaluationCandidateId: 'candidate-a',
       },
       {
-        provider: 'google_places',
+        provider: 'hotpepper',
         recordRef: 'eval-place-b',
         runtimeCandidateId: 'runtime-candidate-2',
         evaluationCandidateId: 'candidate-b',
@@ -125,19 +125,19 @@ describe('model-eval candidate identity mapping', () => {
   it('keeps malformed or ambiguous host observations unverified', () => {
     const capture = createCandidateIdentityCapture();
     capture.observe({
-      provider: 'google_places',
+      provider: 'hotpepper',
       recordRef: 'eval-place-a',
       candidateId: 'runtime-a',
     });
     capture.observe({
-      provider: 'google_places',
+      provider: 'hotpepper',
       recordRef: 'eval-place-a',
       candidateId: 'runtime-b',
     });
     expect(capture.isUsable()).toBe(false);
 
     const malformed = resolveCandidateIdentityMapping(
-      [{ provider: 'google_places', recordRef: 'eval-place-a', candidateId: '' }],
+      [{ provider: 'hotpepper', recordRef: 'eval-place-a', candidateId: '' }],
       expected,
     );
     expect(malformed).toEqual({ ok: false, code: 'CANDIDATE_ID_MAPPING_CONFLICT' });
@@ -146,7 +146,7 @@ describe('model-eval candidate identity mapping', () => {
   it('does not infer a missing record from a matching display name', () => {
     const capture = createCandidateIdentityCapture();
     capture.observe({
-      provider: 'google_places',
+      provider: 'hotpepper',
       recordRef: 'unrelated-place',
       candidateId: 'runtime-a',
     });
@@ -165,7 +165,7 @@ describe('model-eval candidate identity mapping', () => {
     });
     const record = registration.registerCandidate({
       ...scope,
-      provider: 'google_places',
+      provider: 'hotpepper',
       recordRef: 'eval-place-a',
       displayName: '観測対象の表示名',
       status: 'operational',
@@ -176,7 +176,7 @@ describe('model-eval candidate identity mapping', () => {
     capture.observe(observed[0]);
     expect(capture.snapshot()).toEqual([
       {
-        provider: 'google_places',
+        provider: 'hotpepper',
         recordRef: 'eval-place-a',
         candidateId: 'runtime-candidate-1',
       },
@@ -195,7 +195,7 @@ describe('model-eval candidate identity mapping', () => {
     });
     const record = registration.registerCandidate({
       ...scope,
-      provider: 'google_places',
+      provider: 'hotpepper',
       recordRef: 'eval-place-a',
       displayName: '同名カフェ',
       status: 'operational',
@@ -220,16 +220,20 @@ describe('model-eval candidate identity mapping', () => {
           Promise.resolve(
             new Response(
               JSON.stringify({
-                places: [
-                  {
-                    id: 'eval-place-a',
-                    displayName: { text: '同名カフェ' },
-                    formattedAddress: '東京都渋谷区',
-                    primaryType: 'cafe',
-                    businessStatus: 'OPERATIONAL',
-                    googleMapsUri: 'https://maps.google.com/?cid=eval-place-a',
-                  },
-                ],
+                results: {
+                  results_available: 1,
+                  shop: [
+                    {
+                      id: 'eval-place-a',
+                      name: '同名カフェ',
+                      address: '東京都渋谷区',
+                      lat: 35.6595,
+                      lng: 139.7005,
+                      genre: { name: 'カフェ' },
+                      urls: { pc: 'https://www.hotpepper.jp/streval-place-a/' },
+                    },
+                  ],
+                },
               }),
               { status: 200, headers: { 'content-type': 'application/json' } },
             ),
