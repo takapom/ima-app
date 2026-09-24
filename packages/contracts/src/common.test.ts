@@ -195,6 +195,14 @@ describe('public contract primitives', () => {
         legacy(deniedRetention({ sessionExpiresAt: '2026-09-10T05:00:00+09:00' }), deniedSource),
       ).success,
     ).toBe(false);
+    // Fully restorable text cannot rest on a citation that was restorable only by reference.
+    const referenceOnlySource = {
+      ...evidence,
+      retention: allowedRetention({ restoreMode: 'reference_only' }),
+    };
+    expect(v.safeParse(textSchema, legacy(allowedRetention(), referenceOnlySource)).success).toBe(
+      false,
+    );
     const hiddenSource = {
       ...evidence,
       retention: deniedRetention({ displayPolicyStatus: 'disabled_m35' }),
