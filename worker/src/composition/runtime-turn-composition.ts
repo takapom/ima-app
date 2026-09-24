@@ -57,13 +57,12 @@ import {
 } from '@worker/runtime/response/runtime-public-response';
 import {
   modelSource,
-  hasUnresolvedReadFailure,
   observationResultIsReusable,
   observationIdsIn,
   observedWindow,
   RuntimeTurnCompositionError,
   prepareConversationCommit,
-  unresolvedFailureRefusal,
+  unresolvedProposalRefusal,
 } from '@worker/composition/runtime-turn-composition-support';
 import { observeRuntimeTerminalFormatFailure } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 import {
@@ -285,13 +284,8 @@ export function createRuntimeTurnComposition(
     const cardSetId = options.publicResponse?.cardSetId;
     return {
       respond: async (input, execution, cancellation) => {
-        // A question or answer may not paper over a failed read or a refused proposal; a refused
-        // question or answer can still be retried.
-        if (
-          input.kind !== 'propose' &&
-          (turn.hasUnresolvedProposalFailure() || hasUnresolvedReadFailure(results.values()))
-        ) {
-          return unresolvedFailureRefusal;
+        if (input.kind !== 'propose' && turn.hasUnresolvedProposalFailure()) {
+          return unresolvedProposalRefusal;
         }
         if (input.kind === 'propose' && cardSetId !== undefined) {
           registerRuntimeCardSetId(
