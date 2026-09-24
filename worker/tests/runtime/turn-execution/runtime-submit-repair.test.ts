@@ -5,11 +5,15 @@ import {
   emptyPortCalls,
   submitInput,
 } from '../../support/runtime-turn-factory-fixture';
-import { createComposition, captureToolResult } from './runtime-turn-composition-fixture';
+import {
+  createComposition,
+  captureToolResult,
+  respondWith,
+} from './runtime-turn-composition-fixture';
 
 describe('submit entry validation', () => {
   it.each([false, true])(
-    'only accepts a final message after a failed read is repaired: %s',
+    'only accepts an answer after a failed read is repaired: %s',
     async (repaired) => {
       const { composition } = createComposition();
       await captureToolResult(composition, {
@@ -22,19 +26,19 @@ describe('submit entry validation', () => {
           data: { candidates: [] },
           warnings: [],
         });
-      const accept = () =>
-        composition.onAccepted({
-          terminal: 'message',
-          finalText: JSON.stringify({
-            kind: 'final_message',
-            message: { text: '条件を変えて探しますか？', basis: 'conversational', evidenceIds: [] },
-          }),
-          emptyFinal: false,
-          partCount: 1,
-          bytes: 100,
+      const result = await respondWith(composition, {
+        kind: 'ask',
+        message: '条件を変えて探しますか？',
+      });
+      if (repaired) expect(result).toMatchObject({ status: 'committed', kind: 'ask' });
+      else {
+        expect(result).toMatchObject({
+          status: 'invalid',
+          repairable: false,
+          issues: [{ code: 'CONSTRAINT_VIOLATION', path: 'kind' }],
         });
-      if (repaired) expect(accept).not.toThrow();
-      else expect(accept).toThrow('FINAL_COMMIT_INVALID');
+        await expect(composition.getCommittedResponse()).resolves.toBeUndefined();
+      }
       composition.dispose();
     },
   );
@@ -43,12 +47,9 @@ describe('submit entry validation', () => {
     const { factory } = createFactory(calls, { onSubmitRejected: () => undefined });
     const envelope = { input: submitInput, metadata: {} };
     for (const remainingRepairs of [2, 1, 0]) {
-      const result = await invokePublicToolEnvelope(
-        'submit_cards',
-        envelope,
-        factory.dependencies,
-        { toolCallId: `invalid-${remainingRepairs}` },
-      );
+      const result = await invokePublicToolEnvelope('respond', envelope, factory.dependencies, {
+        toolCallId: `invalid-${remainingRepairs}`,
+      });
       expect(result).toMatchObject({
         status: 'invalid',
         repairable: remainingRepairs > 0,
@@ -61,7 +62,7 @@ describe('submit entry validation', () => {
     expect(calls.submits).toHaveLength(0);
     expect(factory.hasUnresolvedSubmitFailure()).toBe(true);
     const result = await invokePublicToolEnvelope(
-      'submit_cards',
+      'respond',
       { input: submitInput },
       factory.dependencies,
       { toolCallId: 'too-late' },
@@ -78,14 +79,14 @@ describe('submit entry validation', () => {
     const calls = emptyPortCalls();
     const { factory } = createFactory(calls, { onSubmitRejected: () => undefined });
     await invokePublicToolEnvelope(
-      'submit_cards',
+      'respond',
       { input: submitInput, unknown: true },
       factory.dependencies,
       { toolCallId: 'bad-envelope' },
     );
     expect(factory.hasUnresolvedSubmitFailure()).toBe(true);
     const result = await invokePublicToolEnvelope(
-      'submit_cards',
+      'respond',
       { input: submitInput },
       factory.dependencies,
       { toolCallId: 'corrected' },
@@ -97,24 +98,12 @@ describe('submit entry validation', () => {
 
   it('does not replace an unresolved submit error with a successful conversation response', async () => {
     const { composition } = createComposition();
-    await invokePublicToolEnvelope(
-      'submit_cards',
-      { invalid: true },
-      composition.turn.dependencies,
-      { toolCallId: 'invalid' },
-    );
-    expect(() =>
-      composition.onAccepted({
-        terminal: 'message',
-        finalText: JSON.stringify({
-          kind: 'final_message',
-          message: { text: '候補を確認しました。', basis: 'conversational', evidenceIds: [] },
-        }),
-        emptyFinal: false,
-        partCount: 1,
-        bytes: 100,
-      }),
-    ).toThrow('FINAL_COMMIT_INVALID');
+    await invokePublicToolEnvelope('respond', { invalid: true }, composition.turn.dependencies, {
+      toolCallId: 'invalid',
+    });
+    await expect(
+      respondWith(composition, { kind: 'answer', message: '候補を確認しました。' }, 'answer'),
+    ).resolves.toMatchObject({ status: 'invalid', repairable: false });
     expect(await composition.getCommittedResponse()).toBeUndefined();
     composition.dispose();
   });

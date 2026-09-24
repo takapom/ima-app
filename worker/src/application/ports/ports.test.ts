@@ -8,11 +8,11 @@ import {
   SearchPlacesInputSchema,
   SearchPlacesOutputSchema,
 } from '@worker/application/ports/operations';
-import { SubmitCardsInputSchema } from '@worker/application/ports/model';
+import { RespondInputSchema, SubmitCardsInputSchema } from '@worker/application/ports/model';
 import {
-  SubmitCardsCommittedSchema,
-  SubmitCardsPortInputSchema,
-  SubmitCardsPortResultSchema,
+  RespondCommittedSchema,
+  RespondPortInputSchema,
+  RespondPortResultSchema,
 } from '@worker/application/ports/submission';
 import {
   LocationContextSchema,
@@ -144,22 +144,50 @@ describe('core port contracts', () => {
         alts: [{ ...cards.alts[0], candidateId: 'candidate-1' }],
       }).success,
     ).toBe(false);
-    const portInput = cards;
-    expect(v.safeParse(SubmitCardsPortInputSchema, portInput).success).toBe(true);
+    const proposal = { kind: 'propose', ...cards };
+    expect(v.safeParse(RespondPortInputSchema, proposal).success).toBe(true);
     expect(
-      v.safeParse(SubmitCardsPortInputSchema, { ...portInput, ownerScopeRef: 'secret' }).success,
+      v.safeParse(RespondPortInputSchema, { ...proposal, ownerScopeRef: 'secret' }).success,
     ).toBe(false);
     expect(
-      v.safeParse(SubmitCardsCommittedSchema, {
+      v.safeParse(RespondInputSchema, {
+        ...proposal,
+        alts: [{ ...cards.alts[0], candidateId: 'candidate-1' }],
+      }).success,
+    ).toBe(false);
+    for (const kind of ['ask', 'answer'] as const) {
+      expect(v.safeParse(RespondInputSchema, { kind, message: '確認します' }).success).toBe(true);
+      // A question or an answer carries one message and never cards.
+      expect(v.safeParse(RespondInputSchema, { kind, message: ['確認します'] }).success).toBe(
+        false,
+      );
+      expect(
+        v.safeParse(RespondInputSchema, { kind, message: '確認します', hero: cards.hero }).success,
+      ).toBe(false);
+    }
+    expect(v.safeParse(RespondInputSchema, { kind: 'final_message', message: 'x' }).success).toBe(
+      false,
+    );
+    expect(
+      v.safeParse(RespondCommittedSchema, {
         status: 'committed',
         responseId: 'response-1',
         revision: 1,
+        kind: 'propose',
         presentation: 'replace',
-        cards,
       }).success,
     ).toBe(true);
     expect(
-      v.safeParse(SubmitCardsPortResultSchema, {
+      v.safeParse(RespondCommittedSchema, {
+        status: 'committed',
+        responseId: 'response-1',
+        revision: 1,
+        kind: 'ask',
+        presentation: 'replace',
+      }).success,
+    ).toBe(false);
+    expect(
+      v.safeParse(RespondPortResultSchema, {
         status: 'invalid',
         issues: [
           {
@@ -174,7 +202,7 @@ describe('core port contracts', () => {
       }).success,
     ).toBe(true);
     expect(
-      v.safeParse(SubmitCardsPortResultSchema, {
+      v.safeParse(RespondPortResultSchema, {
         status: 'invalid',
         issues: [
           {
@@ -189,7 +217,7 @@ describe('core port contracts', () => {
       }).success,
     ).toBe(true);
     expect(
-      v.safeParse(SubmitCardsPortResultSchema, {
+      v.safeParse(RespondPortResultSchema, {
         status: 'invalid',
         issues: [{ code: 'STALE_TURN', path: null, message: 'turn expired', missingFields: [] }],
         repairable: true,
@@ -197,7 +225,7 @@ describe('core port contracts', () => {
       }).success,
     ).toBe(false);
     expect(
-      v.safeParse(SubmitCardsPortResultSchema, {
+      v.safeParse(RespondPortResultSchema, {
         status: 'invalid',
         issues: [
           { code: 'BUDGET_EXCEEDED', path: null, message: 'budget exhausted', missingFields: [] },
@@ -207,7 +235,7 @@ describe('core port contracts', () => {
       }).success,
     ).toBe(false);
     expect(
-      v.safeParse(SubmitCardsPortResultSchema, {
+      v.safeParse(RespondPortResultSchema, {
         status: 'invalid',
         issues: [
           { code: 'BUDGET_EXCEEDED', path: null, message: 'budget exhausted', missingFields: [] },
@@ -217,7 +245,7 @@ describe('core port contracts', () => {
       }).success,
     ).toBe(true);
     expect(
-      v.safeParse(SubmitCardsPortResultSchema, {
+      v.safeParse(RespondPortResultSchema, {
         status: 'invalid',
         issues: [
           { code: 'MISSING_EVIDENCE', path: null, message: 'still missing', missingFields: [] },
@@ -227,11 +255,11 @@ describe('core port contracts', () => {
       }).success,
     ).toBe(false);
     expect(
-      v.safeParse(SubmitCardsPortResultSchema, {
+      v.safeParse(RespondPortResultSchema, {
         status: 'committed',
         revision: 1,
+        kind: 'propose',
         presentation: 'replace',
-        cards,
       }).success,
     ).toBe(false);
   });

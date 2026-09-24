@@ -94,7 +94,7 @@ export type HarnessContext = v.InferOutput<typeof HarnessContextSchema>;
 /** Harness-issued identity for one operation invocation; model output cannot provide it. */
 export const ToolExecutionContextSchema = v.strictObject({
   callId: CallIdSchema,
-  operation: v.picklist(['search_places', 'get_place_details', 'submit_cards']),
+  operation: v.picklist(['search_places', 'get_place_details', 'respond']),
   threadId: OpaqueIdSchema,
   turnId: TurnIdSchema,
   revision: RevisionSchema,

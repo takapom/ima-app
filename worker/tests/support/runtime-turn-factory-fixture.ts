@@ -8,8 +8,8 @@ import type {
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
 import type { HarnessContext, ToolExecutionContext } from '@worker/application/ports/context';
-import type { SubmitCardsInput } from '@worker/application/ports/model';
-import type { SubmitCardsPortResult, SubmitCardsPort } from '@worker/application/ports/submission';
+import type { RespondInput } from '@worker/application/ports/model';
+import type { RespondPortResult, RespondPort } from '@worker/application/ports/submission';
 import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
@@ -69,7 +69,8 @@ export const detailsInput: GetPlaceDetailsInput = {
   freshness: 'reuse_valid',
 };
 
-export const submitInput: SubmitCardsInput = {
+export const submitInput: RespondInput = {
+  kind: 'propose',
   message: ['候補です'],
   hero: { candidateId: 'candidate-1', why: '候補です' },
   alts: [],
@@ -100,12 +101,12 @@ export const detailsResult = {
   warnings: [],
 } satisfies { status: 'ok'; data: GetPlaceDetailsOutput; warnings: never[] };
 
-export const committedResult: SubmitCardsPortResult = {
+export const committedResult: RespondPortResult = {
   status: 'committed',
   responseId: 'response-1',
   revision: 1,
+  kind: 'propose',
   presentation: 'replace',
-  cards: submitInput,
 };
 
 export type PortCalls = {
@@ -140,13 +141,13 @@ export const createPorts = (
       return Promise.resolve(detailsResult);
     },
   };
-  const submit: SubmitCardsPort = {
-    submit: (_input, execution) => {
+  const respond: RespondPort = {
+    respond: (_input, execution) => {
       calls.submits.push(execution);
       return Promise.resolve(committedResult);
     },
   };
-  return { registry, clock, search, details, submit };
+  return { registry, clock, search, details, respond };
 };
 
 export const createBudget = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudget =>

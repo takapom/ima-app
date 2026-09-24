@@ -5,40 +5,36 @@ import {
 } from '@worker/runtime/turn-execution/runtime-batch';
 
 describe('validateRuntimeBatch', () => {
-  it('accepts reads as a non-terminal batch and a single submit as terminal', () => {
-    expect(validateRuntimeBatch([{ kind: 'tool', operation: 'search_places' }])).toMatchObject({
+  it('accepts reads as a non-terminal batch and a single respond as terminal', () => {
+    expect(validateRuntimeBatch([{ kind: 'tool', operation: 'search_places' }])).toEqual({
       ok: true,
       terminal: 'none',
+      missingRespond: null,
     });
-    expect(validateRuntimeBatch([{ kind: 'tool', operation: 'submit_cards' }])).toMatchObject({
+    expect(validateRuntimeBatch([{ kind: 'tool', operation: 'respond' }])).toEqual({
       ok: true,
-      terminal: 'submit',
+      terminal: 'respond',
+      missingRespond: null,
     });
   });
 
-  it('rejects mixed reads, multiple submits, final-plus-tool, and unknown tools', () => {
+  it('rejects mixed reads, multiple responds, retired tools and empty tool finishes', () => {
     const cases: Array<[RuntimeBatchAction[], string]> = [
       [
         [
           { kind: 'tool', operation: 'get_place_details' },
-          { kind: 'tool', operation: 'submit_cards' },
+          { kind: 'tool', operation: 'respond' },
         ],
         'MIXED_TERMINAL_ACTION',
       ],
       [
         [
-          { kind: 'tool', operation: 'submit_cards' },
-          { kind: 'tool', operation: 'submit_cards' },
+          { kind: 'tool', operation: 'respond' },
+          { kind: 'tool', operation: 'respond' },
         ],
-        'MULTIPLE_SUBMIT',
+        'MULTIPLE_RESPOND',
       ],
-      [
-        [
-          { kind: 'final', text: 'message' },
-          { kind: 'tool', operation: 'search_places' },
-        ],
-        'FINAL_WITH_TOOL',
-      ],
+      [[{ kind: 'tool', operation: 'submit_cards' }], 'UNKNOWN_TOOL'],
       [[{ kind: 'tool', operation: 'read' }], 'UNKNOWN_TOOL'],
       [[], 'TOOL_FINISH_WITHOUT_TOOL'],
     ];
@@ -47,11 +43,16 @@ describe('validateRuntimeBatch', () => {
     }
   });
 
-  it('accepts an empty final response without treating it as a tool error', () => {
-    expect(validateRuntimeBatch([{ kind: 'final', text: '' }])).toEqual({
+  it('commits nothing when a step ends without a tool call, and says whether text was written', () => {
+    expect(validateRuntimeBatch([{ kind: 'text', text: '{"kind":"answer"}' }])).toEqual({
       ok: true,
-      terminal: 'message',
-      emptyFinal: true,
+      terminal: 'none',
+      missingRespond: 'TEXT_WITHOUT_RESPOND',
+    });
+    expect(validateRuntimeBatch([{ kind: 'text', text: ' ' }])).toEqual({
+      ok: true,
+      terminal: 'none',
+      missingRespond: 'EMPTY_STEP',
     });
   });
 });

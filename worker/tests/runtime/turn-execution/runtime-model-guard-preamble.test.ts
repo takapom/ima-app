@@ -31,15 +31,13 @@ describe('runtime model guard preamble text', () => {
     await readAll(result.stream);
 
     // The preamble is not a terminal action, so the read runs instead of denying the turn.
-    expect(accepted).toEqual([
-      expect.objectContaining({ terminal: 'none', finalText: null, emptyFinal: false }),
-    ]);
+    expect(accepted).toEqual([expect.objectContaining({ terminal: 'none', missingRespond: null })]);
   });
 
   it('keeps a submit next to preamble text instead of denying the step', async () => {
     const script = modelScript([
       ...textParts('カードを出します'),
-      ...toolParts('submit_cards'),
+      ...toolParts('respond'),
       finish('tool-calls'),
     ]);
     const accepted: RuntimeModelGuardAcceptance[] = [];
@@ -48,10 +46,12 @@ describe('runtime model guard preamble text', () => {
     const result = await streamCall(model);
     await readAll(result.stream);
 
-    expect(accepted).toEqual([expect.objectContaining({ terminal: 'submit', finalText: null })]);
+    expect(accepted).toEqual([
+      expect.objectContaining({ terminal: 'respond', missingRespond: null }),
+    ]);
   });
 
-  it('still treats text as the terminal action when the step calls no tool', async () => {
+  it('commits nothing when the step writes text instead of calling respond', async () => {
     const script = modelScript([...textParts('確認しました'), finish('stop')]);
     const accepted: RuntimeModelGuardAcceptance[] = [];
     const model = guarded(script, { onAccepted: (value) => accepted.push(value) });
@@ -60,7 +60,7 @@ describe('runtime model guard preamble text', () => {
     await readAll(result.stream);
 
     expect(accepted).toEqual([
-      expect.objectContaining({ terminal: 'message', finalText: '確認しました' }),
+      expect.objectContaining({ terminal: 'none', missingRespond: 'TEXT_WITHOUT_RESPOND' }),
     ]);
   });
 });

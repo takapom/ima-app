@@ -7,7 +7,7 @@ import type {
   PlaceSearchPort,
   SearchPlacesInput,
 } from '@worker/application/ports/operations';
-import type { SubmitCardsPort } from '@worker/application/ports/submission';
+import type { RespondPort } from '@worker/application/ports/submission';
 import { createPublicToolSet, invokePublicTool } from '@worker/adapters/in/tools';
 import type { ToolBindingDependencies, ToolRuntime } from '@worker/adapters/in/tools';
 import { createToolRegistry } from './registry-fixture';
@@ -85,15 +85,15 @@ const makeDependencies = (
       return Promise.reject(new Error('unexpected call'));
     },
   };
-  const submit: SubmitCardsPort = {
-    submit: () => Promise.reject(new Error('unexpected call')),
+  const respond: RespondPort = {
+    respond: () => Promise.reject(new Error('unexpected call')),
   };
   return {
     registry,
     clock: () => context.serverNow,
     search,
     details,
-    submit,
+    respond,
     runtime: (operation): ToolRuntime => ({
       context,
       execution: {

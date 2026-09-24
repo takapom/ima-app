@@ -42,7 +42,7 @@ import type {
   RuntimeThinkTurnBuildRequest,
 } from '@worker/runtime/turn-execution/runtime-think-connection';
 import { defaultRuntimeModelContextPolicy } from '@worker/runtime/context/runtime-field-policy';
-import { unavailableSubmit } from '@worker/composition/runtime-production-submit';
+import { unavailableRespond } from '@worker/composition/runtime-production-respond';
 import { resolveRuntimeProductionReadCost } from '@worker/composition/runtime-production-read-cost';
 import { createRuntimeProductionPlacePorts } from '@worker/composition/runtime-production-place-ports';
 import { createFactoryContinuation } from '@worker/composition/runtime-production-continuation';
@@ -278,7 +278,7 @@ const makeOptions = (
         clock,
         search: plan.search,
         details: plan.details,
-        submit: unavailableSubmit(),
+        respond: unavailableRespond(),
         ...(plan.modelContext.fieldPolicy === undefined
           ? {}
           : { modelContextFieldPolicy: plan.modelContext.fieldPolicy }),

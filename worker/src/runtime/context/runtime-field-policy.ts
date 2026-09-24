@@ -392,7 +392,7 @@ export const projectRuntimeToolResultForModel = (
       status: 'committed',
       responseId: typeof value.responseId === 'string' ? value.responseId : 'WITHHELD',
       revision: typeof value.revision === 'number' ? value.revision : 0,
-      presentation: 'replace',
+      presentation: value.presentation === 'replace' ? 'replace' : 'keep',
     };
   }
   if (value.status === 'invalid') {

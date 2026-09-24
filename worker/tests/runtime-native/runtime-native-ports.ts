@@ -27,11 +27,8 @@ import {
   type ToolExecutionContext,
 } from '@worker/application/ports/context';
 import { type RegistryScope } from '@worker/domain/evidence/freshness';
-import { type SubmitCardsInput } from '@worker/application/ports/model';
-import {
-  type SubmitCardsPort,
-  type SubmitCardsPortResult,
-} from '@worker/application/ports/submission';
+import { type RespondInput } from '@worker/application/ports/model';
+import { type RespondPort, type RespondPortResult } from '@worker/application/ports/submission';
 import { type SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
 
@@ -310,9 +307,9 @@ export type RuntimeNativePortFixture = {
   readonly scope: RegistryScope;
   readonly turnId: string;
   readonly inputs: {
-    readonly invalidSubmit: SubmitCardsInput;
+    readonly invalidSubmit: RespondInput;
     readonly details: GetPlaceDetailsInput;
-    readonly validSubmit: SubmitCardsInput;
+    readonly validSubmit: RespondInput;
   };
   readonly observations: NativeObservationIds;
   readonly retention: RuntimeRetentionContext;
@@ -320,7 +317,7 @@ export type RuntimeNativePortFixture = {
   readonly ports: {
     readonly search: PlaceSearchPort;
     readonly details: PlaceDetailsPort;
-    readonly submit: SubmitCardsPort;
+    readonly respond: RespondPort;
   };
   readonly commit: RuntimeNativeCommitPort;
   readonly hashes: RuntimeNativeHashPort;
@@ -385,13 +382,14 @@ export const createRuntimeNativePortFixture = (
     submitContext,
   );
   const observations: NativeObservationIds = { identity, opening };
-  const validSubmit: SubmitCardsInput = {
+  const validSubmit: Extract<RespondInput, { kind: 'propose' }> = {
+    kind: 'propose',
     message: ['Runtime native candidate is open now.'],
     hero: { candidateId: candidate.candidateId, why: 'Identity and opening hours are registered.' },
     alts: [],
   };
   // Repairable: the model picked a candidate that no search registered.
-  const invalidSubmit: SubmitCardsInput = {
+  const invalidSubmit: RespondInput = {
     ...validSubmit,
     hero: { ...validSubmit.hero, candidateId: 'candidate-unregistered' },
   };
@@ -426,19 +424,19 @@ export const createRuntimeNativePortFixture = (
         });
       },
     } satisfies PlaceDetailsPort,
-    submit: {
-      submit: (
-        _input: SubmitCardsInput,
+    respond: {
+      respond: (
+        _input: RespondInput,
         _execution: ToolExecutionContext,
-      ): Promise<SubmitCardsPortResult> => {
-        operations.push('submit_cards');
+      ): Promise<RespondPortResult> => {
+        operations.push('respond');
         return Promise.resolve({
           status: 'invalid',
           issues: [
             {
               code: 'INVALID_ARGUMENT',
-              path: 'submit',
-              message: 'native fixture submit adapter must be rebuilt by the composition',
+              path: 'respond',
+              message: 'native fixture respond adapter must be rebuilt by the composition',
               missingFields: [],
             },
           ],
@@ -446,7 +444,7 @@ export const createRuntimeNativePortFixture = (
           remainingRepairs: 0,
         });
       },
-    } satisfies SubmitCardsPort,
+    } satisfies RespondPort,
   };
   return {
     context,

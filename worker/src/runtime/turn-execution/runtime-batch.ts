@@ -1,32 +1,33 @@
 export const RUNTIME_PUBLIC_OPERATIONS = Object.freeze([
   'search_places',
   'get_place_details',
-  'submit_cards',
+  'respond',
 ] as const);
 
 export type RuntimePublicOperation = (typeof RUNTIME_PUBLIC_OPERATIONS)[number];
 
+/** A step ended without a tool call; `text` is what the model wrote instead (maybe nothing). */
 export type RuntimeBatchAction =
   | { readonly kind: 'tool'; readonly operation: string }
-  | { readonly kind: 'final'; readonly text: string };
+  | { readonly kind: 'text'; readonly text: string };
 
 export type RuntimeBatchIssueCode =
-  | 'UNKNOWN_TOOL'
-  | 'MIXED_TERMINAL_ACTION'
-  | 'MULTIPLE_SUBMIT'
-  | 'FINAL_WITH_TOOL'
-  | 'TOOL_FINISH_WITHOUT_TOOL';
+  'UNKNOWN_TOOL' | 'MIXED_TERMINAL_ACTION' | 'MULTIPLE_RESPOND' | 'TOOL_FINISH_WITHOUT_TOOL';
 
 export type RuntimeBatchIssue = {
   readonly code: RuntimeBatchIssueCode;
   readonly message: string;
 };
 
+/**
+ * Every step must call a tool, and respond is the only terminal action. A step without a tool
+ * call commits nothing; `missingRespond` says whether the model wrote text or nothing at all.
+ */
 export type RuntimeBatchResult =
   | {
       readonly ok: true;
-      readonly terminal: 'none' | 'message' | 'submit';
-      readonly emptyFinal: boolean;
+      readonly terminal: 'none' | 'respond';
+      readonly missingRespond: 'TEXT_WITHOUT_RESPOND' | 'EMPTY_STEP' | null;
     }
   | { readonly ok: false; readonly issue: RuntimeBatchIssue };
 
@@ -45,32 +46,26 @@ export const validateRuntimeBatch = (
   const tools = actions.filter(
     (action): action is Extract<RuntimeBatchAction, { kind: 'tool' }> => action.kind === 'tool',
   );
-  const finals = actions.filter(
-    (action): action is Extract<RuntimeBatchAction, { kind: 'final' }> => action.kind === 'final',
-  );
   const unknown = tools.find((action) => !isPublicOperation(action.operation));
   if (unknown !== undefined) return issue('UNKNOWN_TOOL', 'provider requested an unknown tool');
-  const submits = tools.filter((action) => action.operation === 'submit_cards');
-  const reads = tools.filter((action) => action.operation !== 'submit_cards');
-  if (finals.length > 0 && tools.length > 0) {
-    return issue('FINAL_WITH_TOOL', 'final message and tool calls must be separate steps');
+  const responds = tools.filter((action) => action.operation === 'respond');
+  const reads = tools.filter((action) => action.operation !== 'respond');
+  if (reads.length > 0 && responds.length > 0) {
+    return issue('MIXED_TERMINAL_ACTION', 'read and respond actions must be separate steps');
   }
-  if (reads.length > 0 && submits.length > 0) {
-    return issue('MIXED_TERMINAL_ACTION', 'read and submit actions must be separate steps');
+  if (responds.length > 1) return issue('MULTIPLE_RESPOND', 'a step may contain one respond');
+  if (tools.length > 0) {
+    return { ok: true, terminal: responds.length === 1 ? 'respond' : 'none', missingRespond: null };
   }
-  if (submits.length > 1) return issue('MULTIPLE_SUBMIT', 'a step may contain one submit action');
-  if (finals.length > 1) return issue('FINAL_WITH_TOOL', 'a step may contain one final message');
-  if (tools.length === 0 && finals.length === 0) {
+  const text = actions.find(
+    (action): action is Extract<RuntimeBatchAction, { kind: 'text' }> => action.kind === 'text',
+  );
+  if (text === undefined) {
     return issue('TOOL_FINISH_WITHOUT_TOOL', 'provider step has no executable action');
-  }
-  if (finals.length === 1) {
-    const final = finals[0];
-    if (final === undefined) return issue('FINAL_WITH_TOOL', 'final message is missing');
-    return { ok: true, terminal: 'message', emptyFinal: final.text.length === 0 };
   }
   return {
     ok: true,
-    terminal: submits.length === 1 ? 'submit' : 'none',
-    emptyFinal: false,
+    terminal: 'none',
+    missingRespond: text.text.trim().length > 0 ? 'TEXT_WITHOUT_RESPOND' : 'EMPTY_STEP',
   };
 };

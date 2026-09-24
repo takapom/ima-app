@@ -6,7 +6,7 @@ import type {
   SearchPlacesInput,
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
-import type { SubmitCardsPort } from '@worker/application/ports/submission';
+import type { RespondPort } from '@worker/application/ports/submission';
 import { invokePublicTool } from '@worker/adapters/in/tools';
 import type { ToolBindingDependencies, ToolRuntime } from '@worker/adapters/in/tools';
 import { createToolRegistry } from './registry-fixture';
@@ -75,8 +75,8 @@ const execution = (operation: ToolExecutionContext['operation']): ToolExecutionC
 const unusedDetails: PlaceDetailsPort = {
   read: () => Promise.reject(new Error('unused details Port')),
 };
-const unusedSubmit: SubmitCardsPort = {
-  submit: () => Promise.reject(new Error('unused submit Port')),
+const unusedRespond: RespondPort = {
+  respond: () => Promise.reject(new Error('unused respond Port')),
 };
 
 describe('public tool read clock', () => {
@@ -103,7 +103,7 @@ describe('public tool read clock', () => {
       },
       search,
       details: unusedDetails,
-      submit: unusedSubmit,
+      respond: unusedRespond,
       runtime: (operation): ToolRuntime => ({
         context,
         execution: execution(operation),

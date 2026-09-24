@@ -138,6 +138,8 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
       observationIdsSeen: [],
       modelCandidateCounts: [],
       finalResponseFlags: [],
+      toolChoices: [],
+      offeredTools: [],
       fetchUrls: [],
       searchResultCounts: [],
       llmInputCanarySeen: false,
@@ -181,8 +183,7 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
         if (monotonicCalls++ === 0) return budgetStart;
         if (
           this.productionScenario === 'final-reserve' ||
-          this.productionScenario === 'late-tool' ||
-          this.productionScenario === 'late-submit'
+          this.productionScenario === 'late-tool'
         ) {
           return (
             budgetStart +

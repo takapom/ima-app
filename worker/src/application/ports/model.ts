@@ -18,17 +18,41 @@ export const SubmitCardsPayloadSchema = v.strictObject({
   alts: v.pipe(v.array(CardSelectionSchema), v.maxLength(2)),
 });
 
+type CardsPayload = v.InferOutput<typeof SubmitCardsPayloadSchema>;
+
+const altsExplainDifferences = (input: CardsPayload): boolean =>
+  input.alts.every((alt) => alt.diff !== undefined);
+
+const candidatesAreUnique = (input: CardsPayload): boolean =>
+  new Set([input.hero.candidateId, ...input.alts.map((alt) => alt.candidateId)]).size ===
+  input.alts.length + 1;
+
 export const SubmitCardsInputSchema = v.pipe(
   SubmitCardsPayloadSchema,
+  v.check(altsExplainDifferences, 'alternative cards require diff evidence'),
+  v.check(candidatesAreUnique, 'hero and alternative candidates must be unique'),
+);
+export type SubmitCardsInput = v.InferOutput<typeof SubmitCardsInputSchema>;
+
+/**
+ * The one way the model ends a turn. The kinds are equal choices: ask a question, answer
+ * (explain, compare, or report that nothing fits), or propose cards. Asking and answering keep
+ * the cards on screen; proposing replaces them.
+ */
+export const RespondInputSchema = v.pipe(
+  v.variant('kind', [
+    v.strictObject({ kind: v.literal('ask'), message: Text(300) }),
+    v.strictObject({ kind: v.literal('answer'), message: Text(300) }),
+    v.strictObject({ kind: v.literal('propose'), ...SubmitCardsPayloadSchema.entries }),
+  ]),
   v.check(
-    (input) => input.alts.every((alt) => alt.diff !== undefined),
+    (input) => input.kind !== 'propose' || altsExplainDifferences(input),
     'alternative cards require diff evidence',
   ),
   v.check(
-    (input) =>
-      new Set([input.hero.candidateId, ...input.alts.map((alt) => alt.candidateId)]).size ===
-      input.alts.length + 1,
+    (input) => input.kind !== 'propose' || candidatesAreUnique(input),
     'hero and alternative candidates must be unique',
   ),
 );
-export type SubmitCardsInput = v.InferOutput<typeof SubmitCardsInputSchema>;
+export type RespondInput = v.InferOutput<typeof RespondInputSchema>;
+export type RespondKind = RespondInput['kind'];

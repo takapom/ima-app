@@ -8,10 +8,10 @@ import {
   Text,
 } from '@worker/domain/primitives';
 import type { CancellationToken, ToolExecutionContext } from '@worker/application/ports/context';
-import { SubmitCardsInputSchema } from '@worker/application/ports/model';
+import { RespondInputSchema } from '@worker/application/ports/model';
 
-export const SubmitCardsPortInputSchema = SubmitCardsInputSchema;
-export type SubmitCardsPortInput = v.InferOutput<typeof SubmitCardsPortInputSchema>;
+export const RespondPortInputSchema = RespondInputSchema;
+export type RespondPortInput = v.InferOutput<typeof RespondPortInputSchema>;
 
 const SubmitIssueCodeSchema = v.picklist([
   'INVALID_ARGUMENT',
@@ -35,16 +35,23 @@ export const SubmitIssueSchema = v.strictObject({
 });
 export type SubmitIssue = v.InferOutput<typeof SubmitIssueSchema>;
 
-export const SubmitCardsCommittedSchema = v.strictObject({
-  status: v.literal('committed'),
-  responseId: ResponseIdSchema,
-  revision: RevisionSchema,
-  presentation: v.literal('replace'),
-  cards: SubmitCardsInputSchema,
-});
-export type SubmitCardsCommitted = v.InferOutput<typeof SubmitCardsCommittedSchema>;
+/** Asking and answering keep the cards on screen; proposing replaces them. */
+export const RespondCommittedSchema = v.pipe(
+  v.strictObject({
+    status: v.literal('committed'),
+    responseId: ResponseIdSchema,
+    revision: RevisionSchema,
+    kind: v.picklist(['ask', 'answer', 'propose']),
+    presentation: v.picklist(['keep', 'replace']),
+  }),
+  v.check(
+    (result) => (result.kind === 'propose') === (result.presentation === 'replace'),
+    'respond kind and presentation are inconsistent',
+  ),
+);
+export type RespondCommitted = v.InferOutput<typeof RespondCommittedSchema>;
 
-export const SubmitCardsInvalidSchema = v.pipe(
+export const RespondInvalidSchema = v.pipe(
   v.strictObject({
     status: v.literal('invalid'),
     issues: v.pipe(v.array(SubmitIssueSchema), v.minLength(1), v.maxLength(8)),
@@ -62,24 +69,21 @@ export const SubmitCardsInvalidSchema = v.pipe(
       (result.remainingRepairs > 0 ? result.repairable : !result.repairable) &&
       (!terminal || (!result.repairable && result.remainingRepairs === 0))
     );
-  }, 'invalid submit repair state is inconsistent'),
+  }, 'invalid respond repair state is inconsistent'),
 );
-export type SubmitCardsInvalid = v.InferOutput<typeof SubmitCardsInvalidSchema>;
+export type RespondInvalid = v.InferOutput<typeof RespondInvalidSchema>;
 
-export const SubmitCardsPortResultSchema = v.union([
-  SubmitCardsCommittedSchema,
-  SubmitCardsInvalidSchema,
-]);
-export type SubmitCardsPortResult = v.InferOutput<typeof SubmitCardsPortResultSchema>;
+export const RespondPortResultSchema = v.union([RespondCommittedSchema, RespondInvalidSchema]);
+export type RespondPortResult = v.InferOutput<typeof RespondPortResultSchema>;
 
 /**
  * Runtime adapters implement this boundary. The schema exposes the response ID only as the
  * server-issued result shape; registry checks and atomic commit remain in the owning Harness.
  */
-export interface SubmitCardsPort {
-  submit(
-    input: SubmitCardsPortInput,
+export interface RespondPort {
+  respond(
+    input: RespondPortInput,
     execution: ToolExecutionContext,
     cancellation: CancellationToken,
-  ): Promise<SubmitCardsPortResult>;
+  ): Promise<RespondPortResult>;
 }

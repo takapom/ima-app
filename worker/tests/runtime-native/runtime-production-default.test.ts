@@ -122,6 +122,11 @@ describe('production factory through a real Think Durable Object', () => {
     expect(report).not.toBeNull();
     if (report === null) return;
     expect(report.calls).toBe(3);
+    // Every step requires a tool call; outside the final reserve all public tools are offered.
+    expect(report.toolChoices).toEqual(['required', 'required', 'required']);
+    expect(report.offeredTools).toEqual(
+      Array.from({ length: 3 }, () => ['get_place_details', 'respond', 'search_places']),
+    );
     expect(report.fetchUrls).toEqual([
       'https://webservice.recruit.co.jp/hotpepper/gourmet/v1/',
       'https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?id=m16-production-place',
@@ -232,11 +237,11 @@ describe('production factory through a real Think Durable Object', () => {
       toolNames: [
         'search_places',
         'get_place_details',
-        'submit_cards',
-        'final_message',
+        'respond',
+        'respond',
         'search_places',
         'get_place_details',
-        'submit_cards',
+        'respond',
       ],
       modelHistorySeen: true,
       modelCardSetSeen: true,
@@ -275,9 +280,12 @@ describe('production factory through a real Think Durable Object', () => {
     });
 
     const report: RuntimeProductionReport | null = await stub.getRuntimeProductionReport();
+    // The final step reaches the provider with respond as its only tool, and a tool is required.
     expect(report).toMatchObject({
       calls: 1,
       finalResponseFlags: [true],
+      toolChoices: ['required'],
+      offeredTools: [['respond']],
       fetchUrls: [],
     });
   });
@@ -307,39 +315,6 @@ describe('production factory through a real Think Durable Object', () => {
       calls: 1,
       finalResponseFlags: [true],
       toolNames: ['search_places'],
-      fetchUrls: [],
-    });
-    await expect(stub.replayRuntimeTurn(target)).resolves.toEqual({
-      status: 'unavailable',
-      code: 'NOT_FOUND',
-    });
-  });
-
-  it('blocks a final-only submit before the CommitPort can run', async () => {
-    const threadId = `m16-production-late-submit-${crypto.randomUUID()}`;
-    const target: ThreadRuntimeTarget = {
-      ownerScopeRef: 'owner-m16-production-late-submit',
-      threadId,
-      turnId: `turn-${crypto.randomUUID()}`,
-      revision: 1,
-    };
-    const stub = productionEnv().PRODUCTION_THREADS.getByName(threadId);
-
-    await expect(stub.initialize(target.ownerScopeRef, target.threadId)).resolves.toMatchObject({
-      ok: true,
-    });
-    await expect(
-      stub.runRuntimeTurn(requestFor(target, '[m16-late-submit] final response with cards')),
-    ).resolves.toMatchObject({
-      status: 'failed',
-      code: 'MIXED_TERMINAL_ACTION',
-      response: null,
-    });
-
-    await expect(stub.getRuntimeProductionReport()).resolves.toMatchObject({
-      calls: 1,
-      finalResponseFlags: [true],
-      toolNames: ['submit_cards'],
       fetchUrls: [],
     });
     await expect(stub.replayRuntimeTurn(target)).resolves.toEqual({
@@ -406,7 +381,7 @@ describe('production factory through a real Think Durable Object', () => {
     const report: RuntimeProductionReport | null = await stub.getRuntimeProductionReport();
     expect(report).toMatchObject({
       calls: 3,
-      toolNames: ['search_places', 'get_place_details', 'final_message'],
+      toolNames: ['search_places', 'get_place_details', 'respond'],
       llmInputCanarySeen: true,
       deniedFieldCanarySeen: false,
     });

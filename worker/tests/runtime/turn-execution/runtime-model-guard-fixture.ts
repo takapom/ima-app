@@ -56,8 +56,8 @@ export const textParts = (text = 'done'): RuntimeModelGuardStreamPart[] => [
 
 export const validFinal = (): RuntimeModelGuardStreamPart[] => [
   { type: 'stream-start', warnings: [] },
-  ...textParts(),
-  finish('stop'),
+  ...toolParts('respond'),
+  finish('tool-calls'),
 ];
 
 export const budget = (

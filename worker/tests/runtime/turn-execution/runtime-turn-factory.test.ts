@@ -1,5 +1,5 @@
 import type { TurnContext } from '@cloudflare/think';
-import type { SubmitCardsPort } from '@worker/application/ports/submission';
+import type { RespondPort } from '@worker/application/ports/submission';
 import { describe, expect, it } from 'vitest';
 import { RuntimeTurnFactoryError } from '@worker/runtime/turn-execution/runtime-turn-factory';
 import type {
@@ -25,8 +25,8 @@ describe('createRuntimeTurnFactory', () => {
     const { factory, stopWhen } = createFactory(calls);
     expect(Object.keys(factory.tools).sort()).toEqual([
       'get_place_details',
+      'respond',
       'search_places',
-      'submit_cards',
     ]);
 
     const model = modelFor('message', { calls: 0, requests: [] });
@@ -39,7 +39,7 @@ describe('createRuntimeTurnFactory', () => {
     };
     const config = await factory.hooks.beforeTurn(turn);
     expect(config).toMatchObject({
-      activeTools: ['search_places', 'get_place_details', 'submit_cards'],
+      activeTools: ['search_places', 'get_place_details', 'respond'],
       maxSteps: 6,
       maxRetries: 0,
       stopWhen,
@@ -55,7 +55,7 @@ describe('createRuntimeTurnFactory', () => {
       },
     };
     await expect(factory.hooks.beforeTurn(thinkManagedTurn)).resolves.toMatchObject({
-      activeTools: ['search_places', 'get_place_details', 'submit_cards'],
+      activeTools: ['search_places', 'get_place_details', 'respond'],
     });
 
     const extraToolTurn: TurnContext = {
@@ -86,8 +86,8 @@ describe('createRuntimeTurnFactory', () => {
   it('records why a submit was refused instead of leaving it invisible', async () => {
     const calls: PortCalls = emptyPortCalls();
     const rejections: RuntimeSubmitRejection[] = [];
-    const refusing: SubmitCardsPort = {
-      submit: () =>
+    const refusing: RespondPort = {
+      respond: () =>
         Promise.resolve({
           status: 'invalid',
           repairable: true,
@@ -104,11 +104,11 @@ describe('createRuntimeTurnFactory', () => {
         }),
     };
     const { factory } = createFactory(calls, {
-      buildSubmitPort: () => refusing,
+      buildRespondPort: () => refusing,
       onSubmitRejected: (rejection) => rejections.push(rejection),
     });
 
-    await invokePublicToolEnvelope('submit_cards', { input: submitInput }, factory.dependencies, {
+    await invokePublicToolEnvelope('respond', { input: submitInput }, factory.dependencies, {
       toolCallId: 'sdk-submit-refused',
     });
 
@@ -169,7 +169,7 @@ describe('createRuntimeTurnFactory', () => {
     const calls: PortCalls = emptyPortCalls();
     const { factory } = createFactory(calls);
     const first = await invokePublicToolEnvelope(
-      'submit_cards',
+      'respond',
       { input: submitInput },
       factory.dependencies,
       { toolCallId: 'sdk-submit-1' },
@@ -178,7 +178,7 @@ describe('createRuntimeTurnFactory', () => {
     expect(factory.budget.snapshot()).toMatchObject({ submitAttempts: 1, completed: true });
 
     const second = await invokePublicToolEnvelope(
-      'submit_cards',
+      'respond',
       { input: submitInput },
       factory.dependencies,
       { toolCallId: 'sdk-submit-2' },
@@ -194,13 +194,13 @@ describe('createRuntimeTurnFactory', () => {
     const calls: PortCalls = emptyPortCalls();
     let now = context.serverNow;
     const built: Array<{ now: string }> = [];
-    const dynamicSubmit: SubmitCardsPort = {
-      submit: () => Promise.resolve(committedResult),
+    const dynamicSubmit: RespondPort = {
+      respond: () => Promise.resolve(committedResult),
     };
     const { factory } = createFactory(
       calls,
       {
-        buildSubmitPort: ({ now: sampledNow }) => {
+        buildRespondPort: ({ now: sampledNow }) => {
           built.push({ now: sampledNow });
           return dynamicSubmit;
         },
@@ -209,7 +209,7 @@ describe('createRuntimeTurnFactory', () => {
     );
     now = '2026-09-10T00:01:00Z';
     const result = await invokePublicToolEnvelope(
-      'submit_cards',
+      'respond',
       { input: submitInput },
       factory.dependencies,
       { toolCallId: 'sdk-submit-fresh-context' },

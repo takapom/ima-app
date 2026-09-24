@@ -17,14 +17,14 @@ import type {
 import type { Issue } from '@worker/domain/issue';
 import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
 import type { Result } from '@worker/domain/result';
-import type { SubmitCardsInput } from '@worker/application/ports/model';
+import type { RespondInput } from '@worker/application/ports/model';
 import type {
-  SubmitCardsInvalid,
-  SubmitCardsPort,
-  SubmitCardsPortResult,
+  RespondInvalid,
+  RespondPort,
+  RespondPortResult,
 } from '@worker/application/ports/submission';
 
-export const PUBLIC_TOOL_NAMES = ['search_places', 'get_place_details', 'submit_cards'] as const;
+export const PUBLIC_TOOL_NAMES = ['search_places', 'get_place_details', 'respond'] as const;
 
 export type PublicToolName = (typeof PUBLIC_TOOL_NAMES)[number];
 
@@ -45,7 +45,7 @@ export type ToolRuntime = {
   readonly context: HarnessContext;
   readonly execution: ToolExecutionContext;
   readonly cancellation: CancellationToken;
-  /** M10 supplies the remaining submit repair budget for this invocation. */
+  /** M10 supplies the remaining respond repair budget for this invocation. */
   readonly remainingRepairs: number;
 };
 
@@ -65,7 +65,7 @@ export type PublicToolEnvelope<Input> = {
 
 export type SearchToolEnvelope = PublicToolEnvelope<SearchPlacesInput>;
 export type DetailsToolEnvelope = PublicToolEnvelope<GetPlaceDetailsInput>;
-export type SubmitToolEnvelope = PublicToolEnvelope<SubmitCardsInput>;
+export type RespondToolEnvelope = PublicToolEnvelope<RespondInput>;
 
 export type ToolBindingDependencies = {
   /** Read-only candidate authorization; the registry remains the Application owner. */
@@ -74,16 +74,16 @@ export type ToolBindingDependencies = {
   readonly clock: () => string;
   readonly search: PlaceSearchPort;
   readonly details: PlaceDetailsPort;
-  readonly submit: SubmitCardsPort;
-  /** Charges and reports submit failures rejected before the Application Port is reached. */
-  readonly rejectSubmitInput?: (result: SubmitCardsInvalid) => SubmitCardsInvalid;
+  readonly respond: RespondPort;
+  /** Charges and reports respond failures rejected before the Application Port is reached. */
+  readonly rejectRespondInput?: (result: RespondInvalid) => RespondInvalid;
   readonly readAdmission?: ToolReadAdmission;
   /** Host-evaluated policy for the SDK model-input surface. Omitted means deny by default. */
   readonly modelContextFieldPolicy?: ModelContextFieldPolicy;
   readonly runtime: ToolRuntimeFactory;
 };
 
-export type SubmitToolResult = SubmitCardsPortResult;
+export type RespondToolResult = RespondPortResult;
 
 type KnownValue<T> = T extends { status: 'known'; observations: ReadonlyArray<infer Observation> }
   ? Observation extends { value: infer Value }
@@ -162,15 +162,15 @@ export type SafeGetPlaceDetailsOutput = {
 export type SearchToolResult = Result<SafeSearchPlacesOutput>;
 export type DetailsToolResult = Result<SafeGetPlaceDetailsOutput>;
 
-export type PublicToolResult = SearchToolResult | DetailsToolResult | SubmitToolResult;
+export type PublicToolResult = SearchToolResult | DetailsToolResult | RespondToolResult;
 
 export type PublicToolSet = {
   readonly search_places: Tool<SearchToolEnvelope, SearchToolResult>;
   readonly get_place_details: Tool<DetailsToolEnvelope, DetailsToolResult>;
-  readonly submit_cards: Tool<SubmitToolEnvelope, SubmitToolResult>;
+  readonly respond: Tool<RespondToolEnvelope, RespondToolResult>;
 };
 
-export type PublicToolInput = SearchPlacesInput | GetPlaceDetailsInput | SubmitCardsInput;
+export type PublicToolInput = SearchPlacesInput | GetPlaceDetailsInput | RespondInput;
 
 export const isPublicToolName = (name: string): name is PublicToolName =>
-  name === 'search_places' || name === 'get_place_details' || name === 'submit_cards';
+  name === 'search_places' || name === 'get_place_details' || name === 'respond';

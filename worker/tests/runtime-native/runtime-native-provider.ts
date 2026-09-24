@@ -1,5 +1,5 @@
 import type { GetPlaceDetailsInput } from '@worker/application/ports/operations';
-import type { SubmitCardsInput } from '@worker/application/ports/model';
+import type { RespondInput } from '@worker/application/ports/model';
 import {
   modelFor,
   type RuntimeGateModel,
@@ -38,19 +38,19 @@ export type RuntimeNativeModelReport = RuntimeGateModelReport & {
   abortObserved: boolean;
   rawProviderErrorDetailSeen: boolean;
 };
-export type RuntimeNativeToolName = 'get_place_details' | 'submit_cards';
+export type RuntimeNativeToolName = 'get_place_details' | 'respond';
 
 export type RuntimeNativeInputs = {
-  readonly invalidSubmit: SubmitCardsInput;
+  readonly invalidSubmit: RespondInput;
   readonly details: GetPlaceDetailsInput;
-  readonly validSubmit: SubmitCardsInput;
+  readonly validSubmit: RespondInput;
 };
 
 export type RuntimeNativeAction =
   | {
       readonly kind: 'tool';
       readonly name: RuntimeNativeToolName;
-      readonly input: GetPlaceDetailsInput | SubmitCardsInput;
+      readonly input: GetPlaceDetailsInput | RespondInput;
     }
   | { readonly kind: 'final'; readonly text: string };
 
@@ -159,7 +159,7 @@ export const createRuntimeNativeScenarioPlan = (
       scenario,
       steps: [
         {
-          actions: [{ kind: 'tool', name: 'submit_cards', input: inputs.invalidSubmit }],
+          actions: [{ kind: 'tool', name: 'respond', input: inputs.invalidSubmit }],
           finish: 'tool-calls',
         },
         {
@@ -167,13 +167,13 @@ export const createRuntimeNativeScenarioPlan = (
           finish: 'tool-calls',
         },
         {
-          actions: [{ kind: 'tool', name: 'submit_cards', input: inputs.validSubmit }],
+          actions: [{ kind: 'tool', name: 'respond', input: inputs.validSubmit }],
           finish: 'tool-calls',
         },
       ],
       expected: {
         modelCalls: 3,
-        providerToolCalls: ['submit_cards', 'get_place_details', 'submit_cards'],
+        providerToolCalls: ['respond', 'get_place_details', 'respond'],
         commitWrites: 1,
         terminal: 'submit',
         guardError: null,
@@ -186,14 +186,14 @@ export const createRuntimeNativeScenarioPlan = (
       scenario,
       steps: [
         {
-          actions: [{ kind: 'tool', name: 'submit_cards', input: inputs.validSubmit }],
+          actions: [{ kind: 'tool', name: 'respond', input: inputs.validSubmit }],
           finish: 'tool-calls',
         },
         { actions: [{ kind: 'final', text: '' }], finish: 'stop' },
       ],
       expected: {
         modelCalls: 2,
-        providerToolCalls: ['submit_cards'],
+        providerToolCalls: ['respond'],
         commitWrites: 1,
         terminal: 'empty-final',
         guardError: null,
@@ -208,14 +208,14 @@ export const createRuntimeNativeScenarioPlan = (
         {
           actions: [
             { kind: 'tool', name: 'get_place_details', input: inputs.details },
-            { kind: 'tool', name: 'submit_cards', input: inputs.validSubmit },
+            { kind: 'tool', name: 'respond', input: inputs.validSubmit },
           ],
           finish: 'tool-calls',
         },
       ],
       expected: {
         modelCalls: 1,
-        providerToolCalls: ['get_place_details', 'submit_cards'],
+        providerToolCalls: ['get_place_details', 'respond'],
         commitWrites: 0,
         terminal: 'guard-rejected',
         guardError: 'MIXED_TERMINAL_ACTION',

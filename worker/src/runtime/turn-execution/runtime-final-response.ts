@@ -4,10 +4,7 @@ import type {
   RuntimeBeforeStepDelegate,
   RuntimeBeforeToolCallDelegate,
 } from '@worker/runtime/turn-execution/runtime-turn-factory';
-import type {
-  RuntimeModelGuardAcceptance,
-  RuntimeModelGuardCallOptions,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelGuardCallOptions } from '@worker/runtime/turn-execution/runtime-model-guard';
 
 type RuntimeFinalResponseOptions = {
   readonly budget: RuntimeBudget;
@@ -20,15 +17,20 @@ export type RuntimeFinalResponseHooks = {
   readonly beforeToolCall: RuntimeBeforeToolCallDelegate;
   readonly isFinalResponse: (params: RuntimeModelGuardCallOptions) => boolean;
   readonly reserveModelStep: RuntimeBudget['reserveModelStep'];
-  readonly accept: (acceptance: RuntimeModelGuardAcceptance) => void;
 };
 
 const finalToolBlock: ToolCallDecision = {
   action: 'block',
-  reason: 'final response mode does not permit tool calls',
+  reason: 'final response mode permits only respond',
 };
 
-const finalStep = { activeTools: [] as string[], toolChoice: 'none' as const };
+/**
+ * Every step must call a tool; the final step may only respond. A committed respond ends the
+ * loop through the budget's stop condition, so a refused respond leaves the next step a normal
+ * repair step.
+ */
+const readStep = { toolChoice: 'required' as const };
+const finalStep = { activeTools: ['respond'], toolChoice: 'required' as const };
 
 const finalDenial = (): RuntimeBudgetResult<void> => ({
   ok: false,
@@ -43,7 +45,6 @@ export const createRuntimeFinalResponseHooks = (
 ): RuntimeFinalResponseHooks => {
   let finalOnly = false;
   let finalReserved = false;
-  let finalAccepted = false;
 
   const enterFinalReserve = (): boolean => {
     if (options.budget.checkAdmission(false)?.code === 'FINAL_RESERVE') finalOnly = true;
@@ -52,7 +53,7 @@ export const createRuntimeFinalResponseHooks = (
 
   const reserveModelStep: RuntimeBudget['reserveModelStep'] = (finalResponse = false) => {
     if (!finalResponse) return options.budget.reserveModelStep(false);
-    if (finalReserved || finalAccepted) return finalDenial();
+    if (finalReserved) return finalDenial();
     const result = options.budget.reserveModelStep(true);
     if (result.ok) finalReserved = true;
     return result;
@@ -61,19 +62,18 @@ export const createRuntimeFinalResponseHooks = (
   const isFinalResponse = (params: RuntimeModelGuardCallOptions): boolean => {
     const selected = enterFinalReserve() || options.isFinalResponse?.(params) === true;
     if (selected) finalOnly = true;
-    return selected || finalAccepted;
+    return selected;
   };
 
   const beforeStep: RuntimeBeforeStepDelegate = (): StepConfig | void => {
     enterFinalReserve();
-    if (!finalOnly && !finalAccepted) return undefined;
-    return finalStep;
+    return finalOnly ? finalStep : readStep;
   };
 
   const beforeToolCall: RuntimeBeforeToolCallDelegate = async (
     context: ToolCallContext,
   ): Promise<ToolCallDecision | void> => {
-    if (finalOnly || finalAccepted) return finalToolBlock;
+    if (finalOnly && context.toolName !== 'respond') return finalToolBlock;
     return options.beforeToolCall?.(context);
   };
 
@@ -82,8 +82,5 @@ export const createRuntimeFinalResponseHooks = (
     beforeToolCall,
     isFinalResponse,
     reserveModelStep,
-    accept: (acceptance) => {
-      if (acceptance.terminal === 'message') finalAccepted = true;
-    },
   };
 };
