@@ -67,7 +67,6 @@ const searchBody = (requestId: string, threadId: string): Json => ({
     areaText: '恵比寿',
     budget: 'normal',
   },
-  savedPlaceRefs: [],
   excludeCandidateIds: [],
   mode: 'search',
   idempotencyKey: `search-${requestId}`,

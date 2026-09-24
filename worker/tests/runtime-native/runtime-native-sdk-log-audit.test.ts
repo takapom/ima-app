@@ -45,7 +45,6 @@ const requestFor = (target: ThreadRuntimeTarget): ThreadRuntimeTurnInput => {
         areaText: 'SDKログ監査',
         budget: 'normal',
       },
-      savedPlaceRefs: [],
       excludeCandidateIds: [],
       mode: 'search',
       idempotencyKey,

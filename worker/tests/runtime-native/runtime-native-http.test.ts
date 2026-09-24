@@ -79,7 +79,6 @@ const turnBody = (
       areaText: 'runtime native fixture',
       budget: 'normal',
     },
-    savedPlaceRefs: [],
     excludeCandidateIds: [],
     mode: 'search',
     idempotencyKey: `native-http-turn-key-${crypto.randomUUID()}`,

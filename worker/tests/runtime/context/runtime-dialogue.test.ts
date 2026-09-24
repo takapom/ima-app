@@ -30,7 +30,6 @@ const request = (turnId: string, text: string, revision = 1): ThreadTurnRequest 
     areaText: null,
     budget: 'normal',
   },
-  savedPlaceRefs: [],
   excludeCandidateIds: [],
   mode: 'search',
   idempotencyKey: `key-${turnId}`,
@@ -91,7 +90,7 @@ const fixture = () => {
 const policy = { ...denyModelContextFieldPolicy, history: 'allow' as const };
 
 describe('conversation context', () => {
-  it('restores a snapshot written with legacy quoted turns without keeping them', () => {
+  it('restores a snapshot written with legacy quoted turns and saved refs without keeping them', () => {
     const f = fixture();
     const first = request('turn-question', '甘いものを食べたい');
     const store = f.reopen();
@@ -99,10 +98,12 @@ describe('conversation context', () => {
     store.commitTurn(first, response(first, 'どのエリアで探しますか？'));
     const written = JSON.parse(f.payload()) as Record<string, unknown>;
     expect(written).not.toHaveProperty('originalTurns');
+    expect(written).not.toHaveProperty('savedPlaceRefs');
 
     const legacy = f.withSnapshot({
       ...written,
       originalTurns: [{ threadId: SCOPE.threadId, turnId: 'turn-question' }],
+      savedPlaceRefs: ['saved-legacy'],
     });
     const next = legacy.beginTurn(request('turn-answer', '恵比寿', 2), SCOPE, policy);
     expect(next.modelContext.history.map((entry) => entry.text)).toEqual([
@@ -110,6 +111,7 @@ describe('conversation context', () => {
       'どのエリアで探しますか？',
     ]);
     expect(legacy.snapshot()).not.toHaveProperty('originalTurns');
+    expect(JSON.stringify(next.modelContext)).not.toContain('saved-legacy');
   });
 
   it('restores the question and previous answer so a short reply has meaning', () => {

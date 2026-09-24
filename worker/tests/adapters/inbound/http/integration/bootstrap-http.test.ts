@@ -92,7 +92,6 @@ function searchBody(requestId: string, threadId: string): JsonRecord {
       areaText: '恵比寿',
       budget: 'normal',
     },
-    savedPlaceRefs: [],
     excludeCandidateIds: [],
     mode: 'search',
     idempotencyKey: `search-${requestId}`,

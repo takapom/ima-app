@@ -39,13 +39,7 @@ type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 
 export type RuntimeProductionModelContext = Pick<
   ModelContextSource,
-  | 'userText'
-  | 'history'
-  | 'cardSet'
-  | 'evidence'
-  | 'savedReferences'
-  | 'fieldPolicy'
-  | 'conversationMemory'
+  'userText' | 'history' | 'cardSet' | 'evidence' | 'fieldPolicy' | 'conversationMemory'
 >;
 
 type ProductionContextState = {
@@ -53,7 +47,6 @@ type ProductionContextState = {
   readonly cardSet: CardSetSource | null;
   readonly cardSetReferenceOnly: boolean;
   readonly evidence: readonly ModelEvidenceSource[];
-  readonly savedPlaceRefs: readonly string[];
   readonly excludedCandidateIds: readonly string[];
   readonly candidateIdentities: readonly RuntimeProductionCandidateIdentityReference[];
 };
@@ -79,7 +72,6 @@ export type RuntimeProductionContextStore = {
     readonly history: readonly ModelHistoryEntry[];
     readonly cardSet: CardSetSource | null;
     readonly evidence: readonly ModelEvidenceSource[];
-    readonly savedPlaceRefs: readonly string[];
     readonly candidateIdentities: readonly RuntimeProductionCandidateIdentityReference[];
   };
 };
@@ -111,7 +103,6 @@ const turnKey = (scope: RegistryScope, input: ThreadTurnRequest): string =>
     promotedCandidateId: input.promotedCandidateId,
     selectedCandidateId: input.selectedCandidateId,
     candidateOrder: input.candidateOrder,
-    savedPlaceRefs: input.savedPlaceRefs,
     excludeCandidateIds: input.excludeCandidateIds,
     mode: input.mode,
     idempotencyKey: input.idempotencyKey,
@@ -139,7 +130,6 @@ const copyState = (state: ProductionContextState): ProductionContextState => ({
   cardSet: copyCardSet(state.cardSet),
   cardSetReferenceOnly: state.cardSetReferenceOnly,
   evidence: structuredClone(state.evidence),
-  savedPlaceRefs: [...state.savedPlaceRefs],
   excludedCandidateIds: [...state.excludedCandidateIds],
   candidateIdentities: structuredClone(state.candidateIdentities),
 });
@@ -246,7 +236,6 @@ export const createRuntimeProductionContextStore = (input: {
     cardSet: null,
     cardSetReferenceOnly: false,
     evidence: [],
-    savedPlaceRefs: [],
     excludedCandidateIds: [],
     candidateIdentities: [],
   };
@@ -340,7 +329,6 @@ export const createRuntimeProductionContextStore = (input: {
         history,
         cardSet,
         evidence: [...structuredClone(state.evidence)],
-        savedReferences: request.savedPlaceRefs.map((savedPlaceRef) => ({ savedPlaceRef })),
         fieldPolicy,
       },
     };
@@ -429,7 +417,6 @@ export const createRuntimeProductionContextStore = (input: {
       cardSetReferenceOnly:
         parsed.output.kind === 'cards' ? false : active.base.cardSetReferenceOnly,
       evidence: [...byEvidenceId.values()].slice(-64),
-      savedPlaceRefs: [...active.input.savedPlaceRefs],
       excludedCandidateIds: nextExcluded,
       candidateIdentities,
     };
@@ -444,7 +431,6 @@ export const createRuntimeProductionContextStore = (input: {
       history: structuredClone(state.history),
       cardSet: copyCardSet(state.cardSet),
       evidence: structuredClone(state.evidence),
-      savedPlaceRefs: [...state.savedPlaceRefs],
       candidateIdentities: structuredClone(state.candidateIdentities),
     }),
   };

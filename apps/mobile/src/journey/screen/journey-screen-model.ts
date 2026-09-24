@@ -8,10 +8,7 @@ import type { JourneySubmitContext } from '@mobile/journey/screen/journey-screen
 
 /** Build the displayed context from the action result, including a just-skipped candidate. */
 export const submitContextFor = (
-  input: Pick<
-    JourneySubmitContext,
-    'conditions' | 'removedChipLabels' | 'cardSetId' | 'savedPlaceRefs'
-  >,
+  input: Pick<JourneySubmitContext, 'conditions' | 'removedChipLabels' | 'cardSetId'>,
   state: JourneyActionState,
   candidateIds: readonly string[],
 ): JourneySubmitContext => ({

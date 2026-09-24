@@ -33,7 +33,6 @@ const request = {
     areaText: '恵比寿',
     budget: 'normal' as const,
   },
-  savedPlaceRefs: [],
   excludeCandidateIds: [],
   mode: 'search' as const,
   idempotencyKey: 'idempotency-runtime-admission',

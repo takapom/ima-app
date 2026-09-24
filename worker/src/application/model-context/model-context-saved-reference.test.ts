@@ -47,26 +47,9 @@ const source = (savedReferences: unknown) => ({
 });
 
 describe('saved references in model context', () => {
-  it('projects only opaque saved references', () => {
-    const projected = projectModelContext(source([{ savedPlaceRef: 'saved-1' }]));
-
-    expect(projected.savedReferences).toEqual([{ savedPlaceRef: 'saved-1' }]);
-    expect(JSON.stringify(projected)).not.toContain('"provider"');
-    expect(JSON.stringify(projected)).not.toContain('"recordRef"');
-    expect(JSON.stringify(projected)).not.toContain('"ownerScopeRef"');
-  });
-
-  it('rejects duplicate, over-bound, or enriched references before model projection', () => {
-    expect(() =>
-      projectModelContext(source([{ savedPlaceRef: 'saved-1' }, { savedPlaceRef: 'saved-1' }])),
-    ).toThrowError(ModelContextError);
-    expect(() =>
-      projectModelContext(
-        source(Array.from({ length: 51 }, (_, index) => ({ savedPlaceRef: `saved-${index + 1}` }))),
-      ),
-    ).toThrowError(ModelContextError);
-    expect(() =>
-      projectModelContext(source([{ savedPlaceRef: 'saved-1', provider: 'google' }])),
-    ).toThrowError(ModelContextError);
+  it('rejects saved references removed from the model context (#54)', () => {
+    expect(() => projectModelContext(source([{ savedPlaceRef: 'saved-1' }]))).toThrowError(
+      ModelContextError,
+    );
   });
 });

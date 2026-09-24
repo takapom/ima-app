@@ -61,16 +61,6 @@ export const savedPlacePreviewDisplayFor = (
   return { name: identity.value.name, area: identity.value.area, attributions };
 };
 
-export const savedPlaceConsultationRefFor = (
-  state: SavedPlacePreviewState,
-  requestedRef: string,
-): string | null =>
-  state.status === 'ready' &&
-  state.payload?.savedPlaceRef === requestedRef &&
-  state.selected?.serverSavedPlaceRef === requestedRef
-    ? requestedRef
-    : null;
-
 export const savedPlacePreviewFailureTextFor = (
   failure: SavedPlacePreviewFailure | null,
 ): string => {

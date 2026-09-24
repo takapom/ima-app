@@ -22,7 +22,6 @@ const baseRequest = {
     areaText: null,
     budget: 'normal',
   },
-  savedPlaceRefs: [],
   excludeCandidateIds: [],
   mode: 'search',
   idempotencyKey: 'idempotency-1',
@@ -72,5 +71,18 @@ describe('legacy travel preference keys', () => {
   it('still rejects invalid legacy values and unrelated keys', () => {
     expect(v.safeParse(PreferencesSchema, { ...legacy, maxWalkMinutes: 0 }).success).toBe(false);
     expect(v.safeParse(PreferencesSchema, { ...legacy, stationLabel: '渋谷' }).success).toBe(false);
+  });
+});
+
+describe('legacy saved-place consultation references', () => {
+  it('accepts savedPlaceRefs from builds before #54 and does not require them', () => {
+    expect(
+      v.safeParse(SearchRequestSchema, { ...baseRequest, savedPlaceRefs: ['saved-1'] }).success,
+    ).toBe(true);
+    expect(v.safeParse(SearchRequestSchema, baseRequest).success).toBe(true);
+    expect(
+      v.safeParse(SearchRequestSchema, { ...baseRequest, savedPlaceRefs: ['provider/raw'] })
+        .success,
+    ).toBe(false);
   });
 });

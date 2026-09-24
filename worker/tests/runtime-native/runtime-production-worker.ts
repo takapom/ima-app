@@ -6,7 +6,6 @@ import {
   modelForProduction,
   runtimeTurnUsesLlmOnlyPolicy,
   runtimeTurnUsesMultiTurnPolicy,
-  runtimeTurnUsesSavedReference,
   type MutableRuntimeProductionReport,
   type RuntimeProductionCandidateIdentity,
   type RuntimeProductionReport,
@@ -85,7 +84,6 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
   private productionReport: MutableRuntimeProductionReport | null = null;
   private llmOnlyModel = false;
   private multiTurnModel = false;
-  private savedReferenceModel = false;
   private productionScenario: ProductionScenario = 'default';
   private productionCandidateIdentities: RuntimeProductionCandidateIdentity[] = [];
 
@@ -105,7 +103,6 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
   override async runRuntimeTurn(value: unknown) {
     this.llmOnlyModel = runtimeTurnUsesLlmOnlyPolicy(value);
     this.multiTurnModel = runtimeTurnUsesMultiTurnPolicy(value);
-    this.savedReferenceModel = runtimeTurnUsesSavedReference(value);
     this.productionScenario = productionScenarioFor(value);
     this.productionCandidateIdentities = [];
     return super.runRuntimeTurn(value);
@@ -149,7 +146,6 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
       modelHistoryTextSeen: false,
       modelCardSetSeen: false,
       modelCardSetSnapshots: [],
-      savedReferenceCandidateIds: [],
     };
     this.productionReport = report;
     const retention = this.llmOnlyModel ? LLM_ONLY_RETENTION : ALLOW_RETENTION;
@@ -162,12 +158,7 @@ export class ProductionThreadDO extends ProductionThreadDOBase {
     let monotonicCalls = 0;
     return {
       ...base,
-      modelForTurn: modelForProduction(
-        report,
-        this.llmOnlyModel,
-        () => this.productionScenario,
-        () => this.savedReferenceModel,
-      ),
+      modelForTurn: modelForProduction(report, this.llmOnlyModel, () => this.productionScenario),
       fetcher: fetcherForProduction(report, () => this.productionScenario),
       candidateIdentityObserver: (record: RuntimeProductionCandidateIdentity) => {
         this.productionCandidateIdentities.push({

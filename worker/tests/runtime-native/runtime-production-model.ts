@@ -31,7 +31,6 @@ export type RuntimeProductionReport = {
   readonly modelHistoryTextSeen: boolean;
   readonly modelCardSetSeen: boolean;
   readonly modelCardSetSnapshots: readonly RuntimeProductionCardSetSnapshot[];
-  readonly savedReferenceCandidateIds: readonly string[];
 };
 
 export type RuntimeProductionCandidateIdentity = Pick<
@@ -60,7 +59,6 @@ export type MutableRuntimeProductionReport = ProductionProviderFixtureReport & {
   modelHistoryTextSeen: boolean;
   modelCardSetSeen: boolean;
   modelCardSetSnapshots: RuntimeProductionCardSetSnapshot[];
-  savedReferenceCandidateIds: string[];
 };
 
 const usage = {
@@ -85,99 +83,6 @@ const candidateIdsIn = (prompt: string): string[] =>
 const observationIdsIn = (prompt: string): string[] =>
   [...prompt.matchAll(/"observationId":"([^"]+)"/gu)].map((match) => match[1] ?? '');
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const structuredPrompt = (prompt: string): unknown => {
-  try {
-    return JSON.parse(prompt) as unknown;
-  } catch {
-    return undefined;
-  }
-};
-
-const savedReferenceIdsIn = (prompt: string): string[] => {
-  const ids = new Set<string>();
-  const visit = (value: unknown): void => {
-    if (typeof value === 'string') {
-      try {
-        const parsed = JSON.parse(value) as unknown;
-        if (isRecord(parsed) && parsed.kind === 'ima_turn_context') visit(parsed);
-      } catch {
-        // User text and ordinary model content are not context envelopes.
-      }
-      return;
-    }
-    if (Array.isArray(value)) {
-      value.forEach(visit);
-      return;
-    }
-    if (!isRecord(value)) return;
-    const savedReferences = value.savedReferences;
-    if (Array.isArray(savedReferences)) {
-      for (const entry of savedReferences) {
-        if (isRecord(entry) && typeof entry.savedPlaceRef === 'string') {
-          ids.add(entry.savedPlaceRef);
-        }
-      }
-    }
-    Object.values(value).forEach(visit);
-  };
-  visit(structuredPrompt(prompt));
-  return [...ids];
-};
-
-const resolvedSavedReferenceCandidateIn = (
-  prompt: string,
-  savedPlaceRef: string,
-): string | undefined => {
-  const root = structuredPrompt(prompt);
-  let resolved: string | undefined;
-  const visit = (value: unknown): void => {
-    if (resolved !== undefined) return;
-    if (Array.isArray(value)) {
-      value.forEach(visit);
-      return;
-    }
-    if (!isRecord(value)) return;
-    if (value.type === 'tool-result' && value.toolName === 'get_place_details') {
-      const output = value.output;
-      const result = isRecord(output) && output.type === 'json' ? output.value : undefined;
-      if (isRecord(result) && (result.status === 'ok' || result.status === 'partial')) {
-        const data = result.data;
-        const items = isRecord(data) ? data.items : undefined;
-        if (Array.isArray(items)) {
-          for (const item of items) {
-            if (!isRecord(item) || item.savedPlaceRef !== savedPlaceRef) continue;
-            if (typeof item.candidateId !== 'string' || !isRecord(item.fields)) continue;
-            const identity = item.fields.identity;
-            if (
-              !isRecord(identity) ||
-              identity.status !== 'known' ||
-              !Array.isArray(identity.observations) ||
-              identity.observations.length === 0
-            ) {
-              continue;
-            }
-            if (
-              identity.observations.some(
-                (observation) =>
-                  isRecord(observation) && observation.candidateId === item.candidateId,
-              )
-            ) {
-              resolved = item.candidateId;
-              return;
-            }
-          }
-        }
-      }
-    }
-    Object.values(value).forEach(visit);
-  };
-  visit(root);
-  return resolved;
-};
-
 export const runtimeTurnUsesLlmOnlyPolicy = (value: unknown): boolean => {
   if (typeof value !== 'object' || value === null || !('input' in value)) return false;
   const input = value.input;
@@ -195,13 +100,6 @@ export const runtimeTurnUsesMultiTurnPolicy = (value: unknown): boolean => {
       input.text.includes('[m16-follow-up]') ||
       input.text.includes('[m16-condition-change]'))
   );
-};
-
-export const runtimeTurnUsesSavedReference = (value: unknown): boolean => {
-  if (typeof value !== 'object' || value === null || !('input' in value)) return false;
-  const input = value.input;
-  if (typeof input !== 'object' || input === null || !('text' in input)) return false;
-  return typeof input.text === 'string' && input.text.includes('[m29-saved-reference]');
 };
 
 const observedProviderOptions = (
@@ -278,7 +176,6 @@ export const modelForProduction = (
   report: MutableRuntimeProductionReport,
   finalAfterDetails = false,
   scenario: () => ProductionScenario = () => 'default',
-  usesSavedReference: () => boolean = () => false,
 ): RuntimeGateModel => ({
   specificationVersion: 'v3',
   provider: 'm16-production-scripted-provider',
@@ -287,7 +184,6 @@ export const modelForProduction = (
   doGenerate: () => Promise.reject(new Error('M16_PRODUCTION_STREAM_ONLY')),
   doStream: (() => {
     let conditionChangeCalls = 0;
-    let savedReferenceRequested = false;
     return (options: RuntimeGateModelCallOptions) => {
       const prompt = JSON.stringify(options.prompt);
       report.llmInputCanarySeen ||= prompt.includes(LLM_INPUT_CANARY);
@@ -316,37 +212,8 @@ export const modelForProduction = (
       }
       const candidateIds = candidateIdsIn(prompt);
       const observationIds = observationIdsIn(prompt);
-      const savedReferences = savedReferenceIdsIn(prompt);
       report.modelCandidateCounts.push(new Set(candidateIds).size);
       report.observationIdsSeen.push(observationIds);
-      if (usesSavedReference() && savedReferences.length > 0) {
-        report.calls += 1;
-        report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
-        if (savedReferenceRequested) {
-          const resolvedCandidateId = resolvedSavedReferenceCandidateIn(
-            prompt,
-            savedReferences[0] ?? '',
-          );
-          if (resolvedCandidateId === undefined) {
-            throw new Error('M29_SAVED_REFERENCE_RESULT_INVALID');
-          }
-          report.savedReferenceCandidateIds.push(resolvedCandidateId);
-          report.toolNames.push('final_message');
-          return Promise.resolve({
-            stream: streamOf(finalMessageParts('保存店の詳細を確認しました。')),
-          });
-        }
-        savedReferenceRequested = true;
-        report.toolNames.push('get_place_details');
-        return Promise.resolve({
-          stream: streamOf(
-            toolParts(report.calls, 'get_place_details', {
-              requests: [{ savedPlaceRef: savedReferences[0], fields: ['identity'] }],
-              freshness: 'refresh',
-            }),
-          ),
-        });
-      }
       if (scenario() === 'zero-results' && report.calls > 0) {
         report.calls += 1;
         report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));

@@ -152,7 +152,6 @@ describe('keyless dev fixture CORS boundary', () => {
             areaText: null,
             budget: null,
           },
-          savedPlaceRefs: [],
           excludeCandidateIds: [],
           mode: 'search',
           idempotencyKey: `dev-fixture-cors-turn-key-${crypto.randomUUID()}`,

@@ -39,7 +39,6 @@ const requestFor = (target: ThreadRuntimeTarget, text: string): ThreadRuntimeTur
       areaText: '候補数fixture',
       budget: 'normal',
     },
-    savedPlaceRefs: [],
     excludeCandidateIds: [],
     mode: 'search',
     idempotencyKey: `m24-production-${target.turnId}`,

@@ -28,7 +28,6 @@ describe('candidate feedback request', () => {
         conditions: createDefaultJourneyConditions(),
         removedChipLabels: [],
         cardSetId: 'cards',
-        savedPlaceRefs: [],
       },
       skipped.state,
       ['hero', 'alt'],

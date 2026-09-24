@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PublicPlaceDetailsData, RetentionMetadata } from '@ima/contracts';
 import {
-  savedPlaceConsultationRefFor,
   savedPlaceItemsFor,
   savedPlacePreviewDisplayFor,
   savedPlacePreviewFailureTextFor,
@@ -233,21 +232,5 @@ describe('saved place preview view projection', () => {
       '保存店の詳細を取得できませんでした。',
     );
     expect(savedPlacePreviewFailureTextFor({ reason: 'clock_unavailable' })).toContain('時刻');
-  });
-
-  it('allows consultation only for the currently ready preview reference', () => {
-    const ready = previewState({
-      status: 'ready',
-      selected: { ...listItem(), name: null, area: null, restoreMode: 'reference_only' },
-      payload: {
-        savedPlaceRef: asServer('saved-ref-1'),
-        candidateId: 'candidate-1',
-        evidenceIds: ['evidence-1'],
-        data: details,
-      },
-    });
-    expect(savedPlaceConsultationRefFor(ready, 'saved-ref-1')).toBe('saved-ref-1');
-    expect(savedPlaceConsultationRefFor(ready, 'saved-ref-other')).toBeNull();
-    expect(savedPlaceConsultationRefFor({ ...ready, status: 'loading' }, 'saved-ref-1')).toBeNull();
   });
 });

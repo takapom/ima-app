@@ -48,7 +48,6 @@ const requestFor = (
       areaText: 'runtime native fixture',
       budget: 'normal',
     },
-    savedPlaceRefs: [],
     excludeCandidateIds: [],
     mode: 'search',
     idempotencyKey: `native-${target.turnId}`,

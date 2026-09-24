@@ -86,7 +86,11 @@ const SearchTurnFields = {
   promotedCandidateId: v.optional(v.nullable(OpaqueIdSchema)),
   selectedCandidateId: v.optional(v.nullable(OpaqueIdSchema)),
   candidateOrder: v.optional(CandidateOrderSchema),
-  savedPlaceRefs: v.pipe(v.array(OpaqueIdSchema), v.maxLength(50)),
+  /**
+   * Sent by app builds from before saved-place consultation was removed (#54). It is validated
+   * for those clients and turn inputs they stored, and the Worker does not read it.
+   */
+  savedPlaceRefs: v.optional(v.pipe(v.array(OpaqueIdSchema), v.maxLength(50))),
   excludeCandidateIds: v.pipe(v.array(OpaqueIdSchema), v.maxLength(50)),
   mode: SearchModeSchema,
   idempotencyKey: OpaqueIdSchema,

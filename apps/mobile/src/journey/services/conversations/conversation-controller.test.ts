@@ -120,7 +120,6 @@ const input: ConversationTurnRequest = {
     areaText: null,
     budget: 'normal',
   },
-  savedPlaceRefs: [],
   excludeCandidateIds: [],
   mode: 'search',
   idempotencyKey: 'send-a',

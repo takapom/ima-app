@@ -2,7 +2,6 @@ import { createConversationClient } from '@mobile/platform/http/conversation-cli
 import type { ConversationCache } from '@mobile/platform/sqlite/conversation-cache';
 import type { AssistantResponseState } from '@mobile/journey/state/assistant-response';
 import {
-  parseSavedReferencePath,
   type CreateThreadRequest,
   type LifecycleCommand,
   type LocationSnapshot,
@@ -92,15 +91,6 @@ type RequestFactoryOptions = {
   readonly idFactory: (prefix: string) => string;
 };
 
-export class JourneyApiRequestFactoryError extends Error {
-  readonly code = 'INVALID_SAVED_PLACE_REFS' as const;
-
-  constructor(readonly issue: 'not_array' | 'too_many' | 'invalid_ref' | 'duplicate') {
-    super('savedPlaceRefs failed request validation');
-    this.name = 'JourneyApiRequestFactoryError';
-  }
-}
-
 const unavailable = (reason: MobileJourneyRuntimeReason): MobileJourneyRuntime => ({
   mode: 'unconfigured',
   binding: null,
@@ -162,26 +152,6 @@ const preferencesFor = (input: JourneyApiSearchFactoryInput): Preferences => ({
   budget: input.context.conditions.budget,
 });
 
-const isStringArray = (value: unknown): value is readonly string[] =>
-  Array.isArray(value) && value.every((item: unknown): item is string => typeof item === 'string');
-
-const savedPlaceRefsFor = (refs: unknown): string[] => {
-  if (refs === undefined) return [];
-  if (!isStringArray(refs)) {
-    throw new JourneyApiRequestFactoryError(Array.isArray(refs) ? 'invalid_ref' : 'not_array');
-  }
-  if (refs.length > 50) throw new JourneyApiRequestFactoryError('too_many');
-  const seen = new Set<string>();
-  for (const ref of refs) {
-    if (!parseSavedReferencePath({ savedPlaceRef: ref }).success) {
-      throw new JourneyApiRequestFactoryError('invalid_ref');
-    }
-    if (seen.has(ref)) throw new JourneyApiRequestFactoryError('duplicate');
-    seen.add(ref);
-  }
-  return [...refs];
-};
-
 export const createJourneyApiRequestFactory = (
   options: RequestFactoryOptions,
 ): JourneyApiRequestFactory => {
@@ -201,7 +171,6 @@ export const createJourneyApiRequestFactory = (
     promotedCandidateId: input.context.promotedCandidateId,
     selectedCandidateId: input.context.selectedCandidateId,
     candidateOrder: [...input.context.candidateOrder],
-    savedPlaceRefs: savedPlaceRefsFor(input.context.savedPlaceRefs),
     excludeCandidateIds: [...input.context.excludeCandidateIds],
     mode: 'search' as const,
     idempotencyKey: options.idFactory('operation'),

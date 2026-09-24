@@ -64,7 +64,8 @@ export const RuntimeProductionContextReferenceSchema = v.strictObject({
   ownerScopeRef: OpaqueIdSchema,
   threadId: OpaqueIdSchema,
   sessionExpiresAt: IsoTimestampSchema,
-  savedPlaceRefs: v.pipe(v.array(SavedPlaceRefSchema), v.maxLength(50)),
+  /** Written before saved-place consultation was removed (#54); read and discarded on restore. */
+  savedPlaceRefs: v.optional(v.pipe(v.array(SavedPlaceRefSchema), v.maxLength(50))),
   /** Owner/thread-bound candidate IDs excluded before a later card-set replacement. */
   excludedCandidateIds: v.optional(v.pipe(v.array(OpaqueIdSchema), v.maxLength(50))),
   history: v.pipe(v.array(HistoryReferenceSchema), v.maxLength(32)),
@@ -90,7 +91,6 @@ export type RuntimeProductionContextStateForReference = {
   readonly history: readonly RetainedHistoryEntry[];
   readonly cardSet: CardSetSource | null;
   readonly evidence: readonly ModelEvidenceSource[];
-  readonly savedPlaceRefs: readonly string[];
   readonly excludedCandidateIds: readonly string[];
   readonly candidateIdentities: readonly RuntimeProductionCandidateIdentityReference[];
 };
@@ -107,7 +107,6 @@ export const referenceSnapshotFor = (input: {
     ownerScopeRef: input.scope.ownerScopeRef,
     threadId: input.scope.threadId,
     sessionExpiresAt: input.sessionExpiresAt,
-    savedPlaceRefs: [...input.state.savedPlaceRefs],
     excludedCandidateIds: [...input.state.excludedCandidateIds],
     history: input.state.history.map(
       ({ threadId, turnId, role, basis, text, evidenceIds, retention }) => ({
@@ -170,7 +169,6 @@ export const stateFromReference = (snapshot: RuntimeProductionContextReference, 
     history,
     cardSet: snapshot.cardSet === null ? null : withheldCardSet(snapshot.cardSet),
     evidence: [],
-    savedPlaceRefs: [...snapshot.savedPlaceRefs],
     excludedCandidateIds: [...(snapshot.excludedCandidateIds ?? [])],
     candidateIdentities: [...(snapshot.candidateIdentities ?? [])],
     cardSetReferenceOnly: snapshot.cardSet !== null,

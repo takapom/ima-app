@@ -41,7 +41,6 @@ const requestFor = (target: ThreadRuntimeTarget): ThreadRuntimeTurnInput => {
       areaText: '渋谷',
       budget: 'normal' as const,
     },
-    savedPlaceRefs: [],
     excludeCandidateIds: [],
     mode: 'search' as const,
     idempotencyKey,

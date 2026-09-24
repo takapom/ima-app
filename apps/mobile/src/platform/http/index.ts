@@ -15,7 +15,6 @@ export type {
 export {
   createJourneyApiRequestFactory,
   createMobileJourneyRuntime,
-  JourneyApiRequestFactoryError,
   mobileJourneyRuntimeMessage,
 } from '@mobile/composition/mobile-runtime';
 export type {

@@ -61,7 +61,6 @@ export const requestInput: ThreadTurnRequest = {
     areaText: null,
     budget: 'normal',
   },
-  savedPlaceRefs: [],
   excludeCandidateIds: [],
   mode: 'search',
   idempotencyKey: 'idempotency-production-factory',
