@@ -276,7 +276,6 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
       ],
       hero: {
         candidateId,
-        evidenceIds: observations,
         why: {
           text: '恵比寿のカフェ候補です。営業状況は店舗で確認してください。',
           evidenceIds: observations,

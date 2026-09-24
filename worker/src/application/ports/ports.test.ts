@@ -190,12 +190,14 @@ describe('core port contracts', () => {
   it('validates submit shape and explicit terminal display contract', () => {
     const cards = {
       message: [conversational],
-      hero: { candidateId: 'candidate-1', evidenceIds: [], why: conversational },
-      alts: [
-        { candidateId: 'candidate-2', evidenceIds: [], why: conversational, diff: conversational },
-      ],
+      hero: { candidateId: 'candidate-1', why: conversational },
+      alts: [{ candidateId: 'candidate-2', why: conversational, diff: conversational }],
     };
     expect(v.safeParse(SubmitCardsInputSchema, cards).success).toBe(true);
+    expect(
+      v.safeParse(SubmitCardsInputSchema, { ...cards, hero: { ...cards.hero, evidenceIds: [] } })
+        .success,
+    ).toBe(false);
     expect(
       v.safeParse(SubmitCardsInputSchema, {
         ...cards,

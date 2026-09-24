@@ -214,7 +214,6 @@ export const makeSelection = (
   alternative = false,
 ): CardSelection => ({
   candidateId,
-  evidenceIds: [ids.identity, ids.opening, ids.price, ids.photos],
   why: { text: `理由 ${candidateId}`, evidenceIds: [ids.identity], basis: 'grounded' },
   ...(alternative
     ? {
@@ -234,7 +233,7 @@ export const makeInput = (selections: readonly CardSelection[]): SubmitCardsInpu
     message: [
       {
         text: '候補を提案します',
-        evidenceIds: [hero.evidenceIds[0] ?? ''],
+        evidenceIds: [...hero.why.evidenceIds],
         basis: 'grounded',
       },
     ],

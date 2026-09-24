@@ -40,7 +40,7 @@ describe('submit-cards pure validation and card assembly', () => {
     }
   });
 
-  it('attaches display-only observations the model never cited', () => {
+  it('attaches every card field from the registry without model-copied IDs', () => {
     const fixture = makeFixture();
     const ids = idsFor(fixture);
     const facilities = addObservation(
@@ -56,36 +56,54 @@ describe('submit-cards pure validation and card assembly', () => {
         sourceText: [],
       },
     );
-    // The model cites only the claim and constraint fields it must ground; price, photos
-    // and facilities are display-only and must still reach the card.
-    const selection = {
-      ...makeSelection('candidate-1', ids),
-      evidenceIds: [ids.identity, ids.opening],
-    };
-    const result = validateSubmitCards(makeInput([selection]), fixture.context, fixture.registry);
+    const result = validateSubmitCards(
+      makeInput([makeSelection('candidate-1', ids)]),
+      fixture.context,
+      fixture.registry,
+    );
 
     expect(result.status).toBe('valid');
     if (result.status === 'valid') {
+      expect(result.response.hero.identity.name).toBe('店 candidate-1');
       expect(result.response.hero.price?.rawLabel).toBe('¥¥');
       expect(result.response.hero.photos?.photos[0]?.photoRef).toBe('photo-candidate-1');
       expect(result.response.hero.facilities?.nonSmoking).toBe('partial');
-      // Attribution and photo tokens are keyed off card evidence, so the attached ids belong there.
-      expect(result.response.hero.evidenceIds).toEqual(
-        expect.arrayContaining([ids.price, ids.photos, facilities]),
+      // Attribution and photo tokens are keyed off card evidence, so every attached id is there.
+      expect([...result.response.hero.evidenceIds].sort()).toEqual(
+        [ids.identity, ids.opening, ids.price, ids.photos, facilities].sort(),
       );
     }
   });
 
-  it('never attaches a claim field the model failed to cite', () => {
+  it('rejects the retired card evidenceIds input instead of ignoring it', () => {
     const fixture = makeFixture();
     const ids = idsFor(fixture);
-    const selection = { ...makeSelection('candidate-1', ids), evidenceIds: [ids.identity] };
-    const result = validateSubmitCards(makeInput([selection]), fixture.context, fixture.registry);
+    const legacy = { ...makeSelection('candidate-1', ids), evidenceIds: [ids.identity] };
+    const result = validateSubmitCards(makeInput([legacy]), fixture.context, fixture.registry);
+    expect(result).toMatchObject({ status: 'invalid', issues: [{ code: 'INVALID_ARGUMENT' }] });
+  });
 
+  it('requires a usable identity and opening-hours observation for the candidate itself', () => {
+    const fixture = makeFixture();
+    const bare = fixture.registry.registerCandidate({
+      ...fixture.context.scope,
+      provider: 'fixture',
+      recordRef: 'record-bare',
+      displayName: '観測のない店',
+      status: 'operational',
+    });
+    const result = validateSubmitCards(
+      makeInput([makeSelection(bare.candidateId, idsFor(fixture))]),
+      fixture.context,
+      fixture.registry,
+    );
+
+    // Candidate-1's observations exist in the same scope but never attach to another candidate.
     expect(result.status).toBe('invalid');
     if (result.status === 'invalid') {
-      expect(result.issues.some((entry) => entry.missingFields.includes('opening_hours'))).toBe(
-        true,
+      const missing = result.issues.filter((entry) => entry.code === 'MISSING_EVIDENCE');
+      expect(missing.flatMap((entry) => entry.missingFields).sort()).toEqual(
+        ['identity', 'opening_hours'].sort(),
       );
     }
   });
@@ -116,13 +134,9 @@ describe('submit-cards pure validation and card assembly', () => {
     ).toBe('invalid');
   });
 
-  it('rejects stale evidence and registered conflicting values', () => {
+  it('skips observations from another turn context and rejects registered conflicts', () => {
     const fixture = makeFixture();
     const ids = idsFor(fixture);
-    const staleContext = {
-      ...fixture.context.expectedObservationContext,
-      timeContext: 'old-turn',
-    };
     const staleId = addObservation(
       fixture.registry,
       fixture.context,
@@ -138,18 +152,17 @@ describe('submit-cards pure validation and card assembly', () => {
         businessStatus: 'operational',
         sourceUrl: null,
       },
-      staleContext,
+      { ...fixture.context.expectedObservationContext, timeContext: 'old-turn' },
     );
-    const staleSelection = makeSelection('candidate-1', ids);
-    staleSelection.evidenceIds[0] = staleId;
-    const stale = validateSubmitCards(
-      makeInput([staleSelection]),
+    const skipped = validateSubmitCards(
+      makeInput([makeSelection('candidate-1', ids)]),
       fixture.context,
       fixture.registry,
     );
-    expect(stale.status).toBe('invalid');
-    if (stale.status === 'invalid') {
-      expect(stale.issues.some((item) => item.code === 'STALE_EVIDENCE')).toBe(true);
+    expect(skipped.status).toBe('valid');
+    if (skipped.status === 'valid') {
+      expect(skipped.response.hero.identity.name).toBe('店 candidate-1');
+      expect(skipped.response.hero.evidenceIds).not.toContain(staleId);
     }
 
     addObservation(fixture.registry, fixture.context, 'candidate-1', 'opening_hours', {
@@ -173,40 +186,26 @@ describe('submit-cards pure validation and card assembly', () => {
     }
   });
 
-  it('accepts equivalent duplicate field observations and rejects a missing required field', () => {
+  it('accepts equivalent duplicate field observations', () => {
     const fixture = makeFixture();
     const ids = idsFor(fixture);
-    const duplicateOpeningId = addObservation(
-      fixture.registry,
-      fixture.context,
-      'candidate-1',
-      'opening_hours',
-      {
-        timeZone: 'UTC',
-        intervals: [{ startAt: '2026-09-10T11:00:00Z', endAt: '2026-09-10T15:00:00Z' }],
-        weeklyText: ['11:00-15:00'],
-        evaluatedAt: now,
-        listedOpenAtEvaluation: true,
-        nextBoundaryAt: '2026-09-10T15:00:00Z',
-        lastOrderAt: '2026-09-10T14:00:00Z',
-        lastOrderRaw: '14:00',
-      },
-    );
-    const duplicate = makeSelection('candidate-1', ids);
-    duplicate.evidenceIds.splice(2, 0, duplicateOpeningId);
+    addObservation(fixture.registry, fixture.context, 'candidate-1', 'opening_hours', {
+      timeZone: 'UTC',
+      intervals: [{ startAt: '2026-09-10T11:00:00Z', endAt: '2026-09-10T15:00:00Z' }],
+      weeklyText: ['11:00-15:00'],
+      evaluatedAt: now,
+      listedOpenAtEvaluation: true,
+      nextBoundaryAt: '2026-09-10T15:00:00Z',
+      lastOrderAt: '2026-09-10T14:00:00Z',
+      lastOrderRaw: '14:00',
+    });
     expect(
-      validateSubmitCards(makeInput([duplicate]), fixture.context, fixture.registry).status,
+      validateSubmitCards(
+        makeInput([makeSelection('candidate-1', ids)]),
+        fixture.context,
+        fixture.registry,
+      ).status,
     ).toBe('valid');
-
-    const missing = makeSelection('candidate-1', ids);
-    missing.evidenceIds = missing.evidenceIds.filter((id) => id !== ids.opening);
-    const invalid = validateSubmitCards(makeInput([missing]), fixture.context, fixture.registry);
-    expect(invalid.status).toBe('invalid');
-    if (invalid.status === 'invalid') {
-      expect(invalid.issues.some((item) => item.missingFields.includes('opening_hours'))).toBe(
-        true,
-      );
-    }
   });
 
   it('rejects an observation ID suppressed by refresh even when a newer ID is reusable', () => {
@@ -235,18 +234,22 @@ describe('submit-cards pure validation and card assembly', () => {
       ]),
     ).toBe(true);
 
+    // The why text still cites the suppressed ID, so the old citation is rejected.
     const oldSelection = makeSelection('candidate-1', ids);
     expect(
       validateSubmitCards(makeInput([oldSelection]), fixture.context, fixture.registry).status,
     ).toBe('invalid');
 
-    const newSelection = makeSelection('candidate-1', ids);
-    newSelection.evidenceIds = newSelection.evidenceIds.map((id) =>
-      id === ids.identity ? refreshedIdentity : id,
+    const newSelection = makeSelection('candidate-1', { ...ids, identity: refreshedIdentity });
+    const refreshed = validateSubmitCards(
+      makeInput([newSelection]),
+      fixture.context,
+      fixture.registry,
     );
-    newSelection.why.evidenceIds = [refreshedIdentity];
-    expect(
-      validateSubmitCards(makeInput([newSelection]), fixture.context, fixture.registry).status,
-    ).toBe('valid');
+    expect(refreshed.status).toBe('valid');
+    if (refreshed.status === 'valid') {
+      expect(refreshed.response.hero.identity.name).toBe('店 candidate-1 refreshed');
+      expect(refreshed.response.hero.evidenceIds).not.toContain(ids.identity);
+    }
   });
 });

@@ -79,7 +79,6 @@ const submitInput: SubmitCardsInput = {
   message: [{ text: '候補です', evidenceIds: [], basis: 'conversational' }],
   hero: {
     candidateId: 'candidate-1',
-    evidenceIds: [],
     why: { text: '候補です', evidenceIds: [], basis: 'conversational' },
   },
   alts: [],
@@ -201,8 +200,9 @@ describe('public tool catalog', () => {
     expect(tools.get_place_details.description).toContain('identityとopening_hoursは確定に必須');
     expect(tools.get_place_details.description).toContain('写真や価格が無い店舗でも提案できます');
     expect(tools.submit_cards.description).toContain('2nd step');
-    expect(tools.submit_cards.description).toContain('identityとopening_hoursのobservationId');
-    expect(tools.submit_cards.description).toContain('引用しなかったfieldはカードに表示されません');
+    expect(tools.submit_cards.description).toContain('システムが付けます');
+    expect(tools.submit_cards.description).not.toContain('observationId');
+    expect(tools.get_place_details.description).not.toContain('observationId');
     expect(tools.submit_cards.description).toContain('読み取りと確定は同じstepにできません');
     expect(getPublicTool(tools, 'walking_route')).toBeUndefined();
     const result = await invokePublicToolByName(

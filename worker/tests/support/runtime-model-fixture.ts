@@ -68,7 +68,6 @@ const invalidSubmitInput: SubmitCardsInput = {
   message: [{ text: 'fixture selection needs evidence', evidenceIds: [], basis: 'inference' }],
   hero: {
     candidateId: 'candidate-1',
-    evidenceIds: [],
     why: { text: 'fixture selection', evidenceIds: [], basis: 'inference' },
   },
   alts: [],
@@ -84,7 +83,6 @@ const validSubmitInput: SubmitCardsInput = {
   ],
   hero: {
     candidateId: 'candidate-1',
-    evidenceIds: [identityObservationId('candidate-1')],
     why: {
       text: 'Identity is confirmed by the fixture source.',
       evidenceIds: [identityObservationId('candidate-1')],
@@ -96,7 +94,6 @@ const validSubmitInput: SubmitCardsInput = {
 
 const validAlt = (candidateId: string, text: string): SubmitCardsInput['hero'] => ({
   candidateId,
-  evidenceIds: [identityObservationId(candidateId)],
   why: {
     text: 'Identity is confirmed by the fixture source.',
     evidenceIds: [identityObservationId(candidateId)],

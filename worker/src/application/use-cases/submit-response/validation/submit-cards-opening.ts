@@ -31,17 +31,8 @@ export const validateOpening = (
   observations: Map<KnownObservationField, ResolvedObservation>,
 ): SubmitValidationIssue[] => {
   const opening = observations.get('opening_hours');
-  if (opening === undefined) {
-    return [
-      issue(
-        'MISSING_EVIDENCE',
-        `${selectionPath}.openingHours`,
-        'opening-hours evidence is required for a current candidate',
-        ['opening_hours'],
-        candidateId,
-      ),
-    ];
-  }
+  // A missing observation is reported by the card's required-field check.
+  if (opening === undefined) return [];
   const observationId = opening.observation.observationId;
   const hours = parseObservationValue(opening.observation, OpeningHoursSchema);
   if (hours === undefined) {

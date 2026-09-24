@@ -57,7 +57,6 @@ export function redactedRuntimeToolInput(toolName: RuntimeRetentionToolName): JS
           message: [{ text: 'WITHHELD', evidenceIds: [], basis: 'inference' }],
           hero: {
             candidateId: 'candidate-withheld',
-            evidenceIds: [],
             why: { text: 'WITHHELD', evidenceIds: [], basis: 'inference' },
           },
           alts: [],

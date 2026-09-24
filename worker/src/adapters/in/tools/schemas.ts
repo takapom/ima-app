@@ -115,11 +115,10 @@ const submitJsonSchema: WireSchema = {
       type: 'object',
       properties: {
         candidateId: opaqueId,
-        evidenceIds: { type: 'array', items: opaqueId, maxItems: 16 },
         why: evidenceText(80),
         diff: evidenceText(40),
       },
-      required: ['candidateId', 'evidenceIds', 'why'],
+      required: ['candidateId', 'why'],
       additionalProperties: false,
     },
     alts: {
@@ -129,11 +128,10 @@ const submitJsonSchema: WireSchema = {
         type: 'object',
         properties: {
           candidateId: opaqueId,
-          evidenceIds: { type: 'array', items: opaqueId, maxItems: 16 },
           why: evidenceText(80),
           diff: evidenceText(40),
         },
-        required: ['candidateId', 'evidenceIds', 'why', 'diff'],
+        required: ['candidateId', 'why', 'diff'],
         additionalProperties: false,
       },
     },

@@ -84,7 +84,6 @@ export const submitInputFor = (
   if (fallback === undefined) throw new Error('M25_FIXTURE_CONTEXT_MISSING');
   const selectionFor = (candidate: (typeof selections)[number]) => ({
     candidateId: candidate.candidateId,
-    evidenceIds: [...candidate.evidenceIds],
     why: {
       text: '固定fixtureの公開根拠を確認しました。',
       evidenceIds: [...candidate.evidenceIds],
