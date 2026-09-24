@@ -101,6 +101,19 @@ const eventRecord = (input: unknown): TelemetryEventRecord => {
   return parsed.output;
 };
 
+/**
+ * Rows written before the routes and last-train providers were removed (#55) name a provider that
+ * no longer exists. They expire with the retention window; until then a read skips them instead
+ * of failing for every other row.
+ */
+const RETIRED_TELEMETRY_PROVIDERS: readonly unknown[] = ['routes', 'last_train'];
+
+const isRetiredProviderRow = (payload: unknown): boolean =>
+  typeof payload === 'object' &&
+  payload !== null &&
+  'provider' in payload &&
+  RETIRED_TELEMETRY_PROVIDERS.includes(payload.provider);
+
 const traceRecord = (input: unknown): TraceRecord => {
   const parsed = v.safeParse(traceRecordSchema, input);
   if (!parsed.success) throw new TelemetryStorageError('TELEMETRY_RECORD_INVALID');
@@ -253,9 +266,16 @@ export class TelemetryDO extends DurableObject {
           effectiveCutoffMs,
         )
         .toArray();
-      const records = rows.map((row) => {
+      const records = rows.flatMap((row) => {
+        let payload: unknown;
         try {
-          return traceRecord(JSON.parse(row.payload_json));
+          payload = JSON.parse(row.payload_json);
+        } catch {
+          throw new TelemetryStorageError('TELEMETRY_ROW_INVALID');
+        }
+        if (isRetiredProviderRow(payload)) return [];
+        try {
+          return [traceRecord(payload)];
         } catch {
           throw new TelemetryStorageError('TELEMETRY_ROW_INVALID');
         }
