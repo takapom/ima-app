@@ -71,7 +71,7 @@ bun run dev:worker:llm
 
 `kind: "invalid_tool_input"`はProvider呼出し前のTool引数検証エラー。`fields`に値を含まない契約上の項目名を出し、LLMにも同じ項目名を返して修正を促す。HTTP 200は会話応答の成功を示し、店舗検索やカード提示の成功を保証しない。
 
-カードが出ない場合はまず`event: "turn_outcome"`の行を見る。`committed`が確定の有無、`kind`が確定した応答の種別（`ask`・`answer`・`propose`）、`operations`がそのturnで呼ばれた公開Toolと回数を示す。`respond`が0ならモデルは確定へ進んでおらず、原因は検索結果か指示の側にある。Toolを呼ばずに文章だけ・空で終わったstepは`event: "respond_missing"`の`reason`（`TEXT_WITHOUT_RESPOND`・`EMPTY_STEP`）に出る。確定を試みた場合は`event: "respond_invalid"`の行を見る。確定が検証で拒否されるとissueの`code`・`path`・`missingFields`・Core側の`message`と、影響した候補数・修復残数を出力する。候補ID・観測ID・生成文・Provider内容は含まない。カードの店名・営業時間などの根拠はCoreがレジストリから付ける。`missingFields`に`identity`や`opening_hours`が出る場合は、その候補の有効な観測がレジストリにない（検索結果に含まれない、または期限切れ・競合で`get_place_details`による取り直しが必要）。この行がなく候補も出ないときは、確定まで到達せず検索が0件だった場合を疑う。
+カードが出ない場合はまず`event: "turn_outcome"`の行を見る。`committed`が確定の有無、`kind`が確定した応答の種別（`ask`・`answer`・`propose`）、`operations`がそのturnで呼ばれた公開Toolと回数を示す。`respond`が0ならToolまで届いた確定はない。モデルが確定しなかったか、respondの引数がTool schemaで拒否されたかのどちらかで、後者はTool実行前に落ちるため`respond_invalid`の行も修復予算の消費もなく、`kind: "invalid_tool_input"`・`tool: "respond"`の`runtime_upstream_failure`行だけに残る。Toolを呼ばずに文章だけ・空で終わったstepは`event: "respond_missing"`の`reason`（`TEXT_WITHOUT_RESPOND`・`EMPTY_STEP`）に出る。確定を試みた場合は`event: "respond_invalid"`の行を見る。確定が検証で拒否されるとissueの`code`・`path`・`missingFields`・Core側の`message`と、影響した候補数・修復残数を出力する。候補ID・観測ID・生成文・Provider内容は含まない。カードの店名・営業時間などの根拠はCoreがレジストリから付ける。`missingFields`に`identity`や`opening_hours`が出る場合は、その候補の有効な観測がレジストリにない（検索結果に含まれない、または期限切れ・競合で`get_place_details`による取り直しが必要）。この行がなく候補も出ないときは、確定まで到達せず検索が0件だった場合を疑う。
 
 ## 品質検査
 

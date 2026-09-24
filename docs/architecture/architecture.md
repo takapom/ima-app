@@ -65,12 +65,12 @@ Adapterの生成・注入は`src/composition/`が担当する。RuntimeからAda
 | `src/security/`                   | App Integrity・認証・レート制限の契約と判定                                                                               |
 | `src/telemetry/`                  | 運用イベントの契約・集計・受け渡し                                                                                        |
 
-| 配置                                    | 探す対象                                                                                                                                                                                       |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Core `application/`                     | `model-context`はモデル入力、`candidate-registry`は候補・観測の登録、`submission`は検証・確定、`travel`は移動計算、`saved-references`は保存・決定。今回の条件変更は直下の`turn-constraints.ts` |
-| Worker `src/runtime/`                   | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・計測は各フォルダ                                                      |
-| Mobile `journey/services/`・`platform/` | `platform/http`はHTTPとその契約、`journey/services/conversations`は会話操作・復元、`composition`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`                |
-| Mobile 機能ごとの`components/`          | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI。表示文言・表示用変換は`presentation`                                                   |
+| 配置                                    | 探す対象                                                                                                                                                                             |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Core `application/`                     | `model-context`はモデル入力、`candidate-registry`は候補・観測の登録、`ports`はCoreのPort、`use-cases`の`submit-response`は応答の検証・確定、`save-place`・`decide-place`は保存・決定 |
+| Worker `src/runtime/`                   | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・計測は各フォルダ                                            |
+| Mobile `journey/services/`・`platform/` | `platform/http`はHTTPとその契約、`journey/services/conversations`は会話操作・復元、`composition`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`      |
+| Mobile 機能ごとの`components/`          | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI。表示文言・表示用変換は`presentation`                                         |
 
 Coreの単体テストは`worker/src/`の対象実装の近くに置く。Workerのテストは`worker/tests/`に集約し、`adapters/`・`runtime/`・`security/`はInfrastructureの対応モジュール、`src/composition/`は組み立て処理を検証する。評価CLIなどの開発用コードは`worker/tooling/`に置く。テスト専用fixtureを公開exportsへ追加しない。配置変更だけで既存の公開入口や責務・依存方向を変更しない。
 
@@ -97,7 +97,7 @@ flowchart TD
   Port --> Store[SavedReferenceDO: owner状態]
 ```
 
-compositionが具象Adapterを構成する。現在はHot Pepperの検索・詳細AdapterをCoreのPlaceSearchPort/PlaceDetailsPortへ注入し、店舗IDで候補を登録する。地域名はkeyword、現在地は緯度経度とrangeへ変換し、営業時間は掲載文のまま渡す。GoogleのPlaces/Routes/Photos接続は持たない。営業未確認の許容は`src/composition/`で組み立ててCoreの確定検証へ明示し、必須の移動・滞在条件は解除しない。公開DTOとCore内部型の変換はWorkerが所有する。
+compositionが具象Adapterを構成する。現在はHot Pepperの検索・詳細AdapterをCoreのPlaceSearchPort/PlaceDetailsPortへ注入し、店舗IDで候補を登録する。地域名はkeyword、現在地は緯度経度とrangeへ変換し、営業時間は掲載文のまま渡す。GoogleのPlaces/Routes/Photos接続は持たない。営業未確認の許容は`src/composition/`で組み立ててCoreの確定検証へ明示する。公開DTOとCore内部型の変換はWorkerが所有する。
 ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Portと同一の層にしない。
 
 店舗写真は検索・詳細Adapterが`photo.pc`のURLを観測として登録し、確定カードの写真根拠からWorkerがowner・端末・期限に紐づくtokenを発行する。既存の`GET /v1/photos/:token`が認証・期限検証後にHot Pepperの画像CDNから取得し、Mobileの写真表示部品へ渡す。画像本体をLLMや永続ストレージへ渡さない。
@@ -120,7 +120,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 
 | データ                                 | 正を持つ場所                       | 制約                                            |
 | -------------------------------------- | ---------------------------------- | ----------------------------------------------- |
-| 店の名称・営業時間・写真・経路         | 外部Provider                       | 用途別許可・帰属・期限を検証する                |
+| 店の名称・営業時間・写真・掲載文       | 外部Provider                       | 用途別許可・帰属・期限を検証する                |
 | 保存済みprefs・店舗identity・decidedAt | owner単位の`SavedReferenceDO`      | 店の本文を埋め込まない                          |
 | 会話一覧・発言・送信状態               | owner単位の`ConversationHistoryDO` | ユーザー原文は削除まで、回答は保持判定付き      |
 | 今夜の会話実行・確定参照               | `ThreadDO`                         | session期限と保存前制御を適用する               |
