@@ -300,6 +300,7 @@ const projectSearchData = (value: JsonRecord, policy: ModelContextFieldPolicy): 
       identity: projectFieldResult(candidate.identity ?? null, 'identity', policy),
       openingHours: projectFieldResult(candidate.openingHours ?? null, 'opening_hours', policy),
       price: projectFieldResult(candidate.price ?? null, 'price', policy),
+      facilities: projectFieldResult(candidate.facilities ?? null, 'facilities', policy),
     };
   });
   if (candidates.some((candidate): candidate is undefined => candidate === undefined)) {

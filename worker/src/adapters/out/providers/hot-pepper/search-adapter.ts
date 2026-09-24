@@ -18,6 +18,7 @@ import {
   hotPepperIssue,
   hotPepperProviderIssue,
   registerHotPepperField,
+  type HotPepperDetailField,
 } from '@worker/adapters/out/providers/hot-pepper/place-observations';
 import type { ToolExecutionContext } from '@worker/application/ports/context';
 
@@ -177,7 +178,7 @@ export const createHotPepperSearchAdapter = (options: SearchOptions): PlaceSearc
           excludedCount += 1;
           continue;
         }
-        const field = (field: 'identity' | 'opening_hours' | 'price') =>
+        const field = (field: HotPepperDetailField) =>
           registerHotPepperField({
             shop,
             field,
@@ -187,11 +188,14 @@ export const createHotPepperSearchAdapter = (options: SearchOptions): PlaceSearc
             now: options.clock(),
             registration: options.registration,
           });
+        // Photos are registered for the card but never shown to the model.
+        field('photos');
         candidates.push({
           candidateId: candidate.candidateId,
           identity: field('identity'),
           openingHours: field('opening_hours'),
           price: field('price'),
+          facilities: field('facilities'),
         });
         if (candidates.length === binding.limit) break;
       }
@@ -214,8 +218,8 @@ export const createHotPepperSearchAdapter = (options: SearchOptions): PlaceSearc
         coverage: 'provider_results',
       });
       const warnings = data.candidates.flatMap((candidate) =>
-        [candidate.identity, candidate.openingHours, candidate.price].flatMap((field) =>
-          field.status === 'error' ? [field.error] : [],
+        [candidate.identity, candidate.openingHours, candidate.price, candidate.facilities].flatMap(
+          (field) => (field.status === 'error' ? [field.error] : []),
         ),
       );
       return { status: warnings.length ? 'partial' : 'ok', data, warnings };
