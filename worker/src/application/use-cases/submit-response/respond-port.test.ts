@@ -15,7 +15,7 @@ import {
   CommitAdapterError,
   SubmitApplication,
 } from '@worker/application/use-cases/submit-response/submit-application';
-import { createSubmitCardsPort } from '@worker/application/use-cases/submit-response/submit-cards-port';
+import { createSubmitCardsPort } from '@worker/application/use-cases/submit-response/respond-port';
 import {
   makeFixture,
   makeInput,
