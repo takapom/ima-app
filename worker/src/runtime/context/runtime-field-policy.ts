@@ -192,6 +192,36 @@ const safeIssue = (value: JSONValue): JSONValue => {
   };
 };
 
+/**
+ * A refused respond is explained by the Core or the tool binding, never by a provider, and the
+ * model needs the reason to repair it: which candidate, which path, which fields are missing.
+ * Evidence IDs stay out, like every observation ID.
+ */
+const respondIssue = (value: JSONValue): JSONValue => {
+  if (!isRecord(value)) return safeIssue(value);
+  const code =
+    typeof value.code === 'string' && isIssueCode(value.code) ? value.code : 'UPSTREAM_UNAVAILABLE';
+  const candidateId =
+    typeof value.candidateId === 'string' &&
+    v.safeParse(CandidateIdSchema, value.candidateId).success
+      ? value.candidateId
+      : undefined;
+  return {
+    code,
+    path: typeof value.path === 'string' && value.path.length <= 240 ? value.path : null,
+    ...(candidateId === undefined ? {} : { candidateId }),
+    message:
+      typeof value.message === 'string' && value.message.length <= 300
+        ? value.message
+        : 'respond was refused',
+    missingFields: Array.isArray(value.missingFields)
+      ? value.missingFields
+          .filter((field): field is string => typeof field === 'string' && field.length <= 80)
+          .slice(0, 16)
+      : [],
+  };
+};
+
 type ShownObservation = { readonly observationId: string; readonly value: JSONValue };
 
 /** Checks the internal observation shape; only its value is summarized for the model. */
@@ -398,7 +428,7 @@ export const projectRuntimeToolResultForModel = (
   if (value.status === 'invalid') {
     return {
       status: 'invalid',
-      issues: Array.isArray(value.issues) ? value.issues.map((issue) => safeIssue(issue)) : [],
+      issues: Array.isArray(value.issues) ? value.issues.map((issue) => respondIssue(issue)) : [],
       repairable: value.repairable === true,
       remainingRepairs:
         typeof value.remainingRepairs === 'number' && Number.isSafeInteger(value.remainingRepairs)

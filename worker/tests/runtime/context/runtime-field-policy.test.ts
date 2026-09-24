@@ -93,6 +93,54 @@ describe('runtime field policy', () => {
     ).toBe(false);
   });
 
+  it('tells the model why a respond was refused, without evidence IDs', () => {
+    const projected = projectRuntimeToolResultForModel(
+      {
+        status: 'invalid',
+        issues: [
+          {
+            code: 'STALE_EVIDENCE',
+            path: 'hero.candidateId',
+            candidateId: 'candidate-1',
+            evidenceIds: ['observation-secret'],
+            message: 'opening-hours evidence is stale',
+            missingFields: ['opening_hours'],
+          },
+          {
+            code: 'PROVIDER_SECRET_LEAK',
+            path: 'x'.repeat(241),
+            message: 'y'.repeat(301),
+            missingFields: [42],
+          },
+        ],
+        repairable: true,
+        remainingRepairs: 1,
+      },
+      defaultRuntimeModelContextPolicy,
+    );
+    expect(projected).toEqual({
+      status: 'invalid',
+      issues: [
+        {
+          code: 'STALE_EVIDENCE',
+          path: 'hero.candidateId',
+          candidateId: 'candidate-1',
+          message: 'opening-hours evidence is stale',
+          missingFields: ['opening_hours'],
+        },
+        {
+          code: 'UPSTREAM_UNAVAILABLE',
+          path: null,
+          message: 'respond was refused',
+          missingFields: [],
+        },
+      ],
+      repairable: true,
+      remainingRepairs: 1,
+    });
+    expect(JSON.stringify(projected)).not.toContain('observation-secret');
+  });
+
   it('preserves Core location errors while sanitizing their details', () => {
     const projected = projectRuntimeToolResultForModel(
       {
