@@ -44,7 +44,7 @@ thread ID、device ID、IPだけを所有者の認可根拠にしない。reques
 
 ## 3操作と根拠
 
-`search_places`は新規検索またはopaque cursorによる継続。`limit`（既定10）と`excludeCandidateIds`（既定なし）は省略でき、`null`は入力不正。検索結果は候補ごとにidentity・opening_hours・price・facilitiesを返し、photosはカード用に登録するがモデルには返さない。`get_place_details`はcandidateと要求fieldを指定した取り直しで、確定の前提ではない。`submit_cards`は根拠付きのmessage・hero・altsを検証して確定する。
+`search_places`は新規検索またはopaque cursorによる継続。`limit`（既定10）と`excludeCandidateIds`（既定なし）は省略でき、`null`は入力不正。検索結果は候補ごとにidentity・opening_hours・price・facilitiesを返し、photosはカード用に登録するがモデルには返さない。`get_place_details`はcandidateと要求fieldを指定した取り直しで、確定の前提ではない。`submit_cards`はmessage・hero・altsを検証して確定する。生成文（message・why・diff）は長さ上限付きの文字列で、根拠IDや`basis`は受け付けない。カード項目の観測はCoreが付ける。
 
 詳細fieldはidentity、opening_hours、price、photos、contact、facilities。contactは接続中のProviderにないため、モデル向けスキーマには出さない。未要求の取得、未知fieldの黙殺、営業時間からの入店保証は行わない。
 モデルには必要な文脈を投影し、Providerの生ID、秘密、生レスポンス、不要な座標を渡さない。

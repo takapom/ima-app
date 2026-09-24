@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { EvidenceTextSchema } from '@worker/domain/evidence/evidence';
+import { Text } from '@worker/domain/primitives';
 import {
   FacilitiesInfoSchema,
   OpeningHoursSchema,
@@ -18,7 +18,6 @@ import {
   invalid,
   issue,
   parseObservationValue,
-  resolveEvidenceText,
   resolveObservation,
   type ResolvedObservation,
   type KnownObservationField,
@@ -27,7 +26,6 @@ import {
   type SubmitValidationResult,
   type ValidatedCard,
   type ValidatedCardsResponse,
-  type ValidatedEvidenceText,
   type ValidatedMessageResponse,
 } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import { validateOpening } from '@worker/application/use-cases/submit-response/validation/submit-cards-opening';
@@ -181,45 +179,8 @@ const validateCandidate = (
       ),
     );
   issues.push(...validateOpening(selection.candidateId, path, context, byField));
-  const why = resolveEvidenceText(
-    selection.why,
-    selection.candidateId,
-    `${path}.why`,
-    context,
-    registry,
-    new Map(),
-  );
-  if (why.status === 'invalid') issues.push(...why.issues);
-  const diff =
-    selection.diff === undefined
-      ? null
-      : resolveEvidenceText(
-          selection.diff,
-          selection.candidateId,
-          `${path}.diff`,
-          context,
-          registry,
-          new Map(),
-        );
-  if (diff?.status === 'invalid') issues.push(...diff.issues);
-  if (
-    issues.length > 0 ||
-    identity === undefined ||
-    opening === undefined ||
-    why.status === 'invalid' ||
-    (diff !== null && diff.status === 'invalid')
-  )
+  if (issues.length > 0 || identity === undefined || opening === undefined)
     return invalid(...issues);
-  if (why.status !== 'valid')
-    return invalid(
-      issue(
-        'INVALID_EVIDENCE',
-        `${path}.why`,
-        'why evidence could not be resolved',
-        [],
-        selection.candidateId,
-      ),
-    );
   const priceObservation = byField.get('price');
   const photosObservation = byField.get('photos');
   const facilitiesObservation = byField.get('facilities');
@@ -245,8 +206,8 @@ const validateCandidate = (
       photos,
       facilities,
       evidenceIds: attached.evidenceIds,
-      why: why.response,
-      diff: diff === null ? null : diff.status === 'valid' ? diff.response : null,
+      why: selection.why,
+      diff: selection.diff ?? null,
     },
   };
 };
@@ -291,20 +252,6 @@ export function validateSubmitCards(
     if (result.status === 'invalid') issues.push(...result.issues);
     else cards.push(result.response);
   }
-  const cache = new Map<string, ResolvedObservation>();
-  const messages: ValidatedEvidenceText[] = [];
-  for (const [index, message] of inputValue.message.entries()) {
-    const result = resolveEvidenceText(
-      message,
-      null,
-      `message[${index}]`,
-      parsedContext.response,
-      registry,
-      cache,
-    );
-    if (result.status === 'invalid') issues.push(...result.issues);
-    else messages.push(result.response);
-  }
   if (issues.length > 0 || cards.length !== selections.length) return invalid(...issues);
   const [hero, ...alts] = cards;
   if (hero === undefined)
@@ -313,7 +260,7 @@ export function validateSubmitCards(
     status: 'valid',
     response: {
       presentation: 'replace',
-      message: messages,
+      message: inputValue.message,
       hero,
       alts,
     },
@@ -323,27 +270,11 @@ export function validateSubmitCards(
 export function validateMessage(
   input: unknown,
   context: unknown,
-  registry: CandidateObservationRegistryPort,
 ): SubmitValidationResult<ValidatedMessageResponse> {
   const parsedContext = parseContext(context);
   if (parsedContext.status === 'invalid') return parsedContext;
-  const parsedMessage = v.safeParse(EvidenceTextSchema(300), input);
+  const parsedMessage = v.safeParse(Text(300), input);
   if (!parsedMessage.success)
     return invalid(issue('INVALID_ARGUMENT', 'message', 'message is invalid'));
-  const result = resolveEvidenceText(
-    parsedMessage.output,
-    null,
-    'message',
-    parsedContext.response,
-    registry,
-    new Map(),
-  );
-  if (result.status === 'invalid') return result;
-  return {
-    status: 'valid',
-    response: {
-      presentation: 'keep',
-      message: result.response,
-    },
-  };
+  return { status: 'valid', response: { presentation: 'keep', message: parsedMessage.output } };
 }

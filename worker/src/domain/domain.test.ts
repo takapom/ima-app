@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as v from 'valibot';
 import { AnyFieldResultSchema, FieldResultSchema, ResultSchema } from '@worker/domain/result';
-import {
-  AnyObservationSchema,
-  EvidenceTextWithPolicySchema,
-  ObservationSchema,
-} from '@worker/domain/evidence/evidence';
+import { AnyObservationSchema, ObservationSchema } from '@worker/domain/evidence/evidence';
 import {
   CandidateIdSchema,
   HttpsUrlSchema,
@@ -44,15 +40,6 @@ const denyRetention = (overrides: Record<string, unknown> = {}) => ({
   displayPolicyStatus: 'available',
   ...overrides,
 });
-const evidence = {
-  evidenceId: 'obs-1',
-  observationId: 'obs-1',
-  candidateId: 'candidate-1',
-  field: 'identity',
-  attribution: { label: 'Example source', sourceLink: 'https://example.com/source' },
-  retention: denyRetention(),
-};
-
 describe('core domain contracts', () => {
   it('bounds IDs and revisions without importing the public contracts package', () => {
     expect(v.safeParse(CandidateIdSchema, 'candidate-1').success).toBe(true);
@@ -163,75 +150,5 @@ describe('core domain contracts', () => {
       }).success,
     ).toBe(true);
     expect(v.safeParse(IssueSchema, { code: 'UNKNOWN_CODE' }).success).toBe(false);
-  });
-
-  it('inherits the strictest source evidence policy for generated text', () => {
-    const textSchema = EvidenceTextWithPolicySchema(300);
-    expect(
-      v.safeParse(textSchema, {
-        text: '一時表示の候補',
-        evidenceIds: ['obs-1'],
-        evidence: [evidence],
-        basis: 'grounded',
-        retention: denyRetention(),
-      }).success,
-    ).toBe(true);
-    expect(
-      v.safeParse(textSchema, {
-        text: '保存可能と誤って延長',
-        evidenceIds: ['obs-1'],
-        evidence: [evidence],
-        basis: 'grounded',
-        retention: allowRetention(),
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(textSchema, {
-        text: '表示期限を延長',
-        evidenceIds: ['obs-1'],
-        evidence: [evidence],
-        basis: 'grounded',
-        retention: denyRetention({ displayUntil: '2026-09-09T13:30:00Z' }),
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(textSchema, {
-        text: 'セッション期限を延長',
-        evidenceIds: ['obs-1'],
-        evidence: [evidence],
-        basis: 'grounded',
-        retention: denyRetention({ sessionExpiresAt: '2026-09-10T13:00:00Z' }),
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(textSchema, {
-        text: '重複根拠',
-        evidenceIds: ['obs-1', 'obs-1'],
-        evidence: [evidence],
-        basis: 'grounded',
-        retention: denyRetention(),
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(textSchema, {
-        text: '根拠なし',
-        evidenceIds: [],
-        evidence: [],
-        basis: 'conversational',
-        retention: denyRetention(),
-      }).success,
-    ).toBe(true);
-    expect(
-      v.safeParse(textSchema, {
-        text: '未参照根拠',
-        evidenceIds: ['obs-1'],
-        evidence: [
-          { ...evidence, evidenceId: 'obs-1' },
-          { ...evidence, evidenceId: 'obs-2' },
-        ],
-        basis: 'grounded',
-        retention: denyRetention(),
-      }).success,
-    ).toBe(false);
   });
 });

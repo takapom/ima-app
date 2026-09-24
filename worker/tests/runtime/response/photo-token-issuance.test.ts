@@ -92,20 +92,7 @@ const photoObservation: ReadonlyStoredObservation = {
   retention: photoRetention,
 };
 
-const photoEvidence = {
-  observationId: photoObservation.observationId,
-  candidateId: photoObservation.candidateId,
-  field: 'photos' as const,
-  sources: photoObservation.sources,
-  retention: photoRetention,
-};
-
-const photoWhy = {
-  text: '写真付き候補',
-  evidenceIds: [photoObservation.observationId],
-  basis: 'grounded' as const,
-  evidence: [photoEvidence],
-};
+const photoWhy = '写真付き候補';
 
 const photoResponse: CommittedResponse = {
   presentation: 'replace',

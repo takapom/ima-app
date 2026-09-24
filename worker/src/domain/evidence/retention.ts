@@ -96,24 +96,6 @@ export const RetentionMetadataSchema = v.pipe(
 );
 export type RetentionMetadata = v.InferOutput<typeof RetentionMetadataSchema>;
 
-export const retentionDoesNotExceed = (target: RetentionMetadata, source: RetentionMetadata) => {
-  const noLater = (candidate: string | null, bound: string | null) =>
-    candidate === null || (bound !== null && Date.parse(candidate) <= Date.parse(bound));
-  const noLaterOrAbsent = (candidate: string | null, bound: string | null) =>
-    bound === null ? candidate === null : noLater(candidate, bound);
-
-  return (
-    Date.parse(target.sessionExpiresAt) <= Date.parse(source.sessionExpiresAt) &&
-    (source.displayPolicyStatus === 'available' || target.displayPolicyStatus !== 'available') &&
-    noLaterOrAbsent(target.freshUntil, source.freshUntil) &&
-    noLaterOrAbsent(target.displayUntil, source.displayUntil) &&
-    (target.retentionDecision !== 'allow' ||
-      (source.retentionUntil !== null &&
-        target.retentionUntil !== null &&
-        noLater(target.retentionUntil, source.retentionUntil)))
-  );
-};
-
 const earliestOf = (values: readonly (string | null)[]): string | null => {
   let earliest: string | null = null;
   for (const value of values) {

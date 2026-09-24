@@ -21,15 +21,21 @@ import {
 
 type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 
+/** Written before generated text stopped citing observations (#61); read and discarded. */
+const LegacyTextCitation = {
+  basis: v.optional(v.picklist(['grounded', 'inference', 'conversational'])),
+  evidenceIds: v.optional(v.pipe(v.array(ObservationIdSchema), v.maxLength(32))),
+};
+
 const HistoryReferenceSchema = v.strictObject({
   threadId: OpaqueIdSchema,
   turnId: TurnIdSchema,
   role: v.picklist(['user', 'assistant']),
-  basis: v.picklist(['grounded', 'inference', 'conversational']),
+  basis: LegacyTextCitation.basis,
   content: v.optional(
     v.strictObject({
       text: Text(500),
-      evidenceIds: v.pipe(v.array(ObservationIdSchema), v.maxLength(32)),
+      evidenceIds: LegacyTextCitation.evidenceIds,
       retention: RetentionMetadataSchema,
     }),
   ),
@@ -108,19 +114,16 @@ export const referenceSnapshotFor = (input: {
     threadId: input.scope.threadId,
     sessionExpiresAt: input.sessionExpiresAt,
     excludedCandidateIds: [...input.state.excludedCandidateIds],
-    history: input.state.history.map(
-      ({ threadId, turnId, role, basis, text, evidenceIds, retention }) => ({
-        threadId,
-        turnId,
-        role,
-        basis,
-        ...(retention?.restoreMode === 'full' &&
-        input.now !== undefined &&
-        conversationBodyIsUsable(retention, input.now)
-          ? { content: { text, evidenceIds: [...evidenceIds], retention } }
-          : {}),
-      }),
-    ),
+    history: input.state.history.map(({ threadId, turnId, role, text, retention }) => ({
+      threadId,
+      turnId,
+      role,
+      ...(retention?.restoreMode === 'full' &&
+      input.now !== undefined &&
+      conversationBodyIsUsable(retention, input.now)
+        ? { content: { text, retention } }
+        : {}),
+    })),
     cardSet,
     evidence: input.state.evidence.map(
       ({ observationId, candidateId, field, fetchedAt, freshUntil, expiresAt, retention }) => ({
@@ -140,12 +143,12 @@ export const referenceSnapshotFor = (input: {
 };
 
 const restoredHistory = (
-  { content, ...reference }: HistoryReference,
+  { content, basis: _basis, ...reference }: HistoryReference,
   now: string,
 ): RetainedHistoryEntry =>
   content?.retention.restoreMode === 'full' && conversationBodyIsUsable(content.retention, now)
-    ? { ...reference, ...content }
-    : { ...reference, basis: 'conversational', text: '[withheld]', evidenceIds: [] };
+    ? { ...reference, text: content.text, retention: content.retention }
+    : { ...reference, text: '[withheld]' };
 
 const withheldCardSet = (record: CardSetRecord): CardSetSource => ({
   record: {

@@ -18,7 +18,7 @@ import {
   type RuntimePublicResponseDependencies,
 } from '@worker/composition/runtime-turn-composition';
 import type { RuntimeThinkConnectionOptions } from '@worker/runtime/turn-execution/runtime-think-connection';
-import type { ValidatedEvidenceText } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+import type { EvidenceLink } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import {
   isRuntimeNativeScenario,
   createRuntimeNativeModel,
@@ -51,7 +51,7 @@ const scenarioFromText = (text: string): RuntimeNativeScenario => {
     : 'invalid-submit-details-valid';
 };
 
-type NativeEvidenceLink = ValidatedEvidenceText['evidence'][number];
+type NativeEvidenceLink = EvidenceLink;
 
 const cardEvidenceResolver =
   (

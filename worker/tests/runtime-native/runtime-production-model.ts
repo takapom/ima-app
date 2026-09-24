@@ -151,18 +151,8 @@ const streamOf = (
     },
   });
 
-const finalMessageParts = (
-  text = '条件を確認しました。',
-  evidenceIds: readonly string[] = [],
-): RuntimeGateModelStreamPart[] => {
-  const envelope = JSON.stringify({
-    kind: 'final_message',
-    message: {
-      text,
-      evidenceIds,
-      basis: evidenceIds.length > 0 ? 'grounded' : 'conversational',
-    },
-  });
+const finalMessageParts = (text = '条件を確認しました。'): RuntimeGateModelStreamPart[] => {
+  const envelope = JSON.stringify({ kind: 'final_message', message: text });
   return [
     { type: 'stream-start', warnings: [] },
     { type: 'text-start', id: 'production-final' },
@@ -227,7 +217,7 @@ export const modelForProduction = (
         report.providerOptionsSeen.push(observedProviderOptions(options.providerOptions));
         report.toolNames.push('final_message');
         return Promise.resolve({
-          stream: streamOf(finalMessageParts('前の候補を維持します。', observationIds.slice(-2))),
+          stream: streamOf(finalMessageParts('前の候補を維持します。')),
         });
       }
       if (finalAfterDetails && report.calls >= 2) {
@@ -239,12 +229,10 @@ export const modelForProduction = (
       const uniqueCandidateIds = [...new Set(candidateIds)];
       const twoCandidates =
         scenario() === 'two-results' ? uniqueCandidateIds.slice(-2) : ([] as string[]);
-      const evidenceFor = (candidate: string): string[] =>
-        observationIdsForCandidateIn(prompt, candidate).slice(scenario() === 'photo' ? -3 : -2);
+      // A candidate is committable once its details were read into the prompt.
+      const wasRead = (candidate: string): boolean =>
+        observationIdsForCandidateIn(prompt, candidate).length > 0;
       const candidateId = twoCandidates.at(-1) ?? candidateIds.at(-1) ?? 'missing-candidate';
-      const evidenceIds = evidenceFor(candidateId).length
-        ? evidenceFor(candidateId)
-        : observationIds.slice(-2);
       let input: unknown;
       let toolName: string;
       const conditionChange = scenario() === 'condition-change';
@@ -270,42 +258,19 @@ export const modelForProduction = (
       } else {
         toolName = 'submit_cards';
         const alternativeCandidateId = twoCandidates.find((id) => id !== candidateId);
-        const alternativeEvidenceIds =
-          alternativeCandidateId === undefined ? [] : evidenceFor(alternativeCandidateId);
-        const selectionsAreGrounded =
-          twoCandidates.length === 2 && evidenceIds.length > 0 && alternativeEvidenceIds.length > 0;
+        const bothRead =
+          alternativeCandidateId !== undefined &&
+          wasRead(candidateId) &&
+          wasRead(alternativeCandidateId);
         input = {
-          message: [
-            {
-              text: '渋谷の候補です。',
-              evidenceIds: selectionsAreGrounded
-                ? [...new Set([...evidenceIds, ...alternativeEvidenceIds])]
-                : evidenceIds,
-              basis: 'grounded',
-            },
-          ],
-          hero: {
-            candidateId,
-            why: {
-              text: '検索結果と詳細を確認しました。',
-              evidenceIds,
-              basis: 'grounded',
-            },
-          },
-          alts: selectionsAreGrounded
+          message: ['渋谷の候補です。'],
+          hero: { candidateId, why: '検索結果と詳細を確認しました。' },
+          alts: bothRead
             ? [
                 {
                   candidateId: alternativeCandidateId,
-                  why: {
-                    text: 'もう一つの候補です。',
-                    evidenceIds: alternativeEvidenceIds,
-                    basis: 'grounded',
-                  },
-                  diff: {
-                    text: '条件との違いを比較しました。',
-                    evidenceIds: alternativeEvidenceIds,
-                    basis: 'grounded',
-                  },
+                  why: 'もう一つの候補です。',
+                  diff: '条件との違いを比較しました。',
                 },
               ]
             : [],

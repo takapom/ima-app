@@ -93,11 +93,8 @@ const addUnique = (target: Set<string>, values: readonly string[]): void => {
 const referencesFor = (response: CommittedResponse): CommitReferences => {
   const candidateIds = new Set<string>();
   const observationIds = new Set<string>();
+  // Generated text cites nothing; only card facts reference observations.
   if (response.presentation === 'replace') {
-    addUnique(
-      observationIds,
-      response.message.flatMap((text) => text.evidenceIds),
-    );
     const cards = [response.hero, ...response.alts];
     addUnique(
       candidateIds,
@@ -105,11 +102,7 @@ const referencesFor = (response: CommittedResponse): CommitReferences => {
     );
     for (const card of cards) {
       addUnique(observationIds, card.evidenceIds);
-      addUnique(observationIds, card.why.evidenceIds);
-      if (card.diff !== null) addUnique(observationIds, card.diff.evidenceIds);
     }
-  } else {
-    addUnique(observationIds, response.message.evidenceIds);
   }
   return {
     candidateIds: [...candidateIds],
@@ -158,7 +151,6 @@ export class SubmitApplication {
   commitMessage(
     input: unknown,
     context: unknown,
-    registry: CandidateObservationRegistryPort,
     request: unknown,
   ): Promise<CommitApplicationResult> {
     const parsedRequest = v.safeParse(CommitApplicationRequestSchema, request);
@@ -170,7 +162,7 @@ export class SubmitApplication {
     ) {
       return Promise.resolve(invalidRequest());
     }
-    const validation = validateMessage(input, parsedContext.output, registry);
+    const validation = validateMessage(input, parsedContext.output);
     if (validation.status === 'invalid') return Promise.resolve(validation);
     return this.commitResponse(validation.response, parsedRequest.output);
   }

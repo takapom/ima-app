@@ -254,10 +254,14 @@ const unavailableField = (value: JsonRecord): JSONValue | undefined => {
   return { status: value.status, reason: 'field value is unavailable' };
 };
 
+/** Receives each observation whose value is passed to the model. */
+export type RuntimePresentedObservation = (observationId: string) => void;
+
 const projectFieldResult = (
   value: JSONValue,
   field: DetailField,
   policy: ModelContextFieldPolicy,
+  presented: RuntimePresentedObservation | undefined,
 ): JSONValue => {
   if (!isRecord(value)) return MODEL_INPUT_WITHHELD;
   if (value.status === 'known') {
@@ -270,9 +274,13 @@ const projectFieldResult = (
     const observations = value.observations.map((observation) =>
       safeObservation(observation, field),
     );
-    return observations.every((observation): observation is JSONValue => observation !== undefined)
-      ? { status: 'known', observations }
-      : MODEL_INPUT_WITHHELD;
+    if (!observations.every((observation): observation is JSONValue => observation !== undefined))
+      return MODEL_INPUT_WITHHELD;
+    for (const observation of observations) {
+      if (isRecord(observation) && typeof observation.observationId === 'string')
+        presented?.(observation.observationId);
+    }
+    return { status: 'known', observations };
   }
   if (value.status === 'error') {
     return { status: 'error', error: safeIssue(value.error ?? null) };
@@ -280,7 +288,11 @@ const projectFieldResult = (
   return unavailableField(value) ?? MODEL_INPUT_WITHHELD;
 };
 
-const projectSearchData = (value: JsonRecord, policy: ModelContextFieldPolicy): JSONValue => {
+const projectSearchData = (
+  value: JsonRecord,
+  policy: ModelContextFieldPolicy,
+  presented: RuntimePresentedObservation | undefined,
+): JSONValue => {
   const applied = value.applied;
   if (
     typeof value.searchId !== 'string' ||
@@ -297,10 +309,15 @@ const projectSearchData = (value: JsonRecord, policy: ModelContextFieldPolicy): 
     if (!isRecord(candidate) || typeof candidate.candidateId !== 'string') return undefined;
     return {
       candidateId: candidate.candidateId,
-      identity: projectFieldResult(candidate.identity ?? null, 'identity', policy),
-      openingHours: projectFieldResult(candidate.openingHours ?? null, 'opening_hours', policy),
-      price: projectFieldResult(candidate.price ?? null, 'price', policy),
-      facilities: projectFieldResult(candidate.facilities ?? null, 'facilities', policy),
+      identity: projectFieldResult(candidate.identity ?? null, 'identity', policy, presented),
+      openingHours: projectFieldResult(
+        candidate.openingHours ?? null,
+        'opening_hours',
+        policy,
+        presented,
+      ),
+      price: projectFieldResult(candidate.price ?? null, 'price', policy, presented),
+      facilities: projectFieldResult(candidate.facilities ?? null, 'facilities', policy, presented),
     };
   });
   if (candidates.some((candidate): candidate is undefined => candidate === undefined)) {
@@ -331,7 +348,11 @@ const DETAIL_FIELDS: readonly DetailField[] = [
   'facilities',
 ];
 
-const projectDetailsData = (value: JsonRecord, policy: ModelContextFieldPolicy): JSONValue => {
+const projectDetailsData = (
+  value: JsonRecord,
+  policy: ModelContextFieldPolicy,
+  presented: RuntimePresentedObservation | undefined,
+): JSONValue => {
   if (!Array.isArray(value.items)) return MODEL_INPUT_WITHHELD;
   const items = value.items.map((item) => {
     const fieldsValue = isRecord(item) ? item.fields : undefined;
@@ -348,7 +369,8 @@ const projectDetailsData = (value: JsonRecord, policy: ModelContextFieldPolicy):
     const fields: { [key: string]: JSONValue } = {};
     for (const field of DETAIL_FIELDS) {
       const fieldValue = fieldsValue[field];
-      if (fieldValue !== undefined) fields[field] = projectFieldResult(fieldValue, field, policy);
+      if (fieldValue !== undefined)
+        fields[field] = projectFieldResult(fieldValue, field, policy, presented);
     }
     return { candidateId: candidateIdValue, fields };
   });
@@ -370,6 +392,7 @@ const projectIssueResult = (value: JsonRecord): JSONValue => ({
 export const projectRuntimeToolResultForModel = (
   value: JSONValue,
   policy: ModelContextFieldPolicy,
+  presented?: RuntimePresentedObservation,
 ): JSONValue => {
   if (!isRecord(value)) return MODEL_INPUT_WITHHELD;
   if (value.status === 'error') return projectIssueResult(value);
@@ -379,9 +402,9 @@ export const projectRuntimeToolResultForModel = (
     const data = dataValue;
     const projected =
       Array.isArray(data.candidates) && 'searchId' in data
-        ? projectSearchData(data, policy)
+        ? projectSearchData(data, policy, presented)
         : Array.isArray(data.items)
-          ? projectDetailsData(data, policy)
+          ? projectDetailsData(data, policy, presented)
           : MODEL_INPUT_WITHHELD;
     if (projected === MODEL_INPUT_WITHHELD) return projected;
     return {

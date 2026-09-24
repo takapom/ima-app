@@ -19,11 +19,8 @@ const FIELD_NAMES = new Set([
   'message',
   'hero',
   'alts',
-  'evidenceIds',
   'why',
   'diff',
-  'text',
-  'basis',
   '$',
   '*',
 ]);

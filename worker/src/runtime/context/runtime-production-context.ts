@@ -9,6 +9,7 @@ import type {
 } from '@worker/application/model-context/model-context';
 import type { ModelEvidenceSource } from '@worker/application/model-context/model-evidence';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
+import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import { CardSetRecordSchema } from '@worker/domain/candidates/continuity';
 import { DetailFieldSchema } from '@worker/domain/primitives';
 import { ModelEvidenceSourceSchema } from '@worker/application/model-context/model-evidence';
@@ -29,6 +30,7 @@ import {
 } from '@worker/runtime/context/runtime-production-display-context';
 
 import {
+  conversationBodyIsUsable,
   userHistoryFor,
   responseHistory,
   projectConversationHistory,
@@ -66,6 +68,8 @@ export type RuntimeProductionContextStore = {
     fieldPolicy: ModelContextFieldPolicy,
   ): {
     readonly modelContext: RuntimeProductionModelContext;
+    /** Retention of each history body passed to the model; generated text inherits it. */
+    readonly historyRetention: readonly RetentionMetadata[];
   };
   commitTurn(input: ThreadTurnRequest, response: unknown): void;
   snapshot(): {
@@ -290,9 +294,10 @@ export const createRuntimeProductionContextStore = (input: {
     }
     boundScope ??= safeScope;
     restoreForScope(safeScope);
-    const history = projectConversationHistory(
-      state.history,
-      input.now?.() ?? new Date().toISOString(),
+    const now = input.now?.() ?? new Date().toISOString();
+    const history = projectConversationHistory(state.history, now);
+    const historyRetention = state.history.flatMap(({ retention }) =>
+      retention !== undefined && conversationBodyIsUsable(retention, now) ? [retention] : [],
     );
     // Reject an over-bound exclusion history before any model/provider work is started.
     nextExcludedCandidateIds(state.excludedCandidateIds, request.excludeCandidateIds);
@@ -331,6 +336,7 @@ export const createRuntimeProductionContextStore = (input: {
         evidence: [...structuredClone(state.evidence)],
         fieldPolicy,
       },
+      historyRetention: structuredClone(historyRetention),
     };
   };
 

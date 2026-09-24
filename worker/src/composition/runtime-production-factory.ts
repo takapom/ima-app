@@ -146,6 +146,8 @@ const defaultPlan = (
     search,
     details,
     retention,
+    historyRetention:
+      input.request.conversationMemory === undefined ? context.historyRetention : [],
     modelContext:
       input.request.conversationMemory === undefined
         ? context.modelContext
@@ -264,6 +266,7 @@ const makeOptions = (
       model,
       ...(plan.providerOptions === undefined ? {} : { providerOptions: plan.providerOptions }),
       modelContext: plan.modelContext,
+      ...(plan.historyRetention === undefined ? {} : { historyRetention: plan.historyRetention }),
       retention: plan.retention,
       budget,
       clock,

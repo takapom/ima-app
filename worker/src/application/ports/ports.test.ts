@@ -59,7 +59,7 @@ const details = {
   freshness: 'refresh',
 };
 
-const conversational = { text: '候補です', evidenceIds: [], basis: 'conversational' } as const;
+const conversational = '候補です' as const;
 
 describe('core port contracts', () => {
   it('keeps search and continue as a strict union with bounded radius', () => {

@@ -7,12 +7,7 @@ import {
 
 const response: ValidatedMessageResponse = {
   presentation: 'keep',
-  message: {
-    text: '写真を含む応答の確定結果',
-    evidenceIds: [],
-    basis: 'conversational',
-    evidence: [],
-  },
+  message: '写真を含む応答の確定結果',
 };
 
 const metadata = {

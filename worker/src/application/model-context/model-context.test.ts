@@ -103,24 +103,18 @@ const source = {
       turnId: 'turn-1',
       role: 'user' as const,
       text: '静かで甘いものがある店',
-      evidenceIds: [],
-      basis: 'conversational' as const,
     },
     {
       threadId: 'thread-1',
       turnId: 'turn-2',
       role: 'assistant' as const,
       text: '候補を3つ出しました。',
-      evidenceIds: ['observation-1'],
-      basis: 'grounded' as const,
     },
     {
       threadId: 'thread-1',
       turnId: 'turn-3',
       role: 'user' as const,
       text: '二つ目の理由を教えて',
-      evidenceIds: [],
-      basis: 'conversational' as const,
     },
   ],
   cardSet,
@@ -180,8 +174,6 @@ describe('model context projection', () => {
       turnId: 'turn-2',
       role: 'assistant',
       text: '候補を3つ出しました。',
-      evidenceIds: ['observation-1'],
-      basis: 'grounded',
     });
     expect(projected.cardSet?.entries.map((entry) => entry.candidateId)).toEqual([
       'candidate-2',
@@ -286,46 +278,33 @@ describe('model context projection', () => {
     expect(JSON.stringify(projected.evidence[1])).not.toContain('二つ目');
   });
 
-  it.each([['observation-stale'], ['observation-1', 'observation-stale']])(
-    'preserves conversation but clears grounding when any evidence is stale (case %#)',
-    (...evidenceIds) => {
-      const staleEvidence = {
-        ...firstEvidence,
-        observationId: 'observation-stale',
-        freshUntil: '2026-09-10T12:00:00Z',
-        value: { ...firstEvidence.value, name: '古い店舗' },
-      };
-      const projected = projectModelContext({
-        ...source,
-        history: [
-          ...source.history,
-          {
-            threadId: 'thread-1',
-            turnId: 'turn-5',
-            role: 'assistant' as const,
-            text: '古い店舗は営業中です。',
-            evidenceIds,
-            basis: 'grounded' as const,
-          },
-        ],
-        evidence: [firstEvidence, staleEvidence],
-      });
-      expect(projected.evidence[1]?.status).toBe('stale');
-      expect(projected.history.slice(0, 3)).toEqual(projectModelContext(source).history);
-      expect(projected.history[3]).toEqual({
-        turnId: 'turn-5',
-        role: 'assistant',
-        text: '古い店舗は営業中です。',
-        evidenceIds: [],
-        basis: 'conversational',
-      });
-      expect(projected.history.every((entry) => !('threadId' in entry))).toBe(true);
-      expect(projected.history.flatMap((entry) => entry.evidenceIds)).not.toContain(
-        'observation-stale',
-      );
-      expect(JSON.stringify(projected.evidence)).not.toContain('古い店舗');
-    },
-  );
+  it('keeps quoted conversation while stale evidence stops being a fact', () => {
+    const staleEvidence = {
+      ...firstEvidence,
+      observationId: 'observation-stale',
+      freshUntil: '2026-09-10T12:00:00Z',
+      value: { ...firstEvidence.value, name: '古い店舗' },
+    };
+    const quoted = {
+      threadId: 'thread-1',
+      turnId: 'turn-5',
+      role: 'assistant' as const,
+      text: '以前の回答です。',
+    };
+    const projected = projectModelContext({
+      ...source,
+      history: [...source.history, quoted],
+      evidence: [firstEvidence, staleEvidence],
+    });
+    expect(projected.evidence[1]?.status).toBe('stale');
+    expect(projected.history.at(-1)).toEqual({
+      turnId: 'turn-5',
+      role: 'assistant',
+      text: '以前の回答です。',
+    });
+    expect(projected.history.every((entry) => !('threadId' in entry))).toBe(true);
+    expect(JSON.stringify(projected.evidence)).not.toContain('古い店舗');
+  });
 
   it('uses local freshness when policy freshness is unbounded and rejects the exact boundary', () => {
     const noPolicyFreshness = {

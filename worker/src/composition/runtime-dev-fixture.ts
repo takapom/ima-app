@@ -267,20 +267,10 @@ const nextTool = (prompt: unknown): { readonly name: string; readonly input: unk
   return {
     name: 'submit_cards',
     input: {
-      message: [
-        {
-          text: '掲載営業時間は24時間、予算目安は1,200〜2,400円です。現在の営業状況は未確認です。',
-          evidenceIds: observations,
-          basis: 'grounded',
-        },
-      ],
+      message: ['掲載営業時間は24時間、予算目安は1,200〜2,400円です。現在の営業状況は未確認です。'],
       hero: {
         candidateId,
-        why: {
-          text: '恵比寿のカフェ候補です。営業状況は店舗で確認してください。',
-          evidenceIds: observations,
-          basis: 'grounded',
-        },
+        why: '恵比寿のカフェ候補です。営業状況は店舗で確認してください。',
       },
       alts: [],
     },

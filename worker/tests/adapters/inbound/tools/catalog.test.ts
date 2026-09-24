@@ -76,11 +76,8 @@ const detailsInput: GetPlaceDetailsInput = {
 };
 
 const submitInput: SubmitCardsInput = {
-  message: [{ text: '候補です', evidenceIds: [], basis: 'conversational' }],
-  hero: {
-    candidateId: 'candidate-1',
-    why: { text: '候補です', evidenceIds: [], basis: 'conversational' },
-  },
+  message: ['候補です'],
+  hero: { candidateId: 'candidate-1', why: '候補です' },
   alts: [],
 };
 

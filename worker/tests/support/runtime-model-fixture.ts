@@ -64,46 +64,23 @@ const detailsInput: GetPlaceDetailsInput = {
   freshness: 'reuse_valid',
 };
 
+// Invalid until a details read registers the candidate's identity and opening hours.
 const invalidSubmitInput: SubmitCardsInput = {
-  message: [{ text: 'fixture selection needs evidence', evidenceIds: [], basis: 'inference' }],
-  hero: {
-    candidateId: 'candidate-1',
-    why: { text: 'fixture selection', evidenceIds: [], basis: 'inference' },
-  },
+  message: ['fixture selection needs evidence'],
+  hero: { candidateId: 'candidate-1', why: 'fixture selection' },
   alts: [],
 };
 
 const validSubmitInput: SubmitCardsInput = {
-  message: [
-    {
-      text: 'Fixture candidate-1 is open now.',
-      evidenceIds: [identityObservationId('candidate-1')],
-      basis: 'grounded',
-    },
-  ],
-  hero: {
-    candidateId: 'candidate-1',
-    why: {
-      text: 'Identity is confirmed by the fixture source.',
-      evidenceIds: [identityObservationId('candidate-1')],
-      basis: 'grounded',
-    },
-  },
+  message: ['Fixture candidate-1 is open now.'],
+  hero: { candidateId: 'candidate-1', why: 'Identity is confirmed by the fixture source.' },
   alts: [],
 };
 
 const validAlt = (candidateId: string, text: string): SubmitCardsInput['hero'] => ({
   candidateId,
-  why: {
-    text: 'Identity is confirmed by the fixture source.',
-    evidenceIds: [identityObservationId(candidateId)],
-    basis: 'grounded',
-  },
-  diff: {
-    text,
-    evidenceIds: [identityObservationId(candidateId)],
-    basis: 'grounded',
-  },
+  why: 'Identity is confirmed by the fixture source.',
+  diff: text,
 });
 
 const validSubmitInputTwo: SubmitCardsInput = {
@@ -154,11 +131,7 @@ function stepToolParts(
 function stepFinalParts(text: string = 'Fixture final answer.'): RuntimeGateModelStreamPart[] {
   const finalEnvelope = JSON.stringify({
     kind: 'final_message',
-    message: {
-      text,
-      evidenceIds: [identityObservationId('candidate-1')],
-      basis: 'grounded',
-    },
+    message: text,
   });
   return [
     { type: 'text-start', id: 'step-final' },

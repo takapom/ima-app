@@ -208,35 +208,17 @@ export const makeFixture = (
   return { context, registry, ids };
 };
 
-export const makeSelection = (
-  candidateId: CandidateId,
-  ids: EvidenceIds,
-  alternative = false,
-): CardSelection => ({
+export const makeSelection = (candidateId: CandidateId, alternative = false): CardSelection => ({
   candidateId,
-  why: { text: `理由 ${candidateId}`, evidenceIds: [ids.identity], basis: 'grounded' },
-  ...(alternative
-    ? {
-        diff: {
-          text: `比較 ${candidateId}`,
-          evidenceIds: [ids.identity],
-          basis: 'grounded',
-        },
-      }
-    : {}),
+  why: `理由 ${candidateId}`,
+  ...(alternative ? { diff: `比較 ${candidateId}` } : {}),
 });
 
 export const makeInput = (selections: readonly CardSelection[]): SubmitCardsInput => {
   const [hero, ...alts] = selections;
   if (hero === undefined) throw new Error('fixture requires a hero selection');
   return {
-    message: [
-      {
-        text: '候補を提案します',
-        evidenceIds: [...hero.why.evidenceIds],
-        basis: 'grounded',
-      },
-    ],
+    message: ['候補を提案します'],
     hero,
     alts,
   };

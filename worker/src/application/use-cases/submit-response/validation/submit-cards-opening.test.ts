@@ -14,7 +14,7 @@ const statusFor = (fixture: ReturnType<typeof makeFixture>) => {
   const ids = fixture.ids.get('candidate-1');
   if (ids === undefined) throw new Error('fixture candidate missing');
   return validateSubmitCards(
-    makeInput([makeSelection('candidate-1', ids)]),
+    makeInput([makeSelection('candidate-1')]),
     fixture.context,
     fixture.registry,
   );

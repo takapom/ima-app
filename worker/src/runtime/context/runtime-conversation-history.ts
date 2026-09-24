@@ -12,7 +12,7 @@ export type RetainedHistoryEntry = ModelHistoryEntry & {
   readonly retention?: RetentionMetadata | undefined;
 };
 
-/** History quotes earlier utterances; Core separately checks the freshness of their evidence. */
+/** History quotes earlier utterances; their freshness belonged to the turn that produced them. */
 export const conversationBodyIsUsable = (retention: RetentionMetadata, now: string): boolean =>
   v.safeParse(RetentionMetadataSchema, retention).success &&
   isRuntimeRetentionWindowOpen({ ...retention, freshUntil: null }, now);
@@ -25,7 +25,7 @@ export const projectConversationHistory = (
   structuredClone(history).map(({ retention, ...entry }) =>
     retention === undefined || conversationBodyIsUsable(retention, now)
       ? entry
-      : { ...entry, text: '[withheld]', evidenceIds: [], basis: 'conversational' },
+      : { ...entry, text: '[withheld]' },
   );
 
 export const responseHistory = (response: AssistantResponse): readonly RetainedHistoryEntry[] =>
@@ -35,8 +35,6 @@ export const responseHistory = (response: AssistantResponse): readonly RetainedH
       turnId: response.turnId,
       role: 'assistant',
       text: message.text,
-      evidenceIds: message.evidenceIds,
-      basis: message.basis,
     });
     return parsed.success ? [{ ...parsed.output, retention: message.retention }] : [];
   });
@@ -50,8 +48,6 @@ export const userHistoryFor = (
     turnId: input.turnId ?? input.requestId,
     role: 'user',
     text: input.text,
-    evidenceIds: [],
-    basis: 'conversational',
   });
   return parsed.success ? parsed.output : undefined;
 };

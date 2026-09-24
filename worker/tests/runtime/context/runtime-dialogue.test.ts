@@ -128,6 +128,8 @@ describe('conversation context', () => {
       'どのエリアで探しますか？',
     ]);
     expect(next.modelContext.userText).toBe('恵比寿');
+    // Each quoted body passes its own retention on to the text generated from it.
+    expect(next.historyRetention).toEqual([allowRetention.retention, allowRetention.retention]);
     restored.commitTurn(second, response(second, 'カフェを探します。'));
     expect(
       f

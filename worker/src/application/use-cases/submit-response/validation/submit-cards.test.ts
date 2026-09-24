@@ -25,7 +25,7 @@ describe('submit-cards pure validation and card assembly', () => {
   it('assembles observed facts and preserves why/diff text for one card', () => {
     const fixture = makeFixture();
     const result = validateSubmitCards(
-      makeInput([makeSelection('candidate-1', idsFor(fixture))]),
+      makeInput([makeSelection('candidate-1')]),
       fixture.context,
       fixture.registry,
     );
@@ -34,8 +34,8 @@ describe('submit-cards pure validation and card assembly', () => {
       expect(result.response.hero.identity.name).toBe('店 candidate-1');
       expect(result.response.hero.price?.rawLabel).toBe('¥¥');
       expect(result.response.hero.photos?.photos[0]?.photoRef).toBe('photo-candidate-1');
-      expect(result.response.hero.why.text).toBe('理由 candidate-1');
-      expect(result.response.message[0]?.evidence[0]?.observationId).toBe(idsFor(fixture).identity);
+      expect(result.response.hero.why).toBe('理由 candidate-1');
+      expect(result.response.message).toEqual(['候補を提案します']);
       expect(fixture.registry.listObservations(fixture.context.scope)).toHaveLength(4);
     }
   });
@@ -57,7 +57,7 @@ describe('submit-cards pure validation and card assembly', () => {
       },
     );
     const result = validateSubmitCards(
-      makeInput([makeSelection('candidate-1', ids)]),
+      makeInput([makeSelection('candidate-1')]),
       fixture.context,
       fixture.registry,
     );
@@ -78,7 +78,7 @@ describe('submit-cards pure validation and card assembly', () => {
   it('rejects the retired card evidenceIds input instead of ignoring it', () => {
     const fixture = makeFixture();
     const ids = idsFor(fixture);
-    const legacy = { ...makeSelection('candidate-1', ids), evidenceIds: [ids.identity] };
+    const legacy = { ...makeSelection('candidate-1'), evidenceIds: [ids.identity] };
     const result = validateSubmitCards(makeInput([legacy]), fixture.context, fixture.registry);
     expect(result).toMatchObject({ status: 'invalid', issues: [{ code: 'INVALID_ARGUMENT' }] });
   });
@@ -93,7 +93,7 @@ describe('submit-cards pure validation and card assembly', () => {
       status: 'operational',
     });
     const result = validateSubmitCards(
-      makeInput([makeSelection(bare.candidateId, idsFor(fixture))]),
+      makeInput([makeSelection(bare.candidateId)]),
       fixture.context,
       fixture.registry,
     );
@@ -112,7 +112,7 @@ describe('submit-cards pure validation and card assembly', () => {
     const candidateIds = ['candidate-1', 'candidate-2', 'candidate-3'].slice(0, count);
     const fixture = makeFixture(candidateIds);
     const selections = candidateIds.map((candidateId, index) =>
-      makeSelection(candidateId, idsFor(fixture, candidateId), index > 0),
+      makeSelection(candidateId, index > 0),
     );
     const result = validateSubmitCards(makeInput(selections), fixture.context, fixture.registry);
     expect(result.status).toBe('valid');
@@ -121,22 +121,33 @@ describe('submit-cards pure validation and card assembly', () => {
 
   it('supports message-only and rejects an empty message', () => {
     const fixture = makeFixture([], { requireLastOrderAtArrival: false });
-    const message = {
-      text: '条件を確認しました',
-      evidenceIds: [],
-      basis: 'conversational' as const,
-    };
-    const result = validateMessage(message, fixture.context, fixture.registry);
-    expect(result.status).toBe('valid');
-    if (result.status === 'valid') expect(result.response.presentation).toBe('keep');
+    const result = validateMessage('条件を確認しました', fixture.context);
+    expect(result).toMatchObject({
+      status: 'valid',
+      response: { presentation: 'keep', message: '条件を確認しました' },
+    });
+    expect(validateMessage('', fixture.context).status).toBe('invalid');
+  });
+
+  it('rejects the retired self-reported basis and citations on generated text', () => {
+    const fixture = makeFixture();
+    const cited = { text: '理由', evidenceIds: [idsFor(fixture).identity], basis: 'grounded' };
+    expect(validateMessage(cited, fixture.context).status).toBe('invalid');
+    const selection = { ...makeSelection('candidate-1'), why: cited as unknown as string };
     expect(
-      validateMessage({ ...message, text: '' }, fixture.context, fixture.registry).status,
+      validateSubmitCards(makeInput([selection]), fixture.context, fixture.registry),
+    ).toMatchObject({ status: 'invalid', issues: [{ code: 'INVALID_ARGUMENT' }] });
+    expect(
+      validateSubmitCards(
+        { ...makeInput([makeSelection('candidate-1')]), message: [cited as unknown as string] },
+        fixture.context,
+        fixture.registry,
+      ).status,
     ).toBe('invalid');
   });
 
   it('skips observations from another turn context and rejects registered conflicts', () => {
     const fixture = makeFixture();
-    const ids = idsFor(fixture);
     const staleId = addObservation(
       fixture.registry,
       fixture.context,
@@ -155,7 +166,7 @@ describe('submit-cards pure validation and card assembly', () => {
       { ...fixture.context.expectedObservationContext, timeContext: 'old-turn' },
     );
     const skipped = validateSubmitCards(
-      makeInput([makeSelection('candidate-1', ids)]),
+      makeInput([makeSelection('candidate-1')]),
       fixture.context,
       fixture.registry,
     );
@@ -176,7 +187,7 @@ describe('submit-cards pure validation and card assembly', () => {
       lastOrderRaw: '13:30',
     });
     const conflict = validateSubmitCards(
-      makeInput([makeSelection('candidate-1', ids)]),
+      makeInput([makeSelection('candidate-1')]),
       fixture.context,
       fixture.registry,
     );
@@ -188,7 +199,6 @@ describe('submit-cards pure validation and card assembly', () => {
 
   it('accepts equivalent duplicate field observations', () => {
     const fixture = makeFixture();
-    const ids = idsFor(fixture);
     addObservation(fixture.registry, fixture.context, 'candidate-1', 'opening_hours', {
       timeZone: 'UTC',
       intervals: [{ startAt: '2026-09-10T11:00:00Z', endAt: '2026-09-10T15:00:00Z' }],
@@ -201,14 +211,14 @@ describe('submit-cards pure validation and card assembly', () => {
     });
     expect(
       validateSubmitCards(
-        makeInput([makeSelection('candidate-1', ids)]),
+        makeInput([makeSelection('candidate-1')]),
         fixture.context,
         fixture.registry,
       ).status,
     ).toBe('valid');
   });
 
-  it('rejects an observation ID suppressed by refresh even when a newer ID is reusable', () => {
+  it('attaches the refreshed observation instead of one suppressed by refresh', () => {
     const fixture = makeFixture();
     const ids = idsFor(fixture);
     fixture.registry.invalidateObservationReuse(fixture.context.scope, 'candidate-1', 'identity');
@@ -234,15 +244,9 @@ describe('submit-cards pure validation and card assembly', () => {
       ]),
     ).toBe(true);
 
-    // The why text still cites the suppressed ID, so the old citation is rejected.
-    const oldSelection = makeSelection('candidate-1', ids);
-    expect(
-      validateSubmitCards(makeInput([oldSelection]), fixture.context, fixture.registry).status,
-    ).toBe('invalid');
-
-    const newSelection = makeSelection('candidate-1', { ...ids, identity: refreshedIdentity });
+    // The Core attaches the reusable refreshed identity, never the suppressed one.
     const refreshed = validateSubmitCards(
-      makeInput([newSelection]),
+      makeInput([makeSelection('candidate-1')]),
       fixture.context,
       fixture.registry,
     );

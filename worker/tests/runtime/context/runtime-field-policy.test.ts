@@ -171,6 +171,7 @@ describe('runtime field policy', () => {
       displayName: uses(),
     };
     const policy = toModelContextFieldPolicy(input, 'fixture');
+    const presented: string[] = [];
     const projected = projectRuntimeToolResultForModel(
       {
         status: 'ok',
@@ -198,7 +199,10 @@ describe('runtime field policy', () => {
         warnings: [{ code: 'UPSTREAM_UNAVAILABLE', message: 'warning canary' }],
       },
       policy,
+      (observationId) => presented.push(observationId),
     );
+    // Only values that reach the model bound the generated text; the withheld price does not.
+    expect(presented).toEqual(['observation-identity']);
 
     expect(JSON.stringify(projected)).toContain('Cafe');
     expect(JSON.stringify(projected)).not.toContain('secret-price');

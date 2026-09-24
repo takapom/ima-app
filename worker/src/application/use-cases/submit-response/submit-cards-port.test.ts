@@ -151,7 +151,7 @@ describe('submit cards application adapter', () => {
       getRemainingRepairs: () => 2,
     });
 
-    const input = makeInput([makeSelection('candidate-1', ids)]);
+    const input = makeInput([makeSelection('candidate-1')]);
     const result = await port.submit(input, execution(fixture.context.scope.threadId), token);
 
     expect(result.status).toBe('committed');
@@ -182,8 +182,7 @@ describe('submit cards application adapter', () => {
       idempotencyKey: 'port-invalid',
       getRemainingRepairs: () => repairs,
     });
-    const invalidInput = makeInput([makeSelection('candidate-1', ids)]);
-    invalidInput.hero.why.evidenceIds = ['unregistered-observation'];
+    const invalidInput = makeInput([makeSelection('candidate-unregistered')]);
 
     const first = await port.submit(invalidInput, execution(fixture.context.scope.threadId), token);
     repairs = 1;
@@ -218,7 +217,7 @@ describe('submit cards application adapter', () => {
       idempotencyKey: 'port-cancel',
       getRemainingRepairs: () => 2,
     });
-    const input = makeInput([makeSelection('candidate-1', ids)]);
+    const input = makeInput([makeSelection('candidate-1')]);
     const cancelled = await port.submit(input, execution(fixture.context.scope.threadId), {
       isCancelled: () => true,
     });
@@ -241,7 +240,7 @@ describe('submit cards application adapter', () => {
       expectedRevision: 1,
       idempotencyKey: 'error-key',
     };
-    const input = { text: '確認しました', evidenceIds: [], basis: 'conversational' as const };
+    const input = '確認しました';
     const wrongReceipt = new SubmitApplication(
       new WrongRevisionCommit(),
       new FixedResponseIds(),
@@ -254,11 +253,11 @@ describe('submit cards application adapter', () => {
     );
 
     await expect(
-      wrongReceipt.commitMessage(input, fixture.context, fixture.registry, request),
+      wrongReceipt.commitMessage(input, fixture.context, request),
     ).rejects.toBeInstanceOf(CommitAdapterError);
-    await expect(
-      throwing.commitMessage(input, fixture.context, fixture.registry, request),
-    ).rejects.toThrow('commit adapter failed');
+    await expect(throwing.commitMessage(input, fixture.context, request)).rejects.toThrow(
+      'commit adapter failed',
+    );
   });
 
   it('does not recreate an ephemeral response when a delayed digest finishes after disposal', async () => {
@@ -266,17 +265,12 @@ describe('submit cards application adapter', () => {
     const hash = new DeferredHash();
     const commit = new FixedCommit();
     const application = new SubmitApplication(commit, new FixedResponseIds(), hash);
-    const pending = application.commitMessage(
-      { text: '遅着', evidenceIds: [], basis: 'conversational' },
-      fixture.context,
-      fixture.registry,
-      {
-        scope: fixture.context.scope,
-        turnId: 'port-turn-1',
-        expectedRevision: 1,
-        idempotencyKey: 'late-digest',
-      },
-    );
+    const pending = application.commitMessage('遅着', fixture.context, {
+      scope: fixture.context.scope,
+      turnId: 'port-turn-1',
+      expectedRevision: 1,
+      idempotencyKey: 'late-digest',
+    });
     application.clearTurn(fixture.context.scope, 'port-turn-1');
     hash.resolve();
     const result = await pending;
@@ -295,17 +289,12 @@ describe('submit cards application adapter', () => {
     const fixture = messageFixture();
     const commit = new DeferredCommit();
     const application = new SubmitApplication(commit, new FixedResponseIds(), new FixedHash());
-    const pending = application.commitMessage(
-      { text: '遅着commit', evidenceIds: [], basis: 'conversational' },
-      fixture.context,
-      fixture.registry,
-      {
-        scope: fixture.context.scope,
-        turnId: 'port-turn-1',
-        expectedRevision: 1,
-        idempotencyKey: 'late-commit',
-      },
-    );
+    const pending = application.commitMessage('遅着commit', fixture.context, {
+      scope: fixture.context.scope,
+      turnId: 'port-turn-1',
+      expectedRevision: 1,
+      idempotencyKey: 'late-commit',
+    });
     await Promise.resolve();
     application.clearTurn(fixture.context.scope, 'port-turn-1');
     commit.resolve();

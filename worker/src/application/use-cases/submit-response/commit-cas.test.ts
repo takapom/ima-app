@@ -128,11 +128,7 @@ class BarrierCommitPort implements CommitPort {
   }
 }
 
-const message = (text: string) => ({
-  text,
-  evidenceIds: [],
-  basis: 'conversational' as const,
-});
+const message = (text: string) => text;
 
 describe('BarrierCommit CAS', () => {
   it('does not commit when response preparation fails', async () => {
@@ -152,7 +148,7 @@ describe('BarrierCommit CAS', () => {
       },
     );
     await expect(
-      application.commitMessage(message('条件を確認しました'), fixture.context, fixture.registry, {
+      application.commitMessage(message('条件を確認しました'), fixture.context, {
         scope: fixture.context.scope,
         turnId: 'turn',
         expectedRevision: 1,
@@ -186,15 +182,9 @@ describe('BarrierCommit CAS', () => {
       application.commitMessage(
         message('条件を確認しました'),
         fixture.context,
-        fixture.registry,
         request('first-key'),
       ),
-      application.commitMessage(
-        message('競合した内容'),
-        fixture.context,
-        fixture.registry,
-        request('second-key'),
-      ),
+      application.commitMessage(message('競合した内容'), fixture.context, request('second-key')),
     ]);
 
     expect([first.status, second.status].sort()).toEqual(['committed', 'conflict']);
