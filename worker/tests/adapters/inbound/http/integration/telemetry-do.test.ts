@@ -159,6 +159,26 @@ describe('M26 telemetry Durable Object', () => {
     await expect(stub.deleteExpired(boundaryAt)).resolves.toBe(1);
   });
 
+  it('skips rows of a retired provider instead of failing the whole read', async () => {
+    const stub = testEnv(env).TELEMETRY.getByName(`telemetry-retired-${crypto.randomUUID()}`);
+    const current = trace(`trace-current-${crypto.randomUUID()}`);
+    const retired = { ...trace(`trace-retired-${crypto.randomUUID()}`), provider: 'last_train' };
+    await expect(stub.writeTrace(OWNER_A, current)).resolves.toEqual({ ok: true });
+    await runInDurableObject(stub, (_instance, state) => {
+      state.storage.sql.exec(
+        'INSERT INTO telemetry_trace (owner_scope_ref, trace_id, occurred_at_ms, payload_json) VALUES (?, ?, ?, ?)',
+        OWNER_A,
+        retired.traceId,
+        Date.parse(retired.occurredAt),
+        JSON.stringify(retired),
+      );
+    });
+    const read = await stub.readTraceSince(new Date(0).toISOString());
+    expect(read.ok).toBe(true);
+    if (!read.ok) throw new Error('M26_TRACE_READ_FAILED');
+    expect(read.records.map((record) => record.traceId)).toEqual([current.traceId]);
+  });
+
   it('classifies corrupt stored JSON without exposing parser details', async () => {
     const stub = testEnv(env).TELEMETRY.getByName(`telemetry-corrupt-${crypto.randomUUID()}`);
     const record = trace(`trace-corrupt-${crypto.randomUUID()}`);
