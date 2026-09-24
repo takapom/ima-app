@@ -68,7 +68,7 @@ Adapterの生成・注入は`src/composition/`が担当する。RuntimeからAda
 | 配置                                    | 探す対象                                                                                                                                                                                       |
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Core `application/`                     | `model-context`はモデル入力、`candidate-registry`は候補・観測の登録、`submission`は検証・確定、`travel`は移動計算、`saved-references`は保存・決定。今回の条件変更は直下の`turn-constraints.ts` |
-| Worker `src/runtime/`                   | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・保存参照・計測は各フォルダ                                            |
+| Worker `src/runtime/`                   | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・計測は各フォルダ                                                      |
 | Mobile `journey/services/`・`platform/` | `platform/http`はHTTPとその契約、`journey/services/conversations`は会話操作・復元、`composition`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`                |
 | Mobile 機能ごとの`components/`          | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI。表示文言・表示用変換は`presentation`                                                   |
 

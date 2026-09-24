@@ -4,7 +4,10 @@ import {
   safeToolInputValidationMessage,
   toolInputInvalidFields,
 } from '@worker/runtime/model/tool-input-error';
-import { searchPlacesToolSchema } from '@worker/adapters/in/tools/schemas';
+import {
+  getPlaceDetailsToolSchema,
+  searchPlacesToolSchema,
+} from '@worker/adapters/in/tools/schemas';
 
 const CANARY = 'SECRET_INPUT_CANARY';
 const input = {
@@ -74,5 +77,40 @@ describe('safe tool validation feedback', () => {
     `Tool input validation failed. Invalid fields: ${Array<string>(9).fill('input').join(', ')}`,
   ])('rejects unrecognized or oversized error details', (message) => {
     expect(safeToolInputValidationMessage(message)).toBeUndefined();
+  });
+
+  it('defaults an omitted limit and exclusion list but rejects null', async () => {
+    const { limit: _limit, excludeCandidateIds: _excluded, ...minimal } = input;
+    void _limit;
+    void _excluded;
+    expect(await validate({ input: minimal })).toEqual({
+      success: true,
+      value: { input: { ...minimal, limit: 10, excludeCandidateIds: [] } },
+    });
+    expect(await validate({ input: { ...minimal, limit: null } })).toMatchObject({
+      success: false,
+    });
+    expect(await validate({ input: { ...minimal, excludeCandidateIds: null } })).toMatchObject({
+      success: false,
+    });
+  });
+
+  it('rejects removed arguments instead of ignoring them (#54)', async () => {
+    expect(await validate({ input: { ...input, openNow: false } })).toMatchObject({
+      success: false,
+    });
+    const details = asSchema(getPlaceDetailsToolSchema);
+    if (details.validate === undefined) throw new Error('Missing validator');
+    expect(
+      await details.validate({
+        input: {
+          requests: [{ savedPlaceRef: 'saved-1', fields: ['identity'] }],
+          freshness: 'refresh',
+        },
+      }),
+    ).toMatchObject({ success: false });
+    const wire = (await details.jsonSchema) as { properties: { input: unknown } };
+    expect(JSON.stringify(wire.properties.input)).not.toContain('contact');
+    expect(JSON.stringify(wire.properties.input)).not.toContain('savedPlaceRef');
   });
 });

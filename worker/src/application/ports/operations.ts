@@ -38,11 +38,15 @@ export const SearchPlacesInputSchema = v.union([
     mode: v.literal('search'),
     query: Text(200),
     area: v.union([CurrentLocationAreaSchema, NamedAreaSchema]),
-    limit: v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(10)),
-    excludeCandidateIds: v.pipe(
-      v.array(CandidateIdSchema),
-      v.maxLength(50),
-      v.check((ids) => new Set(ids).size === ids.length, 'duplicate excluded candidate'),
+    /** Omitted means the provider page limit; null is still invalid. */
+    limit: v.optional(v.pipe(SafeIntegerSchema, v.minValue(1), v.maxValue(10)), 10),
+    excludeCandidateIds: v.optional(
+      v.pipe(
+        v.array(CandidateIdSchema),
+        v.maxLength(50),
+        v.check((ids) => new Set(ids).size === ids.length, 'duplicate excluded candidate'),
+      ),
+      () => [],
     ),
   }),
   v.strictObject({
