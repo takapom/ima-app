@@ -5,12 +5,13 @@ import type {
   RuntimeGateModelStreamPart,
 } from '../support/runtime-model-fixture';
 import {
-  finalParts,
+  messageParts,
   streamOf,
   toolParts,
   type ModelEvalFixtureEvidenceSnapshot,
 } from './model-eval-context-output';
 import {
+  collectProjectedPromptValues,
   modelContextIn,
   modelPreferenceBudgetIn,
   type ProjectedObservation,
@@ -60,127 +61,32 @@ export const repairOverridesFor = (profile: string, phase: () => 'cards' | 'mess
   };
 };
 
-type RepairProjectedEvidence = {
-  readonly candidateId: string;
-  readonly field: string;
-  readonly observationId: string;
-  readonly status: string;
-  readonly reason?: string;
-  readonly freshUntil?: string | null;
-};
-
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 const array = (value: unknown): readonly unknown[] =>
   Array.isArray(value) ? (value as readonly unknown[]) : [];
 
-const projectedEvidenceFor = (
-  prompt: RuntimeGateModelCallOptions['prompt'],
-): readonly RepairProjectedEvidence[] => {
-  const contextEvidence = array(modelContextIn(prompt)?.evidence).flatMap((value) => {
-    if (!record(value)) return [];
-    const candidateId = value.candidateId;
-    const field = value.field;
-    const observationId = value.observationId;
-    const status = value.status;
-    const reason = value.reason;
-    const freshUntil = value.freshUntil;
-    return typeof candidateId === 'string' &&
-      typeof field === 'string' &&
-      typeof observationId === 'string' &&
-      typeof status === 'string'
-      ? [
-          {
-            candidateId,
-            field,
-            observationId,
-            status,
-            ...(typeof reason === 'string' ? { reason } : {}),
-            ...(freshUntil === null || typeof freshUntil === 'string' ? { freshUntil } : {}),
-          },
-        ]
-      : [];
-  });
-  const toolEvidence = array(prompt).flatMap((message) => {
-    if (!record(message) || message.role !== 'tool') return [];
-    return array(message.content).flatMap((part) => {
-      if (!record(part) || part.type !== 'tool-result' || part.toolName !== 'get_place_details') {
-        return [];
-      }
-      const output = record(part.output) ? part.output.value : undefined;
-      if (!record(output) || (output.status !== 'ok' && output.status !== 'partial')) return [];
-      const data = record(output.data) ? output.data : undefined;
-      if (!record(data) || !Array.isArray(data.items)) return [];
-      return data.items.flatMap((item) => {
-        if (!record(item) || typeof item.candidateId !== 'string' || !record(item.fields)) {
-          return [];
-        }
-        return Object.entries(item.fields).flatMap(([field, value]) => {
-          if (!record(value) || value.status !== 'known' || !Array.isArray(value.observations)) {
-            return [];
-          }
-          return value.observations.flatMap((observation) => {
-            if (
-              !record(observation) ||
-              observation.field !== field ||
-              typeof observation.observationId !== 'string' ||
-              typeof observation.candidateId !== 'string' ||
-              typeof observation.field !== 'string'
-            ) {
-              return [];
-            }
-            return [
-              {
-                candidateId: observation.candidateId,
-                field: observation.field,
-                observationId: observation.observationId,
-                status: 'known',
-              },
-            ];
-          });
-        });
-      });
-    });
-  });
-  return [...contextEvidence, ...toolEvidence];
-};
-
-const openingEvidenceFor = (
+/**
+ * At the target the prelude's opening hours are stale, or withheld once their retention window has
+ * ended; either way the model cannot use them. A refresh arrives as a details summary.
+ */
+const openingObservationsFor = (
   prompt: RuntimeGateModelCallOptions['prompt'],
   candidateId: string,
-  status: 'known' | 'stale',
-): readonly RepairProjectedEvidence[] =>
-  projectedEvidenceFor(prompt).filter(
-    (evidence) =>
-      evidence.candidateId === candidateId &&
-      evidence.field === 'opening_hours' &&
-      (evidence.status === status ||
-        (status === 'stale' &&
-          evidence.status === 'withheld' &&
-          evidence.reason === 'evidence retention window has ended' &&
-          typeof evidence.freshUntil === 'string' &&
-          Date.parse(evidence.freshUntil) <= Date.parse(MODEL_EVAL_REPAIR_TARGET_NOW))),
+  state: 'stale' | 'refreshed',
+): readonly ProjectedObservation[] =>
+  collectProjectedPromptValues(prompt).observations.filter(
+    (observation) =>
+      observation.candidateId === candidateId &&
+      observation.field === 'opening_hours' &&
+      (state === 'stale'
+        ? observation.status === 'stale' || observation.status === 'withheld'
+        : observation.status === 'known' && observation.source === 'details'),
   );
 
-export const freshRepairEvidenceIdsFor = (
-  prompt: RuntimeGateModelCallOptions['prompt'],
-  candidateId: string,
-): readonly string[] =>
-  openingEvidenceFor(prompt, candidateId, 'known').map((item) => item.observationId);
-
-export const staleRepairEvidenceIdsFor = (
-  prompt: RuntimeGateModelCallOptions['prompt'],
-  candidateId: string,
-): readonly string[] =>
-  openingEvidenceFor(prompt, candidateId, 'stale').map((item) => item.observationId);
-
 export type RepairTargetResult =
-  | {
-      readonly ok: true;
-      readonly candidateId: string;
-      readonly staleEvidenceIds: readonly string[];
-    }
+  | { readonly ok: true; readonly candidateId: string }
   | {
       readonly ok: false;
       readonly code: 'REPAIR_CARD_CONTEXT_MISSING' | 'REPAIR_STALE_EVIDENCE_MISSING';
@@ -215,25 +121,19 @@ export const repairTargetFor = (
 ): RepairTargetResult => {
   const target = repairCardTargetFor(prompt);
   if (!target.ok) return target;
-  const staleEvidenceIds = staleRepairEvidenceIdsFor(prompt, target.candidateId);
-  return staleEvidenceIds.length === 0
+  return openingObservationsFor(prompt, target.candidateId, 'stale').length === 0
     ? { ok: false, code: 'REPAIR_STALE_EVIDENCE_MISSING' }
-    : { ok: true, candidateId: target.candidateId, staleEvidenceIds };
+    : { ok: true, candidateId: target.candidateId };
 };
 
 export const repairEvidenceSnapshotFor = (
   prompt: RuntimeGateModelCallOptions['prompt'],
   candidateId: string,
 ): ModelEvalFixtureEvidenceSnapshot => {
-  const evidenceIds = freshRepairEvidenceIdsFor(prompt, candidateId);
-  const observations: ProjectedObservation[] = evidenceIds.map((observationId) => ({
-    candidateId,
-    field: 'opening_hours',
-    observationId,
-  }));
+  const observations = openingObservationsFor(prompt, candidateId, 'refreshed');
   return {
     candidateId,
-    evidenceIds,
+    knownFields: observations.length === 0 ? [] : ['opening_hours'],
     modelBudget: modelPreferenceBudgetIn(prompt),
     observations,
   };
@@ -242,7 +142,7 @@ export const repairEvidenceSnapshotFor = (
 export type RepairFixturePartsInput = {
   readonly prompt: RuntimeGateModelCallOptions['prompt'];
   readonly currentCall: number;
-  readonly step: (name: 'get_place_details' | 'final_message') => void;
+  readonly step: (name: 'get_place_details' | 'respond:answer') => void;
   readonly detailsRequest: (candidateIds: readonly string[]) => void;
   readonly finalEvidence: (snapshot: ModelEvalFixtureEvidenceSnapshot) => void;
 };
@@ -264,17 +164,17 @@ export const repairPartsFor = (
   }
   const target = repairCardTargetFor(input.prompt);
   if (!target.ok) throw new Error(target.code);
-  const evidenceIds = freshRepairEvidenceIdsFor(input.prompt, target.candidateId);
-  input.step('final_message');
-  if (evidenceIds.length === 0) {
+  const refreshed = openingObservationsFor(input.prompt, target.candidateId, 'refreshed');
+  input.step('respond:answer');
+  if (refreshed.length === 0) {
     return streamOf(
-      finalParts(
+      messageParts(
+        input.currentCall,
+        'answer',
         '営業時間を更新できませんでした。確認できた範囲では不明です。',
-        [],
-        'conversational',
       ),
     );
   }
   input.finalEvidence(repairEvidenceSnapshotFor(input.prompt, target.candidateId));
-  return streamOf(finalParts('営業時間の根拠を更新しました。', evidenceIds));
+  return streamOf(messageParts(input.currentCall, 'answer', '営業時間の根拠を更新しました。'));
 };

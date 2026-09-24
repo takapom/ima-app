@@ -86,7 +86,7 @@ describe('candidate-failure profile through the production adapter and one DO', 
     expect(failedText).toBe('候補を取得できませんでした。');
     expect(await failed.stub.getModelEvalFixtureSteps()).toEqual([
       'search_places',
-      'final_message',
+      'respond:answer',
     ]);
     expect(await failed.stub.getModelEvalFixtureCandidateIdentities()).toEqual([]);
     expect(await failed.stub.getModelEvalFixtureDetailsRequests()).toEqual([]);
@@ -102,7 +102,10 @@ describe('candidate-failure profile through the production adapter and one DO', 
     expect(empty.response.kind).toBe('message');
     expect(emptyText).toBe('条件に合う候補は見つかりませんでした。');
     expect(emptyText).not.toContain('取得できませんでした');
-    expect(await empty.stub.getModelEvalFixtureSteps()).toEqual(['search_places', 'final_message']);
+    expect(await empty.stub.getModelEvalFixtureSteps()).toEqual([
+      'search_places',
+      'respond:answer',
+    ]);
     expect(await empty.stub.getModelEvalFixtureCandidateIdentities()).toEqual([]);
     expect(await empty.stub.getModelEvalFixtureToolErrorCodes()).toEqual([]);
     const emptyTrace = await empty.stub.getModelEvalFixtureTrace();

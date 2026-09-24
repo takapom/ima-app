@@ -79,7 +79,8 @@ describe('condition and mixed-intent fixture profiles through one DO', () => {
       const price = hero.facts.price;
       expect(price?.status).toBe('known');
       if (price?.status !== 'known') return;
-      expect(price.value.level).toBe(2);
+      // Hot Pepper lists a price band, not a level.
+      expect(price.value).toMatchObject({ level: null, rawLabel: '1001～1500円' });
       expect(Object.hasOwn(result.response.cards.hero.facts, 'quietness')).toBe(false);
 
       const mapping = resolveCandidateIdentityMapping(
@@ -97,11 +98,10 @@ describe('condition and mixed-intent fixture profiles through one DO', () => {
         (item) => item.candidateId === hero.candidateId,
       );
       expect(snapshot?.modelBudget).toBe('normal');
+      // The model saw the listed price band that the card now shows with Core-attached evidence.
       const priceObservation = snapshot?.observations.find((item) => item.field === 'price');
-      expect(priceObservation).toBeDefined();
-      expect(price.evidence.map((item) => item.evidenceId)).toContain(
-        priceObservation?.observationId,
-      );
+      expect(priceObservation?.status).toBe('known');
+      expect(price.evidence.length).toBeGreaterThan(0);
       expect(price.evidence[0]?.retention.freshUntil).not.toBeNull();
       expect(Date.parse(price.evidence[0]?.retention.freshUntil ?? '')).toBeGreaterThan(
         Date.parse(MODEL_EVAL_NOW),
@@ -113,7 +113,7 @@ describe('condition and mixed-intent fixture profiles through one DO', () => {
       expect(await result.stub.getModelEvalFixtureSteps()).toEqual([
         'search_places',
         'get_place_details',
-        'submit_cards',
+        'respond:propose',
       ]);
     },
   );

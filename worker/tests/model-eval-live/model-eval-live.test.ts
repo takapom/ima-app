@@ -1,4 +1,6 @@
+import * as v from 'valibot';
 import { env } from 'cloudflare:test';
+import { HotPepperShopWireSchema } from '@worker/adapters/out/providers/hot-pepper/wire';
 import { describe, expect, it } from 'vitest';
 import { MODEL_EVALUATION_SCENARIOS } from '../../tooling/model-eval/dataset';
 import {
@@ -106,40 +108,32 @@ const timingForCase = (evaluationCase: EvaluationCase): LiveEvaluationTiming => 
 };
 
 describe('opt-in live model evaluation runner', () => {
-  it('keeps fixture opening status consistent with the fixed 21:00 JST clock', async () => {
-    const trace = new LiveTraceRecorder();
-    const response = await fixedPlacesFetcher(trace)(
-      new Request('https://places.googleapis.com/v1/places:searchText', { method: 'POST' }),
-    );
-    const body: unknown = await response.json();
-    if (
-      typeof body !== 'object' ||
-      body === null ||
-      !('places' in body) ||
-      !Array.isArray(body.places)
-    ) {
-      throw new Error('fixture places response malformed');
+  it('serves the catalogue in the Hot Pepper wire shape and honors the requested page', async () => {
+    const shopsFrom = async (query: string): Promise<readonly unknown[]> => {
+      const response = await fixedPlacesFetcher(new LiveTraceRecorder())(
+        new Request(`https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?${query}`),
+      );
+      const body: unknown = await response.json();
+      if (typeof body !== 'object' || body === null || !('results' in body)) {
+        throw new Error('fixture response malformed');
+      }
+      const results = body.results;
+      if (typeof results !== 'object' || results === null || !('shop' in results)) {
+        throw new Error('fixture results malformed');
+      }
+      return Array.isArray(results.shop) ? (results.shop as readonly unknown[]) : [];
+    };
+    const firstPage = await shopsFrom('keyword=cafe&count=3');
+    const everyShop = await shopsFrom('keyword=cafe&count=10');
+    const detail = await shopsFrom('id=eval-place-d');
+
+    expect(firstPage).toHaveLength(3);
+    expect(everyShop).toHaveLength(10);
+    expect(detail).toHaveLength(1);
+    for (const shop of everyShop) {
+      expect(v.safeParse(HotPepperShopWireSchema, shop).success).toBe(true);
     }
-    const places = (body.places as readonly unknown[]).flatMap(
-      (place): readonly [string, boolean | undefined][] => {
-        if (typeof place !== 'object' || place === null || !('id' in place)) return [];
-        const hours = 'currentOpeningHours' in place ? place.currentOpeningHours : undefined;
-        if (
-          typeof place.id !== 'string' ||
-          typeof hours !== 'object' ||
-          hours === null ||
-          !('openNow' in hours) ||
-          (hours.openNow !== undefined && typeof hours.openNow !== 'boolean')
-        ) {
-          return [];
-        }
-        return [[place.id, hours.openNow]];
-      },
-    );
-    const statusById = new Map(places);
-    expect(statusById.get('eval-place-a')).toBe(true);
-    expect(statusById.get('eval-place-b')).toBe(false);
-    expect(statusById.get('eval-place-c')).toBe(false);
+    expect(JSON.stringify(everyShop)).not.toMatch(/PRICE_LEVEL|priceLevel|openUntil/u);
   });
 
   it('runs the explicitly wired live profiles through Think and same-DO context', async ({
@@ -171,7 +165,7 @@ describe('opt-in live model evaluation runner', () => {
       if (workerEnv.OPENAI_API_KEY !== undefined && workerEnv.OPENAI_API_KEY.length > 0) {
         expect(serializedArtifact).not.toContain(workerEnv.OPENAI_API_KEY);
       }
-      expect(artifact.schemaVersion).toBe('m25.live.v1');
+      expect(artifact.schemaVersion).toBe('m25.live.v2');
       expect(artifact.attempts).toHaveLength(3);
       expect(artifact.report.coverage.actual + artifact.failures.length).toBe(3);
       expect(artifact.report.coverage.expected).toBe(3);
@@ -197,6 +191,10 @@ describe('opt-in live model evaluation runner', () => {
       'continuity',
       'repair',
       'gps-refusal',
+      'mood',
+      'mood',
+      'mood',
+      'many-candidates',
     ]);
     if (hasRuntimeFailure) throw new Error('M25_LIVE_RUNTIME_FAILED');
     expect(artifacts.every((artifact) => artifact.status === 'unverified')).toBe(true);

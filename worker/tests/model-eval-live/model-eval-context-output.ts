@@ -1,12 +1,12 @@
 import type { GetPlaceDetailsInput, SearchPlacesInput } from '@worker/application/ports/operations';
-import type { SubmitCardsInput } from '@worker/application/ports/model';
+import type { RespondInput } from '@worker/application/ports/model';
 import type {
   RuntimeGateModelCallOptions,
   RuntimeGateModelStreamPart,
 } from '../support/runtime-model-fixture';
 import {
   candidateIdsIn,
-  evidenceFor,
+  knownFieldsFor,
   modelPreferenceBudgetIn,
   observationFieldsFor,
   type ProjectedObservation,
@@ -18,11 +18,11 @@ export const FIXTURE_USAGE = {
 } as const;
 
 const toolFinish = { unified: 'tool-calls', raw: 'tool-calls' } as const;
-const stopFinish = { unified: 'stop', raw: 'stop' } as const;
 
+/** What the fixture model had in view for one candidate when it responded. */
 export type ModelEvalFixtureEvidenceSnapshot = {
   readonly candidateId: string;
-  readonly evidenceIds: readonly string[];
+  readonly knownFields: readonly string[];
   readonly modelBudget: string | null;
   readonly observations: readonly ProjectedObservation[];
 };
@@ -40,7 +40,7 @@ export const streamOf = (
 export const toolParts = (
   call: number,
   toolName: string,
-  input: SearchPlacesInput | GetPlaceDetailsInput | SubmitCardsInput,
+  input: SearchPlacesInput | GetPlaceDetailsInput | RespondInput,
 ): RuntimeGateModelStreamPart[] => {
   const id = `model-eval-fixture-${toolName}-${call}`;
   const encoded = JSON.stringify({ input });
@@ -54,31 +54,20 @@ export const toolParts = (
   ];
 };
 
-export const finalParts = (
-  text: string,
-  evidenceIds: readonly string[],
-  basis: 'grounded' | 'conversational' = 'grounded',
-): RuntimeGateModelStreamPart[] => {
-  const encoded = JSON.stringify({
-    kind: 'final_message',
-    message: { text, evidenceIds, basis },
-  });
-  return [
-    { type: 'stream-start', warnings: [] },
-    { type: 'text-start', id: 'model-eval-fixture-final' },
-    { type: 'text-delta', id: 'model-eval-fixture-final', delta: encoded },
-    { type: 'text-end', id: 'model-eval-fixture-final' },
-    { type: 'finish', usage: FIXTURE_USAGE, finishReason: stopFinish },
-  ];
-};
+/** A question or an answer committed through respond, the only way a turn ends. */
+export const messageParts = (
+  call: number,
+  kind: 'ask' | 'answer',
+  message: string,
+): RuntimeGateModelStreamPart[] => toolParts(call, 'respond', { kind, message });
 
 export const submitInputFor = (
   prompt: RuntimeGateModelCallOptions['prompt'],
   candidateOrder = candidateIdsIn(prompt),
-): SubmitCardsInput => {
+): RespondInput => {
   const selections = candidateOrder
-    .map((candidateId) => ({ candidateId, evidenceIds: evidenceFor(prompt, candidateId) }))
-    .filter((candidate) => candidate.evidenceIds.length > 0)
+    .filter((candidateId) => knownFieldsFor(prompt, candidateId).includes('identity'))
+    .map((candidateId) => ({ candidateId }))
     .slice(0, 3);
   const fallback = selections[0];
   if (fallback === undefined) throw new Error('M25_FIXTURE_CONTEXT_MISSING');
@@ -91,6 +80,7 @@ export const submitInputFor = (
     diff: '別候補として比較できます。',
   }));
   return {
+    kind: 'propose',
     message: ['固定fixtureの候補を提示します。'],
     hero: selectionFor(fallback),
     alts: alternatives,
@@ -102,7 +92,7 @@ export const evidenceSnapshotFor = (
   candidateId: string,
 ): ModelEvalFixtureEvidenceSnapshot => ({
   candidateId,
-  evidenceIds: [...evidenceFor(prompt, candidateId)],
+  knownFields: [...knownFieldsFor(prompt, candidateId)],
   modelBudget: modelPreferenceBudgetIn(prompt),
   observations: observationFieldsFor(prompt, candidateId),
 });

@@ -187,16 +187,24 @@ describe('specific-place formal card resolution through one fixture DO', () => {
     expect(after.upstreamCalls).toBe(before.upstreamCalls + 1);
     expect(after.modelCalls).toBe(before.modelCalls + 2);
     const evidence = await prepared.stub.getModelEvalFixtureEvidenceSnapshots();
-    const aOpeningIds = evidence
-      .filter((snapshot) => snapshot.candidateId === runtimeA)
-      .flatMap((snapshot) =>
-        snapshot.observations
-          .filter((observation) => observation.field === 'opening_hours')
-          .map((observation) => observation.observationId),
-      );
-    expect(new Set(aOpeningIds).size).toBeGreaterThanOrEqual(2);
-    // The answer cites nothing; it is generated after the refresh and never exposes the old ID.
-    const [previousOpeningId] = aOpeningIds;
+    const latest = [...evidence].reverse().find((snapshot) => snapshot.candidateId === runtimeA);
+    // The answer is generated after the refresh, from a known opening-hours summary it read.
+    expect(latest?.observations).toContainEqual({
+      candidateId: runtimeA,
+      field: 'opening_hours',
+      status: 'known',
+      source: 'details',
+    });
+    // The answer cites nothing, so the card's earlier evidence ID never reaches it.
+    const previous = prepared.first;
+    const previousOpening =
+      previous.kind === 'cards'
+        ? [previous.cards.hero, ...previous.cards.alts].find(
+            (card) => card.candidateId === runtimeA,
+          )?.facts.opening_hours
+        : undefined;
+    const previousOpeningId =
+      previousOpening?.status === 'known' ? previousOpening.evidence[0]?.evidenceId : undefined;
     if (previousOpeningId === undefined) throw new Error('M25_SPECIFIC_PLACE_OPENING_MISSING');
     expect(JSON.stringify(targetTurn.response)).not.toContain(previousOpeningId);
   });

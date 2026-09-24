@@ -191,14 +191,17 @@ const runProfile = async (profile: 'compare' | 'decide-action' | 'clarify-ambigu
   );
   const evidence = await stub.getModelEvalFixtureEvidenceSnapshots();
   const refreshedCandidates = profile === 'compare' ? [runtimeA, runtimeB] : [runtimeA];
+  // Each turn that read details shows the model a known opening-hours summary from that read.
+  const readOpeningHours = (snapshot: (typeof evidence)[number]): boolean =>
+    snapshot.observations.some(
+      (observation) =>
+        observation.field === 'opening_hours' &&
+        observation.source === 'details' &&
+        observation.status === 'known',
+    );
   for (const runtimeCandidateId of refreshedCandidates) {
     const snapshots = evidence.filter((snapshot) => snapshot.candidateId === runtimeCandidateId);
-    const openingIds = snapshots.flatMap((snapshot) =>
-      snapshot.observations
-        .filter((observation) => observation.field === 'opening_hours')
-        .map((observation) => observation.observationId),
-    );
-    expect(new Set(openingIds).size).toBeGreaterThanOrEqual(
+    expect(snapshots.filter(readOpeningHours).length).toBeGreaterThanOrEqual(
       profile === 'clarify-ambiguity' ? 1 : 2,
     );
   }
@@ -207,15 +210,12 @@ const runProfile = async (profile: 'compare' | 'decide-action' | 'clarify-ambigu
     if (targetResponse?.kind !== 'message') throw new Error('M25_CARD_TARGET_MESSAGE_MISSING');
     // The answer cites nothing; the refresh itself must have happened before it was generated.
     for (const runtimeCandidateId of refreshedCandidates) {
-      const refreshedOpeningId = [...evidence]
+      const latest = [...evidence]
         .reverse()
-        .find(
-          (snapshot) =>
-            snapshot.candidateId === runtimeCandidateId &&
-            snapshot.observations.some((observation) => observation.field === 'opening_hours'),
-        )
-        ?.observations.find((observation) => observation.field === 'opening_hours')?.observationId;
-      if (refreshedOpeningId === undefined) throw new Error('M25_CARD_OPENING_REFRESH_MISSING');
+        .find((snapshot) => snapshot.candidateId === runtimeCandidateId);
+      if (latest === undefined || !readOpeningHours(latest)) {
+        throw new Error('M25_CARD_OPENING_REFRESH_MISSING');
+      }
     }
   }
   expect(execution.attempt.trace?.upstreamCalls).toBe(
@@ -243,9 +243,9 @@ describe('keyless formal card-context profiles through one fixture DO', () => {
         expect(result.execution.failure).toBeUndefined();
         expect(result.execution.attempt.status).toBe('evaluated');
         expect(result.execution.attempt.publicResponse?.kind).toBe('message');
-        expect(
-          result.execution.run?.response.selections.map((selection) => selection.candidateId),
-        ).toEqual(profile === 'compare' ? ['candidate-a', 'candidate-b'] : ['candidate-a']);
+        // An answer cites no candidates; which ones it discusses is left to human review.
+        expect(result.execution.run?.response.selections).toEqual([]);
+        expect(result.execution.run?.metrics.respondKind).toBe('answer');
       }
       expect(result.execution.attempt.trace?.toolNames).not.toContain('search_places');
     },

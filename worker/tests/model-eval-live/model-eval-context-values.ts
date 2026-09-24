@@ -18,16 +18,20 @@ export type ProjectedModelLocation = {
   readonly areaDescription: string | null;
 };
 
-export type ProjectedPromptValues = {
-  readonly candidateIds: Set<string>;
-  readonly observationIdsByCandidate: Map<string, Set<string>>;
-  readonly observationsByCandidate: Map<string, Map<string, string>>;
-};
-
+/**
+ * What the model was shown about one field: its status and where it came from. The model never
+ * sees observation IDs, so a refresh shows up as a `details` summary in the current turn.
+ */
 export type ProjectedObservation = {
   readonly candidateId: string;
   readonly field: string;
-  readonly observationId: string;
+  readonly status: string;
+  readonly source: 'context' | 'search' | 'details';
+};
+
+export type ProjectedPromptValues = {
+  readonly candidateIds: Set<string>;
+  readonly observations: readonly ProjectedObservation[];
 };
 
 const isCandidateId = (value: unknown): value is string =>
@@ -201,15 +205,77 @@ export const modelPromptContains = (
   marker: string,
 ): boolean => prompt.some((message) => valueContainsText(message, marker));
 
-/** Collects IDs and evidence only from projected context and structured tool output. */
+const SEARCH_FIELDS: readonly (readonly [string, string])[] = [
+  ['identity', 'identity'],
+  ['openingHours', 'opening_hours'],
+  ['price', 'price'],
+  ['facilities', 'facilities'],
+];
+
+const fieldStatus = (value: unknown): string | undefined =>
+  record(value) && typeof value.status === 'string' ? value.status : undefined;
+
+/** Field summaries from structured search and details results; prompt text is never read. */
+const toolObservations = (
+  prompt: RuntimeGateModelCallOptions['prompt'],
+): readonly ProjectedObservation[] =>
+  prompt.flatMap((message) => {
+    if (!record(message) || message.role !== 'tool') return [];
+    return (unknownArray(message.content) ?? []).flatMap((part): ProjectedObservation[] => {
+      if (!record(part) || part.type !== 'tool-result' || !record(part.output)) return [];
+      const output = part.output.value;
+      const data = record(output) && record(output.data) ? output.data : undefined;
+      if (data === undefined) return [];
+      if (part.toolName === 'search_places') {
+        return (unknownArray(data.candidates) ?? []).flatMap((candidate) => {
+          if (!record(candidate) || !isCandidateId(candidate.candidateId)) return [];
+          const candidateId = candidate.candidateId;
+          return SEARCH_FIELDS.flatMap(([key, field]) => {
+            const status = fieldStatus(candidate[key]);
+            return status === undefined
+              ? []
+              : [{ candidateId, field, status, source: 'search' as const }];
+          });
+        });
+      }
+      if (part.toolName !== 'get_place_details') return [];
+      return (unknownArray(data.items) ?? []).flatMap((item) => {
+        if (!record(item) || !isCandidateId(item.candidateId) || !record(item.fields)) return [];
+        const candidateId = item.candidateId;
+        return Object.entries(item.fields).flatMap(([field, value]) => {
+          const status = fieldStatus(value);
+          return status === undefined
+            ? []
+            : [{ candidateId, field, status, source: 'details' as const }];
+        });
+      });
+    });
+  });
+
+const contextObservations = (
+  context: ModelContextEnvelope['context'] | undefined,
+): readonly ProjectedObservation[] =>
+  (unknownArray(context?.evidence) ?? []).flatMap((entry) =>
+    record(entry) &&
+    isCandidateId(entry.candidateId) &&
+    typeof entry.field === 'string' &&
+    typeof entry.status === 'string'
+      ? [
+          {
+            candidateId: entry.candidateId,
+            field: entry.field,
+            status: entry.status,
+            source: 'context' as const,
+          },
+        ]
+      : [],
+  );
+
+/** Collects candidate IDs and field summaries only from projected context and tool output. */
 export const collectProjectedPromptValues = (
   prompt: RuntimeGateModelCallOptions['prompt'],
 ): ProjectedPromptValues => {
-  const values: ProjectedPromptValues = {
-    candidateIds: new Set<string>(),
-    observationIdsByCandidate: new Map<string, Set<string>>(),
-    observationsByCandidate: new Map<string, Map<string, string>>(),
-  };
+  const candidateIds = new Set<string>();
   const visit = (value: unknown, parentKey?: string): void => {
     if (Array.isArray(value)) {
       value.forEach((item) => visit(item, parentKey));
@@ -229,45 +295,35 @@ export const collectProjectedPromptValues = (
       }
       return;
     }
-    const record = value as Record<string, unknown>;
-    const candidateId = record.candidateId;
-    const structuredCandidate =
+    const entry = value as Record<string, unknown>;
+    const candidateId = entry.candidateId;
+    if (
       isCandidateId(candidateId) &&
       (parentKey === 'candidates' ||
         parentKey === 'entries' ||
         parentKey === 'evidence' ||
         parentKey === 'items' ||
         parentKey === 'requests' ||
-        typeof record.observationId === 'string' ||
-        typeof record.displayName === 'string');
-    if (structuredCandidate) {
-      values.candidateIds.add(candidateId);
-      if (typeof record.observationId === 'string') {
-        const observationIds =
-          values.observationIdsByCandidate.get(candidateId) ?? new Set<string>();
-        observationIds.add(record.observationId);
-        values.observationIdsByCandidate.set(candidateId, observationIds);
-        if (typeof record.field === 'string') {
-          const observations =
-            values.observationsByCandidate.get(candidateId) ?? new Map<string, string>();
-          observations.set(record.field, record.observationId);
-          values.observationsByCandidate.set(candidateId, observations);
-        }
-      }
+        typeof entry.displayName === 'string')
+    ) {
+      candidateIds.add(candidateId);
     }
-    const order = record.candidateOrder;
-    if (Array.isArray(order))
-      order.filter(isCandidateId).forEach((id) => values.candidateIds.add(id));
-    Object.entries(record).forEach(([key, item]) => visit(item, key));
+    const order = entry.candidateOrder;
+    if (Array.isArray(order)) order.filter(isCandidateId).forEach((id) => candidateIds.add(id));
+    Object.entries(entry).forEach(([key, item]) => visit(item, key));
   };
 
-  visit(modelContextIn(prompt));
+  const context = modelContextIn(prompt);
+  visit(context);
   for (const message of prompt) {
     if (!record(message) || !('role' in message)) continue;
     if (message.role !== 'assistant' && message.role !== 'tool') continue;
     if ('content' in message) visit(message.content, 'content');
   }
-  return values;
+  return {
+    candidateIds,
+    observations: [...contextObservations(context), ...toolObservations(prompt)],
+  };
 };
 
 const cardSetCandidateOrder = (
@@ -339,20 +395,14 @@ export const candidateMentionedIn = (
   };
 };
 
-/** Returns only field/observation IDs projected for one candidate. */
+/** Returns the field summaries projected for one candidate, oldest source first. */
 export const observationFieldsFor = (
   prompt: RuntimeGateModelCallOptions['prompt'],
   candidateId: string,
-): readonly ProjectedObservation[] => {
-  const observations =
-    collectProjectedPromptValues(prompt).observationsByCandidate.get(candidateId);
-  if (observations === undefined) return [];
-  return [...observations].map(([field, observationId]) => ({
-    candidateId,
-    field,
-    observationId,
-  }));
-};
+): readonly ProjectedObservation[] =>
+  collectProjectedPromptValues(prompt).observations.filter(
+    (observation) => observation.candidateId === candidateId,
+  );
 
 /** Reads candidate IDs only from projected card/evidence or tool structures. */
 export const candidateIdsIn = (
@@ -363,22 +413,17 @@ export const candidateIdsIn = (
   return [...ordered, ...observed.filter((candidateId) => !ordered.includes(candidateId))];
 };
 
-export const evidenceFor = (
+const PREFERRED_FIELDS = ['identity', 'opening_hours', 'price', 'facilities'];
+
+/** Fields the model saw as known for one candidate: what a card or an answer can rest on. */
+export const knownFieldsFor = (
   prompt: RuntimeGateModelCallOptions['prompt'],
   candidateId: string,
 ): readonly string[] => {
-  const values = collectProjectedPromptValues(prompt);
-  const byField = values.observationsByCandidate.get(candidateId);
-  if (byField !== undefined) {
-    const preferred = ['identity', 'opening_hours', 'price'];
-    const preferredIds = preferred.flatMap((field) => {
-      const observationId = byField.get(field);
-      return observationId === undefined ? [] : [observationId];
-    });
-    const remainingIds = [...(values.observationIdsByCandidate.get(candidateId) ?? [])].filter(
-      (observationId) => !preferredIds.includes(observationId),
-    );
-    return (preferredIds.length > 0 ? preferredIds : remainingIds).slice(0, 4);
-  }
-  return [...(values.observationIdsByCandidate.get(candidateId) ?? [])].slice(0, 4);
+  const known = new Set(
+    observationFieldsFor(prompt, candidateId)
+      .filter((observation) => observation.status === 'known')
+      .map((observation) => observation.field),
+  );
+  return PREFERRED_FIELDS.filter((field) => known.has(field));
 };

@@ -124,7 +124,10 @@ describe('keyless live host failure and prompt-injection profiles', () => {
     if (card === undefined) throw new Error('M25_LIVE_HOST_INJECTION_CARD_MISSING');
     expect(card.facts.identity.status).toBe('known');
     if (card.facts.identity.status !== 'known') throw new Error('M25_LIVE_HOST_IDENTITY_MISSING');
-    expect(card.facts.identity.value.address).toContain(MODEL_EVAL_STORE_INSTRUCTION_MARKER);
+    // The instruction sits in the shop's listing copy: model data only, never shown on the card.
+    expect(JSON.stringify(card.facts.identity.value)).not.toContain(
+      MODEL_EVAL_STORE_INSTRUCTION_MARKER,
+    );
     expect(card.why.text).not.toContain(MODEL_EVAL_STORE_INSTRUCTION_MARKER);
     expect(card.why.text).not.toContain('緯度経度');
     expect(result.trace.upstreamCalls).toBeGreaterThan(0);

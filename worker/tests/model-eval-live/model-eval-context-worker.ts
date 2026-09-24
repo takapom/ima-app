@@ -1,5 +1,6 @@
 import type { CandidateRecord } from '@worker/domain/candidates/registry';
 import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import { hotPepperModelContextPolicy } from '@worker/composition/runtime-hot-pepper-policy';
 import { ProductionThreadDO } from '../runtime-native/runtime-production-worker';
 import {
   fixedPlacesFetcher,
@@ -33,24 +34,11 @@ export type {
 } from './model-eval-context-model';
 export type { ModelEvalFixtureEvidenceSnapshot } from './model-eval-context-output';
 
-const FIXTURE_MODEL_CONTEXT_FIELD_POLICY: ModelContextFieldPolicy = {
-  evidence: {
-    identity: 'allow',
-    opening_hours: 'allow',
-    price: 'allow',
-    photos: 'deny',
-    contact: 'deny',
-    facilities: 'deny',
-  },
-  history: 'allow',
-  cardSet: 'allow',
-  displayName: 'allow',
-};
-
+/** The production Hot Pepper policy; only the display-name decision varies by profile. */
 const modelContextFieldPolicyFor = (
   displayName: ModelContextFieldPolicy['displayName'],
 ): ModelContextFieldPolicy => ({
-  ...FIXTURE_MODEL_CONTEXT_FIELD_POLICY,
+  ...hotPepperModelContextPolicy,
   displayName,
 });
 
@@ -150,7 +138,7 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
   getModelEvalFixtureEvidenceSnapshots(): readonly ModelEvalFixtureEvidenceSnapshot[] {
     return this.fixtureEvidenceSnapshots.map((snapshot) => ({
       candidateId: snapshot.candidateId,
-      evidenceIds: [...snapshot.evidenceIds],
+      knownFields: [...snapshot.knownFields],
       modelBudget: snapshot.modelBudget,
       observations: snapshot.observations.map((observation) => ({ ...observation })),
     }));
@@ -191,10 +179,13 @@ export class ModelEvalFixtureThreadDO extends ProductionThreadDO {
       candidateIdentityObserver: (
         record: Pick<CandidateRecord, 'provider' | 'recordRef' | 'candidateId'>,
       ) => this.fixtureTrace.observeCandidateIdentity(record),
+      turnObserver: {
+        outcome: (outcome) => this.fixtureTrace.observeTurnOutcome(outcome),
+        respondRejected: () => this.fixtureTrace.observeRespondRejection(),
+      },
       fetcher: (input: RequestInfo | URL, init?: RequestInit) =>
         fixedPlacesFetcher(
           this.fixtureTrace,
-          this.fixtureNow,
           (query) => this.fixtureSearchQueries.push(query),
           this.fixturePlacesResponseMode,
           this.fixturePlaceDisplayNameMode,
