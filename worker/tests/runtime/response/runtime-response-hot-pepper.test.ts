@@ -8,10 +8,7 @@ import {
   mapCommittedResponseToPublic,
   RuntimePublicResponseError,
 } from '@worker/runtime/response/runtime-response';
-import {
-  card,
-  requireCardEvidenceLink,
-} from '../turn-execution/runtime-final-message-card-fixture';
+import { card, requireCardEvidenceLink } from './runtime-response-card-fixture';
 
 const availableRetention: RetentionMetadata = {
   retentionDecision: 'allow',
