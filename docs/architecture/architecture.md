@@ -129,7 +129,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 bindingは`SAVED_REFERENCES`、owner shard名は`saved-reference-owner:{ownerScopeRef}`。ThreadDOへprefsをコピーして独立した正にしない。
 検索bodyのprefsは今夜の上書きであり、暗黙の永続writeにしない。D1 Adapterや汎用Repositoryは必要になるまで追加しない。
 
-会話の長期IDと期限付きThreadのIDを分ける。Threadが失効しても同じ会話へ新Threadを紐づけ、候補・観測IDは移植しない。会話Store・run・memoryのPortは`application/ports`、SQLite実装は`adapters/out/persistence/conversations`、実行連携は`runtime/conversations`が担う。
+会話の長期IDと期限付きThreadのIDを分ける。Threadが失効しても同じ会話へ新Threadを紐づけ、候補・観測IDは移植しない。会話Store・run・memoryのPortは`application/ports`、SQLite実装は`adapters/out/persistence/conversations`、開始・中断・結果回収の手順は`application/use-cases/conversations`、Thread RPCは`adapters/out/persistence/conversations`、公開応答の受け渡しは`runtime/conversations`が担う。
 発言＋run受付、回答＋run完了はそれぞれ会話DO内で原子的に保存する。Threadの確定結果と未配送記録を同じトランザクションに含め、再照会・alarmで履歴へ冪等配送する。実行成否不明の生成を再実行せず、上限時間で中断を記録する。
 モデル入力は受理した発言より前の直近履歴と、古いユーザー発言の抜粋要約。要約は元メッセージID・範囲・版を持つ派生データで、全会話を網羅する意味要約ではない。Provider生結果や古い事実を新しい根拠にしない。
 会話削除は本文・要約・タイトルを除去して削除印を残す。関連Threadの削除失敗は本文を含まないキューで再試行する。端末SQLiteはowner/endpoint別キャッシュであり、サーバーが正を持つ。

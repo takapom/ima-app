@@ -1,3 +1,6 @@
+import { createConversationExecution } from '@worker/composition/conversation-execution';
+import { conversationFingerprint } from '@worker/adapters/out/security/conversation-fingerprint';
+import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
 import { ConversationDeletions } from '@worker/adapters/out/persistence/conversations/conversation-deletions';
 import { conversationResponseDeadline } from '@worker/runtime/conversations/conversation-response-deadline';
 import { SqlConversationMemory } from '@worker/adapters/out/persistence/conversations/sql-conversation-memory';
@@ -9,11 +12,7 @@ import {
   type ConversationTurnRequest,
 } from '@ima/contracts';
 import type { ConversationRunScope } from '@worker/application/ports/conversation-runs';
-import {
-  ConversationExecution,
-  conversationFingerprint,
-  type ConversationThreadNamespace,
-} from '@worker/runtime/conversations/conversation-execution';
+import { ConversationExecution } from '@worker/runtime/conversations/conversation-execution';
 import { DurableObject } from 'cloudflare:workers';
 import * as v from 'valibot';
 import { OpaqueIdSchema } from '@worker/domain/primitives';
@@ -46,7 +45,7 @@ export class ConversationHistoryDO extends DurableObject<
     this.records = new SqlConversationRecords(ctx.storage);
     this.runs = new SqlConversationRuns(this.records);
     this.deletions = new ConversationDeletions(this.records, env.THREADS);
-    this.execution = new ConversationExecution({
+    this.execution = createConversationExecution({
       store: this,
       threads: env.THREADS,
       now: () => new Date().toISOString(),

@@ -21,7 +21,7 @@ import {
 } from '@worker/adapters/in/http/conversation-boundary';
 import type { HttpEnv } from '@worker/adapters/in/http/route-boundary';
 import { HttpBoundaryError } from '@worker/adapters/in/http/errors';
-import { conversationFingerprint } from '@worker/runtime/conversations/conversation-execution';
+import { conversationFingerprint } from '@worker/adapters/out/security/conversation-fingerprint';
 import type { Conversation } from '@worker/domain/conversations/conversation';
 import type { ConversationRunResult } from '@worker/application/ports/conversation-runs';
 

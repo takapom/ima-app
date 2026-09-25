@@ -1,5 +1,5 @@
 import type { ConversationScope } from '@worker/application/ports/conversation-store';
-import type { ConversationThreadNamespace } from '@worker/runtime/conversations/conversation-execution';
+import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
 import { ConversationScopeSchema } from '@worker/adapters/out/persistence/conversations/conversation-store-input';
 import * as v from 'valibot';
 import type { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
