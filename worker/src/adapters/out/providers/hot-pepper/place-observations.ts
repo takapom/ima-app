@@ -42,7 +42,12 @@ export const listingTextFor = (shop: HotPepperShopWire): string | null => {
     const text = raw?.replace(LISTING_NOISE, '').trim();
     if (text !== undefined && text.length > 0 && !parts.includes(text)) parts.push(text);
   }
-  const joined = [...parts.join('\n')].slice(0, LISTING_TEXT_MAX_LENGTH).join('');
+  // Schema maxLength counts UTF-16 code units; iterate code points to avoid splitting a pair.
+  let joined = '';
+  for (const character of parts.join('\n')) {
+    if (joined.length + character.length > LISTING_TEXT_MAX_LENGTH) break;
+    joined += character;
+  }
   return joined.length === 0 ? null : joined;
 };
 

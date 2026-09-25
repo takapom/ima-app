@@ -6,6 +6,7 @@ import {
 } from '@worker/adapters/out/providers/hot-pepper/wire';
 import { LISTING_TEXT_MAX_LENGTH } from '@worker/domain/places/place-values';
 import { summarizeFieldForModel } from '@worker/runtime/model/model-field-summary';
+import { makeFixture, place, read, readInput } from './adapter-fixtures';
 
 const shopWith = (listing: Record<string, string>): HotPepperShopWire => {
   const shop = parseHotPepperResponse({
@@ -84,5 +85,52 @@ describe('Hot Pepper listing text', () => {
       }),
     ).toMatchObject({ listingText: null });
     expect(summarizeFieldForModel('photos', { photos: [] })).toEqual({ count: 0 });
+  });
+
+  it.each([
+    {
+      memo: 'い'.repeat(97) + '😀続き',
+      expected: 'あ'.repeat(500) + '\n' + 'い'.repeat(97) + '😀',
+    },
+    { memo: 'い'.repeat(98) + '😀続き', expected: 'あ'.repeat(500) + '\n' + 'い'.repeat(98) },
+  ])(
+    'keeps a whole supplementary character only when it fits the UTF-16 limit',
+    ({ memo, expected }) => {
+      const text = listingTextFor(shopWith({ catch: 'あ'.repeat(500), shop_detail_memo: memo }));
+      expect(text).toBe(expected);
+      expect(text?.length).toBeLessThanOrEqual(LISTING_TEXT_MAX_LENGTH);
+    },
+  );
+
+  it('registers identity when valid provider text exceeds the limit after joining emoji and memos', async () => {
+    const fixture = makeFixture();
+    const candidateId = fixture.candidateIds[0];
+    if (candidateId === undefined) throw new Error('fixture candidate is missing');
+    fixture.setBody((id) => ({
+      ...place(id),
+      catch: '😀' + 'あ'.repeat(498),
+      shop_detail_memo: 'い'.repeat(200),
+    }));
+
+    const result = await read(fixture, readInput(candidateId, ['identity']));
+    expect(result).toMatchObject({
+      status: 'ok',
+      warnings: [],
+      data: {
+        items: [
+          {
+            candidateId,
+            fields: {
+              identity: {
+                status: 'known',
+                observations: [
+                  { value: { listingText: '😀' + 'あ'.repeat(498) + '\n' + 'い'.repeat(99) } },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    });
   });
 });
