@@ -1,3 +1,4 @@
+import { createPhotoTokenIssuer } from '@worker/adapters/out/security/photo-token-issuer';
 import { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
 import type { createPlacesSearchContinuation } from '@worker/adapters/out/providers/places-search/continuation';
 import { createLiveOpenAIProvider } from '@worker/adapters/out/providers/openai/model-provider';
@@ -128,7 +129,7 @@ const defaultPlan = (
     photoCodec === undefined || input.request.deviceId === undefined
       ? undefined
       : createPhotoTokenPreparer({
-          codec: photoCodec,
+          issuer: createPhotoTokenIssuer(photoCodec),
           registry,
           scope: productionScopeFor(input.context),
           deviceId: input.request.deviceId,

@@ -1,10 +1,11 @@
+import { createPhotoTokenIssuer } from '@worker/adapters/out/security/photo-token-issuer';
+import { preparePhotoTokens } from '@worker/application/use-cases/photos/prepare-photo-tokens';
 import { describe, expect, it, vi } from 'vitest';
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
 import type { ReadonlyStoredObservation } from '@worker/domain/candidates/registry';
 import {
   collectPhotoTokenObservations,
   createPhotoTokenPreparer,
-  preparePhotoTokens,
   type PhotoDisplayPolicySnapshot,
 } from '@worker/runtime/response/photo-token-issuance';
 import { PhotoTokenError, type PhotoTokenCodec } from '@worker/runtime/ports/photo';
@@ -29,10 +30,11 @@ const observation = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const makeCodec = (issue: PhotoTokenCodec['issue']): PhotoTokenCodec => ({
-  issue,
-  verify: () => Promise.reject(new Error('verify is not used by preissue tests')),
-});
+const makeIssuer = (issue: PhotoTokenCodec['issue']) =>
+  createPhotoTokenIssuer({
+    issue,
+    verify: () => Promise.reject(new Error('verify is not used by preissue tests')),
+  });
 
 const policyRecord = (overrides: Partial<RuntimePolicyRecord> = {}): RuntimePolicyRecord => ({
   decision: 'allow',
@@ -205,7 +207,7 @@ describe('preparePhotoTokens', () => {
 
     expect(observations[0]?.displayAllowed).toBe(true);
     const issue = vi.fn(() => Promise.resolve('display-token'));
-    const prepared = await preparePhotoTokens(makeCodec(issue), observations, CONTEXT);
+    const prepared = await preparePhotoTokens(makeIssuer(issue), observations, CONTEXT);
     expect(issue).toHaveBeenCalledTimes(1);
     expect(prepared.resolve('candidate-a', 'places/A/photos/one')).toBe('display-token');
   });
@@ -227,7 +229,7 @@ describe('preparePhotoTokens', () => {
       Promise.resolve(`issued:${input.photoRef}:${input.deviceId}`),
     );
     const prepare = createPhotoTokenPreparer({
-      codec: makeCodec(issue),
+      issuer: makeIssuer(issue),
       registry: photoRegistry(photoObservation),
       scope: { ownerScopeRef: CONTEXT.ownerScopeRef, threadId: CONTEXT.threadId },
       deviceId: CONTEXT.deviceId,
@@ -260,7 +262,7 @@ describe('preparePhotoTokens', () => {
       Promise.resolve(`issued:${input.photoRef}`),
     );
     const prepared = await preparePhotoTokens(
-      makeCodec(issue),
+      makeIssuer(issue),
       [
         observation(),
         observation({ displayUntil: '2026-09-10T12:05:00.000Z' }),
@@ -286,7 +288,7 @@ describe('preparePhotoTokens', () => {
         : Promise.resolve(`issued:${input.photoRef}`),
     );
     const prepared = await preparePhotoTokens(
-      makeCodec(issue),
+      makeIssuer(issue),
       [
         observation({ photoRef: 'places/A/photos/good' }),
         observation({ photoRef: 'places/A/photos/bad' }),
@@ -304,7 +306,7 @@ describe('preparePhotoTokens', () => {
 
   it('does not hide an unexpected implementation failure', async () => {
     const issue = vi.fn(() => Promise.reject(new Error('unexpected provider state')));
-    await expect(preparePhotoTokens(makeCodec(issue), [observation()], CONTEXT)).rejects.toThrow(
+    await expect(preparePhotoTokens(makeIssuer(issue), [observation()], CONTEXT)).rejects.toThrow(
       'unexpected provider state',
     );
   });
@@ -314,7 +316,7 @@ describe('preparePhotoTokens', () => {
       Promise.resolve(`issued:${input.photoRef}`),
     );
     const prepared = await preparePhotoTokens(
-      makeCodec(issue),
+      makeIssuer(issue),
       [
         observation({ photoRef: 'places/A/photos/denied', displayAllowed: false }),
         observation({ photoRef: 'places/A/photos/missing-window', displayUntil: null }),
@@ -336,7 +338,7 @@ describe('preparePhotoTokens', () => {
       Promise.resolve(`issued:${input.photoRef}`),
     );
     const prepared = await preparePhotoTokens(
-      makeCodec(issue),
+      makeIssuer(issue),
       [observation(), observation({ displayAllowed: false })],
       CONTEXT,
     );

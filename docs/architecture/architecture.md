@@ -54,21 +54,21 @@ CoreのPortは`worker/src/application/ports/`に置く。Telemetryの内部記�
 
 Adapterの生成・注入は`src/composition/`が担当する。App Integrityの発行・登録・検証手順とStore/VerifierのPortはApplication、HTTP解釈は入力Adapter、乱数生成は出力Adapterが担当する。RuntimeからAdapter・composition・entrypointsへの逆依存、Adapterからcomposition・entrypointsへの逆依存を禁止する。出力Adapterから入力Adapter、Toolから出力Adapterへの直接依存も禁止し、Toolと永続化の実装はPort経由で注入する。
 
-| Worker内の配置                    | 責務                                                                                                                      |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `src/domain/`・`src/application/` | SDK・HTTP・永続化方式に依存しない業務判断とPort                                                                           |
-| `src/runtime/`                    | SDKを使ったturn実行、キャンセル、予算、文脈・保持・公開応答の制御。`model/`はモデル文脈・プロンプト、`threads/`は実行管理 |
-| `src/adapters/`                   | HTTP・Toolの入力変換と、Provider・永続化・署名の具体実装。SQLによるturn管理は`out/persistence/thread/`                    |
-| `src/entrypoints/cloudflare/`     | WorkerとThreadDOの起動・プラットフォーム接続。DOのbinding名とmigrationは維持する                                          |
-| `src/composition/`                | 環境設定を読み、Portと具象Adapter・Runtimeを組み立てる                                                                    |
-| `src/security/`                   | HTTPレート制限の契約・写真取得先の許可条件                                                                                |
+| Worker内の配置                    | 責務                                                                                                                                   |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/domain/`・`src/application/` | SDK・HTTP・永続化方式に依存しない業務判断とPort                                                                                        |
+| `src/runtime/`                    | SDKを使ったturn実行、キャンセル、予算、文脈のSDK変換・保持フック・公開応答変換。`model/`はモデル文脈・プロンプト、`threads/`は実行管理 |
+| `src/adapters/`                   | HTTP・Toolの入力変換と、Provider・永続化・署名の具体実装。SQLによるturn管理は`out/persistence/thread/`                                 |
+| `src/entrypoints/cloudflare/`     | WorkerとThreadDOの起動・プラットフォーム接続。DOのbinding名とmigrationは維持する                                                       |
+| `src/composition/`                | 環境設定を読み、Portと具象Adapter・Runtimeを組み立てる                                                                                 |
+| `src/security/`                   | HTTPレート制限の契約・写真取得先の許可条件                                                                                             |
 
-| 配置                                    | 探す対象                                                                                                                                                                                                                                                     |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Core `application/`                     | `model-context`はモデル入力・項目要約・提示情報に基づく保持条件、`candidate-registry`は候補・観測の登録、`ports`はCoreのPort、`use-cases`の`submit-response`は応答の検証・確定、`save-place`・`decide-place`は保存・決定、`expire-session`は失効時の後片付け |
-| Worker `src/runtime/`                   | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・計測は各フォルダ                                                                                                                    |
-| Mobile `journey/services/`・`platform/` | `platform/http`はHTTPとその契約、`journey/services/conversations`は会話操作・復元、`composition`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`                                                                              |
-| Mobile 機能ごとの`components/`          | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI。表示文言・表示用変換は`presentation`                                                                                                                 |
+| 配置                                    | 探す対象                                                                                                                                                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Core `application/`                     | `model-context`はモデル入力・項目要約・提示情報に基づく保持条件、`candidate-registry`は候補・観測の登録、`ports`はCoreのPort、`use-cases`は応答確定・保存/決定・会話実行・写真token発行・App Integrity・イベント記録・失効処理 |
+| Worker `src/runtime/`                   | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・計測は各フォルダ                                                                                      |
+| Mobile `journey/services/`・`platform/` | `platform/http`はHTTPとその契約、`journey/services/conversations`は会話操作・復元、`composition`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`                                                |
+| Mobile 機能ごとの`components/`          | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI。表示文言・表示用変換は`presentation`                                                                                   |
 
 Coreの単体テストは`worker/src/`の対象実装の近くに置く。Workerのテストは`worker/tests/`に集約し、`adapters/`・`runtime/`・`security/`はInfrastructureの対応モジュール、`src/composition/`は組み立て処理を検証する。評価CLIなどの開発用コードは`worker/tooling/`に置く。テスト専用fixtureを公開exportsへ追加しない。配置変更だけで既存の公開入口や責務・依存方向を変更しない。
 
@@ -98,7 +98,7 @@ flowchart TD
 compositionが具象Adapterを構成する。現在はHot Pepperの検索・詳細AdapterをCoreのPlaceSearchPort/PlaceDetailsPortへ注入し、店舗IDで候補を登録する。地域名はkeyword、現在地は緯度経度とrangeへ変換し、営業時間は掲載文のまま渡す。GoogleのPlaces/Routes/Photos接続は持たない。営業未確認の許容は`src/composition/`で組み立ててCoreの確定検証へ明示する。公開DTOとCore内部型の変換はWorkerが所有する。
 ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Portと同一の層にしない。
 
-店舗写真は検索・詳細Adapterが`photo.pc`のURLを観測として登録し、確定カードの写真根拠からWorkerがowner・端末・期限に紐づくtokenを発行する。既存の`GET /v1/photos/:token`が認証・期限検証後にHot Pepperの画像CDNから取得し、Mobileの写真表示部品へ渡す。画像本体をLLMや永続ストレージへ渡さない。
+店舗写真は検索・詳細Adapterが`photo.pc`のURLを観測として登録し、Applicationが確定カードの写真根拠から表示可否と期限を決め、発行Portを通して署名Adapterがowner・端末・期限に紐づくtokenを発行する。既存の`GET /v1/photos/:token`が認証・期限検証後にHot Pepperの画像CDNから取得し、Mobileの写真表示部品へ渡す。画像本体をLLMや永続ストレージへ渡さない。
 
 ## ランタイムの制約
 
