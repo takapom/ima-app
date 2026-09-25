@@ -1,3 +1,4 @@
+import { createRecordTelemetryEvent } from '@worker/application/use-cases/record-telemetry/record-telemetry-event';
 import type { ConversationHistoryNamespace } from '@worker/adapters/out/persistence/conversations/durable-conversation-store';
 import { DurableRateLimiter } from '@worker/adapters/out/persistence/security/durable-rate-limiter';
 import { createThreadApplicationHandler } from '@worker/adapters/in/http/thread-application';
@@ -27,7 +28,10 @@ import type { AppIntegrityNamespace } from '@worker/adapters/out/persistence/sec
 import { createBootstrapAppIntegrityGate } from '@worker/composition/app-integrity-bootstrap';
 import { personalPreviewEnabled } from '@worker/composition/personal-preview';
 import type { AppIntegrityVerifier } from '@worker/application/ports/app-integrity';
-import { createBestEffortEventsSink, createTelemetryEventsSink } from '@worker/telemetry/events';
+import {
+  createBestEffortEventsSink,
+  createTelemetryEventsSink,
+} from '@worker/adapters/in/http/telemetry-events';
 import {
   createDurableTelemetryStore,
   type TelemetryNamespace,
@@ -124,7 +128,9 @@ export const createHttpRouterConfig = (
       options.events ??
         (env.TELEMETRY === undefined
           ? createUnavailableEvents()
-          : createTelemetryEventsSink(createDurableTelemetryStore(env.TELEMETRY))),
+          : createTelemetryEventsSink(
+              createRecordTelemetryEvent(createDurableTelemetryStore(env.TELEMETRY)),
+            )),
     ),
     rateLimiter: personalPreviewEnabled(env)
       ? { check: () => Promise.resolve({ allowed: true, retryAfterSeconds: null }) }

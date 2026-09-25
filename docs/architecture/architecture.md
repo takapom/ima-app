@@ -39,7 +39,6 @@ worker/
 │   ├── application/          # ports/を含む
 │   ├── runtime/
 │   ├── security/
-│   ├── telemetry/
 │   ├── adapters/in/          # http/・tools/
 │   ├── adapters/out/         # providers/・persistence/・security/
 │   ├── entrypoints/cloudflare/
@@ -51,7 +50,7 @@ worker/
 
 WorkerのAdapterは`worker/src/adapters/`へ集約する。`in/http`はHTTP入口、`in/tools`はLLMのTool入口。`out/providers`はHot Pepper・OpenAIの接続と変換、`out/persistence`はDO・SQL・メモリストアの具体実装、`out/security`は写真トークンの署名実装を持つ。テストも`worker/tests/adapters/`で同じ分類を使い、HTTP配下の`integration/`はworkerdで実行する。
 
-CoreのPortは`worker/src/application/ports/`に置く。OwnerStoreと保存参照の契約もCoreが所有し、保存・決定の手順は`src/application/saved-references/`が担う。HTTP Adapterは公開DTOとエラーの変換を担当する。実行基盤固有のPortは`src/runtime/ports/`や`src/security/`・`src/telemetry/`が所有し、Coreの業務Portと区別する。
+CoreのPortは`worker/src/application/ports/`に置く。Telemetryの内部記録契約・記録手順・保持/集計はApplication、公開イベントの入力変換はHTTP Adapter、SDK計測はRuntimeが担う。OwnerStoreと保存参照の契約もCoreが所有し、保存・決定の手順は`src/application/saved-references/`が担う。HTTP Adapterは公開DTOとエラーの変換を担当する。実行基盤固有のPortは`src/runtime/ports/`や`src/security/`が所有し、Coreの業務Portと区別する。
 
 Adapterの生成・注入は`src/composition/`が担当する。App Integrityの発行・登録・検証手順とStore/VerifierのPortはApplication、HTTP解釈は入力Adapter、乱数生成は出力Adapterが担当する。RuntimeからAdapter・composition・entrypointsへの逆依存、Adapterからcomposition・entrypointsへの逆依存を禁止する。出力Adapterから入力Adapter、Toolから出力Adapterへの直接依存も禁止し、Toolと永続化の実装はPort経由で注入する。
 
@@ -63,7 +62,6 @@ Adapterの生成・注入は`src/composition/`が担当する。App Integrityの
 | `src/entrypoints/cloudflare/`     | WorkerとThreadDOの起動・プラットフォーム接続。DOのbinding名とmigrationは維持する                                          |
 | `src/composition/`                | 環境設定を読み、Portと具象Adapter・Runtimeを組み立てる                                                                    |
 | `src/security/`                   | HTTPレート制限の契約・写真取得先の許可条件                                                                                |
-| `src/telemetry/`                  | 運用イベントの契約・集計・受け渡し                                                                                        |
 
 | 配置                                    | 探す対象                                                                                                                                                                                                                                                     |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

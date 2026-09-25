@@ -1,3 +1,4 @@
+import { createRecordTelemetryEvent } from '@worker/application/use-cases/record-telemetry/record-telemetry-event';
 import { describe, expect, it, vi } from 'vitest';
 import { EventsRequestSchema } from '@ima/contracts';
 import * as v from 'valibot';
@@ -5,9 +6,11 @@ import {
   createBestEffortEventsSink,
   createTelemetryEventsSink,
   sanitizeTelemetryEvent,
+} from '@worker/adapters/in/http/telemetry-events';
+import {
   type TelemetryEventRecord,
   type TelemetryEventStore,
-} from '@worker/telemetry/events';
+} from '@worker/application/ports/telemetry';
 import {
   OPERATIONAL_FLAG_ENV,
   operationalCapabilityMode,
@@ -17,9 +20,8 @@ import {
 import {
   aggregateTelemetryTraces,
   filterTelemetryRetention,
-  parseTraceRecord,
-  type TraceRecord,
-} from '@worker/telemetry/trace';
+} from '@worker/application/telemetry/aggregate-traces';
+import { parseTraceRecord, type TraceRecord } from '@worker/application/ports/telemetry';
 
 class FixtureTelemetryEventStore implements TelemetryEventStore {
   readonly records: TelemetryEventRecord[] = [];
@@ -146,11 +148,13 @@ describe('M26 telemetry and operational flags', () => {
     const failure = vi.fn();
     const sink = createBestEffortEventsSink(
       createTelemetryEventsSink(
-        {
-          write: () => Promise.reject(new Error('raw provider secret')),
-          deleteBefore: () => Promise.resolve(0),
-        },
-        failure,
+        createRecordTelemetryEvent(
+          {
+            write: () => Promise.reject(new Error('raw provider secret')),
+            deleteBefore: () => Promise.resolve(0),
+          },
+          failure,
+        ),
       ),
       failure,
     );

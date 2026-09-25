@@ -1,10 +1,23 @@
-import {
-  EventNameSchema,
-  IsoTimestampSchema,
-  OpaqueIdSchema,
-  RevisionSchema,
-} from '@ima/contracts';
+import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@worker/domain/primitives';
 import * as v from 'valibot';
+
+export const TelemetryEventNameSchema = v.picklist([
+  'search_submitted',
+  'search_responded',
+  'search_failed',
+  'turn_started',
+  'turn_completed',
+  'tool_called',
+  'tool_result',
+  'card_decided',
+  'maps_opened',
+  'skip_tapped',
+  'recover_started',
+  'save_tapped',
+  'share_opened',
+  'share_cancelled',
+  'error_shown',
+]);
 
 export const nonNegativeInteger = (maximum: number) =>
   v.pipe(v.number(), v.safeInteger(), v.minValue(0), v.maxValue(maximum));
@@ -32,7 +45,7 @@ export type TelemetryResultCode = v.InferOutput<typeof telemetryResultCodeSchema
 export const telemetryEventRecordSchema = v.strictObject({
   eventId: OpaqueIdSchema,
   threadId: OpaqueIdSchema,
-  name: EventNameSchema,
+  name: TelemetryEventNameSchema,
   occurredAt: IsoTimestampSchema,
   turnId: v.optional(OpaqueIdSchema),
   revision: v.optional(RevisionSchema),
@@ -94,3 +107,16 @@ export const parseTraceRecord = (input: unknown): TraceRecord | undefined => {
   const parsed = v.safeParse(traceRecordSchema, input);
   return parsed.success ? parsed.output : undefined;
 };
+
+export interface TelemetryEventStore {
+  write(record: TelemetryEventRecord, ownerScopeRef: string): Promise<void>;
+  deleteBefore(cutoff: string): Promise<number>;
+}
+
+export type TelemetryEventFailure = 'invalid_event' | 'write_failed';
+
+export interface TelemetryTraceStore {
+  write(record: TraceRecord, ownerScopeRef: string): Promise<void>;
+  readSince(cutoff: string): Promise<readonly TraceRecord[]>;
+  deleteBefore(cutoff: string): Promise<number>;
+}

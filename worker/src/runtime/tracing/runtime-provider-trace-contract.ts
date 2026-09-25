@@ -1,4 +1,4 @@
-import type { TelemetryProvider } from '@worker/telemetry/schema';
+import type { TelemetryProvider } from '@worker/application/ports/telemetry';
 
 export type RuntimeProviderTransportProvider = Extract<
   TelemetryProvider,

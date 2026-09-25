@@ -1,18 +1,10 @@
 import * as v from 'valibot';
-import { isWithinTelemetryRetention } from '@worker/telemetry/retention';
+import { isWithinTelemetryRetention } from '@worker/application/telemetry/retention';
 import {
   telemetryAggregationSchema,
   type TelemetryAggregation,
   type TraceRecord,
-} from '@worker/telemetry/schema';
-export { parseTraceRecord } from '@worker/telemetry/schema';
-export type { TelemetryAggregation, TraceRecord } from '@worker/telemetry/schema';
-
-export interface TelemetryTraceStore {
-  write(record: TraceRecord, ownerScopeRef: string): Promise<void>;
-  readSince(cutoff: string): Promise<readonly TraceRecord[]>;
-  deleteBefore(cutoff: string): Promise<number>;
-}
+} from '@worker/application/ports/telemetry';
 
 /** Aggregates already validated records; storage and retention scheduling stay outside this pure function. */
 export const aggregateTelemetryTraces = (

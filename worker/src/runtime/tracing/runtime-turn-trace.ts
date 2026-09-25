@@ -1,5 +1,9 @@
-import type { TelemetryResultCode, TelemetryStatus, TraceRecord } from '@worker/telemetry/schema';
-import { parseTraceRecord, type TelemetryTraceStore } from '@worker/telemetry/trace';
+import type {
+  TelemetryResultCode,
+  TelemetryStatus,
+  TraceRecord,
+} from '@worker/application/ports/telemetry';
+import { parseTraceRecord, type TelemetryTraceStore } from '@worker/application/ports/telemetry';
 import {
   createBestEffortRuntimeTraceSink,
   type RuntimeTraceSinkFailure,

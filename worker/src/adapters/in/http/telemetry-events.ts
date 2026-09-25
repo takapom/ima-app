@@ -4,20 +4,14 @@ import {
   telemetryEventRecordSchema,
   type TelemetryEventRecord,
   type TelemetryResultCode,
-} from '@worker/telemetry/schema';
-export type { TelemetryEventRecord, TelemetryResultCode } from '@worker/telemetry/schema';
+} from '@worker/application/ports/telemetry';
+import type { TelemetryEventFailure } from '@worker/application/ports/telemetry';
+import type { RecordTelemetryEvent } from '@worker/application/use-cases/record-telemetry/record-telemetry-event';
 
 export type TelemetryEventContext = { readonly ownerScopeRef: string };
 export interface TelemetryEventsSink {
   accept(input: EventsRequest, context: TelemetryEventContext): Promise<void>;
 }
-
-export interface TelemetryEventStore {
-  write(record: TelemetryEventRecord, ownerScopeRef: string): Promise<void>;
-  deleteBefore(cutoff: string): Promise<number>;
-}
-
-export type TelemetryEventFailure = 'invalid_event' | 'write_failed';
 
 const codeMap: ReadonlyMap<string, TelemetryResultCode> = new Map([
   ['OK', 'OK'],
@@ -65,7 +59,7 @@ export const sanitizeTelemetryEvent = (input: unknown): TelemetryEventRecord | u
 };
 
 export const createTelemetryEventsSink = (
-  store: TelemetryEventStore,
+  recordEvent: RecordTelemetryEvent,
   onFailure?: (failure: TelemetryEventFailure) => void,
 ): TelemetryEventsSink => ({
   async accept(input: EventsRequest, _context: TelemetryEventContext): Promise<void> {
@@ -74,12 +68,7 @@ export const createTelemetryEventsSink = (
       onFailure?.('invalid_event');
       return;
     }
-    try {
-      await store.write(record, _context.ownerScopeRef);
-    } catch {
-      onFailure?.('write_failed');
-      throw new Error('TELEMETRY_WRITE_FAILED');
-    }
+    await recordEvent(record, _context.ownerScopeRef);
   },
 });
 

@@ -5,7 +5,7 @@ import { createBestEffortRuntimeModelTraceSink } from '@worker/runtime/tracing/r
 import type { RuntimeTurnTraceSink } from '@worker/runtime/tracing/runtime-turn-trace';
 import { createBestEffortRuntimeTurnTraceSink } from '@worker/runtime/tracing/runtime-turn-trace';
 import type { RuntimeTraceSinkFailure } from '@worker/runtime/tracing/runtime-trace-sink';
-import type { TelemetryTraceStore } from '@worker/telemetry/trace';
+import type { TelemetryTraceStore } from '@worker/application/ports/telemetry';
 
 export type RuntimeTelemetryDiagnosticOperation = 'turn' | 'model' | 'provider';
 export type RuntimeTelemetryDiagnosticFailure = RuntimeTraceSinkFailure;
