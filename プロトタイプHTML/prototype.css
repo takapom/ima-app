@@ -1,0 +1,391 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #111;
+  color: #f2efe6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.phone {
+  max-width: 430px;
+  margin: auto;
+  min-height: 100vh;
+  background: #171816;
+}
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #171816ef;
+  backdrop-filter: blur(12px);
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid #2a2c28;
+}
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand {
+  font-weight: 800;
+  font-size: 20px;
+}
+.muted {
+  color: #8f928a;
+  font-size: 12px;
+}
+.prompt {
+  margin: 16px 18px 8px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: #20221f;
+  color: #aaa;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c8ff4d;
+  margin-right: 8px;
+}
+.switch {
+  display: flex;
+  margin: 12px 18px 8px;
+  background: #22241f;
+  border: 1px solid #30332c;
+  border-radius: 13px;
+  padding: 3px;
+}
+.switch button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: #999;
+  padding: 9px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.switch button.active {
+  background: #d4ff55;
+  color: #161811;
+}
+.mapwrap {
+  position: relative;
+  height: 360px;
+  margin-top: 8px;
+  overflow: hidden;
+  background: #d7d7cf;
+}
+.map {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(25deg, #d9ddd2, #f0eee3);
+}
+.road {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  transform-origin: left center;
+}
+.r1 {
+  width: 520px;
+  height: 16px;
+  left: -60px;
+  top: 120px;
+  transform: rotate(17deg);
+}
+.r2 {
+  width: 460px;
+  height: 13px;
+  left: 15px;
+  top: 245px;
+  transform: rotate(-22deg);
+}
+.r3 {
+  width: 420px;
+  height: 11px;
+  left: 90px;
+  top: 15px;
+  transform: rotate(75deg);
+}
+.r4 {
+  width: 300px;
+  height: 8px;
+  left: 10px;
+  top: 60px;
+  transform: rotate(48deg);
+}
+.block {
+  position: absolute;
+  background: #c8d1be;
+  border-radius: 8px;
+  opacity: 0.8;
+}
+.b1 {
+  left: 20px;
+  top: 25px;
+  width: 100px;
+  height: 60px;
+}
+.b2 {
+  right: 20px;
+  top: 25px;
+  width: 130px;
+  height: 80px;
+}
+.b3 {
+  left: 30px;
+  bottom: 25px;
+  width: 125px;
+  height: 65px;
+}
+.b4 {
+  right: 15px;
+  bottom: 30px;
+  width: 90px;
+  height: 80px;
+}
+.pin {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  border-radius: 50% 50% 50% 8px;
+  background: #1e211b;
+  color: #d5ff55;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  transform: rotate(-45deg);
+  box-shadow: 0 4px 12px #0004;
+  cursor: pointer;
+  border: 2px solid #d5ff55;
+}
+.pin span {
+  transform: rotate(45deg);
+}
+.pin.active {
+  background: #d5ff55;
+  color: #171816;
+  scale: 1.18;
+  z-index: 3;
+}
+.p1 {
+  left: 65%;
+  top: 30%;
+}
+.p2 {
+  left: 29%;
+  top: 50%;
+}
+.p3 {
+  left: 55%;
+  top: 67%;
+}
+.p4 {
+  left: 18%;
+  top: 22%;
+}
+.me {
+  position: absolute;
+  left: 47%;
+  top: 43%;
+  width: 18px;
+  height: 18px;
+  background: #287df1;
+  border: 4px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px #287df133;
+}
+.loc {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  border: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #fff;
+  color: #222;
+  box-shadow: 0 3px 10px #0003;
+  font-size: 20px;
+}
+.sheet {
+  position: relative;
+  margin-top: -22px;
+  background: #171816;
+  border-radius: 24px 24px 0 0;
+  padding: 8px 0 90px;
+  z-index: 5;
+}
+.handle {
+  width: 42px;
+  height: 4px;
+  border-radius: 99px;
+  background: #555;
+  margin: 4px auto 10px;
+}
+.cards {
+  display: flex;
+  overflow: auto;
+  scroll-snap-type: x mandatory;
+  gap: 12px;
+  padding: 6px 18px 12px;
+  scrollbar-width: none;
+}
+.card {
+  min-width: 88%;
+  scroll-snap-align: center;
+  background: #20221f;
+  border: 1px solid #30332d;
+  border-radius: 20px;
+  padding: 15px;
+  cursor: pointer;
+}
+.card.active {
+  border-color: #cfff52;
+}
+.row {
+  display: flex;
+  gap: 12px;
+}
+.photo {
+  width: 74px;
+  height: 74px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #c87339, #4d261d);
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+}
+.info {
+  flex: 1;
+}
+.cat {
+  font-size: 11px;
+  color: #9b9e94;
+}
+.name {
+  font-weight: 800;
+  font-size: 17px;
+  margin: 4px 0 7px;
+}
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.chip {
+  font-size: 11px;
+  padding: 5px 8px;
+  background: #2b2e28;
+  border-radius: 999px;
+  color: #c7c9c2;
+}
+.chip.walk {
+  color: #d7ff65;
+}
+.why {
+  font-size: 12px;
+  color: #a6a9a0;
+  line-height: 1.5;
+  margin-top: 11px;
+}
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+.detail {
+  background: #d5ff55;
+  color: #171816;
+  border: 0;
+  border-radius: 11px;
+  padding: 9px 13px;
+  font-weight: 800;
+}
+.save {
+  background: #2c2e2a;
+  color: #ddd;
+  border: 0;
+  border-radius: 11px;
+  padding: 9px 12px;
+}
+.list {
+  display: none;
+  padding: 4px 18px;
+}
+.list.show {
+  display: block;
+}
+.list .card {
+  min-width: 100%;
+  margin-bottom: 12px;
+}
+.mapwrap.hide,
+.sheet.hide {
+  display: none;
+}
+.foot {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 430px;
+  width: 100%;
+  background: #171816ee;
+  border-top: 1px solid #2b2d29;
+  padding: 11px 18px calc(11px + env(safe-area-inset-bottom));
+  display: flex;
+  gap: 9px;
+  z-index: 20;
+}
+.input {
+  flex: 1;
+  background: #252723;
+  border-radius: 16px;
+  padding: 12px;
+  color: #8d9088;
+  font-size: 13px;
+}
+.send {
+  width: 42px;
+  border: 0;
+  border-radius: 14px;
+  background: #d5ff55;
+  font-weight: 900;
+}
+.route {
+  position: absolute;
+  height: 4px;
+  background: #6c8fef;
+  border-radius: 10px;
+  transform-origin: left center;
+  display: none;
+}
+.route.show {
+  display: block;
+}
+.rt1 {
+  left: 49%;
+  top: 45%;
+  width: 105px;
+  transform: rotate(-28deg);
+}
+.rt2 {
+  left: 31%;
+  top: 54%;
+  width: 82px;
+  transform: rotate(-9deg);
+}
+.rt3 {
+  left: 48%;
+  top: 47%;
+  width: 95px;
+  transform: rotate(63deg);
+}
