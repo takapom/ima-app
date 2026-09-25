@@ -87,7 +87,14 @@ export const createAppIntegrityHttpGate = (
   enforcement: application.enforcement,
   environment: application.environment,
   async issueNonce(request) {
-    return nonceResponse(await application.issueNonce(request), request.requestId);
+    return nonceResponse(
+      await application.issueNonce({
+        ownerScopeRef: request.ownerScopeRef,
+        deviceId: request.deviceId,
+        now: request.now,
+      }),
+      request.requestId,
+    );
   },
   enroll(request) {
     const parsed = v.safeParse(AppAttestEnrollRequestSchema, request.request);
@@ -95,7 +102,13 @@ export const createAppIntegrityHttpGate = (
       ownerScopeRef: request.ownerScopeRef,
       deviceId: request.deviceId,
       now: request.now,
-      enrollment: parsed.success ? parsed.output : null,
+      enrollment: parsed.success
+        ? {
+            keyId: parsed.output.keyId,
+            nonce: parsed.output.nonce,
+            attestation: parsed.output.attestation,
+          }
+        : null,
     });
   },
   authorize(request) {

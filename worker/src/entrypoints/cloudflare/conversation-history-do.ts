@@ -12,7 +12,7 @@ import {
   type ConversationTurnRequest,
 } from '@ima/contracts';
 import type { ConversationRunScope } from '@worker/application/ports/conversation-runs';
-import { ConversationExecution } from '@worker/runtime/conversations/conversation-execution';
+import type { ConversationExecution } from '@worker/runtime/conversations/conversation-execution';
 import { DurableObject } from 'cloudflare:workers';
 import * as v from 'valibot';
 import { OpaqueIdSchema } from '@worker/domain/primitives';
