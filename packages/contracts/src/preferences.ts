@@ -15,7 +15,8 @@ const LegacyMinutesSchema = v.nullable(
 /**
  * App builds released before walking and last-train conditions were removed (#55) still send
  * these keys, and turn inputs stored by those builds carry them. They are validated and dropped
- * so the output never contains them; new clients must not send them.
+ * so the parsed output never contains them. During the app-first rollout, the mobile HTTP
+ * adapter adds null placeholders after validation to satisfy old Workers' required keys.
  */
 const LegacyTravelPreferenceEntries = {
   homeStationRef: v.optional(v.nullable(OpaqueIdSchema)),
@@ -88,7 +89,8 @@ const SearchTurnFields = {
   candidateOrder: v.optional(CandidateOrderSchema),
   /**
    * Sent by app builds from before saved-place consultation was removed (#54). It is validated
-   * for those clients and turn inputs they stored, and the Worker does not read it.
+   * for those clients and turn inputs they stored, and the Worker does not read it. The mobile
+   * HTTP adapter sends an empty array during the app-first rollout for old Workers.
    */
   savedPlaceRefs: v.optional(v.pipe(v.array(OpaqueIdSchema), v.maxLength(50))),
   excludeCandidateIds: v.pipe(v.array(OpaqueIdSchema), v.maxLength(50)),

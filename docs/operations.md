@@ -105,7 +105,7 @@ profile・反復・候補identity対応・人手レビューのcoverageを確認
 
 ## デプロイと復旧
 
-#51の改修（#55・#61・#56）で公開DTOとprefsの出力が変わった。生成文は`{text, retention}`になり引用を持たず、prefsは`areaText`・`budget`だけを返す。新しいアプリは旧Workerの出力（引用付きの生成文、旧prefs項目）も読めるが、改修前のアプリは新Workerの出力を解析できない。このため、先に新しいアプリを配布して旧buildを更新し、その後にWorkerをデプロイする。旧buildが残る間はWorkerを先に出さない。
+#51の改修（#55・#61・#56）で公開DTOとprefsの出力が変わった。生成文は`{text, retention}`になり引用を持たず、prefsは`areaText`・`budget`だけを返す。新しいアプリは旧Workerの出力（引用付きの生成文、旧prefs項目）を読み、[HTTP送信時の互換処理](devlop/contracts.md#保存写真再取得)で旧Workerの必須入力も満たす。改修前のアプリは新Workerの出力を解析できないため、互換処理を含む新しいアプリを先に配布して旧buildを更新し、その後にWorkerをデプロイする。旧buildが残る間はWorkerを先に出さない。旧Workerへの接続がなくなるまで送信時の互換処理を維持する。
 
 [config dry-run CI](../.github/workflows/config-dry-run.yml)は型生成・bundle・設定・migrationを検査する。Cloudflareへの反映や実リソースの検収は行わない。
 

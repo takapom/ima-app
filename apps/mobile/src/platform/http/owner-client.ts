@@ -8,6 +8,7 @@ import {
   type SavedReferenceListResponse,
 } from '@ima/contracts';
 import { createApiRequester } from '@mobile/platform/http/client';
+import { compatiblePrefsBody } from '@mobile/platform/http/request-compatibility';
 import { issueResult } from '@mobile/platform/http/response';
 import type { ApiClientOptions, ApiRequestOptions, ApiResult } from '@mobile/platform/http/api';
 
@@ -49,7 +50,7 @@ export const createOwnerPrefsClient = (options: ApiClientOptions): OwnerPrefsCli
           route: 'prefsWrite',
           method: 'PUT',
           path: '/v1/prefs',
-          body: parsed.data,
+          body: compatiblePrefsBody(parsed.data),
           expectedStatus: 200,
           parseResponse: parsePrefsWriteResponse,
           requestId: parsed.data.requestId,

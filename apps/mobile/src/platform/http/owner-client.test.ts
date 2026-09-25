@@ -106,7 +106,7 @@ describe('owner prefs API client', () => {
       schemaVersion: 'v1',
       requestId: 'request-put',
       expectedRevision: 0,
-      prefs,
+      prefs: { ...prefs, homeStationRef: null, maxWalkMinutes: null, minimumStayMinutes: null },
     });
     expect(new Headers(calls[2]?.init.headers).get(REQUEST_ID_HEADER)).toBe('request-put');
   });

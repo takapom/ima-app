@@ -15,6 +15,7 @@ import {
   type ParseResult,
 } from '@ima/contracts';
 import { createApiRequester } from '@mobile/platform/http/client';
+import { compatibleTurnBody } from '@mobile/platform/http/request-compatibility';
 import { issueResult } from '@mobile/platform/http/response';
 import type { ApiClientOptions, ApiRequestOptions, ApiResult } from '@mobile/platform/http/api';
 import { watchConversationRun } from '@mobile/platform/http/conversation-stream';
@@ -133,7 +134,7 @@ export const createConversationClient = (options: ApiClientOptions): Conversatio
           route: 'conversationTurn',
           method: 'POST',
           path: `${path(id)}/turns`,
-          body: parsed.data,
+          body: compatibleTurnBody(parsed.data),
           expectedStatus: 202,
           requestId: parsed.data.requestId,
           parseResponse: parseConversationRunResponse,

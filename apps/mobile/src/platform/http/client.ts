@@ -18,6 +18,7 @@ import {
   type ParseResult,
 } from '@ima/contracts';
 import { parseSavedReferenceRefreshResponse } from '@mobile/platform/http/saved-reference-refresh';
+import { compatibleTurnBody } from '@mobile/platform/http/request-compatibility';
 import type {
   ApiClientOptions,
   ApiError,
@@ -249,7 +250,7 @@ export const createJourneyApiClient = (options: ApiClientOptions): JourneyApiCli
           route: 'search',
           method: 'POST',
           path: '/v1/search',
-          body: parsed.data,
+          body: compatibleTurnBody(parsed.data),
           expectedStatus: 200,
           parseResponse: parseSearchResponse,
           requestId: parsed.data.requestId,
@@ -288,7 +289,7 @@ export const createJourneyApiClient = (options: ApiClientOptions): JourneyApiCli
         'POST',
         threadId,
         '/turns',
-        parsed.data,
+        compatibleTurnBody(parsed.data),
         200,
         parseSearchResponse,
         requestOptions,
