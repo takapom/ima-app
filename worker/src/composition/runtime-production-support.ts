@@ -1,5 +1,5 @@
-import { sessionExpiryAt } from '@worker/runtime/retention/session-expiry-policy';
-export { sessionExpiryAt } from '@worker/runtime/retention/session-expiry-policy';
+import { sessionExpiryAt } from '@worker/domain/threads/session-expiry';
+export { sessionExpiryAt } from '@worker/domain/threads/session-expiry';
 import * as v from 'valibot';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type {

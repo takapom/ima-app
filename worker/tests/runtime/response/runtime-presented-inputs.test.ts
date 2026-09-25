@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
-import { createRuntimePresentedInputs } from '@worker/runtime/response/runtime-presented-inputs';
+import { createPresentedInputs } from '@worker/application/model-context/presented-inputs';
 import {
   createToolRegistry,
   otherThreadScope,
@@ -51,7 +51,7 @@ const fixture = () => {
       sources: [{ provider: 'fixture', recordRef: 'record', attribution: null, publicUrl: null }],
       retention: shortProvider,
     }).observationId;
-  const presented = createRuntimePresentedInputs({ registry: tools.registry, scope: toolScope });
+  const presented = createPresentedInputs({ registry: tools.registry, scope: toolScope });
   return { tools, register, presented };
 };
 

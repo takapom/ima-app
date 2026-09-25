@@ -8,7 +8,7 @@ import type {
 } from '@worker/runtime/threads/admission';
 import { RuntimeProductionContextReferenceSchema } from '@worker/runtime/context/runtime-production-context-reference';
 import type { ProductionThreadDO } from './runtime-production-worker';
-import { createRuntimeSessionExpiryGate } from '@worker/runtime/threads/session-expiry';
+import { createSessionExpiryGate } from '@worker/application/use-cases/expire-session/expire-session';
 
 type ProductionTestEnv = Cloudflare.Env & {
   readonly PRODUCTION_THREADS: DurableObjectNamespace<ProductionThreadDO>;
@@ -88,7 +88,7 @@ describe('M16 durable runtime context boundary', () => {
     let contextAttempts = 0;
     let photoAttempts = 0;
     let failRuntime = true;
-    const gate = createRuntimeSessionExpiryGate({
+    const gate = createSessionExpiryGate({
       isExpired: () => true,
       readScope: () => ({ ownerScopeRef: 'owner', threadId: 'thread' }),
       cleanupRuntime: () => {

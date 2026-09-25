@@ -4,14 +4,14 @@ import {
   type ProjectedModelContext,
 } from '@worker/application/model-context/model-context';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
-import type { RuntimePresentedInputs } from '@worker/runtime/response/runtime-presented-inputs';
+import type { PresentedInputs } from '@worker/application/model-context/presented-inputs';
 
 /**
  * Records the context the model receives in one step. Only what the projection passes on counts:
  * withheld, stale and policy-denied values are not shown, so they do not bound the text.
  */
 export const recordPresentedContext = (
-  presented: RuntimePresentedInputs,
+  presented: PresentedInputs,
   projected: ProjectedModelContext,
   source: Pick<ModelContextSource, 'evidence'>,
   historyRetention: readonly RetentionMetadata[],

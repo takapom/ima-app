@@ -4,7 +4,7 @@ import { MODEL_SYSTEM_PROMPT } from '@worker/runtime/model/system-prompt';
 import {
   summarizeFieldForModel,
   type ModelFieldSummary,
-} from '@worker/runtime/model/model-field-summary';
+} from '@worker/application/model-context/model-field-summary';
 
 /** ModelMessage is the public AI SDK prompt type consumed by generateText/streamText. */
 export type ModelInputMessage = ModelMessage;

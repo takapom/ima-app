@@ -65,12 +65,12 @@ Adapterの生成・注入は`src/composition/`が担当する。RuntimeからAda
 | `src/security/`                   | App Integrity・認証・レート制限の契約と判定                                                                               |
 | `src/telemetry/`                  | 運用イベントの契約・集計・受け渡し                                                                                        |
 
-| 配置                                    | 探す対象                                                                                                                                                                             |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Core `application/`                     | `model-context`はモデル入力、`candidate-registry`は候補・観測の登録、`ports`はCoreのPort、`use-cases`の`submit-response`は応答の検証・確定、`save-place`・`decide-place`は保存・決定 |
-| Worker `src/runtime/`                   | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・計測は各フォルダ                                            |
-| Mobile `journey/services/`・`platform/` | `platform/http`はHTTPとその契約、`journey/services/conversations`は会話操作・復元、`composition`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`      |
-| Mobile 機能ごとの`components/`          | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI。表示文言・表示用変換は`presentation`                                         |
+| 配置                                    | 探す対象                                                                                                                                                                                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Core `application/`                     | `model-context`はモデル入力・項目要約・提示情報に基づく保持条件、`candidate-registry`は候補・観測の登録、`ports`はCoreのPort、`use-cases`の`submit-response`は応答の検証・確定、`save-place`・`decide-place`は保存・決定、`expire-session`は失効時の後片付け |
+| Worker `src/runtime/`                   | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・計測は各フォルダ                                                                                                                    |
+| Mobile `journey/services/`・`platform/` | `platform/http`はHTTPとその契約、`journey/services/conversations`は会話操作・復元、`composition`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`                                                                              |
+| Mobile 機能ごとの`components/`          | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI。表示文言・表示用変換は`presentation`                                                                                                                 |
 
 Coreの単体テストは`worker/src/`の対象実装の近くに置く。Workerのテストは`worker/tests/`に集約し、`adapters/`・`runtime/`・`security/`はInfrastructureの対応モジュール、`src/composition/`は組み立て処理を検証する。評価CLIなどの開発用コードは`worker/tooling/`に置く。テスト専用fixtureを公開exportsへ追加しない。配置変更だけで既存の公開入口や責務・依存方向を変更しない。
 

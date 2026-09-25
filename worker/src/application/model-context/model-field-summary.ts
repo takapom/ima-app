@@ -1,5 +1,4 @@
 import * as v from 'valibot';
-import type { JSONValue } from 'ai';
 import {
   FacilitiesInfoSchema,
   OpeningHoursSchema,
@@ -9,7 +8,16 @@ import {
 } from '@worker/domain/places/place-values';
 import type { DetailField } from '@worker/domain/primitives';
 
-export type ModelFieldSummary = { readonly [key: string]: JSONValue };
+type FieldSummaryValue =
+  | string
+  | number
+  | boolean
+  | null
+  | FieldSummaryValue[]
+  | {
+      [key: string]: FieldSummaryValue;
+    };
+export type ModelFieldSummary = { readonly [key: string]: FieldSummaryValue };
 
 /**
  * What the model needs to judge one field. Observation IDs, fetch and expiry times, sources and

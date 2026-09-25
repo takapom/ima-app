@@ -11,7 +11,7 @@ import {
  * may be displayed and kept; it does not claim that the text is supported by, or used, any of it.
  * The bound is folded as inputs arrive, so no count limit can drop a stricter input.
  */
-export type RuntimePresentedInputs = {
+export type PresentedInputs = {
   /** A provider observation whose content reached the model; the registry supplies its policy. */
   readonly observation: (observationId: string) => void;
   /** Content that reached the model with its own retention, e.g. context evidence or history. */
@@ -39,10 +39,10 @@ const unknownOrigin = (sessionExpiresAt: string): RetentionMetadata => ({
   displayPolicyStatus: 'available',
 });
 
-export const createRuntimePresentedInputs = (input: {
+export const createPresentedInputs = (input: {
   readonly registry: Pick<CandidateObservationRegistryPort, 'readObservation'>;
   readonly scope: RegistryScope;
-}): RuntimePresentedInputs => {
+}): PresentedInputs => {
   const observations = new Set<string>();
   let narrowed: RetentionMetadata | undefined;
   let deadline: string | undefined;

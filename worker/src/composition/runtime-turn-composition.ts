@@ -70,8 +70,8 @@ import {
 } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
 import { projectRuntimeToolResultForModel } from '@worker/runtime/context/runtime-field-policy';
 import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-session-config';
-import { createRuntimePresentedInputs } from '@worker/runtime/response/runtime-presented-inputs';
-import { recordPresentedContext } from '@worker/runtime/response/runtime-presented-context';
+import { createPresentedInputs } from '@worker/application/model-context/presented-inputs';
+import { recordPresentedContext } from '@worker/application/model-context/presented-context';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import {
   runtimeTurnObserverWriters,
@@ -216,7 +216,7 @@ export function createRuntimeTurnComposition(
       return options.commit.commit(request);
     },
   };
-  const presented = createRuntimePresentedInputs({
+  const presented = createPresentedInputs({
     registry: options.registry,
     scope: { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
   });

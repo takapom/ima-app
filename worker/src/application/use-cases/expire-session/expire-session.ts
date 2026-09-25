@@ -1,6 +1,6 @@
-export type RuntimeSessionExpiryGate = (onCleanupComplete?: () => void) => Promise<boolean>;
+export type SessionExpiryGate = (onCleanupComplete?: () => void) => Promise<boolean>;
 
-export const createRuntimeSessionExpiryGate = (input: {
+export const createSessionExpiryGate = (input: {
   readonly isExpired: () => boolean;
   readonly readScope: () =>
     { readonly ownerScopeRef: string; readonly threadId: string } | undefined;
@@ -10,7 +10,7 @@ export const createRuntimeSessionExpiryGate = (input: {
     readonly threadId: string;
   }) => void;
   readonly clearPhotos: () => Promise<void>;
-}): RuntimeSessionExpiryGate => {
+}): SessionExpiryGate => {
   let cleanupDone = false;
   return async (onCleanupComplete) => {
     let expired = false;

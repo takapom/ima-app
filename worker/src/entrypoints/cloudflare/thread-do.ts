@@ -23,7 +23,7 @@ import {
   type ThreadRuntimeTurnResult,
 } from '@worker/runtime/threads/admission';
 import { executeRuntimeThreadTurn } from '@worker/runtime/threads/runtime-thread-turn-execution';
-import { createRuntimeSessionExpiryGate } from '@worker/runtime/threads/session-expiry';
+import { createSessionExpiryGate } from '@worker/application/use-cases/expire-session/expire-session';
 import { cleanupRuntimeResources } from '@worker/runtime/threads/thread-cleanup';
 import {
   isThreadConflictError,
@@ -87,7 +87,7 @@ export class ThreadDO
   private readonly runtimeController: ThreadRuntimeController;
   private readonly runtimeCommit: DurableCommitPort;
   private readonly conversationOutbox: ThreadConversationOutbox;
-  private readonly sessionExpired = createRuntimeSessionExpiryGate({
+  private readonly sessionExpired = createSessionExpiryGate({
     isExpired: () => this.runtimeProductionSessionExpired(),
     readScope: () => {
       const row = this.rowSync();
