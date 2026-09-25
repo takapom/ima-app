@@ -26,13 +26,13 @@ import {
 import type { AppIntegrityNamespace } from '@worker/adapters/out/persistence/security/app-integrity-do';
 import { createBootstrapAppIntegrityGate } from '@worker/composition/app-integrity-bootstrap';
 import { personalPreviewEnabled } from '@worker/composition/personal-preview';
-import type { AppIntegrityVerifier } from '@worker/security/app-integrity';
+import type { AppIntegrityVerifier } from '@worker/application/ports/app-integrity';
 import { createBestEffortEventsSink, createTelemetryEventsSink } from '@worker/telemetry/events';
 import {
   createDurableTelemetryStore,
   type TelemetryNamespace,
 } from '@worker/adapters/out/persistence/telemetry/telemetry-do';
-import type { AppIntegrityGate } from '@worker/security/app-integrity';
+import type { AppIntegrityGate } from '@worker/adapters/in/http/app-integrity-gate';
 import { createConfiguredPhoto } from '@worker/composition/bootstrap-photo';
 import { createDurableOwnerStore } from '@worker/adapters/out/persistence/saved-references/durable-owner-store';
 import type { SavedReferenceNamespace } from '@worker/adapters/out/persistence/saved-references/saved-reference-rpc';

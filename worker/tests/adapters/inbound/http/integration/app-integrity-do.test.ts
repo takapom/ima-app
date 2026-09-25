@@ -2,11 +2,11 @@ import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { AppAttestEnrollRequestSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
 import * as v from 'valibot';
+import { createAppIntegrityGate } from '@worker/composition/app-integrity-gate';
 import {
-  createAppIntegrityGate,
   type AppIntegrityKey,
   type AppIntegrityNonce,
-} from '@worker/security/app-integrity';
+} from '@worker/application/ports/app-integrity';
 import {
   createDurableAppIntegrityStores,
   type AppIntegrityDO,

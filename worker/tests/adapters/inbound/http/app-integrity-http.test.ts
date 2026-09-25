@@ -3,14 +3,14 @@ import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
 import { deriveOwnerScopeRef } from '@worker/adapters/in/http/auth';
 import { routeRequest } from '@worker/adapters/in/http/router';
+import { createAppIntegrityGate } from '@worker/composition/app-integrity-gate';
+import { type AppIntegrityGate } from '@worker/adapters/in/http/app-integrity-gate';
 import {
-  createAppIntegrityGate,
-  type AppIntegrityGate,
   type AppIntegrityKeyStore,
   type AppIntegrityChallengeStore,
   type AppIntegrityNonce,
   type AppIntegrityKey,
-} from '@worker/security/app-integrity';
+} from '@worker/application/ports/app-integrity';
 import { makeHarness, makeRequest, requestId, searchInput, turnInput } from './router-fixtures';
 
 const NOW = '2026-09-10T00:00:00.000Z';

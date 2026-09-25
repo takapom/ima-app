@@ -6,7 +6,7 @@ import {
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
 import { routeRequest } from '@worker/adapters/in/http/router';
-import type { AppIntegrityGate } from '@worker/security/app-integrity';
+import type { AppIntegrityGate } from '@worker/adapters/in/http/app-integrity-gate';
 import { makeHarness, makeRequest, requestId } from './router-fixtures';
 
 const NOW = '2026-09-10T00:00:00.000Z';

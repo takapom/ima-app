@@ -1,6 +1,9 @@
 import { toErrorResponse } from '@worker/adapters/in/http/errors';
 import type { AuthenticatedContext } from '@worker/adapters/in/http/auth';
-import type { AppIntegrityGate, AppIntegrityRoute } from '@worker/security/app-integrity';
+import type {
+  AppIntegrityGate,
+  AppIntegrityRoute,
+} from '@worker/adapters/in/http/app-integrity-gate';
 
 type AuthorizedRoute = { readonly kind: AppIntegrityRoute };
 

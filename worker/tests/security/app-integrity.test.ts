@@ -5,15 +5,15 @@ import {
 } from '@ima/contracts';
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
+import { createAppIntegrityGate } from '@worker/composition/app-integrity-gate';
+import { resolveAppIntegrityPolicy } from '@worker/composition/app-integrity-policy';
 import {
-  createAppIntegrityGate,
-  resolveAppIntegrityPolicy,
   type AppIntegrityChallengeStore,
   type AppIntegrityKey,
   type AppIntegrityKeyStore,
   type AppIntegrityNonce,
   type AppIntegrityVerifier,
-} from '@worker/security/app-integrity';
+} from '@worker/application/ports/app-integrity';
 import { routeRequest } from '@worker/adapters/in/http/router';
 import {
   makeHarness,

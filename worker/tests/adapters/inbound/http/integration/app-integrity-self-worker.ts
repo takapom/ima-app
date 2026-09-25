@@ -8,7 +8,7 @@ import {
   AppIntegrityDO,
   type AppIntegrityNamespace,
 } from '@worker/adapters/out/persistence/security/app-integrity-do';
-import type { AppIntegrityVerifier } from '@worker/security/app-integrity';
+import type { AppIntegrityVerifier } from '@worker/application/ports/app-integrity';
 import { RateLimitDO, ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 
 export { AppIntegrityDO, RateLimitDO, ThreadDO };

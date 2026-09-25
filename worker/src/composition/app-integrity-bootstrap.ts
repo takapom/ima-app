@@ -1,10 +1,10 @@
+import { createAppIntegrityGate } from '@worker/composition/app-integrity-gate';
+import { resolveAppIntegrityPolicy } from '@worker/composition/app-integrity-policy';
 import {
-  createAppIntegrityGate,
-  resolveAppIntegrityPolicy,
   type AppAttestEnvironment,
-  type AppIntegrityGate,
   type AppIntegrityVerifier,
-} from '@worker/security/app-integrity';
+} from '@worker/application/ports/app-integrity';
+import { type AppIntegrityGate } from '@worker/adapters/in/http/app-integrity-gate';
 import {
   createDurableAppIntegrityStores,
   type AppIntegrityNamespace,

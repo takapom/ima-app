@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { createAppIntegrityGate } from '@worker/composition/app-integrity-gate';
 import {
-  createAppIntegrityGate,
   type AppIntegrityChallengeStore,
   type AppIntegrityKey,
   type AppIntegrityKeyStore,
   type AppIntegrityNonce,
   type AppIntegrityVerifier,
-} from '@worker/security/app-integrity';
+} from '@worker/application/ports/app-integrity';
 
 const NOW = '2026-09-10T00:00:00.000Z';
 const OWNER = 'owner-a';
