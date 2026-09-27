@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ValidatedMessageResponse } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import {
-  prepareRuntimePhotoResolver,
+  prepareRuntimePhotos,
   type RuntimePublicResponseDependencies,
 } from '@worker/runtime/response/runtime-response';
 
@@ -19,6 +19,32 @@ const metadata = {
 };
 
 describe('runtime photo preparation boundary', () => {
+  it('keeps a legacy injected resolver display-only when preparation returns no result', async () => {
+    const photos = await prepareRuntimePhotos(
+      {
+        textRetention: {
+          retentionDecision: 'deny',
+          retentionMode: 'none',
+          sessionExpiresAt: '2026-09-10T13:00:00Z',
+          freshUntil: null,
+          displayUntil: null,
+          retentionUntil: null,
+          deletionScheduledAt: null,
+          attribution: null,
+          restoreMode: 'unavailable',
+          policyStatus: 'policy_withheld',
+          displayPolicyStatus: 'policy_withheld',
+        },
+        resolvePhotoToken: () => 'display-only-token',
+        preparePhotoTokens: () => Promise.resolve(undefined),
+      },
+      response,
+      metadata,
+      '2026-09-10T12:00:00Z',
+    );
+    expect(photos?.resolve('candidate', 'photo')).toBe('display-only-token');
+    expect(photos?.resolvePersistent('candidate', 'photo')).toBeUndefined();
+  });
   it('withholds only photo tokens when codec or RPC preparation fails', async () => {
     const failures: { readonly code: 'PHOTO_PREPARATION_FAILED' }[] = [];
     const dependencies: RuntimePublicResponseDependencies = {
@@ -39,7 +65,7 @@ describe('runtime photo preparation boundary', () => {
       onPhotoPreparationError: (error) => failures.push(error),
     };
 
-    const resolver = await prepareRuntimePhotoResolver(
+    const resolver = await prepareRuntimePhotos(
       dependencies,
       response,
       metadata,
@@ -50,7 +76,7 @@ describe('runtime photo preparation boundary', () => {
     expect(failures).toEqual([{ code: 'PHOTO_PREPARATION_FAILED' }]);
     expect(JSON.stringify(failures)).not.toContain('photo-secret-canary');
 
-    const observerFailure = await prepareRuntimePhotoResolver(
+    const observerFailure = await prepareRuntimePhotos(
       {
         ...dependencies,
         onPhotoPreparationError: () => {

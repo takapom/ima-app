@@ -63,7 +63,7 @@ export const collectPhotoTokenObservations = (
       );
     },
   });
-/** Binds one thread's registry and device scope to the runtime's post-commit hook. */
+/** Binds one thread's registry and device scope to the runtime's pre-commit preparation. */
 export const createPhotoTokenPreparer =
   (dependencies: PhotoTokenPreparerDependencies): RuntimePhotoTokenPreparer =>
   async ({ response, metadata, now }) => {
@@ -89,7 +89,7 @@ export const createPhotoTokenPreparer =
         deviceId: dependencies.deviceId,
         now,
       });
-      return prepared.resolve;
+      return { resolve: prepared.resolve, resolvePersistent: prepared.resolvePersistent };
     } catch (error: unknown) {
       if (error instanceof PhotoTokenPreparationError) throw new PhotoTokenError('INVALID_INPUT');
       throw error;

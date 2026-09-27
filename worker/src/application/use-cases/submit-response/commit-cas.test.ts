@@ -131,7 +131,7 @@ class BarrierCommitPort implements CommitPort {
 const message = (text: string) => ({ kind: 'answer' as const, message: text });
 
 describe('BarrierCommit CAS', () => {
-  it('does not commit when response preparation fails', async () => {
+  it('does not commit when asynchronous response preparation fails', async () => {
     const fixture = makeFixture([], {
       requireLastOrder: false,
     });
@@ -141,7 +141,8 @@ describe('BarrierCommit CAS', () => {
       commits,
       { nextResponseId: () => 'response' },
       new FixtureCommitHash(),
-      (record, prepared) => {
+      async (record, prepared) => {
+        await Promise.resolve();
         expect(record.responseId).toBe('response');
         expect(prepared.presentation).toBe('keep');
         throw new Error('PREPARATION_FAILED');

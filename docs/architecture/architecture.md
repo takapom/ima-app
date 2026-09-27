@@ -98,7 +98,7 @@ flowchart TD
 compositionが具象Adapterを構成する。現在はHot Pepperの検索・詳細AdapterをCoreのPlaceSearchPort/PlaceDetailsPortへ注入し、店舗IDで候補を登録する。地域名はkeyword、現在地は緯度経度とrangeへ変換し、営業時間は掲載文のまま渡す。GoogleのPlaces/Routes/Photos接続は持たない。営業未確認の許容は`src/composition/`で組み立ててCoreの確定検証へ明示する。公開DTOとCore内部型の変換はWorkerが所有する。
 ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Portと同一の層にしない。
 
-店舗写真は検索・詳細Adapterが`photo.pc`のURLを観測として登録し、Applicationが確定カードの写真根拠から表示可否と期限を決め、発行Portを通して署名Adapterがowner・端末・期限に紐づくtokenを発行する。既存の`GET /v1/photos/:token`が認証・期限検証後にHot Pepperの画像CDNから取得し、Mobileの写真表示部品へ渡す。画像本体をLLMや永続ストレージへ渡さない。
+店舗写真は検索・詳細Adapterが`photo.pc`のURLを観測として登録し、Applicationが検証済みカードの写真根拠から表示・保存可否と期限を決め、発行Portを通して署名Adapterがowner・端末・期限に紐づくtokenを発行する。既存の`GET /v1/photos/:token`が認証・期限検証後にHot Pepperの画像CDNから取得し、Mobileの写真表示部品へ渡す。画像本体をLLMや永続ストレージへ渡さない。
 
 ## ランタイムの制約
 

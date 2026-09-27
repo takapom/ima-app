@@ -34,6 +34,8 @@ export type PreparedPhotoTokens = {
   readonly withheldCount: number;
   /** Returns only server-issued tokens; provider photo references never escape this lookup. */
   readonly resolve: (candidateId: string, photoRef: string) => string | undefined;
+  /** Only tokens whose reference mappings were approved for durable storage. */
+  readonly resolvePersistent: (candidateId: string, photoRef: string) => string | undefined;
 };
 
 const keyFor = (candidateId: string, photoRef: string): string =>
@@ -121,6 +123,7 @@ export const preparePhotoTokens = async (
   if (!parsedContext.success) throw new PhotoTokenPreparationError();
 
   const tokens = new Map<string, string>();
+  const persistentTokens = new Map<string, string>();
   const prepared = new Map<string, PreparedObservation | null>();
   const nowMilliseconds = Date.parse(parsedContext.output.now);
   for (const observation of observations) {
@@ -160,13 +163,17 @@ export const preparePhotoTokens = async (
       },
       context.now,
     );
-    if (result.status === 'issued') tokens.set(key, result.token);
-    else withheldCount += 1;
+    if (result.status === 'issued') {
+      tokens.set(key, result.token);
+      if (observation.persist) persistentTokens.set(key, result.token);
+    } else withheldCount += 1;
   }
 
   return {
     issuedCount: tokens.size,
     withheldCount,
     resolve: (candidateId, photoRef) => tokens.get(keyFor(candidateId, photoRef)),
+    resolvePersistent: (candidateId, photoRef) =>
+      persistentTokens.get(keyFor(candidateId, photoRef)),
   };
 };

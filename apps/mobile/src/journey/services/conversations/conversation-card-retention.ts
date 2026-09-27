@@ -52,6 +52,18 @@ const retainText = (text: Card['why'], now: string): Card['why'] => {
         retention: { ...text.retention, attribution: null, displayPolicyStatus: failure },
       };
 };
+const retainPhotos = (
+  field: NonNullable<Card['facts']['photos']>,
+  expiresAt: string | null,
+  now: string,
+): NonNullable<Card['facts']['photos']> => {
+  const retained = retainField(field, now);
+  if (retained.status !== 'known' || retained.value.photos.length === 0) return retained;
+  if (expiresAt === null) return { status: 'unknown', reason: '写真の表示期限を確認できません' };
+  return Date.parse(now) < Date.parse(expiresAt)
+    ? retained
+    : { status: 'unknown', reason: '写真の表示期限が過ぎています' };
+};
 export const retainConversationCards = (
   part: ConversationCards,
   now: string,
@@ -70,9 +82,7 @@ export const retainConversationCards = (
     if (card.facts.facilities !== undefined)
       retained.facts.facilities = retainField(card.facts.facilities, now);
     if (card.facts.photos !== undefined)
-      retained.facts.photos = keepPhotos
-        ? retainField(card.facts.photos, now)
-        : { status: 'unknown', reason: '写真の表示期限が過ぎています' };
+      retained.facts.photos = retainPhotos(card.facts.photos, part.photosExpireAt, now);
     retained.why = retainText(card.why, now);
     if (card.diff !== undefined) retained.diff = retainText(card.diff, now);
     return retained;

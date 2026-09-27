@@ -125,7 +125,10 @@ export class SubmitApplication {
     private readonly commits: CommitPort,
     private readonly ids: Pick<IdPort, 'nextResponseId'>,
     private readonly hashes: CommitHashPort,
-    private readonly prepareCommit?: (record: CommitRecord, response: CommittedResponse) => void,
+    private readonly prepareCommit?: (
+      record: CommitRecord,
+      response: CommittedResponse,
+    ) => void | Promise<void>,
   ) {}
 
   commitCards(
@@ -226,7 +229,17 @@ export class SubmitApplication {
     };
     const parsedRecord = v.safeParse(CommitRecordSchema, recordCandidate);
     if (!parsedRecord.success) return schemaFailure('generated commit record is invalid');
-    this.prepareCommit?.(parsedRecord.output, structuredClone(response));
+    if (this.prepareCommit !== undefined)
+      await this.prepareCommit(parsedRecord.output, structuredClone(response));
+    if (this.disposedTurns.has(turnKey(request.scope, request.turnId))) {
+      return {
+        status: 'conflict',
+        conflict: {
+          code: 'STALE_REVISION',
+          message: 'turn was disposed during response preparation',
+        },
+      };
+    }
     const rawResult = await this.commits.commit({
       expectedRevision: request.expectedRevision,
       record: parsedRecord.output,

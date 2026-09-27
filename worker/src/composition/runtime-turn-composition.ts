@@ -49,12 +49,11 @@ import type {
   RuntimeModelGuardModel,
 } from '@worker/runtime/turn-execution/runtime-model-guard';
 import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
-import type { RuntimePublicResponseDependencies } from '@worker/runtime/response/runtime-response';
-import {
-  createRuntimePhotoPreparationState,
-  prepareAndMapRuntimeResponse,
-  resetRuntimePhotoPreparationState,
-} from '@worker/runtime/response/runtime-public-response';
+import type {
+  RuntimePreparedPhotos,
+  RuntimePublicResponseDependencies,
+} from '@worker/runtime/response/runtime-response';
+import { mapPreparedRuntimeResponse } from '@worker/runtime/response/runtime-public-response';
 import {
   modelSource,
   observationResultIsReusable,
@@ -202,9 +201,16 @@ export function createRuntimeTurnComposition(
   const now = clockFunction(options.clock);
   const submitIdempotencyKey = options.idempotencyKey ?? `${options.context.turnId}-submit`;
   let disposed = false;
+  const isActive = (): boolean =>
+    !disposed &&
+    !turn.isDisposed() &&
+    !turn.signal.aborted &&
+    options.request.signal?.aborted !== true &&
+    options.request.isStale?.() !== true &&
+    !options.budget.isCancelled();
   const guardedCommit: CommitPort = {
     commit: (request) => {
-      if (disposed) {
+      if (!isActive()) {
         return {
           status: 'conflict',
           conflict: {
@@ -228,18 +234,29 @@ export function createRuntimeTurnComposition(
           ...options.publicResponse,
           textRetention: presented.textRetention(options.publicResponse.textRetention),
         };
+  let preparedPhotos: RuntimePreparedPhotos | undefined;
   const application = new SubmitApplication(
     guardedCommit,
     { nextResponseId: options.ids.nextResponseId },
     options.hashes,
-    (record, response) =>
-      prepareConversationCommit(options.commit, publicResponse(), record, response),
+    async (record, response) => {
+      const photos = await prepareConversationCommit(
+        options.commit,
+        publicResponse(),
+        record,
+        response,
+        {
+          now: now(),
+          isActive,
+        },
+      );
+      if (isActive()) preparedPhotos = photos;
+    },
   );
   const calls = new Map<string, RuntimeRetentionEphemeralToolCall>();
   const results = new Map<string, RuntimeRetentionEphemeralToolResult>();
   let responseId: string | undefined;
   let responseRevision: number | undefined;
-  const photoPreparation = createRuntimePhotoPreparationState();
   const scope = (): RuntimeRetentionContext => {
     const current = retentionContext(options.retention);
     if (!sameRetentionIdentity(options.request, current)) {
@@ -411,8 +428,8 @@ export function createRuntimeTurnComposition(
     },
     projectStep,
     persistMessages: options.persistMessages,
-    getCommittedResponse: async () => {
-      if (disposed) return undefined;
+    getCommittedResponse: () => {
+      if (!isActive()) return undefined;
       if (responseId === undefined || responseRevision === undefined) return undefined;
       const committed = application.getCommittedResponse(
         { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
@@ -421,19 +438,17 @@ export function createRuntimeTurnComposition(
       );
       const dependencies = publicResponse();
       if (committed === undefined || dependencies === undefined) return committed;
-      return prepareAndMapRuntimeResponse({
-        response: committed,
+      return mapPreparedRuntimeResponse(
+        committed,
         dependencies,
-        metadata: {
+        {
           threadId: options.context.threadId,
           turnId: options.context.turnId,
           responseId,
           revision: responseRevision,
         },
-        now: now(),
-        state: photoPreparation,
-        isActive: () => !disposed,
-      });
+        preparedPhotos?.resolve,
+      );
     },
     dispose: () => {
       if (disposed) return;
@@ -446,7 +461,7 @@ export function createRuntimeTurnComposition(
       );
       calls.clear();
       results.clear();
-      resetRuntimePhotoPreparationState(photoPreparation);
+      preparedPhotos = undefined;
       application.clearTurn(
         { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
         options.context.turnId,

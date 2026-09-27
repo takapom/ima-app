@@ -100,6 +100,53 @@ describe('historical card retention across server and client', () => {
     expect(JSON.stringify(expired)).not.toContain('残す理由');
     expect(conversationMessageDeadline(expired)).toBeNull();
   });
+  it.each([
+    { status: 'unknown', reason: '写真を取得していません' },
+    { status: 'unsupported', reason: '写真は未対応です' },
+    { status: 'not_applicable', reason: '写真の対象外です' },
+    { status: 'error', code: 'PROVIDER_UNAVAILABLE', reason: '写真の取得に失敗しました' },
+    {
+      status: 'known',
+      value: { photos: [] },
+      evidence: [{ evidenceId: 'photo', attribution: null, retention }],
+    },
+  ] satisfies NonNullable<AssistantCardsResponse['cards']['hero']['facts']['photos']>[])(
+    'preserves a photo field without tokens: $status',
+    (photos) => {
+      const value = response();
+      value.cards.hero.facts.photos = photos;
+      const record = message(value);
+      const part = record.message.parts.find((part) => part.kind === 'card_set');
+      if (part?.kind !== 'card_set') throw new Error('CARD_SNAPSHOT_MISSING');
+      expect(part.photosExpireAt).toBeNull();
+      expect(part.cards.hero.facts.photos).toEqual(photos);
+      expect(clientRetain(record, now)).toEqual(serverRetain(record, now));
+      expect(clientRetain(record, now)).toEqual(record);
+    },
+  );
+  it('distinguishes an unverifiable token expiry from elapsed expiry and storage denial', () => {
+    const value = response();
+    const photos = value.cards.hero.facts.photos;
+    if (photos?.status !== 'known' || photos.value.photos[0] === undefined)
+      throw new Error('FIXTURE_MISSING');
+    photos.value.photos[0].photoToken = 'invalid-token';
+    expect(JSON.stringify(message(value))).toContain('写真の表示期限を確認できません');
+    expect(JSON.stringify(message(value))).not.toContain('invalid-token');
+    const evidence = photos.evidence[0];
+    if (evidence === undefined) throw new Error('FIXTURE_MISSING');
+    evidence.retention = {
+      ...retention,
+      retentionDecision: 'deny',
+      retentionUntil: null,
+      deletionScheduledAt: null,
+      restoreMode: 'unavailable',
+      policyStatus: 'policy_withheld',
+    };
+    const denied = message(value);
+    expect(JSON.stringify(denied)).toContain('保存が許可されていません');
+    expect(clientRetain(denied, now)).toEqual(serverRetain(denied, now));
+    expect(clientRetain(denied, now)).toEqual(denied);
+  });
   it('withholds disallowed values before storage and rejects a foreign thread snapshot', () => {
     const value = response();
     value.cards.hero.why.retention = {

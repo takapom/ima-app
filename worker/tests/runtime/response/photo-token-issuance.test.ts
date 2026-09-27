@@ -267,7 +267,7 @@ describe('preparePhotoTokens', () => {
     expect(issue.mock.calls[0]?.[0].deviceId).toBe(CONTEXT.deviceId);
     expect(issue.mock.calls[0]?.[0].turnId).toBe(CONTEXT.sourceTurnId);
     expect(issue.mock.calls[0]?.[0].revision).toBe(CONTEXT.sourceRevision);
-    expect(resolver?.('candidate-a', 'places/A/photos/one')).toContain(CONTEXT.deviceId);
+    expect(resolver?.resolve('candidate-a', 'places/A/photos/one')).toContain(CONTEXT.deviceId);
   });
 
   it('deduplicates observed photos and exposes only the issued lookup values', async () => {

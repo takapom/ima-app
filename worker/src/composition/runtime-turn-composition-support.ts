@@ -8,28 +8,32 @@ import type { CommitPort, CommitRecord } from '@worker/application/ports/commit'
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
 import { prepareRuntimeConversationResponse } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
 import { mapPreparedRuntimeResponse } from '@worker/runtime/response/runtime-public-response';
-import type { RuntimePublicResponseDependencies } from '@worker/runtime/response/runtime-response';
+import {
+  prepareRuntimePhotos,
+  type RuntimePreparedPhotos,
+  type RuntimePublicResponseDependencies,
+} from '@worker/runtime/response/runtime-response';
 
-export const prepareConversationCommit = (
+export const prepareConversationCommit = async (
   port: CommitPort,
   dependencies: RuntimePublicResponseDependencies | undefined,
   record: CommitRecord,
   response: CommittedResponse,
-): void => {
-  if (dependencies === undefined) return;
+  preparation: { readonly now: string; readonly isActive: () => boolean },
+): Promise<RuntimePreparedPhotos | undefined> => {
+  if (dependencies === undefined || !preparation.isActive()) return;
+  const metadata = {
+    threadId: record.scope.threadId,
+    turnId: record.turnId,
+    responseId: record.responseId,
+    revision: record.revision,
+  };
+  const photos = await prepareRuntimePhotos(dependencies, response, metadata, preparation.now);
+  if (!preparation.isActive()) return;
   prepareRuntimeConversationResponse(port, record, () =>
-    mapPreparedRuntimeResponse(
-      response,
-      dependencies,
-      {
-        threadId: record.scope.threadId,
-        turnId: record.turnId,
-        responseId: record.responseId,
-        revision: record.revision,
-      },
-      undefined,
-    ),
+    mapPreparedRuntimeResponse(response, dependencies, metadata, photos?.resolvePersistent),
   );
+  return photos;
 };
 
 export type RuntimeTurnCompositionErrorCode = 'CONTEXT_MISMATCH' | 'RETENTION_MISMATCH';

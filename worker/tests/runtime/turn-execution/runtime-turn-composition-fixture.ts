@@ -204,7 +204,7 @@ const createPorts = (
 };
 
 export const createComposition = (
-  commit = new RecordingCommit(),
+  commit: CommitPort = new RecordingCommit(),
   currentTurnStart: number | undefined = 1,
   retentionValue: RuntimeRetentionContext = retention,
   clock: () => string = () => NOW,

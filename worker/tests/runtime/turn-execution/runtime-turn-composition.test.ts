@@ -149,7 +149,7 @@ describe('createRuntimeTurnComposition', () => {
     expect(() =>
       composition.onAccepted({ terminal: 'none', missingRespond: reason, partCount: 1, bytes: 32 }),
     ).not.toThrow();
-    await expect(composition.getCommittedResponse()).resolves.toBeUndefined();
+    expect(await composition.getCommittedResponse()).toBeUndefined();
     expect(commit.requests).toHaveLength(0);
     composition.dispose();
   });
@@ -238,8 +238,9 @@ describe('createRuntimeTurnComposition', () => {
     const preparation = new Promise<void>((resolve) => {
       release = resolve;
     });
+    const commit = new RecordingCommit();
     const { composition } = createComposition(
-      new RecordingCommit(),
+      commit,
       1,
       retention,
       () => NOW,
@@ -249,15 +250,16 @@ describe('createRuntimeTurnComposition', () => {
         preparePhotoTokens: async () => {
           entered();
           await preparation;
-          return () => 'late-photo-token';
+          return { resolve: () => 'late-photo-token', resolvePersistent: () => 'late-photo-token' };
         },
       },
     );
-    await respondWith(composition, { kind: 'answer', message: '遅延写真' });
-    const pending = composition.getCommittedResponse();
+    const pending = respondWith(composition, { kind: 'answer', message: '遅延写真' });
     await preparationEntered;
     composition.dispose();
     release();
-    await expect(pending).resolves.toBeUndefined();
+    await pending;
+    expect(commit.requests).toHaveLength(0);
+    expect(await composition.getCommittedResponse()).toBeUndefined();
   });
 });

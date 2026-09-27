@@ -45,10 +45,15 @@ export type RuntimePhotoTokenPreparationInput = {
   readonly now: string;
 };
 
-/** Issues short-lived photo handles before the synchronous public mapper runs. */
+export type RuntimePreparedPhotos = {
+  readonly resolve: RuntimePhotoTokenResolver;
+  readonly resolvePersistent: RuntimePhotoTokenResolver;
+};
+
+/** Prepares handles before commit; the public mapper stays synchronous. */
 export type RuntimePhotoTokenPreparer = (
   input: RuntimePhotoTokenPreparationInput,
-) => Promise<RuntimePhotoTokenResolver | undefined>;
+) => Promise<RuntimePreparedPhotos | undefined>;
 
 /** Metadata-only failure classification; provider and codec errors never cross this boundary. */
 export type RuntimePhotoPreparationFailure = {
@@ -74,22 +79,25 @@ export type RuntimePublicResponseDependencies = Omit<
   RuntimePublicResponseOptions,
   'threadId' | 'turnId' | 'responseId' | 'revision'
 > & {
-  /** Runs once after Core commit and before mapping; the mapper remains synchronous. */
+  /** Runs before Core commit; live and durable mapping reuse the prepared tokens. */
   readonly preparePhotoTokens?: RuntimePhotoTokenPreparer;
   /** Optional internal audit hook; a failure withholds only the photo field. */
   readonly onPhotoPreparationError?: RuntimePhotoPreparationErrorObserver;
 };
 
-export const prepareRuntimePhotoResolver = async (
+export const prepareRuntimePhotos = async (
   dependencies: RuntimePublicResponseDependencies,
   response: CommittedResponse,
   metadata: RuntimePublicResponseMetadata,
   now: string,
-): Promise<RuntimePhotoTokenResolver | undefined> => {
-  if (dependencies.preparePhotoTokens === undefined) return dependencies.resolvePhotoToken;
+): Promise<RuntimePreparedPhotos | undefined> => {
+  const displayOnly =
+    dependencies.resolvePhotoToken === undefined
+      ? undefined
+      : { resolve: dependencies.resolvePhotoToken, resolvePersistent: () => undefined };
+  if (dependencies.preparePhotoTokens === undefined) return displayOnly;
   try {
-    const prepared = await dependencies.preparePhotoTokens({ response, metadata, now });
-    return prepared ?? dependencies.resolvePhotoToken;
+    return (await dependencies.preparePhotoTokens({ response, metadata, now })) ?? displayOnly;
   } catch {
     try {
       dependencies.onPhotoPreparationError?.({ code: 'PHOTO_PREPARATION_FAILED' });

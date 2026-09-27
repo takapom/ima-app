@@ -118,7 +118,7 @@ describe('Runtime turn composition retention boundaries', () => {
     composition.dispose();
     resolveDigest?.('composition-digest');
     await expect(pending).resolves.not.toMatchObject({ status: 'committed' });
-    await expect(composition.getCommittedResponse()).resolves.toBeUndefined();
+    expect(await composition.getCommittedResponse()).toBeUndefined();
     expect(commit.requests).toHaveLength(0);
   });
 });

@@ -28,13 +28,22 @@ describe('photo token issuance through the application port', () => {
       Promise.resolve({ status: 'issued', token: 'token' }),
     );
     const allowed = { ...observation, persistUntil: '2026-09-10T12:03:00.000Z' };
-    await preparePhotoTokens({ issue }, [allowed], context);
+    const durable = await preparePhotoTokens({ issue }, [allowed], context);
+    expect(durable.resolvePersistent(observation.candidateId, observation.photoRef)).toBe('token');
     expect(issue).toHaveBeenLastCalledWith(
       expect.objectContaining({ persist: true, expiresAt: allowed.persistUntil }),
       context.now,
     );
     issue.mockClear();
-    await preparePhotoTokens({ issue }, [allowed, { ...observation, persistUntil: null }], context);
+    const transient = await preparePhotoTokens(
+      { issue },
+      [allowed, { ...observation, persistUntil: null }],
+      context,
+    );
+    expect(transient.resolve(observation.candidateId, observation.photoRef)).toBe('token');
+    expect(
+      transient.resolvePersistent(observation.candidateId, observation.photoRef),
+    ).toBeUndefined();
     expect(issue.mock.calls[0]?.[0].persist).toBeUndefined();
   });
 

@@ -214,7 +214,9 @@ export const createDurableCommitPort = (
       pendingCardSets.set(key, cardSetId);
     },
     clearCardSetId(scope, idempotencyKey) {
-      pendingCardSets.delete(pendingKey(scope, idempotencyKey));
+      const key = pendingKey(scope, idempotencyKey);
+      pendingCardSets.delete(key);
+      pendingResponses.delete(key);
     },
     commit(value) {
       const request = validateRequest(value);
