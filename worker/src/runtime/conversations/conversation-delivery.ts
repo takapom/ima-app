@@ -32,7 +32,19 @@ export const messageFromConversationResponse = (
         ),
       ),
       ...(parsed.kind === 'cards'
-        ? [{ kind: 'card_set_reference', threadId: parsed.threadId, cardSetId: parsed.cardSetId }]
+        ? [
+            retainConversationPart(
+              {
+                kind: 'card_set',
+                threadId: parsed.threadId,
+                cardSetId: parsed.cardSetId,
+                revision: parsed.revision,
+                cards: parsed.cards,
+                photosExpireAt: photoDeadline(parsed),
+              },
+              now,
+            ),
+          ]
         : []),
     ],
   });
@@ -45,4 +57,33 @@ export type ConversationDelivery = ConversationDeliveryScope & {
 };
 export type BoundConversationTurn = ConversationDeliveryScope & {
   readonly target: ThreadRuntimeTarget;
+};
+
+/** Tokens remain opaque outside the runtime; only their signed server-issued expiry is projected. */
+const photoDeadline = (response: Extract<AssistantResponse, { kind: 'cards' }>): string | null => {
+  const tokens = [response.cards.hero, ...response.cards.alts].flatMap((card) =>
+    card.facts.photos?.status === 'known'
+      ? card.facts.photos.value.photos.map((photo) => photo.photoToken)
+      : [],
+  );
+  if (tokens.length === 0) return null;
+  try {
+    const times = tokens.map((token) => {
+      const payload: unknown = JSON.parse(
+        atob((token.split('.')[1] ?? '').replaceAll('-', '+').replaceAll('_', '/')),
+      );
+      if (
+        typeof payload !== 'object' ||
+        payload === null ||
+        !('e' in payload) ||
+        typeof payload.e !== 'number' ||
+        !Number.isSafeInteger(payload.e)
+      )
+        throw new Error('INVALID_PHOTO_EXPIRY');
+      return payload.e * 1000;
+    });
+    return new Date(Math.min(...times)).toISOString();
+  } catch {
+    return null;
+  }
 };

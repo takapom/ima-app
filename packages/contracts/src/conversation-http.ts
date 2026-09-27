@@ -9,6 +9,7 @@ import {
 } from '@contracts/common';
 import { RetentionMetadataSchema } from '@contracts/public';
 import { ThreadTurnRequestSchema, CreateThreadRequestSchema } from '@contracts/preferences';
+import { CardsDataSchema } from '@contracts/values';
 import { AssistantResponseSchema } from '@contracts/response';
 
 export const ConversationSchema = v.strictObject({
@@ -20,6 +21,15 @@ export const ConversationSchema = v.strictObject({
   lastSequence: v.pipe(v.number(), v.safeInteger(), v.minValue(0)),
 });
 export type Conversation = v.InferOutput<typeof ConversationSchema>;
+export const ConversationCardsSchema = v.strictObject({
+  kind: v.literal('card_set'),
+  threadId: OpaqueIdSchema,
+  cardSetId: OpaqueIdSchema,
+  revision: RevisionSchema,
+  photosExpireAt: v.nullable(IsoTimestampSchema),
+  cards: CardsDataSchema,
+});
+export type ConversationCards = v.InferOutput<typeof ConversationCardsSchema>;
 export const ConversationMessageSchema = v.pipe(
   v.strictObject({
     conversationId: OpaqueIdSchema,
@@ -38,6 +48,7 @@ export const ConversationMessageSchema = v.pipe(
       parts: v.pipe(
         v.array(
           v.variant('kind', [
+            ConversationCardsSchema,
             v.strictObject({ kind: v.literal('user_text'), text: Text(500) }),
             v.strictObject({
               kind: v.literal('retained_text'),
@@ -75,7 +86,8 @@ export const ConversationMessageSchema = v.pipe(
           message.parts.every(
             (part) =>
               part.kind !== 'user_text' &&
-              (part.kind !== 'card_set_reference' || part.threadId === message.source?.threadId),
+              ((part.kind !== 'card_set_reference' && part.kind !== 'card_set') ||
+                part.threadId === message.source?.threadId),
           ),
     'Message role and retention are inconsistent',
   ),

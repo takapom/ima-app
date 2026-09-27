@@ -36,7 +36,7 @@ import {
   type ThreadSnapshotResult,
 } from '@worker/runtime/threads/thread-types';
 
-import { createThreadPhotoReferences } from '@worker/adapters/out/persistence/photo/thread-references';
+import { createPersistentThreadPhotoReferences } from '@worker/adapters/out/persistence/photo/sql-reference-store';
 import type { PhotoReferenceRecord } from '@worker/runtime/ports/photo';
 import type {
   PhotoReferenceGetResult,
@@ -73,8 +73,6 @@ export type {
   ThreadStateErrorCode,
 } from '@worker/runtime/threads/thread-types';
 
-export type ThreadSavedCandidateResult = RuntimeSavedCandidateResult;
-
 /** One DO owns owner-bound lifecycle, photo references, and the configured Think runtime. */
 export class ThreadDO
   extends RuntimeProductionThinkHost<Cloudflare.Env>
@@ -99,10 +97,14 @@ export class ThreadDO
     clearContext: (scope) => this.clearRuntimeProductionContext(scope),
     clearPhotos: () => this.photoReferences.clear(),
   });
-  private readonly photoReferences = createThreadPhotoReferences({
-    clock: () => this.photoReferenceNow(),
-    binding: () => this.rowSync(),
-  });
+  private readonly photoReferences = createPersistentThreadPhotoReferences(
+    this.ctx.storage,
+    this.lifecycle,
+    {
+      clock: () => this.photoReferenceNow(),
+      binding: () => this.rowSync(),
+    },
+  );
 
   protected photoReferenceNow(): string {
     return new Date().toISOString();
@@ -492,7 +494,7 @@ export class ThreadDO
     ownerScopeRef: unknown,
     candidateId: unknown,
     expectedRevision: unknown,
-  ): Promise<ThreadSavedCandidateResult> {
+  ): Promise<RuntimeSavedCandidateResult> {
     return this.savedCandidateResolver.resolve(ownerScopeRef, candidateId, expectedRevision);
   }
 }

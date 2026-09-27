@@ -1,5 +1,10 @@
 import type { ConversationMessage } from '@ima/contracts';
 
+import {
+  retainConversationCards,
+  conversationCardsDeadlines,
+} from '@mobile/journey/services/conversations/conversation-card-retention';
+
 export const conversationMessageDeadline = (message: ConversationMessage): number | null => {
   const values = message.message.parts.flatMap((part) =>
     part.kind === 'retained_text'
@@ -11,7 +16,9 @@ export const conversationMessageDeadline = (message: ConversationMessage): numbe
         ]
           .filter((value) => value !== null)
           .map(Date.parse)
-      : [],
+      : part.kind === 'card_set'
+        ? conversationCardsDeadlines(part)
+        : [],
   );
   return values.length === 0 ? null : Math.min(...values);
 };
@@ -23,6 +30,7 @@ export const retainConversationMessage = (
   message: {
     ...message.message,
     parts: message.message.parts.map((part) => {
+      if (part.kind === 'card_set') return retainConversationCards(part, now);
       if (part.kind !== 'retained_text') return part;
       const policy = part.retention;
       if (policy.policyStatus === 'expired' || policy.displayPolicyStatus === 'expired')

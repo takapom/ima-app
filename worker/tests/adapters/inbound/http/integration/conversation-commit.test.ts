@@ -128,6 +128,66 @@ describe('conversation delivery at the production commit boundary', () => {
     });
   });
 
+  it('persists card snapshots through commit recovery and removes expired card payloads', async () => {
+    const { stub, scope, request, response } = await setup();
+    const text = response.message[0];
+    if (text === undefined) throw new Error('FIXTURE_MISSING');
+    const cards: AssistantResponse = {
+      ...response,
+      kind: 'cards',
+      presentation: 'replace',
+      cardSetId: 'cards',
+      cards: {
+        hero: {
+          candidateId: 'shop',
+          facts: {
+            identity: {
+              status: 'known',
+              value: {
+                name: '復元する店舗',
+                area: '恵比寿',
+                address: null,
+                category: null,
+                stationName: null,
+                accessText: null,
+                businessStatus: 'unknown',
+                sourceUrl: null,
+              },
+              evidence: [{ evidenceId: 'identity', attribution: null, retention: text.retention }],
+            },
+          },
+          why: { ...text, text: '保存する理由' },
+        },
+        alts: [],
+      },
+    };
+    await runInDurableObject(stub, async (_instance, state) => {
+      const outbox = new ThreadConversationOutbox(state.storage);
+      const port = createDurableCommitPort(state.storage, { outbox, now: () => now });
+      const cardRequest = {
+        ...request,
+        record: {
+          ...request.record,
+          presentation: 'replace' as const,
+          references: { candidateIds: ['shop'], observationIds: ['identity'] },
+        },
+      };
+      port.setCardSetId(cardRequest.record.scope, cardRequest.record.idempotencyKey, 'cards');
+      port.setConversationResponse(cardRequest.record, cards);
+      expect(port.commit(cardRequest)).toMatchObject({ status: 'committed' });
+      const restored = await new ThreadConversationOutbox(state.storage).read(scope, now);
+      expect(restored?.message.parts).toContainEqual(
+        expect.objectContaining({ kind: 'card_set', cards: cards.cards }),
+      );
+      await new ThreadConversationOutbox(state.storage).purge(later);
+      const persisted = JSON.stringify(
+        state.storage.sql.exec('SELECT message FROM conversation_delivery').toArray(),
+      );
+      expect(persisted).not.toContain('復元する店舗');
+      expect(persisted).not.toContain('保存する理由');
+    });
+  });
+
   it('rolls back the reference ledger, revision and runtime completion when delivery cannot be written', async () => {
     const { stub, scope, request, response } = await setup();
     await runInDurableObject(stub, async (_instance, state) => {

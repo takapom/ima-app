@@ -26,13 +26,17 @@ import {
   type JsonRow,
 } from '@worker/adapters/out/persistence/conversations/conversation-sql-schema';
 
+import { conversationCardsDeadlines } from '@worker/domain/conversations/conversation-card-retention';
+
 type Input<K extends keyof ConversationStore> = Parameters<ConversationStore[K]>[0];
 type Result<K extends keyof ConversationStore> = Awaited<ReturnType<ConversationStore[K]>>;
 
 export const messageDeadline = (message: Pick<ConversationMessage, 'message'>): number | null => {
   const deadlines = message.message.parts.flatMap((part) =>
     part.kind !== 'retained_text'
-      ? []
+      ? part.kind === 'card_set'
+        ? conversationCardsDeadlines(part)
+        : []
       : [
           part.retention.sessionExpiresAt,
           part.retention.displayUntil,

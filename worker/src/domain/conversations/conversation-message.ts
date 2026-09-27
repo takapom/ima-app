@@ -7,6 +7,9 @@ import {
 } from '@worker/domain/primitives';
 import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
 
+import { ConversationCardsSchema } from '@worker/domain/conversations/conversation-cards';
+import { retainConversationCards } from '@worker/domain/conversations/conversation-card-retention';
+
 /** User-authored text has its own lifetime; an assistant cannot grant itself this policy. */
 const UserTextSchema = v.strictObject({
   kind: v.literal('user_text'),
@@ -35,6 +38,7 @@ export const ConversationPartSchema = v.variant('kind', [
   RetainedTextSchema,
   UnavailablePartSchema,
   CardSetReferenceSchema,
+  ConversationCardsSchema,
 ]);
 export type ConversationPart = v.InferOutput<typeof ConversationPartSchema>;
 
@@ -65,7 +69,8 @@ export const ConversationMessageInputSchema = v.pipe(
       message.parts.every(
         (part) =>
           part.kind !== 'user_text' &&
-          (part.kind !== 'card_set_reference' || part.threadId === message.source?.threadId),
+          ((part.kind !== 'card_set_reference' && part.kind !== 'card_set') ||
+            part.threadId === message.source?.threadId),
       )
     );
   }, 'message role, source and parts are inconsistent'),
@@ -87,6 +92,7 @@ export const retainConversationPart = (part: ConversationPart, now: string): Con
   const parsed = v.safeParse(ConversationPartSchema, part);
   const clock = v.safeParse(IsoTimestampSchema, now);
   if (!parsed.success || !clock.success) throw new Error('INVALID_CONVERSATION_RETENTION_INPUT');
+  if (parsed.output.kind === 'card_set') return retainConversationCards(parsed.output, now);
   if (parsed.output.kind !== 'retained_text') return structuredClone(parsed.output);
   const { retention } = parsed.output;
   if (retention.policyStatus === 'expired' || retention.displayPolicyStatus === 'expired') {

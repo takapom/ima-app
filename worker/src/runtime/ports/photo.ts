@@ -71,9 +71,8 @@ export type PhotoReferenceRecord = {
 };
 
 /**
- * The implementation is owned by the per-thread runtime boundary. An eviction
- * may discard the reference; callers then receive REFERENCE_UNAVAILABLE/410
- * and must obtain a new provider observation before issuing another token.
+ * The per-thread adapter retains scoped references until token expiry. The SQL
+ * adapter survives host eviction; expiry/deletion still require a new observation.
  */
 export type PhotoReferenceStore = {
   put(record: PhotoReferenceRecord, requestedNow?: string): Promise<void>;
