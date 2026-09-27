@@ -146,6 +146,31 @@ describe('journey shell state', () => {
     expect(settled).not.toHaveProperty('responseState');
   });
 
+  it('opens settings from the drawer and leaves the drawer closed behind it', () => {
+    const opened = journeyShellReducer(createJourneyShellState(), { type: 'toggleDrawer' });
+    const settings = journeyShellReducer(opened, { type: 'openSettings' });
+
+    expect(settings.settingsOpen).toBe(true);
+    expect(settings.drawerOpen).toBe(false);
+    expect(settings.drawerView).toBe(opened.drawerView);
+  });
+
+  it('closes settings without reopening the drawer or changing the phase', () => {
+    const settings = journeyShellReducer(createJourneyShellState(), { type: 'openSettings' });
+    const closed = journeyShellReducer(settings, { type: 'closeSettings' });
+
+    expect(closed.settingsOpen).toBe(false);
+    expect(closed.drawerOpen).toBe(false);
+    expect(closed.phase).toBe(settings.phase);
+  });
+
+  it('leaves settings closed after a reset', () => {
+    const settings = journeyShellReducer(createJourneyShellState(), { type: 'openSettings' });
+    const reset = journeyShellReducer(settings, { type: 'reset' });
+
+    expect(reset.settingsOpen).toBe(false);
+  });
+
   it('does not settle a response that arrives after cancellation', () => {
     const working = journeyShellReducer(createJourneyShellState(), {
       type: 'beginRequest',

@@ -14,6 +14,7 @@ import { ErrorState } from '@mobile/journey/components/response/ErrorState';
 import { ResultsState } from '@mobile/journey/components/response/ResultsState';
 import { ResultsAttribution } from '@mobile/journey/components/response/ResultsAttribution';
 import { SavedPlacePreviewSurface } from '@mobile/saved-places/components/SavedPlacePreviewSurface';
+import { SettingsScreen } from '@mobile/settings/components/SettingsScreen';
 import { WorkingState } from '@mobile/journey/components/response/WorkingState';
 import { useAssistantResponseProjection } from '@mobile/journey/hooks/useAssistantResponseProjection';
 import { useJourneyActions } from '@mobile/journey/hooks/useJourneyActions';
@@ -412,6 +413,7 @@ export function JourneyScreenStateOwner({
         historyUnavailable={historyUnavailable}
         onClose={journey.closeDrawer}
         onNewSearch={reset}
+        onSettings={journey.openSettings}
         onViewChange={journey.setDrawerView}
         conditions={journey.conditions}
         savedConditions={persistedPreferences.savedConditions}
@@ -428,6 +430,7 @@ export function JourneyScreenStateOwner({
           ? { onSavedPlaceSelect: savedPlaceUi.selectDrawerItem }
           : {})}
       />
+      <SettingsScreen onClose={journey.closeSettings} open={journey.settingsOpen} />
     </Canvas>
   );
 }

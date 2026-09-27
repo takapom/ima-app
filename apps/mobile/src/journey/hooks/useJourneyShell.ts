@@ -20,6 +20,8 @@ export type JourneyShellController = JourneyShellState & {
   readonly toggleDrawer: () => void;
   readonly closeDrawer: () => void;
   readonly setDrawerView: (view: DrawerView) => void;
+  readonly openSettings: () => void;
+  readonly closeSettings: () => void;
   readonly reset: () => void;
 };
 
@@ -57,6 +59,8 @@ export const useJourneyShell = (
     (view: DrawerView) => dispatch({ type: 'setDrawerView', view }),
     [],
   );
+  const openSettings = useCallback(() => dispatch({ type: 'openSettings' }), []);
+  const closeSettings = useCallback(() => dispatch({ type: 'closeSettings' }), []);
   const reset = useCallback(() => dispatch({ type: 'reset' }), []);
 
   return {
@@ -73,6 +77,8 @@ export const useJourneyShell = (
     toggleDrawer,
     closeDrawer,
     setDrawerView,
+    openSettings,
+    closeSettings,
     reset,
   };
 };

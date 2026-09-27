@@ -125,7 +125,7 @@ export default tseslint.config(
   {
     files: [
       'apps/mobile/App.tsx',
-      'apps/mobile/src/{journey,saved-places,preferences}/{components,hooks,state}/**/*.{ts,tsx}',
+      'apps/mobile/src/{journey,saved-places,preferences,settings}/{components,hooks,state}/**/*.{ts,tsx}',
       'apps/mobile/src/ui/Canvas.tsx',
       'apps/mobile/src/composition/hooks/**/*.{ts,tsx}',
     ],
@@ -137,7 +137,7 @@ export default tseslint.config(
   {
     files: [
       'apps/mobile/App.tsx',
-      'apps/mobile/src/{journey,saved-places,preferences}/{components,hooks,state}/**/*.{ts,tsx}',
+      'apps/mobile/src/{journey,saved-places,preferences,settings}/{components,hooks,state}/**/*.{ts,tsx}',
       'apps/mobile/src/ui/Canvas.tsx',
       'apps/mobile/src/composition/hooks/**/*.{ts,tsx}',
     ],

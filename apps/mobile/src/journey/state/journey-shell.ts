@@ -37,6 +37,7 @@ export type JourneyShellState = {
   readonly conditionScope: ConditionScope;
   readonly drawerOpen: boolean;
   readonly drawerView: DrawerView;
+  readonly settingsOpen: boolean;
   readonly errorMessage: string | null;
 };
 
@@ -57,6 +58,8 @@ export type JourneyShellAction =
   | { readonly type: 'toggleDrawer' }
   | { readonly type: 'closeDrawer' }
   | { readonly type: 'setDrawerView'; readonly view: DrawerView }
+  | { readonly type: 'openSettings' }
+  | { readonly type: 'closeSettings' }
   | { readonly type: 'reset' };
 
 export const createJourneyShellState = (
@@ -73,6 +76,7 @@ export const createJourneyShellState = (
   conditionScope: 'thread',
   drawerOpen: false,
   drawerView: 'home',
+  settingsOpen: false,
   errorMessage: null,
 });
 
@@ -156,6 +160,11 @@ export const journeyShellReducer = (
       return { ...state, drawerOpen: false };
     case 'setDrawerView':
       return { ...state, drawerView: action.view };
+    // 設定はDrawerからの行き先。全画面が覆うため、戻り先はDrawerではなく会話にする。
+    case 'openSettings':
+      return { ...state, settingsOpen: true, drawerOpen: false };
+    case 'closeSettings':
+      return { ...state, settingsOpen: false };
     case 'reset':
       return createJourneyShellState(state.savedConditions);
   }

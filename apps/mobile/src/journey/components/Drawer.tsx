@@ -24,6 +24,7 @@ type DrawerProps = {
   readonly savedPlacesUnavailable?: boolean;
   readonly onClose: () => void;
   readonly onNewSearch: () => void;
+  readonly onSettings: () => void;
   readonly onViewChange: (view: DrawerView) => void;
   readonly conditions: JourneyConditions;
   readonly savedConditions: JourneyConditions;
@@ -52,6 +53,7 @@ export function Drawer({
   savedPlacesUnavailable = false,
   onClose,
   onNewSearch,
+  onSettings,
   onViewChange,
   conditions,
   savedConditions,
@@ -136,6 +138,7 @@ export function Drawer({
               savedPlaces={savedPlaces}
               onConditions={() => onViewChange('conditions')}
               onNewSearch={onNewSearch}
+              onSettings={onSettings}
               onViewChange={onViewChange}
             />
           ) : view === 'history' ? (
@@ -205,6 +208,7 @@ type HomeViewProps = {
   readonly historyUnavailable: boolean;
   readonly savedPlaces: readonly SavedPlaceItem[];
   readonly onNewSearch: () => void;
+  readonly onSettings: () => void;
   readonly onViewChange: (view: DrawerView) => void;
   readonly onConditions: () => void;
 };
@@ -217,6 +221,7 @@ function HomeView({
   savedPlaces,
   onConditions,
   onNewSearch,
+  onSettings,
   onViewChange,
 }: HomeViewProps): React.JSX.Element {
   return (
@@ -275,6 +280,13 @@ function HomeView({
           style={({ pressed }) => [styles.navRow, pressed && styles.rowPressed]}
         >
           <Text style={styles.navText}>条件</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onSettings}
+          style={({ pressed }) => [styles.navRow, pressed && styles.rowPressed]}
+        >
+          <Text style={styles.navText}>設定</Text>
         </Pressable>
       </View>
     </View>
