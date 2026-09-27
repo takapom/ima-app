@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-15 -95.5 420 420" width="1024" height="1024">
+  <rect x="-15" y="-95.5" width="420" height="420" fill="#0c0c0d"/>
+  <g fill="none" stroke="#ecebe6" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M40 110V200"/>
+    <path d="M90 200V140A30 30 0 0 1 150 140V200M150 140A30 30 0 0 1 210 140V200"/>
+    <circle cx="305" cy="155" r="45"/>
+    <path d="M350 110V200"/>
+  </g>
+  <circle cx="40" cy="68" r="15" fill="#ecebe6"/>
+  <g fill="#fbfaf6">
+    <ellipse cx="161" cy="48" rx="27" ry="32"/>
+    <ellipse cx="229" cy="48" rx="27" ry="32"/>
+  </g>
+  <g fill="#161616">
+    <circle cx="164" cy="63" r="14"/>
+    <circle cx="226" cy="63" r="14"/>
+  </g>
+  <g fill="#fbfaf6">
+    <circle cx="158.7" cy="57.7" r="4.2"/>
+    <circle cx="220.7" cy="57.7" r="4.2"/>
+  </g>
+</svg>
