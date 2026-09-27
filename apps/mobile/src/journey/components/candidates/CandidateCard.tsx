@@ -117,30 +117,35 @@ export function CandidateCard({
           accessibilityRole="button"
           hitSlop={4}
           onPress={openDetails}
-          style={({ pressed }) => [styles.peekAction, pressed && styles.pressed]}
+          disabled={onOpenDetail === undefined}
+          style={({ pressed }) => [
+            styles.peekAction,
+            onOpenDetail === undefined && styles.disabled,
+            pressed && styles.pressed,
+          ]}
         >
           <Text style={styles.peekActionText}>{actions.peek.label}</Text>
           <Icon name="chevron" size={11} color={colors.ink} />
         </Pressable>
-        <Pressable
-          accessibilityLabel={actions.save.accessibilityLabel}
-          accessibilityRole="button"
-          disabled={saveAction === undefined}
-          hitSlop={4}
-          onPress={saveAction}
-          style={({ pressed }) => [
-            styles.saveAction,
-            actions.save.emphasized && styles.saveActionEmphasized,
-            saveAction === undefined && styles.disabled,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Icon
-            name="bookmark"
-            size={15}
-            color={actions.save.emphasized ? colors.ink : colors.muted}
-          />
-        </Pressable>
+        {saveAction === undefined ? null : (
+          <Pressable
+            accessibilityLabel={actions.save.accessibilityLabel}
+            accessibilityRole="button"
+            hitSlop={4}
+            onPress={saveAction}
+            style={({ pressed }) => [
+              styles.saveAction,
+              actions.save.emphasized && styles.saveActionEmphasized,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Icon
+              name="bookmark"
+              size={15}
+              color={actions.save.emphasized ? colors.ink : colors.muted}
+            />
+          </Pressable>
+        )}
       </View>
     </View>
   );

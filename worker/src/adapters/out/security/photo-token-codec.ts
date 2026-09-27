@@ -172,6 +172,7 @@ export const createPhotoTokenCodec = (options: {
           revision: parsed.output.revision,
           deviceIdHash: payload.d,
           photoRef: parsed.output.photoRef,
+          ...(parsed.output.persist === true ? { persist: true } : {}),
           expiresAt,
         },
         now,

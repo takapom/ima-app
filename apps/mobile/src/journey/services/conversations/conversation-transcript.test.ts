@@ -32,6 +32,40 @@ const message: PublicMessage = {
   },
 };
 describe('conversation display projection', () => {
+  it('preserves card snapshots when live text overlays the saved answer', () => {
+    const card = {
+      kind: 'card_set' as const,
+      threadId: 'thread',
+      cardSetId: 'cards',
+      revision: 2,
+      photosExpireAt: null,
+      cards: {
+        hero: {
+          candidateId: 'shop',
+          facts: { identity: { status: 'unknown' as const, reason: '期限切れ' } },
+          why: message,
+        },
+        alts: [],
+      },
+    };
+    const record = {
+      ...saved,
+      message: { ...saved.message, parts: [...saved.message.parts, card] },
+    };
+    const live = {
+      responseId: 'response',
+      turnId: 'turn',
+      revision: 2,
+      declaredCardSetId: 'cards',
+      cardSetId: 'cards',
+      message,
+    };
+    expect(conversationTranscriptParts(record, [live])).toEqual([
+      { kind: 'retained_text', text: message.text, retention: message.retention },
+      card,
+    ]);
+    expect(conversationTranscriptEntries([record], [], null)[0]?.parts).toContainEqual(card);
+  });
   it('shows unsynced current-turn text once, never persists it, and excludes expired or other-turn text', () => {
     const live = {
       responseId: 'response',

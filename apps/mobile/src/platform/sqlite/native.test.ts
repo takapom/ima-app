@@ -148,6 +148,41 @@ describe('native SQLite adapter', () => {
     nextLocalSavedEntryId: () => asLocal('local-native'),
   });
 
+  it('exposes the owner-scoped conversation cache through native transactions', () => {
+    const adapter = createNativeSqliteAdapter(optionsFor(driverFor()));
+    const cache = adapter.initialize().conversations;
+    if (cache === undefined) throw new Error('CONVERSATION_CACHE_MISSING');
+    const at = '2026-09-08T04:30:00+09:00';
+    const conversation = {
+      conversationId: 'conversation',
+      title: '会話',
+      createdAt: at,
+      updatedAt: at,
+      revision: 2,
+      lastSequence: 1,
+    };
+    cache.setRecent([conversation]);
+    cache.write(conversation, [
+      {
+        conversationId: 'conversation',
+        sequence: 1,
+        createdAt: at,
+        message: {
+          messageId: 'message',
+          role: 'user',
+          source: null,
+          parts: [{ kind: 'user_text', text: '端末の会話' }],
+        },
+      },
+    ]);
+    cache.markComplete(conversation);
+    expect(cache.page('conversation').messages).toHaveLength(1);
+    expect(cache.completeRevision('conversation')).toBe(2);
+    expect(harnesses[0]?.transactions).toBeGreaterThanOrEqual(5);
+    adapter.close();
+    expect(() => cache.page('conversation')).toThrow('SQLITE_CLOSED');
+  });
+
   it('translates sync statements, serializes operations, and supports close/reopen', () => {
     const adapter = createNativeSqliteAdapter(optionsFor(driverFor()));
     expect(adapter.isInitialized()).toBe(false);

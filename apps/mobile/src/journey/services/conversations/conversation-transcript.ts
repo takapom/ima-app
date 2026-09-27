@@ -14,11 +14,16 @@ export const conversationTranscriptParts = (
   );
   return live.length === 0
     ? record.message.parts
-    : live.map(({ message }) => ({
-        kind: 'retained_text',
-        text: message.text,
-        retention: message.retention,
-      }));
+    : [
+        ...live.map(({ message }) => ({
+          kind: 'retained_text' as const,
+          text: message.text,
+          retention: message.retention,
+        })),
+        ...record.message.parts.filter(
+          (part) => part.kind === 'card_set' || part.kind === 'card_set_reference',
+        ),
+      ];
 };
 
 /** Unsynced live text is a display row only; it never enters the persisted message collection. */

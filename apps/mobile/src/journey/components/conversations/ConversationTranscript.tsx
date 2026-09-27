@@ -1,3 +1,5 @@
+import { HistoricalCards } from '@mobile/journey/components/conversations/HistoricalCards';
+import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { AssistantMessageRecord } from '@mobile/journey/state/assistant-response';
 import { conversationTranscriptEntries } from '@mobile/journey/services/conversations/conversation-transcript';
@@ -7,6 +9,8 @@ import { AttributionList } from '@mobile/ui/AttributionList';
 
 export function ConversationTranscript({
   messages,
+  liveCardSetId,
+  photoClient,
   liveMessages,
   loading,
   hasOlder,
@@ -16,6 +20,8 @@ export function ConversationTranscript({
   unsyncedTurnId,
   onRetrySync,
 }: {
+  readonly liveCardSetId: string | null;
+  readonly photoClient?: JourneyPhotoClient;
   readonly messages: readonly ConversationMessage[];
   readonly liveMessages: readonly AssistantMessageRecord[];
   readonly loading: boolean;
@@ -60,6 +66,19 @@ export function ConversationTranscript({
                   />
                 ) : null}
               </View>
+            ) : part.kind === 'card_set' ? (
+              part.cardSetId === liveCardSetId ? null : (
+                <HistoricalCards
+                  key={part.cardSetId}
+                  part={part}
+                  onSourcePress={onSourcePress}
+                  {...(photoClient === undefined ? {} : { photoClient })}
+                />
+              )
+            ) : part.kind === 'card_set_reference' ? (
+              <Text key={index} style={styles.muted}>
+                この提案の店舗情報は保存されていません。
+              </Text>
             ) : part.kind === 'unavailable' ? (
               <Text key={index} style={styles.muted}>
                 {part.reason === 'expired'

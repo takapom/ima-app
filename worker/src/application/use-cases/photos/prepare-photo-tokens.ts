@@ -12,6 +12,7 @@ export type PhotoTokenObservation = {
   readonly photoRef: string;
   /** The source observation may be projected only while its display policy allows it. */
   readonly displayAllowed: boolean;
+  readonly persistUntil?: string | null;
   readonly sessionExpiresAt: string;
   readonly displayUntil: string | null;
   readonly providerExpiresAt: string | null;
@@ -51,6 +52,7 @@ const PhotoTokenObservationSchema = v.strictObject({
   candidateId: OpaqueIdSchema,
   photoRef: v.pipe(v.string(), v.minLength(1), v.maxLength(512)),
   displayAllowed: v.boolean(),
+  persistUntil: v.optional(v.nullable(IsoTimestampSchema), null),
   sessionExpiresAt: IsoTimestampSchema,
   displayUntil: v.nullable(IsoTimestampSchema),
   providerExpiresAt: v.nullable(IsoTimestampSchema),
@@ -67,6 +69,7 @@ type PreparedObservation = {
   readonly candidateId: string;
   readonly photoRef: string;
   readonly expiresAtMilliseconds: number;
+  readonly persist: boolean;
 };
 
 const prepareObservation = (
@@ -87,6 +90,7 @@ const prepareObservation = (
     if (providerExpiry === undefined) return null;
     bounds.push(providerExpiry);
   }
+  if (parsed.output.persistUntil !== null) bounds.push(Date.parse(parsed.output.persistUntil));
   if (bounds.some((bound) => bound === undefined)) return null;
   const expiresAtMilliseconds = Math.min(
     ...bounds.filter((bound): bound is number => bound !== undefined),
@@ -96,6 +100,7 @@ const prepareObservation = (
     candidateId: parsed.output.candidateId,
     photoRef: parsed.output.photoRef,
     expiresAtMilliseconds,
+    persist: parsed.output.persistUntil !== null,
   };
 };
 
@@ -132,6 +137,7 @@ export const preparePhotoTokens = async (
     }
     prepared.set(key, {
       ...previous,
+      persist: previous.persist && next.persist,
       expiresAtMilliseconds: Math.min(previous.expiresAtMilliseconds, next.expiresAtMilliseconds),
     });
   }
@@ -149,6 +155,7 @@ export const preparePhotoTokens = async (
         revision: context.sourceRevision,
         deviceId: context.deviceId,
         photoRef: observation.photoRef,
+        ...(observation.persist ? { persist: true } : {}),
         expiresAt: new Date(observation.expiresAtMilliseconds).toISOString(),
       },
       context.now,

@@ -1,7 +1,5 @@
 import type {
-  Conversation,
   ConversationMessage,
-  ConversationRun,
   ConversationRunResponse,
   ConversationTurnRequest,
 } from '@ima/contracts';
@@ -18,39 +16,17 @@ import {
 } from '@mobile/journey/state/assistant-response';
 import { retainConversationMessage } from '@mobile/journey/services/conversations/conversation-retention';
 
-export type ConversationState = {
-  readonly conversations: readonly Conversation[];
-  readonly selected: Conversation | null;
-  readonly messages: readonly ConversationMessage[];
-  readonly run: ConversationRun | null;
-  readonly responseState: AssistantResponseState | null;
-  readonly loading: boolean;
-  readonly pending: boolean;
-  readonly listError: boolean;
-  readonly error: string | null;
-  readonly syncError: string | null;
-  readonly nextCursor: string | null;
-  readonly beforeSequence: number | null;
-};
-const initialState = (): ConversationState => ({
-  conversations: [],
-  selected: null,
-  messages: [],
-  run: null,
-  responseState: null,
-  loading: false,
-  pending: false,
-  listError: false,
-  error: null,
-  syncError: null,
-  nextCursor: null,
-  beforeSequence: null,
-});
-const pendingRun = (run: ConversationRun | null) =>
-  run?.status === 'accepted' || run?.status === 'running';
+import {
+  initialState,
+  pendingRun,
+  type ConversationState,
+} from '@mobile/journey/services/conversations/conversation-state';
+import { ConversationHistory } from '@mobile/journey/services/conversations/conversation-history';
+export type { ConversationState } from '@mobile/journey/services/conversations/conversation-state';
 
 export class ConversationController {
   private state = initialState();
+  private readonly history: ConversationHistory;
   private readonly listeners = new Set<() => void>();
   private epoch = 0;
   private listEpoch = 0;
@@ -67,7 +43,9 @@ export class ConversationController {
       readonly now: () => string;
       readonly onDisplay: (state: AssistantResponseState | null) => void;
     },
-  ) {}
+  ) {
+    this.history = new ConversationHistory(options.client, options.cache);
+  }
   reportError = (): void => {
     this.update({
       loading: false,
@@ -94,10 +72,13 @@ export class ConversationController {
     this.abort = new AbortController();
     return ++this.epoch;
   }
-  private cacheCurrent(): void {
+  private cacheCurrent(
+    messages: readonly ConversationMessage[] = this.state.messages.slice(-50),
+  ): void {
     if (this.state.selected === null) return;
     try {
-      this.options.cache?.write(this.state.selected, this.state.messages);
+      this.options.cache?.write(this.state.selected, messages);
+      this.options.cache?.markComplete(this.state.selected);
     } catch {
       this.update({
         error: '端末に履歴を保存できませんでした。会話はサーバーに保存されています。',
@@ -106,6 +87,10 @@ export class ConversationController {
   }
   async activate(): Promise<void> {
     this.disposed = false;
+    this.history.activate();
+    void this.history
+      .purge()
+      .catch(() => this.update({ error: '端末の履歴保存を利用できません。' }));
     try {
       this.update({ conversations: this.options.cache?.list() ?? [] });
     } catch {
@@ -132,11 +117,11 @@ export class ConversationController {
         nextCursor: page.nextCursor,
         listError: false,
       });
-      try {
-        for (const conversation of page.conversations) this.options.cache?.write(conversation, []);
-      } catch {
-        this.update({ error: '端末の履歴保存を利用できません。' });
-      }
+      if (!more)
+        void this.history.prefetch(page.conversations).catch(() => {
+          if (!this.disposed && epoch === this.listEpoch)
+            this.update({ syncError: '端末への履歴保存を完了できませんでした。再取得できます。' });
+        });
     } catch {
       if (!this.disposed && epoch === this.listEpoch) this.update({ listError: true });
     }
@@ -166,8 +151,11 @@ export class ConversationController {
       this.draft = null;
     }
     let cached: readonly ConversationMessage[] = [];
+    let cachedBefore: number | null = null;
     try {
-      cached = this.options.cache?.messages(id) ?? [];
+      const page = this.options.cache?.page(id);
+      cached = page?.messages ?? [];
+      cachedBefore = page?.nextBeforeSequence ?? null;
     } catch {
       /* Network read below supplies the authoritative state. */
     }
@@ -182,15 +170,12 @@ export class ConversationController {
       loading: true,
       pending: false,
       error: null,
-      beforeSequence: null,
+      beforeSequence: cachedBefore,
     });
     try {
-      const [detail, page] = await Promise.all([
-        this.options.client.get(id, { signal: this.abort.signal }),
-        this.options.client.messages(id, null, { signal: this.abort.signal }),
-      ]);
-      const selected = resultData(detail);
-      const messages = resultData(page);
+      const selected = resultData(await this.options.client.get(id, { signal: this.abort.signal }));
+      if (!this.current(epoch)) return;
+      const messages = await this.history.page(selected.conversation, null, this.abort.signal);
       if (!this.current(epoch)) return;
       if (
         selected.conversation.conversationId !== id ||
@@ -207,7 +192,7 @@ export class ConversationController {
         beforeSequence: messages.nextBeforeSequence,
         syncError: null,
       });
-      this.cacheCurrent();
+      this.cacheCurrent(messages.messages);
       if (run !== null && pendingRun(run)) await this.watch(id, run.runId, epoch);
     } catch (error) {
       if (!this.current(epoch)) return;
@@ -237,13 +222,12 @@ export class ConversationController {
   async older(): Promise<void> {
     const id = this.state.selected?.conversationId;
     const before = this.state.beforeSequence;
-    if (id === undefined || before === null || this.state.loading) return;
+    const selected = this.state.selected;
+    if (id === undefined || selected === null || before === null || this.state.loading) return;
     const epoch = this.epoch;
     this.update({ loading: true });
     try {
-      const page = resultData(
-        await this.options.client.messages(id, before, { signal: this.abort.signal }),
-      );
+      const page = await this.history.page(selected, before, this.abort.signal);
       if (!this.current(epoch)) return;
       if (page.messages.some((item) => item.conversationId !== id))
         throw new Error('CONVERSATION_SCOPE_MISMATCH');
@@ -252,7 +236,7 @@ export class ConversationController {
         beforeSequence: page.nextBeforeSequence,
         loading: false,
       });
-      this.cacheCurrent();
+      this.cacheCurrent(page.messages);
     } catch {
       if (this.current(epoch))
         this.update({ loading: false, error: '以前の発言を読み込めませんでした。' });
@@ -374,11 +358,15 @@ export class ConversationController {
         if (!this.current(epoch)) return;
         if (page.messages.some((message) => message.conversationId !== value.run.conversationId))
           throw new Error('CONVERSATION_SCOPE_MISMATCH');
+        const messages = mergeMessages(this.state.messages, page.messages);
         this.update({
-          messages: mergeMessages(this.state.messages, page.messages),
-          beforeSequence: this.state.beforeSequence ?? page.nextBeforeSequence,
+          messages,
+          beforeSequence:
+            messages[0]?.sequence === 1
+              ? null
+              : (this.state.beforeSequence ?? page.nextBeforeSequence),
         });
-        this.cacheCurrent();
+        this.cacheCurrent(page.messages);
         await this.refreshList();
         if (this.current(epoch)) this.update({ syncError: null });
       } catch {
@@ -466,11 +454,9 @@ export class ConversationController {
     }
   }
   expire(): void {
-    try {
-      this.options.cache?.cleanup();
-    } catch {
-      this.update({ error: '端末の履歴保存を利用できません。' });
-    }
+    void this.history
+      .purge()
+      .catch(() => this.update({ error: '端末の履歴保存を利用できません。' }));
     this.update({
       messages: this.state.messages.map((message) =>
         retainConversationMessage(message, this.options.now()),
@@ -479,6 +465,7 @@ export class ConversationController {
   }
   dispose(): void {
     this.disposed = true;
+    this.history.dispose();
     this.invalidate();
     this.listEpoch++;
     this.listeners.clear();

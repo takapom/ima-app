@@ -23,6 +23,21 @@ const observation = {
 };
 
 describe('photo token issuance through the application port', () => {
+  it('allows durable references only with explicit retention permission and caps their lifetime', async () => {
+    const issue = vi.fn<PhotoTokenIssuer['issue']>(() =>
+      Promise.resolve({ status: 'issued', token: 'token' }),
+    );
+    const allowed = { ...observation, persistUntil: '2026-09-10T12:03:00.000Z' };
+    await preparePhotoTokens({ issue }, [allowed], context);
+    expect(issue).toHaveBeenLastCalledWith(
+      expect.objectContaining({ persist: true, expiresAt: allowed.persistUntil }),
+      context.now,
+    );
+    issue.mockClear();
+    await preparePhotoTokens({ issue }, [allowed, { ...observation, persistUntil: null }], context);
+    expect(issue.mock.calls[0]?.[0].persist).toBeUndefined();
+  });
+
   it('intersects duplicate evidence lifetimes before issuing one scoped token', async () => {
     const issue = vi.fn<PhotoTokenIssuer['issue']>(() =>
       Promise.resolve({ status: 'issued', token: 'token' }),

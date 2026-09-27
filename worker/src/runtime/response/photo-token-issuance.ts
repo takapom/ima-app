@@ -50,6 +50,12 @@ export const collectPhotoTokenObservations = (
     scope: input.scope,
     now: input.now,
     photosEnabled: input.photosEnabled,
+    persistenceAllowedFor: (source) => {
+      const snapshot = input.displayPolicyFor(source);
+      return (
+        snapshot !== undefined && runtimePolicyAllows(snapshot.policy, 'persistence', snapshot.mode)
+      );
+    },
     displayAllowedFor: (source) => {
       const snapshot = input.displayPolicyFor(source);
       return (

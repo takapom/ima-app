@@ -118,7 +118,23 @@ const transactionalStoreFor = (
     return outcome.value;
   };
 
+  const cache = store.conversations;
   return {
+    ...(cache === undefined
+      ? {}
+      : {
+          conversations: {
+            list: () => transaction(() => cache.list()),
+            setRecent: (conversations) => transaction(() => cache.setRecent(conversations)),
+            page: (id, before) => transaction(() => cache.page(id, before)),
+            completeRevision: (id) => transaction(() => cache.completeRevision(id)),
+            markComplete: (conversation) => transaction(() => cache.markComplete(conversation)),
+            write: (conversation, messages) =>
+              transaction(() => cache.write(conversation, messages)),
+            remove: (id) => transaction(() => cache.remove(id)),
+            cleanup: () => transaction(() => cache.cleanup()),
+          },
+        }),
     savePlace: (input) => transaction(() => store.savePlace(input)),
     listSavedPlaces: () => transaction(() => store.listSavedPlaces()),
     listTonightDecisions: () => transaction(() => store.listTonightDecisions()),

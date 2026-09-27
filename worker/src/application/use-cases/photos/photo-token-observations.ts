@@ -12,6 +12,7 @@ export type PhotoTokenEvidenceSource = {
   /** Capability is explicit; an omitted/false gate must never issue photo handles. */
   readonly photosEnabled: boolean;
   /** Display policy is resolved per observation and is independent from model/persistence policy. */
+  readonly persistenceAllowedFor: (source: ReadonlyStoredObservation) => boolean;
   readonly displayAllowedFor: (source: ReadonlyStoredObservation) => boolean;
 };
 
@@ -72,6 +73,20 @@ export const collectPhotoTokenObservations = (
           candidateId: card.candidateId,
           photoRef: photo.photoRef,
           displayAllowed,
+          persistUntil:
+            input.persistenceAllowedFor(source) &&
+            source.retention.retentionDecision === 'allow' &&
+            source.retention.restoreMode === 'full' &&
+            source.retention.policyStatus === 'available' &&
+            source.retention.retentionUntil !== null &&
+            source.retention.deletionScheduledAt !== null
+              ? new Date(
+                  Math.min(
+                    Date.parse(source.retention.retentionUntil),
+                    Date.parse(source.retention.deletionScheduledAt),
+                  ),
+                ).toISOString()
+              : null,
           sessionExpiresAt: source.retention.sessionExpiresAt,
           displayUntil: source.retention.displayUntil,
           providerExpiresAt: source.expiresAt,

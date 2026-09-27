@@ -42,6 +42,8 @@ export function ConversationJourneyScreen({
         renderTranscript: (liveMessages, onSourcePress) => (
           <ConversationTranscript
             messages={state.messages}
+            liveCardSetId={state.responseState?.cardSetId ?? null}
+            {...(binding.photoClient === undefined ? {} : { photoClient: binding.photoClient })}
             liveMessages={liveMessages}
             onSourcePress={onSourcePress}
             syncError={state.syncError}

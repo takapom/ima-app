@@ -151,6 +151,7 @@ describe('preparePhotoTokens', () => {
         candidateId: 'candidate-a',
         photoRef: 'places/A/photos/one',
         displayAllowed: true,
+        persistUntil: '2026-09-10T12:45:00.000Z',
         sessionExpiresAt: '2026-09-10T13:00:00Z',
         displayUntil: '2026-09-10T12:30:00Z',
         providerExpiresAt: '2026-09-10T12:25:00Z',
@@ -210,6 +211,18 @@ describe('preparePhotoTokens', () => {
     const prepared = await preparePhotoTokens(makeIssuer(issue), observations, CONTEXT);
     expect(issue).toHaveBeenCalledTimes(1);
     expect(prepared.resolve('candidate-a', 'places/A/photos/one')).toBe('display-token');
+  });
+
+  it('does not persist displayable references when runtime persistence policy denies them', () => {
+    const observations = collectPhotoTokenObservations(photoResponse, {
+      registry: photoRegistry(photoObservation),
+      scope: { ownerScopeRef: CONTEXT.ownerScopeRef, threadId: CONTEXT.threadId },
+      now: CONTEXT.now,
+      photosEnabled: true,
+      displayPolicyFor: () =>
+        photoDisplayPolicy({}, policyRecord({ decision: 'deny', policyStatus: 'policy_withheld' })),
+    });
+    expect(observations[0]).toMatchObject({ displayAllowed: true, persistUntil: null });
   });
 
   it('withholds when display policy is unknown even if other uses allow the field', () => {

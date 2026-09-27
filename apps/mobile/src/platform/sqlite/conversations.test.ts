@@ -69,13 +69,14 @@ describe('conversation SQLite cache', () => {
           },
         },
       ];
+      cache.setRecent([conversation]);
       cache.write(conversation, messages);
       expect(
-        createConversationCache(connection(db), { now: () => now }).messages('conversation'),
+        createConversationCache(connection(db), { now: () => now }).page('conversation').messages,
       ).toEqual(messages);
       expect(createConversationCache(connection(other), { now: () => now }).list()).toEqual([]);
       now = '2026-09-22T10:00:00.000Z';
-      const expired = cache.messages('conversation');
+      const expired = cache.page('conversation').messages;
       expect(expired[0]?.message.parts).toEqual(messages[0]?.message.parts);
       expect(expired[1]?.message.parts).toEqual([{ kind: 'unavailable', reason: 'expired' }]);
       expect(
@@ -83,7 +84,7 @@ describe('conversation SQLite cache', () => {
       ).not.toContain('期限付きの回答');
       cache.remove('conversation');
       expect(cache.list()).toEqual([]);
-      expect(cache.messages('conversation')).toEqual([]);
+      expect(cache.page('conversation').messages).toEqual([]);
     } finally {
       db.close();
       other.close();

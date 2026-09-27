@@ -20,8 +20,8 @@ import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 
 type CandidateDetailSheetProps = {
   readonly detail: ReturnType<typeof useCandidateDetail>;
-  readonly onDecide: (candidateId: string) => void;
-  readonly onSave: (card: PublicCard) => void;
+  readonly onDecide?: (candidateId: string) => void;
+  readonly onSave?: (card: PublicCard) => void;
   readonly onSourcePress: (sourceLink: string) => void;
   readonly photoClient?: JourneyPhotoClient | undefined;
 };
@@ -44,7 +44,11 @@ export function CandidateDetailSheet({
   const view = toCandidateDetailViewModel(card, detail.now);
   const { sourceUrl } = view;
   const photos = candidateDetailPhotos(card, detail.photos, photoClient, detail.now);
-  const handlers = { decide: () => onDecide(card.candidateId), save: () => onSave(card) };
+  const handlers = {
+    decide: onDecide === undefined ? undefined : () => onDecide(card.candidateId),
+    save: onSave === undefined ? undefined : () => onSave(card),
+  };
+  const actions = detailActions(view).filter((action) => handlers[action.kind] !== undefined);
   const openSource = (url: string): void => {
     close();
     onSourcePress(url);
@@ -127,27 +131,29 @@ export function CandidateDetailSheet({
             />
           </View>
         </ScrollView>
-        <View style={styles.actions}>
-          {detailActions(view).map((action, index) => (
-            <Pressable
-              key={action.kind}
-              accessibilityRole="button"
-              onPress={() => {
-                close();
-                handlers[action.kind]();
-              }}
-              style={({ pressed }) => [
-                styles.action,
-                index === 0 ? styles.primary : styles.secondary,
-                pressed && styles.dimmed,
-              ]}
-            >
-              <Text style={index === 0 ? styles.primaryText : styles.secondaryText}>
-                {action.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        {actions.length > 0 ? (
+          <View style={styles.actions}>
+            {actions.map((action, index) => (
+              <Pressable
+                key={action.kind}
+                accessibilityRole="button"
+                onPress={() => {
+                  close();
+                  handlers[action.kind]?.();
+                }}
+                style={({ pressed }) => [
+                  styles.action,
+                  index === 0 ? styles.primary : styles.secondary,
+                  pressed && styles.dimmed,
+                ]}
+              >
+                <Text style={index === 0 ? styles.primaryText : styles.secondaryText}>
+                  {action.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </View>
     </>
   );

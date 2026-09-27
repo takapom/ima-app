@@ -13,6 +13,7 @@ it('restores photo handles after reconstruction, isolates owners/devices and del
     const expiresAt = '2026-09-22T10:30:00Z';
     const record = {
       handle: 'h'.repeat(22),
+      persist: true,
       ownerScopeRef: 'owner',
       threadId: 'thread',
       deviceIdHash: 'd'.repeat(22),
@@ -21,6 +22,15 @@ it('restores photo handles after reconstruction, isolates owners/devices and del
     };
     const store = createSqlPhotoReferenceStore(state.storage);
     await store.put(record, now);
+    const withheld = { ...record, handle: 'w'.repeat(22), persist: false };
+    await store.put(withheld, now);
+    expect(await store.get(withheld.handle, now, withheld)).toEqual(withheld);
+    expect(
+      await createSqlPhotoReferenceStore(state.storage).get(withheld.handle, now, withheld),
+    ).toBeUndefined();
+    expect(state.storage.sql.exec('SELECT COUNT(*) AS count FROM photo_references').one()).toEqual({
+      count: 1,
+    });
     await expect(store.put(record, now)).rejects.toThrow('REFERENCE_CONFLICT');
     const restored = createSqlPhotoReferenceStore(state.storage);
     expect(await restored.get(record.handle, now, record)).toEqual(record);

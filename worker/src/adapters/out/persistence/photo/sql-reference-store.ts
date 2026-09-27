@@ -1,5 +1,6 @@
 import type { Lifecycle } from 'agents/lifecycle';
 import { createThreadPhotoReferences } from '@worker/adapters/out/persistence/photo/thread-references';
+import { createMemoryPhotoReferenceStore } from '@worker/adapters/out/persistence/photo/reference-store';
 import * as v from 'valibot';
 import {
   PhotoReferenceRecordSchema,
@@ -11,6 +12,7 @@ import {
 export const createSqlPhotoReferenceStore = (
   storage: Pick<DurableObjectStorage, 'sql' | 'transactionSync'>,
 ) => {
+  const transient = createMemoryPhotoReferenceStore();
   storage.sql.exec(
     'CREATE TABLE IF NOT EXISTS photo_references (handle TEXT PRIMARY KEY, body TEXT NOT NULL, expires_at REAL NOT NULL)',
   );
@@ -22,6 +24,7 @@ export const createSqlPhotoReferenceStore = (
   };
   const store: PhotoReferenceStoreWithClear = {
     put(input, requestedNow = new Date().toISOString()) {
+      if (input.persist !== true) return transient.put(input, requestedNow);
       return Promise.resolve().then(() => {
         const parsed = v.safeParse(PhotoReferenceRecordSchema, input);
         const now = Date.parse(requestedNow);
@@ -56,7 +59,7 @@ export const createSqlPhotoReferenceStore = (
         const row = storage.sql
           .exec<{ body: string }>('SELECT body FROM photo_references WHERE handle = ?', handle)
           .toArray()[0];
-        if (row === undefined) return undefined;
+        if (row === undefined) return transient.get(handle, now, scope);
         const record = v.parse(PhotoReferenceRecordSchema, JSON.parse(row.body));
         return scope !== undefined &&
           (record.ownerScopeRef !== scope.ownerScopeRef ||
@@ -67,7 +70,7 @@ export const createSqlPhotoReferenceStore = (
     },
     clear() {
       storage.sql.exec('DELETE FROM photo_references');
-      return Promise.resolve();
+      return transient.clear();
     },
   };
   return {

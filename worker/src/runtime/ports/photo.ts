@@ -22,6 +22,7 @@ export const PhotoTokenInputSchema = v.strictObject({
   revision: RevisionSchema,
   deviceId: v.pipe(v.string(), v.minLength(1), v.maxLength(160)),
   photoRef: PhotoResourceNameSchema,
+  persist: v.optional(v.boolean()),
   expiresAt: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(40))),
 });
 export type PhotoTokenInput = v.InferOutput<typeof PhotoTokenInputSchema>;
@@ -68,6 +69,7 @@ export type PhotoReferenceRecord = {
   readonly deviceIdHash: string;
   readonly photoRef: string;
   readonly expiresAt: string;
+  readonly persist?: boolean | undefined;
 };
 
 /**
@@ -105,6 +107,7 @@ export const PhotoReferenceRecordSchema = v.strictObject({
   revision: v.optional(RevisionSchema),
   deviceIdHash: v.pipe(v.string(), v.length(22)),
   photoRef: PhotoResourceNameSchema,
+  persist: v.optional(v.boolean()),
   expiresAt: IsoTimestampSchema,
 });
 
