@@ -47,11 +47,6 @@ import { resolveRuntimeProductionReadCost } from '@worker/composition/runtime-pr
 import { createRuntimeProductionPlacePorts } from '@worker/composition/runtime-production-place-ports';
 import { createFactoryContinuation } from '@worker/composition/runtime-production-continuation';
 import { resolveRuntimeOperationalAdmission } from '@worker/composition/runtime-operational-admission';
-import {
-  devFixtureEnvironmentFor,
-  devFixtureOverridesFor,
-  isKeylessDevFixtureEnvironment,
-} from '@worker/composition/runtime-dev-fixture';
 import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
 import type {
   ProductionBuildInput,
@@ -308,17 +303,14 @@ const makeOptions = (
 export const createRuntimeProductionConnectionOptions = (
   input: RuntimeProductionConnectionOptions,
 ): RuntimeThinkConnectionOptions<unknown> | undefined => {
-  const devFixture = isKeylessDevFixtureEnvironment(input.env);
-  const effectiveEnv = devFixture ? devFixtureEnvironmentFor(input.env) : input.env;
-  const configuredOverrides = {
+  const overrides = {
     ...hotPepperRuntimePolicy(input.overrides?.clock ?? productionClock),
     ...input.overrides,
   };
-  const overrides = devFixture ? devFixtureOverridesFor(configuredOverrides) : configuredOverrides;
   const clock = overrides.clock ?? productionClock;
   const monotonicNow = overrides.monotonicNow ?? productionMonotonicNow;
   const admission = resolveRuntimeOperationalAdmission({
-    env: effectiveEnv,
+    env: input.env,
     hasPrepareTurn: overrides.prepareTurn !== undefined,
     hasModelOverride: overrides.prepareTurn !== undefined || overrides.modelForTurn !== undefined,
     hasFetcher: overrides.fetcher !== undefined,
@@ -353,13 +345,5 @@ export const createRuntimeProductionConnectionOptions = (
       ? {}
       : { placesCursorSecret: admission.placesCursorSecret }),
   };
-  return makeOptions(
-    devFixture ? { ...input, env: effectiveEnv } : input,
-    resolvedOverrides,
-    ids,
-    registry,
-    continuation,
-    clock,
-    monotonicNow,
-  );
+  return makeOptions(input, resolvedOverrides, ids, registry, continuation, clock, monotonicNow);
 };

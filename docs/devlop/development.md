@@ -8,41 +8,6 @@ Nodeは[.node-version](../../.node-version)、Bunは[package.json](../../package
 bun install --frozen-lockfile
 ```
 
-## APIキー不要のローカル起動
-
-専用Workerは合成認証値で起動でき、`.dev.vars`は不要。
-既存の`worker/.dev.vars`がある場合は、live credentialやProvider停止設定を混在させない。開発fixtureはliveへフォールバックせず、live credentialが設定されている場合は拒否する。
-
-```sh
-bun run dev:worker:fixture
-```
-
-`apps/mobile/.env.local`へ以下の開発用値を設定する。
-
-```dotenv
-EXPO_PUBLIC_API_MODE=fixture
-EXPO_PUBLIC_ENVIRONMENT=dev
-EXPO_PUBLIC_API_BASE_URL=http://localhost:8787
-EXPO_PUBLIC_APP_VERSION=m28-dev-fixture
-EXPO_PUBLIC_FIXTURE_APP_TOKEN=dev-fixture-app-token
-EXPO_PUBLIC_FIXTURE_DEVICE_ID=dev-fixture-device
-EXPO_PUBLIC_FIXTURE_OWNER_CREDENTIAL=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE
-```
-
-別terminalでExpoを起動する。
-
-```sh
-bun run dev:web
-```
-
-表示されたWeb URLを開き、新規検索で「カフェ」と入力する。設定変更後はExpoを再起動する。
-「アプリ設定を確認してください」が出る場合は`.env.local`、通信エラーならWorkerの8787番での起動を確認する。
-
-fixtureはホットペッパー形式の合成店舗1件を返す。写真は提供しない。
-
-Dev Clientは`bun run dev:mobile`で起動する。同一マシンのWeb/Simulatorはlocalhostを使えるが、実機はHTTPS endpointを必要とし、LAN IPへの平文HTTPは許可しない。fixture設定は配布buildへ使わない。
-実環境の設定は[運用](../operations.md)を参照する。
-
 ## 実LLMとホットペッパーでのローカル起動
 
 `worker/.dev.vars.llm`を作り、次の3項目を設定する。このファイルはGitの追跡対象外で、既存の`.dev.vars`とは別に読み込む。
@@ -61,13 +26,26 @@ PLACES_CURSOR_SECRET=16バイト以上のランダムな秘密値
 bun run dev:worker:llm
 ```
 
-[実LLM用の開発Worker](../../worker/wrangler.dev.jsonc)は固定店舗・固定モデルを持たず、本番のHTTPとDOへlocalhost用CORSを加える。
+[開発専用Worker](../../worker/wrangler.dev.jsonc)は本番のHTTPとDOを使い、localhostからのブラウザ接続だけCORSを許可する。固定店舗・固定モデルは持たない。
 
-アプリは上記の開発用認証と`EXPO_PUBLIC_API_MODE=fixture`を使い、別terminalで`bun run dev:web`を実行する。端末側のモードは接続・認証の設定であり、モデルの選択はWorkerが行う。APIキーはWorkerだけに設定する。
+`apps/mobile/.env.local`へ以下の開発用値を設定し、別terminalで`bun run dev:web`を実行する。
+
+```dotenv
+EXPO_PUBLIC_API_MODE=fixture
+EXPO_PUBLIC_ENVIRONMENT=dev
+EXPO_PUBLIC_API_BASE_URL=http://localhost:8787
+EXPO_PUBLIC_APP_VERSION=dev-local
+EXPO_PUBLIC_FIXTURE_APP_TOKEN=dev-fixture-app-token
+EXPO_PUBLIC_FIXTURE_DEVICE_ID=dev-local-device
+EXPO_PUBLIC_FIXTURE_OWNER_CREDENTIAL=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE
+```
+
+端末側の`fixture`は開発用の接続・認証設定であり、Workerは実モデル・実店舗APIへ接続する。APIキーはWorkerだけに設定する。設定変更後はExpoを再起動する。
+Dev Clientは`bun run dev:mobile`で起動する。同一マシンのWeb/Simulatorはlocalhostを使えるが、実機はHTTPS endpointを必要とし、LAN IPへの平文HTTPは許可しない。上記の開発用認証を配布buildへ使わない。実環境の設定は[運用](../operations.md)を参照する。
 
 新しい会話で「恵比寿のカフェを探して」と入力し、カード表示後に条件変更や質問を試す。LLMが検索語と地域を選び、ホットペッパーの実店舗検索を行う。検索1回で店名・営業時間・予算・設備・写真を登録するため、カードは詳細取得なしで確定できる。店舗IDによる詳細取得は期限切れ項目の取り直しに使う。店舗写真が取得できれば候補カードに表示する。写真tokenの署名には`PHOTO_TOKEN_SECRET`、未設定なら既存の`PLACES_CURSOR_SECRET`を使うため、追加APIキーは不要。掲載営業時間は表示するが、現在営業中・到着時の営業・ラストオーダーは未確認として扱う。徒歩経路・終電・保存一覧からの店舗再取得はこの構成では無効。Google API実装と接続設定は削除している。
 
-キー不足・無効キー・API障害はエラーになり、固定モデルへ切り替わらない。キーなし起動へ戻す場合はWorkerを終了し、`bun run dev:worker:fixture`で起動する。
+キー不足・無効キー・API障害はエラーになり、固定モデルへ切り替わらない。APIキーなしで固定応答を返す起動経路は設けない。
 
 検索・会話の待機上限は[Workerのターン予算](../../worker/src/runtime/budget/runtime-budget.ts)、[モデル呼び出し](../../worker/src/runtime/turn-execution/runtime-model-guard.ts)、[端末のHTTPクライアント](../../apps/mobile/src/platform/http/client.ts)で管理する。時間切れの診断ログは`kind: "timeout"`、`code: "MODEL_STREAM_TIMEOUT"`となる。待機設定を変更した場合はWorkerとExpoの両方を再起動する。
 
@@ -85,7 +63,7 @@ bun run dev:worker:llm
 | `bun run lint`         | 型付きESLint、Hooks、500行制限、disable理由、違反fixture   |
 | `bun run architecture` | 解決済み依存グラフ、manifest、公開exports、境界違反fixture |
 | `bun run typecheck`    | 3 workspace、rootと関連toolingのTypeScript                 |
-| `bun run test`         | 単体、App Integrity、Worker HTTP、実SDK/DO、開発fixture    |
+| `bun run test`         | 単体、App Integrity、Worker HTTP、実SDK/DO、開発用HTTP     |
 | `bun run build`        | 各workspaceのbuild。Workerはdeploy dry-run                 |
 | `bun run commit-size`  | 各コミットの追加＋削除行数                                 |
 
@@ -103,8 +81,8 @@ bun run dev:worker:llm
 ## 検証の使い分け
 
 - Core/公開schemaの境界は単体試験、SDKの保存前制御・Tool限定・再送はWorker/DOの統合fixtureで検証する。
-- `bun run test:runtime-native`は本番構成・HTTP・開発fixtureを含むSDK検証。固定モデルやmock fetchの成功を実API成功に数えない。
-- 実モデル評価・実店舗接続・実機・配布は[運用](../operations.md)の別ゲート。キー未設定や未測定を0件の成功へ変換しない。
+- `bun run test:runtime-native`は本番構成・HTTP・開発用HTTPを含むSDK検証。固定モデルやmock fetchの成功を実API成功に数えない。
+- 実モデル・実店舗接続・実機・配布は[運用](../operations.md)の別ゲート。キー未設定や未測定を0件の成功へ変換しない。
 
 ## 文書の更新
 

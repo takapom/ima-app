@@ -16,7 +16,6 @@
     "install:ci": "bun install --frozen-lockfile",
     "dev:mobile": "bun run --cwd apps/mobile start",
     "dev:worker": "bun run --cwd worker dev",
-    "dev:worker:fixture": "wrangler dev --config worker/wrangler.runtime-dev-fixture-test.jsonc --local --port 8787",
     "dev:worker:llm": "bun run --cwd worker dev:llm",
     "dev:web": "bun run --cwd apps/mobile start --web --clear",
     "env:preflight": "bun scripts/environment-preflight.ts",
@@ -31,9 +30,8 @@
     "test:worker-http": "vitest run --config vitest.worker.config.ts",
     "test:app-integrity": "vitest run --config vitest.app-integrity.config.ts",
     "test:runtime": "bun run test:runtime-native",
-    "test:runtime-native": "vitest run --config vitest.runtime-native.config.ts && bun run test:runtime-production-http && bun run test:runtime-dev-fixture && bun run test:dev-worker",
+    "test:runtime-native": "vitest run --config vitest.runtime-native.config.ts && bun run test:runtime-production-http && bun run test:dev-worker",
     "test:runtime-production-http": "vitest run --config vitest.runtime-production-http.config.ts",
-    "test:runtime-dev-fixture": "vitest run --config vitest.runtime-dev-fixture.config.ts",
     "test:dev-worker": "vitest run --config vitest.dev.config.ts",
     "build": "bun run scripts/run-workspaces.mjs build",
     "commit-size": "node scripts/check-commit-size.mjs"

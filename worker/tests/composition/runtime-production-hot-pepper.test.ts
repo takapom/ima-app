@@ -3,15 +3,26 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CommitPort, CommitRequest } from '@worker/application/ports/commit';
 import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';
 import { createRuntimeProductionConnectionOptions } from '@worker/composition/runtime-production-factory';
-import { createDevFixtureModel } from '@worker/composition/runtime-dev-fixture';
-import { fixturePlace } from '@worker/composition/runtime-dev-fixture-place';
+import { place } from '../adapters/outbound/providers/hot-pepper/adapter-fixtures';
 import {
   NOW,
   buildRequest,
   readOnlyCommit,
   FIXTURE_OPERATIONAL_ENV,
+  unusedModel,
 } from './runtime-production-factory-fixtures';
 import type { RuntimeProviderTrace } from '@worker/runtime/tracing/runtime-provider-trace';
+
+const testShop = {
+  ...place('composition-shop'),
+  lat: 35.6467,
+  lng: 139.7102,
+  open: '24時間営業',
+  budget: { name: '1200～2400円', average: '1,200〜2,400円' },
+  station_name: '恵比寿',
+  access: 'ＪＲ 恵比寿駅 西口 徒歩3分',
+  wifi: 'あり',
+};
 
 const searchInput = {
   mode: 'search',
@@ -37,7 +48,7 @@ const setup = async (
       response?.(url) ??
         Response.json({
           results: {
-            shop: [fixturePlace(() => current)],
+            shop: [testShop],
             results_available: 1,
             results_start: 1,
           },
@@ -48,7 +59,7 @@ const setup = async (
     env: FIXTURE_OPERATIONAL_ENV,
     commit,
     overrides: {
-      modelForTurn: createDevFixtureModel(),
+      modelForTurn: unusedModel,
       hotPepperApiKey: 'hp-test-secret',
       placesCursorSecret: 'hp-cursor-secret',
       fetcher,
@@ -134,7 +145,7 @@ describe('Hot Pepper primary provider composition', () => {
     ]);
     expect(details.status).toBe('ok');
     if (details.status !== 'ok') throw new Error('Details failed');
-    expect(f.requests[1]?.searchParams.get('id')).toBe('dev-fixture-place');
+    expect(f.requests[1]?.searchParams.get('id')).toBe('composition-shop');
     const hours = details.data.items[0]?.fields.opening_hours;
     if (hours?.status !== 'known') throw new Error('Hours missing');
     expect(await f.details(candidate.candidateId, ['opening_hours'], 'reuse_valid')).toMatchObject({
@@ -167,7 +178,7 @@ describe('Hot Pepper primary provider composition', () => {
       () =>
         Response.json({
           results: {
-            shop: [{ ...fixturePlace(() => NOW), ...(photo === undefined ? {} : { photo }) }],
+            shop: [{ ...testShop, ...(photo === undefined ? {} : { photo }) }],
             results_available: 1,
           },
         }),
@@ -237,7 +248,7 @@ describe('Hot Pepper primary provider composition', () => {
   });
 
   it('uses coordinates and the next larger API range while enforcing the requested radius', async () => {
-    const shop = fixturePlace(() => NOW);
+    const shop = testShop;
     const f = await setup(
       () =>
         Response.json({
@@ -278,7 +289,7 @@ describe('Hot Pepper primary provider composition', () => {
         results: {
           shop: [
             {
-              ...fixturePlace(() => NOW),
+              ...testShop,
               ...(url.searchParams.has('id') ? { id: 'wrong-shop' } : {}),
             },
           ],
@@ -330,7 +341,7 @@ describe('Hot Pepper primary provider composition', () => {
 
   it('continues with the signed original query and rejects tampered cursors', async () => {
     const f = await setup(() =>
-      Response.json({ results: { shop: [fixturePlace(() => NOW)], results_available: 2 } }),
+      Response.json({ results: { shop: [testShop], results_available: 2 } }),
     );
     const first = await f.search();
     if (first.status !== 'ok') throw new Error('Search failed');
@@ -351,7 +362,7 @@ describe('Hot Pepper primary provider composition', () => {
     const f = await setup((url) =>
       url.searchParams.has('id')
         ? new Response(null, { status: 503 })
-        : Response.json({ results: { shop: [fixturePlace(() => NOW)] } }),
+        : Response.json({ results: { shop: [testShop] } }),
     );
     expect(await f.details('unknown-candidate')).toMatchObject({
       status: 'error',

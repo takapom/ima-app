@@ -2,7 +2,7 @@
 
 ## 設定の入口
 
-ローカルの固定データ起動は[開発](devlop/development.md#apiキー不要のローカル起動)を参照する。
+ローカルの実モデル・実店舗API接続は[開発](devlop/development.md#実llmとホットペッパーでのローカル起動)を参照する。
 実環境の設定名と安全な初期値は[.dev.vars.example](../.dev.vars.example)、[.env.example](../.env.example)、[mobile環境例](../apps/mobile/.env.example)、[Wrangler設定](../worker/wrangler.jsonc)、[EAS設定](../apps/mobile/eas.json)で管理する。
 実secret、アカウントID、署名資格は追跡ファイルやコマンド引数へ書かない。Worker secretを端末の公開環境変数へ入れない。
 

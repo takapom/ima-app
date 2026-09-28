@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRuntimeProductionConnectionOptions } from '@worker/composition/runtime-production-factory';
-import { createDevFixtureModel } from '@worker/composition/runtime-dev-fixture';
-import { readOnlyCommit, NOW } from './runtime-production-factory-fixtures';
+import { readOnlyCommit, NOW, unusedModel } from './runtime-production-factory-fixtures';
 
 const live = {
   IMA_ENV: 'dev',
@@ -37,8 +36,14 @@ describe('production factory admission', () => {
       createRuntimeProductionConnectionOptions({
         env: { ...live, IMA_RUNTIME_MODE: 'fixture' },
         commit: readOnlyCommit,
-        overrides: { modelForTurn: createDevFixtureModel(), clock: () => NOW },
+        overrides: { modelForTurn: unusedModel, clock: () => NOW },
       }),
     ).toBeUndefined();
   });
+  it.each([{}, { IMA_PROVIDER_OPENAI: 'true', IMA_PROVIDER_HOTPEPPER: 'true' }])(
+    'does not create a keyless demo model or provider in development: %j',
+    (flags) => {
+      expect(factory({ IMA_ENV: 'dev', IMA_RUNTIME_MODE: 'fixture', ...flags })).toBeUndefined();
+    },
+  );
 });

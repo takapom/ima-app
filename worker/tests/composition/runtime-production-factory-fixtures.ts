@@ -2,6 +2,17 @@ import type { ThreadTurnRequest } from '@ima/contracts';
 import type { CommitPort } from '@worker/application/ports/commit';
 import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RuntimeModelGuardModel } from '@worker/runtime/turn-execution/runtime-model-guard';
+
+/** These composition tests call tools directly and must not execute a model. */
+export const unusedModel: RuntimeModelGuardModel = {
+  specificationVersion: 'v3',
+  provider: 'test',
+  modelId: 'unused',
+  supportedUrls: {},
+  doGenerate: () => Promise.reject(new Error('UNEXPECTED_MODEL_CALL')),
+  doStream: () => Promise.reject(new Error('UNEXPECTED_MODEL_CALL')),
+};
 
 export const NOW = '2026-09-10T00:00:00.000Z';
 

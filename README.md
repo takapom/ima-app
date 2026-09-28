@@ -3,7 +3,7 @@
 大切にしたい人と外出中に、次の行き先を決めるためのiPhoneアプリ。
 自由記述をもとに探索し、メッセージまたは主提案1件＋別案最大2件で応答します。
 
-React Native / ExpoとCloudflare Workerで構成しています。ローカルではAPIキー不要の固定データで検索・カード表示を確認できます。起動にはExpoとWorkerの両方が必要です。
+React Native / ExpoとCloudflare Workerで構成しています。ローカル起動にもOpenAIとホットペッパーのAPIキーを使います。起動にはExpoとWorkerの両方が必要です。
 
 - [開発・ローカル起動](docs/devlop/development.md)
 - [製品仕様](docs/product.md)
