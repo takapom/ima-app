@@ -8,12 +8,9 @@ import {
 import * as v from 'valibot';
 import { describe, expect, it, vi } from 'vitest';
 import { OPENAI_MODEL_NAME } from '@worker/adapters/out/providers/openai/provider-config';
-import { fixturePlace } from '@worker/composition/runtime-dev-fixture-place';
-import { createDevFixtureModel } from '@worker/composition/runtime-dev-fixture';
-import type { RuntimeModelGuardStreamPart } from '@worker/runtime/turn-execution/runtime-model-guard';
+import { place } from '../adapters/outbound/providers/hot-pepper/adapter-fixtures';
 import { requestInput } from '../composition/runtime-production-factory-fixtures';
-import { withDevFixtureCors } from './runtime-dev-fixture-cors';
-import { isDevLiveModelEnvironment } from './runtime-dev-llm';
+import { withDevCors } from '../../tooling/dev/cors';
 
 const ORIGIN = 'http://localhost:8081';
 const PHOTO_URL = 'https://imgfp.hotp.jp/IMGH/00/01/P000000001/P000000001_480.jpg';
@@ -84,40 +81,54 @@ const openAIResponse = async (
       body.input.filter((item) => item.type === 'function_call' && item.call_id === result.call_id),
     ).toHaveLength(1);
   }
-  const model = createDevFixtureModel();
-  const result = await model.doStream({
-    prompt: toolResults.map((item) => ({
-      role: 'tool',
-      content: [
-        {
-          type: 'tool-result',
-          toolCallId: String(item.call_id),
-          toolName:
-            body.input.find((call) => call.call_id === item.call_id)?.name === 'get_place_details'
-              ? 'get_place_details'
-              : 'search_places',
-          output: { type: 'text', value: String(item.output) },
-        },
-      ],
-    })),
+  const candidate = v.object({ candidateId: v.string() });
+  const resultSchema = v.object({
+    data: v.union([
+      v.object({ candidates: v.array(candidate) }),
+      v.object({ items: v.array(candidate) }),
+    ]),
   });
-  const parts: RuntimeModelGuardStreamPart[] = [];
-  await result.stream.pipeTo(
-    new WritableStream({
-      write(part) {
-        parts.push(part);
-      },
-    }),
+  // Earlier tool results may be retention-redacted; use the latest full result.
+  const candidates = toolResults.flatMap((result) => {
+    if (typeof result.output !== 'string' || !result.output.startsWith('{')) return [];
+    const parsed = v.safeParse(resultSchema, JSON.parse(result.output));
+    if (!parsed.success) return [];
+    const data = parsed.output.data;
+    return 'candidates' in data ? data.candidates : data.items;
+  });
+  const candidateId = candidates.at(-1)?.candidateId;
+  const detailsRead = toolResults.some(
+    (result) =>
+      body.input.find((call) => call.call_id === result.call_id)?.name === 'get_place_details',
   );
-  const call = parts.find((part) => part.type === 'tool-call');
-  if (call === undefined) throw new Error('TEST_TOOL_CALL_MISSING');
-  v.parse(v.object({ input: v.unknown() }), JSON.parse(call.input));
-  const argumentsJson = invalidInput ? JSON.stringify({}) : call.input;
+  const tool =
+    candidateId === undefined ? 'search_places' : detailsRead ? 'respond' : 'get_place_details';
+  const input =
+    candidateId === undefined
+      ? {
+          mode: 'search',
+          query: 'カフェ',
+          area: { kind: 'named_area', name: '恵比寿' },
+          limit: 1,
+          excludeCandidateIds: [],
+        }
+      : detailsRead
+        ? {
+            kind: 'propose',
+            message: ['掲載情報を確認してください。'],
+            hero: { candidateId, why: '検索した候補です。' },
+            alts: [],
+          }
+        : {
+            requests: [{ candidateId, fields: ['identity', 'opening_hours', 'price', 'photos'] }],
+            freshness: 'refresh',
+          };
+  const argumentsJson = JSON.stringify(invalidInput ? {} : { input });
   const item = {
     type: 'function_call',
     id: `fc_${crypto.randomUUID()}`,
     call_id: crypto.randomUUID(),
-    name: call.toolName,
+    name: tool,
     arguments: argumentsJson,
     status: 'completed',
   };
@@ -128,7 +139,7 @@ const openAIResponse = async (
     { type: 'response.completed', response: { usage: { input_tokens: 10, output_tokens: 10 } } },
   ];
   return {
-    tool: call.toolName,
+    tool,
     response: new Response(events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join(''), {
       headers: { 'content-type': 'text/event-stream' },
     }),
@@ -153,7 +164,7 @@ describe('development HTTP with OpenAI and Hot Pepper transports', () => {
               results_start: 1,
               shop: [
                 {
-                  ...fixturePlace(() => new Date().toISOString()),
+                  ...place('dev-http-shop'),
                   photo: { pc: { l: PHOTO_URL } },
                 },
               ],
@@ -191,7 +202,7 @@ describe('development HTTP with OpenAI and Hot Pepper transports', () => {
       if (parsed.response.kind !== 'cards') throw new Error('TEST_CARDS_MISSING');
       expect(parsed.response.cards.hero.facts.identity).toMatchObject({
         status: 'known',
-        value: { name: '灯り坂ラウンジ（サンプル）' },
+        value: { name: '店 dev-http-shop' },
       });
       const identity = parsed.response.cards.hero.facts.identity;
       if (identity.status !== 'known') throw new Error('Identity is unavailable');
@@ -205,7 +216,7 @@ describe('development HTTP with OpenAI and Hot Pepper transports', () => {
       expect(photos.value.photos).toHaveLength(1);
       expect(photos.value.photos[0]?.attributions).toContainEqual({
         displayName: 'ホットペッパー グルメ',
-        uri: 'https://www.hotpepper.jp/strDEVFIXTURE/',
+        uri: 'https://www.hotpepper.jp/strdev-http-shop/',
       });
       expect(JSON.stringify(body)).not.toContain(PHOTO_URL);
       expect(tools).toContain('search_places');
@@ -311,8 +322,7 @@ describe('development HTTP with OpenAI and Hot Pepper transports', () => {
     'does not enable the development profile or CORS in %s',
     async (environment) => {
       const env = { IMA_ENV: environment, IMA_RUNTIME_MODE: 'live' };
-      expect(isDevLiveModelEnvironment(env)).toBe(false);
-      const response = await withDevFixtureCors(
+      const response = await withDevCors(
         new Request('https://ima.dev/health', {
           headers: { Origin: ORIGIN },
         }),

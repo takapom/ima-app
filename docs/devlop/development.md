@@ -61,6 +61,8 @@ PLACES_CURSOR_SECRET=16バイト以上のランダムな秘密値
 bun run dev:worker:llm
 ```
 
+[実LLM用の開発Worker](../../worker/wrangler.dev.jsonc)は固定店舗・固定モデルを持たず、本番のHTTPとDOへlocalhost用CORSを加える。
+
 アプリは上記の開発用認証と`EXPO_PUBLIC_API_MODE=fixture`を使い、別terminalで`bun run dev:web`を実行する。端末側のモードは接続・認証の設定であり、モデルの選択はWorkerが行う。APIキーはWorkerだけに設定する。
 
 新しい会話で「恵比寿のカフェを探して」と入力し、カード表示後に条件変更や質問を試す。LLMが検索語と地域を選び、ホットペッパーの実店舗検索を行う。検索1回で店名・営業時間・予算・設備・写真を登録するため、カードは詳細取得なしで確定できる。店舗IDによる詳細取得は期限切れ項目の取り直しに使う。店舗写真が取得できれば候補カードに表示する。写真tokenの署名には`PHOTO_TOKEN_SECRET`、未設定なら既存の`PLACES_CURSOR_SECRET`を使うため、追加APIキーは不要。掲載営業時間は表示するが、現在営業中・到着時の営業・ラストオーダーは未確認として扱う。徒歩経路・終電・保存一覧からの店舗再取得はこの構成では無効。Google API実装と接続設定は削除している。

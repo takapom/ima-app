@@ -1,0 +1,29 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "ima-api-dev",
+  "main": "tooling/dev/worker.ts",
+  "compatibility_date": "2026-08-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "APP_TOKEN": "dev-fixture-app-token",
+    "IMA_ENV": "dev",
+    "IMA_RUNTIME_MODE": "live",
+    "IMA_PROVIDER_OPENAI": "true",
+    "IMA_PROVIDER_HOTPEPPER": "true",
+    "IMA_KILL_SWITCH": "false",
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "THREADS", "class_name": "ThreadDO" },
+      { "name": "CONVERSATIONS", "class_name": "ConversationHistoryDO" },
+      { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
+      { "name": "TELEMETRY", "class_name": "TelemetryDO" },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["ThreadDO", "RateLimitDO", "TelemetryDO", "ConversationHistoryDO"],
+    },
+  ],
+}
