@@ -10,16 +10,15 @@ description: ima-appの検証ゲートを判定し、合格の範囲と未測定
 
 ## ゲートと合格の定義
 
-| ゲート        | 実行                                                                          | 合格が意味すること                    |
-| ------------- | ----------------------------------------------------------------------------- | ------------------------------------- |
-| 静的          | `bun run format` `docs` `lint` `architecture` `typecheck`                     | 整形・規約・依存境界・型              |
-| 単体・契約    | `bun run test:unit`                                                           | Coreの判断と公開schemaの境界          |
-| Worker統合    | `bun run test:app-integrity` `test:worker-http`                               | HTTP境界とApp Integrity               |
-| SDK/DO統合    | `bun run test:runtime`                                                        | 本番構成・HTTP・開発用HTTPでのSDK制御 |
-| 実モデル      | `MODEL_EVAL_LIVE=1 bunx vitest run --config vitest.model-eval-live.config.ts` | 実モデルの応答。Providerは固定        |
-| 実Provider    | [実LLMとホットペッパー起動](../../../docs/devlop/development.md)で会話を作成  | OpenAIとHot Pepperの実接続            |
-| 環境preflight | `bun run env:preflight -- --target <env>`                                     | 設定値の形式と存在のみ                |
-| 実機・配布    | App Attest、EAS成果物、署名、利用条件、プライバシー公開                       | 各項目を個別に検収                    |
+| ゲート             | 実行                                                                         | 合格が意味すること                    |
+| ------------------ | ---------------------------------------------------------------------------- | ------------------------------------- |
+| 静的               | `bun run format` `docs` `lint` `architecture` `typecheck`                    | 整形・規約・依存境界・型              |
+| 単体・契約         | `bun run test:unit`                                                          | Coreの判断と公開schemaの境界          |
+| Worker統合         | `bun run test:app-integrity` `test:worker-http`                              | HTTP境界とApp Integrity               |
+| SDK/DO統合         | `bun run test:runtime`                                                       | 本番構成・HTTP・開発用HTTPでのSDK制御 |
+| 実モデル・Provider | [実LLMとホットペッパー起動](../../../docs/devlop/development.md)で会話を作成 | OpenAIとHot Pepperの実接続            |
+| 環境preflight      | `bun run env:preflight -- --target <env>`                                    | 設定値の形式と存在のみ                |
+| 実機・配布         | App Attest、EAS成果物、署名、利用条件、プライバシー公開                      | 各項目を個別に検収                    |
 
 `bun run check` は変更パスから必要なゲートを選ぶ。選ばれなかったゲートを合格として報告しない。
 
@@ -27,7 +26,6 @@ description: ima-appの検証ゲートを判定し、合格の範囲と未測定
 
 - **preflightの`ready`（exit 0）は実接続ではない。** 値の形式と存在だけを見る。`partial`はexit 2、`blocked`はexit 1。
 - **`runtimeVerified`と`releaseAllowed`は現行コードで常にfalse。** [environment-preflight](../../../scripts/environment-preflight.ts)と[release-preflight](../../../scripts/release-preflight.ts)を参照。変数を設定しても実行・配布の検収は完了しない。
-- **`MODEL_EVAL_LIVE=0`はProvider呼出し前に停止する。** 実モデル成功に数えない。
 - **`test:runtime`の固定モデル・mock fetchの成功は実API成功ではない。**
 - **実接続はOpenAIとHot Pepperのみ。** 徒歩経路・終電は撤去済み（#55）。
 - **キー・flagの設定は利用可能の証明ではない。** runtime factoryが停止flag・secret・用途別policyを確認する。

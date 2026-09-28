@@ -16,8 +16,6 @@ export default defineConfig({
       'worker/tests/composition/**/*.test.ts',
       'worker/tests/runtime/threads/thread-id.test.ts',
       'worker/tests/runtime/model/*.test.ts',
-      'worker/tests/model-eval/*.test.ts',
-      'worker/tests/model-eval-live/live-contract.test.ts',
       'worker/tests/runtime/**/*.test.ts',
     ],
     exclude: ['tests/worker.test.ts', 'worker/tests/adapters/inbound/http/integration/**'],

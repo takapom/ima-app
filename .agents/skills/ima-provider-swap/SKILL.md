@@ -23,7 +23,7 @@ Google からHot Pepperへの差し替え（#43）で確立し、徒歩経路・
 2. **新Adapter追加** — `worker/src/adapters/out/providers/<provider>/`にPort実装とHTTPを置く。既存経路は触らない。業務層へSDK・環境変数・直接I/Oを持ち込まない。
 3. **構成を能力に絞る** — [composition](../../../worker/src/composition)で新Providerが提供できる能力を宣言する。提供しない機能は停止側に倒す。
 4. **実行経路の切替** — `worker/src/composition/`の注入先を新Adapterへ向ける。旧実装はまだ残す。
-5. **fixture更新** — 開発用fixture → SDK/DO統合fixture → 実モデル評価fixtureの順に新形式へ揃える。
+5. **テスト更新** — Adapterの単体テストとSDK/DO統合テストの入力・期待値を新形式へ揃える。
 6. **旧実装の撤去** — 合成経路 → Adapter → HTTP → 専用型 → 応答の正規化、の順に消す。1段ごとにコミットする。
 7. **UI側の停止** — 接続しなくなった条件入力・表示をmobileから外す。存在しない機能を操作できる状態で残さない。
 8. **文書更新** — [Providerポリシー](../../../docs/provider-policy.md)、[運用](../../../docs/operations.md)、[アーキテクチャ](../../../docs/architecture/architecture.md)の現行接続を実態へ合わせる。

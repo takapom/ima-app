@@ -215,11 +215,11 @@
       <section id="evaluation">
         <h2>9. 評価の仕組みと、今回の確認範囲</h2>
         <p>
-          Coreの単体テストで根拠・条件・確定を扱い、実SDK/DOと固定モデル・固定Providerの統合テストで実行・保持・再送の境界を検証する。モデル評価には新規検索、条件変更、説明、比較、候補失敗、prompt
-          injection、会話継続、repairなど14シナリオ×3反復の定義がある。
+          Coreの単体テストで根拠・条件・確定を扱い、実SDK/DOと固定モデル・固定Providerの統合テストで実行・保持・再送の境界を検証する。
         </p>
         <p>
-          実モデル評価runnerは<strong>実OpenAIモデル＋固定Provider</strong>を使う別ゲート。実店舗APIの接続確認とは区別する。人手レビューのcoverageと重大違反も判定へ含め、未測定コストを0として扱わない。
+          実モデルの品質と実店舗APIの接続は、実OpenAIモデル・ホットペッパーを使ったローカル起動で別に確認する。固定モデル・mock
+          fetchによる自動テストの成功を実接続の成功として扱わない。
         </p>
         <p>
           モデル・Provider・turnのtraceを持ち、モデル呼び出しではstatus、resultCode、duration、tokenCountなどの構造化項目を計測する。本文・秘密・生座標をテレメトリへ記録しない方針。
@@ -235,16 +235,6 @@
         </div>
         <p class="refs">
           根拠：<a
-            href="https://github.com/takapom/ima-app/blob/56520e56cd04a7e792f34e2132aded627878cc9e/worker/tests/model-eval/model-eval.test.ts#L98"
-            >モデル評価の定義とテスト</a
-          >
-          /
-          <a
-            href="https://github.com/takapom/ima-app/blob/56520e56cd04a7e792f34e2132aded627878cc9e/docs/operations.md#L90"
-            >実モデル評価の対象</a
-          >
-          /
-          <a
             href="https://github.com/takapom/ima-app/blob/56520e56cd04a7e792f34e2132aded627878cc9e/worker/src/runtime/tracing/runtime-model-trace.ts#L14"
             >モデル呼び出しの計測</a
           >

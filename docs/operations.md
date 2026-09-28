@@ -87,18 +87,6 @@ env -u EXPO_PUBLIC_FIXTURE_APP_TOKEN \
 
 実行日時、対象profile、モデル版、公開schemaの結果、費用、未測定項目を[実接続Issue](https://github.com/takapom/ima-app/issues/36)へ記録する。raw本文・座標・token・secretは証跡へ含めない。
 
-## 実モデル評価
-
-通常のテストとは別の専用poolを使う。`OPENAI_API_KEY`を秘密管理から渡し、有料実行を明示するときだけ次を実行する。
-
-```sh
-MODEL_EVAL_LIVE=1 bunx vitest run --config vitest.model-eval-live.config.ts
-```
-
-[評価runner](../worker/tests/model-eval-live)は実モデル＋固定Providerを使うため、実店舗APIの検収ではない。`MODEL_EVAL_LIVE=0`はProvider呼出し前に停止する検証経路であり、実モデル成功に数えない。
-profile・反復・候補identity対応・人手レビューのcoverageを確認する。候補対応の欠落、不正response、未計測費用は未評価または失敗として残し、0や成功で補わない。
-固定Providerは[評価用の店舗カタログ](../worker/tooling/model-eval/fixture-shops.ts)10件をホットペッパーの形で返し、データセットの根拠も同じカタログから作る。集計はturnごとのモデル呼出し数、実行されたTool回数（search・details・respond）、モデル処理時間とturn全体の時間、確定拒否の件数、確定の種別（ask・answer・propose）、入力・キャッシュ済み入力token数を分けて出す。カードの店名・価格帯・営業時間の掲載文はデータセットと機械照合し、生成文の意味の正しさ（根拠のない断定、推測・未確認の表現、要望と理由の対応）は人手で評価する。
-
 ## 撤去済みのDO
 
 終電dataset用の`JourneyDatasetDO`と管理入口`/internal/m14/last-train`は撤去した（#55）。[Wrangler設定](../worker/wrangler.jsonc)のmigration `v7`が`deleted_classes`でクラスを削除し、デプロイ時に保存済みのdatasetも消える。デプロイ前にdry-runで対象環境のmigrationを確認する。
