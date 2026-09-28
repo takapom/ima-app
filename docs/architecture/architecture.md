@@ -137,7 +137,7 @@ bindingは`SAVED_REFERENCES`、owner shard名は`saved-reference-owner:{ownerSco
 
 ## 境界の検証
 
-Coreの単体試験はCore、HTTP/SDK/DO/Provider統合試験とモデル評価はWorker、端末試験はmobileに置く。評価専用packageは設けない。
+Coreの単体試験はCore、HTTP/SDK/DO/Provider統合試験はWorker、端末試験はmobileに置く。
 依存の静的検査は[dependency-cruiser設定](../../.dependency-cruiser.cjs)とmanifest検査で行う。
 保存前制御・3操作限定・確定1回は実SDK/DOのfixtureで検証し、実APIや実機の成功とは区別する。
 実行手順は[開発](../devlop/development.md)と[運用](../operations.md)を参照する。

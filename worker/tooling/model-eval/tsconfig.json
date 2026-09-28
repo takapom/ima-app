@@ -1,7 +1,0 @@
-{
-  "extends": "../../tsconfig.tests.json",
-  "compilerOptions": {
-    "types": ["node", "vitest/globals", "@cloudflare/workers-types"]
-  },
-  "include": ["./**/*.ts", "../../tests/model-eval/**/*.ts"]
-}
