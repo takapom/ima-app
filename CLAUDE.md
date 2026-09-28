@@ -1,1 +1,1 @@
-AGENTS.mdを参照
+AGENTS.mdを見る。
