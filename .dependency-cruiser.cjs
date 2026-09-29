@@ -249,7 +249,7 @@ module.exports = {
   ],
   options: {
     exclude: {
-      path: '(^|/)(?:\\.wrangler|\\.expo|dist|coverage)(/|$)',
+      path: '(^|/)(?:\\.wrangler|\\.cloudflare|\\.expo|dist|coverage)(/|$)',
     },
     doNotFollow: {
       path: '(^|/)(?:node_modules|dist|coverage)(/|$)',

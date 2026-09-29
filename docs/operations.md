@@ -3,12 +3,12 @@
 ## 設定の入口
 
 ローカルの実モデル・実店舗API接続は[開発](devlop/development.md#実llmとホットペッパーでのローカル起動)を参照する。
-実環境の設定名と安全な初期値は[.dev.vars.example](../.dev.vars.example)、[.env.example](../.env.example)、[mobile環境例](../apps/mobile/.env.example)、[Wrangler設定](../worker/wrangler.jsonc)、[EAS設定](../apps/mobile/eas.json)で管理する。
+実環境の設定名と安全な初期値は[.dev.vars.example](../.dev.vars.example)、[.env.example](../.env.example)、[mobile環境例](../apps/mobile/.env.example)、[Worker設定](../worker/cloudflare.config.ts)、[EAS設定](../apps/mobile/eas.json)で管理する。
 実secret、アカウントID、署名資格は追跡ファイルやコマンド引数へ書かない。Worker secretを端末の公開環境変数へ入れない。
 
 | 区分           | 必要な設定・確認                                                                                                                                                                                      |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Worker         | `IMA_ENV`、`IMA_RUNTIME_MODE`、`APP_TOKEN`、対象環境のDO binding/migration                                                                                                                            |
+| Worker         | `IMA_ENV`、`IMA_RUNTIME_MODE`、`APP_TOKEN`、対象modeのDO binding/exports                                                                                                                              |
 | モデル         | `OPENAI_API_KEY`。モデル名とProvider optionsは[model設定](../worker/src/adapters/out/providers/openai/provider-config.ts)と[options](../worker/src/adapters/out/providers/openai/provider-options.ts) |
 | 店舗検索・詳細 | `HOTPEPPER_API_KEY`、`PLACES_CURSOR_SECRET`                                                                                                                                                           |
 | 端末・配布     | HTTPS endpoint、実bundle ID、EAS project、Apple署名、App Attest                                                                                                                                       |
@@ -48,17 +48,14 @@ Appleの無料Personal TeamではApp Attestを利用できない（[対応Capabi
 
 このモードの認証はAPP_TOKENの所持に依存し、正規アプリ・実機であることは証明しない。64桁の小文字16進トークンが必須で、通常のowner credential認証・所有者分離は維持する。個人検証中はアプリ独自の端末ごと30回/時・ownerごと100回/時の制限を適用しない。通常のstaging・productionではこの制限を維持し、個人検証でも1ターンの処理予算・タイムアウトと外部Provider側の制限は変えない。APP_TOKENを知る人は新しいownerとして利用できるため、本人だけで管理する。
 
-1. `openssl rand -hex 32 | pbcopy`で生成したAPP_TOKENをパスワード管理へ保存し、`bunx wrangler secret put APP_TOKEN --config worker/wrangler.jsonc --env staging`の対話入力で登録する。すでに同じ形式で登録済みなら再生成しない。`OPENAI_API_KEY`、`HOTPEPPER_API_KEY`、`PLACES_CURSOR_SECRET`もstagingのsecretに必要。
-2. リポジトリ直下で次を実行し、個人検証用stagingを有効化する。先に同じコマンドへ`--dry-run`を付けてbundle・bindingを確認する。実行後の検索はOpenAIとHot Pepperへ接続する。
+1. `openssl rand -hex 32 | pbcopy`で生成したAPP_TOKENをパスワード管理へ保存し、`worker`で`bunx wrangler secret put APP_TOKEN --name ima-api-staging`の対話入力で登録する。cfのsecret更新は値をコマンド引数で受け取るため使わない。すでに同じ形式で登録済みなら再生成しない。`OPENAI_API_KEY`、`HOTPEPPER_API_KEY`、`PLACES_CURSOR_SECRET`もstagingのsecretに必要。
+2. `worker`で次を実行し、個人検証用stagingを有効化する。値は[Worker設定](../worker/cloudflare.config.ts)の`personal-preview` modeが持つ。先に同じコマンドへ`--dry-run`を付けてbundle・bindingを確認する。実行後の検索はOpenAIとHot Pepperへ接続する。
 
 ```sh
-bunx wrangler deploy --config worker/wrangler.jsonc --env staging \
-  --var IMA_PERSONAL_PREVIEW:true \
-  --var IMA_RUNTIME_MODE:live \
-  --var IMA_PROVIDER_OPENAI:true \
-  --var IMA_PROVIDER_HOTPEPPER:true \
-  --var IMA_RUNTIME_FLAGS_CONNECTED:1
+bunx cf deploy --mode personal-preview
 ```
+
+検証を終えたら`bunx cf deploy --mode staging`で既定の停止状態へ戻す。
 
 3. `apps/mobile`で以下を実行する。接続先とbundle IDは自分の値に置き換える。`EXPO_NO_DOTENV=1`で開発用`.env.local`を読み込まず、fixtureの認証情報はシェル環境からも除く。APP_TOKENやProviderのキーをビルドへ渡さない。
 
@@ -87,20 +84,20 @@ env -u EXPO_PUBLIC_FIXTURE_APP_TOKEN \
 
 実行日時、対象profile、モデル版、公開schemaの結果、費用、未測定項目を[実接続Issue](https://github.com/takapom/ima-app/issues/36)へ記録する。raw本文・座標・token・secretは証跡へ含めない。
 
-## 撤去済みのDO
+## DOクラスの宣言
 
-終電dataset用の`JourneyDatasetDO`と管理入口`/internal/m14/last-train`は撤去した（#55）。[Wrangler設定](../worker/wrangler.jsonc)のmigration `v7`が`deleted_classes`でクラスを削除し、デプロイ時に保存済みのdatasetも消える。デプロイ前にdry-runで対象環境のmigrationを確認する。
+DOクラスの作成・削除・改名は[Worker設定](../worker/cloudflare.config.ts)の`exports`で宣言する。`exports`で一度デプロイしたWorkerは`migrations`へ戻せず、段階的デプロイと、宣言変更前の版へのrollbackもできない。削除は保存済みデータも消すため、`--dry-run`で対象modeを確認してからデプロイする。
 
 ## デプロイと復旧
 
 #51の改修（#55・#61・#56）で公開DTOとprefsの出力が変わった。生成文は`{text, retention}`になり引用を持たず、prefsは`areaText`・`budget`だけを返す。新しいアプリは旧Workerの出力（引用付きの生成文、旧prefs項目）を読み、[HTTP送信時の互換処理](devlop/contracts.md#保存写真再取得)で旧Workerの必須入力も満たす。改修前のアプリは新Workerの出力を解析できないため、互換処理を含む新しいアプリを先に配布して旧buildを更新し、その後にWorkerをデプロイする。旧buildが残る間はWorkerを先に出さない。旧Workerへの接続がなくなるまで送信時の互換処理を維持する。
 
-[config dry-run CI](../.github/workflows/config-dry-run.yml)は型生成・bundle・設定・migrationを検査する。Cloudflareへの反映や実リソースの検収は行わない。
+[config dry-run CI](../.github/workflows/config-dry-run.yml)は各modeのbundle・設定・DO exportsを検査する。Cloudflareへの反映や実リソースの検収は行わない。
 
 実デプロイ時は次の順序で進める。
 
-1. 対象account・Worker・route・DO migration・secretを確認し、preflightと実接続の不足を解消する。
-2. 対象環境を明示してWranglerの型生成・deploy dry-runを行い、差分をレビューする。
+1. 対象account・Worker・route・DO exports・secretを確認し、preflightと実接続の不足を解消する。
+2. `worker`で`bunx cf deploy --dry-run --mode <staging|production>`を実行し、差分をレビューする。
 3. stagingへ反映し、health、認証拒否、owner分離、Provider、保存期限を確認する。
 4. 実機・App Attest・利用条件・停止操作の証跡を確認してからproductionを扱う。
 

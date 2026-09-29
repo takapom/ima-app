@@ -1,6 +1,7 @@
 node_modules
 .expo
 .wrangler
+.cloudflare
 dist
 coverage
 bun.lock

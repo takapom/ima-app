@@ -19,15 +19,17 @@ jobs:
       matrix:
         include:
           - target: dev
-            wrangler_env: ''
+            cf_mode: ''
           - target: staging
-            wrangler_env: staging
+            cf_mode: staging
+          - target: personal-preview
+            cf_mode: personal-preview
           - target: production
-            wrangler_env: production
+            cf_mode: production
     env:
       CI: 'true'
       TARGET: ${{ matrix.target }}
-      WRANGLER_ENV: ${{ matrix.wrangler_env }}
+      CF_MODE: ${{ matrix.cf_mode }}
     steps:
       - uses: actions/checkout@v4
 
@@ -41,29 +43,21 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - name: Generate types and bundle Worker without deploying
+      - name: Bundle Worker without deploying
         working-directory: worker
         shell: bash
         run: |
           set -euo pipefail
-          case "$TARGET:$WRANGLER_ENV" in
+          case "$TARGET:$CF_MODE" in
             dev:)
-              wrangler_args=()
+              cf_args=()
               ;;
-            staging:staging|production:production)
-              wrangler_args=(--env "$WRANGLER_ENV")
+            staging:staging|personal-preview:personal-preview|production:production)
+              cf_args=(--mode "$CF_MODE")
               ;;
             *)
-              echo "unsupported fixed config target: $TARGET:$WRANGLER_ENV" >&2
+              echo "unsupported fixed config target: $TARGET:$CF_MODE" >&2
               exit 1
               ;;
           esac
-          type_dir="$(mktemp -d "$RUNNER_TEMP/ima-worker-types.XXXXXX")"
-          trap 'rm -rf "$type_dir"' EXIT
-          bunx wrangler types "$type_dir/worker-configuration.d.ts" \
-            --config wrangler.jsonc \
-            "${wrangler_args[@]}" \
-            --include-runtime=false
-          bunx wrangler deploy --dry-run \
-            --config wrangler.jsonc \
-            "${wrangler_args[@]}"
+          bunx cf deploy --dry-run "${cf_args[@]}"

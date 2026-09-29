@@ -45,7 +45,9 @@ worker/
 │   └── composition/
 ├── tests/
 ├── tooling/
-└── wrangler*.jsonc
+├── cloudflare.config.ts      # デプロイするWorkerの設定（cf）
+├── wrangler.config.ts        # cfが委譲するWranglerのbundle設定
+└── wrangler*.jsonc           # ローカル開発とテスト用のWorker設定
 ```
 
 WorkerのAdapterは`worker/src/adapters/`へ集約する。`in/http`はHTTP入口、`in/tools`はLLMのTool入口。`out/providers`はHot Pepper・OpenAIの接続と変換、`out/persistence`はDO・SQL・メモリストアの具体実装、`out/security`は写真トークンの署名実装を持つ。テストも`worker/tests/adapters/`で同じ分類を使い、HTTP配下の`integration/`はworkerdで実行する。

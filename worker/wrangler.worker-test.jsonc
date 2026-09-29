@@ -1,0 +1,40 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "ima-api-worker-test",
+  "main": "src/entrypoints/cloudflare/worker.ts",
+  "compatibility_date": "2026-08-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "IMA_ENV": "dev",
+    "IMA_PERSONAL_PREVIEW": "false",
+    "IMA_RUNTIME_MODE": "fixture",
+    "IMA_PROVIDER_OPENAI": "false",
+    "IMA_PROVIDER_PLACES": "false",
+    "IMA_PROVIDER_HOTPEPPER": "false",
+    "IMA_KILL_SWITCH": "false",
+    "IMA_RUNTIME_FLAGS_CONNECTED": "0",
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "THREADS", "class_name": "ThreadDO" },
+      { "name": "CONVERSATIONS", "class_name": "ConversationHistoryDO" },
+      { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
+      { "name": "TELEMETRY", "class_name": "TelemetryDO" },
+      { "name": "APP_INTEGRITY", "class_name": "AppIntegrityDO" },
+      { "name": "SAVED_REFERENCES", "class_name": "SavedReferenceDO" },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "ThreadDO",
+        "ConversationHistoryDO",
+        "RateLimitDO",
+        "TelemetryDO",
+        "AppIntegrityDO",
+        "SavedReferenceDO",
+      ],
+    },
+  ],
+}

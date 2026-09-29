@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     cloudflareTest({
       wrangler: {
-        configPath: './worker/wrangler.jsonc',
+        configPath: './worker/wrangler.worker-test.jsonc',
       },
       miniflare: {
         bindings: {

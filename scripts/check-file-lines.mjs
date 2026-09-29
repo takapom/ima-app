@@ -11,6 +11,7 @@ const ignoredDirectories = new Set([
   '.grok',
   '.serena',
   '.wrangler',
+  '.cloudflare',
   'coverage',
   'dist',
   'node_modules',

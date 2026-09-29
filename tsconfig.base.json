@@ -19,5 +19,5 @@
       "@contracts/*": ["./packages/contracts/src/*"]
     }
   },
-  "exclude": ["node_modules", ".wrangler", "dist", "coverage"]
+  "exclude": ["node_modules", ".wrangler", ".cloudflare", "dist", "coverage"]
 }

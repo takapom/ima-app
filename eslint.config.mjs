@@ -7,6 +7,7 @@ const ignored = [
   '**/node_modules/**',
   '**/.expo/**',
   '**/.wrangler/**',
+  '**/.cloudflare/**',
   '**/dist/**',
   '**/coverage/**',
   '**/worker-configuration.d.ts',
