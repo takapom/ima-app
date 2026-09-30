@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { EvidenceRef, PublicCard } from '@ima/contracts';
 import {
   cardAttributions,
+  footerAttributions,
   resultAttributions,
 } from '@mobile/journey/presentation/card-attributions';
 
@@ -85,5 +86,36 @@ describe('result credits', () => {
     };
     expect(resultAttributions([card, other])).toEqual([{ label: '店舗情報', sourceLink: null }]);
     expect(cardAttributions(other)[0]?.sourceLink).toBe('https://example.com/shop/2');
+  });
+
+  it('keeps one linked Hot Pepper service credit in the result footer', () => {
+    const identity = card.facts.identity;
+    if (identity?.status !== 'known') throw new Error('fixture identity must be known');
+    const hotPepperEvidence: EvidenceRef = {
+      ...evidence,
+      attributions: [
+        { label: 'ホットペッパー グルメ', sourceLink: 'https://example.com/shop/1' },
+        {
+          label: 'Powered by ホットペッパーグルメ Webサービス',
+          sourceLink: 'https://webservice.recruit.co.jp/',
+        },
+      ],
+    };
+    const hotPepperCard: PublicCard = {
+      ...card,
+      facts: {
+        identity: {
+          ...identity,
+          evidence: [hotPepperEvidence],
+        },
+      },
+    };
+
+    expect(footerAttributions([hotPepperCard, hotPepperCard])).toEqual([
+      {
+        label: 'Powered by ホットペッパーグルメ Webサービス',
+        sourceLink: 'https://webservice.recruit.co.jp/',
+      },
+    ]);
   });
 });

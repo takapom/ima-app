@@ -32,3 +32,20 @@ export const resultAttributions = (
   }
   return [...credits].map(([label, sourceLink]) => ({ label, sourceLink }));
 };
+
+const hotPepperServiceCredit = {
+  label: 'Powered by ホットペッパーグルメ Webサービス',
+  sourceLink: 'https://webservice.recruit.co.jp/',
+} as const;
+
+export const footerAttributions = (
+  cards: readonly PublicCard[],
+): readonly AttributionPresentation[] => {
+  const attributions = resultAttributions(cards);
+  const requiredCredit = attributions.find(
+    (attribution) =>
+      attribution.label === hotPepperServiceCredit.label &&
+      attribution.sourceLink === hotPepperServiceCredit.sourceLink,
+  );
+  return requiredCredit === undefined ? attributions : [requiredCredit];
+};

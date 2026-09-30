@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import type { CardsData } from '@ima/contracts';
-import { resultAttributions } from '@mobile/journey/presentation/card-attributions';
+import { footerAttributions } from '@mobile/journey/presentation/card-attributions';
 import { AttributionList } from '@mobile/ui/AttributionList';
 
 export function ResultsAttribution({
@@ -15,7 +15,7 @@ export function ResultsAttribution({
     <View style={styles.footer}>
       <AttributionList
         centered
-        attributions={resultAttributions([cards.hero, ...cards.alts])}
+        attributions={footerAttributions([cards.hero, ...cards.alts])}
         onSourcePress={onSourcePress}
       />
     </View>

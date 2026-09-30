@@ -5,7 +5,6 @@ import type { AssistantMessageRecord } from '@mobile/journey/state/assistant-res
 import { conversationTranscriptEntries } from '@mobile/journey/services/conversations/conversation-transcript';
 import type { ConversationMessage } from '@ima/contracts';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
-import { AttributionList } from '@mobile/ui/AttributionList';
 
 export function ConversationTranscript({
   messages,
@@ -58,13 +57,6 @@ export function ConversationTranscript({
                 <Text selectable style={styles.text}>
                   {part.text}
                 </Text>
-                {part.kind === 'retained_text' && part.retention.attribution !== null ? (
-                  <AttributionList
-                    comfortable
-                    attributions={[part.retention.attribution]}
-                    onSourcePress={onSourcePress}
-                  />
-                ) : null}
               </View>
             ) : part.kind === 'card_set' ? (
               part.cardSetId === liveCardSetId ? null : (
