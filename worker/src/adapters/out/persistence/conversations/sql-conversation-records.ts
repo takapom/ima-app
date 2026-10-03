@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import { withConversationPhotoSources } from '@worker/runtime/conversations/conversation-photo-sources';
 import type {
   ConversationScope,
   ConversationStore,
@@ -191,7 +192,10 @@ export class SqlConversationRecords {
         )
         .one();
       const message = retainConversationMessage(
-        v.parse(ConversationMessageSchema, JSON.parse(row.body)),
+        withConversationPhotoSources(
+          v.parse(ConversationMessageSchema, JSON.parse(row.body)),
+          input.now,
+        ),
         input.now,
       );
       this.writeMessage(input, message);
@@ -289,7 +293,10 @@ export class SqlConversationRecords {
       .slice(0, input.limit)
       .map((row) =>
         retainConversationMessage(
-          v.parse(ConversationMessageSchema, JSON.parse(row.body)),
+          withConversationPhotoSources(
+            v.parse(ConversationMessageSchema, JSON.parse(row.body)),
+            input.now,
+          ),
           input.now,
         ),
       )
@@ -340,7 +347,13 @@ export class SqlConversationRecords {
       for (const row of rows)
         this.writeMessage(
           { ownerScopeRef: row.owner, conversationId: row.conversation_id },
-          retainConversationMessage(v.parse(ConversationMessageSchema, JSON.parse(row.body)), now),
+          retainConversationMessage(
+            withConversationPhotoSources(
+              v.parse(ConversationMessageSchema, JSON.parse(row.body)),
+              now,
+            ),
+            now,
+          ),
         );
     });
   }

@@ -1,4 +1,5 @@
 import { messageDeadline } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
+import type { ConversationPhotoSource } from '@worker/domain/conversations/conversation-cards';
 import * as v from 'valibot';
 import type { AssistantResponse } from '@ima/contracts';
 import type { CommitRequest } from '@worker/application/ports/commit';
@@ -63,7 +64,12 @@ export class ThreadConversationOutbox {
       input.target.revision,
     );
   }
-  commit(request: CommitRequest, response: AssistantResponse | undefined, now: string): void {
+  commit(
+    request: CommitRequest,
+    response: AssistantResponse | undefined,
+    now: string,
+    sources?: readonly ConversationPhotoSource[],
+  ): void {
     const { record } = request;
     const row = this.storage.sql
       .exec<{ run_id: string }>(
@@ -84,7 +90,7 @@ export class ThreadConversationOutbox {
       response.presentation !== record.presentation
     )
       throw new Error('CONVERSATION_COMMIT_RESPONSE_MISSING');
-    const message = messageFromConversationResponse(response, `answer-${row.run_id}`, now);
+    const message = messageFromConversationResponse(response, `answer-${row.run_id}`, now, sources);
     this.storage.sql.exec(
       'UPDATE conversation_delivery SET message = ? WHERE run_id = ? AND message IS NULL',
       JSON.stringify(message),

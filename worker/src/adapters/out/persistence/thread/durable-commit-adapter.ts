@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import type { ConversationPhotoSource } from '@worker/domain/conversations/conversation-cards';
 import type { AssistantResponse } from '@ima/contracts';
 import type { ThreadConversationOutbox } from '@worker/adapters/out/persistence/conversations/thread-conversation-outbox';
 import {
@@ -52,7 +53,11 @@ export type DurableCommitPort = CommitPort & {
   setCardSetId(scope: CommitScope, idempotencyKey: string, cardSetId: string): void;
   /** Releases pending card metadata when a turn ends before a commit. */
   clearCardSetId(scope: CommitScope, idempotencyKey: string): void;
-  setConversationResponse(record: CommitRecord, response: AssistantResponse): void;
+  setConversationResponse(
+    record: CommitRecord,
+    response: AssistantResponse,
+    sources?: readonly ConversationPhotoSource[],
+  ): void;
 };
 
 const pendingKey = (scope: CommitScope, idempotencyKey: string): string =>
@@ -92,8 +97,9 @@ export const prepareRuntimeConversationResponse = (
   port: CommitPort,
   record: CommitRecord,
   response: () => AssistantResponse,
+  sources?: readonly ConversationPhotoSource[],
 ): void => {
-  if (isDurableCommitPort(port)) port.setConversationResponse(record, response());
+  if (isDurableCommitPort(port)) port.setConversationResponse(record, response(), sources);
 };
 
 export const initializeDurableCommitTable = (storage: DurableObjectStorage): void => {
@@ -198,11 +204,17 @@ export const createDurableCommitPort = (
   delivery?: { readonly outbox: ThreadConversationOutbox; readonly now: () => string },
 ): DurableCommitPort => {
   const pendingCardSets = new Map<string, string>();
-  const pendingResponses = new Map<string, AssistantResponse>();
+  const pendingResponses = new Map<
+    string,
+    { response: AssistantResponse; sources: readonly ConversationPhotoSource[] | undefined }
+  >();
   return {
-    setConversationResponse(record, response) {
+    setConversationResponse(record, response, sources) {
       if (delivery !== undefined)
-        pendingResponses.set(pendingKey(record.scope, record.idempotencyKey), response);
+        pendingResponses.set(pendingKey(record.scope, record.idempotencyKey), {
+          response,
+          sources,
+        });
     },
     setCardSetId(scope, idempotencyKey, cardSetId) {
       if (!v.safeParse(CardSetIdSchema, cardSetId).success)
@@ -313,7 +325,8 @@ export const createDurableCommitPort = (
           );
           if (finalized.rowsWritten !== 1)
             throw new DurableCommitPortError('runtime turn finalization failed');
-          delivery?.outbox.commit(request, pendingResponses.get(key), delivery.now());
+          const prepared = pendingResponses.get(key);
+          delivery?.outbox.commit(request, prepared?.response, delivery.now(), prepared?.sources);
           return newReceipt(record);
         });
       } finally {

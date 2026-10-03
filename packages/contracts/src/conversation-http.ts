@@ -27,6 +27,7 @@ export const ConversationCardsSchema = v.strictObject({
   cardSetId: OpaqueIdSchema,
   revision: RevisionSchema,
   photosExpireAt: v.nullable(IsoTimestampSchema),
+  photoCandidateIds: v.optional(v.pipe(v.array(OpaqueIdSchema), v.maxLength(3))),
   cards: CardsDataSchema,
 });
 export type ConversationCards = v.InferOutput<typeof ConversationCardsSchema>;
@@ -126,6 +127,20 @@ export const ConversationRunSchema = v.pipe(
 
 export type ConversationRun = v.InferOutput<typeof ConversationRunSchema>;
 const envelope = { schemaVersion: SchemaVersionSchema, requestId: RequestIdSchema };
+export const ConversationPhotoPathSchema = v.strictObject({
+  conversationId: OpaqueIdSchema,
+  sequence: v.pipe(RevisionSchema, v.maxValue(Number.MAX_SAFE_INTEGER - 1)),
+  candidateId: OpaqueIdSchema,
+});
+export type ConversationPhotoPath = v.InferOutput<typeof ConversationPhotoPathSchema>;
+export const ConversationPhotoResponseSchema = v.strictObject({
+  bodyKind: v.literal('binary'),
+  descriptor: v.strictObject({
+    ...envelope,
+    contentType: v.picklist(['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+    expiresAt: IsoTimestampSchema,
+  }),
+});
 export const CreateConversationRequestSchema = CreateThreadRequestSchema;
 export const ConversationTurnRequestSchema = v.strictObject({
   ...v.omit(ThreadTurnRequestSchema, ['turnId', 'revision']).entries,
@@ -181,6 +196,7 @@ const parse =
       : { success: false as const, issues: parsed.issues.map((issue) => issue.message) };
   };
 export const parseConversation = parse(ConversationSchema);
+export const parseConversationPhotoPath = parse(ConversationPhotoPathSchema);
 export const parseConversationId = parse(OpaqueIdSchema);
 export const parseConversationMessage = parse(ConversationMessageSchema);
 export const parseCreateConversationRequest = parse(CreateConversationRequestSchema);

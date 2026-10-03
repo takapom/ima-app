@@ -37,7 +37,10 @@ import {
   type TelemetryNamespace,
 } from '@worker/adapters/out/persistence/telemetry/telemetry-do';
 import type { AppIntegrityGate } from '@worker/adapters/in/http/app-integrity-gate';
-import { createConfiguredPhoto } from '@worker/composition/bootstrap-photo';
+import {
+  createConfiguredPhoto,
+  createConfiguredConversationPhotos,
+} from '@worker/composition/bootstrap-photo';
 import { createDurableOwnerStore } from '@worker/adapters/out/persistence/saved-references/durable-owner-store';
 import type { SavedReferenceNamespace } from '@worker/adapters/out/persistence/saved-references/saved-reference-rpc';
 
@@ -138,6 +141,12 @@ export const createHttpRouterConfig = (
   };
   return {
     ...(env.CONVERSATIONS === undefined ? {} : { conversations: env.CONVERSATIONS }),
+    conversationPhotos: createConfiguredConversationPhotos(env),
+    conversationPhotosRateLimiter: new DurableRateLimiter(
+      env.RATE_LIMITS,
+      { windowMs: 3_600_000, devicePerWindow: 120, ownerPerWindow: 400 },
+      'conversation-photo-v1',
+    ),
     conversationReadsRateLimiter: new DurableRateLimiter(
       env.RATE_LIMITS,
       { windowMs: 3_600_000, devicePerWindow: 3_600, ownerPerWindow: 12_000 },

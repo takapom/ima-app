@@ -27,7 +27,7 @@ const tokenFailure = (error: PhotoTokenError): HttpBoundaryError => {
   }
 };
 
-const providerFailure = (error: PhotoProviderError): HttpBoundaryError => {
+export const photoProviderFailure = (error: PhotoProviderError): HttpBoundaryError => {
   switch (error.code) {
     case 'CANCELLED':
       return new HttpBoundaryError({ status: 409, code: 'CANCELLED' });
@@ -117,7 +117,7 @@ export const createPhotoBodyHandler = (options: {
       };
       return { descriptor, body: media.body };
     } catch (error: unknown) {
-      if (error instanceof PhotoProviderError) throw providerFailure(error);
+      if (error instanceof PhotoProviderError) throw photoProviderFailure(error);
       throw error;
     }
   },

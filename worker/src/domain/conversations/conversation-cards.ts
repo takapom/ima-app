@@ -81,6 +81,20 @@ export const ConversationCardsSchema = v.strictObject({
   cardSetId: OpaqueIdSchema,
   revision: RevisionSchema,
   photosExpireAt: v.nullable(IsoTimestampSchema),
+  // Stable references survive content expiry and are removed with the conversation.
+  photoSources: v.optional(
+    v.pipe(
+      v.array(
+        v.strictObject({
+          candidateId: OpaqueIdSchema,
+          provider: v.literal('hotpepper'),
+          recordRef: v.pipe(v.string(), v.regex(/^J[0-9]+$/), v.maxLength(128)),
+        }),
+      ),
+      v.maxLength(3),
+    ),
+  ),
   cards: v.strictObject({ hero: Card, alts: v.pipe(v.array(Card), v.maxLength(2)) }),
 });
 export type ConversationCards = v.InferOutput<typeof ConversationCardsSchema>;
+export type ConversationPhotoSource = NonNullable<ConversationCards['photoSources']>[number];

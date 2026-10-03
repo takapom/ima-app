@@ -7,12 +7,21 @@ import {
   ConversationMessagesResponseSchema,
   ConversationTurnRequestSchema,
   ConversationRunResponseSchema,
+  ConversationPhotoPathSchema,
+  ConversationPhotoResponseSchema,
 } from '@contracts/conversation-http';
 
 const path = v.strictObject({ conversationId: OpaqueIdSchema });
 const runPath = v.strictObject({ ...path.entries, runId: OpaqueIdSchema });
 const limit = v.optional(v.pipe(v.number(), v.safeInteger(), v.minValue(1), v.maxValue(100)));
 export const ConversationHttpRouteContracts = {
+  conversationPhoto: {
+    method: 'GET',
+    path: '/v1/conversations/:conversationId/messages/:sequence/photos/:candidateId',
+    request: ConversationPhotoPathSchema,
+    response: ConversationPhotoResponseSchema,
+    successStatus: 200,
+  },
   conversationCreate: {
     method: 'POST',
     path: '/v1/conversations',

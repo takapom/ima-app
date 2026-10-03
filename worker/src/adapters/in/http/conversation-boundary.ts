@@ -32,7 +32,7 @@ export const conversationRoute =
     } catch {
       return invalidRequest(http);
     }
-    for (const key of ['conversationId', 'runId']) {
+    for (const key of ['conversationId', 'runId', 'candidateId']) {
       const value = http.req.param(key);
       if (value !== undefined && !v.safeParse(OpaqueIdSchema, value).success)
         return invalidRequest(http);
@@ -51,9 +51,11 @@ export const conversationRoute =
     if (!now.success || config.conversations === undefined)
       throw new HttpBoundaryError({ status: 500, code: 'INTERNAL' });
     const limiter =
-      http.req.method === 'GET'
-        ? (config.conversationReadsRateLimiter ?? config.handlers.rateLimiter)
-        : config.handlers.rateLimiter;
+      http.req.param('candidateId') !== undefined
+        ? (config.conversationPhotosRateLimiter ?? config.handlers.rateLimiter)
+        : http.req.method === 'GET'
+          ? (config.conversationReadsRateLimiter ?? config.handlers.rateLimiter)
+          : config.handlers.rateLimiter;
     const rate = await limiter.check({
       route: 'conversation',
       ownerScopeRef: auth.context.ownerScopeRef,

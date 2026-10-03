@@ -1,4 +1,5 @@
 import type { ConversationHistoryNamespace } from '@worker/adapters/out/persistence/conversations/durable-conversation-store';
+import type { ConversationPhotoReader } from '@worker/runtime/ports/conversation-photo';
 import type { RateLimiter } from '@worker/security/rate-limit';
 import type { AuthConfig } from '@worker/adapters/in/http/auth';
 import type { BoundaryFailure } from '@worker/adapters/in/http/errors';
@@ -27,6 +28,8 @@ export interface ResourceScopeAuthorizer {
 }
 
 export type HttpRouterConfig = {
+  readonly conversationPhotos?: ConversationPhotoReader;
+  readonly conversationPhotosRateLimiter?: RateLimiter;
   readonly conversations?: ConversationHistoryNamespace;
   readonly conversationReadsRateLimiter?: RateLimiter;
   readonly auth: AuthConfig;

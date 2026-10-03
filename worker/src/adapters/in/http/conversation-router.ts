@@ -1,4 +1,6 @@
 import { Hono } from 'hono';
+import { publicConversationMessage } from '@worker/runtime/conversations/conversation-photo-sources';
+import { conversationPhotoRoute } from '@worker/adapters/in/http/conversation-photo-route';
 import { streamSSE } from 'hono/streaming';
 import * as v from 'valibot';
 import {
@@ -26,6 +28,10 @@ import type { Conversation } from '@worker/domain/conversations/conversation';
 import type { ConversationRunResult } from '@worker/application/ports/conversation-runs';
 
 export const conversationRouter = new Hono<HttpEnv>();
+conversationRouter.get(
+  '/:conversationId/messages/:sequence/photos/:candidateId',
+  conversationPhotoRoute,
+);
 const publicConversation = ({ ownerScopeRef: _owner, ...conversation }: Conversation) =>
   conversation;
 const scopeFor = (context: ConversationHttpContext) => ({
@@ -133,7 +139,7 @@ conversationRouter.get(
       ? conversationFailure(context.auth.requestId, result)
       : conversationJson(context, ConversationMessagesResponseSchema, {
           ...envelope(context),
-          messages: result.messages,
+          messages: result.messages.map(publicConversationMessage),
           nextBeforeSequence: result.nextBeforeSequence,
         });
   }),

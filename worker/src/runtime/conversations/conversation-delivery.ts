@@ -1,4 +1,6 @@
 import * as v from 'valibot';
+import { conversationPhotoSources } from '@worker/runtime/conversations/conversation-photo-sources';
+import type { ConversationPhotoSource } from '@worker/domain/conversations/conversation-cards';
 import { AssistantResponseSchema, type AssistantResponse } from '@ima/contracts';
 import {
   ConversationMessageInputSchema,
@@ -18,8 +20,13 @@ export const messageFromConversationResponse = (
   response: unknown,
   messageId: string,
   now: string,
+  sources?: readonly ConversationPhotoSource[],
 ): ConversationMessageInput => {
   const parsed = v.parse(AssistantResponseSchema, response);
+  const photoSources =
+    sources ??
+    (parsed.kind === 'cards' ? conversationPhotoSources({ cards: parsed.cards }, now) : []);
+
   return v.parse(ConversationMessageInputSchema, {
     messageId,
     role: 'assistant',
@@ -40,6 +47,9 @@ export const messageFromConversationResponse = (
                 cardSetId: parsed.cardSetId,
                 revision: parsed.revision,
                 cards: parsed.cards,
+                ...(sources === undefined && photoSources.length === 0
+                  ? {}
+                  : { photoSources: [...photoSources] }),
                 photosExpireAt: photoDeadline(parsed),
               },
               now,

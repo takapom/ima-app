@@ -125,7 +125,7 @@ const compose = (storage: DurableObjectStorage, persistence: boolean, fail = fal
       expiresAt: allowRetention.retention.displayUntil,
       context: validationContext.expectedObservationContext,
       sources: [
-        { provider: 'fixture', recordRef: 'shop', attribution: 'Fixture', publicUrl: null },
+        { provider: 'hotpepper', recordRef: 'J123456', attribution: 'Fixture', publicUrl: null },
       ],
       retention: {
         ...allowRetention.retention,
@@ -182,6 +182,9 @@ describe('photos across preparation, commit and conversation restoration', () =>
       const photo = part.cards.hero.facts.photos.value.photos[0];
       if (photo === undefined) throw new Error('PHOTO_MISSING');
       expect(part.photosExpireAt).toBe(photoUntil);
+      expect(part.photoSources).toEqual([
+        { candidateId: fixture.currentCandidateId, provider: 'hotpepper', recordRef: 'J123456' },
+      ]);
       const live = await fixture.composition.getCommittedResponse();
       expect(live).toMatchObject({
         kind: 'cards',
@@ -284,6 +287,17 @@ describe('photos across preparation, commit and conversation restoration', () =>
         const stored = await fixture.outbox.read(scope, NOW);
         expect(JSON.stringify(stored?.message)).toContain('写真を復元する店');
         expect(JSON.stringify(stored?.message)).not.toContain('p1.');
+        expect(stored?.message.parts).toContainEqual(
+          expect.objectContaining({
+            photoSources: [
+              {
+                candidateId: fixture.currentCandidateId,
+                provider: 'hotpepper',
+                recordRef: 'J123456',
+              },
+            ],
+          }),
+        );
         expect(JSON.stringify(stored?.message)).not.toContain('期限が過ぎています');
         const live = await fixture.composition.getCommittedResponse();
         expect(live).toMatchObject({

@@ -1,4 +1,5 @@
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+import { committedConversationPhotoSources } from '@worker/runtime/conversations/conversation-photo-sources';
 import type { HarnessContext } from '@worker/application/ports/context';
 import type { ModelContextSource } from '@worker/application/model-context/model-context';
 import type { ObservationContext } from '@worker/domain/evidence/freshness';
@@ -30,8 +31,11 @@ export const prepareConversationCommit = async (
   };
   const photos = await prepareRuntimePhotos(dependencies, response, metadata, preparation.now);
   if (!preparation.isActive()) return;
-  prepareRuntimeConversationResponse(port, record, () =>
-    mapPreparedRuntimeResponse(response, dependencies, metadata, photos?.resolvePersistent),
+  prepareRuntimeConversationResponse(
+    port,
+    record,
+    () => mapPreparedRuntimeResponse(response, dependencies, metadata, photos?.resolvePersistent),
+    committedConversationPhotoSources(response, dependencies.resolveCardEvidence),
   );
   return photos;
 };
