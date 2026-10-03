@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PublicCard } from '@ima/contracts';
 import { useCandidateDetail } from '@mobile/journey/hooks/useCandidateDetail';
 import { CandidateDetailSheet } from '@mobile/journey/components/candidates/CandidateDetailSheet';
@@ -36,6 +36,7 @@ import {
 } from '@mobile/preferences/state/conditions';
 import { resolveJourneyPhase } from '@mobile/journey/state/journey-phase';
 import type { JourneyScreenProps } from '@mobile/journey/screen/journey-screen-props';
+import { createHistoryPhotoViewport } from '@mobile/journey/state/history-photo-viewport';
 
 type JourneyScreenStateOwnerProps = JourneyScreenProps & {
   readonly preferenceState: UseJourneyPreferencesResult;
@@ -73,6 +74,10 @@ export function JourneyScreenStateOwner({
 }: JourneyScreenStateOwnerProps): React.JSX.Element {
   const transcriptScroll = useRef<ScrollView>(null);
   const followsLatest = useRef(true);
+  const photoViewport = useMemo(createHistoryPhotoViewport, []);
+  const viewportHeight = useRef(0);
+  const contentHeight = useRef(0);
+  const scrollTop = useRef(0);
   const persistedPreferences = preferenceState;
   const journey = useJourneyShell(persistedPreferences.savedConditions);
   const savedPlaceUi = useSavedPlacePreview(savedPlacePreview, onSavedPlaceSelect);
@@ -295,23 +300,41 @@ export function JourneyScreenStateOwner({
       <View style={styles.content}>
         <ScrollView
           ref={transcriptScroll}
+          onLayout={({ nativeEvent }) => {
+            viewportHeight.current = nativeEvent.layout.height;
+            if (contentHeight.current > 0) {
+              if (followsLatest.current)
+                scrollTop.current = Math.max(0, contentHeight.current - viewportHeight.current);
+              photoViewport.update(scrollTop.current, viewportHeight.current);
+            }
+          }}
           onScroll={({ nativeEvent }) => {
+            scrollTop.current = nativeEvent.contentOffset.y;
+            viewportHeight.current = nativeEvent.layoutMeasurement.height;
+            contentHeight.current = nativeEvent.contentSize.height;
             followsLatest.current =
               nativeEvent.contentSize.height -
                 nativeEvent.layoutMeasurement.height -
                 nativeEvent.contentOffset.y <
               80;
+            photoViewport.update(scrollTop.current, viewportHeight.current);
           }}
           scrollEventThrottle={32}
-          onContentSizeChange={() => {
-            if (conversation !== undefined && followsLatest.current)
+          onContentSizeChange={(_width, height) => {
+            contentHeight.current = height;
+            if (conversation !== undefined && followsLatest.current) {
+              scrollTop.current = Math.max(0, height - viewportHeight.current);
+              photoViewport.update(scrollTop.current, viewportHeight.current);
               transcriptScroll.current?.scrollToEnd({ animated: false });
+            } else {
+              photoViewport.update(scrollTop.current, viewportHeight.current);
+            }
           }}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {conversation?.renderTranscript(renderedMessageRecords, openSourceLink)}
+          {conversation?.renderTranscript(renderedMessageRecords, openSourceLink, photoViewport)}
           {phase === 'empty' && !conversation?.hasMessages ? (
             <EmptyState onExample={journey.updateDraft} />
           ) : null}

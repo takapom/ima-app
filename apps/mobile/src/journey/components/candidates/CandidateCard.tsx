@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
 import type { PublicCard } from '@ima/contracts';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
 import {
@@ -17,6 +18,7 @@ import {
 } from '@mobile/journey/components/candidates/candidate-card-styles';
 
 type CandidateCardProps = {
+  readonly photo?: ReactNode;
   readonly card: PublicCard;
   /** Injected render time; the countdown is resolved here, never baked in upstream. */
   readonly now?: string;
@@ -28,6 +30,7 @@ type CandidateCardProps = {
 };
 
 export function CandidateCard({
+  photo,
   card,
   now,
   onOpenDetail,
@@ -47,7 +50,9 @@ export function CandidateCard({
   return (
     <View style={styles.card}>
       <View style={styles.summary}>
-        {view.visual === 'photo' ? (
+        {photo !== undefined ? (
+          <View style={styles.thumbnail}>{photo}</View>
+        ) : view.visual === 'photo' ? (
           <View style={styles.thumbnail}>
             <PhotoRegion
               card={card}

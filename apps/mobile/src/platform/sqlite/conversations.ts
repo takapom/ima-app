@@ -27,7 +27,12 @@ export const createConversationCache = (
   db.exec(`
     CREATE TABLE IF NOT EXISTS conversation_cache (id TEXT PRIMARY KEY, updated_at TEXT NOT NULL, body TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS conversation_message_cache (conversation_id TEXT NOT NULL, id TEXT NOT NULL, sequence INTEGER NOT NULL, body TEXT NOT NULL, expires_at REAL, PRIMARY KEY(conversation_id, id));
-    CREATE TABLE IF NOT EXISTS conversation_cache_completion (id TEXT PRIMARY KEY, revision INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS conversation_cache_migration (version INTEGER PRIMARY KEY);
+    DELETE FROM conversation_message_cache WHERE NOT EXISTS (SELECT 1 FROM conversation_cache_migration WHERE version = 3);
+    INSERT OR IGNORE INTO conversation_cache_migration VALUES (3);
+    DROP TABLE IF EXISTS conversation_cache_completion;
+    DROP TABLE IF EXISTS conversation_cache_completion_v2;
+    CREATE TABLE IF NOT EXISTS conversation_cache_completion_v3 (id TEXT PRIMARY KEY, revision INTEGER NOT NULL);
     CREATE INDEX IF NOT EXISTS conversation_cache_listing ON conversation_cache(updated_at DESC, id DESC);
     CREATE INDEX IF NOT EXISTS conversation_cache_sequence ON conversation_message_cache(conversation_id, sequence DESC);
     CREATE INDEX IF NOT EXISTS conversation_cache_expiry ON conversation_message_cache(expires_at);
@@ -35,7 +40,7 @@ export const createConversationCache = (
   const prune = () => {
     db.exec(`DELETE FROM conversation_cache WHERE id NOT IN (SELECT id FROM conversation_cache ORDER BY updated_at DESC, id DESC LIMIT 3);
       DELETE FROM conversation_message_cache WHERE conversation_id NOT IN (SELECT id FROM conversation_cache);
-      DELETE FROM conversation_cache_completion WHERE id NOT IN (SELECT id FROM conversation_cache);`);
+      DELETE FROM conversation_cache_completion_v3 WHERE id NOT IN (SELECT id FROM conversation_cache);`);
   };
   prune();
   const writeMessage = (message: ConversationMessage) => {
@@ -61,7 +66,7 @@ export const createConversationCache = (
   };
   const remove = (id: string) => {
     db.prepare('DELETE FROM conversation_message_cache WHERE conversation_id = ?').run(id);
-    db.prepare('DELETE FROM conversation_cache_completion WHERE id = ?').run(id);
+    db.prepare('DELETE FROM conversation_cache_completion_v3 WHERE id = ?').run(id);
     db.prepare('DELETE FROM conversation_cache WHERE id = ?').run(id);
   };
   const metadata = (id: string) => {
@@ -118,7 +123,7 @@ export const createConversationCache = (
     },
     completeRevision: (id) => {
       const row = db
-        .prepare('SELECT revision FROM conversation_cache_completion WHERE id = ?')
+        .prepare('SELECT revision FROM conversation_cache_completion_v3 WHERE id = ?')
         .get(id);
       return typeof row?.revision === 'number' ? row.revision : null;
     },
@@ -136,7 +141,7 @@ export const createConversationCache = (
           (row.first !== 1 || row.last !== conversation.lastSequence))
       )
         return;
-      db.prepare('INSERT OR REPLACE INTO conversation_cache_completion VALUES (?, ?)').run(
+      db.prepare('INSERT OR REPLACE INTO conversation_cache_completion_v3 VALUES (?, ?)').run(
         conversation.conversationId,
         conversation.revision,
       );

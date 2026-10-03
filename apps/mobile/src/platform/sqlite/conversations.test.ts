@@ -31,6 +31,77 @@ const retained: RetentionMetadata = {
   displayPolicyStatus: 'available',
 };
 describe('conversation SQLite cache', () => {
+  it('invalidates legacy messages once and only marks a fully refetched history complete', () => {
+    const db = new DatabaseSync(':memory:');
+    const now = '2026-09-21T10:00:00.000Z';
+    const conversation: Conversation = {
+      conversationId: 'conversation',
+      title: '会話',
+      revision: 121,
+      lastSequence: 120,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const messages: ConversationMessage[] = Array.from({ length: 120 }, (_, index) => ({
+      conversationId: conversation.conversationId,
+      sequence: index + 1,
+      createdAt: now,
+      message: {
+        messageId: `message-${index + 1}`,
+        role: 'user',
+        source: null,
+        parts: [{ kind: 'user_text', text: `message ${index + 1}` }],
+      },
+    }));
+    try {
+      db.exec(
+        'CREATE TABLE conversation_cache (id TEXT PRIMARY KEY, updated_at TEXT NOT NULL, body TEXT NOT NULL); CREATE TABLE conversation_message_cache (conversation_id TEXT NOT NULL, id TEXT NOT NULL, sequence INTEGER NOT NULL, body TEXT NOT NULL, expires_at REAL, PRIMARY KEY(conversation_id, id)); CREATE TABLE conversation_cache_completion_v2 (id TEXT PRIMARY KEY, revision INTEGER NOT NULL)',
+      );
+      db.prepare('INSERT INTO conversation_cache VALUES (?, ?, ?)').run(
+        conversation.conversationId,
+        conversation.updatedAt,
+        JSON.stringify(conversation),
+      );
+      for (const message of messages)
+        db.prepare('INSERT INTO conversation_message_cache VALUES (?, ?, ?, ?, NULL)').run(
+          message.conversationId,
+          message.message.messageId,
+          message.sequence,
+          JSON.stringify(message),
+        );
+      db.prepare('INSERT INTO conversation_cache_completion_v2 VALUES (?, ?)').run(
+        conversation.conversationId,
+        conversation.revision,
+      );
+
+      const cache = createConversationCache(connection(db), { now: () => now });
+      expect(cache.list()).toEqual([conversation]);
+      expect(cache.page(conversation.conversationId).messages).toEqual([]);
+      expect(cache.completeRevision(conversation.conversationId)).toBeNull();
+
+      cache.write(conversation, messages.slice(70));
+      cache.markComplete(conversation);
+      expect(cache.page(conversation.conversationId).messages).toHaveLength(50);
+      expect(cache.completeRevision(conversation.conversationId)).toBeNull();
+
+      cache.write(conversation, messages.slice(0, 70));
+      cache.markComplete(conversation);
+      expect(cache.completeRevision(conversation.conversationId)).toBe(conversation.revision);
+
+      const reopened = createConversationCache(connection(db), { now: () => now });
+      expect(db.prepare('SELECT COUNT(*) AS count FROM conversation_message_cache').get()).toEqual({
+        count: 120,
+      });
+      expect(reopened.completeRevision(conversation.conversationId)).toBe(conversation.revision);
+      expect(
+        db
+          .prepare("SELECT name FROM sqlite_master WHERE name = 'conversation_cache_completion_v2'")
+          .get(),
+      ).toBeUndefined();
+    } finally {
+      db.close();
+    }
+  });
   it('restores within one owner database, physically expires assistant text, and deletes both tables', () => {
     const db = new DatabaseSync(':memory:');
     const other = new DatabaseSync(':memory:');

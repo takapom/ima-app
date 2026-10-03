@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PublicCard } from '@ima/contracts';
@@ -19,6 +20,8 @@ import { paddingWithSafeArea } from '@mobile/ui/theme/safe-area';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 
 type CandidateDetailSheetProps = {
+  readonly photo?: ReactNode;
+  readonly photoCaption?: string | undefined;
   readonly detail: ReturnType<typeof useCandidateDetail>;
   readonly onDecide?: (candidateId: string) => void;
   readonly onSave?: (card: PublicCard) => void;
@@ -27,6 +30,8 @@ type CandidateDetailSheetProps = {
 };
 
 export function CandidateDetailSheet({
+  photo,
+  photoCaption,
   detail,
   onDecide,
   onSave,
@@ -84,11 +89,14 @@ export function CandidateDetailSheet({
           </Pressable>
         </View>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-          {photos.length === 0 ? null : (
+          {photo !== undefined ? (
+            <View style={styles.photo}>{photo}</View>
+          ) : photos.length === 0 ? null : (
             <View style={styles.photo}>
               <PhotoRegion card={card} images={photos} />
             </View>
           )}
+          {photoCaption === undefined ? null : <Text style={styles.label}>{photoCaption}</Text>}
           <View style={[styles.heading, view.dimmed && styles.dimmed]}>
             {view.category === null ? null : <Text style={styles.label}>{view.category}</Text>}
             <Text accessibilityRole="header" style={styles.name}>

@@ -1,4 +1,9 @@
 import { REQUEST_ID_HEADER, parsePublicError, parsePhotoPath } from '@ima/contracts';
+import { parseConversationPhotoPath, type ConversationPhotoPath } from '@ima/contracts';
+import { OWNER_CREDENTIAL_HEADER, DEVICE_ID_HEADER, APP_TOKEN_HEADER } from '@ima/contracts';
+import { PhotoMemoryCache } from '@mobile/platform/http/photo-memory-cache';
+import type { PhotoAsset } from '@mobile/platform/http/photo-asset';
+export type { PhotoAsset } from '@mobile/platform/http/photo-asset';
 import { runWithinDeadline } from '@mobile/platform/http/deadline';
 import {
   buildApiUrl,
@@ -21,14 +26,8 @@ const PHOTO_ROUTE = 'photos';
 const CLIENT_REQUEST_ID = 'client-invalid';
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
-export type PhotoAsset = {
-  /** A short-lived in-memory data URI; callers must not persist or cache it. */
-  readonly uri: string;
-  readonly contentType: string;
-  readonly expiresAt: string;
-};
-
 export type PhotoFetchOptions = ApiRequestOptions & {
+  readonly refresh?: boolean;
   /** The earliest public retention deadline for this photo, if known. */
   readonly displayUntil?: string | null;
 };
@@ -43,7 +42,12 @@ export type PhotoResult =
     };
 
 export type JourneyPhotoClient = {
+  readonly clearConversationPhotos?: () => void;
   readonly fetchPhoto: (token: string, options?: PhotoFetchOptions) => Promise<PhotoResult>;
+  readonly fetchConversationPhoto?: (
+    path: ConversationPhotoPath,
+    options?: PhotoFetchOptions,
+  ) => Promise<PhotoResult>;
 };
 
 export type PhotoClientOptions = ApiClientOptions & {
@@ -145,13 +149,22 @@ const invalidContract = (requestId: string, issues: readonly string[]): PhotoRes
   issueResult(requestId, PHOTO_ROUTE, issues, null);
 
 export const createJourneyPhotoClient = (options: PhotoClientOptions): JourneyPhotoClient => {
+  let historyCache = new PhotoMemoryCache();
+  let historyGeneration = 0;
+  const pendingHistory = new Map<
+    string,
+    { work: Promise<PhotoResult>; controller: AbortController; consumers: number }
+  >();
+  const activeHistoryControllers = new Set<AbortController>();
   const fetchImpl: ApiFetch = options.fetchImpl ?? fetch;
   const clock = options.now ?? (() => new Date().toISOString());
 
   const fetchPhoto = async (
     token: string,
     requestOptions: PhotoFetchOptions = {},
+    conversationPath?: ConversationPhotoPath,
   ): Promise<PhotoResult> => {
+    const generation = historyGeneration;
     let requestId: string;
     try {
       requestId = options.requestIdFactory();
@@ -163,6 +176,10 @@ export const createJourneyPhotoClient = (options: PhotoClientOptions): JourneyPh
     }
     const parsedPath = parsePhotoPath({ token });
     if (!parsedPath.success) return invalidContract(requestId, parsedPath.issues);
+    if (conversationPath !== undefined) {
+      const checked = parseConversationPhotoPath(conversationPath);
+      if (!checked.success) return invalidContract(requestId, checked.issues);
+    }
     const now = nowMilliseconds(clock);
     if (now === null) return invalidContract(requestId, ['photo clock is invalid']);
     const displayDeadline = parseDisplayDeadline(requestOptions.displayUntil);
@@ -181,7 +198,9 @@ export const createJourneyPhotoClient = (options: PhotoClientOptions): JourneyPh
       };
     const url = buildApiUrl(
       options.baseUrl,
-      `/v1/photos/${encodeURIComponent(parsedPath.data.token)}`,
+      conversationPath === undefined
+        ? `/v1/photos/${encodeURIComponent(parsedPath.data.token)}`
+        : `/v1/conversations/${encodeURIComponent(conversationPath.conversationId)}/messages/${conversationPath.sequence}/photos/${encodeURIComponent(conversationPath.candidateId)}`,
       options.mode,
     );
     if (url === null) {
@@ -202,106 +221,171 @@ export const createJourneyPhotoClient = (options: PhotoClientOptions): JourneyPh
     }
     const auth = credentials.value;
     if (!auth.ok) return { ok: false, error: auth.error, requestId };
+    if (conversationPath !== undefined && generation !== historyGeneration)
+      return { ok: false, error: { kind: 'aborted' }, requestId };
+    const cacheScope = JSON.stringify([
+      auth.headers[OWNER_CREDENTIAL_HEADER],
+      auth.headers[DEVICE_ID_HEADER],
+      auth.headers[APP_TOKEN_HEADER],
+    ]);
+    const requestCache = historyCache;
+    requestCache.selectScope(cacheScope);
     if (requestOptions.signal?.aborted) return { ok: false, error: { kind: 'aborted' }, requestId };
     const afterCredentials = nowMilliseconds(clock);
     if (afterCredentials === null) return invalidContract(requestId, ['photo clock is invalid']);
     if (displayDeadline !== null && displayDeadline <= afterCredentials) {
       return { ok: false, error: { kind: 'expired' }, requestId };
     }
+    if (conversationPath !== undefined) {
+      const asset = requestCache.read(url.href, afterCredentials, requestOptions.refresh);
+      if (asset !== undefined) return { ok: true, requestId, data: asset };
+    }
 
-    const controller = new AbortController();
-    const onAbort = (): void => controller.abort();
-    requestOptions.signal?.addEventListener('abort', onAbort, { once: true });
-    const work = (async (): Promise<PhotoResult> => {
-      const response = await fetchImpl(url, {
-        method: 'GET',
-        redirect: 'error',
-        headers: auth.headers,
-        signal: controller.signal,
-      });
-      if (requestOptions.signal?.aborted)
-        return { ok: false, error: { kind: 'aborted' }, requestId };
-      if (!response.ok) {
-        const headerRequestId = response.headers.get(REQUEST_ID_HEADER);
-        const raw = await readJson(response);
-        const parsedError = parsePublicError(raw);
-        if (!parsedError.success)
-          return issueResult(requestId, PHOTO_ROUTE, parsedError.issues, response.status);
-        if (
-          parsedError.data.requestId !== requestId ||
-          parsedError.data.status !== response.status ||
-          (headerRequestId !== null && headerRequestId !== requestId)
-        ) {
-          return issueResult(
-            requestId,
-            PHOTO_ROUTE,
-            ['photo error identity does not match the request'],
-            response.status,
-          );
+    const pendingKey =
+      conversationPath === undefined || requestOptions.refresh
+        ? undefined
+        : JSON.stringify([cacheScope, url.href, displayDeadline]);
+    const existing = pendingKey === undefined ? undefined : pendingHistory.get(pendingKey);
+    const controller = existing?.controller ?? new AbortController();
+    const work =
+      existing?.work ??
+      (async (): Promise<PhotoResult> => {
+        const response = await fetchImpl(url, {
+          method: 'GET',
+          redirect: 'error',
+          headers: auth.headers,
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) {
+          await cancelResponseBody(response);
+          return { ok: false, error: { kind: 'aborted' }, requestId };
         }
+        if (!response.ok) {
+          const headerRequestId = response.headers.get(REQUEST_ID_HEADER);
+          const raw = await readJson(response);
+          const parsedError = parsePublicError(raw);
+          if (!parsedError.success)
+            return issueResult(requestId, PHOTO_ROUTE, parsedError.issues, response.status);
+          if (
+            parsedError.data.requestId !== requestId ||
+            parsedError.data.status !== response.status ||
+            (headerRequestId !== null && headerRequestId !== requestId)
+          ) {
+            return issueResult(
+              requestId,
+              PHOTO_ROUTE,
+              ['photo error identity does not match the request'],
+              response.status,
+            );
+          }
+          return {
+            ok: false,
+            requestId,
+            error: {
+              kind: 'http',
+              status: response.status,
+              publicError: parsedError.data,
+              retryAfterSeconds: parseRetryAfter(response.headers.get('retry-after')),
+            },
+          };
+        }
+        if (response.status !== 200) {
+          await cancelResponseBody(response);
+          return invalidContract(requestId, ['unexpected success status']);
+        }
+        const responseRequestId = response.headers.get(REQUEST_ID_HEADER);
+        if (responseRequestId !== requestId) {
+          await cancelResponseBody(response);
+          return invalidContract(requestId, [
+            'photo response requestId does not match the request',
+          ]);
+        }
+        const contentType = response.headers.get('content-type')?.split(';', 1)[0]?.trim() ?? '';
+        if (!IMAGE_TYPES.has(contentType)) {
+          await cancelResponseBody(response);
+          return invalidContract(requestId, ['photo response content type is not supported']);
+        }
+        const expiresHeader = response.headers.get('expires');
+        const expiresAtMilliseconds = expiresHeader === null ? NaN : Date.parse(expiresHeader);
+        const current = nowMilliseconds(clock);
+        if (!Number.isFinite(expiresAtMilliseconds) || current === null) {
+          await cancelResponseBody(response);
+          return invalidContract(requestId, ['photo response expiry is invalid']);
+        }
+        const effectiveExpiry = Math.min(
+          expiresAtMilliseconds,
+          ...(displayDeadline === null ? [] : [displayDeadline]),
+        );
+        if (effectiveExpiry <= current) {
+          await cancelResponseBody(response);
+          return { ok: false, error: { kind: 'expired' }, requestId };
+        }
+        const bytes = await readBoundedBytes(response);
+        if (controller.signal.aborted) return { ok: false, error: { kind: 'aborted' }, requestId };
+        if (bytes === null) return invalidContract(requestId, ['photo response is too large']);
+        const completedAt = nowMilliseconds(clock);
+        if (completedAt === null || effectiveExpiry <= completedAt) {
+          return { ok: false, error: { kind: 'expired' }, requestId };
+        }
+        if (bytes.byteLength === 0) return invalidContract(requestId, ['photo response is empty']);
         return {
-          ok: false,
+          ok: true,
           requestId,
-          error: {
-            kind: 'http',
-            status: response.status,
-            publicError: parsedError.data,
-            retryAfterSeconds: parseRetryAfter(response.headers.get('retry-after')),
+          data: {
+            uri: `data:${contentType};base64,${base64(bytes)}`,
+            contentType,
+            expiresAt: new Date(effectiveExpiry).toISOString(),
           },
         };
-      }
-      if (response.status !== 200) {
-        await cancelResponseBody(response);
-        return invalidContract(requestId, ['unexpected success status']);
-      }
-      const responseRequestId = response.headers.get(REQUEST_ID_HEADER);
-      if (responseRequestId !== requestId) {
-        await cancelResponseBody(response);
-        return invalidContract(requestId, ['photo response requestId does not match the request']);
-      }
-      const contentType = response.headers.get('content-type')?.split(';', 1)[0]?.trim() ?? '';
-      if (!IMAGE_TYPES.has(contentType)) {
-        await cancelResponseBody(response);
-        return invalidContract(requestId, ['photo response content type is not supported']);
-      }
-      const expiresHeader = response.headers.get('expires');
-      const expiresAtMilliseconds = expiresHeader === null ? NaN : Date.parse(expiresHeader);
-      const current = nowMilliseconds(clock);
-      if (!Number.isFinite(expiresAtMilliseconds) || current === null) {
-        await cancelResponseBody(response);
-        return invalidContract(requestId, ['photo response expiry is invalid']);
-      }
-      const effectiveExpiry = Math.min(
-        expiresAtMilliseconds,
-        ...(displayDeadline === null ? [] : [displayDeadline]),
-      );
-      if (effectiveExpiry <= current) {
-        await cancelResponseBody(response);
-        return { ok: false, error: { kind: 'expired' }, requestId };
-      }
-      const bytes = await readBoundedBytes(response);
-      if (bytes === null) return invalidContract(requestId, ['photo response is too large']);
-      const completedAt = nowMilliseconds(clock);
-      if (completedAt === null || effectiveExpiry <= completedAt) {
-        return { ok: false, error: { kind: 'expired' }, requestId };
-      }
-      if (bytes.byteLength === 0) return invalidContract(requestId, ['photo response is empty']);
-      return {
-        ok: true,
-        requestId,
-        data: {
-          uri: `data:${contentType};base64,${base64(bytes)}`,
-          contentType,
-          expiresAt: new Date(effectiveExpiry).toISOString(),
-        },
+      })();
+    const pending = existing ?? { work, controller, consumers: 0 };
+    if (conversationPath !== undefined && existing === undefined) {
+      activeHistoryControllers.add(controller);
+      const finish = () => {
+        activeHistoryControllers.delete(controller);
       };
-    })();
-    const outcome = await runWithinDeadline(work, deadlineAt, requestOptions.signal, onAbort);
-    requestOptions.signal?.removeEventListener('abort', onAbort);
-    if (outcome.kind === 'rejected') return { ok: false, error: { kind: 'offline' }, requestId };
+      void work.then(finish, finish);
+    }
+    const forget = () => {
+      if (pendingKey !== undefined && pendingHistory.get(pendingKey) === pending)
+        pendingHistory.delete(pendingKey);
+    };
+    if (pendingKey !== undefined && existing === undefined) {
+      pendingHistory.set(pendingKey, pending);
+      void work.then(forget, forget);
+    }
+    pending.consumers++;
+    const outcome = await runWithinDeadline(work, deadlineAt, requestOptions.signal);
+    const cancelled = controller.signal.aborted;
+    if (--pending.consumers === 0) {
+      controller.abort();
+      activeHistoryControllers.delete(controller);
+      forget();
+    }
+    if (outcome.kind === 'rejected')
+      return { ok: false, error: { kind: cancelled ? 'aborted' : 'offline' }, requestId };
     if (outcome.kind !== 'done') return { ok: false, error: { kind: outcome.kind }, requestId };
+    if (conversationPath !== undefined && outcome.value.ok)
+      requestCache.write(
+        cacheScope,
+        url.href,
+        outcome.value.data,
+        nowMilliseconds(clock) ?? Infinity,
+      );
     return outcome.value;
   };
 
-  return { fetchPhoto };
+  return {
+    fetchPhoto,
+    clearConversationPhotos: () => {
+      historyGeneration++;
+      for (const controller of activeHistoryControllers) controller.abort();
+      activeHistoryControllers.clear();
+      pendingHistory.clear();
+      historyCache.clear();
+      historyCache = new PhotoMemoryCache();
+    },
+    fetchConversationPhoto: (path, requestOptions) =>
+      fetchPhoto(path.candidateId, requestOptions, path),
+  };
 };

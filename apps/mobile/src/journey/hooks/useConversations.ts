@@ -107,7 +107,11 @@ export const useConversations = (binding: ConversationBinding) => {
     older: () => controller.older(),
     loadMore: () => controller.refreshList(true),
     refresh: () => controller.refreshList(),
-    remove: (id: string) => controller.remove(id),
+    remove: async (id: string) => {
+      binding.photoClient?.clearConversationPhotos?.();
+      await controller.remove(id);
+      binding.photoClient?.clearConversationPhotos?.();
+    },
     cancel: () => {
       stopPreparing();
       return controller.cancel();

@@ -15,6 +15,7 @@ export const useCandidateDetail = (
   response: AssistantResponseState | null,
   candidateOrder: readonly string[],
   now: string | undefined,
+  photoCandidateIds: readonly string[] = [],
 ) => {
   const scope = response?.cardSetId ?? null;
   const [selection, setSelection] = useState({ scope, detail: candidateDetailInitial });
@@ -26,7 +27,8 @@ export const useCandidateDetail = (
   ).filter(
     (card) =>
       candidateOrder.includes(card.candidateId) &&
-      toCandidateDetailViewModel(card, at).attributions.length > 0,
+      (toCandidateDetailViewModel(card, at).attributions.length > 0 ||
+        photoCandidateIds.includes(card.candidateId)),
   );
   const ids = available.map((card) => card.candidateId);
   const detail = reconcileCandidateDetailScope(selection.detail, selection.scope, scope, ids);

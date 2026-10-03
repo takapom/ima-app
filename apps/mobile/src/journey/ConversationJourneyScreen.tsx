@@ -39,12 +39,13 @@ export function ConversationJourneyScreen({
       }}
       conversation={{
         hasMessages: state.messages.length > 0,
-        renderTranscript: (liveMessages, onSourcePress) => (
+        renderTranscript: (liveMessages, onSourcePress, photoViewport) => (
           <ConversationTranscript
             messages={state.messages}
             liveCardSetId={state.responseState?.cardSetId ?? null}
             {...(binding.photoClient === undefined ? {} : { photoClient: binding.photoClient })}
             liveMessages={liveMessages}
+            photoViewport={photoViewport}
             onSourcePress={onSourcePress}
             syncError={state.syncError}
             unsyncedTurnId={state.syncError === null ? null : (state.run?.turnId ?? null)}

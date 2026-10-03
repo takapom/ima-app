@@ -21,6 +21,7 @@ import type { AssistantResponseProjectionNow } from '@mobile/journey/state/assis
 import type { RecoverIntent } from '@mobile/journey/state/journey-actions';
 import type { SavedPlaceItem, SearchHistoryItem } from '@mobile/journey/state/journey-shell';
 import type { JourneyRequestStatus } from '@mobile/journey/state/journey-phase';
+import type { HistoryPhotoViewport } from '@mobile/journey/state/history-photo-viewport';
 
 export type JourneySubmitContext = JourneyApiSubmitContext;
 
@@ -30,6 +31,7 @@ export type JourneyScreenProps = {
     readonly renderTranscript: (
       liveMessages: readonly AssistantMessageRecord[],
       onSourcePress: (sourceLink: string) => void,
+      photoViewport: HistoryPhotoViewport,
     ) => ReactNode;
     readonly hasMessages: boolean;
   };

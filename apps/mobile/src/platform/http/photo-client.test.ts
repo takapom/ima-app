@@ -36,6 +36,147 @@ const responseFor = (requestId = 'photo-request-1'): Response =>
   });
 
 describe('authenticated photo client', () => {
+  it('does not start a history request if deletion occurs while credentials are pending', async () => {
+    let completeCredentials: (() => void) | undefined;
+    const fetchImpl = vi.fn<ApiFetch>(() => Promise.resolve(responseFor()));
+    const client = createJourneyPhotoClient(
+      optionsFor(fetchImpl, {
+        credentials: () =>
+          new Promise((resolve) => {
+            completeCredentials = () =>
+              resolve({ appToken: 'app-token', deviceId: 'device', ownerCredential });
+          }),
+      }),
+    );
+    const pending = client.fetchConversationPhoto?.({
+      conversationId: 'conversation',
+      sequence: 2,
+      candidateId: 'shop',
+    });
+    client.clearConversationPhotos?.();
+    completeCredentials?.();
+    expect(await pending).toMatchObject({ ok: false, error: { kind: 'aborted' } });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+  it('shares an in-flight history photo without cancelling the remaining viewer', async () => {
+    let complete: ((response: Response) => void) | undefined;
+    const fetchImpl = vi.fn<ApiFetch>(() => new Promise((resolve) => (complete = resolve)));
+    const client = createJourneyPhotoClient(optionsFor(fetchImpl));
+    const path = { conversationId: 'conversation', sequence: 2, candidateId: 'shop' };
+    const thumbnail = new AbortController();
+    const first = client.fetchConversationPhoto?.(path, { signal: thumbnail.signal });
+    await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+    const second = client.fetchConversationPhoto?.(path);
+    // Let the second consumer finish credentials and join the existing network read.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    thumbnail.abort();
+    expect(await first).toMatchObject({ ok: false, error: { kind: 'aborted' } });
+    expect(fetchImpl.mock.calls[0]?.[1]?.signal?.aborted).toBe(false);
+    complete?.(responseFor());
+    expect(await second).toMatchObject({ ok: true });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    client.clearConversationPhotos?.();
+  });
+  it('cancels when every history photo consumer leaves and allows a fresh request', async () => {
+    const fetchImpl = vi.fn<ApiFetch>(() => new Promise(() => {}));
+    const client = createJourneyPhotoClient(optionsFor(fetchImpl));
+    const path = { conversationId: 'conversation', sequence: 2, candidateId: 'shop' };
+    const abort = new AbortController();
+    const first = client.fetchConversationPhoto?.(path, { signal: abort.signal });
+    await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+    abort.abort();
+    expect(await first).toMatchObject({ ok: false, error: { kind: 'aborted' } });
+    expect(fetchImpl.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+    fetchImpl.mockResolvedValueOnce(responseFor());
+    expect(await client.fetchConversationPhoto?.(path)).toMatchObject({ ok: true });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    client.clearConversationPhotos?.();
+  });
+  it('does not share a pending photo across credentials or restore it after deletion', async () => {
+    let deviceId = 'device-1';
+    let complete: ((response: Response) => void) | undefined;
+    const fetchImpl = vi.fn<ApiFetch>(() => new Promise((resolve) => (complete = resolve)));
+    const client = createJourneyPhotoClient(
+      optionsFor(fetchImpl, {
+        credentials: () => ({ appToken: 'app-token', deviceId, ownerCredential }),
+      }),
+    );
+    const path = { conversationId: 'conversation', sequence: 2, candidateId: 'shop' };
+    const first = client.fetchConversationPhoto?.(path);
+    await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+    const completeFirst = complete;
+    deviceId = 'device-2';
+    const second = client.fetchConversationPhoto?.(path);
+    await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(2));
+    client.clearConversationPhotos?.();
+    completeFirst?.(responseFor());
+    complete?.(responseFor());
+    expect(await first).toMatchObject({ ok: false, error: { kind: 'aborted' } });
+    expect(await second).toMatchObject({ ok: false, error: { kind: 'aborted' } });
+    fetchImpl.mockResolvedValueOnce(responseFor());
+    expect(await client.fetchConversationPhoto?.(path)).toMatchObject({ ok: true });
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    client.clearConversationPhotos?.();
+  });
+  it('also cancels an explicit refresh when the conversation is deleted', async () => {
+    const fetchImpl = vi.fn<ApiFetch>(
+      (_url, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new Error('aborted')), {
+            once: true,
+          });
+        }),
+    );
+    const client = createJourneyPhotoClient(optionsFor(fetchImpl));
+    const pending = client.fetchConversationPhoto?.(
+      { conversationId: 'conversation', sequence: 2, candidateId: 'shop' },
+      { refresh: true },
+    );
+    await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+    client.clearConversationPhotos?.();
+    expect(fetchImpl.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+    expect(await pending).toMatchObject({ ok: false, error: { kind: 'aborted' } });
+  });
+  it('loads history photos independently from expired tokens and reuses only current credential-scoped memory', async () => {
+    vi.useFakeTimers();
+    try {
+      let deviceId = 'device-1';
+      let clock = now;
+      const fetchImpl = vi.fn<ApiFetch>(() => Promise.resolve(responseFor()));
+      const client = createJourneyPhotoClient(
+        optionsFor(fetchImpl, {
+          credentials: () => ({ appToken: 'app-token', deviceId, ownerCredential }),
+          now: () => clock,
+        }),
+      );
+      const path = { conversationId: 'conversation', sequence: 2, candidateId: 'shop' };
+      expect(await client.fetchConversationPhoto?.(path)).toMatchObject({ ok: true });
+      const request = fetchImpl.mock.calls[0]?.[0];
+      expect(request instanceof Request ? request.url : request?.toString()).toContain(
+        '/v1/conversations/conversation/messages/2/photos/shop',
+      );
+      expect(await client.fetchConversationPhoto?.(path)).toMatchObject({ ok: true });
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+      await client.fetchConversationPhoto?.(path, { refresh: true });
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+      deviceId = 'device-2';
+      await client.fetchConversationPhoto?.(path);
+      expect(fetchImpl).toHaveBeenCalledTimes(3);
+      clock = '2026-09-10T12:06:00Z';
+      expect(await client.fetchConversationPhoto?.(path)).toMatchObject({
+        ok: false,
+        error: { kind: 'expired' },
+      });
+      expect(fetchImpl).toHaveBeenCalledTimes(4);
+      expect(await client.fetchConversationPhoto?.({ ...path, sequence: 0 })).toMatchObject({
+        ok: false,
+      });
+      expect(fetchImpl).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.clearAllTimers();
+      vi.useRealTimers();
+    }
+  });
   it('sends the opaque token with the owner-scoped headers and returns an ephemeral image URI', async () => {
     const fetchImpl = vi.fn<ApiFetch>(() => Promise.resolve(responseFor()));
     const client = createJourneyPhotoClient(optionsFor(fetchImpl));
