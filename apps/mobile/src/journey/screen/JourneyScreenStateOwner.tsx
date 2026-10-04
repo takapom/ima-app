@@ -359,7 +359,9 @@ export function JourneyScreenStateOwner({
                 sourceLink.notice?.text ?? null,
               )}
               onOpenDetail={detail.open}
-              onSourcePress={openSourceLink}
+              onOpenMap={(card) => {
+                void actions.openMap(card).catch(actions.reportFailure);
+              }}
               onPhotoReady={detail.rememberPhoto}
               onSave={save}
               {...(photoClient === undefined ? {} : { photoClient })}

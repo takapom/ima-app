@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { PublicCard } from '@ima/contracts';
 import {
   buildAppleWalkingMapUrl,
+  googleMapsSearchUrlFor,
   placePageUrlFor,
   resolveJourneyMapTarget,
+  resolveMapHandoff,
 } from '@mobile/journey/services/journey-map';
 
 const retention = {
@@ -52,6 +54,21 @@ const cardWith = (
     retention,
   },
 });
+
+const cardWithIdentity = (overrides: { readonly address: string | null }): PublicCard => {
+  const card = cardWith('https://example.com/shop/1');
+  const identity = card.facts.identity;
+  if (identity.status !== 'known') throw new Error('fixture identity must be known');
+  return {
+    ...card,
+    facts: { ...card.facts, identity: { ...identity, value: { ...identity.value, ...overrides } } },
+  };
+};
+
+const unknownIdentityCard: PublicCard = {
+  ...cardWith('https://example.com/shop/1'),
+  facts: { identity: { status: 'unknown', reason: 'not_found' } },
+};
 
 const coordinates = {
   latitude: 35.6467,
@@ -190,5 +207,54 @@ describe('place page fallback for a provider without coordinates', () => {
 
   it('normalizes the place page URL through the shared source-link preparation', () => {
     expect(placePageUrlFor(cardWith('https://example.com'))).toBe('https://example.com/');
+  });
+});
+
+describe('Google Maps search handoff', () => {
+  it('builds a keyless Google Maps search URL from the displayable name and address', () => {
+    expect(googleMapsSearchUrlFor(cardWith('https://example.com/shop/1'))).toBe(
+      'https://www.google.com/maps/search/?api=1&query=%E5%A4%9C%E3%82%AB%E3%83%95%E3%82%A7%20%E6%9D%B1%E4%BA%AC%E9%83%BD%E6%B8%8B%E8%B0%B7%E5%8C%BA%E6%81%B5%E6%AF%94%E5%AF%BF1-1-1',
+    );
+  });
+
+  it('falls back to the area when the address is not provided', () => {
+    expect(googleMapsSearchUrlFor(cardWithIdentity({ address: null }))).toBe(
+      'https://www.google.com/maps/search/?api=1&query=%E5%A4%9C%E3%82%AB%E3%83%95%E3%82%A7%20%E6%81%B5%E6%AF%94%E5%AF%BF',
+    );
+  });
+
+  it('does not build a search from an unknown identity', () => {
+    expect(googleMapsSearchUrlFor(unknownIdentityCard)).toBeNull();
+  });
+
+  it('does not hand expired provider identity to an external map', () => {
+    expect(googleMapsSearchUrlFor(cardWith('https://example.com/shop/1', 'expired'))).toBeNull();
+  });
+});
+
+describe('map handoff', () => {
+  it('opens the Google Maps search even when trusted coordinates exist', () => {
+    expect(resolveMapHandoff(coordinates, cardWith('https://example.com/shop/1'))).toEqual({
+      status: 'ready',
+      url: googleMapsSearchUrlFor(cardWith('https://example.com/shop/1')),
+      target: 'map',
+    });
+  });
+
+  it('falls back to trusted coordinates when the identity can no longer be shown', () => {
+    expect(
+      resolveMapHandoff(coordinates, cardWith('https://example.com/shop/1', 'expired')),
+    ).toEqual({
+      status: 'ready',
+      url: 'https://maps.apple.com/?daddr=35.6467%2C139.71&dirflg=w',
+      target: 'map',
+    });
+  });
+
+  it('reports a missing destination instead of opening anything for an expired identity', () => {
+    expect(resolveMapHandoff(null, cardWith('https://example.com/shop/1', 'expired'))).toEqual({
+      status: 'unavailable',
+      reason: 'destination_missing',
+    });
   });
 });

@@ -111,7 +111,6 @@ export function HistoricalCards({
             photo={photoFor(card.candidateId)}
             card={card}
             now={now}
-            onSourcePress={onSourcePress}
             {...(toCandidateDetailViewModel(card, Date.parse(now)).attributions.length === 0 &&
             !part.photoCandidateIds?.includes(card.candidateId)
               ? {}
