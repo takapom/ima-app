@@ -315,6 +315,36 @@ describe('Hot Pepper primary provider composition', () => {
     f.composition.dispose();
   });
 
+  it('returns no candidates when nothing is listed around the current location (#66)', async () => {
+    const f = await setup(
+      () =>
+        Response.json({
+          results: {
+            api_version: '1.30',
+            results_available: 0,
+            results_returned: '0',
+            results_start: 0,
+            shop: [],
+          },
+        }),
+      {
+        ...buildRequest.runtimeInput,
+        location: {
+          status: 'available',
+          lat: 35.6896,
+          lng: 139.7006,
+          accuracyMeters: 64,
+          precise: true,
+          capturedAt: NOW,
+        },
+      },
+    );
+    expect(
+      await f.search({ ...searchInput, area: { kind: 'current_location', radiusMeters: 1_000 } }),
+    ).toMatchObject({ status: 'ok', data: { candidates: [], nextCursor: null } });
+    f.composition.dispose();
+  });
+
   it('distinguishes zero results from upstream failure', async () => {
     const empty = await setup(() => Response.json({ results: { shop: [], results_available: 0 } }));
     expect(await empty.search()).toMatchObject({
