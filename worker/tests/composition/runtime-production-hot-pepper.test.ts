@@ -339,6 +339,25 @@ describe('Hot Pepper primary provider composition', () => {
     f.composition.dispose();
   });
 
+  it('does not search around a low-accuracy location (#66)', async () => {
+    const f = await setup(undefined, {
+      ...buildRequest.runtimeInput,
+      location: {
+        status: 'reduced',
+        lat: 35.6467,
+        lng: 139.7102,
+        accuracyMeters: 1_500,
+        precise: false,
+        capturedAt: NOW,
+      },
+    });
+    expect(
+      await f.search({ ...searchInput, area: { kind: 'current_location', radiusMeters: 1_000 } }),
+    ).toMatchObject({ status: 'error', error: { code: 'LOCATION_REQUIRED' } });
+    expect(f.requests).toHaveLength(0);
+    f.composition.dispose();
+  });
+
   it('continues with the signed original query and rejects tampered cursors', async () => {
     const f = await setup(() =>
       Response.json({ results: { shop: [testShop], results_available: 2 } }),

@@ -40,9 +40,15 @@ describe('core port contracts', () => {
     expect(
       v.safeParse(SearchPlacesInputSchema, {
         ...search,
-        area: { kind: 'current_location', radiusMeters: 3_000 },
+        area: { kind: 'current_location', radiusMeters: 1_000 },
       }).success,
     ).toBe(true);
+    expect(
+      v.safeParse(SearchPlacesInputSchema, {
+        ...search,
+        area: { kind: 'current_location', radiusMeters: 1_001 },
+      }).success,
+    ).toBe(false);
     expect(
       v.safeParse(SearchPlacesInputSchema, {
         ...search,

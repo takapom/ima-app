@@ -181,6 +181,10 @@ describe('public tool catalog', () => {
     expect(Object.keys(tools).sort()).toEqual(['get_place_details', 'respond', 'search_places']);
     expect(tools.search_places.description).toContain('空白区切りのAND検索');
     expect(tools.search_places.description).toContain('地域名もqueryと同じkeywordへ連結');
+    expect(tools.search_places.description).toContain(
+      'current_locationはlocation.statusがavailableのときだけ使えます',
+    );
+    expect(tools.search_places.description).toContain('radiusMetersは徒歩圏として100〜1000m');
     expect(tools.search_places.description).toContain('ジャンル語へ置き換えて');
     expect(tools.search_places.description).toContain('0件のときは語を減らす');
     expect(tools.search_places.description).not.toContain('openNow');
