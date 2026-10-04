@@ -8,6 +8,7 @@ import JapaneseYen from 'lucide-react-native/icons/japanese-yen';
 import MapPin from 'lucide-react-native/icons/map-pin';
 import Menu from 'lucide-react-native/icons/menu';
 import Plus from 'lucide-react-native/icons/plus';
+import TrainFront from 'lucide-react-native/icons/train-front';
 import X from 'lucide-react-native/icons/x';
 
 const icons = {
@@ -19,6 +20,7 @@ const icons = {
   close: X,
   clock: Clock,
   mapPin: MapPin,
+  train: TrainFront,
   yen: JapaneseYen,
 } satisfies Record<string, LucideIcon>;
 

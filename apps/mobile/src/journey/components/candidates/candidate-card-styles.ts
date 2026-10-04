@@ -2,7 +2,8 @@ import { StyleSheet } from 'react-native';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 
 export const CANDIDATE_THUMBNAIL_SIZE = 92;
-const SAVE_ACTION_SIZE = 40;
+const ICON_ACTION_SIZE = 40;
+const FACT_LINE_HEIGHT = 16;
 
 export const styles = StyleSheet.create({
   card: {
@@ -26,24 +27,38 @@ export const styles = StyleSheet.create({
     width: CANDIDATE_THUMBNAIL_SIZE,
   },
   heading: { flex: 1, minWidth: 0, gap: 5 },
-  title: { gap: 5 },
-  titleBesideSave: {
-    minHeight: SAVE_ACTION_SIZE,
-    paddingRight: SAVE_ACTION_SIZE + spacing.compact,
-  },
   category: { color: colors.muted, fontSize: typography.label },
   name: { color: colors.text, fontSize: typography.cardTitle, fontWeight: '700' },
   dimmedText: { color: colors.muted },
   diff: { color: colors.muted, fontSize: typography.label },
-  meta: { color: colors.muted, fontSize: typography.label },
+  meta: {
+    color: colors.muted,
+    flexShrink: 1,
+    fontSize: typography.label,
+    lineHeight: FACT_LINE_HEIGHT,
+  },
   closing: { color: colors.lime, fontWeight: '700' },
   factLine: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 6,
     minWidth: 0,
   },
-  actionStack: { gap: 2 },
+  factIcon: { height: FACT_LINE_HEIGHT, justifyContent: 'center' },
+  sideActions: { gap: spacing.compact },
+  iconAction: {
+    alignItems: 'center',
+    borderColor: colors.border,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    height: ICON_ACTION_SIZE,
+    justifyContent: 'center',
+    width: ICON_ACTION_SIZE,
+  },
+  saveActionEmphasized: {
+    backgroundColor: colors.cream,
+    borderColor: colors.cream,
+  },
   detailsAction: {
     alignItems: 'center',
     backgroundColor: colors.cream,
@@ -55,36 +70,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.section,
   },
   detailsActionText: { color: colors.ink, fontSize: typography.button, fontWeight: '700' },
-  mapAction: {
-    alignItems: 'center',
-    alignSelf: 'center',
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'center',
-    minHeight: SAVE_ACTION_SIZE,
-    paddingHorizontal: spacing.section,
-  },
-  mapActionText: {
-    color: colors.text,
-    fontSize: typography.label,
-    textDecorationLine: 'underline',
-  },
-  saveAction: {
-    alignItems: 'center',
-    borderColor: colors.border,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    height: SAVE_ACTION_SIZE,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    width: SAVE_ACTION_SIZE,
-  },
-  saveActionEmphasized: {
-    backgroundColor: colors.cream,
-    borderColor: colors.cream,
-  },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.72 },
 });

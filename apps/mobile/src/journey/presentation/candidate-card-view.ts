@@ -50,15 +50,14 @@ export type CardViewModel = {
 };
 
 export const CARD_DETAILS_LABEL = '店舗詳細を見る' as const;
-export const CARD_MAP_LABEL = '地図で見る' as const;
 
 export type CardActionsView = {
   readonly details: {
     readonly label: typeof CARD_DETAILS_LABEL;
     readonly accessibilityLabel: string;
   };
+  /** Icon-only, so the accessible name is the action's only label. */
   readonly map: {
-    readonly label: typeof CARD_MAP_LABEL;
     readonly accessibilityLabel: string;
   };
   readonly save: {
@@ -74,7 +73,6 @@ export const cardActions = (view: CardViewModel): CardActionsView => ({
     accessibilityLabel: `${view.name}の店舗詳細を見る`,
   },
   map: {
-    label: CARD_MAP_LABEL,
     accessibilityLabel: `${view.name}をGoogle Mapsで見る`,
   },
   save: {

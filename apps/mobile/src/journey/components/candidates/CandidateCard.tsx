@@ -66,76 +66,75 @@ export function CandidateCard({
           </View>
         ) : null}
         <View style={styles.heading}>
-          <View style={[styles.title, saveAction !== undefined && styles.titleBesideSave]}>
-            {view.category === null ? null : (
-              <Text numberOfLines={1} style={styles.category}>
-                {view.category}
-              </Text>
-            )}
-            <Text numberOfLines={2} style={[styles.name, view.dimmed && styles.dimmedText]}>
-              {view.name}
+          {view.category === null ? null : (
+            <Text numberOfLines={1} style={styles.category}>
+              {view.category}
             </Text>
-          </View>
+          )}
+          <Text numberOfLines={2} style={[styles.name, view.dimmed && styles.dimmedText]}>
+            {view.name}
+          </Text>
           {view.diff === null ? null : (
             <Text numberOfLines={1} style={styles.diff}>
               {view.diff}
             </Text>
           )}
-          {view.access === null ? null : <FactLine icon="mapPin" text={view.access} />}
+          {view.access === null ? null : <FactLine icon="train" text={view.access} />}
           {opening === null ? null : (
             <FactLine icon="clock" text={opening} emphasized={view.opening.kind === 'closing'} />
           )}
           {view.price === null ? null : <FactLine icon="yen" text={view.price} />}
         </View>
-        {saveAction === undefined ? null : (
-          <Pressable
-            accessibilityLabel={actions.save.accessibilityLabel}
-            accessibilityRole="button"
-            hitSlop={4}
-            onPress={saveAction}
-            style={({ pressed }) => [
-              styles.saveAction,
-              actions.save.emphasized && styles.saveActionEmphasized,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Icon
-              name="bookmark"
-              size={18}
-              color={actions.save.emphasized ? colors.ink : colors.text}
-            />
-          </Pressable>
+        {saveAction === undefined && !canOpenMap ? null : (
+          <View style={styles.sideActions}>
+            {saveAction === undefined ? null : (
+              <Pressable
+                accessibilityLabel={actions.save.accessibilityLabel}
+                accessibilityRole="button"
+                hitSlop={4}
+                onPress={saveAction}
+                style={({ pressed }) => [
+                  styles.iconAction,
+                  actions.save.emphasized && styles.saveActionEmphasized,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Icon
+                  name="bookmark"
+                  size={18}
+                  color={actions.save.emphasized ? colors.ink : colors.text}
+                />
+              </Pressable>
+            )}
+            {canOpenMap ? (
+              <Pressable
+                accessibilityLabel={actions.map.accessibilityLabel}
+                accessibilityRole="link"
+                hitSlop={4}
+                onPress={openMap}
+                style={({ pressed }) => [styles.iconAction, pressed && styles.pressed]}
+              >
+                <Icon name="mapPin" size={18} color={colors.lime} />
+              </Pressable>
+            ) : null}
+          </View>
         )}
       </View>
-      <View style={styles.actionStack}>
-        <Pressable
-          accessibilityLabel={actions.details.accessibilityLabel}
-          accessibilityRole="button"
-          hitSlop={4}
-          onPress={openDetails}
-          disabled={onOpenDetail === undefined}
-          style={({ pressed }) => [
-            styles.detailsAction,
-            onOpenDetail === undefined && styles.disabled,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text style={styles.detailsActionText}>{actions.details.label}</Text>
-          <Icon name="chevron" size={16} color={colors.ink} />
-        </Pressable>
-        {canOpenMap ? (
-          <Pressable
-            accessibilityLabel={actions.map.accessibilityLabel}
-            accessibilityRole="link"
-            hitSlop={4}
-            onPress={openMap}
-            style={({ pressed }) => [styles.mapAction, pressed && styles.pressed]}
-          >
-            <Icon name="mapPin" size={17} color={colors.lime} />
-            <Text style={styles.mapActionText}>{actions.map.label}</Text>
-          </Pressable>
-        ) : null}
-      </View>
+      <Pressable
+        accessibilityLabel={actions.details.accessibilityLabel}
+        accessibilityRole="button"
+        hitSlop={4}
+        onPress={openDetails}
+        disabled={onOpenDetail === undefined}
+        style={({ pressed }) => [
+          styles.detailsAction,
+          onOpenDetail === undefined && styles.disabled,
+          pressed && styles.pressed,
+        ]}
+      >
+        <Text style={styles.detailsActionText}>{actions.details.label}</Text>
+        <Icon name="chevron" size={16} color={colors.ink} />
+      </Pressable>
     </View>
   );
 }
@@ -145,14 +144,16 @@ function FactLine({
   text,
   emphasized = false,
 }: {
-  readonly icon: 'clock' | 'mapPin' | 'yen';
+  readonly icon: 'clock' | 'train' | 'yen';
   readonly text: string;
   readonly emphasized?: boolean;
 }): React.JSX.Element {
   return (
     <View style={styles.factLine}>
-      <Icon name={icon} size={15} color={emphasized ? colors.lime : colors.muted} />
-      <Text numberOfLines={1} style={[styles.meta, emphasized && styles.closing]}>
+      <View style={styles.factIcon}>
+        <Icon name={icon} size={15} color={emphasized ? colors.lime : colors.muted} />
+      </View>
+      <Text numberOfLines={2} style={[styles.meta, emphasized && styles.closing]}>
         {text}
       </Text>
     </View>
