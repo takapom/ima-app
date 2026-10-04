@@ -64,7 +64,7 @@ const isValidArea = (area: PlacesSearchCursorBinding['area']): boolean => {
     area.kind === 'current_location' &&
     Number.isFinite(area.radiusMeters) &&
     area.radiusMeters >= 100 &&
-    area.radiusMeters <= 1_000
+    area.radiusMeters <= 3_000
   );
 };
 

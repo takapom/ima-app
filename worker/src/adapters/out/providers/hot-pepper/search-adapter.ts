@@ -59,7 +59,16 @@ const requestFor = (
   const coordinates = context.location.coordinates;
   if (context.location.status !== 'available' || coordinates === null)
     throw new HotPepperError('INVALID_REQUEST');
-  const range = area.radiusMeters <= 300 ? 1 : area.radiusMeters <= 500 ? 2 : 3;
+  const range =
+    area.radiusMeters <= 300
+      ? 1
+      : area.radiusMeters <= 500
+        ? 2
+        : area.radiusMeters <= 1_000
+          ? 3
+          : area.radiusMeters <= 2_000
+            ? 4
+            : 5;
   return { keyword: binding.query, ...coordinates, range, count: binding.limit, start };
 };
 

@@ -26,7 +26,7 @@ import type {
 
 const CurrentLocationAreaSchema = v.strictObject({
   kind: v.literal('current_location'),
-  radiusMeters: v.pipe(NonNegativeFiniteNumberSchema, v.minValue(100), v.maxValue(1_000)),
+  radiusMeters: v.pipe(NonNegativeFiniteNumberSchema, v.minValue(100), v.maxValue(3_000)),
 });
 const NamedAreaSchema = v.strictObject({
   kind: v.literal('named_area'),
