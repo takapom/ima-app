@@ -44,16 +44,21 @@ export type CardViewModel = {
   readonly price: string | null;
   readonly amenities: readonly string[];
   readonly diff: string | null;
-  /** Closed shops emphasize 残す. 見てみる stays in the same slot. */
+  /** Closed shops emphasize 残す. 店舗詳細を見る stays in the same slot. */
   readonly primaryAction: 'details' | 'save';
   readonly dimmed: boolean;
 };
 
-export const CARD_PEEK_LABEL = '見てみる' as const;
+export const CARD_DETAILS_LABEL = '店舗詳細を見る' as const;
+export const CARD_MAP_LABEL = '地図で見る' as const;
 
 export type CardActionsView = {
-  readonly peek: {
-    readonly label: typeof CARD_PEEK_LABEL;
+  readonly details: {
+    readonly label: typeof CARD_DETAILS_LABEL;
+    readonly accessibilityLabel: string;
+  };
+  readonly map: {
+    readonly label: typeof CARD_MAP_LABEL;
     readonly accessibilityLabel: string;
   };
   readonly save: {
@@ -62,11 +67,15 @@ export type CardActionsView = {
   };
 };
 
-/** Peek and save keep their slots; only save's emphasis moves with opening state. */
+/** The three card actions keep stable names; only save's emphasis moves with opening state. */
 export const cardActions = (view: CardViewModel): CardActionsView => ({
-  peek: {
-    label: CARD_PEEK_LABEL,
-    accessibilityLabel: `${view.name}を見てみる`,
+  details: {
+    label: CARD_DETAILS_LABEL,
+    accessibilityLabel: `${view.name}の店舗詳細を見る`,
+  },
+  map: {
+    label: CARD_MAP_LABEL,
+    accessibilityLabel: `${view.name}をGoogle Mapsで見る`,
   },
   save: {
     emphasized: view.primaryAction === 'save',

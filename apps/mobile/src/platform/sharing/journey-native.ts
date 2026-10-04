@@ -1,7 +1,7 @@
 import { Linking, Share } from 'react-native';
 import type { PublicCard } from '@ima/contracts';
 import {
-  resolveJourneyMapTarget,
+  resolveMapHandoff,
   type JourneyMapOpenResult,
   type JourneyMapService,
   type WalkingMapDestinationResolver,
@@ -13,15 +13,14 @@ import {
 } from '@mobile/journey/services/journey-source-link';
 
 /**
- * Native adapters stay at the service boundary. The resolver must receive
- * coordinates from an existing public/saved-place source; this adapter never
- * geocodes a name or address on its own.
+ * Native adapters stay at the service boundary. The handoff is a keyless Google Maps
+ * search URL; resolver coordinates are used only when the identity cannot be shown.
  */
 export const createNativeJourneyMapService = (
   resolveDestination: WalkingMapDestinationResolver,
 ): JourneyMapService => ({
   openWalkingMap: async (card: PublicCard): Promise<JourneyMapOpenResult> => {
-    const resolved = resolveJourneyMapTarget(resolveDestination(card), card);
+    const resolved = resolveMapHandoff(resolveDestination(card), card);
     if (resolved.status !== 'ready') return resolved;
     try {
       if (!(await Linking.canOpenURL(resolved.url))) {

@@ -91,6 +91,19 @@ export const placePageUrlFor = (card: PublicCard): string | null => {
   return prepared.status === 'ready' ? prepared.url : null;
 };
 
+/** Builds a keyless Google Maps search handoff from identity that is still displayable. */
+export const googleMapsSearchUrlFor = (card: PublicCard): string | null => {
+  const field = card.facts.identity;
+  if (field.status !== 'known') return null;
+  if (!field.evidence.every((item) => item.retention.displayPolicyStatus === 'available')) {
+    return null;
+  }
+  const location = field.value.address ?? field.value.area;
+  const query = [field.value.name, location].filter((part) => part.length > 0).join(' ');
+  if (query.length === 0) return null;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+};
+
 /**
  * Prefers a walking map built from trusted coordinates and falls back to the place
  * page, so a provider that withholds coordinates still leaves a usable destination.
@@ -106,4 +119,19 @@ export const resolveJourneyMapTarget = (
   if (map.reason === 'destination_invalid') return map;
   const placePage = placePageUrlFor(card);
   return placePage === null ? map : { status: 'ready', url: placePage, target: 'place_page' };
+};
+
+/**
+ * The map action is labelled as Google Maps, so a displayable identity always opens
+ * the Google Maps search; coordinates and the place page remain the fallback only
+ * when the identity cannot be shown.
+ */
+export const resolveMapHandoff = (
+  destination: WalkingMapDestination | null,
+  card: PublicCard,
+): JourneyMapTargetResult => {
+  const googleMaps = googleMapsSearchUrlFor(card);
+  return googleMaps === null
+    ? resolveJourneyMapTarget(destination, card)
+    : { status: 'ready', url: googleMaps, target: 'map' };
 };

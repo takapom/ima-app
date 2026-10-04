@@ -1,21 +1,20 @@
 import { StyleSheet } from 'react-native';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 
-export const CANDIDATE_THUMBNAIL_SIZE = 76;
-const ACTION_SIZE = 36;
+export const CANDIDATE_THUMBNAIL_SIZE = 92;
+const SAVE_ACTION_SIZE = 40;
 
 export const styles = StyleSheet.create({
   card: {
-    minHeight: 240,
     backgroundColor: colors.surfaceMuted,
     borderColor: colors.borderSoft,
     borderWidth: 1,
     borderRadius: radii.card,
     padding: spacing.section,
-    gap: spacing.compact,
+    gap: spacing.section,
   },
   summary: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flexDirection: 'row',
     gap: spacing.section,
     minHeight: spacing.touch * 2,
@@ -26,57 +25,61 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
     width: CANDIDATE_THUMBNAIL_SIZE,
   },
-  heading: { flex: 1, minWidth: 0, gap: spacing.compact },
+  heading: { flex: 1, minWidth: 0, gap: 5 },
+  title: { gap: 5 },
+  titleBesideSave: {
+    minHeight: SAVE_ACTION_SIZE,
+    paddingRight: SAVE_ACTION_SIZE + spacing.compact,
+  },
   category: { color: colors.muted, fontSize: typography.label },
   name: { color: colors.text, fontSize: typography.cardTitle, fontWeight: '700' },
   dimmedText: { color: colors.muted },
   diff: { color: colors.muted, fontSize: typography.label },
   meta: { color: colors.muted, fontSize: typography.label },
   closing: { color: colors.lime, fontWeight: '700' },
-  metaRow: { flexDirection: 'row', gap: spacing.compact },
-  access: { flex: 1, minWidth: 0 },
-  price: { flexShrink: 1, maxWidth: '65%' },
-  sourceLink: {
+  factLine: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.compact,
-    minHeight: ACTION_SIZE,
-    minWidth: spacing.touch,
+    gap: 6,
+    minWidth: 0,
   },
-  sourceUrl: {
-    flex: 1,
-    color: colors.muted,
-    fontSize: typography.label,
-    textDecorationLine: 'underline',
-  },
-  actionRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.compact,
-    marginTop: 'auto',
-    minHeight: 44,
-  },
-  peekAction: {
+  actionStack: { gap: 2 },
+  detailsAction: {
     alignItems: 'center',
     backgroundColor: colors.cream,
     borderRadius: radii.pill,
     flexDirection: 'row',
-    gap: 5,
-    height: ACTION_SIZE,
+    gap: spacing.compact,
+    height: spacing.touch,
     justifyContent: 'center',
-    paddingLeft: 16,
-    paddingRight: 14,
+    paddingHorizontal: spacing.section,
   },
-  peekActionText: { color: colors.ink, fontSize: 13, fontWeight: '700' },
+  detailsActionText: { color: colors.ink, fontSize: typography.button, fontWeight: '700' },
+  mapAction: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'center',
+    minHeight: SAVE_ACTION_SIZE,
+    paddingHorizontal: spacing.section,
+  },
+  mapActionText: {
+    color: colors.text,
+    fontSize: typography.label,
+    textDecorationLine: 'underline',
+  },
   saveAction: {
     alignItems: 'center',
     borderColor: colors.border,
     borderRadius: radii.pill,
     borderWidth: 1,
-    height: ACTION_SIZE,
+    height: SAVE_ACTION_SIZE,
     justifyContent: 'center',
-    marginLeft: 'auto',
-    width: ACTION_SIZE,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    width: SAVE_ACTION_SIZE,
   },
   saveActionEmphasized: {
     backgroundColor: colors.cream,
