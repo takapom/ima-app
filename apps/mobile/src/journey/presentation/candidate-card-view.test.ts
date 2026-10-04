@@ -285,7 +285,7 @@ describe('card opening state', () => {
 });
 
 describe('card action and emphasis', () => {
-  it('keeps detail and map labels explicit and emphasizes 残す only when closed', () => {
+  it('labels details visibly, names the icon-only map action, and emphasizes 残す only when closed', () => {
     const open = toCardViewModel(card({ opening_hours: known(hours()) }), NOW);
     expect(open).toMatchObject({ primaryAction: 'details', dimmed: false });
     expect(cardActions(open)).toEqual({
@@ -294,7 +294,6 @@ describe('card action and emphasis', () => {
         accessibilityLabel: 'ミスターフレンドリー 恵比寿店の店舗詳細を見る',
       },
       map: {
-        label: '地図で見る',
         accessibilityLabel: 'ミスターフレンドリー 恵比寿店をGoogle Mapsで見る',
       },
       save: {
@@ -311,7 +310,6 @@ describe('card action and emphasis', () => {
         accessibilityLabel: 'ミスターフレンドリー 恵比寿店の店舗詳細を見る',
       },
       map: {
-        label: '地図で見る',
         accessibilityLabel: 'ミスターフレンドリー 恵比寿店をGoogle Mapsで見る',
       },
       save: {
