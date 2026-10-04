@@ -75,7 +75,7 @@ Dev Clientは`bun run dev:mobile`で起動する。同一マシンのWeb/Simulat
 
 手書きコード・テスト・設定は空行・コメント込み500行以内。Markdown、lockfile、明示した生成物はファイル行数制限から除外する。コミットの追加＋削除は文書・テスト・生成物も含め2,000行以内とし、必要な試験の切り離しや圧縮で回避しない。
 
-[quality CI](../../.github/workflows/quality.yml)はmainへのpushで品質検査と各コミットの行数検査を実行する構成。[config dry-run CI](../../.github/workflows/config-dry-run.yml)はdev/staging/productionの設定を検査する。定義の存在を、GitHub上での成功や保護設定の証明にしない。
+[quality CI](../../.github/workflows/quality.yml)はmainへのpushとmain向けPRで品質検査と各コミットの行数検査を実行する構成。PRではmainとの分岐点からPRの先頭までの各コミットを検査する。[config dry-run CI](../../.github/workflows/config-dry-run.yml)は同じ契機でdev/staging/productionの設定を検査する。定義の存在を、GitHub上での成功や保護設定の証明にしない。
 ローカルhookは補助であり、必要なら`git config core.hooksPath .githooks`で有効にする。hookは`commit-size`と`bun run check`を実行し、CIは全ゲートを実行する。
 
 ## 検証の使い分け
