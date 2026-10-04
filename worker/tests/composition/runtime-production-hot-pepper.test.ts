@@ -283,6 +283,28 @@ describe('Hot Pepper primary provider composition', () => {
     f.composition.dispose();
   });
 
+  it('widens to the 2km and 3km API ranges (#66)', async () => {
+    const f = await setup(
+      () => Response.json({ results: { shop: [testShop], results_available: 1 } }),
+      {
+        ...buildRequest.runtimeInput,
+        location: {
+          status: 'available',
+          lat: 35.6467,
+          lng: 139.7102,
+          accuracyMeters: 20,
+          precise: true,
+          capturedAt: NOW,
+        },
+      },
+    );
+    for (const radiusMeters of [2_000, 3_000]) {
+      await f.search({ ...searchInput, area: { kind: 'current_location', radiusMeters } });
+    }
+    expect(f.requests.map((request) => request.searchParams.get('range'))).toEqual(['4', '5']);
+    f.composition.dispose();
+  });
+
   it('rejects a detail response for another shop', async () => {
     const f = await setup((url) =>
       Response.json({

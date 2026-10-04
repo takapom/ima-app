@@ -39,7 +39,9 @@ describe('model message encoding', () => {
     expect(MODEL_SYSTEM_PROMPT).toContain(
       'location.statusがavailableなら現在地周辺を場所として扱い、場所を聞き返さず',
     );
-    expect(MODEL_SYSTEM_PROMPT).toContain('徒歩で行ける範囲として最大1000m');
+    expect(MODEL_SYSTEM_PROMPT).toContain('半径はまず1000mで探し');
+    expect(MODEL_SYSTEM_PROMPT).toContain('2000m、3000mの順に広げてください');
+    expect(MODEL_SYSTEM_PROMPT).not.toContain('最大1000m');
     expect(MODEL_SYSTEM_PROMPT).toContain(
       'availableでなく地名もない場合はcurrent_locationで検索せず',
     );
