@@ -40,7 +40,7 @@ const searchJsonSchema: WireSchema = {
               type: 'object',
               properties: {
                 kind: { const: 'current_location' },
-                radiusMeters: { type: 'number', minimum: 100, maximum: 3000 },
+                radiusMeters: { type: 'number', minimum: 100, maximum: 1000 },
               },
               required: ['kind', 'radiusMeters'],
               additionalProperties: false,

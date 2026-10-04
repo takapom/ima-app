@@ -335,7 +335,8 @@ export const createPublicToolSet = (dependencies: ToolBindingDependencies): Publ
   ({
     search_places: tool<SearchToolEnvelope, SearchToolResult>({
       description: [
-        '指定地域の店舗をホットペッパーで検索します。keywordは空白区切りのAND検索で、areaに指定した地域名もqueryと同じkeywordへ連結されます。',
+        '地域名または現在地周辺の店舗をホットペッパーで検索します。keywordは空白区切りのAND検索で、named_areaに指定した地域名もqueryと同じkeywordへ連結されます。',
+        'current_locationはlocation.statusがavailableのときだけ使えます。radiusMetersは徒歩圏として100〜1000mで指定してください。',
         'queryには掲載情報に現れる短い語だけを使い、「甘いもの」「まったり」のような要望表現はスイーツ・カフェ・居酒屋などのジャンル語へ置き換えてください。',
         '0件のときは語を減らすか別のジャンル語で再検索し、検索していない状態を候補なしと断定しないでください。',
         '営業中で絞り込む検索はありません。営業時間は掲載文であり、今の営業・到着時の営業・空席を保証しません。未確認と明示してください。',
