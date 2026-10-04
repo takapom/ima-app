@@ -285,13 +285,17 @@ describe('card opening state', () => {
 });
 
 describe('card action and emphasis', () => {
-  it('keeps 見てみる in the peek slot and emphasizes 残す only when closed', () => {
+  it('keeps detail and map labels explicit and emphasizes 残す only when closed', () => {
     const open = toCardViewModel(card({ opening_hours: known(hours()) }), NOW);
     expect(open).toMatchObject({ primaryAction: 'details', dimmed: false });
     expect(cardActions(open)).toEqual({
-      peek: {
-        label: '見てみる',
-        accessibilityLabel: 'ミスターフレンドリー 恵比寿店を見てみる',
+      details: {
+        label: '店舗詳細を見る',
+        accessibilityLabel: 'ミスターフレンドリー 恵比寿店の店舗詳細を見る',
+      },
+      map: {
+        label: '地図で見る',
+        accessibilityLabel: 'ミスターフレンドリー 恵比寿店をGoogle Mapsで見る',
       },
       save: {
         emphasized: false,
@@ -302,9 +306,13 @@ describe('card action and emphasis', () => {
     const closed = toCardViewModel(card({ opening_hours: known(hours()) }), Date.parse(at(21)));
     expect(closed).toMatchObject({ primaryAction: 'save', dimmed: true });
     expect(cardActions(closed)).toEqual({
-      peek: {
-        label: '見てみる',
-        accessibilityLabel: 'ミスターフレンドリー 恵比寿店を見てみる',
+      details: {
+        label: '店舗詳細を見る',
+        accessibilityLabel: 'ミスターフレンドリー 恵比寿店の店舗詳細を見る',
+      },
+      map: {
+        label: '地図で見る',
+        accessibilityLabel: 'ミスターフレンドリー 恵比寿店をGoogle Mapsで見る',
       },
       save: {
         emphasized: true,
@@ -313,13 +321,13 @@ describe('card action and emphasis', () => {
     });
   });
 
-  it('keeps peek available when the hours are unknown', () => {
+  it('keeps details available when the hours are unknown', () => {
     const view = toCardViewModel(card(), NOW);
     expect(view).toMatchObject({
       primaryAction: 'details',
       dimmed: false,
     });
-    expect(cardActions(view).peek.label).toBe('見てみる');
+    expect(cardActions(view).details.label).toBe('店舗詳細を見る');
     expect(cardActions(view).save.emphasized).toBe(false);
   });
 });

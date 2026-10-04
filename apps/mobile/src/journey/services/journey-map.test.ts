@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PublicCard } from '@ima/contracts';
 import {
   buildAppleWalkingMapUrl,
+  googleMapsSearchUrlFor,
   placePageUrlFor,
   resolveJourneyMapTarget,
 } from '@mobile/journey/services/journey-map';
@@ -190,5 +191,17 @@ describe('place page fallback for a provider without coordinates', () => {
 
   it('normalizes the place page URL through the shared source-link preparation', () => {
     expect(placePageUrlFor(cardWith('https://example.com'))).toBe('https://example.com/');
+  });
+});
+
+describe('Google Maps search handoff', () => {
+  it('builds a keyless Google Maps search URL from the displayable name and address', () => {
+    expect(googleMapsSearchUrlFor(cardWith('https://example.com/shop/1'))).toBe(
+      'https://www.google.com/maps/search/?api=1&query=%E5%A4%9C%E3%82%AB%E3%83%95%E3%82%A7%20%E6%9D%B1%E4%BA%AC%E9%83%BD%E6%B8%8B%E8%B0%B7%E5%8C%BA%E6%81%B5%E6%AF%941-1-1',
+    );
+  });
+
+  it('does not hand expired provider identity to an external map', () => {
+    expect(googleMapsSearchUrlFor(cardWith('https://example.com/shop/1', 'expired'))).toBeNull();
   });
 });
