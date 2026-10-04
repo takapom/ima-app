@@ -60,6 +60,18 @@ describe('Hot Pepper wire boundary', () => {
     expect(
       parseHotPepperResponse({ results: { results_available: 0, results_returned: 0, shop: [] } }),
     ).toEqual({ resultsAvailable: 0, resultsStart: null, shops: [] });
+    // The live API starts an empty page at 0 (#66).
+    expect(
+      parseHotPepperResponse({
+        results: {
+          api_version: '1.30',
+          results_available: 0,
+          results_returned: '0',
+          results_start: 0,
+          shop: [],
+        },
+      }),
+    ).toEqual({ resultsAvailable: 0, resultsStart: 0, shops: [] });
     expect(() => parseHotPepperResponse({ results: { shop: 'invalid' } })).toThrowError(
       HotPepperError,
     );

@@ -150,6 +150,21 @@ describe('Places search cursor store', () => {
     );
   });
 
+  it('binds a current-location search only within the provider range of 3km (#66)', async () => {
+    let next = 0;
+    const store = createPlacesSearchCursorStore({
+      secret: 'a sufficiently long cursor secret',
+      now: () => 100,
+      nonceFactory: () => nonce((next += 1)),
+    });
+    const nearby = (radiusMeters: number): PlacesSearchCursorState => ({
+      ...state(),
+      area: { kind: 'current_location', radiusMeters },
+    });
+    await expect(store.issue(nearby(3_000))).resolves.toEqual(expect.any(String));
+    await expect(store.issue(nearby(3_001))).rejects.toThrow('cursor state is invalid');
+  });
+
   it('does not resolve after disposal or for malformed tokens', async () => {
     const store = createPlacesSearchCursorStore({
       secret: 'a sufficiently long cursor secret',

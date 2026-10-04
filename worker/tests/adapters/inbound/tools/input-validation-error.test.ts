@@ -113,4 +113,14 @@ describe('safe tool validation feedback', () => {
     expect(JSON.stringify(wire.properties.input)).not.toContain('contact');
     expect(JSON.stringify(wire.properties.input)).not.toContain('savedPlaceRef');
   });
+
+  it('limits the current-location radius to the provider range of 3km (#66)', async () => {
+    const nearby = (radiusMeters: number) => ({
+      input: { ...input, area: { kind: 'current_location', radiusMeters } },
+    });
+    expect(await validate(nearby(3_000))).toMatchObject({ success: true });
+    expect(await validate(nearby(3_001))).toMatchObject({ success: false });
+    const json = JSON.stringify(await asSchema(searchPlacesToolSchema).jsonSchema);
+    expect(json).toContain('"radiusMeters":{"type":"number","minimum":100,"maximum":3000}');
+  });
 });

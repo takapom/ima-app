@@ -33,6 +33,22 @@ describe('model message encoding', () => {
     expect(MODEL_SYSTEM_PROMPT).toContain('respondのproposeで店舗カードと選定理由をセットで返して');
   });
 
+  it('treats an available current location as the place instead of asking for it (#66)', () => {
+    expect(MODEL_SYSTEM_PROMPT).toMatch(/2\. 場所[\s\S]*current_location[\s\S]*3\. 要望/);
+    expect(MODEL_SYSTEM_PROMPT).toContain('原文や履歴に地名があれば、その地名で探してください');
+    expect(MODEL_SYSTEM_PROMPT).toContain(
+      'location.statusがavailableなら現在地周辺を場所として扱い、場所を聞き返さず',
+    );
+    expect(MODEL_SYSTEM_PROMPT).toContain('半径はまず1000mで探し');
+    expect(MODEL_SYSTEM_PROMPT).toContain('2000m、3000mの順に広げてください');
+    expect(MODEL_SYSTEM_PROMPT).not.toContain('最大1000m');
+    expect(MODEL_SYSTEM_PROMPT).toContain(
+      'availableでなく地名もない場合はcurrent_locationで検索せず',
+    );
+    expect(MODEL_SYSTEM_PROMPT).toContain('reducedは現在地の精度が低い');
+    expect(MODEL_SYSTEM_PROMPT).toContain('駅名や地名を書いてもらえれば探せます');
+  });
+
   it('reserves the last model call for respond without reads', () => {
     expect(MODEL_SYSTEM_PROMPT).toContain(
       'budget.modelCallsRemainingが1のときは読み取りToolを呼ばず、respondで現状を返してください',

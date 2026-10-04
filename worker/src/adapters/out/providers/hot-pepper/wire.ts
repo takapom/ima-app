@@ -111,7 +111,8 @@ const HotPepperResultsWireSchema = v.object({
       v.number(),
       v.check((value) => Number.isFinite(value), 'result offset must be finite'),
       v.safeInteger(),
-      v.minValue(1),
+      // An empty page starts at 0; a page with shops starts at 1.
+      v.minValue(0),
     ),
   ),
   shop: v.optional(v.pipe(v.array(HotPepperShopWireSchema), v.maxLength(100))),
