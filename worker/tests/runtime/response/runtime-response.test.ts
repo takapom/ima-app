@@ -36,6 +36,23 @@ describe('Core committed response to public DTO mapping', () => {
     expect(JSON.stringify(publicResponse)).not.toContain('recordRef');
   });
 
+  it('says on a message reply that the search in its turn found no candidates', () => {
+    const response: ValidatedMessageResponse = {
+      presentation: 'keep',
+      kind: 'answer',
+      message: '近くに条件に合う店が見つかりませんでした',
+    };
+    const publicResponse = mapCommittedResponseToPublic(response, {
+      ...responseMetadata,
+      searchOutcome: 'no_candidates',
+    });
+    expect(v.safeParse(AssistantResponseSchema, publicResponse).success).toBe(true);
+    expect(publicResponse).toMatchObject({ kind: 'message', searchOutcome: 'no_candidates' });
+    expect(mapCommittedResponseToPublic(response, responseMetadata)).not.toHaveProperty(
+      'searchOutcome',
+    );
+  });
+
   it('carries facilities onto the public card so amenity display has data to render', () => {
     const withFacilities: ValidatedCard = {
       ...card,
