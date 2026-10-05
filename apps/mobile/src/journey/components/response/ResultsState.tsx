@@ -45,16 +45,18 @@ export function ResultsState({
   onPhotoReady,
   onSave,
   photoClient,
-}: ResultsStateProps): React.JSX.Element {
+}: ResultsStateProps): React.JSX.Element | null {
   const displayCards = cards === null ? [] : orderedResultCards(cards, candidateOrder);
   const messageHistory = buildMessageHistory(messageRecords, cardSetId, displayCards.length > 0);
-  const statusLabel = cardSetStatusLabel(cardSetDisplay, messageHistory.length > 0);
+  const statusLabel = cardSetStatusLabel(cardSetDisplay);
   if (displayCards.length === 0) {
+    // Without cards there is nothing to add beside the conversation; the chat dog shows the state.
+    if (!notice && !statusLabel && messageHistory.length === 0) return null;
     return (
       <View style={styles.messageOnly}>
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
         {statusLabel ? <Text style={styles.statusLabel}>{statusLabel}</Text> : null}
-        <MessageHistory items={messageHistory} fallback="候補はまだ提示されていません。" />
+        <MessageHistory items={messageHistory} />
       </View>
     );
   }
@@ -85,19 +87,11 @@ export function ResultsState({
 
 type MessageHistoryProps = {
   readonly items: readonly MessageHistoryItem[];
-  readonly fallback?: string;
 };
 
-function MessageHistory({ items, fallback }: MessageHistoryProps): React.JSX.Element | null {
+function MessageHistory({ items }: MessageHistoryProps): React.JSX.Element | null {
   const [expanded, setExpanded] = useState(false);
-  if (items.length === 0) {
-    return fallback ? (
-      <View style={styles.messageBox}>
-        <View style={styles.messageDot} />
-        <Text style={[styles.messageText, styles.messageBody]}>{fallback}</Text>
-      </View>
-    ) : null;
-  }
+  if (items.length === 0) return null;
   return (
     <View style={styles.messageHistory}>
       {items.length > 1 ? (

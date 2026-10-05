@@ -15,11 +15,11 @@ import maruRun from '../../../assets/character/maru-run.gif';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 
 const NATIVE_DRIVER = Platform.OS !== 'web';
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const AnimatedPath = Animated.createAnimatedComponent(Path);
 const MARK = 132;
 const RING_RADIUS = 56;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
+/** A full circle that starts at the top and runs clockwise, so drawing it needs no rotation. */
+const RING_PATH = `M${MARK / 2} ${MARK / 2 - RING_RADIUS} a${RING_RADIUS} ${RING_RADIUS} 0 1 1 0 ${RING_RADIUS * 2} a${RING_RADIUS} ${RING_RADIUS} 0 1 1 0 ${-RING_RADIUS * 2}`;
 const CHECK_LENGTH = 72;
 const DOG_SIZE = 104;
 const HOLD_MS = 1000;
@@ -29,6 +29,16 @@ type CompletionScreenProps = {
   readonly query: string;
   readonly onDone: () => void;
 };
+
+/** SVG props are drawn from plain numbers; animated SVG components add invalid attributes on web. */
+function useAnimatedNumber(value: Animated.Value): number {
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    const id = value.addListener(({ value: next }) => setCurrent(next));
+    return () => value.removeListener(id);
+  }, [value]);
+  return current;
+}
 
 /** Draws a check mark, lets the dog announce the search, and hands over to the chat. */
 export function CompletionScreen({ query, onDone }: CompletionScreenProps): React.JSX.Element {
@@ -40,6 +50,8 @@ export function CompletionScreen({ query, onDone }: CompletionScreenProps): Reac
     pop: new Animated.Value(0),
     leave: new Animated.Value(0),
   }));
+  const ring = useAnimatedNumber(motion.ring);
+  const check = useAnimatedNumber(motion.check);
 
   useEffect(() => {
     const draw = (value: Animated.Value, duration: number) =>
@@ -103,35 +115,29 @@ export function CompletionScreen({ query, onDone }: CompletionScreenProps): Reac
             strokeWidth={6}
             fill="none"
           />
-          <AnimatedCircle
-            cx={MARK / 2}
-            cy={MARK / 2}
-            r={RING_RADIUS}
-            stroke={colors.lime}
-            strokeWidth={6}
-            strokeLinecap="round"
-            fill="none"
-            strokeDasharray={RING_LENGTH}
-            strokeDashoffset={motion.ring.interpolate({
-              inputRange: [0, 1],
-              outputRange: [RING_LENGTH, 0],
-            })}
-            rotation={-90}
-            origin={`${MARK / 2}, ${MARK / 2}`}
-          />
-          <AnimatedPath
-            d="M42 68 L59 85 L92 50"
-            stroke={colors.lime}
-            strokeWidth={9}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-            strokeDasharray={CHECK_LENGTH}
-            strokeDashoffset={motion.check.interpolate({
-              inputRange: [0, 1],
-              outputRange: [CHECK_LENGTH, 0],
-            })}
-          />
+          {ring > 0 ? (
+            <Path
+              d={RING_PATH}
+              stroke={colors.lime}
+              strokeWidth={6}
+              strokeLinecap="round"
+              fill="none"
+              strokeDasharray={RING_LENGTH}
+              strokeDashoffset={RING_LENGTH * (1 - ring)}
+            />
+          ) : null}
+          {check > 0 ? (
+            <Path
+              d="M42 68 L59 85 L92 50"
+              stroke={colors.lime}
+              strokeWidth={9}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+              strokeDasharray={CHECK_LENGTH}
+              strokeDashoffset={CHECK_LENGTH * (1 - check)}
+            />
+          ) : null}
         </Svg>
         <Animated.Text style={[styles.query, { opacity: motion.check }]}>{query}</Animated.Text>
       </View>
