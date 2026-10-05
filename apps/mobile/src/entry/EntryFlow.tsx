@@ -1,7 +1,7 @@
 import { useCallback, useReducer, useState, type ReactNode } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 import { EntryIntro } from '@mobile/entry/components/EntryIntro';
-import { QuestionPlaceholder } from '@mobile/entry/components/QuestionPlaceholder';
+import { QuestionScreen } from '@mobile/entry/components/QuestionScreen';
 import {
   entryCovers,
   initialEntryStage,
@@ -22,9 +22,12 @@ const NATIVE_DRIVER = Platform.OS !== 'web';
  */
 export function EntryFlow({
   readiness,
+  onQuestionsAnswered,
   children,
 }: {
   readonly readiness: ChatReadiness;
+  /** Receives the answers written as one message, to be sent as the first chat message. */
+  readonly onQuestionsAnswered: (query: string) => void;
   readonly children: ReactNode;
 }): React.JSX.Element {
   const [stage, dispatch] = useReducer(reduceEntryStage, initialEntryStage);
@@ -83,9 +86,12 @@ export function EntryFlow({
           </View>
           {stage === 'questions' ? (
             <View style={[StyleSheet.absoluteFill, styles.overlay]}>
-              <QuestionPlaceholder
+              <QuestionScreen
                 onBack={() => dispatch({ type: 'questionsBack' })}
-                onFinish={() => leaveWith({ type: 'questionsFinished' })}
+                onFinish={(query) => {
+                  onQuestionsAnswered(query);
+                  leaveWith({ type: 'questionsFinished' });
+                }}
               />
             </View>
           ) : null}

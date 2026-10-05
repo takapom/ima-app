@@ -3,28 +3,29 @@ import { Animated, Easing, Image, Platform, Pressable, StyleSheet, Text, View } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import maruMagnifier from '../../../assets/character/maru-magnifier.gif';
 import {
-  PLACEHOLDER_QUESTIONS,
+  ENTRY_QUESTIONS,
+  composeQuestionQuery,
   questionProgress,
-} from '@mobile/entry/presentation/placeholder-questions';
+  type EntryAnswers,
+} from '@mobile/entry/presentation/entry-questions';
 import { Icon } from '@mobile/ui/Icon';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 
 const NATIVE_DRIVER = Platform.OS !== 'web';
 
-type QuestionPlaceholderProps = {
+type QuestionScreenProps = {
   readonly onBack: () => void;
-  readonly onFinish: () => void;
+  /** Receives the answers written as the first chat message. */
+  readonly onFinish: (query: string) => void;
 };
 
-export function QuestionPlaceholder({
-  onBack,
-  onFinish,
-}: QuestionPlaceholderProps): React.JSX.Element {
+export function QuestionScreen({ onBack, onFinish }: QuestionScreenProps): React.JSX.Element {
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<EntryAnswers>({});
   const [enter] = useState(() => new Animated.Value(0));
-  const question = PLACEHOLDER_QUESTIONS[step];
-  const total = PLACEHOLDER_QUESTIONS.length;
+  const question = ENTRY_QUESTIONS[step];
+  const total = ENTRY_QUESTIONS.length;
 
   useEffect(() => {
     const animation = Animated.timing(enter, {
@@ -37,9 +38,11 @@ export function QuestionPlaceholder({
     return () => animation.stop();
   }, [enter]);
 
-  const answer = () => {
+  const answer = (questionId: string, label: string) => {
+    const next = { ...answers, [questionId]: label };
+    setAnswers(next);
     if (step + 1 >= total) {
-      onFinish();
+      onFinish(composeQuestionQuery(next));
       return;
     }
     setStep(step + 1);
@@ -86,11 +89,15 @@ export function QuestionPlaceholder({
             {question.options.map((option) => (
               <Pressable
                 accessibilityRole="button"
-                key={option}
-                onPress={answer}
-                style={({ pressed }) => [styles.option, pressed && styles.pressed]}
+                key={option.label}
+                onPress={() => answer(question.id, option.label)}
+                style={({ pressed }) => [
+                  styles.option,
+                  answers[question.id] === option.label && styles.chosen,
+                  pressed && styles.pressed,
+                ]}
               >
-                <Text style={styles.optionText}>{option}</Text>
+                <Text style={styles.optionText}>{option.label}</Text>
               </Pressable>
             ))}
           </View>
@@ -103,7 +110,6 @@ export function QuestionPlaceholder({
             <View key={index} style={[styles.segment, filled && styles.segmentFilled]} />
           ))}
         </View>
-        <Text style={styles.note}>仮の質問です。回答はまだチャットに渡しません。</Text>
       </View>
     </Animated.View>
   );
@@ -189,9 +195,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.lime,
     borderColor: colors.lime,
   },
-  note: {
-    color: colors.faint,
-    fontSize: typography.label,
+  chosen: {
+    borderColor: colors.lime,
   },
   pressed: {
     backgroundColor: colors.surface,

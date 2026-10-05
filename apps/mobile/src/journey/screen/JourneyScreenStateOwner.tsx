@@ -54,6 +54,8 @@ export function JourneyScreenStateOwner({
   historyUnavailable = false,
   savedPlaces,
   onSubmit,
+  initialQuery,
+  onInitialQuerySent,
   onCancel,
   onRetry,
   onNewSearch,
@@ -166,6 +168,13 @@ export function JourneyScreenStateOwner({
       onSubmit,
     ],
   );
+  const initialQuerySent = useRef(false);
+  useEffect(() => {
+    if (initialQuery === undefined || onSubmit === undefined || initialQuerySent.current) return;
+    initialQuerySent.current = true;
+    onInitialQuerySent?.();
+    submit(initialQuery);
+  }, [initialQuery, onInitialQuerySent, onSubmit, submit]);
   const retry = useCallback((): void => {
     const query = journey.query.trim();
     const retryHandler = onRetry ?? onSubmit;

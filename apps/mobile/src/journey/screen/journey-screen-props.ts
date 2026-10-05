@@ -52,6 +52,10 @@ export type JourneyScreenProps = {
   readonly savedPlaces?: readonly SavedPlaceItem[];
   readonly initialSavedConditions?: JourneyConditions;
   readonly onSubmit?: (query: string, context: JourneySubmitContext) => void;
+  /** Sent once as the first message when the screen opens, e.g. the entry question answers. */
+  readonly initialQuery?: string;
+  /** Called when `initialQuery` has been sent, so the host stops passing it. */
+  readonly onInitialQuerySent?: () => void;
   readonly onCancel?: () => void;
   readonly onRetry?: (query: string, context: JourneySubmitContext) => void;
   readonly onNewSearch?: () => void;
