@@ -26,11 +26,16 @@ const responseMeta = {
   message: PublicMessageListSchema,
 };
 
+/** Set only when the turn searched and every search succeeded without a candidate. */
+export const SearchOutcomeSchema = v.literal('no_candidates');
+export type SearchOutcome = v.InferOutput<typeof SearchOutcomeSchema>;
+
 export const AssistantMessageResponseSchema = v.strictObject({
   ...responseMeta,
   kind: v.literal('message'),
   presentation: v.literal('keep'),
   cardSetId: v.nullable(OpaqueIdSchema),
+  searchOutcome: v.optional(SearchOutcomeSchema),
 });
 export type AssistantMessageResponse = v.InferOutput<typeof AssistantMessageResponseSchema>;
 

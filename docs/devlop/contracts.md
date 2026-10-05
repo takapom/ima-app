@@ -37,6 +37,7 @@ thread ID、device ID、IPだけを所有者の認可根拠にしない。reques
 ## 応答・失敗・冪等性
 
 - `message`は既存カードを保持する`keep`、`cards`は主提案1件＋別案0〜2件へ置換する`replace`。候補0件はcardsにしない。
+- `message`の`searchOutcome: 'no_candidates'`は、そのターンの`search_places`がすべて成功し、どれも候補を返さなかったという事実だけを表す。検索していない・失敗・`partial`・読めない結果を含むターンには付けず、`kind`や応答文から推測しない。ライブ応答と会話の確定応答には同じ値を付け、会話履歴には保存しない。省略可能なので新しいアプリは旧Workerの応答も読める。旧アプリは未知propertyで解析に失敗するため、アプリを先に配布してからWorkerを出す。
 - 端末は`responseId`と`revision`で重複配送・古い応答を処理する。再送用参照に本文がなければ`reference_only`または`unavailable`とし、本文を推測で補わない。
 - IDはowner/threadのscopeを持つ。別threadのcandidate ID・観測を自動流用しない。保存参照をモデルの候補として読み込む経路は持たない（#54で撤去）。
 - schemaの追加property、不正なtimestamp、revision競合、冪等キーと本文の不一致を成功へ補正しない。時刻にはoffsetを含める。

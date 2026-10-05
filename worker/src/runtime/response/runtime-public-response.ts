@@ -19,6 +19,9 @@ export const mapPreparedRuntimeResponse = (
       ? {}
       : { resolveCardEvidence: dependencies.resolveCardEvidence }),
     ...(dependencies.cardSetId === undefined ? {} : { cardSetId: dependencies.cardSetId }),
+    ...(dependencies.searchOutcome === undefined
+      ? {}
+      : { searchOutcome: dependencies.searchOutcome }),
     ...(photoResolver === undefined ? {} : { resolvePhotoToken: photoResolver }),
     ...metadata,
   };

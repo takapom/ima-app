@@ -5,6 +5,7 @@ import {
   type EvidenceRef,
   type PhotoInfo,
   type RetentionMetadata as PublicRetentionMetadata,
+  type SearchOutcome,
 } from '@ima/contracts';
 import { type CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
 import {
@@ -73,6 +74,8 @@ export type RuntimePublicResponseOptions = RuntimePublicResponseMetadata & {
   readonly resolvePhotoToken?: RuntimePhotoTokenResolver;
   /** A server-issued card-set ID; message responses always use a null card-set ID. */
   readonly cardSetId?: string;
+  /** The turn's search fact, published on message responses only. */
+  readonly searchOutcome?: SearchOutcome;
 };
 
 export type RuntimePublicResponseDependencies = Omit<
@@ -300,6 +303,9 @@ export const mapCommittedResponseToPublic = (
             presentation: 'keep' as const,
             cardSetId: null,
             message: [publicText(response.message, options)],
+            ...(options.searchOutcome === undefined
+              ? {}
+              : { searchOutcome: options.searchOutcome }),
           }
         : options.cardSetId === undefined
           ? invalid('CARD_SET_ID_REQUIRED')

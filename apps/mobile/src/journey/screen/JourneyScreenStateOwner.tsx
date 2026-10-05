@@ -10,6 +10,7 @@ import { ConditionChips } from '@mobile/preferences/components/ConditionChips';
 import { DecidedState } from '@mobile/journey/components/response/DecidedState';
 import { Drawer } from '@mobile/journey/components/Drawer';
 import { EmptyState } from '@mobile/journey/components/response/EmptyState';
+import { ChatCompanion, COMPANION_SPACE } from '@mobile/journey/components/companion/ChatCompanion';
 import { ErrorState } from '@mobile/journey/components/response/ErrorState';
 import { ResultsState } from '@mobile/journey/components/response/ResultsState';
 import { ResultsAttribution } from '@mobile/journey/components/response/ResultsAttribution';
@@ -27,6 +28,7 @@ import { selectJourneyNoticeText } from '@mobile/journey/services/journey-source
 import {
   selectAssistantMessageRecords,
   selectAssistantMessages,
+  selectLatestReplyFoundNothing,
 } from '@mobile/journey/state/assistant-response';
 import { DEFAULT_SUGGESTIONS, suggestionsFor } from '@mobile/journey/state/journey-input';
 import {
@@ -339,7 +341,11 @@ export function JourneyScreenStateOwner({
               photoViewport.update(scrollTop.current, viewportHeight.current);
             }
           }}
-          contentContainerStyle={styles.scrollContent}
+          // The skeleton while searching may sit under the dog; real content keeps clear of it.
+          contentContainerStyle={[
+            styles.scrollContent,
+            phase !== 'working' && styles.companionSpace,
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -415,6 +421,10 @@ export function JourneyScreenStateOwner({
             />
           ) : null}
         </ScrollView>
+        <ChatCompanion
+          phase={phase}
+          noCandidates={selectLatestReplyFoundNothing(renderedResponse)}
+        />
       </View>
       <SavedPlacePreviewSurface controller={savedPlaceUi} onSourcePress={openSourceLink} />
       {phase === 'results' ? (
@@ -476,5 +486,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 4,
+  },
+  companionSpace: {
+    paddingBottom: COMPANION_SPACE,
   },
 });
