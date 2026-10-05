@@ -33,6 +33,7 @@ describe('entry coverage', () => {
     expect(entryCovers('splash', 'ready')).toBe(true);
     expect(entryCovers('choosing', 'ready')).toBe(true);
     expect(entryCovers('questions', 'ready')).toBe(true);
+    expect(entryCovers('complete', 'ready')).toBe(true);
     expect(introMayStart('ready')).toBe(true);
   });
 
@@ -66,8 +67,14 @@ describe('entry flow', () => {
     expect(reduceEntryStage('questions', { type: 'questionsBack' })).toBe('choosing');
   });
 
-  it('enters chat when the questions finish', () => {
-    expect(reduceEntryStage('questions', { type: 'questionsFinished' })).toBe('chat');
+  it('shows the completion once the questions finish, then enters chat', () => {
+    expect(reduceEntryStage('questions', { type: 'questionsFinished' })).toBe('complete');
+    expect(reduceEntryStage('complete', { type: 'completionFinished' })).toBe('chat');
+  });
+
+  it('cannot go back from the completion', () => {
+    expect(reduceEntryStage('complete', { type: 'questionsBack' })).toBe('complete');
+    expect(reduceEntryStage('complete', { type: 'choose', route: 'chat' })).toBe('complete');
   });
 
   it('keeps chat once entered', () => {
@@ -80,5 +87,6 @@ describe('entry flow', () => {
     expect(reduceEntryStage('splash', { type: 'choose', route: 'chat' })).toBe('splash');
     expect(reduceEntryStage('choosing', { type: 'questionsFinished' })).toBe('choosing');
     expect(reduceEntryStage('questions', { type: 'splashFinished' })).toBe('questions');
+    expect(reduceEntryStage('questions', { type: 'completionFinished' })).toBe('questions');
   });
 });
