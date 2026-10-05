@@ -69,10 +69,10 @@ describe('results state model', () => {
   });
   it('shows a clarification message without a misleading empty-card label', () => {
     expect(
-      cardSetStatusLabel({ kind: 'empty', reason: 'no_cards', responseId: 'question' }, true),
+      cardSetStatusLabel({ kind: 'empty', reason: 'no_cards', responseId: 'question' }),
     ).toBeNull();
     expect(
-      cardSetStatusLabel({ kind: 'empty', reason: 'reference_only', responseId: 'question' }, true),
+      cardSetStatusLabel({ kind: 'empty', reason: 'reference_only', responseId: 'question' }),
     ).toBe('過去の候補を復元できませんでした。');
   });
   it('keeps message order and marks current, past, and cardless relations', () => {
@@ -140,10 +140,7 @@ describe('results state model', () => {
         },
         '前の候補を表示中',
       ],
-      [
-        { kind: 'empty', reason: 'no_cards', responseId: 'response-3' },
-        '候補はまだ提示されていません。',
-      ],
+      [{ kind: 'empty', reason: 'no_cards', responseId: 'response-3' }, null],
       [
         { kind: 'empty', reason: 'reference_only', responseId: 'response-4' },
         '過去の候補を復元できませんでした。',
