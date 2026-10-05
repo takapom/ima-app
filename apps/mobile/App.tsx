@@ -1,4 +1,5 @@
 import { ConversationJourneyScreen } from '@mobile/journey/ConversationJourneyScreen';
+import { EntryFlow } from '@mobile/entry/EntryFlow';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JourneyScreen } from '@mobile/journey/JourneyScreen';
 import { PersonalPreviewConnection } from '@mobile/composition/PersonalPreviewConnection';
@@ -21,19 +22,21 @@ export type AppProps = {
 export default function App({ journeyApi, mobileRuntimeOptions }: AppProps): React.JSX.Element {
   return (
     <SafeAreaProvider>
-      <PersonalPreviewConnection
-        bypass={journeyApi !== undefined || mobileRuntimeOptions !== undefined}
-      >
-        {(personalOptions) => {
-          const options = mobileRuntimeOptions ?? personalOptions;
-          return (
-            <AppContent
-              {...(journeyApi === undefined ? {} : { journeyApi })}
-              {...(options === undefined ? {} : { mobileRuntimeOptions: options })}
-            />
-          );
-        }}
-      </PersonalPreviewConnection>
+      <EntryFlow>
+        <PersonalPreviewConnection
+          bypass={journeyApi !== undefined || mobileRuntimeOptions !== undefined}
+        >
+          {(personalOptions) => {
+            const options = mobileRuntimeOptions ?? personalOptions;
+            return (
+              <AppContent
+                {...(journeyApi === undefined ? {} : { journeyApi })}
+                {...(options === undefined ? {} : { mobileRuntimeOptions: options })}
+              />
+            );
+          }}
+        </PersonalPreviewConnection>
+      </EntryFlow>
     </SafeAreaProvider>
   );
 }

@@ -70,7 +70,7 @@ Adapterの生成・注入は`src/composition/`が担当する。App Integrityの
 | Core `application/`                     | `model-context`はモデル入力・項目要約・提示情報に基づく保持条件、`candidate-registry`は候補・観測の登録、`ports`はCoreのPort、`use-cases`は応答確定・保存/決定・会話実行・写真token発行・App Integrity・イベント記録・失効処理 |
 | Worker `src/runtime/`                   | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・計測は各フォルダ                                                                                      |
 | Mobile `journey/services/`・`platform/` | `platform/http`はHTTPとその契約、`journey/services/conversations`は会話操作・復元、`composition`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`                                                |
-| Mobile 機能ごとの`components/`          | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI。表示文言・表示用変換は`presentation`                                                                                   |
+| Mobile 機能ごとの`components/`          | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI、`entry`は起動時のスプラッシュと入口の分岐。表示文言・表示用変換は`presentation`                                        |
 
 Coreの単体テストは`worker/src/`の対象実装の近くに置く。Workerのテストは`worker/tests/`に集約し、`adapters/`・`runtime/`・`security/`はInfrastructureの対応モジュール、`src/composition/`は組み立て処理を検証する。実LLMのローカル起動入口などの開発用コードは`worker/tooling/`に置く。テスト専用fixtureを公開exportsへ追加しない。配置変更だけで既存の公開入口や責務・依存方向を変更しない。
 
