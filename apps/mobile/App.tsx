@@ -1,5 +1,6 @@
 import { ConversationJourneyScreen } from '@mobile/journey/ConversationJourneyScreen';
 import { EntryFlow } from '@mobile/entry/EntryFlow';
+import { chatReadiness } from '@mobile/entry/state/entry-flow';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JourneyScreen } from '@mobile/journey/JourneyScreen';
 import { PersonalPreviewConnection } from '@mobile/composition/PersonalPreviewConnection';
@@ -22,21 +23,19 @@ export type AppProps = {
 export default function App({ journeyApi, mobileRuntimeOptions }: AppProps): React.JSX.Element {
   return (
     <SafeAreaProvider>
-      <EntryFlow>
-        <PersonalPreviewConnection
-          bypass={journeyApi !== undefined || mobileRuntimeOptions !== undefined}
-        >
-          {(personalOptions) => {
-            const options = mobileRuntimeOptions ?? personalOptions;
-            return (
-              <AppContent
-                {...(journeyApi === undefined ? {} : { journeyApi })}
-                {...(options === undefined ? {} : { mobileRuntimeOptions: options })}
-              />
-            );
-          }}
-        </PersonalPreviewConnection>
-      </EntryFlow>
+      <PersonalPreviewConnection
+        bypass={journeyApi !== undefined || mobileRuntimeOptions !== undefined}
+      >
+        {(personalOptions) => {
+          const options = mobileRuntimeOptions ?? personalOptions;
+          return (
+            <AppContent
+              {...(journeyApi === undefined ? {} : { journeyApi })}
+              {...(options === undefined ? {} : { mobileRuntimeOptions: options })}
+            />
+          );
+        }}
+      </PersonalPreviewConnection>
     </SafeAreaProvider>
   );
 }
@@ -50,6 +49,24 @@ function AppContent({ journeyApi, mobileRuntimeOptions }: AppProps): React.JSX.E
     runtime: nativeRuntime.runtime,
     ...(mobileRuntimeOptions?.now === undefined ? {} : { now: mobileRuntimeOptions.now }),
   });
+  const readiness = chatReadiness({
+    connected: nativeRuntime.binding !== null,
+    status: nativeRuntime.status,
+  });
+  // One EntryFlow for every branch, so the splash keeps playing while loading turns into ready.
+  return (
+    <EntryFlow readiness={readiness}>
+      <JourneyContent nativeRuntime={nativeRuntime} persistence={persistence} />
+    </EntryFlow>
+  );
+}
+
+type JourneyContentProps = {
+  readonly nativeRuntime: ReturnType<typeof useNativeMobileRuntime>;
+  readonly persistence: ReturnType<typeof useNativeJourneyPersistence>;
+};
+
+function JourneyContent({ nativeRuntime, persistence }: JourneyContentProps): React.JSX.Element {
   if (nativeRuntime.binding?.conversations !== undefined) {
     return (
       <ConversationJourneyScreen

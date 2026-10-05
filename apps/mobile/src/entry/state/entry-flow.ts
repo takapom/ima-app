@@ -6,6 +6,30 @@ export type EntryEvent =
   | { readonly type: 'questionsBack' }
   | { readonly type: 'questionsFinished' };
 
+/** Whether the chat underneath can take over once the entry gets out of the way. */
+export type ChatReadiness = 'preparing' | 'ready' | 'unavailable';
+
+export function chatReadiness({
+  connected,
+  status,
+}: {
+  readonly connected: boolean;
+  readonly status: 'loading' | 'ready' | 'error';
+}): ChatReadiness {
+  if (connected) return 'ready';
+  return status === 'loading' ? 'preparing' : 'unavailable';
+}
+
+/** The connection and error screens are shown as they are, without the splash or the choice. */
+export function entryCovers(stage: EntryStage, readiness: ChatReadiness): boolean {
+  return readiness !== 'unavailable' && stage !== 'chat';
+}
+
+/** The splash stays still while the chat is preparing and moves on only once it is ready. */
+export function introMayStart(readiness: ChatReadiness): boolean {
+  return readiness === 'ready';
+}
+
 /** Every launch starts on the splash; the choice is not remembered between launches. */
 export const initialEntryStage: EntryStage = 'splash';
 

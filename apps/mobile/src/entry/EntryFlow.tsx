@@ -3,8 +3,11 @@ import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 import { EntryIntro } from '@mobile/entry/components/EntryIntro';
 import { QuestionPlaceholder } from '@mobile/entry/components/QuestionPlaceholder';
 import {
+  entryCovers,
   initialEntryStage,
+  introMayStart,
   reduceEntryStage,
+  type ChatReadiness,
   type EntryEvent,
   type EntryRoute,
 } from '@mobile/entry/state/entry-flow';
@@ -15,12 +18,19 @@ const NATIVE_DRIVER = Platform.OS !== 'web';
 /**
  * Covers the chat with the splash and the chat/questions choice on every launch.
  * The chat stays mounted underneath so its runtime starts while the splash plays.
+ * Connection and error screens are left uncovered.
  */
-export function EntryFlow({ children }: { readonly children: ReactNode }): React.JSX.Element {
+export function EntryFlow({
+  readiness,
+  children,
+}: {
+  readonly readiness: ChatReadiness;
+  readonly children: ReactNode;
+}): React.JSX.Element {
   const [stage, dispatch] = useReducer(reduceEntryStage, initialEntryStage);
   const [overlay] = useState(() => new Animated.Value(1));
   const [leaving, setLeaving] = useState(false);
-  const finishSplash = useCallback(() => dispatch({ type: 'splashFinished' }), []);
+  const showChoices = useCallback(() => dispatch({ type: 'splashFinished' }), []);
   const leaveWith = useCallback(
     (event: EntryEvent) => {
       setLeaving(true);
@@ -43,7 +53,7 @@ export function EntryFlow({ children }: { readonly children: ReactNode }): React
     },
     [leaveWith],
   );
-  const covering = stage !== 'chat';
+  const covering = entryCovers(stage, readiness);
 
   return (
     <View style={styles.root}>
@@ -65,8 +75,9 @@ export function EntryFlow({ children }: { readonly children: ReactNode }): React
             style={styles.root}
           >
             <EntryIntro
+              canStart={introMayStart(readiness)}
               interactive={stage === 'choosing' && !leaving}
-              onSplashFinished={finishSplash}
+              onChoicesShown={showChoices}
               onChoose={choose}
             />
           </View>

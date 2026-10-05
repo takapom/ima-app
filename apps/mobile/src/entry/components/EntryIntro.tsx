@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import maruBreath from '../../../assets/character/maru-breath.gif';
 import { entryLayout, jumpArc } from '@mobile/entry/presentation/entry-motion';
 import type { EntryRoute } from '@mobile/entry/state/entry-flow';
+import { playEntryIntro } from '@mobile/entry/state/intro-sequence';
 import { Icon } from '@mobile/ui/Icon';
 import { ImaWordmark } from '@mobile/ui/ImaWordmark';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
@@ -33,14 +34,18 @@ const CHOICES: readonly { route: EntryRoute; title: string; detail: string }[] =
 ];
 
 type EntryIntroProps = {
+  /** False while the chat is preparing; the splash stays still until it can move on. */
+  readonly canStart: boolean;
   readonly interactive: boolean;
-  readonly onSplashFinished: () => void;
+  /** Called once the choices have finished appearing and can be tapped. */
+  readonly onChoicesShown: () => void;
   readonly onChoose: (route: EntryRoute) => void;
 };
 
 export function EntryIntro({
+  canStart,
   interactive,
-  onSplashFinished,
+  onChoicesShown,
   onChoose,
 }: EntryIntroProps): React.JSX.Element {
   const { width, height } = useWindowDimensions();
@@ -54,6 +59,7 @@ export function EntryIntro({
   }));
 
   useEffect(() => {
+    if (!canStart) return undefined;
     const timing = (
       value: Animated.Value,
       toValue: number,
@@ -85,29 +91,27 @@ export function EntryIntro({
           toValue: 1,
           friction: 6,
           tension: 150,
+          // Treat the spring as settled once its wobble is under about a pixel, so the
+          // choices become tappable when they look still rather than a beat later.
+          restDisplacementThreshold: 0.02,
+          restSpeedThreshold: 0.05,
           useNativeDriver: NATIVE_DRIVER,
         }),
       ),
     );
-    let active = true;
+    let cancel: (() => void) | null = null;
     // Start the hold only after the splash has been painted; the chat mounting underneath
     // can block the first frames and would otherwise use up the hold before it is seen.
     let frame = requestAnimationFrame(() => {
       frame = requestAnimationFrame(() => {
-        intro.start(({ finished }) => {
-          if (!finished || !active) return;
-          onSplashFinished();
-          pop.start();
-        });
+        cancel = playEntryIntro(intro, pop, onChoicesShown);
       });
     });
     return () => {
-      active = false;
       cancelAnimationFrame(frame);
-      intro.stop();
-      pop.stop();
+      cancel?.();
     };
-  }, [motion, onSplashFinished]);
+  }, [canStart, motion, onChoicesShown]);
 
   const arc = jumpArc({
     dx: layout.dogEnd.x - layout.dogStart.x,
