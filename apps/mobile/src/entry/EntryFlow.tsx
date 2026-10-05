@@ -1,6 +1,7 @@
 import { useCallback, useReducer, useState, type ReactNode } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 import { EntryIntro } from '@mobile/entry/components/EntryIntro';
+import { CompletionScreen } from '@mobile/entry/components/CompletionScreen';
 import { QuestionScreen } from '@mobile/entry/components/QuestionScreen';
 import {
   entryCovers,
@@ -33,6 +34,7 @@ export function EntryFlow({
   const [stage, dispatch] = useReducer(reduceEntryStage, initialEntryStage);
   const [overlay] = useState(() => new Animated.Value(1));
   const [leaving, setLeaving] = useState(false);
+  const [sentQuery, setSentQuery] = useState('');
   const showChoices = useCallback(() => dispatch({ type: 'splashFinished' }), []);
   const leaveWith = useCallback(
     (event: EntryEvent) => {
@@ -56,7 +58,12 @@ export function EntryFlow({
     },
     [leaveWith],
   );
+  const finishCompletion = useCallback(
+    () => leaveWith({ type: 'completionFinished' }),
+    [leaveWith],
+  );
   const covering = entryCovers(stage, readiness);
+  const introHidden = stage === 'questions' || stage === 'complete';
 
   return (
     <View style={styles.root}>
@@ -73,8 +80,8 @@ export function EntryFlow({
           style={[StyleSheet.absoluteFill, styles.overlay, { opacity: overlay }]}
         >
           <View
-            accessibilityElementsHidden={stage === 'questions'}
-            importantForAccessibility={stage === 'questions' ? 'no-hide-descendants' : 'auto'}
+            accessibilityElementsHidden={introHidden}
+            importantForAccessibility={introHidden ? 'no-hide-descendants' : 'auto'}
             style={styles.root}
           >
             <EntryIntro
@@ -89,10 +96,16 @@ export function EntryFlow({
               <QuestionScreen
                 onBack={() => dispatch({ type: 'questionsBack' })}
                 onFinish={(query) => {
+                  setSentQuery(query);
                   onQuestionsAnswered(query);
-                  leaveWith({ type: 'questionsFinished' });
+                  dispatch({ type: 'questionsFinished' });
                 }}
               />
+            </View>
+          ) : null}
+          {stage === 'complete' ? (
+            <View style={[StyleSheet.absoluteFill, styles.overlay]}>
+              <CompletionScreen query={sentQuery} onDone={finishCompletion} />
             </View>
           ) : null}
         </Animated.View>

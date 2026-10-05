@@ -1,10 +1,11 @@
-export type EntryStage = 'splash' | 'choosing' | 'questions' | 'chat';
+export type EntryStage = 'splash' | 'choosing' | 'questions' | 'complete' | 'chat';
 export type EntryRoute = 'chat' | 'questions';
 export type EntryEvent =
   | { readonly type: 'splashFinished' }
   | { readonly type: 'choose'; readonly route: EntryRoute }
   | { readonly type: 'questionsBack' }
-  | { readonly type: 'questionsFinished' };
+  | { readonly type: 'questionsFinished' }
+  | { readonly type: 'completionFinished' };
 
 /** Whether the chat underneath can take over once the entry gets out of the way. */
 export type ChatReadiness = 'preparing' | 'ready' | 'unavailable';
@@ -41,7 +42,9 @@ export function reduceEntryStage(stage: EntryStage, event: EntryEvent): EntrySta
       return event.type === 'choose' ? event.route : stage;
     case 'questions':
       if (event.type === 'questionsBack') return 'choosing';
-      return event.type === 'questionsFinished' ? 'chat' : stage;
+      return event.type === 'questionsFinished' ? 'complete' : stage;
+    case 'complete':
+      return event.type === 'completionFinished' ? 'chat' : stage;
     case 'chat':
       return stage;
   }

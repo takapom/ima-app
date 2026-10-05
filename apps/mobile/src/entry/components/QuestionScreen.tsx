@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Animated, Easing, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import maruMagnifier from '../../../assets/character/maru-magnifier.gif';
+import { QuestionProgress } from '@mobile/entry/components/QuestionProgress';
 import {
-  ENTRY_QUESTIONS,
   composeQuestionQuery,
-  questionProgress,
+  progressSegments,
+  questionsFor,
   type EntryAnswers,
+  type EntryQuestionId,
 } from '@mobile/entry/presentation/entry-questions';
 import { Icon } from '@mobile/ui/Icon';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
@@ -24,8 +26,11 @@ export function QuestionScreen({ onBack, onFinish }: QuestionScreenProps): React
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<EntryAnswers>({});
   const [enter] = useState(() => new Animated.Value(0));
-  const question = ENTRY_QUESTIONS[step];
-  const total = ENTRY_QUESTIONS.length;
+  const [stepIn] = useState(() => new Animated.Value(1));
+  const questions = questionsFor(answers);
+  const question = questions[step];
+  const total = questions.length;
+  const segments = useMemo(() => progressSegments(step, total), [step, total]);
 
   useEffect(() => {
     const animation = Animated.timing(enter, {
@@ -38,7 +43,19 @@ export function QuestionScreen({ onBack, onFinish }: QuestionScreenProps): React
     return () => animation.stop();
   }, [enter]);
 
-  const answer = (questionId: string, label: string) => {
+  useEffect(() => {
+    stepIn.setValue(0);
+    const animation = Animated.timing(stepIn, {
+      toValue: 1,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: NATIVE_DRIVER,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [step, stepIn]);
+
+  const answer = (questionId: EntryQuestionId, label: string) => {
     const next = { ...answers, [questionId]: label };
     setAnswers(next);
     if (step + 1 >= total) {
@@ -75,7 +92,17 @@ export function QuestionScreen({ onBack, onFinish }: QuestionScreenProps): React
       </View>
 
       {question === undefined ? null : (
-        <View style={styles.body}>
+        <Animated.View
+          style={[
+            styles.body,
+            {
+              opacity: stepIn,
+              transform: [
+                { translateY: stepIn.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) },
+              ],
+            },
+          ]}
+        >
           <View style={styles.titleRow}>
             <Text style={styles.title}>{question.title}</Text>
             <Image
@@ -101,16 +128,10 @@ export function QuestionScreen({ onBack, onFinish }: QuestionScreenProps): React
               </Pressable>
             ))}
           </View>
-        </View>
+        </Animated.View>
       )}
 
-      <View style={styles.footer}>
-        <View accessibilityLabel={`${total}問中${step + 1}問目`} accessible style={styles.progress}>
-          {questionProgress(step + 1, total).map((filled, index) => (
-            <View key={index} style={[styles.segment, filled && styles.segmentFilled]} />
-          ))}
-        </View>
-      </View>
+      <QuestionProgress segments={segments} />
     </Animated.View>
   );
 }
@@ -176,24 +197,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 15,
     fontWeight: '600',
-  },
-  footer: {
-    gap: spacing.section,
-  },
-  progress: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  segment: {
-    borderColor: colors.border,
-    borderRadius: 4,
-    borderWidth: 1,
-    flex: 1,
-    height: 8,
-  },
-  segmentFilled: {
-    backgroundColor: colors.lime,
-    borderColor: colors.lime,
   },
   chosen: {
     borderColor: colors.lime,
