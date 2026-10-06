@@ -46,8 +46,16 @@ describe('focused card', () => {
       card: older[1],
       index: 1,
       count: 3,
+      latest: false,
     });
     expect(focusedCard(both, { top: 500, bottom: 1000 })?.card).toBe(newer[0]);
+  });
+
+  it('tells whether the answer in view is the newest one in the conversation', () => {
+    expect(focusedCard(both, { top: 0, bottom: 500 })?.latest).toBe(false);
+    expect(focusedCard(both, { top: 500, bottom: 1000 })?.latest).toBe(true);
+    const alone = entries(['older', { cards: older, index: 0, range: { top: 0, bottom: 400 } }]);
+    expect(focusedCard(alone, { top: 0, bottom: 400 })?.latest).toBe(true);
   });
 
   it('takes the visible answer nearest to the middle when none covers it', () => {
