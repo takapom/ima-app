@@ -248,4 +248,30 @@ describe('card set focus store', () => {
     focus.update(0, 400);
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it('asks the answers to measure their place again when the transcript content moves', () => {
+    const focus = createCardSetFocus();
+    const remeasure = vi.fn();
+    const stop = focus.watchMoves(remeasure);
+    focus.contentMoved();
+    expect(remeasure).toHaveBeenCalledTimes(1);
+    stop();
+    focus.contentMoved();
+    expect(remeasure).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the move signal apart from the bubble updates', () => {
+    const focus = createCardSetFocus();
+    const bubble = vi.fn();
+    const remeasure = vi.fn();
+    focus.subscribe(bubble);
+    focus.watchMoves(remeasure);
+    focus.contentMoved();
+    expect(bubble).not.toHaveBeenCalled();
+    focus.register('answer', older);
+    focus.setRange('answer', { top: 0, bottom: 400 });
+    focus.update(0, 400);
+    expect(bubble).toHaveBeenCalledTimes(1);
+    expect(remeasure).toHaveBeenCalledTimes(1);
+  });
 });
