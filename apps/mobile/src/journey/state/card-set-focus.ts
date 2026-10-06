@@ -33,6 +33,13 @@ export type CardSetFocus = {
   /** Adds an answer; the returned removal only removes this registration, not a later one. */
   readonly register: (id: string, cards: readonly PublicCard[]) => () => void;
   readonly setCards: (id: string, cards: readonly PublicCard[]) => void;
+  /**
+   * Web reports onLayout only when a view resizes, so an answer pushed down by content above keeps
+   * its old place. The transcript calls `contentMoved` when its content resizes, and answers
+   * watching for moves measure their place again.
+   */
+  readonly watchMoves: (listener: () => void) => () => void;
+  readonly contentMoved: () => void;
   readonly setRange: (id: string, range: CardSetRange | null) => void;
   readonly setIndex: (id: string, index: number) => void;
 };
@@ -105,6 +112,7 @@ export const createCardSetFocus = (): CardSetFocus => {
   const entries = new Map<string, CardSetFocusEntry>();
   const listeners = new Set<() => void>();
   const owners = new Map<string, symbol>();
+  const moveListeners = new Set<() => void>();
   let view: CardSetView | null = null;
   let snapshot: FocusedCard | null = null;
 
@@ -151,6 +159,15 @@ export const createCardSetFocus = (): CardSetFocus => {
       };
     },
     setCards: (id, cards) => patch(id, { cards }),
+    watchMoves: (listener) => {
+      moveListeners.add(listener);
+      return () => {
+        moveListeners.delete(listener);
+      };
+    },
+    contentMoved: () => {
+      for (const listener of moveListeners) listener();
+    },
     setRange: (id, range) => patch(id, { range }),
     setIndex: (id, index) => patch(id, { index }),
   };

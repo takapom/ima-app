@@ -70,6 +70,7 @@ export function useTranscriptViewport({
       },
       onContentSizeChange: (_width: number, height: number): void => {
         contentHeight.current = height;
+        cardFocus.contentMoved();
         if (followOnGrowth && followsLatest.current) {
           scrollTop.current = Math.max(0, height - viewportHeight.current);
           publish();

@@ -1,5 +1,6 @@
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { usePlacedLayout, type PlacedLayout } from '@mobile/journey/hooks/usePlacedLayout';
 import { HistoricalPhoto } from '@mobile/journey/components/conversations/HistoricalPhoto';
 import type { ConversationCards } from '@ima/contracts';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
@@ -38,6 +39,11 @@ export function HistoricalCards({
   readonly cardFocus: CardSetFocus;
 }): React.JSX.Element {
   const [localPhotoRange, setLocalPhotoRange] = useState<HistoryPhotoRange | null>(null);
+  const placeCards = useCallback(
+    ({ y, height }: PlacedLayout) => setLocalPhotoRange({ top: y, bottom: y + height }),
+    [],
+  );
+  const cardsPlace = usePlacedLayout(cardFocus, placeCards);
   const photoRange =
     messageTop === null || localPhotoRange === null
       ? null
@@ -78,13 +84,7 @@ export function HistoricalCards({
     part.photoCandidateIds,
   );
   return (
-    <View
-      onLayout={({ nativeEvent }) => {
-        const top = nativeEvent.layout.y;
-        setLocalPhotoRange({ top, bottom: top + nativeEvent.layout.height });
-      }}
-      style={styles.cards}
-    >
+    <View ref={cardsPlace.ref} onLayout={cardsPlace.onLayout} style={styles.cards}>
       <Text style={styles.label}>提案時の店舗情報</Text>
       {part.photoCandidateIds?.length ? (
         <Text style={styles.label}>写真は現在の店舗写真です。画像提供：ホットペッパー グルメ</Text>

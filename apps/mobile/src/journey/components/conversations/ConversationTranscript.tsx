@@ -1,7 +1,8 @@
 import { HistoricalCards } from '@mobile/journey/components/conversations/HistoricalCards';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { usePlacedLayout, type PlacedLayout } from '@mobile/journey/hooks/usePlacedLayout';
 import type { AssistantMessageRecord } from '@mobile/journey/state/assistant-response';
 import {
   conversationTranscriptEntries,
@@ -35,15 +36,16 @@ function TranscriptMessage({
   readonly onSourcePress: (sourceLink: string) => void;
 }): React.JSX.Element {
   const [localMessageTop, setLocalMessageTop] = useState<number | null>(null);
+  const placeMessage = useCallback(({ y }: PlacedLayout) => setLocalMessageTop(y), []);
+  const messagePlace = usePlacedLayout(cardFocus, placeMessage);
   const [explanationOpen, setExplanationOpen] = useState(false);
   const messageTop = localMessageTop === null ? null : transcriptTop + localMessageTop;
   const folds = foldsExplanation(entry);
   const foldLabel = explanationOpen ? 'ima. の説明を閉じる' : 'ima. の説明を読む';
   return (
     <View
-      onLayout={({ nativeEvent }) => {
-        setLocalMessageTop(nativeEvent.layout.y);
-      }}
+      ref={messagePlace.ref}
+      onLayout={messagePlace.onLayout}
       style={[styles.message, entry.role === 'user' && styles.user]}
     >
       {folds ? (
@@ -132,11 +134,10 @@ export function ConversationTranscript({
   readonly onRetrySync: () => void;
 }): React.JSX.Element {
   const [transcriptTop, setTranscriptTop] = useState(0);
+  const placeTranscript = useCallback(({ y }: PlacedLayout) => setTranscriptTop(y), []);
+  const transcriptPlace = usePlacedLayout(cardFocus, placeTranscript);
   return (
-    <View
-      onLayout={({ nativeEvent }) => setTranscriptTop(nativeEvent.layout.y)}
-      style={styles.transcript}
-    >
+    <View ref={transcriptPlace.ref} onLayout={transcriptPlace.onLayout} style={styles.transcript}>
       {hasOlder ? (
         <Pressable
           accessibilityRole="button"
