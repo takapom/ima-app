@@ -39,6 +39,7 @@ import {
 import { resolveJourneyPhase } from '@mobile/journey/state/journey-phase';
 import type { JourneyScreenProps } from '@mobile/journey/screen/journey-screen-props';
 import { useTranscriptViewport } from '@mobile/journey/hooks/useTranscriptViewport';
+import { createRunnerHandoff } from '@mobile/journey/state/runner-handoff';
 
 type JourneyScreenStateOwnerProps = JourneyScreenProps & {
   readonly preferenceState: UseJourneyPreferencesResult;
@@ -76,6 +77,7 @@ export function JourneyScreenStateOwner({
   savedPlacePreview,
   preferenceState,
 }: JourneyScreenStateOwnerProps): React.JSX.Element {
+  const [runnerHandoff] = useState(createRunnerHandoff);
   const transcript = useTranscriptViewport({
     followOnGrowth: conversation !== undefined,
     initialCompanionSpace: COMPANION_SPACE,
@@ -309,7 +311,7 @@ export function JourneyScreenStateOwner({
       <View style={styles.content}>
         <ScrollView
           {...transcript.scrollProps}
-          // The skeleton while searching may sit under the dog; real content keeps clear of it.
+          // While searching the dog runs in the conversation, so its corner needs no space.
           contentContainerStyle={[
             styles.scrollContent,
             phase !== 'working' && { paddingBottom: transcript.companionSpace },
@@ -326,7 +328,9 @@ export function JourneyScreenStateOwner({
           {phase === 'empty' && !conversation?.hasMessages ? (
             <EmptyState onExample={journey.updateDraft} />
           ) : null}
-          {phase === 'working' ? <WorkingState query={journey.query} /> : null}
+          {phase === 'working' ? (
+            <WorkingState query={journey.query} handoff={runnerHandoff} />
+          ) : null}
           {phase === 'results' ? (
             <ConditionChips
               chips={journey.chips}
@@ -399,6 +403,7 @@ export function JourneyScreenStateOwner({
           phase={phase}
           noCandidates={selectLatestReplyFoundNothing(renderedResponse)}
           focus={transcript.cardFocus}
+          handoff={runnerHandoff}
           onLayout={transcript.onCompanionLayout}
         />
       </View>

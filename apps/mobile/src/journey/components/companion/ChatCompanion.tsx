@@ -1,21 +1,23 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import { Animated, Platform, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { useCallback, useSyncExternalStore } from 'react';
+import { Animated, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import maruBreath from '../../../../assets/character/maru-breath.gif';
 import maruDecided from '../../../../assets/character/maru-decided.png';
 import maruEmpty from '../../../../assets/character/maru-empty.png';
 import maruOops from '../../../../assets/character/maru-oops.png';
-import maruRun from '../../../../assets/character/maru-run.gif';
 import { companionSpeech } from '@mobile/journey/components/companion/companion-speech';
 import type { CardSetFocus } from '@mobile/journey/state/card-set-focus';
+import { useCompanionEntrance } from '@mobile/journey/hooks/useCompanionEntrance';
+import { useReduceMotion } from '@mobile/journey/hooks/useReduceMotion';
 import { companionPose, type CompanionPose } from '@mobile/journey/state/companion-pose';
+import type { RunnerHandoff } from '@mobile/journey/state/runner-handoff';
 import type { JourneyPhase } from '@mobile/journey/state/journey-shell';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 
-const NATIVE_DRIVER = Platform.OS !== 'web';
 const DOG_SIZE = 64;
+// While away the corner keeps a hidden dog so it can measure where to land.
 const SOURCES: Record<CompanionPose, number> = {
   idle: maruBreath,
-  search: maruRun,
+  away: maruBreath,
   notFound: maruEmpty,
   oops: maruOops,
   happy: maruDecided,
@@ -25,18 +27,20 @@ const SOURCES: Record<CompanionPose, number> = {
 export const COMPANION_SPACE = DOG_SIZE;
 
 /**
- * The dog that stays at the bottom right of the chat, reacts to the screen state and reads out the
- * reason of the card in view.
+ * The dog at the bottom right of the chat: it reacts to the screen state, reads out the reason of
+ * the card in view, and is away while it runs in the conversation during a search.
  */
 export function ChatCompanion({
   phase,
   noCandidates,
   focus,
+  handoff,
   onLayout,
 }: {
   readonly phase: JourneyPhase;
   readonly noCandidates: boolean;
   readonly focus: CardSetFocus;
+  readonly handoff: RunnerHandoff;
   readonly onLayout: (event: LayoutChangeEvent) => void;
 }): React.JSX.Element {
   const subscribe = useCallback((listener: () => void) => focus.subscribe(listener), [focus]);
@@ -44,28 +48,13 @@ export function ChatCompanion({
   const speech = companionSpeech(focused);
   const { pose, bubble } = companionPose({ phase, noCandidates, speech: speech?.text ?? null });
   const meta = speech !== null && bubble === speech.text ? speech : null;
-  const [hop] = useState(() => new Animated.Value(1));
-
-  // Only a new pose makes the dog hop; swiping cards swaps the line in place without moving it.
-  useEffect(() => {
-    hop.setValue(0);
-    const animation = Animated.spring(hop, {
-      toValue: 1,
-      friction: 5,
-      tension: 160,
-      useNativeDriver: NATIVE_DRIVER,
-    });
-    animation.start();
-    return () => animation.stop();
-  }, [hop, pose]);
-
-  const motion = {
-    opacity: hop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1], extrapolate: 'clamp' }),
-    transform: [
-      { translateY: hop.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) },
-      { scale: hop.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) },
-    ],
-  };
+  // Only a new pose moves the dog; swiping cards swaps the line in place without moving it.
+  const entrance = useCompanionEntrance({
+    pose,
+    handoff,
+    reduceMotion: useReduceMotion(),
+    dogSize: DOG_SIZE,
+  });
 
   return (
     <View onLayout={onLayout} pointerEvents="none" style={styles.anchor}>
@@ -73,7 +62,7 @@ export function ChatCompanion({
         // Only "nothing found" is announced; card reasons change on every swipe and stay readable.
         <Animated.View
           accessibilityLiveRegion={pose === 'notFound' ? 'polite' : 'none'}
-          style={[styles.bubble, motion]}
+          style={[styles.bubble, entrance.bubbleStyle]}
         >
           {meta === null ? null : (
             <View style={styles.bubbleMeta}>
@@ -87,12 +76,14 @@ export function ChatCompanion({
           <View style={styles.bubbleTail} />
         </Animated.View>
       )}
-      <Animated.Image
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        source={SOURCES[pose]}
-        style={[styles.dog, motion]}
-      />
+      <View collapsable={false} ref={entrance.dogRef} style={styles.dog}>
+        <Animated.Image
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          source={SOURCES[pose]}
+          style={[styles.dog, entrance.dogStyle]}
+        />
+      </View>
     </View>
   );
 }

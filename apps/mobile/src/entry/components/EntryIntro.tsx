@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import maruBreath from '../../../assets/character/maru-breath.gif';
 import { entryLayout } from '@mobile/entry/presentation/entry-motion';
-import { jumpArc } from '@mobile/ui/presentation/jump-arc';
+import { JUMP_SQUASH, jumpArc } from '@mobile/ui/presentation/jump-arc';
 import type { EntryRoute } from '@mobile/entry/state/entry-flow';
 import { playEntryIntro } from '@mobile/entry/state/intro-sequence';
 import { Icon } from '@mobile/ui/Icon';
@@ -26,8 +26,8 @@ const WORDMARK_WIDTH = 168;
 const JUMP_HEIGHT = 72;
 const POSE = { rest: 0, crouch: 1, stretch: 2, air: 3, land: 4, settled: 5 } as const;
 const POSE_INPUT = [0, 1, 2, 3, 4, 5];
-const POSE_SCALE_X = [1, 1.1, 0.93, 1, 1.1, 1];
-const POSE_SCALE_Y = [1, 0.84, 1.1, 1, 0.86, 1];
+const POSE_SCALE_X = [1, JUMP_SQUASH.crouch.x, JUMP_SQUASH.stretch.x, 1, JUMP_SQUASH.land.x, 1];
+const POSE_SCALE_Y = [1, JUMP_SQUASH.crouch.y, JUMP_SQUASH.stretch.y, 1, JUMP_SQUASH.land.y, 1];
 
 const CHOICES: readonly { route: EntryRoute; title: string; detail: string }[] = [
   { route: 'chat', title: 'チャットで話す', detail: 'いまの状況をそのまま書く' },

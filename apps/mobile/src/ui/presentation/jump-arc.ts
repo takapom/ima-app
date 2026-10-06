@@ -32,3 +32,10 @@ export function jumpArc({
   );
   return { input, x: input.map((t) => dx * t), y };
 }
+
+/** Squash and stretch of a hop: crouching before take-off, stretching up, flattening on landing. */
+export const JUMP_SQUASH = {
+  crouch: { x: 1.1, y: 0.84 },
+  stretch: { x: 0.93, y: 1.1 },
+  land: { x: 1.1, y: 0.86 },
+} as const;

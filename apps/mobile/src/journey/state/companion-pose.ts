@@ -1,6 +1,7 @@
 import type { JourneyPhase } from '@mobile/journey/state/journey-shell';
 
-export type CompanionPose = 'idle' | 'search' | 'notFound' | 'oops' | 'happy';
+/** `away`: the dog is running in the conversation during a search, so the corner is empty. */
+export type CompanionPose = 'idle' | 'away' | 'notFound' | 'oops' | 'happy';
 
 export type CompanionState = {
   readonly pose: CompanionPose;
@@ -23,7 +24,7 @@ export function companionPose({
 }): CompanionState {
   switch (phase) {
     case 'working':
-      return { pose: 'search', bubble: null };
+      return { pose: 'away', bubble: null };
     case 'error':
     case 'cancelled':
       return { pose: 'oops', bubble: null };
@@ -37,3 +38,12 @@ export function companionPose({
       return { pose: 'idle', bubble: speech };
   }
 }
+
+export type CompanionEntrance = 'jumpIn' | 'hop' | 'none';
+
+/** Coming back from a search is a jump from the runner; any other change of pose is a hop. */
+export const companionEntrance = (
+  previous: CompanionPose,
+  next: CompanionPose,
+): CompanionEntrance =>
+  next === 'away' || previous === next ? 'none' : previous === 'away' ? 'jumpIn' : 'hop';

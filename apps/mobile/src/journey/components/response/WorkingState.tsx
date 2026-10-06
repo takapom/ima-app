@@ -1,24 +1,33 @@
-import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Animated, Platform, StyleSheet, Text, View } from 'react-native';
-import { styles as cardStyles } from '@mobile/journey/components/candidates/candidate-card-styles';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Image, Platform, StyleSheet, Text, View } from 'react-native';
+import Svg, { Rect } from 'react-native-svg';
+import maruRun from '../../../../assets/character/maru-run.gif';
+import maruSearch from '../../../../assets/character/maru-search.png';
 import {
-  WORKING_SKELETON_CARDS,
-  workingSkeletonMotion,
-  type WorkingSkeletonCard,
-} from '@mobile/journey/components/response/working-state-model';
+  RUNNER_PIXEL,
+  RUNNER_STAGE,
+  runnerCycle,
+  runnerFoodAt,
+  workingRunnerMotion,
+  type RunnerFood,
+  type RunnerKeyframes,
+} from '@mobile/journey/components/response/working-runner-model';
+import { useReduceMotion } from '@mobile/journey/hooks/useReduceMotion';
+import type { RunnerHandoff } from '@mobile/journey/state/runner-handoff';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 
 type WorkingStateProps = {
   readonly query: string;
+  readonly handoff?: RunnerHandoff;
 };
 
-const PULSE_MS = 900;
-const PULSE_LOW_OPACITY = 0.45;
-const USE_NATIVE_DRIVER = Platform.OS !== 'web';
-const FACTS = ['access', 'opening', 'budget'] as const;
+const NATIVE_DRIVER = Platform.OS !== 'web';
+const DASH = 12;
+const DASH_GAP = 8;
+const DASH_PERIOD = DASH + DASH_GAP;
 
-export function WorkingState({ query }: WorkingStateProps): React.JSX.Element {
-  const opacity = useSkeletonPulse();
+export function WorkingState({ query, handoff }: WorkingStateProps): React.JSX.Element {
+  const motion = workingRunnerMotion(useReduceMotion());
   return (
     <View style={styles.container}>
       {query.length > 0 ? <Text style={styles.bubble}>{query}</Text> : null}
@@ -29,77 +38,149 @@ export function WorkingState({ query }: WorkingStateProps): React.JSX.Element {
           <Text style={styles.detail}>近くで今いける場所を確認しています。</Text>
         </View>
       </View>
-      <Animated.View aria-hidden style={[styles.cards, { opacity }]}>
-        {WORKING_SKELETON_CARDS.map((card) => (
-          <SkeletonCard key={card.key} card={card} />
-        ))}
-      </Animated.View>
+      <Runner running={motion === 'run'} {...(handoff === undefined ? {} : { handoff })} />
     </View>
   );
 }
 
-function SkeletonCard({ card }: { readonly card: WorkingSkeletonCard }): React.JSX.Element {
-  return (
-    <View style={cardStyles.card}>
-      <View style={cardStyles.summary}>
-        <View style={[cardStyles.thumbnail, styles.block]} />
-        <View style={cardStyles.heading}>
-          <View style={[styles.line, styles.category]} />
-          <View style={[styles.line, styles.name, { width: card.nameWidth }]} />
-          {FACTS.map((fact, index) => (
-            <View key={fact} style={styles.fact}>
-              <View style={styles.factIcon} />
-              <View style={[styles.line, { width: card.factWidths[index] }]} />
-            </View>
-          ))}
-        </View>
-        <View style={cardStyles.sideActions}>
-          <View style={cardStyles.iconAction} />
-          <View style={cardStyles.iconAction} />
-        </View>
-      </View>
-      <View style={[cardStyles.detailsAction, styles.block]} />
-    </View>
-  );
-}
+/** The dog keeps running and clears one food after another; nothing here is read aloud. */
+function Runner({
+  running,
+  handoff,
+}: {
+  readonly running: boolean;
+  readonly handoff?: RunnerHandoff;
+}): React.JSX.Element {
+  const dogRef = useRef<View>(null);
+  const [width, setWidth] = useState(0);
+  const [lap, setLap] = useState(0);
+  const [clock] = useState(() => new Animated.Value(0));
+  const [ground] = useState(() => new Animated.Value(0));
+  const cycle = useMemo(() => runnerCycle(width), [width]);
+  const animate = running && width > 0;
 
-const useReduceMotion = (): boolean | null => {
-  const [reduceMotion, setReduceMotion] = useState<boolean | null>(null);
   useEffect(() => {
-    let active = true;
-    void AccessibilityInfo.isReduceMotionEnabled().then(
-      (enabled) => {
-        if (active) setReduceMotion(enabled);
-      },
-      () => undefined,
-    );
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
-      if (active) setReduceMotion(enabled);
+    handoff?.report(null);
+  }, [handoff]);
+
+  useEffect(() => {
+    dogRef.current?.measureInWindow((x, y, size) => {
+      if (Number.isFinite(x) && Number.isFinite(y)) handoff?.report({ x, y, size });
     });
-    return () => {
-      active = false;
-      subscription.remove();
-    };
-  }, []);
-  return reduceMotion;
-};
+    if (!animate) return undefined;
+    clock.setValue(0);
+    const animation = Animated.timing(clock, {
+      toValue: 1,
+      duration: cycle.durationMs,
+      easing: Easing.linear,
+      useNativeDriver: NATIVE_DRIVER,
+    });
+    animation.start(({ finished }) => {
+      if (finished) setLap((count) => count + 1);
+    });
+    return () => animation.stop();
+  }, [animate, clock, cycle, handoff, lap]);
 
-const useSkeletonPulse = (): Animated.Value => {
-  const [opacity] = useState(() => new Animated.Value(1));
-  const motion = workingSkeletonMotion(useReduceMotion());
   useEffect(() => {
-    if (motion === 'still') {
-      opacity.setValue(1);
-      return undefined;
-    }
-    const pulse = (toValue: number) =>
-      Animated.timing(opacity, { toValue, duration: PULSE_MS, useNativeDriver: USE_NATIVE_DRIVER });
-    const loop = Animated.loop(Animated.sequence([pulse(PULSE_LOW_OPACITY), pulse(1)]));
+    if (!animate) return undefined;
+    ground.setValue(0);
+    const loop = Animated.loop(
+      Animated.timing(ground, {
+        toValue: 1,
+        duration: (DASH_PERIOD / RUNNER_STAGE.speed) * 1000,
+        easing: Easing.linear,
+        useNativeDriver: NATIVE_DRIVER,
+      }),
+    );
     loop.start();
     return () => loop.stop();
-  }, [motion, opacity]);
-  return opacity;
-};
+  }, [animate, ground]);
+
+  const along = (frames: RunnerKeyframes) =>
+    clock.interpolate({ inputRange: [...frames.input], outputRange: [...frames.output] });
+  const dashes = Math.ceil(width / DASH_PERIOD) + 2;
+
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      onLayout={({ nativeEvent }) => setWidth(nativeEvent.layout.width)}
+      style={styles.stage}
+    >
+      <Animated.View
+        style={[
+          styles.ground,
+          {
+            width: dashes * DASH_PERIOD,
+            transform: [
+              {
+                translateX: ground.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -DASH_PERIOD],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        {Array.from({ length: dashes }, (_, index) => (
+          <View key={index} style={styles.dash} />
+        ))}
+      </Animated.View>
+      {animate ? (
+        <Animated.View
+          style={[styles.food, { transform: [{ translateX: along(cycle.obstacleX) }] }]}
+        >
+          <FoodSprite food={runnerFoodAt(lap)} />
+        </Animated.View>
+      ) : null}
+      <View collapsable={false} ref={dogRef} style={styles.dog}>
+        {animate ? (
+          <Animated.Image
+            source={maruRun}
+            style={[
+              styles.dogImage,
+              {
+                transform: [
+                  { translateY: along(cycle.dogTranslateY) },
+                  { scaleX: along(cycle.dogScaleX) },
+                  { scaleY: along(cycle.dogScaleY) },
+                ],
+              },
+            ]}
+          />
+        ) : (
+          <Image source={maruSearch} style={styles.dogImage} />
+        )}
+      </View>
+    </View>
+  );
+}
+
+function FoodSprite({ food }: { readonly food: RunnerFood }): React.JSX.Element {
+  const columns = food.rows[0]?.length ?? 0;
+  return (
+    <Svg height={food.rows.length * RUNNER_PIXEL} width={columns * RUNNER_PIXEL}>
+      {food.rows.flatMap((row, y) =>
+        [...row].flatMap((cell, x) => {
+          const fill = food.palette[cell];
+          return fill === undefined
+            ? []
+            : [
+                <Rect
+                  key={`${x}:${y}`}
+                  fill={fill}
+                  height={RUNNER_PIXEL}
+                  width={RUNNER_PIXEL}
+                  x={x * RUNNER_PIXEL}
+                  y={y * RUNNER_PIXEL}
+                />,
+              ];
+        }),
+      )}
+    </Svg>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -142,24 +223,33 @@ const styles = StyleSheet.create({
     fontSize: typography.label,
     marginTop: 2,
   },
-  cards: { gap: spacing.section },
-  block: { backgroundColor: colors.surfaceRaised },
-  line: {
-    backgroundColor: colors.border,
-    borderRadius: radii.pill,
-    height: 10,
+  stage: {
+    height: RUNNER_STAGE.height,
+    marginHorizontal: -spacing.page,
+    overflow: 'hidden',
   },
-  category: { width: '30%' },
-  name: { height: 16, marginBottom: 2 },
-  fact: {
-    alignItems: 'center',
+  ground: {
+    bottom: RUNNER_STAGE.groundBottom - 2,
     flexDirection: 'row',
-    gap: 6,
+    gap: DASH_GAP,
+    left: 0,
+    position: 'absolute',
   },
-  factIcon: {
-    backgroundColor: colors.border,
-    borderRadius: 7,
-    height: 14,
-    width: 14,
+  dash: { backgroundColor: colors.faint, height: 2, width: DASH },
+  food: {
+    bottom: RUNNER_STAGE.groundBottom,
+    left: 0,
+    position: 'absolute',
+  },
+  dog: {
+    bottom: RUNNER_STAGE.dogBottom,
+    height: RUNNER_STAGE.dogSize,
+    left: RUNNER_STAGE.dogLeft,
+    position: 'absolute',
+    width: RUNNER_STAGE.dogSize,
+  },
+  dogImage: {
+    height: RUNNER_STAGE.dogSize,
+    width: RUNNER_STAGE.dogSize,
   },
 });
