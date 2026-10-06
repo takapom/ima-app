@@ -3,7 +3,11 @@ import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import type { AssistantMessageRecord } from '@mobile/journey/state/assistant-response';
-import { conversationTranscriptEntries } from '@mobile/journey/services/conversations/conversation-transcript';
+import {
+  conversationTranscriptEntries,
+  foldsExplanation,
+} from '@mobile/journey/services/conversations/conversation-transcript';
+import { Icon } from '@mobile/ui/Icon';
 import type { ConversationMessage } from '@ima/contracts';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 import type { HistoryPhotoViewport } from '@mobile/journey/state/history-photo-viewport';
@@ -31,7 +35,10 @@ function TranscriptMessage({
   readonly onSourcePress: (sourceLink: string) => void;
 }): React.JSX.Element {
   const [localMessageTop, setLocalMessageTop] = useState<number | null>(null);
+  const [explanationOpen, setExplanationOpen] = useState(false);
   const messageTop = localMessageTop === null ? null : transcriptTop + localMessageTop;
+  const folds = foldsExplanation(entry);
+  const foldLabel = explanationOpen ? 'ima. の説明を閉じる' : 'ima. の説明を読む';
   return (
     <View
       onLayout={({ nativeEvent }) => {
@@ -39,14 +46,32 @@ function TranscriptMessage({
       }}
       style={[styles.message, entry.role === 'user' && styles.user]}
     >
-      <Text style={styles.role}>{entry.role === 'user' ? 'あなた' : 'ima.'}</Text>
+      {folds ? (
+        <Pressable
+          accessibilityLabel={foldLabel}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: explanationOpen }}
+          hitSlop={8}
+          onPress={() => setExplanationOpen(!explanationOpen)}
+          style={styles.fold}
+        >
+          <Text style={styles.role}>{foldLabel}</Text>
+          <View style={explanationOpen && styles.foldOpen}>
+            <Icon name="chevron" size={14} color={colors.muted} />
+          </View>
+        </Pressable>
+      ) : (
+        <Text style={styles.role}>{entry.role === 'user' ? 'あなた' : 'ima.'}</Text>
+      )}
       {entry.parts.map((part, index) =>
         part.kind === 'user_text' || part.kind === 'retained_text' ? (
-          <View key={index}>
-            <Text selectable style={styles.text}>
-              {part.text}
-            </Text>
-          </View>
+          folds && !explanationOpen ? null : (
+            <View key={index}>
+              <Text selectable style={styles.text}>
+                {part.text}
+              </Text>
+            </View>
+          )
         ) : part.kind === 'card_set' ? (
           part.cardSetId === liveCardSetId || record === undefined ? null : (
             <HistoricalCards
@@ -171,6 +196,14 @@ const styles = StyleSheet.create({
     borderRadius: radii.small,
   },
   role: { color: colors.muted, fontSize: typography.label },
+  fold: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: 4,
+    minHeight: 32,
+  },
+  foldOpen: { transform: [{ rotate: '90deg' }] },
   text: { color: colors.text, fontSize: 16, lineHeight: 25 },
   muted: { color: colors.muted, fontSize: typography.body, lineHeight: 21 },
   more: { minHeight: spacing.touch, justifyContent: 'center', alignItems: 'center' },

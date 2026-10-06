@@ -97,7 +97,6 @@ export function ResultsState({
           />
         )}
       />
-      <Text style={styles.footnote}>掲載の営業時間 · 今の混雑と空席は未確認</Text>
     </View>
   );
 }
@@ -189,5 +188,4 @@ const styles = StyleSheet.create({
     fontSize: typography.label,
     fontWeight: '700',
   },
-  footnote: { color: colors.faint, fontSize: typography.label },
 });

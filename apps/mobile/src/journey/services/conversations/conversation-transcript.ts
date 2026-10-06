@@ -55,3 +55,11 @@ export const conversationTranscriptEntries = (
     });
   return entries;
 };
+
+/** An answer that came with cards keeps its explanation folded; the cards and the dog lead. */
+export const foldsExplanation = (
+  entry: Pick<ConversationMessage['message'], 'role' | 'parts'>,
+): boolean =>
+  entry.role === 'assistant' &&
+  entry.parts.some((part) => part.kind === 'card_set') &&
+  entry.parts.some((part) => part.kind === 'retained_text');
