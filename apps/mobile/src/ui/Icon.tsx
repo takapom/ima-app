@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import ArrowUp from 'lucide-react-native/icons/arrow-up';
 import Bookmark from 'lucide-react-native/icons/bookmark';
+import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
 import Clock from 'lucide-react-native/icons/clock';
 import JapaneseYen from 'lucide-react-native/icons/japanese-yen';
@@ -16,6 +17,7 @@ const icons = {
   plus: Plus,
   arrow: ArrowUp,
   chevron: ChevronRight,
+  back: ChevronLeft,
   bookmark: Bookmark,
   close: X,
   clock: Clock,

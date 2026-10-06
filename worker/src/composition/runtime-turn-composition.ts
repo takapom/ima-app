@@ -69,6 +69,7 @@ import {
 } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
 import { projectRuntimeToolResultForModel } from '@worker/runtime/context/runtime-field-policy';
 import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-session-config';
+import { searchOutcomeOf } from '@worker/runtime/response/runtime-search-outcome';
 import { createPresentedInputs } from '@worker/application/model-context/presented-inputs';
 import { recordPresentedContext } from '@worker/application/model-context/presented-context';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
@@ -227,13 +228,16 @@ export function createRuntimeTurnComposition(
     scope: { ownerScopeRef: options.context.ownerScopeRef, threadId: options.context.threadId },
   });
   // Generated text is bounded by everything shown to the model this turn, not by what it cites.
-  const publicResponse = (): RuntimePublicResponseDependencies | undefined =>
-    options.publicResponse === undefined
-      ? undefined
-      : {
-          ...options.publicResponse,
-          textRetention: presented.textRetention(options.publicResponse.textRetention),
-        };
+  // The search fact comes from this turn's tool results; durable and live mapping both read it here.
+  const publicResponse = (): RuntimePublicResponseDependencies | undefined => {
+    if (options.publicResponse === undefined) return undefined;
+    const searchOutcome = searchOutcomeOf(results.values());
+    return {
+      ...options.publicResponse,
+      textRetention: presented.textRetention(options.publicResponse.textRetention),
+      ...(searchOutcome === undefined ? {} : { searchOutcome }),
+    };
+  };
   let preparedPhotos: RuntimePreparedPhotos | undefined;
   const application = new SubmitApplication(
     guardedCommit,

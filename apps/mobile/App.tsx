@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { ConversationJourneyScreen } from '@mobile/journey/ConversationJourneyScreen';
+import { EntryFlow } from '@mobile/entry/EntryFlow';
+import { chatReadiness } from '@mobile/entry/state/entry-flow';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JourneyScreen } from '@mobile/journey/JourneyScreen';
 import { PersonalPreviewConnection } from '@mobile/composition/PersonalPreviewConnection';
@@ -47,11 +50,46 @@ function AppContent({ journeyApi, mobileRuntimeOptions }: AppProps): React.JSX.E
     runtime: nativeRuntime.runtime,
     ...(mobileRuntimeOptions?.now === undefined ? {} : { now: mobileRuntimeOptions.now }),
   });
+  const [firstQuery, setFirstQuery] = useState<string | null>(null);
+  const readiness = chatReadiness({
+    connected: nativeRuntime.binding !== null,
+    status: nativeRuntime.status,
+  });
+  // One EntryFlow for every branch, so the splash keeps playing while loading turns into ready.
+  return (
+    <EntryFlow readiness={readiness} onQuestionsAnswered={setFirstQuery}>
+      <JourneyContent
+        nativeRuntime={nativeRuntime}
+        persistence={persistence}
+        firstQuery={firstQuery}
+        onFirstQuerySent={() => setFirstQuery(null)}
+      />
+    </EntryFlow>
+  );
+}
+
+type JourneyContentProps = {
+  readonly nativeRuntime: ReturnType<typeof useNativeMobileRuntime>;
+  readonly persistence: ReturnType<typeof useNativeJourneyPersistence>;
+  /** The question answers, sent once as the first message and then cleared. */
+  readonly firstQuery: string | null;
+  readonly onFirstQuerySent: () => void;
+};
+
+function JourneyContent({
+  nativeRuntime,
+  persistence,
+  firstQuery,
+  onFirstQuerySent,
+}: JourneyContentProps): React.JSX.Element {
+  const initialQuery =
+    firstQuery === null ? {} : { initialQuery: firstQuery, onInitialQuerySent: onFirstQuerySent };
   if (nativeRuntime.binding?.conversations !== undefined) {
     return (
       <ConversationJourneyScreen
         binding={{ ...nativeRuntime.binding, conversations: nativeRuntime.binding.conversations }}
         {...(persistence.preferences === undefined ? {} : { preferences: persistence.preferences })}
+        {...initialQuery}
       />
     );
   }
@@ -62,6 +100,7 @@ function AppContent({ journeyApi, mobileRuntimeOptions }: AppProps): React.JSX.E
         history={persistence.history}
         historyUnavailable={persistence.historyUnavailable}
         {...(persistence.preferences === undefined ? {} : { preferences: persistence.preferences })}
+        {...initialQuery}
       />
     );
   }

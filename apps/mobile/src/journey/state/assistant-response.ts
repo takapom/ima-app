@@ -24,6 +24,8 @@ export type AssistantResponseRecord = {
   /** The card set this response's message is associated with for display. */
   readonly effectiveCardSetId: AssistantResponse['cardSetId'];
   readonly messages: readonly PublicMessage[];
+  /** Present only when the worker reported that this reply's turn searched and found nothing. */
+  readonly foundNothing?: true;
 };
 
 export type AssistantMessageRecord = {
@@ -94,6 +96,10 @@ export const createAssistantResponseState = (threadId: string): AssistantRespons
 export const selectAssistantMessages = (state: AssistantResponseState): readonly PublicMessage[] =>
   state.responseRecords.flatMap((record) => record.messages);
 
+/** Only the latest reply counts; a later reply with cards or a question clears it. */
+export const selectLatestReplyFoundNothing = (state: AssistantResponseState): boolean =>
+  state.responseRecords.at(-1)?.foundNothing === true;
+
 export const selectAssistantMessageRecords = (
   state: AssistantResponseState,
 ): readonly AssistantMessageRecord[] =>
@@ -159,6 +165,9 @@ export const applyAssistantResponse = (
     declaredCardSetId: response.cardSetId,
     effectiveCardSetId,
     messages: response.message,
+    ...(response.kind === 'message' && response.searchOutcome === 'no_candidates'
+      ? { foundNothing: true as const }
+      : {}),
   };
 
   const next = {

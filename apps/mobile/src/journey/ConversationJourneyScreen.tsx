@@ -6,9 +6,13 @@ import type { JourneyPreferencesService } from '@mobile/preferences/services/pre
 export function ConversationJourneyScreen({
   binding,
   preferences,
+  initialQuery,
+  onInitialQuerySent,
 }: {
   readonly binding: ConversationBinding;
   readonly preferences?: JourneyPreferencesService;
+  readonly initialQuery?: string;
+  readonly onInitialQuerySent?: () => void;
 }): React.JSX.Element {
   const conversation = useConversations(binding);
   const state = conversation.state;
@@ -23,6 +27,8 @@ export function ConversationJourneyScreen({
         ? {}
         : { savedPlacePreview: binding.savedPlacePreview })}
       {...(preferences === undefined ? {} : { preferences })}
+      {...(initialQuery === undefined ? {} : { initialQuery })}
+      {...(onInitialQuerySent === undefined ? {} : { onInitialQuerySent })}
       requestStatus={
         state.pending || conversation.locating ? 'pending' : state.error === null ? 'idle' : 'error'
       }
