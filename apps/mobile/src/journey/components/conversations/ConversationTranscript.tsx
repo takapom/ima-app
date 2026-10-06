@@ -7,6 +7,7 @@ import { conversationTranscriptEntries } from '@mobile/journey/services/conversa
 import type { ConversationMessage } from '@ima/contracts';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 import type { HistoryPhotoViewport } from '@mobile/journey/state/history-photo-viewport';
+import type { CardSetFocus } from '@mobile/journey/state/card-set-focus';
 
 type TranscriptEntry = ReturnType<typeof conversationTranscriptEntries>[number];
 
@@ -17,6 +18,7 @@ function TranscriptMessage({
   liveCardSetId,
   photoClient,
   photoViewport,
+  cardFocus,
   onSourcePress,
 }: {
   readonly entry: TranscriptEntry;
@@ -25,6 +27,7 @@ function TranscriptMessage({
   readonly liveCardSetId: string | null;
   readonly photoClient?: JourneyPhotoClient;
   readonly photoViewport: HistoryPhotoViewport;
+  readonly cardFocus: CardSetFocus;
   readonly onSourcePress: (sourceLink: string) => void;
 }): React.JSX.Element {
   const [localMessageTop, setLocalMessageTop] = useState<number | null>(null);
@@ -53,6 +56,7 @@ function TranscriptMessage({
               sequence={record.sequence}
               messageTop={messageTop}
               photoViewport={photoViewport}
+              cardFocus={cardFocus}
               onSourcePress={onSourcePress}
               {...(photoClient === undefined ? {} : { photoClient })}
             />
@@ -78,6 +82,7 @@ export function ConversationTranscript({
   liveCardSetId,
   photoClient,
   photoViewport,
+  cardFocus,
   liveMessages,
   loading,
   hasOlder,
@@ -90,6 +95,7 @@ export function ConversationTranscript({
   readonly liveCardSetId: string | null;
   readonly photoClient?: JourneyPhotoClient;
   readonly photoViewport: HistoryPhotoViewport;
+  readonly cardFocus: CardSetFocus;
   readonly messages: readonly ConversationMessage[];
   readonly liveMessages: readonly AssistantMessageRecord[];
   readonly loading: boolean;
@@ -131,6 +137,7 @@ export function ConversationTranscript({
             transcriptTop={transcriptTop}
             liveCardSetId={liveCardSetId}
             photoViewport={photoViewport}
+            cardFocus={cardFocus}
             onSourcePress={onSourcePress}
             {...(photoClient === undefined ? {} : { photoClient })}
           />

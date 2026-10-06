@@ -10,13 +10,16 @@ export type CompanionState = {
 /**
  * The dog that stays in the chat follows the screen state. "Nothing found" is said only when the
  * latest reply carries the worker's no-candidates signal; failed or cancelled sends never claim it.
+ * Otherwise it reads out the generated reason of the card in view, word for word.
  */
 export function companionPose({
   phase,
   noCandidates,
+  speech,
 }: {
   readonly phase: JourneyPhase;
   readonly noCandidates: boolean;
+  readonly speech: string | null;
 }): CompanionState {
   switch (phase) {
     case 'working':
@@ -29,8 +32,8 @@ export function companionPose({
     case 'results':
       return noCandidates
         ? { pose: 'notFound', bubble: '見つからなかったわん' }
-        : { pose: 'idle', bubble: null };
+        : { pose: 'idle', bubble: speech };
     case 'empty':
-      return { pose: 'idle', bubble: null };
+      return { pose: 'idle', bubble: speech };
   }
 }

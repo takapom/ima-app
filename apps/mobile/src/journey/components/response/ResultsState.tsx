@@ -15,6 +15,8 @@ import type {
   CardSetDisplayState,
 } from '@mobile/journey/state/assistant-response';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
+import { useCardSetFocusEntry } from '@mobile/journey/hooks/useCardSetFocusEntry';
+import type { CardSetFocus, CardSetRange } from '@mobile/journey/state/card-set-focus';
 import { colors, spacing, typography } from '@mobile/ui/theme/tokens';
 
 type ResultsStateProps = {
@@ -22,6 +24,8 @@ type ResultsStateProps = {
   /** Injected render time; cards resolve their opening countdown against it. */
   readonly now?: string;
   readonly cardSetId: string | null;
+  /** Where the companion learns which card of this answer is in view. */
+  readonly cardFocus?: CardSetFocus;
   readonly cardSetDisplay: CardSetDisplayState;
   readonly messageRecords: readonly AssistantMessageRecord[];
   readonly candidateOrder?: readonly string[];
@@ -37,6 +41,7 @@ export function ResultsState({
   cards,
   now,
   cardSetId,
+  cardFocus,
   cardSetDisplay,
   messageRecords,
   candidateOrder,
@@ -50,6 +55,8 @@ export function ResultsState({
   const displayCards = cards === null ? [] : orderedResultCards(cards, candidateOrder);
   const messageHistory = buildMessageHistory(messageRecords, cardSetId, displayCards.length > 0);
   const statusLabel = cardSetStatusLabel(cardSetDisplay);
+  const [range, setRange] = useState<CardSetRange | null>(null);
+  const showCard = useCardSetFocusEntry(cardFocus, cardSetId ?? 'live', displayCards, range);
   if (displayCards.length === 0) {
     // Without cards there is nothing to add beside the conversation; the chat dog shows the state.
     if (!notice && !statusLabel && messageHistory.length === 0) return null;
@@ -63,13 +70,20 @@ export function ResultsState({
   }
 
   return (
-    <View style={styles.container}>
+    <View
+      onLayout={({ nativeEvent }) => {
+        const { y, height } = nativeEvent.layout;
+        setRange({ top: y, bottom: y + height });
+      }}
+      style={styles.container}
+    >
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       {statusLabel ? <Text style={styles.statusLabel}>{statusLabel}</Text> : null}
       <MessageHistory items={messageHistory} />
       <CandidateCarousel
         key={cardSetId ?? 'cards'}
         cards={displayCards}
+        onIndexChange={showCard}
         renderCard={(card) => (
           <CandidateCard
             card={card}

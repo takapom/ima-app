@@ -22,6 +22,7 @@ import type { RecoverIntent } from '@mobile/journey/state/journey-actions';
 import type { SavedPlaceItem, SearchHistoryItem } from '@mobile/journey/state/journey-shell';
 import type { JourneyRequestStatus } from '@mobile/journey/state/journey-phase';
 import type { HistoryPhotoViewport } from '@mobile/journey/state/history-photo-viewport';
+import type { CardSetFocus } from '@mobile/journey/state/card-set-focus';
 
 export type JourneySubmitContext = JourneyApiSubmitContext;
 
@@ -32,6 +33,7 @@ export type JourneyScreenProps = {
       liveMessages: readonly AssistantMessageRecord[],
       onSourcePress: (sourceLink: string) => void,
       photoViewport: HistoryPhotoViewport,
+      cardFocus: CardSetFocus,
     ) => ReactNode;
     readonly hasMessages: boolean;
   };

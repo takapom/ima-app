@@ -6,8 +6,9 @@ import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
 import { CandidateCard } from '@mobile/journey/components/candidates/CandidateCard';
 import { CandidateCarousel } from '@mobile/journey/components/candidates/CandidateCarousel';
 import { CandidateDetailSheet } from '@mobile/journey/components/candidates/CandidateDetailSheet';
-import { presentGeneratedText } from '@mobile/journey/components/candidates/candidate-card-model';
 import { useCandidateDetail } from '@mobile/journey/hooks/useCandidateDetail';
+import { useCardSetFocusEntry } from '@mobile/journey/hooks/useCardSetFocusEntry';
+import type { CardSetFocus } from '@mobile/journey/state/card-set-focus';
 import { createAssistantResponseState } from '@mobile/journey/state/assistant-response';
 import { toCandidateDetailViewModel } from '@mobile/journey/presentation/candidate-detail-view';
 import { colors, spacing, typography } from '@mobile/ui/theme/tokens';
@@ -25,6 +26,7 @@ export function HistoricalCards({
   sequence,
   messageTop,
   photoViewport,
+  cardFocus,
 }: {
   readonly part: ConversationCards;
   readonly onSourcePress: (url: string) => void;
@@ -33,6 +35,7 @@ export function HistoricalCards({
   readonly sequence: number;
   readonly messageTop: number | null;
   readonly photoViewport: HistoryPhotoViewport;
+  readonly cardFocus: CardSetFocus;
 }): React.JSX.Element {
   const [localPhotoRange, setLocalPhotoRange] = useState<HistoryPhotoRange | null>(null);
   const photoRange =
@@ -52,6 +55,7 @@ export function HistoricalCards({
     () => false,
   );
   const cards = [part.cards.hero, ...part.cards.alts];
+  const showCard = useCardSetFocusEntry(cardFocus, part.cardSetId, cards, photoRange);
   const now = new Date().toISOString();
   const photoFor = (candidateId: string, active = photosVisible) =>
     photoClient?.fetchConversationPhoto !== undefined &&
@@ -87,9 +91,9 @@ export function HistoricalCards({
       ) : null}
       <CandidateCarousel
         cards={cards}
+        onIndexChange={showCard}
         renderCard={(card) => (
           <View style={styles.card}>
-            <Text style={styles.reason}>{presentGeneratedText(card.why).text}</Text>
             {Object.entries(card.facts).some(
               ([name, field]) =>
                 !(name === 'photos' && part.photoCandidateIds?.includes(card.candidateId)) &&
@@ -153,5 +157,4 @@ const styles = StyleSheet.create({
   card: { flex: 1, gap: 8 },
   modal: { flex: 1 },
   label: { color: colors.muted, fontSize: typography.label },
-  reason: { color: colors.text, fontSize: typography.body, lineHeight: 22 },
 });
