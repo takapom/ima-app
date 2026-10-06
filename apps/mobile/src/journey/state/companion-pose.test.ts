@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { companionPose } from '@mobile/journey/state/companion-pose';
+import { companionEntrance, companionPose } from '@mobile/journey/state/companion-pose';
 
 describe('chat companion pose', () => {
   it('breathes without a word while waiting for input or with no card in view', () => {
@@ -13,14 +13,14 @@ describe('chat companion pose', () => {
     });
   });
 
-  it('runs while a search is in progress, even after a reply that found nothing', () => {
-    expect(companionPose({ phase: 'working', noCandidates: false, speech: null }).pose).toBe(
-      'search',
-    );
-    expect(companionPose({ phase: 'working', noCandidates: true, speech: null })).toEqual({
-      pose: 'search',
+  it('leaves its corner while a search runs, since it is running in the conversation', () => {
+    expect(companionPose({ phase: 'working', noCandidates: false, speech: null })).toEqual({
+      pose: 'away',
       bubble: null,
     });
+    expect(
+      companionPose({ phase: 'working', noCandidates: true, speech: '前の候補の理由' }),
+    ).toEqual({ pose: 'away', bubble: null });
   });
 
   it('says it found nothing only when the latest reply searched and found no candidates', () => {
@@ -77,5 +77,24 @@ describe('chat companion pose', () => {
       pose: 'happy',
       bubble: null,
     });
+  });
+});
+
+describe('chat companion entrance', () => {
+  it('jumps back into its corner when a search ends', () => {
+    expect(companionEntrance('away', 'idle')).toBe('jumpIn');
+    expect(companionEntrance('away', 'notFound')).toBe('jumpIn');
+    expect(companionEntrance('away', 'oops')).toBe('jumpIn');
+  });
+
+  it('hops in place when it only changes pose', () => {
+    expect(companionEntrance('idle', 'happy')).toBe('hop');
+    expect(companionEntrance('notFound', 'idle')).toBe('hop');
+  });
+
+  it('stays still while the pose is unchanged or while it is away', () => {
+    expect(companionEntrance('idle', 'idle')).toBe('none');
+    expect(companionEntrance('idle', 'away')).toBe('none');
+    expect(companionEntrance('away', 'away')).toBe('none');
   });
 });
