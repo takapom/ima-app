@@ -107,7 +107,76 @@ describe('focused card', () => {
   });
 });
 
+describe('focused card under the companion', () => {
+  const low = entries(['low', { cards: older, index: 0, range: { top: 330, bottom: 630 } }]);
+
+  it('picks an answer only when enough of it shows above the companion', () => {
+    expect(focusedCard(low, { top: 0, bottom: 500, cover: 64 })?.id).toBe('low');
+    expect(focusedCard(low, { top: 0, bottom: 500, cover: 132 })).toBeNull();
+  });
+
+  it('keeps the answer it is talking about while its own bubble grows over it', () => {
+    expect(focusedCard(low, { top: 0, bottom: 500, cover: 132 }, 'low')?.id).toBe('low');
+  });
+
+  it('lets go of the answer once it is scrolled out of view, even while talking about it', () => {
+    expect(focusedCard(low, { top: 600, bottom: 1100, cover: 64 }, 'low')).toBeNull();
+  });
+
+  it('measures the middle on the whole screen, so the bubble never moves it', () => {
+    const pair = entries(
+      ['upper', { cards: older, index: 0, range: { top: 0, bottom: 240 } }],
+      ['lower', { cards: newer, index: 0, range: { top: 260, bottom: 500 } }],
+    );
+    expect(focusedCard(pair, { top: 0, bottom: 500, cover: 0 }, 'lower')?.id).toBe('lower');
+    expect(focusedCard(pair, { top: 0, bottom: 500, cover: 132 }, 'lower')?.id).toBe('lower');
+  });
+});
+
 describe('card set focus store', () => {
+  it('does not drop or re-pick an answer when only the companion changes height', () => {
+    const focus = createCardSetFocus();
+    const listener = vi.fn();
+    focus.subscribe(listener);
+    focus.register('low', older);
+    focus.setRange('low', { top: 330, bottom: 630 });
+    focus.update(0, 500, 64);
+    const talking = focus.current();
+    expect(talking?.id).toBe('low');
+    focus.update(0, 500, 132);
+    focus.update(0, 500, 64);
+    focus.update(0, 500, 132);
+    expect(focus.current()).toBe(talking);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the strip that registered last when an older strip with the same id goes away', () => {
+    const focus = createCardSetFocus();
+    const removeFirst = focus.register('answer', older);
+    focus.setRange('answer', { top: 0, bottom: 400 });
+    focus.update(0, 400);
+    const removeSecond = focus.register('answer', newer);
+    expect(focus.current()?.card).toBe(newer[0]);
+    removeFirst();
+    expect(focus.current()?.card).toBe(newer[0]);
+    removeSecond();
+    expect(focus.current()).toBeNull();
+  });
+
+  it('swaps the cards of an answer without losing the swiped position', () => {
+    const focus = createCardSetFocus();
+    focus.register('answer', []);
+    focus.setRange('answer', { top: 0, bottom: 400 });
+    focus.update(0, 400);
+    focus.setCards('answer', older);
+    focus.setIndex('answer', 2);
+    expect(focus.current()?.card).toBe(older[2]);
+    focus.setCards('answer', [...older]);
+    expect(focus.current()?.index).toBe(2);
+    focus.setCards('missing', newer);
+    expect(focus.current()?.card).toBe(older[2]);
+  });
+
   it('follows registration, layout, swipes, scrolling and removal', () => {
     const focus = createCardSetFocus();
     expect(focus.current()).toBeNull();
