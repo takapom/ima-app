@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import maruBreath from '../../../assets/character/maru-breath.gif';
-import { entryLayout, jumpArc } from '@mobile/entry/presentation/entry-motion';
+import { entryLayout } from '@mobile/entry/presentation/entry-motion';
+import { jumpArc } from '@mobile/ui/presentation/jump-arc';
 import type { EntryRoute } from '@mobile/entry/state/entry-flow';
 import { playEntryIntro } from '@mobile/entry/state/intro-sequence';
 import { Icon } from '@mobile/ui/Icon';
