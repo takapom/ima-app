@@ -4,6 +4,7 @@ import { HistoricalPhoto } from '@mobile/journey/components/conversations/Histor
 import type { ConversationCards } from '@ima/contracts';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
 import { CandidateCard } from '@mobile/journey/components/candidates/CandidateCard';
+import { CandidateCarousel } from '@mobile/journey/components/candidates/CandidateCarousel';
 import { CandidateDetailSheet } from '@mobile/journey/components/candidates/CandidateDetailSheet';
 import { presentGeneratedText } from '@mobile/journey/components/candidates/candidate-card-model';
 import { useCandidateDetail } from '@mobile/journey/hooks/useCandidateDetail';
@@ -84,42 +85,46 @@ export function HistoricalCards({
       {part.photoCandidateIds?.length ? (
         <Text style={styles.label}>写真は現在の店舗写真です。画像提供：ホットペッパー グルメ</Text>
       ) : null}
-      {cards.map((card) => (
-        <View key={card.candidateId} style={styles.card}>
-          <Text style={styles.reason}>{presentGeneratedText(card.why).text}</Text>
-          {Object.entries(card.facts).some(
-            ([name, field]) =>
-              !(name === 'photos' && part.photoCandidateIds?.includes(card.candidateId)) &&
-              field !== undefined &&
-              field.status !== 'known',
-          ) ? (
-            <Text style={styles.label}>
-              {[
-                ...new Set(
-                  Object.entries(card.facts).flatMap(([name, field]) =>
-                    (name === 'photos' && part.photoCandidateIds?.includes(card.candidateId)) ||
-                    field === undefined ||
-                    field.status === 'known'
-                      ? []
-                      : [field.reason],
+      <CandidateCarousel
+        cards={cards}
+        renderCard={(card) => (
+          <View style={styles.card}>
+            <Text style={styles.reason}>{presentGeneratedText(card.why).text}</Text>
+            {Object.entries(card.facts).some(
+              ([name, field]) =>
+                !(name === 'photos' && part.photoCandidateIds?.includes(card.candidateId)) &&
+                field !== undefined &&
+                field.status !== 'known',
+            ) ? (
+              <Text style={styles.label}>
+                {[
+                  ...new Set(
+                    Object.entries(card.facts).flatMap(([name, field]) =>
+                      (name === 'photos' && part.photoCandidateIds?.includes(card.candidateId)) ||
+                      field === undefined ||
+                      field.status === 'known'
+                        ? []
+                        : [field.reason],
+                    ),
                   ),
-                ),
-              ].join(' / ')}
-            </Text>
-          ) : null}
-          <CandidateCard
-            photo={photoFor(card.candidateId)}
-            card={card}
-            now={now}
-            {...(toCandidateDetailViewModel(card, Date.parse(now)).attributions.length === 0 &&
-            !part.photoCandidateIds?.includes(card.candidateId)
-              ? {}
-              : { onOpenDetail: detail.open })}
-            onPhotoReady={detail.rememberPhoto}
-            {...(photoClient === undefined ? {} : { photoClient })}
-          />
-        </View>
-      ))}
+                ].join(' / ')}
+              </Text>
+            ) : null}
+            <CandidateCard
+              photo={photoFor(card.candidateId)}
+              card={card}
+              fill
+              now={now}
+              {...(toCandidateDetailViewModel(card, Date.parse(now)).attributions.length === 0 &&
+              !part.photoCandidateIds?.includes(card.candidateId)
+                ? {}
+                : { onOpenDetail: detail.open })}
+              onPhotoReady={detail.rememberPhoto}
+              {...(photoClient === undefined ? {} : { photoClient })}
+            />
+          </View>
+        )}
+      />
       <Modal
         visible={detail.card !== null}
         transparent
@@ -145,7 +150,7 @@ export function HistoricalCards({
 }
 const styles = StyleSheet.create({
   cards: { gap: spacing.compact },
-  card: { gap: 8 },
+  card: { flex: 1, gap: 8 },
   modal: { flex: 1 },
   label: { color: colors.muted, fontSize: typography.label },
   reason: { color: colors.text, fontSize: typography.body, lineHeight: 22 },

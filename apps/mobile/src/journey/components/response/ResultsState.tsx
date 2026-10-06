@@ -3,6 +3,7 @@ import type { RememberPhoto } from '@mobile/journey/state/photo-image-state';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { CardsData, PublicCard } from '@ima/contracts';
 import { CandidateCard } from '@mobile/journey/components/candidates/CandidateCard';
+import { CandidateCarousel } from '@mobile/journey/components/candidates/CandidateCarousel';
 import {
   buildMessageHistory,
   cardSetStatusLabel,
@@ -66,11 +67,13 @@ export function ResultsState({
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       {statusLabel ? <Text style={styles.statusLabel}>{statusLabel}</Text> : null}
       <MessageHistory items={messageHistory} />
-      <View style={styles.cards}>
-        {displayCards.map((card) => (
+      <CandidateCarousel
+        key={cardSetId ?? 'cards'}
+        cards={displayCards}
+        renderCard={(card) => (
           <CandidateCard
-            key={card.candidateId}
             card={card}
+            fill
             {...(now === undefined ? {} : { now })}
             onOpenDetail={onOpenDetail}
             {...(onOpenMap === undefined ? {} : { onOpenMap })}
@@ -78,8 +81,8 @@ export function ResultsState({
             {...(onSave === undefined ? {} : { onSave })}
             {...(photoClient === undefined ? {} : { photoClient })}
           />
-        ))}
-      </View>
+        )}
+      />
       <Text style={styles.footnote}>掲載の営業時間 · 今の混雑と空席は未確認</Text>
     </View>
   );
@@ -172,6 +175,5 @@ const styles = StyleSheet.create({
     fontSize: typography.label,
     fontWeight: '700',
   },
-  cards: { gap: spacing.section },
   footnote: { color: colors.faint, fontSize: typography.label },
 });
