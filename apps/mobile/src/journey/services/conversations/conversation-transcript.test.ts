@@ -3,6 +3,7 @@ import type { ConversationMessage, PublicMessage } from '@ima/contracts';
 import {
   conversationTranscriptParts,
   conversationTranscriptEntries,
+  foldsExplanation,
 } from '@mobile/journey/services/conversations/conversation-transcript';
 const saved: ConversationMessage = {
   conversationId: 'conversation',
@@ -123,5 +124,48 @@ describe('conversation display projection', () => {
     expect(conversationTranscriptParts(saved, [{ ...live, responseId: 'other' }])).toEqual(
       saved.message.parts,
     );
+  });
+});
+
+describe('folded explanation', () => {
+  const text = { kind: 'retained_text' as const, text: message.text, retention: message.retention };
+  const cardSet = {
+    kind: 'card_set' as const,
+    threadId: 'thread',
+    cardSetId: 'cards',
+    revision: 2,
+    photosExpireAt: null,
+    cards: {
+      hero: {
+        candidateId: 'shop',
+        facts: { identity: { status: 'unknown' as const, reason: 'fixture' } },
+        why: message,
+      },
+      alts: [],
+    },
+  };
+
+  it('folds what ima. wrote when the answer came with cards', () => {
+    expect(foldsExplanation({ role: 'assistant', parts: [text, text, cardSet] })).toBe(true);
+  });
+
+  it('keeps a question or an answer without cards open', () => {
+    expect(foldsExplanation({ role: 'assistant', parts: [text] })).toBe(false);
+  });
+
+  it('keeps the text open when the cards of that answer were not saved', () => {
+    expect(
+      foldsExplanation({
+        role: 'assistant',
+        parts: [text, { kind: 'card_set_reference', threadId: 'thread', cardSetId: 'cards' }],
+      }),
+    ).toBe(false);
+  });
+
+  it('has nothing to fold without text, and never folds what the user wrote', () => {
+    expect(foldsExplanation({ role: 'assistant', parts: [cardSet] })).toBe(false);
+    expect(
+      foldsExplanation({ role: 'user', parts: [{ kind: 'user_text', text: '恵比寿でカフェ' }] }),
+    ).toBe(false);
   });
 });
