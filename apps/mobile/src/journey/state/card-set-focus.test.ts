@@ -65,6 +65,21 @@ describe('focused card', () => {
     expect(focusedCard(new Map(), { top: 0, bottom: 800 })).toBeNull();
   });
 
+  it('does not count an answer that only peeks in at the edge of the screen', () => {
+    expect(focusedCard(both, { top: 390, bottom: 1000 })?.id).toBe('newer');
+    const olderOnly = entries([
+      'older',
+      { cards: older, index: 0, range: { top: 0, bottom: 400 } },
+    ]);
+    expect(focusedCard(olderOnly, { top: 390, bottom: 900 })).toBeNull();
+    expect(focusedCard(olderOnly, { top: 300, bottom: 900 })?.id).toBe('older');
+  });
+
+  it('still counts a short answer that is fully on screen', () => {
+    const short = entries(['short', { cards: newer, index: 0, range: { top: 500, bottom: 540 } }]);
+    expect(focusedCard(short, { top: 0, bottom: 900 })?.id).toBe('short');
+  });
+
   it('ignores answers whose position is not measured yet', () => {
     const unmeasured = entries(['older', { cards: older, index: 0, range: null }]);
     expect(focusedCard(unmeasured, { top: 0, bottom: 800 })).toBeNull();
