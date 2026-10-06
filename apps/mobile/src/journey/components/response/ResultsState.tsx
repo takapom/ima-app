@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { RememberPhoto } from '@mobile/journey/state/photo-image-state';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { CardsData, PublicCard } from '@ima/contracts';
@@ -52,7 +52,10 @@ export function ResultsState({
   onSave,
   photoClient,
 }: ResultsStateProps): React.JSX.Element | null {
-  const displayCards = cards === null ? [] : orderedResultCards(cards, candidateOrder);
+  const displayCards = useMemo(
+    () => (cards === null ? [] : orderedResultCards(cards, candidateOrder)),
+    [cards, candidateOrder],
+  );
   const messageHistory = buildMessageHistory(messageRecords, cardSetId, displayCards.length > 0);
   const statusLabel = cardSetStatusLabel(cardSetDisplay);
   const [range, setRange] = useState<CardSetRange | null>(null);

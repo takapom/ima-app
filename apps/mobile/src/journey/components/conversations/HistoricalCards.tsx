@@ -1,5 +1,5 @@
 import { Modal, StyleSheet, Text, View } from 'react-native';
-import { useCallback, useState, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { HistoricalPhoto } from '@mobile/journey/components/conversations/HistoricalPhoto';
 import type { ConversationCards } from '@ima/contracts';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
@@ -54,7 +54,7 @@ export function HistoricalCards({
     () => photoViewport.visible(photoRange),
     () => false,
   );
-  const cards = [part.cards.hero, ...part.cards.alts];
+  const cards = useMemo(() => [part.cards.hero, ...part.cards.alts], [part.cards]);
   const showCard = useCardSetFocusEntry(cardFocus, part.cardSetId, cards, photoRange);
   const now = new Date().toISOString();
   const photoFor = (candidateId: string, active = photosVisible) =>
