@@ -16,6 +16,8 @@ export type FocusedCard = {
   readonly card: PublicCard;
   readonly index: number;
   readonly count: number;
+  /** True when no measured answer sits below this one in the conversation. */
+  readonly latest: boolean;
 };
 
 export type CardSetFocus = {
@@ -46,9 +48,11 @@ export const focusedCard = (
   if (visible === null) return null;
   const middle = (visible.top + visible.bottom) / 2;
   let best: { id: string; entry: CardSetFocusEntry; distance: number; top: number } | null = null;
+  let newestTop = Number.NEGATIVE_INFINITY;
   for (const [id, entry] of entries) {
     const range = entry.range;
     if (range === null || entry.cards.length === 0) continue;
+    newestTop = Math.max(newestTop, range.top);
     if (!visibleEnough(range, visible)) continue;
     const distance = distanceFrom(middle, range);
     if (
@@ -62,7 +66,15 @@ export const focusedCard = (
   if (best === null) return null;
   const index = Math.max(0, Math.min(best.entry.index, best.entry.cards.length - 1));
   const card = best.entry.cards[index];
-  return card === undefined ? null : { id: best.id, card, index, count: best.entry.cards.length };
+  return card === undefined
+    ? null
+    : {
+        id: best.id,
+        card,
+        index,
+        count: best.entry.cards.length,
+        latest: best.top >= newestTop,
+      };
 };
 
 const sameFocus = (a: FocusedCard | null, b: FocusedCard | null): boolean =>
@@ -72,7 +84,8 @@ const sameFocus = (a: FocusedCard | null, b: FocusedCard | null): boolean =>
     a.id === b.id &&
     a.card === b.card &&
     a.index === b.index &&
-    a.count === b.count);
+    a.count === b.count &&
+    a.latest === b.latest);
 
 export const createCardSetFocus = (): CardSetFocus => {
   const entries = new Map<string, CardSetFocusEntry>();

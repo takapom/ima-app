@@ -5,7 +5,7 @@ import maruDecided from '../../../../assets/character/maru-decided.png';
 import maruEmpty from '../../../../assets/character/maru-empty.png';
 import maruOops from '../../../../assets/character/maru-oops.png';
 import maruRun from '../../../../assets/character/maru-run.gif';
-import { presentGeneratedText } from '@mobile/journey/components/candidates/candidate-card-model';
+import { companionSpeech } from '@mobile/journey/components/companion/companion-speech';
 import type { CardSetFocus } from '@mobile/journey/state/card-set-focus';
 import { companionPose, type CompanionPose } from '@mobile/journey/state/companion-pose';
 import type { JourneyPhase } from '@mobile/journey/state/journey-shell';
@@ -41,8 +41,9 @@ export function ChatCompanion({
 }): React.JSX.Element {
   const subscribe = useCallback((listener: () => void) => focus.subscribe(listener), [focus]);
   const focused = useSyncExternalStore(subscribe, focus.current, focus.current);
-  const speech = focused === null ? null : presentGeneratedText(focused.card.why).text;
-  const { pose, bubble } = companionPose({ phase, noCandidates, speech });
+  const speech = companionSpeech(focused);
+  const { pose, bubble } = companionPose({ phase, noCandidates, speech: speech?.text ?? null });
+  const meta = speech !== null && bubble === speech.text ? speech : null;
   const [hop] = useState(() => new Animated.Value(1));
 
   // Only a new pose makes the dog hop; swiping cards swaps the line in place without moving it.
@@ -74,6 +75,14 @@ export function ChatCompanion({
           accessibilityLiveRegion={pose === 'notFound' ? 'polite' : 'none'}
           style={[styles.bubble, motion]}
         >
+          {meta === null ? null : (
+            <View style={styles.bubbleMeta}>
+              {meta.position === null ? null : (
+                <Text style={styles.bubblePosition}>{meta.position}</Text>
+              )}
+              <Text style={styles.bubbleRelation}>{meta.relation}</Text>
+            </View>
+          )}
           <Text style={styles.bubbleText}>{bubble}</Text>
           <View style={styles.bubbleTail} />
         </Animated.View>
@@ -108,6 +117,21 @@ const styles = StyleSheet.create({
     marginBottom: DOG_SIZE / 2,
     paddingHorizontal: spacing.section,
     paddingVertical: spacing.compact,
+  },
+  bubbleMeta: {
+    flexDirection: 'row',
+    gap: spacing.compact,
+    marginBottom: 2,
+  },
+  bubblePosition: {
+    color: colors.lime,
+    fontSize: typography.label,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '700',
+  },
+  bubbleRelation: {
+    color: colors.muted,
+    fontSize: typography.label,
   },
   bubbleText: {
     color: colors.text,
