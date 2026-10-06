@@ -45,6 +45,7 @@ export function ChatCompanion({
   const { pose, bubble } = companionPose({ phase, noCandidates, speech });
   const [hop] = useState(() => new Animated.Value(1));
 
+  // Only a new pose makes the dog hop; swiping cards swaps the line in place without moving it.
   useEffect(() => {
     hop.setValue(0);
     const animation = Animated.spring(hop, {
@@ -55,7 +56,7 @@ export function ChatCompanion({
     });
     animation.start();
     return () => animation.stop();
-  }, [hop, pose, bubble]);
+  }, [hop, pose]);
 
   const motion = {
     opacity: hop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1], extrapolate: 'clamp' }),
