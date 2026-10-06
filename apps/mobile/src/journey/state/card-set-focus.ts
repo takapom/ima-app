@@ -5,6 +5,11 @@ export type CardSetRange = {
   readonly bottom: number;
 };
 
+/** The visible part of the transcript; `cover` is the height the companion hides at its bottom. */
+export type CardSetView = CardSetRange & {
+  readonly cover?: number;
+};
+
 export type CardSetFocusEntry = {
   readonly cards: readonly PublicCard[];
   readonly index: number;
@@ -23,9 +28,11 @@ export type FocusedCard = {
 export type CardSetFocus = {
   readonly subscribe: (listener: () => void) => () => void;
   readonly current: () => FocusedCard | null;
-  /** Visible part of the transcript, without the area the companion covers. */
-  readonly update: (top: number, height: number) => void;
+  /** Visible part of the transcript and the height the companion covers at its bottom. */
+  readonly update: (top: number, height: number, cover?: number) => void;
+  /** Adds an answer; the returned removal only removes this registration, not a later one. */
   readonly register: (id: string, cards: readonly PublicCard[]) => () => void;
+  readonly setCards: (id: string, cards: readonly PublicCard[]) => void;
   readonly setRange: (id: string, range: CardSetRange | null) => void;
   readonly setIndex: (id: string, index: number) => void;
 };
@@ -40,20 +47,27 @@ const visibleEnough = (range: CardSetRange, visible: CardSetRange): boolean =>
 const distanceFrom = (point: number, range: CardSetRange): number =>
   point < range.top ? range.top - point : point > range.bottom ? point - range.bottom : 0;
 
-/** The answer the reader is looking at: the visible one nearest the middle, newer on a tie. */
+/**
+ * The answer the reader is looking at: the visible one nearest the middle, newer on a tie. A new
+ * answer must show enough above the companion; the one already `holding` the bubble stays while
+ * it shows enough on screen, so the bubble's own height never takes it away or brings it back.
+ */
 export const focusedCard = (
   entries: ReadonlyMap<string, CardSetFocusEntry>,
-  visible: CardSetRange | null,
+  view: CardSetView | null,
+  holding: string | null = null,
 ): FocusedCard | null => {
-  if (visible === null) return null;
-  const middle = (visible.top + visible.bottom) / 2;
+  if (view === null) return null;
+  const screen = { top: view.top, bottom: view.bottom };
+  const uncovered = { top: view.top, bottom: view.bottom - Math.max(0, view.cover ?? 0) };
+  const middle = (screen.top + screen.bottom) / 2;
   let best: { id: string; entry: CardSetFocusEntry; distance: number; top: number } | null = null;
   let newestTop = Number.NEGATIVE_INFINITY;
   for (const [id, entry] of entries) {
     const range = entry.range;
     if (range === null || entry.cards.length === 0) continue;
     newestTop = Math.max(newestTop, range.top);
-    if (!visibleEnough(range, visible)) continue;
+    if (!visibleEnough(range, id === holding ? screen : uncovered)) continue;
     const distance = distanceFrom(middle, range);
     if (
       best === null ||
@@ -90,11 +104,12 @@ const sameFocus = (a: FocusedCard | null, b: FocusedCard | null): boolean =>
 export const createCardSetFocus = (): CardSetFocus => {
   const entries = new Map<string, CardSetFocusEntry>();
   const listeners = new Set<() => void>();
-  let visible: CardSetRange | null = null;
+  const owners = new Map<string, symbol>();
+  let view: CardSetView | null = null;
   let snapshot: FocusedCard | null = null;
 
   const refresh = (): void => {
-    const next = focusedCard(entries, visible);
+    const next = focusedCard(entries, view, snapshot?.id ?? null);
     if (sameFocus(snapshot, next)) return;
     snapshot = next;
     for (const listener of listeners) listener();
@@ -112,20 +127,30 @@ export const createCardSetFocus = (): CardSetFocus => {
       return () => listeners.delete(listener);
     },
     current: () => snapshot,
-    update: (top, height) => {
+    update: (top, height, cover = 0) => {
       if (!Number.isFinite(top) || !Number.isFinite(height) || height <= 0) return;
-      visible = { top: Math.max(0, top), bottom: Math.max(0, top) + height };
+      const start = Math.max(0, top);
+      view = {
+        top: start,
+        bottom: start + height,
+        cover: Number.isFinite(cover) ? Math.min(Math.max(0, cover), height) : 0,
+      };
       refresh();
     },
     register: (id, cards) => {
+      const owner = Symbol(id);
       const entry = entries.get(id);
+      owners.set(id, owner);
       entries.set(id, { cards, index: entry?.index ?? 0, range: entry?.range ?? null });
       refresh();
       return () => {
+        if (owners.get(id) !== owner) return;
+        owners.delete(id);
         entries.delete(id);
         refresh();
       };
     },
+    setCards: (id, cards) => patch(id, { cards }),
     setRange: (id, range) => patch(id, { range }),
     setIndex: (id, index) => patch(id, { index }),
   };

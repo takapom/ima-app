@@ -12,8 +12,8 @@ const FOLLOW_LATEST_SLACK = 80;
 
 /**
  * Tracks which part of the transcript is on screen: history photos load only there, and the
- * companion talks about the answer in view. The companion covers the bottom of the transcript,
- * so that strip is kept free below the content and left out of what counts as in view.
+ * companion talks about the answer in view. The companion covers the bottom of the transcript, so
+ * that strip is kept free below the content and passed on as the covered height.
  */
 export function useTranscriptViewport({
   followOnGrowth,
@@ -33,11 +33,11 @@ export function useTranscriptViewport({
 
   const publish = (): void => {
     photoViewport.update(scrollTop.current, viewportHeight.current);
-    cardFocus.update(scrollTop.current, viewportHeight.current - companionSpace);
+    cardFocus.update(scrollTop.current, viewportHeight.current, companionSpace);
   };
 
   useEffect(() => {
-    cardFocus.update(scrollTop.current, viewportHeight.current - companionSpace);
+    cardFocus.update(scrollTop.current, viewportHeight.current, companionSpace);
   }, [cardFocus, companionSpace]);
 
   return {

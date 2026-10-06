@@ -15,7 +15,7 @@ export function useCardSetFocusEntry(
 ): (index: number) => void {
   useEffect(() => focus?.register(id, []), [focus, id]);
   useEffect(() => {
-    focus?.register(id, cards);
+    focus?.setCards(id, cards);
   }, [focus, id, cards]);
   useEffect(() => {
     focus?.setRange(id, range);
