@@ -172,16 +172,18 @@ html,body{margin:0;background:#2b2b2e;font-family:var(--font);color:var(--text)}
 .guards b{font-size:18px;font-weight:700;color:var(--text)}
 .guards span{font-size:15px;line-height:1.5;color:var(--muted)}
 
-/* 9. 今後：左に大きな一語、右に3つのテーマ */
-.ahead{flex:1;display:grid;grid-template-columns:330px 1fr;gap:56px;min-height:0}
-.ahead .hero2{display:flex;flex-direction:column;justify-content:center;gap:16px}
-.ahead .hero2 b{font-size:68px;line-height:1.15;font-weight:900;color:var(--text)}
-.ahead .hero2 span{font-size:16px;line-height:1.6;color:var(--muted)}
-.themes{display:flex;flex-direction:column;justify-content:center}
-.th{display:grid;grid-template-columns:250px 1fr;gap:24px;padding:22px 0;border-top:1px solid var(--line);align-items:start}
-.th:first-child{border-top:2px solid var(--text)}
-.th b{font-size:22px;line-height:1.4;font-weight:700;color:var(--text)}
-.th ul{margin:0;padding-left:18px;font-size:17px;line-height:1.6;color:var(--text);display:flex;flex-direction:column;gap:6px}
+/* 9. これから：中央の「いまの ima」から4つの方向へ広がる */
+.hub{position:relative;flex:1;min-height:0}
+.hub svg.ln{position:absolute;left:0;top:0;width:1152px;height:440px}
+.hub .core{position:absolute;left:451px;top:110px;width:250px;height:240px;border:1.5px solid var(--faint);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:0 18px}
+.hub .core svg{width:72px;height:auto}
+.hub .core b{font-size:18px;font-weight:700;color:var(--text)}
+.hub .core span{font-size:15px;line-height:1.5;color:var(--muted)}
+.hub .fx{position:absolute;width:362px;height:200px;border-top:2px solid var(--text);padding-top:16px;display:flex;flex-direction:column;gap:10px}
+.hub .fx .h{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:700;color:var(--text)}
+.hub .fx .h .no.off{background:var(--surface);color:var(--lime)}
+.hub .fx .d{font-size:16px;line-height:1.6;color:var(--muted)}
+.hub .fx .k{font-size:14px;font-weight:700;color:var(--lime)}
 </style></head><body>
 
 <!-- 1. 表紙 -->
@@ -267,7 +269,7 @@ html,body{margin:0;background:#2b2b2e;font-family:var(--font);color:var(--text)}
       </div>
     </div>
   </div>
-  <div class="src">吹き出しとカードの文面は説明用の例　店舗データ：Powered by <a href="https://webservice.recruit.co.jp/">ホットペッパーグルメ Webサービス</a></div>
+  <div class="src">吹き出しとカードの文面は説明用の例 ／ 店舗データ：Powered by <a href="https://webservice.recruit.co.jp/">ホットペッパーグルメ Webサービス</a></div>
   <div class="foot"><b>ima</b><span>2</span></div>
 </section>
 
@@ -292,7 +294,7 @@ html,body{margin:0;background:#2b2b2e;font-family:var(--font);color:var(--text)}
 <!-- 5. 主要画面 -->
 <section class="s">
   <img class="maru" src="assets/maru-glasses.png" alt="maru">
-  <h1>画面は、起動から店舗詳細まで会話の流れに沿って進む</h1>
+  <h1>起動から店舗詳細まで、画面は会話の流れに沿って進む</h1>
   <div class="c">
     <div class="gallery">
       <div><div class="shot">起動画面の<br>スクリーンショット<br>を入れる</div><b>起動画面</b><span>maru が入口を尋ねる</span></div>
@@ -413,21 +415,37 @@ html,body{margin:0;background:#2b2b2e;font-family:var(--font);color:var(--text)}
   <div class="foot"><b>ima</b><span>7</span></div>
 </section>
 
-<!-- 9. 今後の展望 -->
+<!-- 9. これからの ima -->
 <section class="s">
-  <img class="maru" src="assets/maru-decided.png" alt="maru">
-  <h1>次は maru と話しながら、二軒めまで一緒に探せるようにする</h1>
+  <img class="maru" src="assets/maru-found.png" alt="maru">
+  <h1>曖昧な一言からその人に合う店を選び、共有までつなげていく</h1>
   <div class="c">
-    <div class="ahead">
-      <div class="hero2"><b>これから<br>作るもの</b><span>GitHub Issues で管理している改善から</span></div>
-      <div class="themes">
-        <div class="th"><b>候補を見比べやすく</b><ul><li>候補カードを横スワイプで1枚ずつ見せる</li><li>説明文はカードの下に折りたたむ</li></ul></div>
-        <div class="th"><b>maru と話しながら選ぶ</b><ul><li>いま見ている候補の選定理由を maru が話す</li><li>お店の雰囲気を掲載情報からひとことで伝える</li></ul></div>
-        <div class="th"><b>探す前と決めたあと</b><ul><li>一軒めを決めたあと、続けて二軒めを探す</li><li>位置情報の許可状態を見せ、設定へ案内する</li></ul></div>
+    <div class="hub">
+      <svg class="ln" viewBox="0 0 1152 440" aria-hidden="true">
+        <g stroke="#6b6a66" stroke-width="2" fill="none">
+          <path d="M451 170H416V78H384"/>
+          <path d="M701 170H736V78H768"/>
+          <path d="M451 290H416V342H384"/>
+          <path d="M701 290H736V342H768"/>
+        </g>
+        <g fill="#b7c97a"><rect x="376" y="74" width="8" height="8"/><rect x="768" y="74" width="8" height="8"/><rect x="376" y="338" width="8" height="8"/><rect x="768" y="338" width="8" height="8"/></g>
+      </svg>
+      <div class="core">
+        <svg viewBox="155 -6 80 98" role="img" aria-label="ima のピン">
+          <path d="M195 88C184 74 159 58 159 34A36 36 0 0 1 231 34C231 58 206 74 195 88Z" fill="#b7c97a"/>
+          <ellipse cx="181" cy="32" rx="11" ry="13" fill="#fbfaf6"/><ellipse cx="209" cy="32" rx="11" ry="13" fill="#fbfaf6"/>
+          <circle cx="182" cy="38" r="6.5" fill="#161616"/><circle cx="208" cy="38" r="6.5" fill="#161616"/>
+          <circle cx="179.5" cy="35.5" r="2" fill="#fbfaf6"/><circle cx="205.5" cy="35.5" r="2" fill="#fbfaf6"/>
+        </svg>
+        <b>いまの ima</b><span>希望を伝えると、理由付きで<br>3件以内に絞る</span>
       </div>
+      <div class="fx" style="left:0;top:0"><span class="k">プロンプトの上手さに頼らない</span><div class="h"><span class="no">1</span>曖昧な一言から意図を汲む</div><div class="d">「いい感じのとこ」のような抽象的な<br>言葉からも、エージェントが意図を<br>読み取って提案する</div></div>
+      <div class="fx" style="left:790px;top:0"><span class="k">コンテキストの構造を設計する</span><div class="h"><span class="no">2</span>その人に合う店を選ぶ</div><div class="d">好みや同行者、これまでの決定を<br>構造化して渡し、パーソナライズ<br>された意味のある店を提案する</div></div>
+      <div class="fx" style="left:0;top:264px"><span class="k">ほかのアプリやプラットフォームと連携</span><div class="h"><span class="no">3</span>提案をそのまま共有する</div><div class="d">エージェントが選んだ店と理由を、<br>同行者へ渡しやすくする</div></div>
+      <div class="fx" style="left:790px;top:264px"><span class="k">スケール</span><div class="h"><span class="no off">＋</span>サービスとして広げる</div><div class="d">個人の検証版から、<br>誰でも使える公開サービスへ</div></div>
     </div>
   </div>
-  <div class="src">本資料は consulting-pptx-skill（github.com/carnot-tech/consulting-pptx-skill）で作成</div>
+  <div class="src">番号は「外出中の『次どこ行く？』」のページのつまずきに対応 ／ 本資料は consulting-pptx-skill（github.com/carnot-tech/consulting-pptx-skill）で作成</div>
   <div class="foot"><b>ima</b><span>8</span></div>
 </section>
 
