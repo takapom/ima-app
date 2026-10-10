@@ -7,6 +7,8 @@
      版面: 1280×720px（338.67mm×190.5mm）。色と書体はアプリの apps/mobile/src/ui/theme/tokens.ts に合わせる。
      レイアウト: 夜の地に生成りの文字、ライムは番号と強調だけ。角はドット絵の maru に合わせて直角。
      リズム: 1枚ごとに型を変える（会話の場面／横の流れ／歩く maru／画面の並び／会話の2×2／ロゴ入りの構成図／ループ図／文字で締める）。 -->
+<!-- 正本について: 2026-10-10 以降、資料の正本は依頼者が手で直した ima-pitch.pptx。
+     このHTMLは新しく足すページの部品の作成に使う（削除されたページや手で直したページは反映していない）。 -->
 <style>
 :root{
   --bg:#0c0c0d;        /* アプリの background */
@@ -184,6 +186,21 @@ html,body{margin:0;background:#2b2b2e;font-family:var(--font);color:var(--text)}
 .hub .fx .h .no.off{background:var(--surface);color:var(--lime)}
 .hub .fx .d{font-size:16px;line-height:1.6;color:var(--muted)}
 .hub .fx .k{font-size:14px;font-weight:700;color:var(--lime)}
+
+/* 解決策：上につまずき、下に ima の解き方。3列で1対1に対応させる */
+.solve{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:48px;min-height:0;align-content:center}
+.sv{display:flex;flex-direction:column;align-items:stretch;min-width:0}
+.sv .pn{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:700;color:var(--muted);padding-bottom:14px;border-bottom:1px solid var(--line)}
+.sv .dn2{align-self:center;width:0;height:0;margin:14px 0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:15px solid var(--lime)}
+.sv .sh{font-size:27px;line-height:1.35;font-weight:900;color:var(--text)}
+.sv .vz{height:168px;display:flex;flex-direction:column;justify-content:center;gap:8px;margin:14px 0 12px 0}
+.sv .vz .talk{align-self:flex-start}
+.sv .vz .bub{font-size:17px}
+.sv .vz .mc{background:var(--surface);padding:10px 14px;display:grid;grid-template-columns:58px 1fr;gap:8px;align-items:center}
+.sv .vz .mc b{font-size:14px;font-weight:700;color:var(--text)}
+.sv .vz .mc span{font-size:14px;color:var(--muted)}
+.sv .vz .mc span.r{color:var(--lime)}
+.sv .sd{font-size:17px;line-height:1.55;color:var(--muted)}
 </style></head><body>
 
 <!-- 1. 表紙 -->
@@ -234,6 +251,36 @@ html,body{margin:0;background:#2b2b2e;font-family:var(--font);color:var(--text)}
     </div>
   </div>
   <div class="foot"><b>ima</b><span>1</span></div>
+</section>
+
+<!-- 2b. 解決策（2ページ目のつまずきに1対1で答える） -->
+<section class="s">
+  <img class="maru" src="assets/maru-decided.png" alt="maru">
+  <h1>ima なら、希望を伝えるだけで3件以内の候補が理由付きで届く</h1>
+  <div class="c">
+    <div class="solve">
+      <div class="sv">
+        <div class="pn"><span class="no">1</span>探す負担が1人に集まる</div><i class="dn2"></i>
+        <div class="sh">探すのは ima に任せる</div>
+        <div class="vz"><div class="talk me"><div class="bub">友だちと和食の定食、<br>予算は4,000円くらいまで<div class="t1"></div><div class="t2"></div></div></div></div>
+        <div class="sd">状況をそのまま書くか、<br>5つの質問にタップで答えるだけ</div>
+      </div>
+      <div class="sv">
+        <div class="pn"><span class="no">2</span>候補が多くて決めきれない</div><i class="dn2"></i>
+        <div class="sh">3件以内に絞って届ける</div>
+        <div class="vz"><div class="mc"><b>主提案</b><span>同じ大きさのカード</span></div><div class="mc"><b>別案</b><span>同じ大きさのカード</span></div><div class="mc"><b>別案</b><span>同じ大きさのカード</span></div></div>
+        <div class="sd">主提案1件と別案最大2件だけを、<br>比べやすく並べる</div>
+      </div>
+      <div class="sv">
+        <div class="pn"><span class="no">3</span>選んだ理由を伝えにくい</div><i class="dn2"></i>
+        <div class="sh">選んだ理由を添える</div>
+        <div class="vz"><div class="mc"><b>主提案</b><span class="r">定食があり、予算目安が条件内</span></div><div class="mc"><b>別案</b><span class="r">個室があり、落ち着いて話せる</span></div></div>
+        <div class="sd">重視した希望と合う店舗情報を<br>短く添え、そのまま同行者に見せられる</div>
+      </div>
+    </div>
+  </div>
+  <div class="src">吹き出しとカードの文面は説明用の例</div>
+  <div class="foot"><b>ima</b><span>2</span></div>
 </section>
 
 <!-- 3. imaとは？ -->
