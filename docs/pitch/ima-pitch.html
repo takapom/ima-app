@@ -201,32 +201,68 @@ html,body{margin:0;background:#2b2b2e;font-family:var(--font);color:var(--text)}
 .sv .vz .mc span{font-size:14px;color:var(--muted)}
 .sv .vz .mc span.r{color:var(--lime)}
 .sv .sd{font-size:17px;line-height:1.55;color:var(--muted)}
+
+/* 表紙（製品紹介）：左に名前・一文・3つの価値・基本情報、右に実際のアプリ画面 */
+.cv2{padding:0 64px}
+.cv2 .maru{width:118px;height:118px;top:22px;right:44px}
+.cv2 .say{position:absolute;top:56px;right:182px}
+.cv2 .say .bub{font-size:16px;padding:9px 16px;font-weight:700}
+.cv2 .say .bub .t1{left:auto;right:-12px;bottom:10px;width:12px;height:10px}
+.cv2 .say .bub .t2{left:auto;right:-19px;bottom:4px;width:7px;height:7px}
+.cv2 .body{flex:1;display:grid;grid-template-columns:660px 1fr;gap:40px;padding-top:46px;min-height:0}
+.cv2 .left{display:flex;flex-direction:column;justify-content:center;gap:22px}
+.cv2 .chip{align-self:flex-start;background:var(--lime);color:var(--ink);font-size:19px;font-weight:700;padding:3px 14px}
+.cv2 .mark2{width:220px;height:auto;display:block;margin-left:-6px}
+.cv2 .big{margin:0;max-width:none;min-height:0;font-size:38px;line-height:1.4;font-weight:900;color:var(--text)}
+.cv2 .lede2{font-size:18px;line-height:1.65;color:var(--muted)}
+.cv2 .vals{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cv2 .vals > div{background:var(--surface);padding:14px 14px 13px 14px;display:flex;flex-direction:column;gap:8px}
+.cv2 .vals .h{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:var(--text)}
+.cv2 .vals .d{font-size:13.5px;line-height:1.5;color:var(--muted)}
+.cv2 .facts{display:grid;grid-template-columns:auto 1fr;column-gap:16px;row-gap:5px;font-size:14px;line-height:1.5}
+.cv2 .facts dt{color:var(--muted)}
+.cv2 .facts dd{margin:0;color:var(--text)}
+.cv2 .right{position:relative}
+.cv2 .ph{position:absolute;padding:7px;background:var(--line);line-height:0}
+.cv2 .ph img{display:block;width:100%;height:auto}
+.cv2 .ph.back{width:204px;left:236px;top:100px}
+.cv2 .ph.front{width:214px;left:44px;top:150px}
 </style></head><body>
 
-<!-- 1. 表紙 -->
-<section class="s cover">
+<!-- 1. 表紙（製品紹介） -->
+<section class="s cover cv2">
   <img class="maru" src="assets/maru-pet.png" alt="maru">
   <div class="say"><div class="bub">いっしょに探すわん<div class="t1"></div><div class="t2"></div></div></div>
-  <div class="hero">
-    <svg class="mark" viewBox="20 -6 350 222" role="img" aria-label="ima">
-      <g fill="none" stroke="#ecebe6" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M40 110V200"/>
-        <path d="M90 200V140A30 30 0 0 1 150 140V200M150 140A30 30 0 0 1 210 140V200"/>
-        <circle cx="305" cy="155" r="45"/>
-        <path d="M350 110V200"/>
-      </g>
-      <circle cx="40" cy="68" r="15" fill="#ecebe6"/>
-      <path d="M195 88C184 74 159 58 159 34A36 36 0 0 1 231 34C231 58 206 74 195 88Z" fill="#b7c97a"/>
-      <ellipse cx="181" cy="32" rx="11" ry="13" fill="#fbfaf6"/>
-      <ellipse cx="209" cy="32" rx="11" ry="13" fill="#fbfaf6"/>
-      <circle cx="182" cy="38" r="6.5" fill="#161616"/>
-      <circle cx="208" cy="38" r="6.5" fill="#161616"/>
-      <circle cx="179.5" cy="35.5" r="2" fill="#fbfaf6"/>
-      <circle cx="205.5" cy="35.5" r="2" fill="#fbfaf6"/>
-    </svg>
-    <div class="lede">
-      <h1 class="big">大切な人との<br>「次どこ行く？」を、<br>ima に聞いて決める</h1>
-      <div class="line">外出中に希望を伝えるだけで、<br>次に入るお店を絞り込める iPhone アプリ</div>
+  <div class="body">
+    <div class="left">
+      <span class="chip">プロダクト紹介</span>
+      <svg class="mark2" viewBox="20 -6 350 222" role="img" aria-label="ima">
+        <g fill="none" stroke="#ecebe6" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M40 110V200"/><path d="M90 200V140A30 30 0 0 1 150 140V200M150 140A30 30 0 0 1 210 140V200"/>
+          <circle cx="305" cy="155" r="45"/><path d="M350 110V200"/>
+        </g>
+        <circle cx="40" cy="68" r="15" fill="#ecebe6"/>
+        <path d="M195 88C184 74 159 58 159 34A36 36 0 0 1 231 34C231 58 206 74 195 88Z" fill="#b7c97a"/>
+        <ellipse cx="181" cy="32" rx="11" ry="13" fill="#fbfaf6"/><ellipse cx="209" cy="32" rx="11" ry="13" fill="#fbfaf6"/>
+        <circle cx="182" cy="38" r="6.5" fill="#161616"/><circle cx="208" cy="38" r="6.5" fill="#161616"/>
+        <circle cx="179.5" cy="35.5" r="2" fill="#fbfaf6"/><circle cx="205.5" cy="35.5" r="2" fill="#fbfaf6"/>
+      </svg>
+      <h1 class="big">大切な人との「次どこ行く？」を、<br>ima に聞いて決める</h1>
+      <div class="lede2">外出中に希望を伝えるだけで、AI エージェントが近くのお店を<br>理由付きで3件以内に絞る iPhone アプリ</div>
+      <div class="vals">
+        <div><span class="h"><span class="no">1</span>希望を伝えるだけ</span><span class="d">書くか、5つの質問に<br>タップで答える</span></div>
+        <div><span class="h"><span class="no">2</span>3件以内に絞る</span><span class="d">主提案1件と<br>別案最大2件</span></div>
+        <div><span class="h"><span class="no">3</span>理由つきで届く</span><span class="d">重視した希望と<br>合う店舗情報を添える</span></div>
+      </div>
+      <dl class="facts">
+        <dt>対応端末</dt><dd>iPhone</dd>
+        <dt>店舗データ</dt><dd>ホットペッパーグルメ（Powered by ホットペッパーグルメ Webサービス）</dd>
+        <dt>提案</dt><dd>AI エージェント（OpenAI）</dd>
+      </dl>
+    </div>
+    <div class="right">
+      <div class="ph back"><img src="assets/screens/questions.png" alt="質問画面"></div>
+      <div class="ph front"><img src="assets/screens/launch.png" alt="起動画面"></div>
     </div>
   </div>
   <div class="foot"><span></span><span></span></div>
