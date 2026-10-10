@@ -31,6 +31,8 @@ html,body{margin:0;background:#2b2b2e;font-family:var(--font);color:var(--text)}
 .s h1{margin:0;max-width:1010px;font-size:31px;line-height:1.42;font-weight:700;color:var(--text);letter-spacing:0}
 .s .c{flex:1;min-height:0;display:flex;flex-direction:column;padding:30px 0 0 0}
 .s .foot{height:58px;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--muted)}
+.s .src{padding-top:10px;font-size:12px;color:var(--muted)}
+.s .src a{color:var(--muted)}
 .s .foot b{color:var(--muted);font-weight:700;font-size:15px}
 
 /* 2カラム：左＝場面、右＝表。見出しの下罫の高さを揃える */
@@ -173,7 +175,7 @@ td li:last-child{margin-bottom:0}
           <tr><th class="ax">つまずき</th><th>起きていること</th><th>なぜ起きるか</th></tr>
           <tr><td class="ax"><span class="ref ax2"><span class="no">1</span><span>探す負担が<br>1人に集まる</span></span></td>
               <td>「どこでもいいよ」と任され、<br>1人で地図と検索を行き来する</td>
-              <td>同行者の気分・体力・予算が<br>言葉にならないまま任され、<br>探す人が推し量るしかない</td></tr>
+              <td>同行者の気分・体力・予算を<br>聞けないまま店選びを任され、<br>探す役が推し量るしかない</td></tr>
           <tr><td class="ax"><span class="ref ax2"><span class="no">2</span><span>候補が多くて<br>決めきれない</span></span></td>
               <td>検索結果が一覧で並び、<br>比べているうちに時間が過ぎる</td>
               <td>検索サービスは条件に合う店を<br>広く並べ、同行者に合う数件へ<br>絞る作業は探す役に残る</td></tr>
@@ -207,9 +209,9 @@ td li:last-child{margin-bottom:0}
       </div>
       <div>
         <table>
-          <tr><th class="ax">ima の特徴</th><th>ユーザーと ima の動き</th><th style="width:226px">応えるつまずき</th></tr>
-          <tr><td class="ax">希望をそのまま<br>伝えられる</td>
-              <td><ul><li>ユーザーは状況をそのまま書くか、<br>5つの質問にタップで答えて探し始める</li><li>場所など提案に欠かせない情報が<br>足りないときだけ、AIが原則1つ聞き返す</li></ul></td>
+          <tr><th class="ax">ima の特徴</th><th>ユーザーと ima の動き</th><th style="width:226px">対応するつまずき</th></tr>
+          <tr><td class="ax">希望をそのまま<br>受け取る</td>
+              <td><ul><li>ユーザーは状況をそのまま書くか、<br>5つの質問にタップで答えて探し始める</li><li>場所など提案に欠かせない情報が<br>足りないときだけ、AIが原則1問聞き返す</li></ul></td>
               <td><span class="ref"><span class="no">1</span>探す負担が<br>1人に集まる</span></td></tr>
           <tr><td class="ax">3件以内に絞る</td>
               <td><ul><li>AIがホットペッパーグルメの掲載店から、<br>主提案1件と別案最大2件をカードで並べる</li><li>ユーザーが店舗詳細を見て、<br>「ここにする」で決める</li></ul></td>
@@ -221,6 +223,7 @@ td li:last-child{margin-bottom:0}
       </div>
     </div>
   </div>
+  <div class="src">店舗データ：Powered by <a href="https://webservice.recruit.co.jp/">ホットペッパーグルメ Webサービス</a></div>
   <div class="foot"><b>ima</b><span>2</span></div>
 </section>
 
@@ -233,11 +236,11 @@ td li:last-child{margin-bottom:0}
       <div></div>
       <div class="cv first"><b>1</b><span>入口を選ぶ</span></div>
       <div class="cv"><b>2</b><span>希望を伝える</span></div>
-      <div class="cv"><b>3</b><span>候補を受け取る</span></div>
+      <div class="cv"><b>3</b><span>候補を絞り込む</span></div>
       <div class="cv"><b>4</b><span>決めて向かう</span></div>
       <div class="rh r1">画面</div>
-      <div class="cell r1">起動のたびに出るスプラッシュ</div>
-      <div class="cell r1">チャット、または5問の質問</div>
+      <div class="cell r1">起動画面</div>
+      <div class="cell r1">チャット、または5つの質問</div>
       <div class="cell r1">会話と候補カード</div>
       <div class="cell r1">店舗詳細</div>
       <div class="rh">ユーザー</div>
@@ -246,10 +249,10 @@ td li:last-child{margin-bottom:0}
       <div class="cell">条件の追加・変更・比較を、<br>同じ会話のまま頼む</div>
       <div class="cell">「店舗詳細を見る」から<br>「ここにする」で決める</div>
       <div class="rh">ima</div>
-      <div class="cell">入口を毎回尋ね、<br>選んだ入口は記憶しない</div>
+      <div class="cell">案内役の犬 maru が<br>起動のたびに入口を尋ねる</div>
       <div class="cell">質問の回答を1文にまとめ、<br>会話の最初の発言として送る</div>
-      <div class="cell">地名がなければ現在地の<br>1km圏から探し、主提案1件と<br>別案最大2件を返す</div>
-      <div class="cell">決めたお店を保存一覧に残し、<br>Google Maps や共有へつなぐ</div>
+      <div class="cell">地名がなければ現在地の<br>1km圏から3km圏まで広げて、<br>主提案1件と別案最大2件を返す</div>
+      <div class="cell">決めたお店を保存一覧に残し、<br>Google Maps や共有へ進める</div>
     </div>
   </div>
   <div class="foot"><b>ima</b><span>3</span></div>
@@ -258,17 +261,17 @@ td li:last-child{margin-bottom:0}
 <!-- 5. 主要画面 -->
 <section class="s">
   <img class="maru" src="assets/maru-glasses.png" alt="maru">
-  <h1>ima の主要画面は、入口の選択から<br>店舗詳細での決定までを1本の会話でつなぐ</h1>
+  <h1>ima の主要画面は、起動画面での入口の選択から<br>店舗詳細の「ここにする」までを順につなぐ</h1>
   <div class="c">
     <div class="screens">
-      <div><div class="colh">入口</div><div class="shot">スプラッシュの<br>スクリーンショットを入れる</div>
+      <div><div class="colh">起動画面</div><div class="shot">起動画面の<br>スクリーンショットを入れる</div>
         <ul><li>maru がチャットか質問かを尋ねる</li><li>選んだ入口へそのまま進む</li></ul></div>
       <div><div class="colh">質問</div><div class="shot">質問画面の<br>スクリーンショットを入れる</div>
         <ul><li>誰と・食べたいもの・系統・予算・雰囲気をタップで答える</li><li>答えは1文になって会話へ渡る</li></ul></div>
       <div><div class="colh">会話と候補カード</div><div class="shot">候補カードが並んだ会話の<br>スクリーンショットを入れる</div>
-        <ul><li>主提案と別案を同じ大きさのカードで並べる</li><li>カードから保存・地図・<br>店舗詳細へ進む</li></ul></div>
-      <div><div class="colh">店舗詳細</div><div class="shot">店舗詳細シートの<br>スクリーンショットを入れる</div>
-        <ul><li>営業時間・定休日・アクセス・予算の掲載情報と出典を出す</li><li>「ここにする」で決める</li></ul></div>
+        <ul><li>主提案と別案を<br>同じ大きさのカードで並べる</li><li>カードから保存・地図・<br>店舗詳細へ進む</li></ul></div>
+      <div><div class="colh">店舗詳細</div><div class="shot">店舗詳細の<br>スクリーンショットを入れる</div>
+        <ul><li>営業時間・定休日・アクセス・<br>予算を出典つきで表示する</li><li>「ここにする」で決める</li></ul></div>
     </div>
   </div>
   <div class="foot"><b>ima</b><span>4</span></div>
@@ -277,7 +280,7 @@ td li:last-child{margin-bottom:0}
 <!-- 6. AIエージェントの振る舞い -->
 <section class="s">
   <img class="maru" src="assets/maru-claude-search.png" alt="maru">
-  <h1>ima の AI は、変わっていない希望を引き継ぎ、<br>足りない情報だけを聞き返して提案し直す</h1>
+  <h1>ima の AI は、変わった点だけを反映して選び直し、<br>足りない情報や見つからないことは言葉で伝える</h1>
   <div class="c">
     <div class="two">
       <div>
@@ -286,19 +289,19 @@ td li:last-child{margin-bottom:0}
           <div class="talk me"><div class="who">ユーザー</div><div class="bub">友だちと和食の定食が食べたい、<br>予算は4,000円くらいまで<div class="t1"></div><div class="t2"></div></div></div>
           <div class="talk"><div class="who">ima</div><div class="bub">近くの和食店から、<br>条件に合う3件を選びました<div class="t1"></div><div class="t2"></div></div></div>
           <div class="talk me"><div class="who">ユーザー</div><div class="bub">やっぱり個室があるところがいい<div class="t1"></div><div class="t2"></div></div></div>
-          <div class="talk"><div class="who">ima</div><div class="bub">和食・4,000円以内はそのままに、<br>個室のある店で選び直しました<div class="t1"></div><div class="t2"></div></div></div>
+          <div class="talk"><div class="who">ima</div><div class="bub">和食の定食・4,000円以内は<br>そのままに、個室のある店で<br>選び直しました<div class="t1"></div><div class="t2"></div></div></div>
         </div>
       </div>
       <div>
         <table>
           <tr><th class="ax" style="width:230px">場面</th><th>AI の判断</th></tr>
-          <tr><td class="ax">場所が分からない</td>
+          <tr><td class="ax">場所の指定がない</td>
               <td><ul><li>現在地が使えれば聞き返さず、<br>周辺を1km圏から3km圏まで広げて探す</li><li>現在地が使えなければ理由を伝え、駅名や地名を尋ねる</li></ul></td></tr>
           <tr><td class="ax">条件が変わった</td>
               <td><ul><li>変わっていない希望を引き継ぐ</li><li>変更点が分かれば選び直し、分からなければ聞き返す</li></ul></td></tr>
-          <tr><td class="ax">説明や比較を<br>頼まれた</td>
+          <tr><td class="ax">説明や比較を<br>求められた</td>
               <td>カードを出し直さず、メッセージで答える</td></tr>
-          <tr><td class="ax">候補が見つからない</td>
+          <tr><td class="ax">条件に合う店がない</td>
               <td>条件に合わない店で数を埋めず、見つからなかったことを伝える</td></tr>
         </table>
       </div>
@@ -314,18 +317,18 @@ td li:last-child{margin-bottom:0}
   <div class="c">
     <div class="poses">
       <div>
-        <div class="colh">入口と質問</div>
+        <div class="colh">起動画面と質問画面</div>
         <div class="pg g3">
-          <div class="pc"><img src="assets/maru-wait.png" alt=""><span class="k">スプラッシュ</span><div class="bub">チャットから<br>始める？<div class="t1"></div><div class="t2"></div></div></div>
+          <div class="pc"><img src="assets/maru-wait.png" alt=""><span class="k">起動画面</span><div class="bub">チャットから<br>始める？<div class="t1"></div><div class="t2"></div></div></div>
           <div class="pc"><img src="assets/maru-magnifier.png" alt=""><span class="k">質問中</span><span class="x">質問の横で<br>虫眼鏡をのぞく</span></div>
           <div class="pc"><img src="assets/maru-run.png" alt=""><span class="k">答え終えたとき</span><div class="bub">探してくる<br>わん！<div class="t1"></div><div class="t2"></div></div></div>
         </div>
       </div>
       <div>
-        <div class="colh">会話画面の右下</div>
+        <div class="colh">会話画面</div>
         <div class="pg g4">
           <div class="pc"><img src="assets/maru-run.png" alt=""><span class="k">検索中</span><span class="x">走って探す</span></div>
-          <div class="pc"><img src="assets/maru-empty.png" alt=""><span class="k">候補0件</span><div class="bub">見つから<br>なかったわん<div class="t1"></div><div class="t2"></div></div><span class="x">検索して0件の<br>ときだけ言う</span></div>
+          <div class="pc"><img src="assets/maru-empty.png" alt=""><span class="k">候補0件</span><div class="bub">見つから<br>なかったわん<div class="t1"></div><div class="t2"></div></div><span class="x">検索結果が0件の<br>ときだけ言う</span></div>
           <div class="pc"><img src="assets/maru-oops.png" alt=""><span class="k">失敗・取り消し</span><span class="x">困った顔になる</span></div>
           <div class="pc"><img src="assets/maru-decided.png" alt=""><span class="k">決定後</span><span class="x">喜ぶ</span></div>
         </div>
