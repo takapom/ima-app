@@ -101,6 +101,9 @@ def fill_runs(tf, paras, sc, first=True):
                 etree.SubElement(pPr, qn("a:buFont")).set("typeface", SANS)
                 etree.SubElement(pPr, qn("a:buChar")).set("char", bu["char"])
         for r in p["runs"]:
+            if r.get("br"):
+                para.add_line_break()
+                continue
             run = para.add_run()
             run.text = r["text"]
             f = run.font

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<title>ima ピッチ資料</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap">
+<!-- 規約: .claude/skills/consulting-pptx-skill/references/slide-rules.md
+     版面: 1280×720px（338.67mm×190.5mm）。色と書体はアプリの apps/mobile/src/ui/theme/tokens.ts に合わせる。
+     レイアウト: 夜の地に生成りの文字、ライムは1枚に1か所。角はドット絵の maru に合わせて直角。 -->
+<style>
+:root{
+  --bg:#0c0c0d;        /* アプリの background */
+  --surface:#1c1c1e;   /* アプリの surfaceRaised */
+  --line:#2a2a2e;      /* アプリの border */
+  --text:#ecebe6;      /* アプリの text */
+  --muted:#9a9993;     /* アプリの muted */
+  --faint:#6b6a66;     /* アプリの faint */
+  --lime:#b7c97a;      /* アプリの lime（地図ピン） */
+  --cream:#e7e2d6;     /* アプリの cream */
+  --ink:#161616;       /* アプリの ink */
+  --font:"Yu Gothic","YuGothic","Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif;
+}
+@page{size:338.67mm 190.5mm;margin:0}
+*{box-sizing:border-box}
+html,body{margin:0;background:#2b2b2e;font-family:var(--font);color:var(--text)}
+@media print{html,body{background:var(--bg)}.s{margin:0!important}}
+
+.s{width:338.67mm;height:190.5mm;background:var(--bg);position:relative;overflow:hidden;
+   margin:8mm auto;page-break-after:always;break-after:page;
+   padding:46px 64px 0 64px;display:flex;flex-direction:column}
+.s .maru{position:absolute;top:22px;right:44px;width:118px;height:118px;image-rendering:pixelated}
+.s h1{margin:0;max-width:1010px;font-size:31px;line-height:1.42;font-weight:700;color:var(--text);letter-spacing:0}
+.s .c{flex:1;min-height:0;display:flex;flex-direction:column;padding:30px 0 0 0}
+.s .foot{height:58px;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--muted)}
+.s .foot b{color:var(--muted);font-weight:700;font-size:15px}
+
+/* 2カラム：左＝場面、右＝表。見出しの下罫の高さを揃える */
+.two{display:grid;grid-template-columns:320px 1fr;gap:44px;flex:1;min-height:0}
+.two > div{display:flex;flex-direction:column;min-height:0}
+.colh{height:44px;display:flex;align-items:flex-end;padding-bottom:9px;border-bottom:2px solid var(--text);
+      font-size:18px;font-weight:700;color:var(--text)}
+
+/* 会話の吹き出し。尻尾はドット絵に合わせて階段状の四角2つで描く */
+.chat{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;padding:6px 0 4px 0}
+.talk{display:flex;flex-direction:column;gap:7px;max-width:326px}
+.talk.me{align-self:flex-end;align-items:flex-end}
+.who{font-size:13px;color:var(--muted);font-weight:500}
+.bub{position:relative;background:var(--surface);color:var(--text);font-size:17px;line-height:1.5;
+     padding:13px 18px;font-weight:500}
+.me .bub{background:var(--cream);color:var(--ink)}
+.bubs{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.bub .t1,.bub .t2{position:absolute;background:var(--surface)}
+.me .bub .t1,.me .bub .t2{background:var(--cream)}
+.bub .t1{width:12px;height:10px;left:14px;bottom:-10px}
+.bub .t2{width:7px;height:7px;left:7px;bottom:-17px}
+.me .bub .t1{left:auto;right:14px}
+.me .bub .t2{left:auto;right:7px}
+
+/* 表 */
+table{border-collapse:collapse;width:100%;flex:1;table-layout:fixed}
+th{height:44px;box-sizing:border-box;vertical-align:bottom;text-align:left;font-size:19px;font-weight:700;
+   color:var(--text);padding:0 14px 9px 14px;border-bottom:2px solid var(--text);background:none}
+td{font-size:16px;line-height:1.6;color:var(--text);padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+th.ax,td.ax{width:190px;padding-left:0}
+td.ax{font-size:18px;font-weight:700;line-height:1.45}
+td ul{margin:0;padding-left:18px}
+td li{margin:0 0 4px 0}
+td li:last-child{margin-bottom:0}
+.no{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--lime);
+    color:var(--ink);font-size:14px;font-weight:900;margin-right:10px;vertical-align:2px;line-height:1}
+.ref.ax2{font-size:18px}
+.ref{display:flex;align-items:center;gap:0;font-weight:700;font-size:16px;line-height:1.45}
+
+/* 表紙 */
+.cover{padding:0 64px}
+.cover .maru{width:184px;height:184px;top:40px;right:60px}
+.cover .say{position:absolute;top:84px;right:258px}
+.cover .say .bub{font-size:18px;padding:12px 20px;font-weight:700}
+.cover .say .bub .t1{left:auto;right:-12px;bottom:14px;width:12px;height:12px}
+.cover .say .bub .t2{left:auto;right:-20px;bottom:6px;width:8px;height:8px}
+.cover .hero{flex:1;display:grid;grid-template-columns:520px 1fr;gap:64px;align-items:center;padding-top:120px}
+.cover .mark{width:520px;height:auto;display:block}
+.cover .lede{display:flex;flex-direction:column;gap:22px;padding-top:48px}
+.cover .big{margin:0;max-width:none;font-size:44px;line-height:1.38;font-weight:900;color:var(--text)}
+.cover .line{font-size:19px;line-height:1.6;color:var(--muted);font-weight:500}
+
+/* 3件以内のカード（主提案と別案が同じ大きさで並ぶ） */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.cards > div{background:var(--surface);padding:13px 9px 11px 9px;display:flex;flex-direction:column;gap:8px}
+.cards .k{font-size:15px;font-weight:700;color:var(--text)}
+.cards .why{font-size:12px;color:var(--muted);line-height:1.4}
+.cards .btn{border:1px solid var(--muted);font-size:11px;font-weight:700;color:var(--text);text-align:center;padding:5px 0;margin-top:2px;white-space:nowrap}
+</style></head><body>
+
+<!-- 1. 表紙 -->
+<section class="s cover">
+  <img class="maru" src="assets/maru-pet.png" alt="maru">
+  <div class="say"><div class="bub">いっしょに探すわん<div class="t1"></div><div class="t2"></div></div></div>
+  <div class="hero">
+    <svg class="mark" viewBox="20 -6 350 222" role="img" aria-label="ima">
+      <g fill="none" stroke="#ecebe6" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M40 110V200"/>
+        <path d="M90 200V140A30 30 0 0 1 150 140V200M150 140A30 30 0 0 1 210 140V200"/>
+        <circle cx="305" cy="155" r="45"/>
+        <path d="M350 110V200"/>
+      </g>
+      <circle cx="40" cy="68" r="15" fill="#ecebe6"/>
+      <path d="M195 88C184 74 159 58 159 34A36 36 0 0 1 231 34C231 58 206 74 195 88Z" fill="#b7c97a"/>
+      <ellipse cx="181" cy="32" rx="11" ry="13" fill="#fbfaf6"/>
+      <ellipse cx="209" cy="32" rx="11" ry="13" fill="#fbfaf6"/>
+      <circle cx="182" cy="38" r="6.5" fill="#161616"/>
+      <circle cx="208" cy="38" r="6.5" fill="#161616"/>
+      <circle cx="179.5" cy="35.5" r="2" fill="#fbfaf6"/>
+      <circle cx="205.5" cy="35.5" r="2" fill="#fbfaf6"/>
+    </svg>
+    <div class="lede">
+      <h1 class="big">大切な人との<br>「次どこ行く？」を、<br>ima に聞いて決める</h1>
+      <div class="line">外出中に希望を伝えるだけで、<br>次に入るお店を絞り込める iPhone アプリ</div>
+    </div>
+  </div>
+  <div class="foot"><span></span><span></span></div>
+</section>
+
+<!-- 2. 課題 -->
+<section class="s">
+  <img class="maru" src="assets/maru-magnifier.png" alt="maru">
+  <h1>外出中の「次どこ行く？」は探す負担が1人に集まり、<br>候補を前に決めきれない</h1>
+  <div class="c">
+    <div class="two">
+      <div>
+        <div class="colh">想定する場面</div>
+        <div class="chat">
+          <div class="talk"><div class="who">同行者</div><div class="bubs"><div class="bub">次どこ行く？</div><div class="bub">どこでもいいよ<div class="t1"></div><div class="t2"></div></div></div></div>
+          <div class="talk me"><div class="who">探す役</div><div class="bub">ちょっと待って、調べてみる<div class="t1"></div><div class="t2"></div></div></div>
+          <div class="talk"><div class="who">同行者</div><div class="bub">まだ決まらない？<div class="t1"></div><div class="t2"></div></div></div>
+        </div>
+      </div>
+      <div>
+        <table>
+          <tr><th class="ax">つまずき</th><th>起きていること</th><th>なぜ起きるか</th></tr>
+          <tr><td class="ax"><span class="ref ax2"><span class="no">1</span><span>探す負担が<br>1人に集まる</span></span></td>
+              <td>「どこでもいいよ」と任され、<br>1人で地図と検索を行き来する</td>
+              <td>同行者の気分・体力・予算が<br>言葉にならないまま任され、<br>探す人が推し量るしかない</td></tr>
+          <tr><td class="ax"><span class="ref ax2"><span class="no">2</span><span>候補が多くて<br>決めきれない</span></span></td>
+              <td>検索結果が一覧で並び、<br>比べているうちに時間が過ぎる</td>
+              <td>検索サービスは条件に合う店を<br>広く並べ、同行者に合う数件へ<br>絞る作業は探す役に残る</td></tr>
+          <tr><td class="ax"><span class="ref ax2"><span class="no">3</span><span>選んだ理由を<br>伝えにくい</span></span></td>
+              <td>評価や写真を見比べても、<br>「なぜここか」を同行者に<br>説明しにくい</td>
+              <td>候補ごとに、同行者のどの希望に<br>合うかが添えられていない</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><b>ima</b><span>1</span></div>
+</section>
+
+<!-- 3. imaとは？ -->
+<section class="s">
+  <img class="maru" src="assets/maru-found.png" alt="maru">
+  <h1>ima とは、希望を伝えるだけで<br>次に入るお店を理由付きで3件以内に絞る iPhone アプリ</h1>
+  <div class="c">
+    <div class="two">
+      <div>
+        <div class="colh">使い方の例</div>
+        <div class="chat">
+          <div class="talk me"><div class="who">ユーザー</div><div class="bub">友だちと和食の定食が食べたい、<br>予算は4,000円くらいまで<div class="t1"></div><div class="t2"></div></div></div>
+          <div class="talk"><div class="who">ima</div><div class="bubs"><div class="bub">近くの和食店から、<br>条件に合う3件を選びました</div><div class="bub">1件目は定食があり、掲載の<br>予算目安が4,000円以内です<div class="t1"></div><div class="t2"></div></div></div></div>
+          <div class="cards">
+            <div><span class="k">主提案</span><span class="why">選んだ理由</span><span class="btn">店舗詳細を見る</span></div>
+            <div><span class="k">別案</span><span class="why">選んだ理由</span><span class="btn">店舗詳細を見る</span></div>
+            <div><span class="k">別案</span><span class="why">選んだ理由</span><span class="btn">店舗詳細を見る</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <table>
+          <tr><th class="ax">ima の特徴</th><th>ユーザーと ima の動き</th><th style="width:226px">応えるつまずき</th></tr>
+          <tr><td class="ax">希望をそのまま<br>伝えられる</td>
+              <td><ul><li>ユーザーは状況をそのまま書くか、<br>5つの質問にタップで答えて探し始める</li><li>場所など提案に欠かせない情報が<br>足りないときだけ、AIが原則1つ聞き返す</li></ul></td>
+              <td><span class="ref"><span class="no">1</span>探す負担が<br>1人に集まる</span></td></tr>
+          <tr><td class="ax">3件以内に絞る</td>
+              <td><ul><li>AIがホットペッパーグルメの掲載店から、<br>主提案1件と別案最大2件をカードで並べる</li><li>ユーザーが店舗詳細を見て、<br>「ここにする」で決める</li></ul></td>
+              <td><span class="ref"><span class="no">2</span>候補が多くて<br>決めきれない</span></td></tr>
+          <tr><td class="ax">理由を添える</td>
+              <td><ul><li>AIが、重視した希望と<br>それに合う店舗情報を短く添える</li><li>AIが、掲載情報で確かめた事実と<br>推測を分けて書く</li></ul></td>
+              <td><span class="ref"><span class="no">3</span>選んだ理由を<br>伝えにくい</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><b>ima</b><span>2</span></div>
+</section>
+
+</body></html>

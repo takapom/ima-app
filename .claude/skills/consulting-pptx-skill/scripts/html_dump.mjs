@@ -123,7 +123,8 @@ const collect = () => {
           cur.runs.push({ text: tt(n.parentElement, t), ...runStyle(n.parentElement) });
         } else if (n.nodeType === 1) {
           if (!visible(n) || MEDIA.has(n.tagName.toLowerCase())) continue;
-          if (n.tagName === "BR") { newPara(block); continue; }
+          // 箇条書きの中の <br> は段落を分けず行内の改行にする（ぶら下げを2行目以降にも効かせる）
+          if (n.tagName === "BR") { if (cur && cur.bullet) { cur.runs.push({ text: "\n", br: true }); continue; } newPara(block); continue; }
           const disp = getComputedStyle(n).display;
           if (INLINE.has(disp)) { walk(n, block); continue; }
           // ブロック: 新しい段落で中身を読む
