@@ -16,4 +16,5 @@ coverage/
 /.code-review-graph/
 /.grok/
 /.serena/
-/.claude/
+/.claude/*
+!/.claude/skills/
