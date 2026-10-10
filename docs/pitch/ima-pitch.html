@@ -5,7 +5,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap">
 <!-- 規約: .claude/skills/consulting-pptx-skill/references/slide-rules.md
      版面: 1280×720px（338.67mm×190.5mm）。色と書体はアプリの apps/mobile/src/ui/theme/tokens.ts に合わせる。
-     レイアウト: 夜の地に生成りの文字、ライムは1枚に1か所。角はドット絵の maru に合わせて直角。 -->
+     レイアウト: 夜の地に生成りの文字、ライムは番号と強調だけ。角はドット絵の maru に合わせて直角。
+     リズム: 1枚ごとに型を変える（会話の場面／横の流れ／歩く maru／画面の並び／会話の2×2／ロゴ入りの構成図／ループ図／文字で締める）。 -->
 <style>
 :root{
   --bg:#0c0c0d;        /* アプリの background */
@@ -28,52 +29,32 @@ html,body{margin:0;background:#2b2b2e;font-family:var(--font);color:var(--text)}
    margin:8mm auto;page-break-after:always;break-after:page;
    padding:46px 64px 0 64px;display:flex;flex-direction:column}
 .s .maru{position:absolute;top:22px;right:44px;width:118px;height:118px;image-rendering:pixelated}
-.s h1{margin:0;max-width:1010px;font-size:31px;line-height:1.42;font-weight:700;color:var(--text);letter-spacing:0}
-.s .c{flex:1;min-height:0;display:flex;flex-direction:column;padding:30px 0 0 0}
+.s h1{margin:0;max-width:1010px;min-height:66px;font-size:32px;line-height:1.42;font-weight:700;color:var(--text);letter-spacing:0}
+.s .c{flex:1;min-height:0;display:flex;flex-direction:column;padding:34px 0 0 0}
 .s .foot{height:58px;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--muted)}
+.s .foot b{color:var(--muted);font-weight:700;font-size:15px}
 .s .src{padding-top:10px;font-size:12px;color:var(--muted)}
 .s .src a{color:var(--muted)}
-.s .foot b{color:var(--muted);font-weight:700;font-size:15px}
 
-/* 2カラム：左＝場面、右＝表。見出しの下罫の高さを揃える */
-.two{display:grid;grid-template-columns:320px 1fr;gap:44px;flex:1;min-height:0}
-.two > div{display:flex;flex-direction:column;min-height:0}
-.colh{height:44px;display:flex;align-items:flex-end;padding-bottom:9px;border-bottom:2px solid var(--text);
-      font-size:18px;font-weight:700;color:var(--text)}
+/* 番号チップ（課題の番号。以降のページでも同じ番号で呼び戻す） */
+.no{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:var(--lime);
+    color:var(--ink);font-size:15px;font-weight:900;line-height:1;flex:none}
 
-/* 会話の吹き出し。尻尾はドット絵に合わせて階段状の四角2つで描く */
-.chat{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;padding:6px 0 4px 0}
-.talk{display:flex;flex-direction:column;gap:7px;max-width:326px}
+/* 吹き出し。尻尾はドット絵に合わせて階段状の四角2つで描く */
+.talk{display:flex;flex-direction:column;gap:7px;max-width:360px}
 .talk.me{align-self:flex-end;align-items:flex-end}
 .who{font-size:13px;color:var(--muted);font-weight:500}
-.bub{position:relative;background:var(--surface);color:var(--text);font-size:17px;line-height:1.5;
-     padding:13px 18px;font-weight:500}
+.bub{position:relative;background:var(--surface);color:var(--text);font-size:18px;line-height:1.5;padding:13px 18px;font-weight:500}
 .me .bub{background:var(--cream);color:var(--ink)}
-.bubs{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .bub .t1,.bub .t2{position:absolute;background:var(--surface)}
 .me .bub .t1,.me .bub .t2{background:var(--cream)}
 .bub .t1{width:12px;height:10px;left:14px;bottom:-10px}
 .bub .t2{width:7px;height:7px;left:7px;bottom:-17px}
 .me .bub .t1{left:auto;right:14px}
 .me .bub .t2{left:auto;right:7px}
+.bubs{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 
-/* 表 */
-table{border-collapse:collapse;width:100%;flex:1;table-layout:fixed}
-th{height:44px;box-sizing:border-box;vertical-align:bottom;text-align:left;font-size:19px;font-weight:700;
-   color:var(--text);padding:0 14px 9px 14px;border-bottom:2px solid var(--text);background:none}
-td{font-size:16px;line-height:1.6;color:var(--text);padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
-tr:last-child td{border-bottom:0}
-th.ax,td.ax{width:190px;padding-left:0}
-td.ax{font-size:18px;font-weight:700;line-height:1.45}
-td ul{margin:0;padding-left:18px}
-td li{margin:0 0 4px 0}
-td li:last-child{margin-bottom:0}
-.no{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--lime);
-    color:var(--ink);font-size:14px;font-weight:900;margin-right:10px;vertical-align:2px;line-height:1}
-.ref.ax2{font-size:18px}
-.ref{display:flex;align-items:center;gap:0;font-weight:700;font-size:16px;line-height:1.45}
-
-/* 表紙 */
+/* 1. 表紙 */
 .cover{padding:0 64px}
 .cover .maru{width:184px;height:184px;top:40px;right:60px}
 .cover .say{position:absolute;top:84px;right:258px}
@@ -83,93 +64,124 @@ td li:last-child{margin-bottom:0}
 .cover .hero{flex:1;display:grid;grid-template-columns:520px 1fr;gap:64px;align-items:center;padding-top:120px}
 .cover .mark{width:520px;height:auto;display:block}
 .cover .lede{display:flex;flex-direction:column;gap:22px;padding-top:48px}
-.cover .big{margin:0;max-width:none;font-size:44px;line-height:1.38;font-weight:900;color:var(--text)}
+.cover .big{margin:0;max-width:none;min-height:0;font-size:44px;line-height:1.38;font-weight:900;color:var(--text)}
 .cover .line{font-size:19px;line-height:1.6;color:var(--muted);font-weight:500}
 
-/* 3件以内のカード（主提案と別案が同じ大きさで並ぶ） */
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
-.cards > div{background:var(--surface);padding:13px 9px 11px 9px;display:flex;flex-direction:column;gap:8px}
-.cards .k{font-size:15px;font-weight:700;color:var(--text)}
-.cards .why{font-size:12px;color:var(--muted);line-height:1.4}
-.cards .btn{border:1px solid var(--muted);font-size:11px;font-weight:700;color:var(--text);text-align:center;padding:5px 0;margin-top:2px;white-space:nowrap}
+/* 2. 課題：左に会話の場面、右に大きな番号と短い一言 */
+.pain{flex:1;display:grid;grid-template-columns:400px 1fr;gap:72px;min-height:0}
+.scene{display:flex;flex-direction:column;justify-content:space-evenly;background:var(--surface);padding:22px 26px}
+.scene .bub{font-size:20px}
+.scene .bub{background:var(--bg)}
+.scene .bub .t1,.scene .bub .t2{background:var(--bg)}
+.scene .me .bub,.scene .me .bub .t1,.scene .me .bub .t2{background:var(--cream)}
+.pts{display:flex;flex-direction:column;justify-content:center}
+.pt{display:grid;grid-template-columns:62px 1fr;gap:20px;align-items:center;padding:24px 0;border-top:1px solid var(--line)}
+.pt:first-child{border-top:0}
+.pt .no{width:46px;height:46px;font-size:24px}
+.pt b{display:block;font-size:28px;line-height:1.35;font-weight:700;color:var(--text)}
+.pt .tx span{display:block;margin-top:6px;font-size:18px;line-height:1.5;color:var(--muted)}
 
-/* 体験フロー：上に矢羽、下に段ごとの行列（行＝画面・ユーザー・ima） */
-.flow{flex:1;display:grid;grid-template-columns:118px repeat(4,1fr);grid-template-rows:64px 0.7fr 1fr 1fr;column-gap:10px}
-.flow .cv{background:var(--surface);display:flex;align-items:center;gap:10px;padding:0 18px 0 34px;
-  clip-path:polygon(0 0,calc(100% - 22px) 0,100% 50%,calc(100% - 22px) 100%,0 100%,22px 50%)}
-.flow .cv.first{padding-left:18px;clip-path:polygon(0 0,calc(100% - 22px) 0,100% 50%,calc(100% - 22px) 100%,0 100%)}
-.flow .cv b{font-size:20px;font-weight:900;color:var(--lime)}
-.flow .cv span{font-size:18px;font-weight:700;color:var(--text)}
-.flow .rh{display:flex;align-items:center;font-size:18px;font-weight:700;color:var(--text);border-top:1px solid var(--line)}
-.flow .cell{display:flex;align-items:center;font-size:16px;line-height:1.6;color:var(--text);padding:12px 4px 12px 6px;border-top:1px solid var(--line)}
-.flow .r1{border-top:2px solid var(--text)}
+/* 3. imaとは：左から右へ「伝える → 探す → 3件で返す」 */
+.what{flex:1;display:grid;grid-template-columns:1fr 52px 0.8fr 52px 1.1fr;min-height:0;align-content:center}
+.what .vis .talk{align-self:center}
+.what .bub{font-size:20px}
+.what > div{display:flex;flex-direction:column;min-width:0}
+.vis{height:290px;display:flex;align-items:center;justify-content:center}
+.arw{display:flex;align-items:center;justify-content:center;height:290px}
+.arw i{width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:15px solid var(--faint)}
+.lab{border-top:2px solid var(--text);padding-top:16px;display:flex;flex-direction:column;gap:8px}
+.lab .h{display:flex;align-items:center;gap:12px;font-size:26px;font-weight:700;color:var(--text)}
+.lab .d{font-size:18px;line-height:1.55;color:var(--muted)}
+.pin{width:150px;height:auto}
+.pinwrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.pinwrap span{font-size:16px;color:var(--muted);text-align:center;line-height:1.5}
+.cards3{display:flex;flex-direction:column;gap:10px;width:100%}
+.cards3 > div{background:var(--surface);padding:15px 16px;display:grid;grid-template-columns:66px 1fr;align-items:center;gap:10px}
+.cards3 .k{font-size:16px;font-weight:700;color:var(--text)}
+.cards3 .why{font-size:16px;color:var(--lime);line-height:1.4}
 
-/* 主要画面：スクリーンショットの枠（iPhone の縦横比）と説明 */
-.screens{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:30px}
-.screens > div{display:flex;flex-direction:column;min-width:0}
-.shot{width:150px;height:325px;margin:16px 0 14px 0;border:1.5px dashed var(--faint);display:flex;align-items:center;justify-content:center;
-  text-align:center;font-size:13px;line-height:1.6;color:var(--muted);padding:0 10px}
-.screens ul{margin:0;padding-left:18px;font-size:15px;line-height:1.55;color:var(--text)}
-.screens li{margin-bottom:6px}
+/* 4. 体験フロー：maru が4つの段を歩く */
+.walk{flex:1;display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr 34px 1fr;min-height:0;align-items:start;align-content:center}
+.stp{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding-top:6px}
+.stp img{width:208px;height:208px;image-rendering:pixelated;margin-left:-26px;margin-bottom:-10px}
+.stp .h{display:flex;align-items:center;gap:12px;font-size:25px;font-weight:700;color:var(--text);border-top:2px solid var(--text);padding-top:16px;width:100%}
+.stp .d{font-size:18px;line-height:1.55;color:var(--muted)}
+.dots{height:208px;display:flex;align-items:center;justify-content:center;gap:5px;padding-top:6px}
+.dots i{width:6px;height:6px;background:var(--lime);display:block}
 
-/* maru の場面ごとの姿 */
-.poses{flex:1;display:grid;grid-template-columns:3fr 4fr;gap:34px}
-.poses > div{display:flex;flex-direction:column;min-width:0}
-.pg{flex:1;display:grid;gap:14px;padding-top:44px;align-content:start;align-items:start}
-.pg.g3{grid-template-columns:repeat(3,1fr)}
-.pg.g4{grid-template-columns:repeat(4,1fr)}
-.pc{display:flex;flex-direction:column;gap:10px;min-width:0}
-.pc img{flex:none;width:176px;height:176px;image-rendering:pixelated;margin-left:-24px;margin-bottom:-8px}
-.pc .k{font-size:18px;font-weight:700;color:var(--text)}
-.pc .x{font-size:15px;line-height:1.55;color:var(--muted)}
-.pc .bub{font-size:15px;padding:9px 11px;line-height:1.45;font-weight:700;align-self:flex-start}
-.pc .bub .t1{left:12px}
-.pc .bub .t2{left:5px}
+/* 5. 主要画面：4つの画面を大きく並べる */
+.gallery{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:36px;min-height:0}
+.gallery > div{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+.shot{width:186px;height:398px;border:1.5px dashed var(--faint);display:flex;align-items:center;justify-content:center;
+  text-align:center;font-size:13px;line-height:1.6;color:var(--muted);padding:0 12px}
+.gallery b{font-size:19px;font-weight:700;color:var(--text)}
+.gallery span{font-size:15px;line-height:1.5;color:var(--muted);margin-top:-8px}
 
-/* アーキテクチャ全体図：左から iPhone → Workers → 外部 API。箱は塗りのみで枠なし */
-.arch{display:grid;grid-template-columns:808px 1fr;gap:40px;flex:1;min-height:0}
-.arch > div{display:flex;flex-direction:column;min-height:0}
-.dg{flex:1;display:grid;grid-template-columns:200px 66px 290px 66px 186px;padding-top:16px;align-items:stretch}
-.bx{background:var(--surface);display:flex;flex-direction:column;padding:16px 16px 14px 16px;gap:10px}
-.bx .bt{font-size:18px;font-weight:700;color:var(--text)}
-.bx .bs{font-size:13px;color:var(--muted);line-height:1.45}
-.bx .it{border-top:1px solid var(--line);padding-top:9px;display:flex;flex-direction:column;gap:3px}
-.bx .it b{font-size:14px;font-weight:700;color:var(--text)}
-.bx .it span{font-size:13px;line-height:1.45;color:var(--muted)}
-.bx .do{background:var(--bg);padding:9px 11px;display:flex;flex-direction:column;gap:2px}
-.bx .do b{font-size:14px;font-weight:700;color:var(--lime)}
-.bx .do span{font-size:13px;line-height:1.4;color:var(--text)}
-.bx .dos{display:flex;flex-direction:column;gap:8px}
-.ar{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
-.ar .ln{width:40px;height:2px;background:var(--muted)}
-.ar .hd.l{border-left:0;border-right:10px solid var(--muted)}
-.ar .hd{width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid var(--muted)}
-.ar .lr{display:flex;align-items:center}
-.ar .lb{font-size:12px;color:var(--muted);text-align:center;line-height:1.4}
-.side ul{margin:0;padding:22px 0 0 18px;font-size:15.5px;line-height:1.6;color:var(--text);display:flex;flex-direction:column;gap:18px}
+/* 6. AI の振る舞い：場面ごとの会話を2×2で */
+.quad{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;column-gap:56px;min-height:0}
+.qd{display:flex;flex-direction:column;justify-content:center;gap:14px;padding:16px 0 14px 0;border-top:1px solid var(--line)}
+.qd:nth-child(-n+2){border-top:2px solid var(--text)}
+.qd .h{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;color:var(--lime)}
+.qd .h img{width:44px;height:44px;image-rendering:pixelated;margin:-10px 0}
+.qd .talk{max-width:470px}
+.qd .bub{font-size:19px;padding:11px 16px}
+.qd .row{display:flex;flex-direction:column;gap:12px}
 
-/* エージェントの縦ステップ（左）と右コメント */
-.agent{display:grid;grid-template-columns:690px 1fr;gap:44px;flex:1;min-height:0}
-.agent > div{display:flex;flex-direction:column;min-height:0}
-.steps{flex:1;display:flex;flex-direction:column;justify-content:space-between;padding-top:14px}
-.st{display:grid;grid-template-columns:44px 196px 1fr;gap:14px;align-items:center}
-.st .n{width:44px;height:44px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--lime)}
-.st .k{font-size:17px;font-weight:700;color:var(--text);line-height:1.4}
-.st .x{font-size:15px;line-height:1.55;color:var(--text)}
-.st .x code{font-family:"SFMono-Regular",Menlo,Consolas,monospace;font-size:14px;color:var(--lime)}
-.dn{width:0;height:0;margin-left:15px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--faint)}
+/* 7. 全体構成：公式ロゴのタイルで技術を示す */
+.sys{flex:1;display:grid;grid-template-columns:300px 92px 1fr 92px 232px;min-height:0}
+.zone{background:var(--surface);padding:18px 18px 16px 18px;display:flex;flex-direction:column;gap:16px;justify-content:center}
+.zone .zt{font-size:20px;font-weight:700;color:var(--text)}
+.tiles{display:flex;flex-wrap:wrap;gap:10px}
+.tl{display:flex;flex-direction:column;align-items:center;gap:6px}
+.tl .tile{width:72px;height:72px;display:block}
+.tl .tile.w{width:140px}
+.tl span{font-size:13px;color:var(--muted);text-align:center;line-height:1.3}
+.zone .it{font-size:15px;line-height:1.5;color:var(--text);border-top:1px solid var(--line);padding-top:10px}
+.zone .it em{font-style:normal;color:var(--muted)}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dos div{background:var(--bg);padding:11px 12px;display:flex;flex-direction:column;gap:2px}
+.dos b{font-size:14px;color:var(--lime);font-weight:700}
+.dos span{font-size:14px;color:var(--text)}
+.ext{display:flex;flex-direction:column;gap:14px}
+.ext .zone{flex:1;justify-content:center}
+.link{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px}
+.link.two{justify-content:space-around}
+.link .lr{display:flex;align-items:center}
+.link .ln{width:56px;height:2px;background:var(--muted)}
+.link .hd{width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid var(--muted)}
+.link .hd.l{border-left:0;border-right:10px solid var(--muted)}
+.link .lb{font-size:12px;line-height:1.4;color:var(--muted);text-align:center}
+.link .g{display:flex;flex-direction:column;align-items:center;gap:8px}
+.why3{display:grid;grid-template-columns:300px 92px 1fr 92px 232px;padding-top:14px}
+.why3 span{display:flex;gap:8px;align-items:baseline;font-size:15px;font-weight:700;color:var(--text);line-height:1.45}
+.why3 span i{width:8px;height:8px;background:var(--lime);display:block;flex:none;transform:translateY(-2px)}
 
-/* 今後の展望：テーマ3列 */
-.next{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:34px;min-height:0}
-.next > div{display:flex;flex-direction:column;min-width:0}
-.next ul{margin:0;padding:20px 0 0 18px;font-size:17px;line-height:1.6;color:var(--text);display:flex;flex-direction:column;gap:16px}
-.crew{display:flex;flex-wrap:wrap;align-items:flex-end;gap:4px;margin-top:auto;padding-top:10px}
-.crew img{width:84px;height:84px;image-rendering:pixelated}
-.crew .lbl{width:100%;font-size:13px;color:var(--muted)}
-.arcol{display:flex;flex-direction:column;gap:12px}
-.arcol .ar{flex:1}
-.excol{display:flex;flex-direction:column;gap:12px}
-.excol .bx{flex:1}
+/* 8. エージェント：ループと差し戻しを図で */
+.loop{position:relative;height:400px;margin-bottom:auto}
+.loop .bx{position:absolute;background:var(--surface);display:flex;flex-direction:column;justify-content:center;gap:8px;padding:14px 16px}
+.loop .bx .k{font-size:22px;font-weight:700;color:var(--text)}
+.loop .bx .x{font-size:15px;line-height:1.45;color:var(--muted)}
+.loop .bx code{font-family:"SFMono-Regular",Menlo,Consolas,monospace;font-size:16px;color:var(--lime);background:var(--bg);padding:6px 8px;display:block}
+.loop .bx.ok{background:var(--lime)}
+.loop .bx.ok .k{color:var(--ink)}
+.loop .bx.ok .x{color:var(--ink)}
+.loop svg.ar{position:absolute;left:0;top:0;width:1152px;height:400px}
+.loop .lb{position:absolute;font-size:15px;line-height:1.4;color:var(--muted);text-align:center}
+.guards{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;border-top:2px solid var(--text);padding-top:16px}
+.guards div{display:flex;flex-direction:column;gap:6px}
+.guards b{font-size:18px;font-weight:700;color:var(--text)}
+.guards span{font-size:15px;line-height:1.5;color:var(--muted)}
+
+/* 9. 今後：左に大きな一語、右に3つのテーマ */
+.ahead{flex:1;display:grid;grid-template-columns:330px 1fr;gap:56px;min-height:0}
+.ahead .hero2{display:flex;flex-direction:column;justify-content:center;gap:16px}
+.ahead .hero2 b{font-size:68px;line-height:1.15;font-weight:900;color:var(--text)}
+.ahead .hero2 span{font-size:16px;line-height:1.6;color:var(--muted)}
+.themes{display:flex;flex-direction:column;justify-content:center}
+.th{display:grid;grid-template-columns:250px 1fr;gap:24px;padding:22px 0;border-top:1px solid var(--line);align-items:start}
+.th:first-child{border-top:2px solid var(--text)}
+.th b{font-size:22px;line-height:1.4;font-weight:700;color:var(--text)}
+.th ul{margin:0;padding-left:18px;font-size:17px;line-height:1.6;color:var(--text);display:flex;flex-direction:column;gap:6px}
 </style></head><body>
 
 <!-- 1. 表紙 -->
@@ -204,30 +216,18 @@ td li:last-child{margin-bottom:0}
 <!-- 2. 課題 -->
 <section class="s">
   <img class="maru" src="assets/maru-magnifier.png" alt="maru">
-  <h1>外出中の「次どこ行く？」は探す負担が1人に集まり、<br>候補を前に決めきれない</h1>
+  <h1>外出中の「次どこ行く？」は、探す役の1人が背負って決めきれない</h1>
   <div class="c">
-    <div class="two">
-      <div>
-        <div class="colh">想定する場面</div>
-        <div class="chat">
-          <div class="talk"><div class="who">同行者</div><div class="bubs"><div class="bub">次どこ行く？</div><div class="bub">どこでもいいよ<div class="t1"></div><div class="t2"></div></div></div></div>
-          <div class="talk me"><div class="who">探す役</div><div class="bub">ちょっと待って、調べてみる<div class="t1"></div><div class="t2"></div></div></div>
-          <div class="talk"><div class="who">同行者</div><div class="bub">まだ決まらない？<div class="t1"></div><div class="t2"></div></div></div>
-        </div>
+    <div class="pain">
+      <div class="scene">
+        <div class="talk"><div class="who">同行者</div><div class="bubs"><div class="bub">次どこ行く？</div><div class="bub">どこでもいいよ<div class="t1"></div><div class="t2"></div></div></div></div>
+        <div class="talk me"><div class="who">探す役</div><div class="bub">ちょっと待って、調べてみる<div class="t1"></div><div class="t2"></div></div></div>
+        <div class="talk"><div class="who">同行者</div><div class="bub">まだ決まらない？<div class="t1"></div><div class="t2"></div></div></div>
       </div>
-      <div>
-        <table>
-          <tr><th class="ax">つまずき</th><th>起きていること</th><th>なぜ起きるか</th></tr>
-          <tr><td class="ax"><span class="ref ax2"><span class="no">1</span><span>探す負担が<br>1人に集まる</span></span></td>
-              <td>「どこでもいいよ」と任され、<br>1人で地図と検索を行き来する</td>
-              <td>同行者の気分・体力・予算を<br>聞けないまま店選びを任され、<br>探す役が推し量るしかない</td></tr>
-          <tr><td class="ax"><span class="ref ax2"><span class="no">2</span><span>候補が多くて<br>決めきれない</span></span></td>
-              <td>検索結果が一覧で並び、<br>比べているうちに時間が過ぎる</td>
-              <td>検索サービスは条件に合う店を<br>広く並べ、同行者に合う数件へ<br>絞る作業は探す役に残る</td></tr>
-          <tr><td class="ax"><span class="ref ax2"><span class="no">3</span><span>選んだ理由を<br>伝えにくい</span></span></td>
-              <td>評価や写真を見比べても、<br>「なぜここか」を同行者に<br>説明しにくい</td>
-              <td>候補ごとに、同行者のどの希望に<br>合うかが添えられていない</td></tr>
-        </table>
+      <div class="pts">
+        <div class="pt"><span class="no">1</span><div class="tx"><b>探す負担が1人に集まる</b><span>「どこでもいいよ」と任され、1人で地図と検索を行き来する</span></div></div>
+        <div class="pt"><span class="no">2</span><div class="tx"><b>候補が多くて決めきれない</b><span>検索結果を比べているうちに時間が過ぎる</span></div></div>
+        <div class="pt"><span class="no">3</span><div class="tx"><b>選んだ理由を伝えにくい</b><span>「なぜここか」を同行者に説明しにくい</span></div></div>
       </div>
     </div>
   </div>
@@ -239,65 +239,51 @@ td li:last-child{margin-bottom:0}
   <img class="maru" src="assets/maru-found.png" alt="maru">
   <h1>ima とは、希望を伝えるだけで<br>次に入るお店を理由付きで3件以内に絞る iPhone アプリ</h1>
   <div class="c">
-    <div class="two">
+    <div class="what">
       <div>
-        <div class="colh">使い方の例</div>
-        <div class="chat">
-          <div class="talk me"><div class="who">ユーザー</div><div class="bub">友だちと和食の定食が食べたい、<br>予算は4,000円くらいまで<div class="t1"></div><div class="t2"></div></div></div>
-          <div class="talk"><div class="who">ima</div><div class="bubs"><div class="bub">近くの和食店から、<br>条件に合う3件を選びました</div><div class="bub">1件目は定食があり、掲載の<br>予算目安が4,000円以内です<div class="t1"></div><div class="t2"></div></div></div></div>
-          <div class="cards">
-            <div><span class="k">主提案</span><span class="why">選んだ理由</span><span class="btn">店舗詳細を見る</span></div>
-            <div><span class="k">別案</span><span class="why">選んだ理由</span><span class="btn">店舗詳細を見る</span></div>
-            <div><span class="k">別案</span><span class="why">選んだ理由</span><span class="btn">店舗詳細を見る</span></div>
-          </div>
-        </div>
+        <div class="vis"><div class="talk me"><div class="bub">友だちと和食の定食、<br>予算は4,000円くらいまで<div class="t1"></div><div class="t2"></div></div></div></div>
+        <div class="lab"><div class="h"><span class="no">1</span>希望をそのまま伝える</div><div class="d">書くか、5つの質問にタップで答える</div></div>
       </div>
+      <div class="arw"><i></i></div>
       <div>
-        <table>
-          <tr><th class="ax">ima の特徴</th><th>ユーザーと ima の動き</th><th style="width:226px">対応するつまずき</th></tr>
-          <tr><td class="ax">希望をそのまま<br>受け取る</td>
-              <td><ul><li>ユーザーは状況をそのまま書くか、<br>5つの質問にタップで答えて探し始める</li><li>場所など提案に欠かせない情報が<br>足りないときだけ、AIが原則1問聞き返す</li></ul></td>
-              <td><span class="ref"><span class="no">1</span>探す負担が<br>1人に集まる</span></td></tr>
-          <tr><td class="ax">3件以内に絞る</td>
-              <td><ul><li>AIがホットペッパーグルメの掲載店から、<br>主提案1件と別案最大2件をカードで並べる</li><li>ユーザーが店舗詳細を見て、<br>「ここにする」で決める</li></ul></td>
-              <td><span class="ref"><span class="no">2</span>候補が多くて<br>決めきれない</span></td></tr>
-          <tr><td class="ax">理由を添える</td>
-              <td><ul><li>AIが、重視した希望と<br>それに合う店舗情報を短く添える</li><li>AIが、掲載情報で確かめた事実と<br>推測を分けて書く</li></ul></td>
-              <td><span class="ref"><span class="no">3</span>選んだ理由を<br>伝えにくい</span></td></tr>
-        </table>
+        <div class="vis"><div class="pinwrap">
+          <svg class="pin" viewBox="155 -6 80 98" role="img" aria-label="ima のピン">
+            <path d="M195 88C184 74 159 58 159 34A36 36 0 0 1 231 34C231 58 206 74 195 88Z" fill="#b7c97a"/>
+            <ellipse cx="181" cy="32" rx="11" ry="13" fill="#fbfaf6"/><ellipse cx="209" cy="32" rx="11" ry="13" fill="#fbfaf6"/>
+            <circle cx="182" cy="38" r="6.5" fill="#161616"/><circle cx="208" cy="38" r="6.5" fill="#161616"/>
+            <circle cx="179.5" cy="35.5" r="2" fill="#fbfaf6"/><circle cx="205.5" cy="35.5" r="2" fill="#fbfaf6"/>
+          </svg>
+          <span>ホットペッパーグルメの<br>掲載店から探す</span></div></div>
+        <div class="lab"><div class="h"><span class="no">2</span>3件以内に絞る</div><div class="d">主提案1件と別案最大2件</div></div>
+      </div>
+      <div class="arw"><i></i></div>
+      <div>
+        <div class="vis"><div class="cards3">
+          <div><span class="k">主提案</span><span class="why">定食があり、予算目安が条件内</span></div>
+          <div><span class="k">別案</span><span class="why">駅から近く、すぐ入れる</span></div>
+          <div><span class="k">別案</span><span class="why">個室があり、落ち着いて話せる</span></div>
+        </div></div>
+        <div class="lab"><div class="h"><span class="no">3</span>理由を添える</div><div class="d">重視した希望と、合う店舗情報を短く</div></div>
       </div>
     </div>
   </div>
-  <div class="src">店舗データ：Powered by <a href="https://webservice.recruit.co.jp/">ホットペッパーグルメ Webサービス</a></div>
+  <div class="src">吹き出しとカードの文面は説明用の例　店舗データ：Powered by <a href="https://webservice.recruit.co.jp/">ホットペッパーグルメ Webサービス</a></div>
   <div class="foot"><b>ima</b><span>2</span></div>
 </section>
 
 <!-- 4. 体験フロー -->
 <section class="s">
   <img class="maru" src="assets/maru-run.png" alt="maru">
-  <h1>ユーザーは入口を選んで希望を伝え、<br>届いた候補から「ここにする」で決める</h1>
+  <h1>希望を伝えれば、届いた候補から「ここにする」で決められる</h1>
   <div class="c">
-    <div class="flow">
-      <div></div>
-      <div class="cv first"><b>1</b><span>入口を選ぶ</span></div>
-      <div class="cv"><b>2</b><span>希望を伝える</span></div>
-      <div class="cv"><b>3</b><span>候補を絞り込む</span></div>
-      <div class="cv"><b>4</b><span>決めて向かう</span></div>
-      <div class="rh r1">画面</div>
-      <div class="cell r1">起動画面</div>
-      <div class="cell r1">チャット、または5つの質問</div>
-      <div class="cell r1">会話と候補カード</div>
-      <div class="cell r1">店舗詳細</div>
-      <div class="rh">ユーザー</div>
-      <div class="cell">「チャットで話す」か<br>「質問に答える」を選ぶ</div>
-      <div class="cell">状況をそのまま書くか、<br>誰と・食べたいもの・系統・<br>予算・雰囲気に答える</div>
-      <div class="cell">条件の追加・変更・比較を、<br>同じ会話のまま頼む</div>
-      <div class="cell">「店舗詳細を見る」から<br>「ここにする」で決める</div>
-      <div class="rh">ima</div>
-      <div class="cell">案内役の犬 maru が<br>起動のたびに入口を尋ねる</div>
-      <div class="cell">質問の回答を1文にまとめ、<br>会話の最初の発言として送る</div>
-      <div class="cell">地名がなければ現在地の<br>1km圏から3km圏まで広げて、<br>主提案1件と別案最大2件を返す</div>
-      <div class="cell">決めたお店を保存一覧に残し、<br>Google Maps や共有へ進める</div>
+    <div class="walk">
+      <div class="stp"><img src="assets/maru-wait.png" alt=""><div class="h"><span class="no">1</span>入口を選ぶ</div><div class="d">チャットで話すか、<br>質問に答えるか</div></div>
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="stp"><img src="assets/maru-magnifier.png" alt=""><div class="h"><span class="no">2</span>希望を伝える</div><div class="d">状況をそのまま書くか、<br>5つの質問にタップで答える</div></div>
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="stp"><img src="assets/maru-run.png" alt=""><div class="h"><span class="no">3</span>候補を絞り込む</div><div class="d">3件以内のカードが届き、<br>条件の変更も同じ会話で頼める</div></div>
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="stp"><img src="assets/maru-decided.png" alt=""><div class="h"><span class="no">4</span>決めて向かう</div><div class="d">「ここにする」で決めて、<br>Google Maps で開く</div></div>
     </div>
   </div>
   <div class="foot"><b>ima</b><span>3</span></div>
@@ -306,17 +292,13 @@ td li:last-child{margin-bottom:0}
 <!-- 5. 主要画面 -->
 <section class="s">
   <img class="maru" src="assets/maru-glasses.png" alt="maru">
-  <h1>ima の主要画面は、起動画面での入口の選択から<br>店舗詳細の「ここにする」までを順につなぐ</h1>
+  <h1>画面は、起動から店舗詳細まで会話の流れに沿って進む</h1>
   <div class="c">
-    <div class="screens">
-      <div><div class="colh">起動画面</div><div class="shot">起動画面の<br>スクリーンショットを入れる</div>
-        <ul><li>maru がチャットか質問かを尋ねる</li><li>選んだ入口へそのまま進む</li></ul></div>
-      <div><div class="colh">質問画面</div><div class="shot">質問画面の<br>スクリーンショットを入れる</div>
-        <ul><li>誰と・食べたいもの・系統・予算・雰囲気をタップで答える</li><li>答えは1文になって会話へ渡る</li></ul></div>
-      <div><div class="colh">会話と候補カード</div><div class="shot">候補カードが並んだ会話の<br>スクリーンショットを入れる</div>
-        <ul><li>主提案と別案を<br>同じ大きさのカードで並べる</li><li>カードから保存・地図・<br>店舗詳細へ進む</li></ul></div>
-      <div><div class="colh">店舗詳細</div><div class="shot">店舗詳細の<br>スクリーンショットを入れる</div>
-        <ul><li>営業時間・定休日・アクセス・<br>予算を出典つきで表示する</li><li>「ここにする」で決める</li></ul></div>
+    <div class="gallery">
+      <div><div class="shot">起動画面の<br>スクリーンショット<br>を入れる</div><b>起動画面</b><span>maru が入口を尋ねる</span></div>
+      <div><div class="shot">質問画面の<br>スクリーンショット<br>を入れる</div><b>質問画面</b><span>タップで5つに答える</span></div>
+      <div><div class="shot">候補カードが並んだ<br>会話のスクリーンショット<br>を入れる</div><b>会話と候補カード</b><span>3件以内を同じ大きさで並べる</span></div>
+      <div><div class="shot">店舗詳細の<br>スクリーンショット<br>を入れる</div><b>店舗詳細</b><span>「ここにする」で決める</span></div>
     </div>
   </div>
   <div class="foot"><b>ima</b><span>4</span></div>
@@ -325,184 +307,128 @@ td li:last-child{margin-bottom:0}
 <!-- 6. AIエージェントの振る舞い -->
 <section class="s">
   <img class="maru" src="assets/maru-claude-search.png" alt="maru">
-  <h1>ima の AI は、変わった点だけを反映して選び直し、<br>足りない情報や見つからないことは言葉で伝える</h1>
+  <h1>ima の AI は、変わった点だけ選び直し、足りない情報は聞き返す</h1>
   <div class="c">
-    <div class="two">
-      <div>
-        <div class="colh">条件を変えたときの会話の例</div>
-        <div class="chat">
-          <div class="talk me"><div class="who">ユーザー</div><div class="bub">友だちと和食の定食が食べたい、<br>予算は4,000円くらいまで<div class="t1"></div><div class="t2"></div></div></div>
-          <div class="talk"><div class="who">ima</div><div class="bub">近くの和食店から、<br>条件に合う3件を選びました<div class="t1"></div><div class="t2"></div></div></div>
-          <div class="talk me"><div class="who">ユーザー</div><div class="bub">やっぱり個室があるところがいい<div class="t1"></div><div class="t2"></div></div></div>
-          <div class="talk"><div class="who">ima</div><div class="bub">和食の定食・4,000円以内は<br>そのままに、個室のある店で<br>選び直しました<div class="t1"></div><div class="t2"></div></div></div>
-        </div>
-      </div>
-      <div>
-        <table>
-          <tr><th class="ax" style="width:230px">場面</th><th>AI の判断</th></tr>
-          <tr><td class="ax">場所の指定がない</td>
-              <td><ul><li>現在地が使えれば聞き返さず、<br>周辺を1km圏から3km圏まで広げて探す</li><li>現在地が使えなければ理由を伝え、駅名や地名を尋ねる</li></ul></td></tr>
-          <tr><td class="ax">条件が変わった</td>
-              <td><ul><li>変わっていない希望を引き継ぐ</li><li>変更点が分かれば選び直し、分からなければ聞き返す</li></ul></td></tr>
-          <tr><td class="ax">説明や比較を<br>求められた</td>
-              <td>カードを出し直さず、メッセージで答える</td></tr>
-          <tr><td class="ax">条件に合う店がない</td>
-              <td>条件に合わない店で数を埋めず、見つからなかったことを伝える</td></tr>
-        </table>
-      </div>
+    <div class="quad">
+      <div class="qd"><div class="h">場所が分からない</div><div class="row">
+        <div class="talk me"><div class="bub">近くで定食が食べたい<div class="t1"></div><div class="t2"></div></div></div>
+        <div class="talk"><div class="bub">現在地が取れないので、<br>駅名か地名を教えてください<div class="t1"></div><div class="t2"></div></div></div></div></div>
+      <div class="qd"><div class="h">条件が変わった</div><div class="row">
+        <div class="talk me"><div class="bub">やっぱり個室がいい<div class="t1"></div><div class="t2"></div></div></div>
+        <div class="talk"><div class="bub">和食の定食・4,000円以内はそのままに、<br>個室で選び直しました<div class="t1"></div><div class="t2"></div></div></div></div></div>
+      <div class="qd"><div class="h">比べてほしい</div><div class="row">
+        <div class="talk me"><div class="bub">1件目と2件目の違いは？<div class="t1"></div><div class="t2"></div></div></div>
+        <div class="talk"><div class="bub">カードはそのままに、違いを文章で答えます<div class="t1"></div><div class="t2"></div></div></div></div></div>
+      <div class="qd"><div class="h"><img src="assets/maru-empty.png" alt="">合うお店がない</div><div class="row">
+        <div class="talk me"><div class="bub">この近くでジンギスカン<div class="t1"></div><div class="t2"></div></div></div>
+        <div class="talk"><div class="bub">数を埋めずに、見つからなかったと伝えます<div class="t1"></div><div class="t2"></div></div></div></div></div>
     </div>
   </div>
+  <div class="src">吹き出しの文面は説明用の例</div>
   <div class="foot"><b>ima</b><span>5</span></div>
 </section>
 
-<!-- 7. キャラクター -->
+<!-- 7. アーキテクチャ① 全体 -->
 <section class="s">
-  <img class="maru" src="assets/maru-decided.png" alt="maru">
-  <h1>maru は入口から決定までの場面ごとに姿を変え、<br>ima がいま何をしているかを伝える</h1>
+  <img class="maru" src="assets/maru-search.png" alt="maru">
+  <h1>ima は iPhone アプリと Cloudflare Workers の2つで動く</h1>
   <div class="c">
-    <div class="poses">
-      <div>
-        <div class="colh">起動画面と質問画面</div>
-        <div class="pg g3">
-          <div class="pc"><img src="assets/maru-wait.png" alt=""><span class="k">起動画面</span><div class="bub">チャットから<br>始める？<div class="t1"></div><div class="t2"></div></div></div>
-          <div class="pc"><img src="assets/maru-magnifier.png" alt=""><span class="k">質問中</span><span class="x">質問の横で<br>虫眼鏡をのぞく</span></div>
-          <div class="pc"><img src="assets/maru-run.png" alt=""><span class="k">答え終えたとき</span><div class="bub">探してくる<br>わん！<div class="t1"></div><div class="t2"></div></div></div>
+    <div class="sys">
+      <div class="zone">
+        <span class="zt">iPhone アプリ</span>
+        <div class="tiles">
+          <div class="tl"><img class="tile" src="assets/icons/tile-react.png" alt="React"><span>React Native</span></div>
+          <div class="tl"><img class="tile" src="assets/icons/tile-expo.png" alt="Expo"><span>Expo</span></div>
+          <div class="tl"><img class="tile" src="assets/icons/tile-typescript.png" alt="TypeScript"><span>TypeScript</span></div>
         </div>
+        <div class="tiles"><div class="tl"><img class="tile w" src="assets/icons/tile-sqlite.png" alt="SQLite"><span>会話のキャッシュ</span></div></div>
+        <div class="it">SecureStore <em>端末の資格情報</em></div>
       </div>
-      <div>
-        <div class="colh">会話画面</div>
-        <div class="pg g4">
-          <div class="pc"><img src="assets/maru-run.png" alt=""><span class="k">検索中</span><span class="x">走って探す</span></div>
-          <div class="pc"><img src="assets/maru-empty.png" alt=""><span class="k">候補0件</span><div class="bub">見つから<br>なかったわん<div class="t1"></div><div class="t2"></div></div><span class="x">検索結果が0件の<br>ときだけ言う</span></div>
-          <div class="pc"><img src="assets/maru-oops.png" alt=""><span class="k">失敗・取り消し</span><span class="x">困った顔になる</span></div>
-          <div class="pc"><img src="assets/maru-decided.png" alt=""><span class="k">決定後</span><span class="x">喜ぶ</span></div>
+      <div class="link"><div class="g"><span class="lb">HTTPS で<br>発言を送る</span><div class="lr"><div class="ln"></div><div class="hd"></div></div></div>
+        <div class="g"><div class="lr"><div class="hd l"></div><div class="ln"></div></div><span class="lb">SSE で<br>結果を返す</span></div></div>
+      <div class="zone">
+        <div class="tiles">
+          <div class="tl"><img class="tile w" src="assets/icons/tile-cloudflare-workers.png" alt="Cloudflare Workers"><span>Cloudflare Workers</span></div>
+          <div class="tl"><img class="tile w" src="assets/icons/tile-hono.png" alt="Hono"><span>HTTP の受け口</span></div>
+          <div class="tl"><img class="tile" src="assets/icons/tile-typescript.png" alt="TypeScript"><span>TypeScript</span></div>
         </div>
+        <div class="dos">
+          <div><b>ConversationHistoryDO</b><span>会話</span></div>
+          <div><b>ThreadDO</b><span>AI の実行</span></div>
+          <div><b>SavedReferenceDO</b><span>保存と決定</span></div>
+          <div><b>TelemetryDO</b><span>運用ログ</span></div>
+        </div>
+        <div class="it">Durable Objects <em>ユーザーごとに状態を分けて持つ</em></div>
       </div>
+      <div class="link two">
+        <div class="g"><span class="lb">ThreadDO が<br>呼ぶ</span><div class="lr"><div class="ln"></div><div class="hd"></div></div></div>
+        <div class="g"><span class="lb">Tool が<br>呼ぶ</span><div class="lr"><div class="ln"></div><div class="hd"></div></div></div>
+      </div>
+      <div class="ext">
+        <div class="zone"><div class="tl"><img class="tile" src="assets/icons/tile-openai.png" alt="OpenAI"><span>OpenAI</span></div><div class="it">gpt-5.6-luna <em>会話と提案</em></div></div>
+        <div class="zone"><div class="tl"><img class="tile w" src="assets/icons/tile-hotpepper.png" alt="ホットペッパーグルメ"><span>ホットペッパーグルメ</span></div><div class="it">グルメサーチAPI <em>店舗と写真</em></div></div>
+      </div>
+    </div>
+    <div class="why3">
+      <span><i></i>端末に置くのはキャッシュだけ</span><span></span>
+      <span><i></i>切れても実行 ID で結果を取り直せる</span><span></span>
+      <span><i></i>API キーは Worker だけが持つ</span>
     </div>
   </div>
   <div class="foot"><b>ima</b><span>6</span></div>
 </section>
 
-<!-- 8. アーキテクチャ① 全体 -->
+<!-- 8. アーキテクチャ② エージェント -->
 <section class="s">
-  <img class="maru" src="assets/maru-search.png" alt="maru">
-  <h1>ima は iPhone アプリと Cloudflare Workers の2つをデプロイし、<br>会話・実行・保存・運用ログを別々の Durable Objects に持つ</h1>
+  <img class="maru" src="assets/maru-magnifier.png" alt="maru">
+  <h1>AI は3つの Tool だけを使い、検証に通った応答だけを確定する</h1>
   <div class="c">
-    <div class="arch">
-      <div>
-        <div class="colh">システム全体の構成</div>
-        <div class="dg">
-          <div class="bx">
-            <span class="bt">iPhone アプリ</span><span class="bs">React Native 0.86<br>Expo 57・TypeScript</span>
-            <div class="it"><b>画面と会話</b><span>起動画面から店舗詳細まで</span></div>
-            <div class="it"><b>SQLite</b><span>直近3会話のキャッシュ</span></div>
-            <div class="it"><b>SecureStore</b><span>端末ごとの資格情報</span></div>
-            <div class="it"><b>位置情報</b><span>ユーザーの操作で取得</span></div>
-          </div>
-          <div class="ar"><span class="lb">発言を送る</span><div class="lr"><div class="ln"></div><div class="hd"></div></div><div class="lr"><div class="hd l"></div><div class="ln"></div></div><span class="lb">SSE で<br>結果を返す</span></div>
-          <div class="bx">
-            <span class="bt">Cloudflare Workers</span><span class="bs">HTTPS を Hono 4 で受け、<br>認証・入力検証をする</span>
-            <div class="dos">
-              <div class="do"><b>ConversationHistoryDO</b><span>会話・発言・実行の受付</span></div>
-              <div class="do"><b>ThreadDO</b><span>会話の実行（Think・当日5時まで）</span></div>
-              <div class="do"><b>SavedReferenceDO</b><span>保存したお店・決定・条件</span></div>
-              <div class="do"><b>TelemetryDO</b><span>運用イベント（7日で削除）</span></div>
-            </div>
-          </div>
-          <div class="arcol">
-            <div class="ar"><span class="lb">ThreadDO<br>が呼ぶ</span><div class="lr"><div class="ln"></div><div class="hd"></div></div></div>
-            <div class="ar"><span class="lb">Tool が<br>呼ぶ</span><div class="lr"><div class="ln"></div><div class="hd"></div></div></div>
-          </div>
-          <div class="excol">
-            <div class="bx"><span class="bt">OpenAI</span><span class="bs">外部 API</span>
-              <div class="it"><b>gpt-5.6-luna</b><span>reasoning effort: low</span></div></div>
-            <div class="bx"><span class="bt">ホットペッパー</span><span class="bs">外部 API</span>
-              <div class="it"><b>グルメサーチAPI</b><span>店舗の検索・詳細・写真</span></div></div>
-          </div>
-        </div>
-      </div>
-      <div class="side">
-        <div class="colh">この構成にした理由</div>
-        <ul>
-          <li>会話と保存の元データは<br>サーバーに置き、端末の SQLite は<br>キャッシュに留める</li>
-          <li>サーバーは生成を受け付けると<br>実行 ID を返し、通信が切れても<br>アプリはその ID で結果を取り直す</li>
-          <li>会話と保存はユーザーごとの<br>Durable Object に分けて持つ</li>
-          <li>API キーは Worker の secret に<br>だけ置き、アプリには入れない</li>
-        </ul>
-      </div>
+    <div class="loop">
+      <svg class="ar" viewBox="0 0 1152 400" aria-hidden="true">
+        <defs><marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#9a9993"/></marker>
+              <marker id="hl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#b7c97a"/></marker></defs>
+        <g stroke="#9a9993" stroke-width="2.5" fill="none">
+          <path d="M170 195H206" marker-end="url(#h)"/>
+          <path d="M540 195H576" marker-end="url(#h)"/>
+          <path d="M760 195H796" marker-end="url(#h)"/>
+          <path d="M970 195H996" marker-end="url(#h)"/>
+          <path d="M320 100C320 40 440 40 440 100" marker-end="url(#h)"/>
+        </g>
+        <path d="M885 282C885 352 670 352 670 284" stroke="#b7c97a" stroke-width="2.5" fill="none" marker-end="url(#hl)"/>
+      </svg>
+      <div class="bx" style="left:0;top:110px;width:170px;height:170px"><span class="k">発言</span><span class="x">受け付けて<br>会話に保存</span></div>
+      <div class="bx" style="left:210px;top:100px;width:330px;height:190px"><span class="k">Think のループ</span><code>search_places</code><code>get_place_details</code><span class="x">店舗情報を読み取る Tool</span></div>
+      <div class="bx" style="left:580px;top:110px;width:180px;height:170px"><span class="k">応答</span><code>respond</code><span class="x">質問・説明・提案の<br>どれか1つ</span></div>
+      <div class="bx" style="left:800px;top:110px;width:170px;height:170px"><span class="k">検証</span><span class="x">根拠・新しさ・<br>必須条件</span></div>
+      <div class="bx ok" style="left:1000px;top:110px;width:152px;height:170px"><span class="k">確定</span><span class="x">1回だけ<br>SSE でアプリへ</span></div>
+      <span class="lb" style="left:300px;top:8px;width:160px">最大6回・60秒</span>
+      <span class="lb" style="left:640px;top:360px;width:280px;color:#b7c97a">通らなければ差し戻す（2回まで）</span>
+    </div>
+    <div class="guards">
+      <div><b>毎回 Tool を呼ばせる</b><span>文章だけの応答は確定しない</span></div>
+      <div><b>読み取りと確定を分ける</b><span>店舗を読んだ呼び出しでは確定しない</span></div>
+      <div><b>カードの事実は取得データから</b><span>営業時間や予算をモデルに書かせない</span></div>
     </div>
   </div>
   <div class="foot"><b>ima</b><span>7</span></div>
 </section>
 
-<!-- 9. アーキテクチャ② エージェント -->
+<!-- 9. 今後の展望 -->
 <section class="s">
-  <img class="maru" src="assets/maru-magnifier.png" alt="maru">
-  <h1>ima の AI は3つの Tool だけを使い、<br>検証に通った応答だけを1回確定させる</h1>
+  <img class="maru" src="assets/maru-decided.png" alt="maru">
+  <h1>次は maru と話しながら、二軒めまで一緒に探せるようにする</h1>
   <div class="c">
-    <div class="agent">
-      <div>
-        <div class="colh">1回の発言を処理する流れ</div>
-        <div class="steps">
-          <div class="st"><span class="n">1</span><span class="k">発言を受け付ける</span><span class="x">Worker が発言を会話に保存し、実行の受付を返す</span></div>
-          <i class="dn"></i>
-          <div class="st"><span class="n">2</span><span class="k">ループを回す</span><span class="x">ThreadDO で Cloudflare の Think SDK がモデルを呼ぶ<br>（1回の発言につきモデル呼び出し最大6回・60秒）</span></div>
-          <i class="dn"></i>
-          <div class="st"><span class="n">3</span><span class="k">お店の情報を集める</span><span class="x"><code>search_places</code> で探し、<code>get_place_details</code> で<br>詳細を取り直す（必要なだけ手順2から繰り返す）</span></div>
-          <i class="dn"></i>
-          <div class="st"><span class="n">4</span><span class="k">応答を出す</span><span class="x"><code>respond</code> で質問・説明・カード提案のどれか1つを返す</span></div>
-          <i class="dn"></i>
-          <div class="st"><span class="n">5</span><span class="k">検証して確定する</span><span class="x">根拠・情報の新しさ・必須条件を確かめて確定する<br>（通らなければ手順4へ差し戻し、2回まで直させる）</span></div>
-        </div>
-      </div>
-      <div class="side">
-        <div class="colh">AI の応答を根拠に結びつける仕組み</div>
-        <ul>
-          <li>モデルを呼ぶたびに Tool の呼び出しを必須にし、<br>文章だけの応答は確定させない</li><li>店舗情報を読み取ったのと同じ呼び出しでは、<br>応答を確定させない</li>
-          <li>カードの営業時間や予算は、モデルの文章ではなく<br>取得した店舗情報から付ける</li>
-          <li>確定した応答だけを、SSE でアプリへ届ける</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  <div class="foot"><b>ima</b><span>8</span></div>
-</section>
-
-<!-- 10. 今後の展望 -->
-<section class="s">
-  <img class="maru" src="assets/maru-run.png" alt="maru">
-  <h1>次は候補を見比べやすくして maru との会話を増やし、<br>一軒めのあとの二軒めまで一緒に探せるようにする</h1>
-  <div class="c">
-    <div class="next">
-      <div>
-        <div class="colh">候補を見比べやすくする</div>
-        <ul>
-          <li>候補カードを横スワイプの帯で<br>1枚ずつ見せ、何枚目かを示す</li>
-          <li>候補を出したときの説明文は、<br>カードの下に折りたたむ</li>
-          <li>店舗詳細の見た目を<br>候補カードのデザインにそろえる</li>
-        </ul>
-      </div>
-      <div>
-        <div class="colh">maru と話しながら選ぶ</div>
-        <ul>
-          <li>いま見ている候補の選定理由を、<br>maru が吹き出しで話す</li>
-          <li>結果が出たとき、maru が掲載情報から<br>お店の雰囲気をひとことで伝える</li>
-          <li>一緒に探すキャラクターを<br>5体から選べるようにする</li>
-        </ul>
-        <div class="crew"><span class="lbl">maru のほかに描き起こし済みの4体</span><img src="assets/fuwa-wait.png" alt="fuwa"><img src="assets/hoppe-wait.png" alt="hoppe"><img src="assets/mocchi-wait.png" alt="mocchi"><img src="assets/nonno-wait.png" alt="nonno"></div>
-      </div>
-      <div>
-        <div class="colh">探す前と決めたあとを整える</div>
-        <ul>
-          <li>一軒めを決めたあと、<br>続けて二軒めを探す流れを作る</li>
-          <li>3km圏でも0件のとき、市内まで<br>広げて探し直すかを検討する</li>
-          <li>位置情報の許可状態を表示し、<br>拒否されたときは iOS の設定へ案内する</li>
-        </ul>
+    <div class="ahead">
+      <div class="hero2"><b>これから<br>作るもの</b><span>GitHub Issues で管理している改善から</span></div>
+      <div class="themes">
+        <div class="th"><b>候補を見比べやすく</b><ul><li>候補カードを横スワイプで1枚ずつ見せる</li><li>説明文はカードの下に折りたたむ</li></ul></div>
+        <div class="th"><b>maru と話しながら選ぶ</b><ul><li>いま見ている候補の選定理由を maru が話す</li><li>お店の雰囲気を掲載情報からひとことで伝える</li></ul></div>
+        <div class="th"><b>探す前と決めたあと</b><ul><li>一軒めを決めたあと、続けて二軒めを探す</li><li>位置情報の許可状態を見せ、設定へ案内する</li></ul></div>
       </div>
     </div>
   </div>
   <div class="src">本資料は consulting-pptx-skill（github.com/carnot-tech/consulting-pptx-skill）で作成</div>
-  <div class="foot"><b>ima</b><span>9</span></div>
+  <div class="foot"><b>ima</b><span>8</span></div>
 </section>
 
 </body></html>
