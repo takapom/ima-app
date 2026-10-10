@@ -451,10 +451,12 @@ export const useJourneyActions = ({
     [contextKey, currentOperationToken, isCurrentOperation, services.share],
   );
 
-  const candidateOrder = selectJourneyCandidateOrder(
-    actionContext.candidateIds,
-    effectiveState.promotedCandidateId,
-    effectiveState.tonightExcludedCandidateIds,
+  const { promotedCandidateId: promoted, tonightExcludedCandidateIds: excluded } = effectiveState;
+  const { candidateIds: ids } = actionContext;
+  // One array while the order holds, so card strips do not re-register on every render.
+  const candidateOrder = useMemo(
+    () => selectJourneyCandidateOrder(ids, promoted, excluded),
+    [ids, promoted, excluded],
   );
   const clearNotice = useCallback(() => {
     noticeToken.current += 1;

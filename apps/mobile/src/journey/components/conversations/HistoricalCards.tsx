@@ -1,12 +1,15 @@
 import { Modal, StyleSheet, Text, View } from 'react-native';
-import { useCallback, useState, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { usePlacedLayout, type PlacedLayout } from '@mobile/journey/hooks/usePlacedLayout';
 import { HistoricalPhoto } from '@mobile/journey/components/conversations/HistoricalPhoto';
 import type { ConversationCards } from '@ima/contracts';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
 import { CandidateCard } from '@mobile/journey/components/candidates/CandidateCard';
+import { CandidateCarousel } from '@mobile/journey/components/candidates/CandidateCarousel';
 import { CandidateDetailSheet } from '@mobile/journey/components/candidates/CandidateDetailSheet';
-import { presentGeneratedText } from '@mobile/journey/components/candidates/candidate-card-model';
 import { useCandidateDetail } from '@mobile/journey/hooks/useCandidateDetail';
+import { useCardSetFocusEntry } from '@mobile/journey/hooks/useCardSetFocusEntry';
+import type { CardSetFocus } from '@mobile/journey/state/card-set-focus';
 import { createAssistantResponseState } from '@mobile/journey/state/assistant-response';
 import { toCandidateDetailViewModel } from '@mobile/journey/presentation/candidate-detail-view';
 import { colors, spacing, typography } from '@mobile/ui/theme/tokens';
@@ -24,6 +27,7 @@ export function HistoricalCards({
   sequence,
   messageTop,
   photoViewport,
+  cardFocus,
 }: {
   readonly part: ConversationCards;
   readonly onSourcePress: (url: string) => void;
@@ -32,8 +36,14 @@ export function HistoricalCards({
   readonly sequence: number;
   readonly messageTop: number | null;
   readonly photoViewport: HistoryPhotoViewport;
+  readonly cardFocus: CardSetFocus;
 }): React.JSX.Element {
   const [localPhotoRange, setLocalPhotoRange] = useState<HistoryPhotoRange | null>(null);
+  const placeCards = useCallback(
+    ({ y, height }: PlacedLayout) => setLocalPhotoRange({ top: y, bottom: y + height }),
+    [],
+  );
+  const cardsPlace = usePlacedLayout(cardFocus, placeCards);
   const photoRange =
     messageTop === null || localPhotoRange === null
       ? null
@@ -50,7 +60,8 @@ export function HistoricalCards({
     () => photoViewport.visible(photoRange),
     () => false,
   );
-  const cards = [part.cards.hero, ...part.cards.alts];
+  const cards = useMemo(() => [part.cards.hero, ...part.cards.alts], [part.cards]);
+  const showCard = useCardSetFocusEntry(cardFocus, part.cardSetId, cards, photoRange);
   const now = new Date().toISOString();
   const photoFor = (candidateId: string, active = photosVisible) =>
     photoClient?.fetchConversationPhoto !== undefined &&
@@ -73,53 +84,51 @@ export function HistoricalCards({
     part.photoCandidateIds,
   );
   return (
-    <View
-      onLayout={({ nativeEvent }) => {
-        const top = nativeEvent.layout.y;
-        setLocalPhotoRange({ top, bottom: top + nativeEvent.layout.height });
-      }}
-      style={styles.cards}
-    >
+    <View ref={cardsPlace.ref} onLayout={cardsPlace.onLayout} style={styles.cards}>
       <Text style={styles.label}>提案時の店舗情報</Text>
       {part.photoCandidateIds?.length ? (
         <Text style={styles.label}>写真は現在の店舗写真です。画像提供：ホットペッパー グルメ</Text>
       ) : null}
-      {cards.map((card) => (
-        <View key={card.candidateId} style={styles.card}>
-          <Text style={styles.reason}>{presentGeneratedText(card.why).text}</Text>
-          {Object.entries(card.facts).some(
-            ([name, field]) =>
-              !(name === 'photos' && part.photoCandidateIds?.includes(card.candidateId)) &&
-              field !== undefined &&
-              field.status !== 'known',
-          ) ? (
-            <Text style={styles.label}>
-              {[
-                ...new Set(
-                  Object.entries(card.facts).flatMap(([name, field]) =>
-                    (name === 'photos' && part.photoCandidateIds?.includes(card.candidateId)) ||
-                    field === undefined ||
-                    field.status === 'known'
-                      ? []
-                      : [field.reason],
+      <CandidateCarousel
+        cards={cards}
+        onIndexChange={showCard}
+        renderCard={(card) => (
+          <View style={styles.card}>
+            {Object.entries(card.facts).some(
+              ([name, field]) =>
+                !(name === 'photos' && part.photoCandidateIds?.includes(card.candidateId)) &&
+                field !== undefined &&
+                field.status !== 'known',
+            ) ? (
+              <Text style={styles.label}>
+                {[
+                  ...new Set(
+                    Object.entries(card.facts).flatMap(([name, field]) =>
+                      (name === 'photos' && part.photoCandidateIds?.includes(card.candidateId)) ||
+                      field === undefined ||
+                      field.status === 'known'
+                        ? []
+                        : [field.reason],
+                    ),
                   ),
-                ),
-              ].join(' / ')}
-            </Text>
-          ) : null}
-          <CandidateCard
-            photo={photoFor(card.candidateId)}
-            card={card}
-            now={now}
-            {...(toCandidateDetailViewModel(card, Date.parse(now)).attributions.length === 0 &&
-            !part.photoCandidateIds?.includes(card.candidateId)
-              ? {}
-              : { onOpenDetail: detail.open })}
-            onPhotoReady={detail.rememberPhoto}
-            {...(photoClient === undefined ? {} : { photoClient })}
-          />
-        </View>
-      ))}
+                ].join(' / ')}
+              </Text>
+            ) : null}
+            <CandidateCard
+              photo={photoFor(card.candidateId)}
+              card={card}
+              fill
+              now={now}
+              {...(toCandidateDetailViewModel(card, Date.parse(now)).attributions.length === 0 &&
+              !part.photoCandidateIds?.includes(card.candidateId)
+                ? {}
+                : { onOpenDetail: detail.open })}
+              onPhotoReady={detail.rememberPhoto}
+              {...(photoClient === undefined ? {} : { photoClient })}
+            />
+          </View>
+        )}
+      />
       <Modal
         visible={detail.card !== null}
         transparent
@@ -145,8 +154,7 @@ export function HistoricalCards({
 }
 const styles = StyleSheet.create({
   cards: { gap: spacing.compact },
-  card: { gap: 8 },
+  card: { flex: 1, gap: 8 },
   modal: { flex: 1 },
   label: { color: colors.muted, fontSize: typography.label },
-  reason: { color: colors.text, fontSize: typography.body, lineHeight: 22 },
 });

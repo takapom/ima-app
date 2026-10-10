@@ -21,6 +21,8 @@ import {
 type CandidateCardProps = {
   readonly photo?: ReactNode;
   readonly card: PublicCard;
+  /** Stretches to its slot so cards side by side share one height and bottom edge. */
+  readonly fill?: boolean;
   /** Injected render time; the countdown is resolved here, never baked in upstream. */
   readonly now?: string;
   readonly onOpenDetail?: (candidateId: string) => void;
@@ -33,6 +35,7 @@ type CandidateCardProps = {
 export function CandidateCard({
   photo,
   card,
+  fill = false,
   now,
   onOpenDetail,
   onOpenMap,
@@ -50,7 +53,7 @@ export function CandidateCard({
   const canOpenMap = onOpenMap !== undefined && googleMapsSearchUrlFor(card) !== null;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, fill && styles.fill]}>
       <View style={styles.summary}>
         {photo !== undefined ? (
           <View style={styles.thumbnail}>{photo}</View>

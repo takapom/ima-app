@@ -92,7 +92,7 @@ function PhotoSlide({
   );
 }
 
-/** Photo paging is nested in the visual region, so horizontal swipes never choose a candidate. */
+/** Photo paging stays in the visual region; a single photo leaves horizontal swipes to the candidate strip. */
 export function PhotoRegion({
   card,
   client,
@@ -180,6 +180,7 @@ export function PhotoRegion({
         }}
         pagingEnabled
         ref={scrollRef}
+        scrollEnabled={field.value.photos.length > 1}
         showsHorizontalScrollIndicator={false}
         style={styles.scrollView}
       >

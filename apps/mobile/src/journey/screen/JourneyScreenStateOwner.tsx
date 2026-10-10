@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PublicCard } from '@ima/contracts';
 import { useCandidateDetail } from '@mobile/journey/hooks/useCandidateDetail';
 import { CandidateDetailSheet } from '@mobile/journey/components/candidates/CandidateDetailSheet';
@@ -38,7 +38,8 @@ import {
 } from '@mobile/preferences/state/conditions';
 import { resolveJourneyPhase } from '@mobile/journey/state/journey-phase';
 import type { JourneyScreenProps } from '@mobile/journey/screen/journey-screen-props';
-import { createHistoryPhotoViewport } from '@mobile/journey/state/history-photo-viewport';
+import { useTranscriptViewport } from '@mobile/journey/hooks/useTranscriptViewport';
+import { createRunnerHandoff } from '@mobile/journey/state/runner-handoff';
 
 type JourneyScreenStateOwnerProps = JourneyScreenProps & {
   readonly preferenceState: UseJourneyPreferencesResult;
@@ -76,12 +77,11 @@ export function JourneyScreenStateOwner({
   savedPlacePreview,
   preferenceState,
 }: JourneyScreenStateOwnerProps): React.JSX.Element {
-  const transcriptScroll = useRef<ScrollView>(null);
-  const followsLatest = useRef(true);
-  const photoViewport = useMemo(createHistoryPhotoViewport, []);
-  const viewportHeight = useRef(0);
-  const contentHeight = useRef(0);
-  const scrollTop = useRef(0);
+  const [runnerHandoff] = useState(createRunnerHandoff);
+  const transcript = useTranscriptViewport({
+    followOnGrowth: conversation !== undefined,
+    initialCompanionSpace: COMPANION_SPACE,
+  });
   const persistedPreferences = preferenceState;
   const journey = useJourneyShell(persistedPreferences.savedConditions);
   const savedPlaceUi = useSavedPlacePreview(savedPlacePreview, onSavedPlaceSelect);
@@ -310,50 +310,27 @@ export function JourneyScreenStateOwner({
       <AppBar onMenu={journey.toggleDrawer} onNewSearch={reset} />
       <View style={styles.content}>
         <ScrollView
-          ref={transcriptScroll}
-          onLayout={({ nativeEvent }) => {
-            viewportHeight.current = nativeEvent.layout.height;
-            if (contentHeight.current > 0) {
-              if (followsLatest.current)
-                scrollTop.current = Math.max(0, contentHeight.current - viewportHeight.current);
-              photoViewport.update(scrollTop.current, viewportHeight.current);
-            }
-          }}
-          onScroll={({ nativeEvent }) => {
-            scrollTop.current = nativeEvent.contentOffset.y;
-            viewportHeight.current = nativeEvent.layoutMeasurement.height;
-            contentHeight.current = nativeEvent.contentSize.height;
-            followsLatest.current =
-              nativeEvent.contentSize.height -
-                nativeEvent.layoutMeasurement.height -
-                nativeEvent.contentOffset.y <
-              80;
-            photoViewport.update(scrollTop.current, viewportHeight.current);
-          }}
-          scrollEventThrottle={32}
-          onContentSizeChange={(_width, height) => {
-            contentHeight.current = height;
-            if (conversation !== undefined && followsLatest.current) {
-              scrollTop.current = Math.max(0, height - viewportHeight.current);
-              photoViewport.update(scrollTop.current, viewportHeight.current);
-              transcriptScroll.current?.scrollToEnd({ animated: false });
-            } else {
-              photoViewport.update(scrollTop.current, viewportHeight.current);
-            }
-          }}
-          // The skeleton while searching may sit under the dog; real content keeps clear of it.
+          {...transcript.scrollProps}
+          // While searching the dog runs in the conversation, so its corner needs no space.
           contentContainerStyle={[
             styles.scrollContent,
-            phase !== 'working' && styles.companionSpace,
+            phase !== 'working' && { paddingBottom: transcript.companionSpace },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {conversation?.renderTranscript(renderedMessageRecords, openSourceLink, photoViewport)}
+          {conversation?.renderTranscript(
+            renderedMessageRecords,
+            openSourceLink,
+            transcript.photoViewport,
+            transcript.cardFocus,
+          )}
           {phase === 'empty' && !conversation?.hasMessages ? (
             <EmptyState onExample={journey.updateDraft} />
           ) : null}
-          {phase === 'working' ? <WorkingState query={journey.query} /> : null}
+          {phase === 'working' ? (
+            <WorkingState query={journey.query} handoff={runnerHandoff} />
+          ) : null}
           {phase === 'results' ? (
             <ConditionChips
               chips={journey.chips}
@@ -366,6 +343,7 @@ export function JourneyScreenStateOwner({
               cards={renderedResponse.cards}
               {...(now === undefined ? {} : { now })}
               cardSetId={renderedResponse.cardSetId}
+              cardFocus={transcript.cardFocus}
               cardSetDisplay={renderedResponse.cardSetDisplay}
               messageRecords={conversation === undefined ? renderedMessageRecords : []}
               candidateOrder={actions.candidateOrder}
@@ -424,6 +402,9 @@ export function JourneyScreenStateOwner({
         <ChatCompanion
           phase={phase}
           noCandidates={selectLatestReplyFoundNothing(renderedResponse)}
+          focus={transcript.cardFocus}
+          handoff={runnerHandoff}
+          onLayout={transcript.onCompanionLayout}
         />
       </View>
       <SavedPlacePreviewSurface controller={savedPlaceUi} onSourcePress={openSourceLink} />
@@ -486,8 +467,5 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 4,
-  },
-  companionSpace: {
-    paddingBottom: COMPANION_SPACE,
   },
 });

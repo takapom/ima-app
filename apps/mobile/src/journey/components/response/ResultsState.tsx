@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { RememberPhoto } from '@mobile/journey/state/photo-image-state';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { CardsData, PublicCard } from '@ima/contracts';
 import { CandidateCard } from '@mobile/journey/components/candidates/CandidateCard';
+import { CandidateCarousel } from '@mobile/journey/components/candidates/CandidateCarousel';
 import {
   buildMessageHistory,
   cardSetStatusLabel,
@@ -14,6 +15,9 @@ import type {
   CardSetDisplayState,
 } from '@mobile/journey/state/assistant-response';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
+import { useCardSetFocusEntry } from '@mobile/journey/hooks/useCardSetFocusEntry';
+import { usePlacedLayout, type PlacedLayout } from '@mobile/journey/hooks/usePlacedLayout';
+import type { CardSetFocus, CardSetRange } from '@mobile/journey/state/card-set-focus';
 import { colors, spacing, typography } from '@mobile/ui/theme/tokens';
 
 type ResultsStateProps = {
@@ -21,6 +25,8 @@ type ResultsStateProps = {
   /** Injected render time; cards resolve their opening countdown against it. */
   readonly now?: string;
   readonly cardSetId: string | null;
+  /** Where the companion learns which card of this answer is in view. */
+  readonly cardFocus?: CardSetFocus;
   readonly cardSetDisplay: CardSetDisplayState;
   readonly messageRecords: readonly AssistantMessageRecord[];
   readonly candidateOrder?: readonly string[];
@@ -36,6 +42,7 @@ export function ResultsState({
   cards,
   now,
   cardSetId,
+  cardFocus,
   cardSetDisplay,
   messageRecords,
   candidateOrder,
@@ -46,9 +53,19 @@ export function ResultsState({
   onSave,
   photoClient,
 }: ResultsStateProps): React.JSX.Element | null {
-  const displayCards = cards === null ? [] : orderedResultCards(cards, candidateOrder);
+  const displayCards = useMemo(
+    () => (cards === null ? [] : orderedResultCards(cards, candidateOrder)),
+    [cards, candidateOrder],
+  );
   const messageHistory = buildMessageHistory(messageRecords, cardSetId, displayCards.length > 0);
   const statusLabel = cardSetStatusLabel(cardSetDisplay);
+  const [range, setRange] = useState<CardSetRange | null>(null);
+  const showCard = useCardSetFocusEntry(cardFocus, cardSetId ?? 'live', displayCards, range);
+  const placeResult = useCallback(
+    ({ y, height }: PlacedLayout) => setRange({ top: y, bottom: y + height }),
+    [],
+  );
+  const resultPlace = usePlacedLayout(cardFocus, placeResult);
   if (displayCards.length === 0) {
     // Without cards there is nothing to add beside the conversation; the chat dog shows the state.
     if (!notice && !statusLabel && messageHistory.length === 0) return null;
@@ -62,15 +79,18 @@ export function ResultsState({
   }
 
   return (
-    <View style={styles.container}>
+    <View ref={resultPlace.ref} onLayout={resultPlace.onLayout} style={styles.container}>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       {statusLabel ? <Text style={styles.statusLabel}>{statusLabel}</Text> : null}
       <MessageHistory items={messageHistory} />
-      <View style={styles.cards}>
-        {displayCards.map((card) => (
+      <CandidateCarousel
+        key={cardSetId ?? 'cards'}
+        cards={displayCards}
+        onIndexChange={showCard}
+        renderCard={(card) => (
           <CandidateCard
-            key={card.candidateId}
             card={card}
+            fill
             {...(now === undefined ? {} : { now })}
             onOpenDetail={onOpenDetail}
             {...(onOpenMap === undefined ? {} : { onOpenMap })}
@@ -78,9 +98,8 @@ export function ResultsState({
             {...(onSave === undefined ? {} : { onSave })}
             {...(photoClient === undefined ? {} : { photoClient })}
           />
-        ))}
-      </View>
-      <Text style={styles.footnote}>掲載の営業時間 · 今の混雑と空席は未確認</Text>
+        )}
+      />
     </View>
   );
 }
@@ -172,6 +191,4 @@ const styles = StyleSheet.create({
     fontSize: typography.label,
     fontWeight: '700',
   },
-  cards: { gap: spacing.section },
-  footnote: { color: colors.faint, fontSize: typography.label },
 });

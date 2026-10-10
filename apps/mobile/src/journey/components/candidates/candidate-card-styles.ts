@@ -14,6 +14,7 @@ export const styles = StyleSheet.create({
     padding: spacing.section,
     gap: spacing.section,
   },
+  fill: { flex: 1, justifyContent: 'space-between' },
   summary: {
     alignItems: 'flex-start',
     flexDirection: 'row',

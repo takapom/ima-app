@@ -1,12 +1,18 @@
 import { HistoricalCards } from '@mobile/journey/components/conversations/HistoricalCards';
 import type { JourneyPhotoClient } from '@mobile/platform/http/photo-client';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { usePlacedLayout, type PlacedLayout } from '@mobile/journey/hooks/usePlacedLayout';
 import type { AssistantMessageRecord } from '@mobile/journey/state/assistant-response';
-import { conversationTranscriptEntries } from '@mobile/journey/services/conversations/conversation-transcript';
+import {
+  conversationTranscriptEntries,
+  foldsExplanation,
+} from '@mobile/journey/services/conversations/conversation-transcript';
+import { Icon } from '@mobile/ui/Icon';
 import type { ConversationMessage } from '@ima/contracts';
 import { colors, radii, spacing, typography } from '@mobile/ui/theme/tokens';
 import type { HistoryPhotoViewport } from '@mobile/journey/state/history-photo-viewport';
+import type { CardSetFocus } from '@mobile/journey/state/card-set-focus';
 
 type TranscriptEntry = ReturnType<typeof conversationTranscriptEntries>[number];
 
@@ -17,6 +23,7 @@ function TranscriptMessage({
   liveCardSetId,
   photoClient,
   photoViewport,
+  cardFocus,
   onSourcePress,
 }: {
   readonly entry: TranscriptEntry;
@@ -25,25 +32,48 @@ function TranscriptMessage({
   readonly liveCardSetId: string | null;
   readonly photoClient?: JourneyPhotoClient;
   readonly photoViewport: HistoryPhotoViewport;
+  readonly cardFocus: CardSetFocus;
   readonly onSourcePress: (sourceLink: string) => void;
 }): React.JSX.Element {
   const [localMessageTop, setLocalMessageTop] = useState<number | null>(null);
+  const placeMessage = useCallback(({ y }: PlacedLayout) => setLocalMessageTop(y), []);
+  const messagePlace = usePlacedLayout(cardFocus, placeMessage);
+  const [explanationOpen, setExplanationOpen] = useState(false);
   const messageTop = localMessageTop === null ? null : transcriptTop + localMessageTop;
+  const folds = foldsExplanation(entry);
+  const foldLabel = explanationOpen ? 'ima. の説明を閉じる' : 'ima. の説明を読む';
   return (
     <View
-      onLayout={({ nativeEvent }) => {
-        setLocalMessageTop(nativeEvent.layout.y);
-      }}
+      ref={messagePlace.ref}
+      onLayout={messagePlace.onLayout}
       style={[styles.message, entry.role === 'user' && styles.user]}
     >
-      <Text style={styles.role}>{entry.role === 'user' ? 'あなた' : 'ima.'}</Text>
+      {folds ? (
+        <Pressable
+          accessibilityLabel={foldLabel}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: explanationOpen }}
+          hitSlop={8}
+          onPress={() => setExplanationOpen(!explanationOpen)}
+          style={styles.fold}
+        >
+          <Text style={styles.role}>{foldLabel}</Text>
+          <View style={explanationOpen && styles.foldOpen}>
+            <Icon name="chevron" size={14} color={colors.muted} />
+          </View>
+        </Pressable>
+      ) : (
+        <Text style={styles.role}>{entry.role === 'user' ? 'あなた' : 'ima.'}</Text>
+      )}
       {entry.parts.map((part, index) =>
         part.kind === 'user_text' || part.kind === 'retained_text' ? (
-          <View key={index}>
-            <Text selectable style={styles.text}>
-              {part.text}
-            </Text>
-          </View>
+          folds && !explanationOpen ? null : (
+            <View key={index}>
+              <Text selectable style={styles.text}>
+                {part.text}
+              </Text>
+            </View>
+          )
         ) : part.kind === 'card_set' ? (
           part.cardSetId === liveCardSetId || record === undefined ? null : (
             <HistoricalCards
@@ -53,6 +83,7 @@ function TranscriptMessage({
               sequence={record.sequence}
               messageTop={messageTop}
               photoViewport={photoViewport}
+              cardFocus={cardFocus}
               onSourcePress={onSourcePress}
               {...(photoClient === undefined ? {} : { photoClient })}
             />
@@ -78,6 +109,7 @@ export function ConversationTranscript({
   liveCardSetId,
   photoClient,
   photoViewport,
+  cardFocus,
   liveMessages,
   loading,
   hasOlder,
@@ -90,6 +122,7 @@ export function ConversationTranscript({
   readonly liveCardSetId: string | null;
   readonly photoClient?: JourneyPhotoClient;
   readonly photoViewport: HistoryPhotoViewport;
+  readonly cardFocus: CardSetFocus;
   readonly messages: readonly ConversationMessage[];
   readonly liveMessages: readonly AssistantMessageRecord[];
   readonly loading: boolean;
@@ -101,11 +134,10 @@ export function ConversationTranscript({
   readonly onRetrySync: () => void;
 }): React.JSX.Element {
   const [transcriptTop, setTranscriptTop] = useState(0);
+  const placeTranscript = useCallback(({ y }: PlacedLayout) => setTranscriptTop(y), []);
+  const transcriptPlace = usePlacedLayout(cardFocus, placeTranscript);
   return (
-    <View
-      onLayout={({ nativeEvent }) => setTranscriptTop(nativeEvent.layout.y)}
-      style={styles.transcript}
-    >
+    <View ref={transcriptPlace.ref} onLayout={transcriptPlace.onLayout} style={styles.transcript}>
       {hasOlder ? (
         <Pressable
           accessibilityRole="button"
@@ -131,6 +163,7 @@ export function ConversationTranscript({
             transcriptTop={transcriptTop}
             liveCardSetId={liveCardSetId}
             photoViewport={photoViewport}
+            cardFocus={cardFocus}
             onSourcePress={onSourcePress}
             {...(photoClient === undefined ? {} : { photoClient })}
           />
@@ -164,6 +197,14 @@ const styles = StyleSheet.create({
     borderRadius: radii.small,
   },
   role: { color: colors.muted, fontSize: typography.label },
+  fold: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: 4,
+    minHeight: 32,
+  },
+  foldOpen: { transform: [{ rotate: '90deg' }] },
   text: { color: colors.text, fontSize: 16, lineHeight: 25 },
   muted: { color: colors.muted, fontSize: typography.body, lineHeight: 21 },
   more: { minHeight: spacing.touch, justifyContent: 'center', alignItems: 'center' },
