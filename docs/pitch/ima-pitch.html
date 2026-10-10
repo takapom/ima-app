@@ -90,6 +90,39 @@ td li:last-child{margin-bottom:0}
 .cards .k{font-size:15px;font-weight:700;color:var(--text)}
 .cards .why{font-size:12px;color:var(--muted);line-height:1.4}
 .cards .btn{border:1px solid var(--muted);font-size:11px;font-weight:700;color:var(--text);text-align:center;padding:5px 0;margin-top:2px;white-space:nowrap}
+
+/* 体験フロー：上に矢羽、下に段ごとの行列（行＝画面・ユーザー・ima） */
+.flow{flex:1;display:grid;grid-template-columns:118px repeat(4,1fr);grid-template-rows:64px 0.7fr 1fr 1fr;column-gap:10px}
+.flow .cv{background:var(--surface);display:flex;align-items:center;gap:10px;padding:0 18px 0 34px;
+  clip-path:polygon(0 0,calc(100% - 22px) 0,100% 50%,calc(100% - 22px) 100%,0 100%,22px 50%)}
+.flow .cv.first{padding-left:18px;clip-path:polygon(0 0,calc(100% - 22px) 0,100% 50%,calc(100% - 22px) 100%,0 100%)}
+.flow .cv b{font-size:20px;font-weight:900;color:var(--lime)}
+.flow .cv span{font-size:18px;font-weight:700;color:var(--text)}
+.flow .rh{display:flex;align-items:center;font-size:18px;font-weight:700;color:var(--text);border-top:1px solid var(--line)}
+.flow .cell{display:flex;align-items:center;font-size:16px;line-height:1.6;color:var(--text);padding:12px 4px 12px 6px;border-top:1px solid var(--line)}
+.flow .r1{border-top:2px solid var(--text)}
+
+/* 主要画面：スクリーンショットの枠（iPhone の縦横比）と説明 */
+.screens{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:30px}
+.screens > div{display:flex;flex-direction:column;min-width:0}
+.shot{width:150px;height:325px;margin:16px 0 14px 0;border:1.5px dashed var(--faint);display:flex;align-items:center;justify-content:center;
+  text-align:center;font-size:13px;line-height:1.6;color:var(--muted);padding:0 10px}
+.screens ul{margin:0;padding-left:18px;font-size:15px;line-height:1.55;color:var(--text)}
+.screens li{margin-bottom:6px}
+
+/* maru の場面ごとの姿 */
+.poses{flex:1;display:grid;grid-template-columns:3fr 4fr;gap:34px}
+.poses > div{display:flex;flex-direction:column;min-width:0}
+.pg{flex:1;display:grid;gap:14px;padding-top:44px;align-content:start;align-items:start}
+.pg.g3{grid-template-columns:repeat(3,1fr)}
+.pg.g4{grid-template-columns:repeat(4,1fr)}
+.pc{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pc img{flex:none;width:176px;height:176px;image-rendering:pixelated;margin-left:-24px;margin-bottom:-8px}
+.pc .k{font-size:18px;font-weight:700;color:var(--text)}
+.pc .x{font-size:15px;line-height:1.55;color:var(--muted)}
+.pc .bub{font-size:15px;padding:9px 11px;line-height:1.45;font-weight:700;align-self:flex-start}
+.pc .bub .t1{left:12px}
+.pc .bub .t2{left:5px}
 </style></head><body>
 
 <!-- 1. 表紙 -->
@@ -189,6 +222,117 @@ td li:last-child{margin-bottom:0}
     </div>
   </div>
   <div class="foot"><b>ima</b><span>2</span></div>
+</section>
+
+<!-- 4. 体験フロー -->
+<section class="s">
+  <img class="maru" src="assets/maru-run.png" alt="maru">
+  <h1>ユーザーは入口を選んで希望を伝え、<br>届いた候補から「ここにする」で決める</h1>
+  <div class="c">
+    <div class="flow">
+      <div></div>
+      <div class="cv first"><b>1</b><span>入口を選ぶ</span></div>
+      <div class="cv"><b>2</b><span>希望を伝える</span></div>
+      <div class="cv"><b>3</b><span>候補を受け取る</span></div>
+      <div class="cv"><b>4</b><span>決めて向かう</span></div>
+      <div class="rh r1">画面</div>
+      <div class="cell r1">起動のたびに出るスプラッシュ</div>
+      <div class="cell r1">チャット、または5問の質問</div>
+      <div class="cell r1">会話と候補カード</div>
+      <div class="cell r1">店舗詳細</div>
+      <div class="rh">ユーザー</div>
+      <div class="cell">「チャットで話す」か<br>「質問に答える」を選ぶ</div>
+      <div class="cell">状況をそのまま書くか、<br>誰と・食べたいもの・系統・<br>予算・雰囲気に答える</div>
+      <div class="cell">条件の追加・変更・比較を、<br>同じ会話のまま頼む</div>
+      <div class="cell">「店舗詳細を見る」から<br>「ここにする」で決める</div>
+      <div class="rh">ima</div>
+      <div class="cell">入口を毎回尋ね、<br>選んだ入口は記憶しない</div>
+      <div class="cell">質問の回答を1文にまとめ、<br>会話の最初の発言として送る</div>
+      <div class="cell">地名がなければ現在地の<br>1km圏から探し、主提案1件と<br>別案最大2件を返す</div>
+      <div class="cell">決めたお店を保存一覧に残し、<br>Google Maps や共有へつなぐ</div>
+    </div>
+  </div>
+  <div class="foot"><b>ima</b><span>3</span></div>
+</section>
+
+<!-- 5. 主要画面 -->
+<section class="s">
+  <img class="maru" src="assets/maru-glasses.png" alt="maru">
+  <h1>ima の主要画面は、入口の選択から<br>店舗詳細での決定までを1本の会話でつなぐ</h1>
+  <div class="c">
+    <div class="screens">
+      <div><div class="colh">入口</div><div class="shot">スプラッシュの<br>スクリーンショットを入れる</div>
+        <ul><li>maru がチャットか質問かを尋ねる</li><li>選んだ入口へそのまま進む</li></ul></div>
+      <div><div class="colh">質問</div><div class="shot">質問画面の<br>スクリーンショットを入れる</div>
+        <ul><li>誰と・食べたいもの・系統・予算・雰囲気をタップで答える</li><li>答えは1文になって会話へ渡る</li></ul></div>
+      <div><div class="colh">会話と候補カード</div><div class="shot">候補カードが並んだ会話の<br>スクリーンショットを入れる</div>
+        <ul><li>主提案と別案を同じ大きさのカードで並べる</li><li>カードから保存・地図・<br>店舗詳細へ進む</li></ul></div>
+      <div><div class="colh">店舗詳細</div><div class="shot">店舗詳細シートの<br>スクリーンショットを入れる</div>
+        <ul><li>営業時間・定休日・アクセス・予算の掲載情報と出典を出す</li><li>「ここにする」で決める</li></ul></div>
+    </div>
+  </div>
+  <div class="foot"><b>ima</b><span>4</span></div>
+</section>
+
+<!-- 6. AIエージェントの振る舞い -->
+<section class="s">
+  <img class="maru" src="assets/maru-claude-search.png" alt="maru">
+  <h1>ima の AI は、変わっていない希望を引き継ぎ、<br>足りない情報だけを聞き返して提案し直す</h1>
+  <div class="c">
+    <div class="two">
+      <div>
+        <div class="colh">条件を変えたときの会話の例</div>
+        <div class="chat">
+          <div class="talk me"><div class="who">ユーザー</div><div class="bub">友だちと和食の定食が食べたい、<br>予算は4,000円くらいまで<div class="t1"></div><div class="t2"></div></div></div>
+          <div class="talk"><div class="who">ima</div><div class="bub">近くの和食店から、<br>条件に合う3件を選びました<div class="t1"></div><div class="t2"></div></div></div>
+          <div class="talk me"><div class="who">ユーザー</div><div class="bub">やっぱり個室があるところがいい<div class="t1"></div><div class="t2"></div></div></div>
+          <div class="talk"><div class="who">ima</div><div class="bub">和食・4,000円以内はそのままに、<br>個室のある店で選び直しました<div class="t1"></div><div class="t2"></div></div></div>
+        </div>
+      </div>
+      <div>
+        <table>
+          <tr><th class="ax" style="width:230px">場面</th><th>AI の判断</th></tr>
+          <tr><td class="ax">場所が分からない</td>
+              <td><ul><li>現在地が使えれば聞き返さず、<br>周辺を1km圏から3km圏まで広げて探す</li><li>現在地が使えなければ理由を伝え、駅名や地名を尋ねる</li></ul></td></tr>
+          <tr><td class="ax">条件が変わった</td>
+              <td><ul><li>変わっていない希望を引き継ぐ</li><li>変更点が分かれば選び直し、分からなければ聞き返す</li></ul></td></tr>
+          <tr><td class="ax">説明や比較を<br>頼まれた</td>
+              <td>カードを出し直さず、メッセージで答える</td></tr>
+          <tr><td class="ax">候補が見つからない</td>
+              <td>条件に合わない店で数を埋めず、見つからなかったことを伝える</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><b>ima</b><span>5</span></div>
+</section>
+
+<!-- 7. キャラクター -->
+<section class="s">
+  <img class="maru" src="assets/maru-decided.png" alt="maru">
+  <h1>maru は入口から決定までの場面ごとに姿を変え、<br>ima がいま何をしているかを伝える</h1>
+  <div class="c">
+    <div class="poses">
+      <div>
+        <div class="colh">入口と質問</div>
+        <div class="pg g3">
+          <div class="pc"><img src="assets/maru-wait.png" alt=""><span class="k">スプラッシュ</span><div class="bub">チャットから<br>始める？<div class="t1"></div><div class="t2"></div></div></div>
+          <div class="pc"><img src="assets/maru-magnifier.png" alt=""><span class="k">質問中</span><span class="x">質問の横で<br>虫眼鏡をのぞく</span></div>
+          <div class="pc"><img src="assets/maru-run.png" alt=""><span class="k">答え終えたとき</span><div class="bub">探してくる<br>わん！<div class="t1"></div><div class="t2"></div></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="colh">会話画面の右下</div>
+        <div class="pg g4">
+          <div class="pc"><img src="assets/maru-run.png" alt=""><span class="k">検索中</span><span class="x">走って探す</span></div>
+          <div class="pc"><img src="assets/maru-empty.png" alt=""><span class="k">候補0件</span><div class="bub">見つから<br>なかったわん<div class="t1"></div><div class="t2"></div></div><span class="x">検索して0件の<br>ときだけ言う</span></div>
+          <div class="pc"><img src="assets/maru-oops.png" alt=""><span class="k">失敗・取り消し</span><span class="x">困った顔になる</span></div>
+          <div class="pc"><img src="assets/maru-decided.png" alt=""><span class="k">決定後</span><span class="x">喜ぶ</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><b>ima</b><span>6</span></div>
 </section>
 
 </body></html>
