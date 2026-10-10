@@ -1,0 +1,4 @@
+interface:
+  display_name: "コンサル品質スライド"
+  short_description: "設計規約と62型のパーツでスライドを作成・検査する"
+  default_prompt: "$consulting-pptx-skill を使い、目的と読者に沿ったスライド資料を作成してください。"
