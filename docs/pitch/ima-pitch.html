@@ -125,6 +125,47 @@ td li:last-child{margin-bottom:0}
 .pc .bub{font-size:15px;padding:9px 11px;line-height:1.45;font-weight:700;align-self:flex-start}
 .pc .bub .t1{left:12px}
 .pc .bub .t2{left:5px}
+
+/* アーキテクチャ全体図：左から iPhone → Workers → 外部 API。箱は塗りのみで枠なし */
+.arch{display:grid;grid-template-columns:808px 1fr;gap:40px;flex:1;min-height:0}
+.arch > div{display:flex;flex-direction:column;min-height:0}
+.dg{flex:1;display:grid;grid-template-columns:200px 66px 290px 66px 186px;padding-top:16px;align-items:stretch}
+.bx{background:var(--surface);display:flex;flex-direction:column;padding:16px 16px 14px 16px;gap:10px}
+.bx .bt{font-size:18px;font-weight:700;color:var(--text)}
+.bx .bs{font-size:13px;color:var(--muted);line-height:1.45}
+.bx .it{border-top:1px solid var(--line);padding-top:9px;display:flex;flex-direction:column;gap:3px}
+.bx .it b{font-size:14px;font-weight:700;color:var(--text)}
+.bx .it span{font-size:13px;line-height:1.45;color:var(--muted)}
+.bx .do{background:var(--bg);padding:9px 11px;display:flex;flex-direction:column;gap:2px}
+.bx .do b{font-size:14px;font-weight:700;color:var(--lime)}
+.bx .do span{font-size:13px;line-height:1.4;color:var(--text)}
+.bx .dos{display:flex;flex-direction:column;gap:8px}
+.ar{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.ar .ln{width:40px;height:2px;background:var(--muted)}
+.ar .hd.l{border-left:0;border-right:10px solid var(--muted)}
+.ar .hd{width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid var(--muted)}
+.ar .lr{display:flex;align-items:center}
+.ar .lb{font-size:12px;color:var(--muted);text-align:center;line-height:1.4}
+.side ul{margin:0;padding:22px 0 0 18px;font-size:15.5px;line-height:1.6;color:var(--text);display:flex;flex-direction:column;gap:18px}
+
+/* エージェントの縦ステップ（左）と右コメント */
+.agent{display:grid;grid-template-columns:690px 1fr;gap:44px;flex:1;min-height:0}
+.agent > div{display:flex;flex-direction:column;min-height:0}
+.steps{flex:1;display:flex;flex-direction:column;justify-content:space-between;padding-top:14px}
+.st{display:grid;grid-template-columns:44px 196px 1fr;gap:14px;align-items:center}
+.st .n{width:44px;height:44px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--lime)}
+.st .k{font-size:17px;font-weight:700;color:var(--text);line-height:1.4}
+.st .x{font-size:15px;line-height:1.55;color:var(--text)}
+.st .x code{font-family:"SFMono-Regular",Menlo,Consolas,monospace;font-size:14px;color:var(--lime)}
+.dn{width:0;height:0;margin-left:15px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--faint)}
+
+/* 今後の展望：テーマ3列 */
+.next{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:34px;min-height:0}
+.next > div{display:flex;flex-direction:column;min-width:0}
+.next ul{margin:0;padding:20px 0 0 18px;font-size:17px;line-height:1.6;color:var(--text);display:flex;flex-direction:column;gap:16px}
+.crew{display:flex;flex-wrap:wrap;align-items:flex-end;gap:4px;margin-top:auto;padding-top:10px}
+.crew img{width:84px;height:84px;image-rendering:pixelated}
+.crew .lbl{width:100%;font-size:13px;color:var(--muted)}
 </style></head><body>
 
 <!-- 1. 表紙 -->
@@ -336,6 +377,124 @@ td li:last-child{margin-bottom:0}
     </div>
   </div>
   <div class="foot"><b>ima</b><span>6</span></div>
+</section>
+
+<!-- 8. アーキテクチャ① 全体 -->
+<section class="s">
+  <img class="maru" src="assets/maru-search.png" alt="maru">
+  <h1>ima は iPhone アプリと Cloudflare Workers の2つで動き、<br>会話・実行・保存を Durable Objects に分けて持つ</h1>
+  <div class="c">
+    <div class="arch">
+      <div>
+        <div class="colh">システム全体の構成</div>
+        <div class="dg">
+          <div class="bx">
+            <span class="bt">iPhone アプリ</span><span class="bs">React Native 0.86<br>Expo 57・TypeScript</span>
+            <div class="it"><b>画面と会話</b><span>起動画面から店舗詳細まで</span></div>
+            <div class="it"><b>SQLite</b><span>直近3会話のキャッシュ</span></div>
+            <div class="it"><b>SecureStore</b><span>端末ごとの資格情報</span></div>
+            <div class="it"><b>位置情報</b><span>ユーザーの操作で取得</span></div>
+          </div>
+          <div class="ar"><span class="lb">発言を送る</span><div class="lr"><div class="ln"></div><div class="hd"></div></div><div class="lr"><div class="hd l"></div><div class="ln"></div></div><span class="lb">SSE で<br>結果を返す</span></div>
+          <div class="bx">
+            <span class="bt">Cloudflare Workers</span><span class="bs">HTTPS を Hono 4 で受け、<br>認証・入力検証をする</span>
+            <div class="dos">
+              <div class="do"><b>ConversationHistoryDO</b><span>会話・発言・実行の受付</span></div>
+              <div class="do"><b>ThreadDO</b><span>今夜の会話実行（Think）</span></div>
+              <div class="do"><b>SavedReferenceDO</b><span>保存したお店・決定・条件</span></div>
+              <div class="do"><b>TelemetryDO</b><span>運用イベント（7日で削除）</span></div>
+            </div>
+          </div>
+          <div class="ar"><span class="lb">Tool から<br>呼び出す</span><div class="lr"><div class="ln"></div><div class="hd"></div></div></div>
+          <div class="bx">
+            <span class="bt">外部 API</span><span class="bs">キーは Worker だけが持つ</span>
+            <div class="it"><b>OpenAI</b><span>gpt-5.6-luna<br>（推論は low）</span></div>
+            <div class="it"><b>ホットペッパー<br>グルメサーチAPI</b><span>店舗の検索・詳細・写真</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="side">
+        <div class="colh">この構成にした理由</div>
+        <ul>
+          <li>会話と保存の正はサーバーに置き、<br>端末の SQLite はキャッシュに留める</li>
+          <li>生成は実行単位で受け付け、<br>通信が切れても同じ実行を<br>再照会して結果を受け取る</li>
+          <li>会話と保存はユーザーごとの Durable<br>Object に分け、他人の会話と混ぜない</li>
+          <li>API キーは Worker の secret に<br>だけ置き、アプリには入れない</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><b>ima</b><span>7</span></div>
+</section>
+
+<!-- 9. アーキテクチャ② エージェント -->
+<section class="s">
+  <img class="maru" src="assets/maru-magnifier.png" alt="maru">
+  <h1>ima の AI は3つの Tool だけを使い、<br>応答は respond で1回だけ確定させる</h1>
+  <div class="c">
+    <div class="agent">
+      <div>
+        <div class="colh">1回の発言を処理する流れ</div>
+        <div class="steps">
+          <div class="st"><span class="n">1</span><span class="k">発言を受け付ける</span><span class="x">Worker が発言を会話に保存し、実行の受付を返す</span></div>
+          <i class="dn"></i>
+          <div class="st"><span class="n">2</span><span class="k">ループを回す</span><span class="x">ThreadDO の Think がモデルを呼ぶ<br>（1回の発言につき最大6ステップ・60秒）</span></div>
+          <i class="dn"></i>
+          <div class="st"><span class="n">3</span><span class="k">お店の情報を集める</span><span class="x"><code>search_places</code> で探し、<br><code>get_place_details</code> で詳細を取り直す</span></div>
+          <i class="dn"></i>
+          <div class="st"><span class="n">4</span><span class="k">応答を出す</span><span class="x"><code>respond</code> で質問・説明・カード提案のどれか1つを返す</span></div>
+          <i class="dn"></i>
+          <div class="st"><span class="n">5</span><span class="k">検証して確定する</span><span class="x">根拠・鮮度・必須条件を確かめて1回だけ確定し、<br>アプリへ届ける</span></div>
+        </div>
+      </div>
+      <div class="side">
+        <div class="colh">AI の回答を根拠に結びつける仕組み</div>
+        <ul>
+          <li>どのステップでも Tool の呼び出しを必須にし、<br>文章だけの返答は確定させない</li><li>1つのステップの中で、店舗情報の読み取りと<br>応答の確定を混ぜない</li>
+          <li>カードの営業時間や予算は、モデルの文章ではなく<br>取得した店舗情報から付ける</li>
+          <li>検証に通らない応答は差し戻し、2回まで直させる</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><b>ima</b><span>8</span></div>
+</section>
+
+<!-- 10. 今後の展望 -->
+<section class="s">
+  <img class="maru" src="assets/maru-run.png" alt="maru">
+  <h1>次は候補の見せ方と maru の会話を広げ、<br>一軒めのあとの「二軒め」まで一緒に探せるようにする</h1>
+  <div class="c">
+    <div class="next">
+      <div>
+        <div class="colh">候補を見比べやすくする</div>
+        <ul>
+          <li>候補カードを横スワイプの帯で<br>1枚ずつ見せ、何枚目かを示す</li>
+          <li>カードを出した回答の説明文を、<br>帯の下に畳む</li>
+          <li>店舗詳細シートを<br>新しいカードのデザインにそろえる</li>
+        </ul>
+      </div>
+      <div>
+        <div class="colh">maru と話しながら選ぶ</div>
+        <ul>
+          <li>いま見ている候補の選定理由を、<br>maru が吹き出しで話す</li>
+          <li>結果が出たとき、maru が<br>お店の雰囲気をひとことで伝える</li>
+          <li>一緒に探すキャラクターを<br>5体から選べるようにする</li>
+        </ul>
+        <div class="crew"><span class="lbl">maru のほかに描き起こし済みの4体</span><img src="assets/fuwa-wait.png" alt="fuwa"><img src="assets/hoppe-wait.png" alt="hoppe"><img src="assets/mocchi-wait.png" alt="mocchi"><img src="assets/nonno-wait.png" alt="nonno"></div>
+      </div>
+      <div>
+        <div class="colh">次の一軒までつなぐ</div>
+        <ul>
+          <li>決定の演出と、「ただいま」から<br>二軒めを探す流れを作る</li>
+          <li>候補が0件のとき、範囲を広げて<br>探し直すかを検討する</li>
+          <li>位置情報の許可状態を表示し、<br>拒否されたときは iOS の設定へ案内する</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="src">本資料は consulting-pptx-skill（github.com/carnot-tech/consulting-pptx-skill）で作成</div>
+  <div class="foot"><b>ima</b><span>9</span></div>
 </section>
 
 </body></html>
