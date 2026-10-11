@@ -46,6 +46,7 @@ describe('file line quality gate', () => {
     ['handwritten.xml', 501, 1],
     ['index.html', 501, 1],
     ['mock.html', 501, 1],
+    ['.claude/skills/example/scripts/bundle.js', 501, 0],
     ['.codex/skills/example/scripts/bundle.js', 501, 0],
     ['.codex/config.json', 501, 1],
     ['worker/skills/source.ts', 501, 1],
@@ -73,10 +74,12 @@ describe('eslint disable quality gate', () => {
   it('excludes agent skill scripts without excluding application source', () => {
     const root = temporaryRoot();
     execFileSync('git', ['init', '--quiet'], { cwd: root });
-    const skillDirectory = join(root, '.codex/skills/example');
-    mkdirSync(skillDirectory, { recursive: true });
     const directive = ['eslint', 'disable'].join('-');
-    writeFileSync(join(skillDirectory, 'example.js'), `// ${directive}\n`);
+    for (const agentDirectory of ['.claude', '.codex']) {
+      const skillDirectory = join(root, agentDirectory, 'skills/example');
+      mkdirSync(skillDirectory, { recursive: true });
+      writeFileSync(join(skillDirectory, 'example.js'), `// ${directive}\n`);
+    }
     expect(run(disableChecker, root).status).toBe(0);
     writeFileSync(join(root, 'source.js'), `// ${directive}\n`);
     expect(run(disableChecker, root).status).toBe(1);
