@@ -1,6 +1,6 @@
 import { env, runInDurableObject, SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import type { TelemetryDO } from '@worker/adapters/out/persistence/telemetry/telemetry-do';
+import type { TelemetryDO } from '@worker/infrastructure/adapters/out/persistence/telemetry/telemetry-do';
 import { TELEMETRY_RETENTION_MS } from '@worker/core/application/telemetry/retention';
 
 const OWNER_A = 'A'.repeat(42) + 'E';

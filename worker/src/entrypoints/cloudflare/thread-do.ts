@@ -50,12 +50,12 @@ import {
   type ThreadOperationRow,
   type ThreadRow,
 } from '@worker/adapters/out/persistence/thread/thread-do-state';
-export { RateLimitDO } from '@worker/adapters/out/persistence/security/rate-limit-do';
+export { RateLimitDO } from '@worker/infrastructure/adapters/out/persistence/security/rate-limit-do';
 export type {
   RateLimitCheckInput,
   RateLimitCheckResult,
   RateLimitConfig,
-} from '@worker/adapters/out/persistence/security/rate-limit-do';
+} from '@worker/infrastructure/adapters/out/persistence/security/rate-limit-do';
 export {
   isThreadConflictError,
   isThreadStateError,

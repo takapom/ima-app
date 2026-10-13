@@ -24,7 +24,7 @@ import type { RuntimeProviderTraceSink } from '@worker/runtime/tracing/runtime-p
 import {
   createDurableTelemetryStore,
   type TelemetryNamespace,
-} from '@worker/adapters/out/persistence/telemetry/telemetry-do';
+} from '@worker/infrastructure/adapters/out/persistence/telemetry/telemetry-do';
 import { createRuntimeProductionTelemetrySinks } from '@worker/runtime/threads/runtime-production-telemetry';
 import { RuntimeThinkHost } from '@worker/entrypoints/cloudflare/runtime-host';
 import type {

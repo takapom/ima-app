@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:test';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ThreadTurnRequest } from '@ima/contracts';
-import type { TelemetryDO } from '@worker/adapters/out/persistence/telemetry/telemetry-do';
+import type { TelemetryDO } from '@worker/infrastructure/adapters/out/persistence/telemetry/telemetry-do';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,

@@ -19,7 +19,7 @@ import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 import type {
   RateLimitConfig,
   RateLimitDO,
-} from '@worker/adapters/out/persistence/security/rate-limit-do';
+} from '@worker/infrastructure/adapters/out/persistence/security/rate-limit-do';
 import {
   createRuntimeApplicationHandler,
   type RuntimeCancellationClassification,
@@ -35,7 +35,7 @@ import {
 import {
   createDurableTelemetryStore,
   type TelemetryNamespace,
-} from '@worker/adapters/out/persistence/telemetry/telemetry-do';
+} from '@worker/infrastructure/adapters/out/persistence/telemetry/telemetry-do';
 import type { AppIntegrityGate } from '@worker/infrastructure/adapters/in/http/app-integrity-gate';
 import {
   createConfiguredPhoto,

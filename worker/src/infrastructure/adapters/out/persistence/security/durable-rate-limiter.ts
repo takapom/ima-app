@@ -3,7 +3,7 @@ import type {
   RateLimitDO,
   RateLimitConfig,
   RateLimitCheckResult,
-} from '@worker/adapters/out/persistence/security/rate-limit-do';
+} from '@worker/infrastructure/adapters/out/persistence/security/rate-limit-do';
 
 export class DurableRateLimiter implements RateLimiter {
   constructor(
