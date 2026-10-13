@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AssistantResponse, ThreadTurnRequest } from '@ima/contracts';
 import { denyModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import { createRuntimeProductionContextStore } from '@worker/runtime/context/runtime-production-context';
-import type { RuntimeProductionContextReference } from '@worker/runtime/context/runtime-production-context-reference';
+import type { RuntimeProductionContextReference } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 import { createToolRegistry } from '../../adapters/inbound/tools/registry-fixture';
 import {
   allowRetention,

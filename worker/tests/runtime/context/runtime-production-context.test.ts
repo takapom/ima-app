@@ -5,7 +5,7 @@ import { type RegistryIdPort } from '@worker/core/application/ports/context';
 import { type RegistryScope } from '@worker/core/domain/evidence/freshness';
 import { describe, expect, it } from 'vitest';
 import { createRuntimeProductionContextStore } from '@worker/runtime/context/runtime-production-context';
-import type { RuntimeProductionContextReference } from '@worker/runtime/context/runtime-production-context-reference';
+import type { RuntimeProductionContextReference } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 import {
   RuntimeProductionContextLimitError,
   RuntimeProductionDisplayContextError,

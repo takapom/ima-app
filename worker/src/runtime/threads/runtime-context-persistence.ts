@@ -3,7 +3,7 @@ import {
   parseRuntimeProductionContextReference,
   type RuntimeProductionContextPersistence,
   type RuntimeProductionContextReference,
-} from '@worker/runtime/context/runtime-production-context-reference';
+} from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 
 type RuntimeContextRow = { readonly payload: string };
 

@@ -4,7 +4,7 @@ import {
   createRuntimeProductionContextStore,
   type RuntimeProductionContextStore,
 } from '@worker/runtime/context/runtime-production-context';
-import type { RuntimeProductionContextPersistence } from '@worker/runtime/context/runtime-production-context-reference';
+import type { RuntimeProductionContextPersistence } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 
 export const createFactoryRuntimeContext = (input: {
   readonly registry: CandidateObservationRegistryPort;

@@ -6,7 +6,7 @@ import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
 } from '@worker/runtime/threads/admission';
-import { RuntimeProductionContextReferenceSchema } from '@worker/runtime/context/runtime-production-context-reference';
+import { RuntimeProductionContextReferenceSchema } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 import type { ProductionThreadDO } from './runtime-production-worker';
 import { createSessionExpiryGate } from '@worker/core/application/use-cases/expire-session/expire-session';
 

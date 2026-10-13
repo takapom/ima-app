@@ -5,7 +5,7 @@ import {
   candidateIdentityForReference,
   type RuntimeProductionCandidateIdentityReference,
   type RuntimeProductionContextReference,
-} from '@worker/runtime/context/runtime-production-context-reference';
+} from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 
 export type RuntimeSavedCandidateIdentity = RuntimeProductionCandidateIdentityReference;
 
