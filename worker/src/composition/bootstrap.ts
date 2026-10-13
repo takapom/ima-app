@@ -23,7 +23,7 @@ import type {
 import {
   createRuntimeApplicationHandler,
   type RuntimeCancellationClassification,
-} from '@worker/adapters/in/http/runtime-handler';
+} from '@worker/infrastructure/adapters/in/http/runtime-handler';
 import type { AppIntegrityNamespace } from '@worker/adapters/out/persistence/security/app-integrity-do';
 import { createBootstrapAppIntegrityGate } from '@worker/composition/app-integrity-bootstrap';
 import { personalPreviewEnabled } from '@worker/composition/personal-preview';
@@ -31,7 +31,7 @@ import type { AppIntegrityVerifier } from '@worker/core/application/ports/app-in
 import {
   createBestEffortEventsSink,
   createTelemetryEventsSink,
-} from '@worker/adapters/in/http/telemetry-events';
+} from '@worker/infrastructure/adapters/in/http/telemetry-events';
 import {
   createDurableTelemetryStore,
   type TelemetryNamespace,
@@ -44,7 +44,7 @@ import {
 import { createDurableOwnerStore } from '@worker/adapters/out/persistence/saved-references/durable-owner-store';
 import type { SavedReferenceNamespace } from '@worker/adapters/out/persistence/saved-references/saved-reference-rpc';
 
-export { createApplicationScopeAuthorizer } from '@worker/adapters/in/http/saved-reference-refresh';
+export { createApplicationScopeAuthorizer } from '@worker/infrastructure/adapters/in/http/saved-reference-refresh';
 
 export type BootstrapEnv = {
   readonly APP_TOKEN?: string;

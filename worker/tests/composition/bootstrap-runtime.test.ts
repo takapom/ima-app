@@ -9,7 +9,7 @@ import {
   createRuntimeApplicationHandler,
   serverTurnId,
   type RuntimeThreadStub,
-} from '@worker/adapters/in/http/runtime-handler';
+} from '@worker/infrastructure/adapters/in/http/runtime-handler';
 import type { HandlerContext } from '@worker/infrastructure/adapters/in/http/handler';
 import {
   isThreadRuntimeTarget,

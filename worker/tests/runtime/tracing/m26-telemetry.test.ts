@@ -6,7 +6,7 @@ import {
   createBestEffortEventsSink,
   createTelemetryEventsSink,
   sanitizeTelemetryEvent,
-} from '@worker/adapters/in/http/telemetry-events';
+} from '@worker/infrastructure/adapters/in/http/telemetry-events';
 import {
   type TelemetryEventRecord,
   type TelemetryEventStore,

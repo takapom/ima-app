@@ -25,7 +25,7 @@ import {
   type ThreadState,
   type ThreadAuthorization,
 } from '@worker/runtime/threads/thread-types';
-import type { RuntimeThreadStub } from '@worker/adapters/in/http/runtime-handler';
+import type { RuntimeThreadStub } from '@worker/infrastructure/adapters/in/http/runtime-handler';
 import { createThreadId } from '@worker/runtime/threads/thread-id';
 import {
   handleOwnerApplication,
