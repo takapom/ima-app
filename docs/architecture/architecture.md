@@ -54,6 +54,8 @@ worker/
 └── wrangler*.jsonc           # ローカル開発とテスト用のWorker設定
 ```
 
+`worker/src/domain`・`worker/src/application`・`worker/src/runtime` など、`core`/`infrastructure`/`platform`/`policy` 以外の直下配置は使わない（`@worker/*` の第二入口を防ぐ。`npm run architecture` で検査する）。
+
 WorkerのAdapterは`worker/src/infrastructure/adapters/`へ集約する。`in/http`はHTTP入口、`in/tools`はLLMのTool入口。`out/providers`はHot Pepper・OpenAIの接続と変換、`out/persistence`はDO・SQL・メモリストアの具体実装、`out/security`は写真トークンの署名実装を持つ。テストも`worker/tests/adapters/`で同じ分類を使い、HTTP配下の`integration/`はworkerdで実行する。
 
 CoreのPortは`worker/src/core/application/ports/`に置く。Telemetryの内部記録契約・記録手順・保持/集計はApplication、公開イベントの入力変換はHTTP Adapter、SDK計測はRuntimeが担う。OwnerStoreと保存参照の契約もCoreが所有し、保存・決定の手順は`core/application/`配下のuse-casesが担う。HTTP Adapterは公開DTOとエラーの変換を担当する。実行基盤固有のPortは`infrastructure/runtime/ports/`が所有し、横断ポリシー契約は`policy/security/`が所有する。Coreの業務Portと区別する。

@@ -52,6 +52,30 @@ module.exports = {
       },
     },
     {
+      name: 'no-legacy-worker-core-import',
+      comment:
+        'Core は worker/src/core/{domain,application}/ のみ。worker/src/domain や worker/src/application へ依存しない。',
+      severity: 'error',
+      from: {
+        path: '^worker/',
+      },
+      to: {
+        path: '^worker/src/(?:domain|application)(?:/|$)',
+      },
+    },
+    {
+      name: 'no-legacy-worker-shell-import',
+      comment:
+        'runtime/adapters/composition/entrypoints/security は infrastructure/platform/policy 配下が正。worker/src 直下の旧パスへ依存しない。',
+      severity: 'error',
+      from: {
+        path: '^worker/',
+      },
+      to: {
+        path: '^worker/src/(?:runtime|adapters|composition|entrypoints|security)(?:/|$)',
+      },
+    },
+    {
       name: 'no-circular',
       severity: 'error',
       from: {

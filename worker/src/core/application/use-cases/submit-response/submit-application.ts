@@ -90,7 +90,6 @@ export class CommitAdapterError extends Error {
   }
 }
 
-/** アダプタ契約の破れは検証エラーにせず、成功扱いにできない例外にする。 */
 const schemaFailure = (message: string): never => {
   throw new CommitAdapterError(message);
 };

@@ -28,6 +28,8 @@ export const baseFiles = {
     'export type OwnerStore = { read(): void };\n',
   'worker/src/core/application/ports/saved-reference-store.ts':
     'export type StoreResult = { ok: boolean };\n',
+  'worker/src/application/legacy.ts': 'export const legacy = true;\n',
+  'worker/src/runtime/turn.ts': 'export const turn = true;\n',
   'node_modules/react/package.json': '{"name":"react","main":"index.js","version":"1.0.0"}',
   'node_modules/react/index.js': 'module.exports = {};\n',
   'node_modules/vitest/package.json': '{"name":"vitest","main":"index.js","version":"4.1.11"}',
@@ -40,6 +42,18 @@ export const cases = [
     target: 'worker/src/platform/composition/eval.ts',
     source: "import '../../../tooling/eval/stub.js';\n",
     rule: 'worker-src-no-tooling',
+  },
+  {
+    name: 'worker-cannot-import-legacy-application-path',
+    target: 'worker/src/platform/composition/legacy-core.ts',
+    source: "import '@worker/application/legacy.js';\n",
+    rule: 'no-legacy-worker-core-import',
+  },
+  {
+    name: 'worker-cannot-import-legacy-runtime-path',
+    target: 'worker/src/platform/composition/legacy-shell.ts',
+    source: "import '@worker/runtime/turn.js';\n",
+    rule: 'no-legacy-worker-shell-import',
   },
   {
     name: 'tooling-may-import-worker-source',
