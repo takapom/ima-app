@@ -16,7 +16,7 @@ import {
   hotPepperSourceFor,
   normalizeHotPepperFacilities,
   normalizeHotPepperPrice,
-} from '@worker/adapters/out/providers/hot-pepper/normalize';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/normalize';
 import { HotPepperError } from '@worker/adapters/out/providers/hot-pepper/types';
 import type { HotPepperShopWire } from '@worker/adapters/out/providers/hot-pepper/wire';
 import { HotPepperPhotoUrlSchema } from '@worker/security/photo-resource-policy';

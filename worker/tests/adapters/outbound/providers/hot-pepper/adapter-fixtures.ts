@@ -7,7 +7,7 @@ import type {
 } from '@worker/core/application/ports/context';
 import type { GetPlaceDetailsInput } from '@worker/core/application/ports/operations';
 import { CandidateObservationRegistry as Registry } from '@worker/core/application/candidate-registry/registry';
-import { createHotPepperDetailsAdapter } from '@worker/adapters/out/providers/hot-pepper/details-adapter';
+import { createHotPepperDetailsAdapter } from '@worker/infrastructure/adapters/out/providers/hot-pepper/details-adapter';
 import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
 import {
   createPlacesSearchRegistration,

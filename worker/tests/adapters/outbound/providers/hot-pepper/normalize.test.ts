@@ -3,7 +3,7 @@ import {
   normalizeHotPepperPrice,
   normalizeHotPepperFacilities,
   hotPepperSourceFor,
-} from '@worker/adapters/out/providers/hot-pepper/normalize';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/normalize';
 import {
   parseHotPepperResponse,
   type HotPepperShopWire,

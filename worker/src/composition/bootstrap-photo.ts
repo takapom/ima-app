@@ -2,7 +2,7 @@ import { HttpBoundaryError } from '@worker/infrastructure/adapters/in/http/error
 import type { PhotoBodyHandler } from '@worker/infrastructure/adapters/in/http/handler';
 import { createPhotoBodyHandler } from '@worker/infrastructure/adapters/in/http/photo-body-handler';
 import { configuredPhotoTokenCodec } from '@worker/composition/photo-token-configuration';
-import { createHotPepperPhotoTransport } from '@worker/adapters/out/providers/hot-pepper/photo-transport';
+import { createHotPepperPhotoTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/photo-transport';
 import { resolveRuntimeOperationalGate } from '@worker/composition/runtime-operational-gate';
 import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
 import { createHotPepperConversationPhotoReader } from '@worker/infrastructure/adapters/out/providers/hot-pepper/conversation-photo-reader';
