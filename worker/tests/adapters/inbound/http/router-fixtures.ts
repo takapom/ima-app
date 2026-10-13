@@ -26,7 +26,10 @@ import type {
   RateLimiter,
   RateLimitResult,
 } from '@worker/infrastructure/adapters/in/http/handler';
-import { type HttpRouterConfig, type ResourceKind } from '@worker/adapters/in/http/router';
+import {
+  type HttpRouterConfig,
+  type ResourceKind,
+} from '@worker/infrastructure/adapters/in/http/router';
 import {
   HttpBoundaryError,
   type BoundaryFailure,

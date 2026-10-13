@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import { deriveOwnerScopeRef } from '@worker/infrastructure/adapters/in/http/auth';
 import { createHttpRouterConfig, createThreadScopeAuthorizer } from '@worker/composition/bootstrap';
-import { routeRequest } from '@worker/adapters/in/http/router';
+import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import { createPhotoReferenceStoreResolver } from '@worker/adapters/out/persistence/photo/rpc';
 import { createPhotoTokenCodec } from '@worker/adapters/out/security/photo-token-codec';
 import type { TelemetryDO } from '@worker/adapters/out/persistence/telemetry/telemetry-do';

@@ -4,7 +4,7 @@ import { createBootstrapAppIntegrityGate } from '@worker/composition/app-integri
 import { createHttpRouterConfig, type BootstrapEnv } from '@worker/composition/bootstrap';
 import { personalPreviewEnabled } from '@worker/composition/personal-preview';
 import { DurableRateLimiter } from '@worker/adapters/out/persistence/security/durable-rate-limiter';
-import { routeRequest } from '@worker/adapters/in/http/router';
+import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import { makeHarness, makeRequest, searchInput, type Harness } from '../router-fixtures';
 
 const token = 'a1'.repeat(32);

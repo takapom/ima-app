@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { APP_TOKEN_HEADER, REQUEST_ID_HEADER } from '@ima/contracts';
-import { routeRequest } from '@worker/adapters/in/http/router';
+import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import { makeHarness, makeRequest, requestId } from './router-fixtures';
 
 describe('Hono routing compatibility', () => {

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ConversationHistoryDO } from '@worker/entrypoints/cloudflare/conversation-history-do';
 import { deriveOwnerScopeRef } from '@worker/infrastructure/adapters/in/http/auth';
 import { conversationOwnerName } from '@worker/adapters/out/persistence/conversations/durable-conversation-store';
-import { routeRequest } from '@worker/adapters/in/http/router';
+import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
 import type { ConversationPhotoReader } from '@worker/runtime/ports/conversation-photo';
 import { ConversationMessageSchema } from '@worker/core/domain/conversations/conversation-message';

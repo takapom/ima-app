@@ -3,8 +3,8 @@ import * as v from 'valibot';
 import { authenticateRequest } from '@worker/infrastructure/adapters/in/http/auth';
 import { HttpBoundaryError, toErrorResponse } from '@worker/infrastructure/adapters/in/http/errors';
 import type { MatchedRoute } from '@worker/infrastructure/adapters/in/http/http-route';
-import { handleAuthorizedRoute } from '@worker/adapters/in/http/route-handler';
-import type { HttpRouterConfig } from '@worker/adapters/in/http/router-config';
+import { handleAuthorizedRoute } from '@worker/infrastructure/adapters/in/http/route-handler';
+import type { HttpRouterConfig } from '@worker/infrastructure/adapters/in/http/router-config';
 
 export type HttpEnv = {
   Bindings: { readonly config: HttpRouterConfig; readonly fallbackRequestId: string };

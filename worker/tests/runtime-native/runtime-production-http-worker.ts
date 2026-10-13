@@ -3,7 +3,7 @@ import {
   createThreadScopeAuthorizer,
   type BootstrapEnv,
 } from '@worker/composition/bootstrap';
-import { routeRequest } from '@worker/adapters/in/http/router';
+import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import { RateLimitDO } from '@worker/entrypoints/cloudflare/thread-do';
 import { TelemetryDO } from '@worker/adapters/out/persistence/telemetry/telemetry-do';
 import { SavedReferenceDO } from '@worker/adapters/out/persistence/saved-references/saved-reference-do';

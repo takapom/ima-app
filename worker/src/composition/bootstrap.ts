@@ -14,7 +14,7 @@ import {
   DEFAULT_JSON_BODY_LIMIT_BYTES,
   type HttpRouterConfig,
   type ResourceScopeAuthorizer,
-} from '@worker/adapters/in/http/router';
+} from '@worker/infrastructure/adapters/in/http/router';
 import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 import type {
   RateLimitConfig,

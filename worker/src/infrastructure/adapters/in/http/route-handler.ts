@@ -32,7 +32,7 @@ import {
   DEFAULT_JSON_BODY_LIMIT_BYTES,
   type HttpRouterConfig,
   type ResourceReference,
-} from '@worker/adapters/in/http/router-config';
+} from '@worker/infrastructure/adapters/in/http/router-config';
 import { authorizeAppIntegrity } from '@worker/infrastructure/adapters/in/http/app-integrity-authorization';
 import {
   handleAppIntegrityHttpRoute,

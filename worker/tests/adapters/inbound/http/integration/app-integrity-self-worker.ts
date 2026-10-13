@@ -3,7 +3,7 @@ import {
   createThreadScopeAuthorizer,
   type BootstrapEnv,
 } from '@worker/composition/bootstrap';
-import { routeRequest } from '@worker/adapters/in/http/router';
+import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import {
   AppIntegrityDO,
   type AppIntegrityNamespace,

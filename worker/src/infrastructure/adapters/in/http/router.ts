@@ -2,7 +2,7 @@ import { conversationRouter } from '@worker/infrastructure/adapters/in/http/conv
 import { Hono } from 'hono';
 import { REQUEST_ID_HEADER } from '@ima/contracts';
 import { isValidRequestId } from '@worker/infrastructure/adapters/in/http/input';
-import type { HttpRouterConfig } from '@worker/adapters/in/http/router-config';
+import type { HttpRouterConfig } from '@worker/infrastructure/adapters/in/http/router-config';
 import {
   boundaryErrorResponse,
   invalidRequest,
@@ -20,14 +20,14 @@ import {
   searchRouter,
 } from '@worker/infrastructure/adapters/in/http/resource-routers';
 
-export { DEFAULT_JSON_BODY_LIMIT_BYTES } from '@worker/adapters/in/http/router-config';
+export { DEFAULT_JSON_BODY_LIMIT_BYTES } from '@worker/infrastructure/adapters/in/http/router-config';
 export type {
   HttpRouterConfig,
   ResourceKind,
   ResourceReference,
   ResourceScopeAuthorizer,
   ResourceScopeDecision,
-} from '@worker/adapters/in/http/router-config';
+} from '@worker/infrastructure/adapters/in/http/router-config';
 
 // Keep static segments literal; Hono decodes only captured parameters once.
 const app = new Hono<HttpEnv>({

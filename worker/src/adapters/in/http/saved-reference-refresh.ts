@@ -1,7 +1,7 @@
 import type {
   ResourceScopeAuthorizer,
   ResourceScopeDecision,
-} from '@worker/adapters/in/http/router';
+} from '@worker/infrastructure/adapters/in/http/router';
 import {
   createOwnerSavedReferenceRpc,
   type OwnerSavedReferenceRpc,
