@@ -8,8 +8,8 @@ import type {
   TelemetryResultCode,
   TelemetryStatus,
   TraceRecord,
-} from '@worker/application/ports/telemetry';
-import { parseTraceRecord } from '@worker/application/ports/telemetry';
+} from '@worker/core/application/ports/telemetry';
+import { parseTraceRecord } from '@worker/core/application/ports/telemetry';
 import {
   createBestEffortRuntimeTraceSink,
   type RuntimeTraceSinkFailure,

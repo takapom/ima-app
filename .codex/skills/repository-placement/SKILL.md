@@ -10,7 +10,7 @@ description: >-
 配置の正は[アーキテクチャ](../../../docs/architecture/architecture.md)。
 「Repositoryはユースケース層に置く」という一般論だけで、既存Portを移動しない。
 
-- 業務側の永続化契約は [ApplicationのPorts](../../../worker/src/application/ports) が所有する。
+- 業務側の永続化契約は [ApplicationのPorts](../../../worker/src/core/application/ports) が所有する。
   [OwnerStore](../../../worker/src/core/application/ports/owner-store.ts) を具体例として読む。
 - ApplicationはPortを呼ぶ手順と業務判断を持ち、Domainは保存方式・SDK・HTTPへ依存しない。
 - 具象の保存実装は [outbound/persistence](../../../worker/src/adapters/out/persistence)、

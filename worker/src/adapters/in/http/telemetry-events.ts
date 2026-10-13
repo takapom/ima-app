@@ -4,8 +4,8 @@ import {
   telemetryEventRecordSchema,
   type TelemetryEventRecord,
   type TelemetryResultCode,
-} from '@worker/application/ports/telemetry';
-import type { TelemetryEventFailure } from '@worker/application/ports/telemetry';
+} from '@worker/core/application/ports/telemetry';
+import type { TelemetryEventFailure } from '@worker/core/application/ports/telemetry';
 import type { RecordTelemetryEvent } from '@worker/application/use-cases/record-telemetry/record-telemetry-event';
 
 export type TelemetryEventContext = { readonly ownerScopeRef: string };

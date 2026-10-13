@@ -10,7 +10,7 @@ import {
 import {
   type TelemetryEventRecord,
   type TelemetryEventStore,
-} from '@worker/application/ports/telemetry';
+} from '@worker/core/application/ports/telemetry';
 import {
   OPERATIONAL_FLAG_ENV,
   operationalCapabilityMode,
@@ -20,8 +20,8 @@ import {
 import {
   aggregateTelemetryTraces,
   filterTelemetryRetention,
-} from '@worker/application/telemetry/aggregate-traces';
-import { parseTraceRecord, type TraceRecord } from '@worker/application/ports/telemetry';
+} from '@worker/core/application/telemetry/aggregate-traces';
+import { parseTraceRecord, type TraceRecord } from '@worker/core/application/ports/telemetry';
 
 class FixtureTelemetryEventStore implements TelemetryEventStore {
   readonly records: TelemetryEventRecord[] = [];

@@ -1,10 +1,10 @@
 import * as v from 'valibot';
-import { isWithinTelemetryRetention } from '@worker/application/telemetry/retention';
+import { isWithinTelemetryRetention } from '@worker/core/application/telemetry/retention';
 import {
   telemetryAggregationSchema,
   type TelemetryAggregation,
   type TraceRecord,
-} from '@worker/application/ports/telemetry';
+} from '@worker/core/application/ports/telemetry';
 
 /** Aggregates already validated records; storage and retention scheduling stay outside this pure function. */
 export const aggregateTelemetryTraces = (

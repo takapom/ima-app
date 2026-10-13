@@ -4,7 +4,7 @@ import {
   type TelemetryEventRecord,
   type TelemetryEventStore,
   type TelemetryEventFailure,
-} from '@worker/application/ports/telemetry';
+} from '@worker/core/application/ports/telemetry';
 /** テレメトリ1件を owner スコープ付きで永続化する関数型。 */
 export type RecordTelemetryEvent = (
   record: TelemetryEventRecord,

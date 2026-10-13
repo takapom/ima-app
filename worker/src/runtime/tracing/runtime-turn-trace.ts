@@ -2,8 +2,11 @@ import type {
   TelemetryResultCode,
   TelemetryStatus,
   TraceRecord,
-} from '@worker/application/ports/telemetry';
-import { parseTraceRecord, type TelemetryTraceStore } from '@worker/application/ports/telemetry';
+} from '@worker/core/application/ports/telemetry';
+import {
+  parseTraceRecord,
+  type TelemetryTraceStore,
+} from '@worker/core/application/ports/telemetry';
 import {
   createBestEffortRuntimeTraceSink,
   type RuntimeTraceSinkFailure,
