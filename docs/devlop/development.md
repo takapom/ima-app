@@ -58,16 +58,27 @@ Dev Clientは`bun run dev:mobile`で起動する。同一マシンのWeb/Simulat
 [promptfoo](https://www.promptfoo.dev/)で、本番と同じターンを実OpenAIと合成店舗で実行し、Tool呼び出しと応答を採点する。プロンプト・Tool定義の変更前後の比較に使う。
 
 ```sh
-bun run eval        # 評価の実行。OpenAIの利用料が発生する
-bun run eval:view   # 結果をブラウザで見る
+bun run eval                 # 全ケースを1回ずつ実行。OpenAIの利用料が発生する（モデルとLLM採点）
+bun run eval --repeat 3      # 揺らぎを見るため、各ケースを3回実行する
+bun run eval:view            # 結果をブラウザで見る
 ```
 
-- APIキーは上記の`worker/.dev.vars.llm`の`OPENAI_API_KEY`を使う。ホットペッパーのキーは使わず、店舗は[合成店舗](../../worker/tooling/eval/shops/shop-sets.ts)だけを返す。実在店舗のデータを評価データに加えない。
-- [評価用Worker](../../worker/wrangler.eval.jsonc)は本番のThreadDOを継承し、モデル・店舗供給・時刻・turn結果の観測だけを差し替える。Providerが`wrangler dev --local`で起動し、デプロイしない。
-- ケースと採点は[評価設定](../../worker/tooling/eval/promptfoo/promptfooconfig.yaml)と[判定](../../worker/tooling/eval/promptfoo/assertions.ts)に置く。`prompts`の`production`は本番のシステムプロンプトで、案はファイルを並べて比べる。
+- APIキーは上記の`worker/.dev.vars.llm`の`OPENAI_API_KEY`を使う。LLM採点のため、promptfooも同じファイルを読む。ホットペッパーのキーは使わず、店舗は[合成店舗](../../worker/tooling/eval/shops/shop-sets.ts)だけを返す。実在店舗のデータを評価データに加えない。
+- [評価用Worker](../../worker/wrangler.eval.jsonc)は本番のThreadDOを継承し、モデル・店舗供給・時計・turn結果の観測だけを差し替える。Providerが`wrangler dev --local`で起動し、デプロイしない。
+- [評価ケース](../../worker/tooling/eval/promptfoo/cases)は[AIの振る舞い](../philosophy/ai-behavior.md)の条項ごとに置き、全ケースに共通する判定は[評価設定](../../worker/tooling/eval/promptfoo/promptfooconfig.yaml)の`defaultTest`に置く。
+- 指標は2種類ある。「ゲート:」は[必須ゲート](../../worker/tooling/eval/promptfoo/assertions.ts)で、1つでも不合格ならケースを不合格にする。「スコア:」は[スコア](../../worker/tooling/eval/promptfoo/scores.ts)とLLM採点で、`weight: 0`として記録だけを行い合否には使わない。どちらも呼び出し順の完全一致は合否に使わない。
+- 確定しない・場所を聞き返す・時間切れで打ち切られるなどのモデルの振る舞いはFAILとして採点する。モデル呼び出し自体の失敗（キー・通信・Provider障害）、設定で実行されなかった場合（`RUNTIME_UNCONFIGURED`）、案を適用できなかった場合、評価用Workerの起動失敗はERRORとして表示し、0件や不合格の結果として扱わない。
 - 結果の`metadata.evalRun`に、ターンごとのTool呼び出し・引数・結果、step数、修復回数、確定の有無、トークン数、モデル呼び出しの所要時間が残る。
-- 確定しない・場所を聞き返す・時間切れで打ち切られるなどのモデルの振る舞いはFAILとして採点する。モデル呼び出し自体の失敗（キー・通信・Provider障害）、設定で実行されなかった場合（`RUNTIME_UNCONFIGURED`）、システムプロンプト案を適用できなかった場合、評価用Workerの起動失敗はERRORとして表示し、0件や不合格の結果として扱わない。
 - promptfoo（[package.json](../../package.json)でバージョン固定）はテレメトリ・更新確認・共有を無効にして実行し、結果はローカルの`~/.promptfoo`に保存する。`promptfoo share`は使わない。
+
+### 改善サイクルと採否の基準
+
+1. 現行版の基準値を`--repeat 3`で取り、対象のIssueに記録する。記録は実行日時・コミット・モデル・ケース数・repeat・指標ごとの通過率・トークン数・費用とし、応答の本文・座標・キーは含めない。
+2. 失敗したケースを読み、原因を分ける。判断の誤りはプロンプト、引数の拒否や修復はTool設計、step不足は予算や無駄な呼び出しを疑う。
+3. 仮説を1つだけ立てて案を作る。システムプロンプトの案は評価設定の`prompts`にファイルを並べ、Toolのdescriptionの案は同じProviderを`label`と`toolDescriptionsFile`（`search_places`・`get_place_details`・`respond`をキーにしたJSON）を変えて並べる。
+4. 現行版と案を、同じケース・同じrepeatで実行し、`bun run eval:view`で指標ごとに比べる。
+5. 「ゲート:」の通過率がどれも現行版を下回らず、狙った「スコア:」が上がったときだけ採用する。ERRORが残る実行は比べずにやり直す。
+6. 直した失敗を評価ケースに加え、本番ログ（`turn_outcome`・`respond_invalid`）で見つけた失敗の型も合成店舗で再現してケースに加える。
 
 ## 品質検査
 
