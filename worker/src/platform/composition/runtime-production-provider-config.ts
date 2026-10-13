@@ -1,6 +1,6 @@
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { CapabilitySnapshot, HarnessContext } from '@worker/core/application/ports/context';
-import type { RuntimePublicResponseDependencies } from '@worker/composition/runtime-turn-composition';
+import type { RuntimePublicResponseDependencies } from '@worker/platform/composition/runtime-turn-composition';
 import { productionScopeFor } from '@worker/platform/composition/runtime-production-support';
 
 export const isConfiguredSecret = (value: string | undefined): value is string =>

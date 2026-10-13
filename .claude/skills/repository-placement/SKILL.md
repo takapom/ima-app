@@ -14,7 +14,7 @@ description: >-
   [OwnerStore](../../../worker/src/core/application/ports/owner-store.ts) を具体例として読む。
 - ApplicationはPortを呼ぶ手順と業務判断を持ち、Domainは保存方式・SDK・HTTPへ依存しない。
 - 具象の保存実装は [outbound/persistence](../../../worker/src/infrastructure/adapters/out/persistence)、
-  生成・注入は [composition](../../../worker/src/composition) が担当する。
+  生成・注入は [composition](../../../worker/src/platform/composition) が担当する。
 - Runtime固有の契約と公開HTTP DTOをApplicationの永続化Portへ混ぜない。
 
 ## レビュー

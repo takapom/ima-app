@@ -14,7 +14,7 @@ import type {
   RuntimeCompositionModelContext,
   RuntimeCompositionValidationContext,
   RuntimePublicResponseDependencies,
-} from '@worker/composition/runtime-turn-composition';
+} from '@worker/platform/composition/runtime-turn-composition';
 import type { RuntimeProductionContextPersistence } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 import type { ProductionRetentionSource } from '@worker/platform/composition/runtime-production-support';
 import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';

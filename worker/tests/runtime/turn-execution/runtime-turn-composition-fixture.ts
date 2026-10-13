@@ -30,7 +30,7 @@ import {
   type RuntimePublicResponseDependencies,
   type RuntimeTurnCompositionCoreOptions,
   type RuntimeTurnCompositionPublicOptions,
-} from '@worker/composition/runtime-turn-composition';
+} from '@worker/platform/composition/runtime-turn-composition';
 import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
 import type { RuntimeTurnPortDependencies } from '@worker/infrastructure/runtime/turn-execution/runtime-turn-factory';
 

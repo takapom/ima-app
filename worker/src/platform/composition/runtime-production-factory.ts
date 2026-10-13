@@ -9,7 +9,7 @@ import { createRuntimeProviderTransportObserver } from '@worker/infrastructure/a
 import {
   createRuntimeTurnComposition,
   type RuntimeTurnCompositionCoreOptions,
-} from '@worker/composition/runtime-turn-composition';
+} from '@worker/platform/composition/runtime-turn-composition';
 import { wrapRuntimeProductionCommit } from '@worker/infrastructure/runtime/context/runtime-production-context';
 import { createFactoryRuntimeContext } from '@worker/infrastructure/runtime/context/runtime-production-context-factory';
 import { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
