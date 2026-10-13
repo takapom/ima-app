@@ -8,7 +8,7 @@ import { threadRuntimeResultFromNative } from '@worker/infrastructure/runtime/th
 import type {
   RuntimeThinkTurnRequest,
   RuntimeThinkTurnResult,
-} from '@worker/runtime/turn-execution/runtime-think-connection';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 
 type RuntimeTurnExecutionInput = {
   readonly input: ThreadRuntimeTurnInput;

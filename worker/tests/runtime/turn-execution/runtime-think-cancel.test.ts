@@ -24,7 +24,7 @@ import {
   createRuntimeThinkConnection,
   type RuntimeThinkConnection,
   type RuntimeThinkPersistMessages,
-} from '@worker/runtime/turn-execution/runtime-think-connection';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import { createRuntimeTurnComposition } from '@worker/composition/runtime-turn-composition';
 import type {
   RuntimeModelGuardModel,

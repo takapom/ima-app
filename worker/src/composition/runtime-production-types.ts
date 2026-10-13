@@ -21,7 +21,7 @@ import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/ret
 import type { RuntimeModelGuardModel } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import type { RuntimeTurnObserver } from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
 import type { RuntimeModelTraceSink } from '@worker/infrastructure/runtime/tracing/runtime-model-trace';
-import type { RuntimeThinkTurnBuildRequest } from '@worker/runtime/turn-execution/runtime-think-connection';
+import type { RuntimeThinkTurnBuildRequest } from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import type { RuntimeProviderTraceSink } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace';
 
 export type ProductionBuildInput = {

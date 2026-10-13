@@ -11,7 +11,7 @@ import { sessionExpiryAt } from '@worker/composition/runtime-production-support'
 import { createDurableRuntimeContextPersistence } from '@worker/infrastructure/runtime/threads/runtime-context-persistence';
 import type { RuntimeProductionContextReference } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 import { createRuntimeRetentionAlarmCapability } from '@worker/infrastructure/runtime/threads/runtime-retention-alarm';
-import type { RuntimeThinkConnectionOptions } from '@worker/runtime/turn-execution/runtime-think-connection';
+import type { RuntimeThinkConnectionOptions } from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import {
   emitRuntimeTurnTrace,
   runtimeTraceModeFor,

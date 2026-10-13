@@ -41,7 +41,7 @@ import { configureRuntimeProductionSession } from '@worker/infrastructure/runtim
 import type {
   RuntimeThinkConnectionOptions,
   RuntimeThinkTurnBuildRequest,
-} from '@worker/runtime/turn-execution/runtime-think-connection';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import { defaultRuntimeModelContextPolicy } from '@worker/infrastructure/runtime/context/runtime-field-policy';
 import { resolveRuntimeProductionReadCost } from '@worker/composition/runtime-production-read-cost';
 import { createRuntimeProductionPlacePorts } from '@worker/composition/runtime-production-place-ports';

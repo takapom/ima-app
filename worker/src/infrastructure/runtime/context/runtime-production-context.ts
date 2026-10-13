@@ -13,7 +13,7 @@ import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import { CardSetRecordSchema } from '@worker/core/domain/candidates/continuity';
 import { DetailFieldSchema } from '@worker/core/domain/primitives';
 import { ModelEvidenceSourceSchema } from '@worker/core/application/model-context/model-evidence';
-import type { RuntimeThinkComposition } from '@worker/runtime/turn-execution/runtime-think-connection';
+import type { RuntimeThinkComposition } from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import {
   referenceSnapshotFor,
   stateFromReference,

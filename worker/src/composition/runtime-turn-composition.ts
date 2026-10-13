@@ -17,7 +17,7 @@ import type {
   RuntimeThinkComposition,
   RuntimeThinkPersistMessages,
   RuntimeThinkTurnBuildRequest,
-} from '@worker/runtime/turn-execution/runtime-think-connection';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import {
   projectRuntimeCurrentTurnMessages,
   type RuntimeRetentionModelProjectionOptions,

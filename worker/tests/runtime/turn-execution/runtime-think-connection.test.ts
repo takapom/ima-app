@@ -22,7 +22,7 @@ import {
   RuntimeThinkConnectionError,
   type RuntimeThinkComposition,
   type RuntimeThinkPersistMessages,
-} from '@worker/runtime/turn-execution/runtime-think-connection';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import { createRuntimeTurnFactory } from '@worker/runtime/turn-execution/runtime-turn-factory';
 import {
   RUNTIME_RETENTION_WITHHELD,

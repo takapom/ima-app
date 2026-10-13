@@ -1,6 +1,6 @@
 import type { RuntimeTurnStore } from '@worker/infrastructure/runtime/ports/turn-store';
 export type { RuntimeThreadBinding } from '@worker/infrastructure/runtime/ports/turn-store';
-import { type RuntimeThinkConnection } from '@worker/runtime/turn-execution/runtime-think-connection';
+import { type RuntimeThinkConnection } from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import {
   cancelledRuntimeResult,
   isThreadRuntimeTarget,

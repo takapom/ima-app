@@ -20,7 +20,7 @@ import {
   createRuntimeTurnComposition,
   type RuntimePublicResponseDependencies,
 } from '@worker/composition/runtime-turn-composition';
-import type { RuntimeThinkConnectionOptions } from '@worker/runtime/turn-execution/runtime-think-connection';
+import type { RuntimeThinkConnectionOptions } from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import type { EvidenceLink } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import {
   isRuntimeNativeScenario,
