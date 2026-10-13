@@ -9,7 +9,7 @@ import {
   notFoundResponse,
   type HttpContext,
   type HttpEnv,
-} from '@worker/adapters/in/http/route-boundary';
+} from '@worker/infrastructure/adapters/in/http/route-boundary';
 import { threadRouter } from '@worker/adapters/in/http/thread-router';
 import {
   attestRouter,
@@ -18,7 +18,7 @@ import {
   prefsRouter,
   savedRouter,
   searchRouter,
-} from '@worker/adapters/in/http/resource-routers';
+} from '@worker/infrastructure/adapters/in/http/resource-routers';
 
 export { DEFAULT_JSON_BODY_LIMIT_BYTES } from '@worker/adapters/in/http/router-config';
 export type {

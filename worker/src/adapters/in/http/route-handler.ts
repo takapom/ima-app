@@ -46,8 +46,8 @@ import {
   handleThreadPlaceWriteRoute,
   isThreadPlaceWriteRoute,
 } from '@worker/adapters/in/http/thread-place-routes';
-import { ensurePhotoResponse } from '@worker/adapters/in/http/photo-route';
-import { rateLimitedResponse } from '@worker/adapters/in/http/rate-limit-response';
+import { ensurePhotoResponse } from '@worker/infrastructure/adapters/in/http/photo-route';
+import { rateLimitedResponse } from '@worker/infrastructure/adapters/in/http/rate-limit-response';
 
 const invalidArgument = (): BoundaryFailure => ({ status: 400, code: 'INVALID_ARGUMENT' });
 const internal = (): BoundaryFailure => ({ status: 500, code: 'INTERNAL' });

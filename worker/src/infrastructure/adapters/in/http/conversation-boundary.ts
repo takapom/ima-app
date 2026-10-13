@@ -9,11 +9,11 @@ import {
   invalidRequest,
   notFoundResponse,
   type HttpContext,
-} from '@worker/adapters/in/http/route-boundary';
+} from '@worker/infrastructure/adapters/in/http/route-boundary';
 import { DEFAULT_JSON_BODY_LIMIT_BYTES } from '@worker/adapters/in/http/router-config';
 import { parseJsonBodyWithRaw } from '@worker/infrastructure/adapters/in/http/input';
 import { authorizeAppIntegrity } from '@worker/infrastructure/adapters/in/http/app-integrity-authorization';
-import { rateLimitedResponse } from '@worker/adapters/in/http/rate-limit-response';
+import { rateLimitedResponse } from '@worker/infrastructure/adapters/in/http/rate-limit-response';
 import {
   conversationOwnerName,
   type ConversationApiRpc,

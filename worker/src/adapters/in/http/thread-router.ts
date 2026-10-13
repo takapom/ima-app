@@ -6,7 +6,7 @@ import {
   publicRoute,
   type HttpContext,
   type HttpEnv,
-} from '@worker/adapters/in/http/route-boundary';
+} from '@worker/infrastructure/adapters/in/http/route-boundary';
 
 const threadPath = (context: HttpContext) =>
   parseRoutePath(ThreadPathSchema, { threadId: context.req.param('threadId') });

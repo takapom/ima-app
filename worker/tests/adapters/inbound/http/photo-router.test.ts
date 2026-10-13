@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deriveOwnerScopeRef } from '@worker/infrastructure/adapters/in/http/auth';
 import { routeRequest } from '@worker/adapters/in/http/router';
-import { createPhotoBodyHandler } from '@worker/adapters/in/http/photo-body-handler';
+import { createPhotoBodyHandler } from '@worker/infrastructure/adapters/in/http/photo-body-handler';
 import { createMemoryPhotoReferenceStore } from '@worker/adapters/out/persistence/photo/reference-store';
 import { createPhotoTokenCodec } from '@worker/adapters/out/security/photo-token-codec';
 import { makeHarness, makeRequest, ownerCredential } from './router-fixtures';

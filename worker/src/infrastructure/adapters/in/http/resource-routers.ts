@@ -6,7 +6,7 @@ import {
   publicRoute,
   type HttpContext,
   type HttpEnv,
-} from '@worker/adapters/in/http/route-boundary';
+} from '@worker/infrastructure/adapters/in/http/route-boundary';
 
 export const prefsRouter = new Hono<HttpEnv>();
 prefsRouter.get(
