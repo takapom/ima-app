@@ -19,7 +19,7 @@ import {
   type PriceInfo,
 } from '@worker/domain/places/place-values';
 import { IsoTimestampSchema } from '@worker/domain/primitives';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { SubmitIssue } from '@worker/core/application/ports/submission';
 import type { ReadonlyStoredObservation } from '@worker/core/domain/candidates/registry';

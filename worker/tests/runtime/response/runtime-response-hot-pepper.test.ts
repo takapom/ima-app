@@ -3,7 +3,7 @@ import type {
   EvidenceLink,
   ValidatedCardsResponse,
 } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import {
   mapCommittedResponseToPublic,
   RuntimePublicResponseError,

@@ -72,7 +72,7 @@ import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-se
 import { searchOutcomeOf } from '@worker/runtime/response/runtime-search-outcome';
 import { createPresentedInputs } from '@worker/core/application/model-context/presented-inputs';
 import { recordPresentedContext } from '@worker/core/application/model-context/presented-context';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import {
   runtimeTurnObserverWriters,
   type RuntimeTurnObserver,

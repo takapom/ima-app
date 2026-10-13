@@ -26,7 +26,7 @@ import {
 } from '@worker/core/application/ports/submission';
 import { type CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import { type DetailField } from '@worker/domain/primitives';
-import { type Issue, type IssueCode } from '@worker/domain/issue';
+import { type Issue, type IssueCode } from '@worker/core/domain/issue';
 import type {
   PublicToolInvocation,
   PublicToolName,

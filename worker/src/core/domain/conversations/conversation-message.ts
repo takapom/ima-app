@@ -5,7 +5,7 @@ import {
   RevisionSchema,
   Text,
 } from '@worker/domain/primitives';
-import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
+import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 
 import { ConversationCardsSchema } from '@worker/core/domain/conversations/conversation-cards';
 import { retainConversationCards } from '@worker/core/domain/conversations/conversation-card-retention';

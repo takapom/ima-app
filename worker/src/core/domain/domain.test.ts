@@ -8,8 +8,8 @@ import {
   IsoTimestampSchema,
   RevisionSchema,
 } from '@worker/domain/primitives';
-import { IssueSchema } from '@worker/domain/issue';
-import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
+import { IssueSchema } from '@worker/core/domain/issue';
+import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 
 const timestamp = '2026-09-09T12:00:00Z';
 const allowRetention = (overrides: Record<string, unknown> = {}) => ({

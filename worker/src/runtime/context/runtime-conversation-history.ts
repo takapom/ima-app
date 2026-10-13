@@ -4,7 +4,10 @@ import {
   ModelHistoryEntrySchema,
   type ModelHistoryEntry,
 } from '@worker/core/application/model-context/model-context';
-import { RetentionMetadataSchema, type RetentionMetadata } from '@worker/domain/evidence/retention';
+import {
+  RetentionMetadataSchema,
+  type RetentionMetadata,
+} from '@worker/core/domain/evidence/retention';
 import { type RegistryScope } from '@worker/core/domain/evidence/freshness';
 import { isRuntimeRetentionWindowOpen } from '@worker/runtime/retention/runtime-retention';
 

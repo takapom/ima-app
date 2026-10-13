@@ -11,7 +11,7 @@ import {
   type CandidateRegistration,
   type ObservationRegistration,
 } from '@worker/core/domain/candidates/registry';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 
 class FixedClock implements ClockPort {
   constructor(private value: string) {}

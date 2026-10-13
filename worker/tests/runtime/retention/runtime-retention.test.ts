@@ -1,6 +1,6 @@
 import type { JSONValue, ModelMessage, UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import {
   attachRuntimeRetentionContext,
   captureRuntimeEphemeralToolCall,

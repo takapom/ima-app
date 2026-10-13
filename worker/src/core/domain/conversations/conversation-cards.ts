@@ -6,7 +6,7 @@ import {
   RevisionSchema,
   Text,
 } from '@worker/domain/primitives';
-import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
+import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 import {
   PlaceIdentitySchema,
   OpeningHoursSchema,

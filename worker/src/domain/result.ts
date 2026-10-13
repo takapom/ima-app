@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { ObservationSchema } from '@worker/core/domain/evidence/evidence';
-import { IssueSchema } from '@worker/domain/issue';
+import { IssueSchema } from '@worker/core/domain/issue';
 import { Text } from '@worker/domain/primitives';
 
 /**

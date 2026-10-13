@@ -1,5 +1,5 @@
 import type { ConversationCards } from '@worker/core/domain/conversations/conversation-cards';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 type Card = ConversationCards['cards']['hero'];
 
 /** 保持ポリシーに書かれた期限のうち、いちばん早い時刻（ミリ秒）。null は「期限なし」なので計算に入れない。 */

@@ -1,6 +1,9 @@
 import * as v from 'valibot';
 import { DetailFieldSchema } from '@worker/domain/primitives';
-import { RetentionMetadataSchema, type RetentionMetadata } from '@worker/domain/evidence/retention';
+import {
+  RetentionMetadataSchema,
+  type RetentionMetadata,
+} from '@worker/core/domain/evidence/retention';
 import { SourceRefSchema } from '@worker/core/domain/evidence/evidence';
 import { type RegistryJsonValue } from '@worker/core/domain/candidates/registry';
 import {

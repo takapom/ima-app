@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import { createPresentedInputs } from '@worker/core/application/model-context/presented-inputs';
 import {
   createToolRegistry,

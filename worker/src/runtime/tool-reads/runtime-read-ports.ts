@@ -11,7 +11,7 @@ import type {
   SearchPlacesInput,
   SearchPlacesOutput,
 } from '@worker/core/application/ports/operations';
-import type { Issue } from '@worker/domain/issue';
+import type { Issue } from '@worker/core/domain/issue';
 import type { Result } from '@worker/domain/result';
 import {
   RuntimeReadExecutor,

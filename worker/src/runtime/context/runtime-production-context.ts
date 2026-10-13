@@ -9,7 +9,7 @@ import type {
 } from '@worker/core/application/model-context/model-context';
 import type { ModelEvidenceSource } from '@worker/core/application/model-context/model-evidence';
 import type { RegistryScope } from '@worker/core/domain/evidence/freshness';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import { CardSetRecordSchema } from '@worker/core/domain/candidates/continuity';
 import { DetailFieldSchema } from '@worker/domain/primitives';
 import { ModelEvidenceSourceSchema } from '@worker/core/application/model-context/model-evidence';

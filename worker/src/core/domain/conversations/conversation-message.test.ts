@@ -8,7 +8,7 @@ import {
   ConversationSchema,
   conversationTitleFromUserText,
 } from '@worker/core/domain/conversations/conversation';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 
 const expiresAt = '2026-09-21T20:00:00.000Z';
 const retention: RetentionMetadata = {

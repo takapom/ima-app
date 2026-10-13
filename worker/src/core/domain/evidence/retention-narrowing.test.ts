@@ -5,7 +5,7 @@ import {
   narrowRetention,
   RetentionMetadataSchema,
   type RetentionMetadata,
-} from '@worker/domain/evidence/retention';
+} from '@worker/core/domain/evidence/retention';
 
 const app: RetentionMetadata = {
   retentionDecision: 'allow',

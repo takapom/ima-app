@@ -16,7 +16,7 @@ import {
   type RegistryJsonValue,
   type StoredObservation,
 } from '@worker/core/domain/candidates/registry';
-import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
+import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 import { IsoTimestampSchema, OpaqueIdSchema, type CandidateId } from '@worker/domain/primitives';
 
 export type ObservationPreparationDependencies = {

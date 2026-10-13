@@ -9,7 +9,7 @@ import {
   PlaceIdentitySchema,
   PriceInfoSchema,
 } from '@worker/domain/places/place-values';
-import { IssueCodeSchema } from '@worker/domain/issue';
+import { IssueCodeSchema } from '@worker/core/domain/issue';
 import { summarizeFieldForModel } from '@worker/core/application/model-context/model-field-summary';
 import {
   modelContextFieldAllowed,

@@ -7,7 +7,7 @@ import type {
   ObservationRegistration,
   RegistryJsonValue,
 } from '@worker/core/domain/candidates/registry';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import type { SubmitValidationContext } from '@worker/core/application/use-cases/submit-response/validation/submit-cards';
 
 export const now = '2026-09-10T12:00:00Z';

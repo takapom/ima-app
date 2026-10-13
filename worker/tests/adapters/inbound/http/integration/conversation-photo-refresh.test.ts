@@ -7,7 +7,7 @@ import { routeRequest } from '@worker/adapters/in/http/router';
 import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
 import type { ConversationPhotoReader } from '@worker/runtime/ports/conversation-photo';
 import { ConversationMessageSchema } from '@worker/core/domain/conversations/conversation-message';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import { makeHarness, makeRequest, ownerCredential } from '../router-fixtures';
 import { ConversationMessagesResponseSchema } from '@ima/contracts';
 import * as v from 'valibot';

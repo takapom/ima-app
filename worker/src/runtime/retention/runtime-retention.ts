@@ -1,13 +1,13 @@
 import * as v from 'valibot';
 import type { JSONValue, UIMessage } from 'ai';
-import type { RetentionMetadata } from '@worker/domain/evidence/retention';
+import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import {
   IsoTimestampSchema,
   OpaqueIdSchema,
   ThreadIdSchema,
   TurnIdSchema,
 } from '@worker/domain/primitives';
-import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
+import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 import {
   cloneRuntimeJsonValue,
   isRuntimeJsonValue,

@@ -4,7 +4,7 @@ import {
   capRetention,
   narrowRetention,
   type RetentionMetadata,
-} from '@worker/domain/evidence/retention';
+} from '@worker/core/domain/evidence/retention';
 
 /**
  * What the model was shown while generating one response. It bounds how long the generated text
