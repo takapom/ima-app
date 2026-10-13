@@ -53,6 +53,22 @@ Dev Clientは`bun run dev:mobile`で起動する。同一マシンのWeb/Simulat
 
 カードが出ない場合はまず`event: "turn_outcome"`の行を見る。`committed`が確定の有無、`kind`が確定した応答の種別（`ask`・`answer`・`propose`）、`operations`がそのturnで呼ばれた公開Toolと回数を示す。`respond`が0ならToolまで届いた確定はない。モデルが確定しなかったか、respondの引数がTool schemaで拒否されたかのどちらかで、後者はTool実行前に落ちるため`respond_invalid`の行も修復予算の消費もなく、`kind: "invalid_tool_input"`・`tool: "respond"`の`runtime_upstream_failure`行だけに残る。Toolを呼ばずに文章だけ・空で終わったstepは`event: "respond_missing"`の`reason`（`TEXT_WITHOUT_RESPOND`・`EMPTY_STEP`）に出る。確定を試みた場合は`event: "respond_invalid"`の行を見る。確定が検証で拒否されるとissueの`code`・`path`・`missingFields`・Core側の`message`と、影響した候補数・修復残数を出力する。候補ID・観測ID・生成文・Provider内容は含まない。カードの店名・営業時間などの根拠はCoreがレジストリから付ける。`missingFields`に`identity`や`opening_hours`が出る場合は、その候補の有効な観測がレジストリにない（検索結果に含まれない、または期限切れ・競合で`get_place_details`による取り直しが必要）。この行がなく候補も出ないときは、確定まで到達せず検索が0件だった場合を疑う。
 
+## プロンプトとToolの評価（promptfoo）
+
+[promptfoo](https://www.promptfoo.dev/)で、本番と同じターンを実OpenAIと合成店舗で実行し、Tool呼び出しと応答を採点する。プロンプト・Tool定義の変更前後の比較に使う。
+
+```sh
+bun run eval        # 評価の実行。OpenAIの利用料が発生する
+bun run eval:view   # 結果をブラウザで見る
+```
+
+- APIキーは上記の`worker/.dev.vars.llm`の`OPENAI_API_KEY`を使う。ホットペッパーのキーは使わず、店舗は[合成店舗](../../worker/tooling/eval/shops/shop-sets.ts)だけを返す。実在店舗のデータを評価データに加えない。
+- [評価用Worker](../../worker/wrangler.eval.jsonc)は本番のThreadDOを継承し、モデル・店舗供給・時刻・turn結果の観測だけを差し替える。Providerが`wrangler dev --local`で起動し、デプロイしない。
+- ケースと採点は[評価設定](../../worker/tooling/eval/promptfoo/promptfooconfig.yaml)と[判定](../../worker/tooling/eval/promptfoo/assertions.ts)に置く。`prompts`の`production`は本番のシステムプロンプトで、案はファイルを並べて比べる。
+- 結果の`metadata.evalRun`に、ターンごとのTool呼び出し・引数・結果、step数、修復回数、確定の有無、トークン数、モデル呼び出しの所要時間が残る。
+- 確定しない・場所を聞き返す・時間切れで打ち切られるなどのモデルの振る舞いはFAILとして採点する。モデル呼び出し自体の失敗（キー・通信・Provider障害）、設定で実行されなかった場合（`RUNTIME_UNCONFIGURED`）、システムプロンプト案を適用できなかった場合、評価用Workerの起動失敗はERRORとして表示し、0件や不合格の結果として扱わない。
+- promptfoo（[package.json](../../package.json)でバージョン固定）はテレメトリ・更新確認・共有を無効にして実行し、結果はローカルの`~/.promptfoo`に保存する。`promptfoo share`は使わない。
+
 ## 品質検査
 
 | コマンド               | 検証するもの                                               |
