@@ -29,7 +29,7 @@ import {
   scopeError,
   validateReplacement as validateObservationReplacement,
   valueKey,
-} from '@worker/application/candidate-registry/registry-observation';
+} from '@worker/core/application/candidate-registry/registry-observation';
 
 function identityKey(ownerScopeRef: string, provider: string, recordRef: string): string {
   return JSON.stringify([ownerScopeRef, provider, recordRef]);
