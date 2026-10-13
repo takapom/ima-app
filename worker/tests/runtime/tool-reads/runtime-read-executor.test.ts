@@ -8,7 +8,7 @@ import {
   RuntimeReadExecutor,
   RuntimeReadFailure,
   type RuntimeReadExecutionRequest,
-} from '@worker/runtime/tool-reads/runtime-read-executor';
+} from '@worker/infrastructure/runtime/tool-reads/runtime-read-executor';
 
 const config = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudgetConfig => ({
   ...DEFAULT_RUNTIME_BUDGET,

@@ -1,7 +1,7 @@
 import type {
   ThreadSnapshotResult,
   ThreadDeleteResult,
-} from '@worker/runtime/threads/thread-types';
+} from '@worker/infrastructure/runtime/threads/thread-types';
 import type {
   ThreadRuntimeTurnInput,
   ThreadRuntimeTurnResult,

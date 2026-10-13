@@ -22,9 +22,9 @@ import {
   type ThreadRuntimeResponseMetadata,
   type ThreadRuntimeTurnResult,
 } from '@worker/infrastructure/runtime/threads/admission';
-import { executeRuntimeThreadTurn } from '@worker/runtime/threads/runtime-thread-turn-execution';
+import { executeRuntimeThreadTurn } from '@worker/infrastructure/runtime/threads/runtime-thread-turn-execution';
 import { createSessionExpiryGate } from '@worker/core/application/use-cases/expire-session/expire-session';
-import { cleanupRuntimeResources } from '@worker/runtime/threads/thread-cleanup';
+import { cleanupRuntimeResources } from '@worker/infrastructure/runtime/threads/thread-cleanup';
 import {
   isThreadConflictError,
   isThreadStateError,
@@ -34,7 +34,7 @@ import {
   type ThreadDeleteResult,
   type ThreadSnapshot,
   type ThreadSnapshotResult,
-} from '@worker/runtime/threads/thread-types';
+} from '@worker/infrastructure/runtime/threads/thread-types';
 
 import { createPersistentThreadPhotoReferences } from '@worker/infrastructure/adapters/out/persistence/photo/sql-reference-store';
 import type { PhotoReferenceRecord } from '@worker/infrastructure/runtime/ports/photo';
@@ -61,7 +61,7 @@ export {
   isThreadStateError,
   ThreadConflictError,
   ThreadStateError,
-} from '@worker/runtime/threads/thread-types';
+} from '@worker/infrastructure/runtime/threads/thread-types';
 export type {
   ThreadAuthorization,
   ThreadConflictErrorCode,
@@ -71,7 +71,7 @@ export type {
   ThreadSnapshotResult,
   ThreadState,
   ThreadStateErrorCode,
-} from '@worker/runtime/threads/thread-types';
+} from '@worker/infrastructure/runtime/threads/thread-types';
 
 /** One DO owns owner-bound lifecycle, photo references, and the configured Think runtime. */
 export class ThreadDO

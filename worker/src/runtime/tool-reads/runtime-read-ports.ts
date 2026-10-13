@@ -19,7 +19,7 @@ import {
   type RuntimeReadExecutionRequest,
   type RuntimeReadExecutionResult,
   type RuntimeReadFailureKind,
-} from '@worker/runtime/tool-reads/runtime-read-executor';
+} from '@worker/infrastructure/runtime/tool-reads/runtime-read-executor';
 import type {
   RuntimeBudget,
   RuntimeBudgetDenial,

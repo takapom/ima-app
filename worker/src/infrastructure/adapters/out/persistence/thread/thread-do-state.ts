@@ -1,4 +1,7 @@
-import type { ThreadSnapshot, ThreadState } from '@worker/runtime/threads/thread-types';
+import type {
+  ThreadSnapshot,
+  ThreadState,
+} from '@worker/infrastructure/runtime/threads/thread-types';
 
 export type ThreadRow = {
   readonly thread_id: string;

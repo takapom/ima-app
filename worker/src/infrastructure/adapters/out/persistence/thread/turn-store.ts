@@ -16,7 +16,7 @@ import type {
 } from '@worker/infrastructure/runtime/ports/turn-store';
 import { persistRuntimeResult } from '@worker/infrastructure/adapters/out/persistence/thread/result-persistence';
 import { cancelRuntimeForLifecycleRows } from '@worker/infrastructure/adapters/out/persistence/thread/lifecycle-cancel';
-import { isRuntimeTargetStale } from '@worker/runtime/threads/stale-check';
+import { isRuntimeTargetStale } from '@worker/infrastructure/runtime/threads/stale-check';
 type RuntimeTurnRow = {
   readonly turn_id: string;
   readonly owner_scope_ref: string;
