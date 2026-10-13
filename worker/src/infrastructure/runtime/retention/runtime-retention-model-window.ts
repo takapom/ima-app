@@ -3,12 +3,12 @@ import { IsoTimestampSchema } from '@worker/core/domain/primitives';
 import {
   RuntimeRetentionEphemeralScopeSchema,
   RuntimeRetentionScopeIdentitySchema,
-} from '@worker/runtime/retention/runtime-retention';
+} from '@worker/infrastructure/runtime/retention/runtime-retention';
 import type {
   RuntimeRetentionEphemeralToolCall,
   RuntimeRetentionEphemeralToolResult,
   RuntimeRetentionScopeIdentity,
-} from '@worker/runtime/retention/runtime-retention';
+} from '@worker/infrastructure/runtime/retention/runtime-retention';
 
 /**
  * Checks only the model-input lifetime and scope. Display and persistence policy are evaluated

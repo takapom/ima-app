@@ -47,7 +47,7 @@ import { resolveRuntimeProductionReadCost } from '@worker/composition/runtime-pr
 import { createRuntimeProductionPlacePorts } from '@worker/composition/runtime-production-place-ports';
 import { createFactoryContinuation } from '@worker/composition/runtime-production-continuation';
 import { resolveRuntimeOperationalAdmission } from '@worker/composition/runtime-operational-admission';
-import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
+import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
 import type {
   ProductionBuildInput,
   RuntimeProductionConnectionOptions,

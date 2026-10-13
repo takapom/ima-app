@@ -3,7 +3,7 @@ import { committedConversationPhotoSources } from '@worker/infrastructure/runtim
 import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
 import type { ObservationContext } from '@worker/core/domain/evidence/freshness';
-import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
+import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
 import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import type { CommitPort, CommitRecord } from '@worker/core/application/ports/commit';
 import type { CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';

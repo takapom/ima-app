@@ -30,7 +30,7 @@ import {
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
   type RuntimeRetentionScopeIdentity,
-} from '@worker/runtime/retention/runtime-retention';
+} from '@worker/infrastructure/runtime/retention/runtime-retention';
 import { createRuntimeRetentionTransform } from '@worker/infrastructure/runtime/retention/runtime-retention-transform';
 import {
   createRuntimeReadPorts,
@@ -68,7 +68,7 @@ import {
   registerRuntimeCardSetId,
 } from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
 import { projectRuntimeToolResultForModel } from '@worker/infrastructure/runtime/context/runtime-field-policy';
-import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-session-config';
+import { configureRuntimeCompaction } from '@worker/infrastructure/runtime/retention/runtime-session-config';
 import { searchOutcomeOf } from '@worker/infrastructure/runtime/response/runtime-search-outcome';
 import { createPresentedInputs } from '@worker/core/application/model-context/presented-inputs';
 import { recordPresentedContext } from '@worker/core/application/model-context/presented-context';

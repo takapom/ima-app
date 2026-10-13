@@ -19,7 +19,7 @@ import {
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
   type RuntimeRetentionScopeIdentity,
-} from '@worker/runtime/retention/runtime-retention';
+} from '@worker/infrastructure/runtime/retention/runtime-retention';
 import { runtimeEphemeralModelInputIsUsable } from '@worker/infrastructure/runtime/retention/runtime-retention-model-window';
 import { safeToolInputValidationMessage } from '@worker/infrastructure/runtime/model/tool-input-error';
 

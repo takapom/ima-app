@@ -1,5 +1,5 @@
 import type { Session } from '@cloudflare/think';
-import { sanitizeRuntimeCompactionSummary } from '@worker/runtime/retention/runtime-retention';
+import { sanitizeRuntimeCompactionSummary } from '@worker/infrastructure/runtime/retention/runtime-retention';
 
 /** Keeps SDK compaction metadata reference-only at the production boundary. */
 export const configureRuntimeProductionSession = (session: Session): Session =>

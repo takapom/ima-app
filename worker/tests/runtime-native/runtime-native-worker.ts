@@ -9,7 +9,7 @@ import {
   RuntimeBudget,
 } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/infrastructure/adapters/out/providers/openai/provider-options';
-import { sanitizeRuntimeCompactionSummary } from '@worker/runtime/retention/runtime-retention';
+import { sanitizeRuntimeCompactionSummary } from '@worker/infrastructure/runtime/retention/runtime-retention';
 import {
   HotPepperError,
   type HotPepperSearchRequest,

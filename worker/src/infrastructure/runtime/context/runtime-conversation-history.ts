@@ -9,7 +9,7 @@ import {
   type RetentionMetadata,
 } from '@worker/core/domain/evidence/retention';
 import { type RegistryScope } from '@worker/core/domain/evidence/freshness';
-import { isRuntimeRetentionWindowOpen } from '@worker/runtime/retention/runtime-retention';
+import { isRuntimeRetentionWindowOpen } from '@worker/infrastructure/runtime/retention/runtime-retention';
 
 export type RetainedHistoryEntry = ModelHistoryEntry & {
   readonly retention?: RetentionMetadata | undefined;

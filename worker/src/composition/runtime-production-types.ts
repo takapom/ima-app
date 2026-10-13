@@ -17,7 +17,7 @@ import type {
 } from '@worker/composition/runtime-turn-composition';
 import type { RuntimeProductionContextPersistence } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 import type { ProductionRetentionSource } from '@worker/composition/runtime-production-support';
-import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
+import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
 import type { RuntimeModelGuardModel } from '@worker/runtime/turn-execution/runtime-model-guard';
 import type { RuntimeTurnObserver } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 import type { RuntimeModelTraceSink } from '@worker/runtime/tracing/runtime-model-trace';

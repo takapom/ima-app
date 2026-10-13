@@ -22,7 +22,7 @@ import {
   sanitizeRuntimeMessagesForPersistence,
   type RuntimeRetentionContext,
   type RuntimeRetentionMessage,
-} from '@worker/runtime/retention/runtime-retention';
+} from '@worker/infrastructure/runtime/retention/runtime-retention';
 import {
   wrapRuntimeModelGuard,
   type RuntimeModelGuardAcceptance,
