@@ -6,7 +6,7 @@ import type {
   RuntimeSubmitRejection,
   RuntimeTurnOutcome,
 } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
-import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';
+import { invokePublicToolEnvelope } from '@worker/infrastructure/adapters/in/tools';
 import { modelFor } from '../../support/runtime-model-fixture';
 import {
   committedResult,

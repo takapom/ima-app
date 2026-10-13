@@ -1,7 +1,7 @@
 import type { ThreadTurnRequest } from '@ima/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import type { CommitPort, CommitRequest } from '@worker/core/application/ports/commit';
-import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';
+import { invokePublicToolEnvelope } from '@worker/infrastructure/adapters/in/tools';
 import { createRuntimeProductionConnectionOptions } from '@worker/composition/runtime-production-factory';
 import { place } from '../adapters/outbound/providers/hot-pepper/adapter-fixtures';
 import {

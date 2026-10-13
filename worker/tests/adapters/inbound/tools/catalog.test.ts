@@ -25,8 +25,11 @@ import {
   getPublicTool,
   invokePublicTool,
   invokePublicToolByName,
-} from '@worker/adapters/in/tools';
-import type { ToolBindingDependencies, ToolRuntime } from '@worker/adapters/in/tools';
+} from '@worker/infrastructure/adapters/in/tools';
+import type {
+  ToolBindingDependencies,
+  ToolRuntime,
+} from '@worker/infrastructure/adapters/in/tools';
 import { createToolRegistry } from './registry-fixture';
 
 const context: HarnessContext = {

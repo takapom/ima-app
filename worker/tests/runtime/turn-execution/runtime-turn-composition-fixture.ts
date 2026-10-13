@@ -14,7 +14,7 @@ import type {
 import type { Result } from '@worker/core/domain/result';
 import type { SubmitValidationContext } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { JSONValue, TextStreamPart, ToolResultPart, ToolSet } from 'ai';
-import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';
+import { invokePublicToolEnvelope } from '@worker/infrastructure/adapters/in/tools';
 import { createToolRegistry } from '../../adapters/inbound/tools/registry-fixture';
 import { modelFor } from '../../support/runtime-model-fixture';
 import {

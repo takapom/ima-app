@@ -5,7 +5,7 @@ export {
   invokePublicToolByName,
   invokePublicToolEnvelope,
   isPublicToolName,
-} from '@worker/adapters/in/tools/catalog';
+} from '@worker/infrastructure/adapters/in/tools/catalog';
 export { projectDetailsResult, projectSearchResult } from '@worker/adapters/in/tools/projection';
 export { PUBLIC_TOOL_NAMES } from '@worker/runtime/ports/tool-binding';
 export type {

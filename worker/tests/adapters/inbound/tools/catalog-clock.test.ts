@@ -7,8 +7,11 @@ import type {
   SearchPlacesOutput,
 } from '@worker/core/application/ports/operations';
 import type { RespondPort } from '@worker/core/application/ports/submission';
-import { invokePublicTool } from '@worker/adapters/in/tools';
-import type { ToolBindingDependencies, ToolRuntime } from '@worker/adapters/in/tools';
+import { invokePublicTool } from '@worker/infrastructure/adapters/in/tools';
+import type {
+  ToolBindingDependencies,
+  ToolRuntime,
+} from '@worker/infrastructure/adapters/in/tools';
 import { createToolRegistry } from './registry-fixture';
 
 const context: HarnessContext = {

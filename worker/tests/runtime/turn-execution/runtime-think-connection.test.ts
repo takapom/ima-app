@@ -1,4 +1,4 @@
-import { createPublicToolSet } from '@worker/adapters/in/tools';
+import { createPublicToolSet } from '@worker/infrastructure/adapters/in/tools';
 import type { PrepareStepContext, Session, TurnContext } from '@cloudflare/think';
 import type {
   GetPlaceDetailsOutput,
