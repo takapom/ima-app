@@ -14,4 +14,4 @@ export { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 export { RateLimitDO, TelemetryDO };
 export default { fetch } satisfies { fetch: ProductionFetch };
 
-export { ConversationHistoryDO } from '@worker/entrypoints/cloudflare/conversation-history-do';
+export { ConversationHistoryDO } from '@worker/platform/entrypoints/cloudflare/conversation-history-do';

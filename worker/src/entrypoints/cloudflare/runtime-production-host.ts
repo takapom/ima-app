@@ -26,7 +26,7 @@ import {
   type TelemetryNamespace,
 } from '@worker/infrastructure/adapters/out/persistence/telemetry/telemetry-do';
 import { createRuntimeProductionTelemetrySinks } from '@worker/infrastructure/runtime/threads/runtime-production-telemetry';
-import { RuntimeThinkHost } from '@worker/entrypoints/cloudflare/runtime-host';
+import { RuntimeThinkHost } from '@worker/platform/entrypoints/cloudflare/runtime-host';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnResult,
