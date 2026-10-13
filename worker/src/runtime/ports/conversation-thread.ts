@@ -10,7 +10,7 @@ import type {
 import type {
   ConversationDelivery,
   ConversationDeliveryScope,
-} from '@worker/runtime/conversations/conversation-delivery';
+} from '@worker/infrastructure/runtime/conversations/conversation-delivery';
 export type ConversationThreadNamespace = {
   readonly getByName: (name: string) => {
     initialize(

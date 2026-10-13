@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { conversationPhotoSources } from '@worker/runtime/conversations/conversation-photo-sources';
+import { conversationPhotoSources } from '@worker/infrastructure/runtime/conversations/conversation-photo-sources';
 import type { ConversationPhotoSource } from '@worker/core/domain/conversations/conversation-cards';
 import { AssistantResponseSchema, type AssistantResponse } from '@ima/contracts';
 import {

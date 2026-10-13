@@ -9,7 +9,7 @@ import type { RuntimeProductionContextReference } from '@worker/infrastructure/r
 import {
   RuntimeProductionContextLimitError,
   RuntimeProductionDisplayContextError,
-} from '@worker/runtime/context/runtime-production-display-context';
+} from '@worker/infrastructure/runtime/context/runtime-production-display-context';
 import { runtimeResultForError } from '@worker/runtime/threads/controller-errors';
 
 const scope: RegistryScope = { ownerScopeRef: 'context-owner', threadId: 'context-thread' };

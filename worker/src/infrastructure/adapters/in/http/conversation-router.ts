@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { publicConversationMessage } from '@worker/runtime/conversations/conversation-photo-sources';
+import { publicConversationMessage } from '@worker/infrastructure/runtime/conversations/conversation-photo-sources';
 import { conversationPhotoRoute } from '@worker/infrastructure/adapters/in/http/conversation-photo-route';
 import { streamSSE } from 'hono/streaming';
 import * as v from 'valibot';

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { AssistantCardsResponse } from '@contracts/index';
 import { parseConversationMessage } from '@contracts/index';
-import { messageFromConversationResponse } from '@worker/runtime/conversations/conversation-delivery';
+import { messageFromConversationResponse } from '@worker/infrastructure/runtime/conversations/conversation-delivery';
 import {
   publicConversationMessage,
   conversationPhotoSources,
   withConversationPhotoSources,
-} from '@worker/runtime/conversations/conversation-photo-sources';
+} from '@worker/infrastructure/runtime/conversations/conversation-photo-sources';
 import { retainConversationMessage as serverRetain } from '@worker/core/domain/conversations/conversation-message';
 import {
   retainConversationMessage as clientRetain,

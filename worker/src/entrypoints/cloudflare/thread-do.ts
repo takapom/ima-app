@@ -1,6 +1,6 @@
 import { ThreadConversationOutbox } from '@worker/infrastructure/adapters/out/persistence/conversations/thread-conversation-outbox';
 import { isThreadRuntimeTurnInput } from '@worker/runtime/threads/admission';
-import type { ConversationDeliveryScope } from '@worker/runtime/conversations/conversation-delivery';
+import type { ConversationDeliveryScope } from '@worker/infrastructure/runtime/conversations/conversation-delivery';
 import { initializeThreadStorage } from '@worker/infrastructure/adapters/out/persistence/thread/schema';
 import { DurableRuntimeTurnStore } from '@worker/infrastructure/adapters/out/persistence/thread/turn-store';
 import { RuntimeProductionThinkHost } from '@worker/entrypoints/cloudflare/runtime-production-host';

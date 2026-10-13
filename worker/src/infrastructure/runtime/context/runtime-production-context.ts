@@ -27,7 +27,7 @@ import {
   hasDisplayContext,
   stagedCardSetFor,
   RuntimeProductionContextLimitError,
-} from '@worker/runtime/context/runtime-production-display-context';
+} from '@worker/infrastructure/runtime/context/runtime-production-display-context';
 
 import {
   conversationBodyIsUsable,

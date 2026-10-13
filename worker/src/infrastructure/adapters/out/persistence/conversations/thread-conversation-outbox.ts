@@ -14,7 +14,7 @@ import {
   type BoundConversationTurn,
   type ConversationDelivery,
   type ConversationDeliveryScope,
-} from '@worker/runtime/conversations/conversation-delivery';
+} from '@worker/infrastructure/runtime/conversations/conversation-delivery';
 import {
   ConversationMessageInputSchema,
   retainConversationPart,

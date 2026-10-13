@@ -9,7 +9,7 @@ import {
 import type { ConversationRunScope } from '@worker/core/application/ports/conversation-runs';
 import type { ConversationThreadPort } from '@worker/core/application/ports/conversation-execution';
 import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
-import type { PreparedConversationExecution } from '@worker/runtime/conversations/conversation-execution';
+import type { PreparedConversationExecution } from '@worker/infrastructure/runtime/conversations/conversation-execution';
 import type { ThreadRuntimeFailureCode } from '@worker/runtime/threads/admission';
 export type ConversationExecutionObserver = {
   readonly onResponse: (scope: ConversationRunScope, response: AssistantResponse) => void;

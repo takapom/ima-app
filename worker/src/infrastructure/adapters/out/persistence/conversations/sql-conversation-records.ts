@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { withConversationPhotoSources } from '@worker/runtime/conversations/conversation-photo-sources';
+import { withConversationPhotoSources } from '@worker/infrastructure/runtime/conversations/conversation-photo-sources';
 import type {
   ConversationScope,
   ConversationStore,
