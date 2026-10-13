@@ -13,7 +13,7 @@ import type {
   AppIntegrityOwner,
   AppIntegrityNonce,
 } from '@worker/core/application/ports/app-integrity';
-import type { AppIntegrityApplication } from '@worker/application/use-cases/app-integrity/app-integrity';
+import type { AppIntegrityApplication } from '@worker/core/application/use-cases/app-integrity/app-integrity';
 import { appIntegrityRequestHash } from '@worker/adapters/in/http/app-integrity-request-proof';
 export type AppIntegrityRoute =
   | 'conversation_turn'

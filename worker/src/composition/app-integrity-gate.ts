@@ -1,7 +1,7 @@
 import {
   createAppIntegrityApplication,
   type AppIntegrityOptions,
-} from '@worker/application/use-cases/app-integrity/app-integrity';
+} from '@worker/core/application/use-cases/app-integrity/app-integrity';
 import {
   createAppIntegrityHttpGate,
   type AppIntegrityGate,
