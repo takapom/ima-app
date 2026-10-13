@@ -1,7 +1,7 @@
 import {
   projectModelContext,
   type ProjectedModelContext,
-} from '@worker/application/model-context/model-context';
+} from '@worker/core/application/model-context/model-context';
 
 export const createModelContext = (): ProjectedModelContext =>
   projectModelContext({

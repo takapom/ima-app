@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ModelContextError,
   projectModelContext,
-} from '@worker/application/model-context/model-context';
+} from '@worker/core/application/model-context/model-context';
 
 const harness = {
   threadId: 'thread-saved',

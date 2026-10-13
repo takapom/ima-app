@@ -6,7 +6,7 @@ import type { ModelContextFieldPolicy } from '@worker/core/application/model-con
 import type {
   ModelContextSource,
   ModelHistoryEntry,
-} from '@worker/application/model-context/model-context';
+} from '@worker/core/application/model-context/model-context';
 import type { ModelEvidenceSource } from '@worker/application/model-context/model-evidence';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';

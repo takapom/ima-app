@@ -6,10 +6,10 @@ import type { CandidateObservationRegistryPort } from '@worker/application/ports
 import type { ClockPort, HarnessContext, IdPort } from '@worker/application/ports/context';
 import type { CommitHashPort, CommitPort } from '@worker/application/ports/commit';
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
-import type { ModelContextSource } from '@worker/application/model-context/model-context';
+import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
 import type { RespondPort } from '@worker/application/ports/submission';
 import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
-import { projectModelContext } from '@worker/application/model-context/model-context';
+import { projectModelContext } from '@worker/core/application/model-context/model-context';
 import { SubmitApplication } from '@worker/application/use-cases/submit-response/submit-application';
 import { createRespondPort } from '@worker/application/use-cases/submit-response/respond-port';
 import { encodeModelContext } from '@worker/runtime/model/encoding';

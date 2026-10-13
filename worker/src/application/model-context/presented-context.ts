@@ -2,7 +2,7 @@ import {
   MODEL_CONTEXT_WITHHELD_NAME,
   type ModelContextSource,
   type ProjectedModelContext,
-} from '@worker/application/model-context/model-context';
+} from '@worker/core/application/model-context/model-context';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import type { PresentedInputs } from '@worker/application/model-context/presented-inputs';
 

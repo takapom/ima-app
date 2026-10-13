@@ -3,8 +3,8 @@ import {
   evaluateModelEvidenceAvailability,
   ModelContextError,
   projectModelContext,
-} from '@worker/application/model-context/model-context';
-import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context';
+} from '@worker/core/application/model-context/model-context';
+import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context';
 
 const allowModelContextFieldPolicy: ModelContextFieldPolicy = {
   evidence: {

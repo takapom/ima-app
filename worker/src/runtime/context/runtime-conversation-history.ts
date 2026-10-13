@@ -3,7 +3,7 @@ import type { AssistantResponse, ThreadTurnRequest } from '@ima/contracts';
 import {
   ModelHistoryEntrySchema,
   type ModelHistoryEntry,
-} from '@worker/application/model-context/model-context';
+} from '@worker/core/application/model-context/model-context';
 import { RetentionMetadataSchema, type RetentionMetadata } from '@worker/domain/evidence/retention';
 import { type RegistryScope } from '@worker/domain/evidence/freshness';
 import { isRuntimeRetentionWindowOpen } from '@worker/runtime/retention/runtime-retention';

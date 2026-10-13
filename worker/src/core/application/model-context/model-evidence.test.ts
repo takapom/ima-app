@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { projectModelContext } from '@worker/application/model-context/model-context';
+import { projectModelContext } from '@worker/core/application/model-context/model-context';
 import {
   projectModelEvidence,
   projectModelEvidenceForLlmInput,
