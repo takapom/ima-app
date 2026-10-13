@@ -1,0 +1,190 @@
+# 場所の扱い（ai-behavior.md §2）。
+# 現在地があり地名がなければ聞き返さずに現在地周辺を探し、位置情報が使えず地名もなければ地名を尋ねる。
+# 全ケースに共通する判定（確定・断定しない・LLM採点など）は promptfooconfig.yaml の defaultTest にある。
+
+- description: 現在地あり・地名なし → 甘いものを現在地周辺で探して提案する
+  vars:
+    location: available
+    turns: 近くで甘いもの食べたい
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:firstSearchUsesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://scores.ts:firstRadiusIs1000
+      metric: スコア:半径1000mから
+      weight: 0
+    - type: javascript
+      value: file://scores.ts:queryAvoidsWords
+      config:
+        words:
+          - 甘いもの
+      metric: スコア:検索語
+      weight: 0
+
+- description: 現在地あり・地名なし → ラーメンを現在地周辺で探して提案する
+  vars:
+    location: available
+    turns: 近くでラーメン食べたい
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:firstSearchUsesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://scores.ts:firstRadiusIs1000
+      metric: スコア:半径1000mから
+      weight: 0
+
+- description: 現在地あり・地名なし → 二軒目を現在地周辺で探して提案する
+  vars:
+    location: available
+    turns: この辺で二軒目、軽く飲みたい
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:firstSearchUsesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://scores.ts:firstRadiusIs1000
+      metric: スコア:半径1000mから
+      weight: 0
+    - type: javascript
+      value: file://scores.ts:queryAvoidsWords
+      config:
+        words:
+          - 二軒目
+          - 軽く
+      metric: スコア:検索語
+      weight: 0
+
+- description: 現在地あり・地名なし → 和食を現在地周辺で探して提案する
+  vars:
+    location: available
+    turns: 近くで和食が食べたい
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:firstSearchUsesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://scores.ts:firstRadiusIs1000
+      metric: スコア:半径1000mから
+      weight: 0
+
+- description: 現在地あり・地名なし → 焼肉を現在地周辺で探して提案する
+  vars:
+    location: available
+    turns: 近くで焼肉
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:firstSearchUsesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://scores.ts:firstRadiusIs1000
+      metric: スコア:半径1000mから
+      weight: 0
+
+- description: 位置情報を拒否・地名なし → 現在地で検索せず、地名を1つ尋ねる
+  vars:
+    location: denied
+    turns: カフェ行きたい
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: ask
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:neverSearchesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://assertions.ts:singleQuestion
+      metric: ゲート:質問は1つ
+
+- description: 位置情報の取得が時間切れ・地名なし → 現在地で検索せず、地名を尋ねる
+  vars:
+    location: timeout
+    turns: ご飯食べたい
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: ask
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:neverSearchesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://assertions.ts:singleQuestion
+      metric: ゲート:質問は1つ
+
+- description: 位置情報が使えない・地名なし → 現在地で検索せず、地名を尋ねる
+  vars:
+    location: unavailable
+    turns: 近くで飲みたい
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: ask
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:neverSearchesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://assertions.ts:singleQuestion
+      metric: ゲート:質問は1つ
+
+- description: 現在地の精度が低い・地名なし → 現在地で検索せず、地名を尋ねる
+  vars:
+    location: reduced
+    turns: 近くでカフェ
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: ask
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:neverSearchesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://assertions.ts:singleQuestion
+      metric: ゲート:質問は1つ
+
+- description: 位置情報を拒否・地名あり → 地名で探して提案する
+  vars:
+    location: denied
+    turns: 渋谷でカフェ
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:searchesNamedArea
+      metric: ゲート:場所の扱い

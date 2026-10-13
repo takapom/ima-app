@@ -1,15 +1,17 @@
-# 本番と同じターンを実モデルと合成店舗で実行する疎通用の評価（#87）。
-# 実行はリポジトリのルートで `bun run eval`。OpenAIの利用料が発生する。
-description: ima. 疎通用の評価
+# 本番と同じターンを実モデルと合成店舗で実行する評価（#87・#88）。
+# 実行はリポジトリのルートで `bun run eval`。OpenAIの利用料が発生する（モデルとLLM採点）。
+# 手順と採否の基準は docs/devlop/development.md の「プロンプトとToolの評価」を参照。
+description: ima. AIの振る舞いの評価
 
 # `production`は本番のシステムプロンプトをそのまま使う。案を比べるときは
 # `file://prompts/案.txt` のように並べる（ファイルの中の {{ }} はpromptfooのテンプレートとして展開される）。
 prompts:
   - production
 
+# Toolのdescriptionの案を比べるときは、同じProviderを`label`と`toolDescriptionsFile`を変えて並べる。
 providers:
   - id: file://provider.ts
-    label: ima-turn
+    label: 現行
     config:
       workerDir: worker
       envFile: .dev.vars.llm
@@ -24,67 +26,43 @@ defaultTest:
     shopSet: shibuya-ebisu
     # JSTの土曜20:00。掲載営業時間の読み方を実行ごとに揃える。
     now: '2026-10-10T11:00:00.000Z'
+  options:
+    # LLM採点に使うモデル。本番と同じく応答をOpenAIに保存させない。
+    provider:
+      id: openai:responses:gpt-5.6-luna
+      config:
+        reasoning:
+          effort: low
+        store: false
+  # 全ケースに共通する判定。「ゲート:」は1つでも不合格ならケースを不合格にする必須ゲート、
+  # 「スコア:」はweight 0で、指標として記録するが合否には使わない。
+  assert:
+    - type: javascript
+      value: file://assertions.ts:committed
+      metric: ゲート:確定
+    - type: javascript
+      value: file://assertions.ts:noOpenNowClaim
+      metric: ゲート:断定しない
+    - type: javascript
+      value: file://scores.ts:noRepairs
+      metric: スコア:修復なし
+      weight: 0
+    - type: llm-rubric
+      metric: スコア:理由の具体性
+      weight: 0
+      # 採点には、ユーザーに見える発話・メッセージ・カードだけを渡す。
+      transform: "output.split('\\n').filter((line) => /^(\\[ターン|メッセージ:|カード\\d)/.test(line)).join('\\n')"
+      value: >-
+        店舗カードを提案している場合、各カードの理由が、ユーザーの要望のどれに店舗のどの情報
+        （ジャンル・掲載文・予算・設備など）が合うのかを具体的に結び付けている。
+        カードを提案していない場合は、ユーザーが次に何をすればよいかが分かる説明になっている。
+    - type: llm-rubric
+      metric: スコア:事実と推測の区別
+      weight: 0
+      transform: "output.split('\\n').filter((line) => /^(\\[ターン|メッセージ:|カード\\d)/.test(line)).join('\\n')"
+      value: >-
+        取得した店舗情報で確認できる事実と、推測や確認できない事柄（雰囲気・今営業しているか・
+        空席・徒歩時間・終電・滞在できる時間など）を文章の中で区別しており、
+        確認できない事柄を断定していない。
 
-tests:
-  - description: 現在地あり・地名なし → 聞き返さずに現在地周辺を探して提案する
-    vars:
-      location: available
-      turns: 近くで甘いもの食べたい
-    assert:
-      - type: javascript
-        value: file://assertions.ts:committed
-        metric: 確定
-      - type: javascript
-        value: file://assertions.ts:firstSearchUsesCurrentLocation
-        metric: 場所の扱い
-      - type: javascript
-        value: file://assertions.ts:kindIs
-        config:
-          kind: propose
-        metric: 応答の種別
-
-  - description: 位置情報なし・地名なし → 現在地で検索せず、地名を尋ねる
-    vars:
-      location: denied
-      turns: カフェ行きたい
-    assert:
-      - type: javascript
-        value: file://assertions.ts:committed
-        metric: 確定
-      - type: javascript
-        value: file://assertions.ts:neverSearchesCurrentLocation
-        metric: 場所の扱い
-      - type: javascript
-        value: file://assertions.ts:kindIs
-        config:
-          kind: ask
-        metric: 応答の種別
-
-  - description: 地名あり → その地名で探して提案する
-    vars:
-      location: available
-      turns: 恵比寿で静かめのバーに行きたい
-    assert:
-      - type: javascript
-        value: file://assertions.ts:committed
-        metric: 確定
-      - type: javascript
-        value: file://assertions.ts:searchesNamedArea
-        metric: 場所の扱い
-      - type: javascript
-        value: file://assertions.ts:kindIs
-        config:
-          kind: propose
-        metric: 応答の種別
-
-  - description: 該当する店がない → カードを出さずに状況を伝える
-    vars:
-      location: denied
-      turns: 札幌でスープカレーが食べたい
-    assert:
-      - type: javascript
-        value: file://assertions.ts:committed
-        metric: 確定
-      - type: javascript
-        value: file://assertions.ts:noCards
-        metric: 無理に提案しない
+tests: file://cases/*.yaml

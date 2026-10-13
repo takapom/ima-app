@@ -1,0 +1,131 @@
+# 続きの会話（ai-behavior.md §1・§3）。`turns`は1行1発話で、同じスレッドで順に実行する。
+# 判定は最後のターンを見る。表示中の候補への説明・比較は検索し直さずに答え、
+# 別案・却下は前の候補と重ならないように提案し、変更の方向が分からなければ尋ねる。
+
+- description: 既存候補の比較 → 検索し直さずに違いを説明する
+  vars:
+    location: available
+    turns: |
+      近くでカフェ
+      1つ目と2つ目は何が違う？
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: answer
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:lastTurnDoesNotSearch
+      metric: ゲート:既存候補への回答
+
+- description: 既存候補の説明 → 検索し直さずに雰囲気を掲載の範囲で説明する
+  vars:
+    location: denied
+    turns: |
+      恵比寿でバー
+      2つ目の店はどんな雰囲気？
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: answer
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:lastTurnDoesNotSearch
+      metric: ゲート:既存候補への回答
+
+- description: 既存候補の営業時間 → 掲載の営業時間を伝え、営業中とは断定しない
+  vars:
+    location: available
+    turns: |
+      近くで甘いもの食べたい
+      最初の店って何時までやってる？
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: answer
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:lastTurnDoesNotSearch
+      metric: ゲート:既存候補への回答
+
+- description: 既存候補の予算 → 検索し直さずに予算を答える
+  vars:
+    location: available
+    turns: |
+      近くでラーメン
+      そこの予算はどれくらい？
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: answer
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:lastTurnDoesNotSearch
+      metric: ゲート:既存候補への回答
+
+- description: 条件変更（もっと安く） → 前の第一候補より安い店を提案し直す
+  vars:
+    location: available
+    turns: |
+      近くで和食
+      もっと安いところがいい
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:excludesPreviousHero
+      metric: ゲート:別案・却下
+
+- description: 別案の依頼 → 前に出していないカフェを提案する
+  vars:
+    location: available
+    turns: |
+      近くでカフェ
+      別のカフェを提案して
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:differsFromPreviousCards
+      metric: ゲート:別案・却下
+
+- description: 第一候補の却下 → 却下した店を再提案しない
+  vars:
+    location: available
+    turns: |
+      近くでカフェ
+      1つ目の店は嫌、ほかで
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:excludesPreviousHero
+      metric: ゲート:別案・却下
+
+- description: 方向の分からない否定（ちがう） → 何を変えたいかを1つ尋ねる
+  vars:
+    location: available
+    turns: |
+      近くでカフェ
+      ちがう
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: ask
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:singleQuestion
+      metric: ゲート:質問は1つ

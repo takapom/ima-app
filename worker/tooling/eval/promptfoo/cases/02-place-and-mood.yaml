@@ -1,0 +1,188 @@
+# 地名のある要望と、気分・状態の要望（ai-behavior.md §1・§3）。
+# 要望の言葉はジャンル語に置き換えて探し、雰囲気は掲載文の範囲で推測として伝える。
+
+- description: 地名あり → 恵比寿で静かめのバーを探して提案する
+  vars:
+    location: available
+    turns: 恵比寿で静かめのバーに行きたい
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:searchesNamedArea
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://scores.ts:queryAvoidsWords
+      config:
+        words:
+          - 静かめ
+      metric: スコア:検索語
+      weight: 0
+
+- description: 地名あり・位置情報なし → 渋谷でラーメンを探して提案する
+  vars:
+    location: denied
+    turns: 渋谷でラーメン
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:searchesNamedArea
+      metric: ゲート:場所の扱い
+
+- description: 地名あり・現在地もあり → 現在地より地名を優先して探す
+  vars:
+    location: available
+    turns: 恵比寿でカフェ
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:searchesNamedArea
+      metric: ゲート:場所の扱い
+
+- description: 地名と設備の条件 → 新宿で個室のある居酒屋を第一候補にする
+  vars:
+    shopSet: shinjuku
+    location: denied
+    turns: 新宿で個室のある居酒屋
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:searchesNamedArea
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://assertions.ts:heroIn
+      config:
+        names:
+          - 架空 居酒屋 さくら
+          - 架空 居酒屋 月見
+          - 架空 炉端 いろり
+          - 架空 焼鳥 とりこ
+      metric: ゲート:条件に合う候補
+
+- description: 気分の要望 → 雨・屋内・話していたいを、ジャンル語に置き換えて探す
+  vars:
+    location: available
+    turns: 雨だから屋内で、まだ話していたい。高すぎない二軒目
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:firstSearchUsesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://scores.ts:queryAvoidsWords
+      config:
+        words:
+          - 雨
+          - 屋内
+          - 話して
+          - 二軒目
+          - 高すぎない
+      metric: スコア:検索語
+      weight: 0
+
+- description: 状態の要望 → 疲れた・座れるを、ジャンル語に置き換えて探す
+  vars:
+    location: available
+    turns: 少し疲れた。座れるところがいい。甘いものはもういらない
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:firstSearchUsesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://scores.ts:queryAvoidsWords
+      config:
+        words:
+          - 疲れ
+          - 座れる
+          - 甘いもの
+      metric: スコア:検索語
+      weight: 0
+
+- description: 地名と気分の要望 → 恵比寿で静かめの甘いものを探す
+  vars:
+    location: available
+    turns: 恵比寿、ご飯終わり。静かめで甘いもの
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:searchesNamedArea
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://scores.ts:queryAvoidsWords
+      config:
+        words:
+          - 静かめ
+          - 甘いもの
+          - ご飯終わり
+      metric: スコア:検索語
+      weight: 0
+
+- description: 気分だけの要望 → まったりを、ジャンル語に置き換えて現在地周辺で探す
+  vars:
+    location: available
+    turns: まったりできるところ探して
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:firstSearchUsesCurrentLocation
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://scores.ts:queryAvoidsWords
+      config:
+        words:
+          - まったり
+      metric: スコア:検索語
+      weight: 0
+
+- description: 目的の要望 → 新宿で記念日に合う店を第一候補にする
+  vars:
+    shopSet: shinjuku
+    location: denied
+    turns: 新宿で記念日のディナー
+  assert:
+    - type: javascript
+      value: file://assertions.ts:kindIs
+      config:
+        kind: propose
+      metric: ゲート:応答の種別
+    - type: javascript
+      value: file://assertions.ts:searchesNamedArea
+      metric: ゲート:場所の扱い
+    - type: javascript
+      value: file://assertions.ts:heroIn
+      config:
+        names:
+          - 架空 イタリアン ルーチェ
+      metric: ゲート:条件に合う候補

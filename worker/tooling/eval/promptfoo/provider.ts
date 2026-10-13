@@ -20,7 +20,8 @@ import {
 
 /**
  * promptfooのカスタムProvider。評価用Workerを`wrangler dev --local`で1度だけ起動し、
- * ケースごとに`POST /turns`を呼ぶ。APIキーはwranglerが--env-fileから読み、このプロセスは扱わない。
+ * ケースごとに`POST /turns`を呼ぶ。Workerが使うAPIキーはwranglerが--env-fileから読む。
+ * （LLM採点のため、promptfoo自体も同じenvファイルを読むが、このProviderはキーを参照しない。）
  *
  * promptfooを依存に加えないため、Provider契約のうち使う部分の型だけをここに写す。
  */
