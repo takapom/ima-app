@@ -3,7 +3,7 @@ import { sessionExpiryAt } from '@worker/core/domain/threads/session-expiry';
 import {
   createRuntimeProductionContextStore,
   type RuntimeProductionContextStore,
-} from '@worker/runtime/context/runtime-production-context';
+} from '@worker/infrastructure/runtime/context/runtime-production-context';
 import type { RuntimeProductionContextPersistence } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 
 export const createFactoryRuntimeContext = (input: {
