@@ -7,8 +7,8 @@ import type {
   CommitRecord,
   CommitRequest,
 } from '@worker/core/application/ports/commit';
-import { SubmitApplication } from '@worker/application/use-cases/submit-response/submit-application';
-import { makeFixture } from '@worker/application/use-cases/submit-response/tests/submit-cards-fixtures';
+import { SubmitApplication } from '@worker/core/application/use-cases/submit-response/submit-application';
+import { makeFixture } from '@worker/core/application/use-cases/submit-response/tests/submit-cards-fixtures';
 
 const turnKey = (scope: RegistryScope, turnId: string): string =>
   `${scope.ownerScopeRef}\u0000${scope.threadId}\u0000${turnId}`;

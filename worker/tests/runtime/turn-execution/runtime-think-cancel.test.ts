@@ -4,7 +4,7 @@ import type {
   CommitPortResult,
   CommitRequest,
 } from '@worker/core/application/ports/commit';
-import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
+import type { CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';
 import type { HarnessContext } from '@worker/core/application/ports/context';
 import type {
   PlaceDetailsPort,

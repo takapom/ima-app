@@ -2,7 +2,7 @@ import type {
   ConversationCards,
   ConversationPhotoSource,
 } from '@worker/domain/conversations/conversation-cards';
-import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
+import type { CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';
 import type { RuntimeCardEvidenceResolver } from '@worker/runtime/response/runtime-response';
 import type { ConversationMessage } from '@worker/domain/conversations/conversation-message';
 

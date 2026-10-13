@@ -10,7 +10,7 @@ import {
   makeSelection,
   now,
   type EvidenceIds,
-} from '@worker/application/use-cases/submit-response/tests/submit-cards-fixtures';
+} from '@worker/core/application/use-cases/submit-response/tests/submit-cards-fixtures';
 
 const idsFor = (
   fixture: ReturnType<typeof makeFixture>,

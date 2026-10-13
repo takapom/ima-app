@@ -4,7 +4,7 @@ import type {
   CommittedResponse,
   SubmitApplication,
   CommitApplicationResult,
-} from '@worker/application/use-cases/submit-response/submit-application';
+} from '@worker/core/application/use-cases/submit-response/submit-application';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type {
   CancellationToken,

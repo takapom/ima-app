@@ -8,7 +8,7 @@ import {
   makeInput,
   makeSelection,
   now,
-} from '@worker/application/use-cases/submit-response/tests/submit-cards-fixtures';
+} from '@worker/core/application/use-cases/submit-response/tests/submit-cards-fixtures';
 
 const statusFor = (fixture: ReturnType<typeof makeFixture>) => {
   const ids = fixture.ids.get('candidate-1');

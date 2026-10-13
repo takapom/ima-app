@@ -7,7 +7,7 @@ import {
   type RetentionMetadata as PublicRetentionMetadata,
   type SearchOutcome,
 } from '@ima/contracts';
-import { type CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
+import { type CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';
 import {
   type EvidenceLink,
   type ValidatedCard,

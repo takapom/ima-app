@@ -6,7 +6,7 @@ import {
   makeInput,
   makeSelection,
   now,
-} from '@worker/application/use-cases/submit-response/tests/submit-cards-fixtures';
+} from '@worker/core/application/use-cases/submit-response/tests/submit-cards-fixtures';
 
 const fixtureFor = (listedOpenAtEvaluation: boolean | null = null) => {
   const fixture = makeFixture(['candidate-1'], { requireLastOrder: false });
