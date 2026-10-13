@@ -60,7 +60,12 @@ export class EvalThreadDO extends ThreadDO {
     const shops = evalShopSetFor(evalCase.shopSet);
     if (shops === undefined) return failureJson('UNKNOWN_SHOP_SET');
     this.evalSetup = { shops, now: evalCase.now };
-    this.evalRecorder.setSystemPrompt(evalCase.systemPrompt);
+    this.evalRecorder.setVariant({
+      ...(evalCase.systemPrompt === undefined ? {} : { systemPrompt: evalCase.systemPrompt }),
+      ...(evalCase.toolDescriptions === undefined
+        ? {}
+        : { toolDescriptions: evalCase.toolDescriptions }),
+    });
     const initialized = await this.initialize(EVAL_OWNER_SCOPE_REF, threadId);
     if (!initialized.ok) return failureJson('TURN_FAILED');
 

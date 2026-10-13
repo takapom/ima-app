@@ -95,7 +95,7 @@ const observation = (overrides: Partial<EvalTurnObservation> = {}): EvalTurnObse
   toolResultsMatched: true,
   modelCalls: [],
   respondMissing: [],
-  systemPromptNotFound: false,
+  evalError: null,
   outcome: { committed: true, operations: { search_places: 1, respond: 1 }, kind: 'propose' },
   rejections: [],
   ...overrides,
@@ -228,7 +228,7 @@ describe('evalTurnRecord', () => {
       observation({
         toolCalls: [],
         outcome: null,
-        systemPromptNotFound: true,
+        evalError: 'SYSTEM_PROMPT_NOT_FOUND',
         toolResultsMatched: true,
       }),
     );

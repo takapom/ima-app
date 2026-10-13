@@ -1,7 +1,9 @@
 import * as v from 'valibot';
 import {
   EvalCaseSchema,
+  EvalToolDescriptionsSchema,
   type EvalCase,
+  type EvalToolDescriptions,
   type EvalRunResult,
   type EvalToolCall,
   type EvalTurnRecord,
@@ -20,12 +22,25 @@ const textVar = (vars: Record<string, unknown>, name: string): string | undefine
  * promptfooのvarsとプロンプトから評価ケースを作る。
  * `turns`は1行1発話の文字列にする（配列のvarsはpromptfooが別ケースに展開してしまうため）。
  */
+type Parsed<T> =
+  { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: string };
+
+const invalidFields = (issues: readonly v.BaseIssue<unknown>[]): string =>
+  [...new Set(issues.map((issue) => v.getDotPath(issue) ?? '(root)'))].join(', ');
+
+/** Toolのdescriptionの案（JSON）を検証する。書けるのは公開Toolの名前だけ。 */
+export const parseToolDescriptions = (raw: unknown): Parsed<EvalToolDescriptions> => {
+  const parsed = v.safeParse(EvalToolDescriptionsSchema, raw);
+  return parsed.success
+    ? { ok: true, value: parsed.output }
+    : { ok: false, error: `Toolのdescriptionの案が不正です: ${invalidFields(parsed.issues)}` };
+};
+
 export const evalCaseFrom = (
   prompt: string,
   vars: Record<string, unknown>,
-):
-  | { readonly ok: true; readonly value: EvalCase }
-  | { readonly ok: false; readonly error: string } => {
+  toolDescriptions?: EvalToolDescriptions,
+): Parsed<EvalCase> => {
   const turns = (textVar(vars, 'turns') ?? '')
     .split('\n')
     .map((line) => line.trim())
@@ -39,10 +54,10 @@ export const evalCaseFrom = (
     areaText: vars.areaText ?? null,
     budget: vars.budget ?? null,
     ...(systemPrompt === undefined ? {} : { systemPrompt }),
+    ...(toolDescriptions === undefined ? {} : { toolDescriptions }),
   });
   if (parsed.success) return { ok: true, value: parsed.output };
-  const fields = [...new Set(parsed.issues.map((issue) => v.getDotPath(issue) ?? '(case)'))];
-  return { ok: false, error: `評価ケースのvarsが不正です: ${fields.join(', ')}` };
+  return { ok: false, error: `評価ケースのvarsが不正です: ${invalidFields(parsed.issues)}` };
 };
 
 const toolLabel = (call: EvalToolCall): string => {
@@ -113,6 +128,9 @@ export const evaluationErrorOf = (run: EvalRunResult): string | undefined => {
     }
     if (turn.evalError === 'SYSTEM_PROMPT_NOT_FOUND') {
       return `ターン${index + 1}でシステムプロンプト案を適用できませんでした（モデル入力に本番のプロンプトが見つからない）。`;
+    }
+    if (turn.evalError === 'TOOL_DESCRIPTION_TARGET_NOT_FOUND') {
+      return `ターン${index + 1}でToolのdescriptionの案を適用できませんでした（案に書いたToolがモデル入力にない）。`;
     }
     if (
       turn.modelCalls.some(

@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import * as v from 'valibot';
@@ -10,7 +10,13 @@ import {
   EvalRunResultSchema,
   type EvalHealth,
 } from '../eval-contract';
-import { evalCaseFrom, evaluationErrorOf, renderEvalRun, tokenUsageOf } from './provider-support';
+import {
+  evalCaseFrom,
+  evaluationErrorOf,
+  parseToolDescriptions,
+  renderEvalRun,
+  tokenUsageOf,
+} from './provider-support';
 
 /**
  * promptfooのカスタムProvider。評価用Workerを`wrangler dev --local`で1度だけ起動し、
@@ -41,6 +47,10 @@ const ProviderConfigSchema = v.object({
   port: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1024), v.maxValue(65_535)), 8791),
   readyTimeoutMs: v.optional(v.pipe(v.number(), v.minValue(1_000)), 120_000),
   caseTimeoutMs: v.optional(v.pipe(v.number(), v.minValue(1_000)), 300_000),
+  /** Toolのdescriptionの案（JSON）。評価設定ファイルからの相対パス。省略時は本番のdescription。 */
+  toolDescriptionsFile: v.optional(v.string()),
+  /** promptfooが渡す、評価設定ファイルのディレクトリ。 */
+  basePath: v.optional(v.string()),
 });
 type ProviderConfig = v.InferOutput<typeof ProviderConfigSchema>;
 
@@ -156,16 +166,31 @@ const ensureWorker = (config: ProviderConfig): Promise<string> => {
   return ready;
 };
 
+/** 案のファイルを読む。読めない・形が違うときは、ケースごとにERRORとして返すため理由を保つ。 */
+const loadToolDescriptions = (config: ProviderConfig) => {
+  if (config.toolDescriptionsFile === undefined) return { ok: true, value: undefined } as const;
+  const path = resolve(config.basePath ?? process.cwd(), config.toolDescriptionsFile);
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return { ok: false, error: `Toolのdescriptionの案を読めません: ${path}` } as const;
+  }
+  return parseToolDescriptions(raw);
+};
+
 const errorText = (error: unknown): string =>
   error instanceof Error ? error.message : '評価用Workerの呼び出しに失敗しました。';
 
 export default class ImaTurnProvider {
   private readonly providerId: string;
   private readonly config: ProviderConfig;
+  private readonly toolDescriptions: ReturnType<typeof loadToolDescriptions>;
 
   constructor(options: ProviderOptions = {}) {
     this.providerId = options.id ?? 'ima-turn';
     this.config = v.parse(ProviderConfigSchema, options.config ?? {});
+    this.toolDescriptions = loadToolDescriptions(this.config);
   }
 
   id(): string {
@@ -173,7 +198,8 @@ export default class ImaTurnProvider {
   }
 
   async callApi(prompt: string, context?: CallApiContext): Promise<ProviderResponse> {
-    const evalCase = evalCaseFrom(prompt, context?.vars ?? {});
+    if (!this.toolDescriptions.ok) return { error: this.toolDescriptions.error };
+    const evalCase = evalCaseFrom(prompt, context?.vars ?? {}, this.toolDescriptions.value);
     if (!evalCase.ok) return { error: evalCase.error };
     let body: unknown;
     let status: number;

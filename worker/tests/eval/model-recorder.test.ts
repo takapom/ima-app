@@ -6,10 +6,8 @@ import type {
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
 } from '@worker/runtime/turn-execution/runtime-model-guard';
-import {
-  createEvalModelRecorder,
-  EvalSystemPromptMissingError,
-} from '../../tooling/eval/model-recorder';
+import { createEvalModelRecorder } from '../../tooling/eval/model-recorder';
+import { EvalVariantNotAppliedError } from '../../tooling/eval/variants';
 
 type FinishPart = Extract<RuntimeModelGuardStreamPart, { type: 'finish' }>;
 type Prompt = RuntimeModelGuardCallOptions['prompt'];
@@ -208,7 +206,7 @@ describe('createEvalModelRecorder', () => {
     const recorder = createEvalModelRecorder();
     const wrapped = recorder.wrap(model);
     await drain((await wrapped.doStream({ prompt: basePrompt })).stream);
-    recorder.setSystemPrompt('評価用の案');
+    recorder.setVariant({ systemPrompt: '評価用の案' });
     await drain((await wrapped.doStream({ prompt: basePrompt })).stream);
 
     expect(prompts[0]?.[0]).toEqual({ role: 'system', content: MODEL_SYSTEM_PROMPT });
@@ -219,15 +217,15 @@ describe('createEvalModelRecorder', () => {
   it('fails loudly when the production prompt is absent, instead of testing another prompt', async () => {
     const { model } = scriptedModel([[finish]]);
     const recorder = createEvalModelRecorder();
-    recorder.setSystemPrompt('評価用の案');
+    recorder.setVariant({ systemPrompt: '評価用の案' });
     await expect(
       recorder.wrap(model).doStream({ prompt: [{ role: 'system', content: '別の指示' }] }),
-    ).rejects.toBeInstanceOf(EvalSystemPromptMissingError);
+    ).rejects.toBeInstanceOf(EvalVariantNotAppliedError);
     // モデルは呼ばれず、案を適用できなかったことが記録に残る。
     const turn = recorder.takeTurn();
-    expect(turn.systemPromptNotFound).toBe(true);
+    expect(turn.evalError).toBe('SYSTEM_PROMPT_NOT_FOUND');
     expect(turn.modelCalls).toEqual([]);
-    expect(recorder.takeTurn().systemPromptNotFound).toBe(false);
+    expect(recorder.takeTurn().evalError).toBeNull();
   });
 
   it('records a stream that fails midway as a failed call, not as a skipped respond', async () => {

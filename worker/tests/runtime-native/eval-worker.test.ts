@@ -8,7 +8,7 @@ import {
   EvalRunResultSchema,
   type EvalCaseInput,
 } from '../../tooling/eval/eval-contract';
-import { ECHO_SYSTEM_LENGTH, ECHO_SYSTEM_MARKER } from './eval-scripted-thread';
+import { ECHO_SYSTEM_LENGTH, ECHO_SYSTEM_MARKER, ECHO_TOOL_MARKER } from './eval-scripted-thread';
 
 const evalEnv = (): EvalWorkerEnv => {
   if (!('EVAL_THREADS' in env)) throw new Error('EVAL_THREADS binding is missing');
@@ -90,6 +90,22 @@ describe('evaluation Worker on the production ThreadDO', () => {
     );
     expect(variant.turns[0]?.messages).toEqual(['system:評価用の案です']);
     expect(variant.turns[0]?.kind).toBe('answer');
+  });
+
+  it('sends a tool description variant in place of the production description', async () => {
+    const turnsOf = async (body: unknown) =>
+      v.parse(EvalRunResultSchema, await (await post(body)).json()).turns;
+    const production = await turnsOf(caseOf({ turns: [`${ECHO_TOOL_MARKER} 確認`] }));
+    expect(production[0]?.messages[0]?.startsWith('tool:')).toBe(true);
+    expect(production[0]?.messages[0]).not.toBe('tool:検索の案です');
+
+    const variant = await turnsOf(
+      caseOf({
+        turns: [`${ECHO_TOOL_MARKER} 確認`],
+        toolDescriptions: { search_places: '検索の案です' },
+      }),
+    );
+    expect(variant[0]?.messages).toEqual(['tool:検索の案です']);
   });
 
   it('refuses invalid cases, unknown shop sets and a missing model key explicitly', async () => {

@@ -7,6 +7,8 @@ import { EvalThreadDO } from '../../tooling/eval/eval-thread-do';
 /** 発話にこの印があると、受け取ったimaのシステムプロンプトの先頭をanswerで返す。 */
 export const ECHO_SYSTEM_MARKER = '[echo-system]';
 export const ECHO_SYSTEM_LENGTH = 12;
+/** 発話にこの印があると、受け取った`search_places`のdescriptionの先頭をanswerで返す。 */
+export const ECHO_TOOL_MARKER = '[echo-tool]';
 
 const usage = {
   inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 },
@@ -53,6 +55,16 @@ const scriptedModel = (): RuntimeModelGuardModel => {
         const head = system?.role === 'system' ? system.content.slice(0, ECHO_SYSTEM_LENGTH) : '';
         return Promise.resolve({
           stream: toolParts(call, 'respond', { kind: 'answer', message: `system:${head}` }),
+        });
+      }
+      if (prompt.includes(ECHO_TOOL_MARKER)) {
+        const search = options.tools?.find((entry) => entry.name === 'search_places');
+        const head =
+          search?.type === 'function'
+            ? (search.description ?? '').slice(0, ECHO_SYSTEM_LENGTH)
+            : '';
+        return Promise.resolve({
+          stream: toolParts(call, 'respond', { kind: 'answer', message: `tool:${head}` }),
         });
       }
       const candidateId = /"candidateId":"([^"]+)"/u.exec(prompt)?.[1];

@@ -121,6 +121,6 @@ export const evalTurnRecord = (
       codes: rejection.issues.map((issue) => issue.code),
       remainingRepairs: rejection.remainingRepairs,
     })),
-    evalError: observation.systemPromptNotFound ? 'SYSTEM_PROMPT_NOT_FOUND' : null,
+    evalError: observation.evalError,
   };
 };

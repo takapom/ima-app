@@ -11,6 +11,7 @@ import type { EvalRunResult, EvalTurnRecord } from '../../tooling/eval/eval-cont
 import {
   evalCaseFrom,
   evaluationErrorOf,
+  parseToolDescriptions,
   PRODUCTION_PROMPT,
   renderEvalRun,
   tokenUsageOf,
@@ -92,10 +93,29 @@ describe('evalCaseFrom', () => {
     }
   });
 
+  it('adds tool description variants to the case', () => {
+    const parsed = evalCaseFrom(PRODUCTION_PROMPT, vars, { respond: '確定の案' });
+    expect(parsed.ok && parsed.value.toolDescriptions).toEqual({ respond: '確定の案' });
+  });
+
   it('names the invalid vars instead of running a broken case', () => {
     expect(evalCaseFrom(PRODUCTION_PROMPT, { ...vars, location: 'somewhere', turns: '' })).toEqual({
       ok: false,
       error: '評価ケースのvarsが不正です: location, turns',
+    });
+  });
+});
+
+describe('parseToolDescriptions', () => {
+  it('accepts descriptions for public tools only', () => {
+    expect(parseToolDescriptions({ search_places: '検索の案' })).toEqual({
+      ok: true,
+      value: { search_places: '検索の案' },
+    });
+    expect(parseToolDescriptions({ web_search: '案' })).toMatchObject({ ok: false });
+    expect(parseToolDescriptions({ respond: '' })).toEqual({
+      ok: false,
+      error: 'Toolのdescriptionの案が不正です: respond',
     });
   });
 });
@@ -164,6 +184,16 @@ describe('evaluationErrorOf', () => {
         ],
       }),
     ).toContain('RUNTIME_UNCONFIGURED');
+  });
+
+  it('reports tool descriptions that could not be applied', () => {
+    expect(
+      evaluationErrorOf({
+        turns: [
+          turn({ committed: false, kind: null, evalError: 'TOOL_DESCRIPTION_TARGET_NOT_FOUND' }),
+        ],
+      }),
+    ).toContain('Toolのdescriptionの案を適用できませんでした');
   });
 
   it('reports a prompt variant that could not be applied', () => {

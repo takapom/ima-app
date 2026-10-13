@@ -28,6 +28,16 @@ const canonicalUtcTimestamp = v.pipe(
   }, 'now must be an existing UTC time'),
 );
 
+const toolDescription = v.pipe(v.string(), v.minLength(1), v.maxLength(4_000));
+
+/** 本番のToolのdescriptionを置き換える案。書いたToolだけを置き換える。 */
+export const EvalToolDescriptionsSchema = v.strictObject({
+  search_places: v.optional(toolDescription),
+  get_place_details: v.optional(toolDescription),
+  respond: v.optional(toolDescription),
+});
+export type EvalToolDescriptions = v.InferOutput<typeof EvalToolDescriptionsSchema>;
+
 export const EvalCaseSchema = v.strictObject({
   /** 合成店舗セットの名前。座標はセットと一緒にWorkerの中だけに置く。 */
   shopSet: v.pipe(v.string(), v.regex(/^[a-z0-9-]{1,64}$/u)),
@@ -43,6 +53,8 @@ export const EvalCaseSchema = v.strictObject({
   budget: v.optional(v.nullable(v.picklist(['cheap', 'normal', 'any'])), null),
   /** 本番のシステムプロンプトを置き換える案。省略時は本番の定数を使う。 */
   systemPrompt: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(20_000))),
+  /** 省略時は本番のToolのdescriptionを使う。 */
+  toolDescriptions: v.optional(EvalToolDescriptionsSchema),
 });
 export type EvalCase = v.InferOutput<typeof EvalCaseSchema>;
 export type EvalCaseInput = v.InferInput<typeof EvalCaseSchema>;
@@ -112,7 +124,9 @@ export const EvalTurnRecordSchema = v.strictObject({
     }),
   ),
   /** 評価の仕組み側でターンを正しく実行できなかった理由。モデルの採点には使わない。 */
-  evalError: v.nullable(v.picklist(['SYSTEM_PROMPT_NOT_FOUND'])),
+  evalError: v.nullable(
+    v.picklist(['SYSTEM_PROMPT_NOT_FOUND', 'TOOL_DESCRIPTION_TARGET_NOT_FOUND']),
+  ),
 });
 export type EvalTurnRecord = v.InferOutput<typeof EvalTurnRecordSchema>;
 

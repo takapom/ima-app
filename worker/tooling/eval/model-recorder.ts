@@ -1,5 +1,4 @@
 import { wrapLanguageModel } from 'ai';
-import { MODEL_SYSTEM_PROMPT } from '@worker/runtime/model/system-prompt';
 import { toolInputInvalidFields } from '@worker/runtime/model/tool-input-error';
 import type {
   RuntimeModelGuardCallOptions,
@@ -8,6 +7,7 @@ import type {
   RuntimeModelGuardStreamPart,
 } from '@worker/runtime/turn-execution/runtime-model-guard';
 import type { EvalModelCall, EvalToolCall, EvalToolResult, EvalTurnRecord } from './eval-contract';
+import { applyVariant, EvalVariantNotAppliedError, type EvalVariant } from './variants';
 
 type PromptMessage = RuntimeModelGuardCallOptions['prompt'][number];
 type ToolResultOutput = Extract<
@@ -25,25 +25,17 @@ export type EvalModelRecording = {
   readonly toolResultsMatched: boolean;
   readonly modelCalls: EvalModelCall[];
   readonly respondMissing: RespondMissing[];
-  /** 案を適用できずにモデルを呼ばなかったstepがあったか。 */
-  readonly systemPromptNotFound: boolean;
+  /** 案を適用できずにモデルを呼ばなかった理由。なければnull。 */
+  readonly evalError: EvalTurnRecord['evalError'];
 };
 
 export type EvalModelRecorder = {
   readonly wrap: (model: RuntimeModelGuardModel) => RuntimeModelGuardModel;
-  /** undefinedなら本番のシステムプロンプトのまま。 */
-  readonly setSystemPrompt: (text: string | undefined) => void;
+  /** 評価する案。省略した部分は本番のまま。 */
+  readonly setVariant: (variant: EvalVariant) => void;
   /** 前回の呼び出し以降にモデルが行ったことを返し、次のターンの記録を始める。 */
   readonly takeTurn: () => EvalModelRecording;
 };
-
-/** 案を適用できないときに投げる。別のプロンプトを黙って評価しないため。 */
-export class EvalSystemPromptMissingError extends Error {
-  constructor() {
-    super('the production system prompt was not found in the model input');
-    this.name = 'EvalSystemPromptMissingError';
-  }
-}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -155,12 +147,12 @@ const observeStream = (
 export const createEvalModelRecorder = (
   now: () => number = () => Date.now(),
 ): EvalModelRecorder => {
-  let systemPrompt: string | undefined;
+  let variant: EvalVariant = {};
   let calls: { name: string; args: unknown }[] = [];
   let promptCalls: PromptCall[] = [];
   let modelCalls: EvalModelCall[] = [];
   let respondMissing: RespondMissing[] = [];
-  let systemPromptNotFound = false;
+  let evalError: EvalTurnRecord['evalError'] = null;
 
   /**
    * そのターンのTool呼び出しと結果を、モデルに渡るpromptから読む。
@@ -198,23 +190,6 @@ export const createEvalModelRecorder = (
     promptCalls.length <= calls.length &&
     promptCalls.every((promptCall, index) => promptCall.name === calls[index]?.name);
 
-  const replaceSystemPrompt = (
-    prompt: RuntimeModelGuardCallOptions['prompt'],
-    replacement: string,
-  ): RuntimeModelGuardCallOptions['prompt'] => {
-    let replaced = 0;
-    const next = prompt.map((message): PromptMessage => {
-      if (message.role !== 'system' || message.content !== MODEL_SYSTEM_PROMPT) return message;
-      replaced += 1;
-      return { ...message, content: replacement };
-    });
-    if (replaced === 0) {
-      systemPromptNotFound = true;
-      throw new EvalSystemPromptMissingError();
-    }
-    return next;
-  };
-
   const finishCall = (
     started: number,
     toolNames: string[],
@@ -236,11 +211,13 @@ export const createEvalModelRecorder = (
         specificationVersion: 'v3',
         transformParams: ({ params }) => {
           readPromptCalls(params.prompt);
-          return Promise.resolve(
-            systemPrompt === undefined
-              ? params
-              : { ...params, prompt: replaceSystemPrompt(params.prompt, systemPrompt) },
-          );
+          try {
+            return Promise.resolve(applyVariant(params, variant));
+          } catch (error: unknown) {
+            // モデルは呼ばれない。採点せずERRORにするため、理由を記録に残す。
+            if (error instanceof EvalVariantNotAppliedError) evalError = error.reason;
+            return Promise.reject(error instanceof Error ? error : new Error('variant failed'));
+          }
         },
         wrapGenerate: async ({ doGenerate }) => {
           const started = now();
@@ -312,8 +289,8 @@ export const createEvalModelRecorder = (
 
   return {
     wrap,
-    setSystemPrompt: (text) => {
-      systemPrompt = text;
+    setVariant: (next) => {
+      variant = next;
     },
     takeTurn: () => {
       const matched = matchesRecordedCalls();
@@ -325,13 +302,13 @@ export const createEvalModelRecorder = (
         toolResultsMatched: matched,
         modelCalls,
         respondMissing,
-        systemPromptNotFound,
+        evalError,
       };
       calls = [];
       promptCalls = [];
       modelCalls = [];
       respondMissing = [];
-      systemPromptNotFound = false;
+      evalError = null;
       return recording;
     },
   };
