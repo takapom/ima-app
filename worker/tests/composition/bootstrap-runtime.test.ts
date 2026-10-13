@@ -10,7 +10,7 @@ import {
   serverTurnId,
   type RuntimeThreadStub,
 } from '@worker/adapters/in/http/runtime-handler';
-import type { HandlerContext } from '@worker/adapters/in/http/handler';
+import type { HandlerContext } from '@worker/infrastructure/adapters/in/http/handler';
 import {
   isThreadRuntimeTarget,
   isThreadRuntimeTurnInput,

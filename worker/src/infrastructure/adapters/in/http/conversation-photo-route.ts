@@ -6,7 +6,7 @@ import {
 import { conversationPhotoSources } from '@worker/runtime/conversations/conversation-photo-sources';
 import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
 import { photoProviderFailure } from '@worker/adapters/in/http/photo-body-handler';
-import { HttpBoundaryError, toErrorResponse } from '@worker/adapters/in/http/errors';
+import { HttpBoundaryError, toErrorResponse } from '@worker/infrastructure/adapters/in/http/errors';
 import { ConversationPhotoResponseSchema } from '@ima/contracts';
 import * as v from 'valibot';
 

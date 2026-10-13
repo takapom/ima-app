@@ -15,7 +15,7 @@ import {
   authenticateRequest,
   deriveOwnerScopeRef,
 } from '@worker/infrastructure/adapters/in/http/auth';
-import { toErrorResponse, toPublicError } from '@worker/adapters/in/http/errors';
+import { toErrorResponse, toPublicError } from '@worker/infrastructure/adapters/in/http/errors';
 import { parseJsonBody } from '@worker/adapters/in/http/input';
 
 const OWNER_CREDENTIAL = `${'A'.repeat(42)}A`;

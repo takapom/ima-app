@@ -1,4 +1,8 @@
-import type { PhotoPath, SavedReferencePath, ThreadPath } from '@worker/adapters/in/http/handler';
+import type {
+  PhotoPath,
+  SavedReferencePath,
+  ThreadPath,
+} from '@worker/infrastructure/adapters/in/http/handler';
 
 export type LifecycleAction = 'cancel' | 'resume' | 'restart' | 'end';
 

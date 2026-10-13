@@ -4,7 +4,7 @@ import {
   authenticateRequest,
   type AuthenticatedContext,
 } from '@worker/infrastructure/adapters/in/http/auth';
-import { HttpBoundaryError, toErrorResponse } from '@worker/adapters/in/http/errors';
+import { HttpBoundaryError, toErrorResponse } from '@worker/infrastructure/adapters/in/http/errors';
 import {
   invalidRequest,
   notFoundResponse,

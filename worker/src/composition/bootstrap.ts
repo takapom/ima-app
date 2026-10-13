@@ -8,8 +8,8 @@ import type {
   EventsSink,
   HandlerDependencies,
   PhotoBodyHandler,
-} from '@worker/adapters/in/http/handler';
-import { HttpBoundaryError } from '@worker/adapters/in/http/errors';
+} from '@worker/infrastructure/adapters/in/http/handler';
+import { HttpBoundaryError } from '@worker/infrastructure/adapters/in/http/errors';
 import {
   DEFAULT_JSON_BODY_LIMIT_BYTES,
   type HttpRouterConfig,

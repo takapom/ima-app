@@ -1,5 +1,9 @@
-import { HttpBoundaryError } from '@worker/adapters/in/http/errors';
-import type { HandlerContext, PhotoBodyHandler, PhotoPath } from '@worker/adapters/in/http/handler';
+import { HttpBoundaryError } from '@worker/infrastructure/adapters/in/http/errors';
+import type {
+  HandlerContext,
+  PhotoBodyHandler,
+  PhotoPath,
+} from '@worker/infrastructure/adapters/in/http/handler';
 import { PhotoProviderError, type PhotoMediaTransport } from '@worker/runtime/ports/photo-media';
 import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';
 import {

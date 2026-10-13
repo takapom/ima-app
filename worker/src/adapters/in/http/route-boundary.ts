@@ -1,8 +1,8 @@
 import type { Context } from 'hono';
 import * as v from 'valibot';
 import { authenticateRequest } from '@worker/infrastructure/adapters/in/http/auth';
-import { HttpBoundaryError, toErrorResponse } from '@worker/adapters/in/http/errors';
-import type { MatchedRoute } from '@worker/adapters/in/http/http-route';
+import { HttpBoundaryError, toErrorResponse } from '@worker/infrastructure/adapters/in/http/errors';
+import type { MatchedRoute } from '@worker/infrastructure/adapters/in/http/http-route';
 import { handleAuthorizedRoute } from '@worker/adapters/in/http/route-handler';
 import type { HttpRouterConfig } from '@worker/adapters/in/http/router-config';
 

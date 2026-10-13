@@ -1,5 +1,5 @@
-import { HttpBoundaryError } from '@worker/adapters/in/http/errors';
-import type { PhotoBodyHandler } from '@worker/adapters/in/http/handler';
+import { HttpBoundaryError } from '@worker/infrastructure/adapters/in/http/errors';
+import type { PhotoBodyHandler } from '@worker/infrastructure/adapters/in/http/handler';
 import { createPhotoBodyHandler } from '@worker/adapters/in/http/photo-body-handler';
 import { configuredPhotoTokenCodec } from '@worker/composition/photo-token-configuration';
 import { createHotPepperPhotoTransport } from '@worker/adapters/out/providers/hot-pepper/photo-transport';

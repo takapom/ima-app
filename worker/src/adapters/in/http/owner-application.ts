@@ -14,8 +14,8 @@ import type {
   ApplicationOperation,
   ApplicationResult,
   HandlerContext,
-} from '@worker/adapters/in/http/handler';
-import { HttpBoundaryError } from '@worker/adapters/in/http/errors';
+} from '@worker/infrastructure/adapters/in/http/handler';
+import { HttpBoundaryError } from '@worker/infrastructure/adapters/in/http/errors';
 import type {
   OwnerDecideResult,
   OwnerRegisterResult,

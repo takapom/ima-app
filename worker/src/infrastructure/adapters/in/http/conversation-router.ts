@@ -22,7 +22,7 @@ import {
   type ConversationHttpContext,
 } from '@worker/infrastructure/adapters/in/http/conversation-boundary';
 import type { HttpEnv } from '@worker/adapters/in/http/route-boundary';
-import { HttpBoundaryError } from '@worker/adapters/in/http/errors';
+import { HttpBoundaryError } from '@worker/infrastructure/adapters/in/http/errors';
 import { conversationFingerprint } from '@worker/adapters/out/security/conversation-fingerprint';
 import type { Conversation } from '@worker/core/domain/conversations/conversation';
 import type { ConversationRunResult } from '@worker/core/application/ports/conversation-runs';

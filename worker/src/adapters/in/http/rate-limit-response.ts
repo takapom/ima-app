@@ -1,4 +1,4 @@
-import { toPublicError } from '@worker/adapters/in/http/errors';
+import { toPublicError } from '@worker/infrastructure/adapters/in/http/errors';
 
 const retryAfter = (value: number | null): string =>
   value !== null && Number.isSafeInteger(value) && value >= 1 ? String(value) : '60';

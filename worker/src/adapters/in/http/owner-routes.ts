@@ -7,15 +7,15 @@ import {
 } from '@ima/contracts';
 import type { CancellationToken } from '@worker/core/application/ports/context';
 import type { AuthenticatedContext } from '@worker/infrastructure/adapters/in/http/auth';
-import { toErrorResponse } from '@worker/adapters/in/http/errors';
+import { toErrorResponse } from '@worker/infrastructure/adapters/in/http/errors';
 import type {
   ApplicationHandler,
   ApplicationOperation,
   ApplicationResult,
   HandlerContext,
-} from '@worker/adapters/in/http/handler';
+} from '@worker/infrastructure/adapters/in/http/handler';
 import { parseJsonBodyWithRaw } from '@worker/adapters/in/http/input';
-import type { MatchedRoute } from '@worker/adapters/in/http/http-route';
+import type { MatchedRoute } from '@worker/infrastructure/adapters/in/http/http-route';
 
 export type OwnerHttpRoute = Extract<
   MatchedRoute,

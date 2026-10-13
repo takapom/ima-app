@@ -18,16 +18,16 @@ import {
   HttpBoundaryError,
   toErrorResponse,
   type BoundaryFailure,
-} from '@worker/adapters/in/http/errors';
+} from '@worker/infrastructure/adapters/in/http/errors';
 import type { AuthenticatedContext } from '@worker/infrastructure/adapters/in/http/auth';
 import { parseJsonBodyWithRaw } from '@worker/adapters/in/http/input';
 import type {
   ApplicationOperation,
   ApplicationResult,
   HandlerContext,
-} from '@worker/adapters/in/http/handler';
+} from '@worker/infrastructure/adapters/in/http/handler';
 import type { CancellationToken } from '@worker/core/application/ports/context';
-import type { MatchedRoute } from '@worker/adapters/in/http/http-route';
+import type { MatchedRoute } from '@worker/infrastructure/adapters/in/http/http-route';
 import {
   DEFAULT_JSON_BODY_LIMIT_BYTES,
   type HttpRouterConfig,

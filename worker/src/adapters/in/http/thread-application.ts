@@ -5,8 +5,11 @@ import type {
   ApplicationOperation,
   ApplicationResult,
   HandlerContext,
-} from '@worker/adapters/in/http/handler';
-import { HttpBoundaryError, type BoundaryFailure } from '@worker/adapters/in/http/errors';
+} from '@worker/infrastructure/adapters/in/http/handler';
+import {
+  HttpBoundaryError,
+  type BoundaryFailure,
+} from '@worker/infrastructure/adapters/in/http/errors';
 import type {
   ResourceScopeAuthorizer,
   ResourceScopeDecision,

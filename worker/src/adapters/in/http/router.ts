@@ -1,4 +1,4 @@
-import { conversationRouter } from '@worker/adapters/in/http/conversation-router';
+import { conversationRouter } from '@worker/infrastructure/adapters/in/http/conversation-router';
 import { Hono } from 'hono';
 import { REQUEST_ID_HEADER } from '@ima/contracts';
 import { isValidRequestId } from '@worker/adapters/in/http/input';

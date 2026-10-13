@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Preferences, PrefsWriteRequest } from '@ima/contracts';
-import { HttpBoundaryError } from '@worker/adapters/in/http/errors';
-import type { HandlerContext } from '@worker/adapters/in/http/handler';
+import { HttpBoundaryError } from '@worker/infrastructure/adapters/in/http/errors';
+import type { HandlerContext } from '@worker/infrastructure/adapters/in/http/handler';
 import {
   handleOwnerApplication,
   type OwnerSavedCandidateResolver,

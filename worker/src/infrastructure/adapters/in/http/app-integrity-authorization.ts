@@ -1,4 +1,4 @@
-import { toErrorResponse } from '@worker/adapters/in/http/errors';
+import { toErrorResponse } from '@worker/infrastructure/adapters/in/http/errors';
 import type { AuthenticatedContext } from '@worker/infrastructure/adapters/in/http/auth';
 import type {
   AppIntegrityGate,
