@@ -1,9 +1,9 @@
 import type { ConversationScope } from '@worker/core/application/ports/conversation-store';
 import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
-import { ConversationScopeSchema } from '@worker/adapters/out/persistence/conversations/conversation-store-input';
+import { ConversationScopeSchema } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-store-input';
 import * as v from 'valibot';
 import type { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
-import { storeFailure } from '@worker/adapters/out/persistence/conversations/conversation-sql-schema';
+import { storeFailure } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-sql-schema';
 
 /** A content-free deletion queue survives transport failure after the conversation is tombstoned. */
 export class ConversationDeletions {

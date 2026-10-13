@@ -20,7 +20,7 @@ import type { ConversationStore } from '@worker/core/application/ports/conversat
 import type { ConversationRuns } from '@worker/core/application/ports/conversation-runs';
 import { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
 import { SqlConversationRuns } from '@worker/adapters/out/persistence/conversations/sql-conversation-runs';
-import { storeFailure } from '@worker/adapters/out/persistence/conversations/conversation-sql-schema';
+import { storeFailure } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-sql-schema';
 
 type StoreInput<K extends keyof ConversationStore> = Parameters<ConversationStore[K]>[0];
 type RunInput<K extends keyof ConversationRuns> = Parameters<ConversationRuns[K]>[0];

@@ -1,5 +1,5 @@
 import { createRecordTelemetryEvent } from '@worker/core/application/use-cases/record-telemetry/record-telemetry-event';
-import type { ConversationHistoryNamespace } from '@worker/adapters/out/persistence/conversations/durable-conversation-store';
+import type { ConversationHistoryNamespace } from '@worker/infrastructure/adapters/out/persistence/conversations/durable-conversation-store';
 import { DurableRateLimiter } from '@worker/adapters/out/persistence/security/durable-rate-limiter';
 import { createThreadApplicationHandler } from '@worker/infrastructure/adapters/in/http/thread-application';
 export { createThreadScopeAuthorizer } from '@worker/infrastructure/adapters/in/http/thread-application';

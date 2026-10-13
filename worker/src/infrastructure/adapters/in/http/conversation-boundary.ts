@@ -17,7 +17,7 @@ import { rateLimitedResponse } from '@worker/infrastructure/adapters/in/http/rat
 import {
   conversationOwnerName,
   type ConversationApiRpc,
-} from '@worker/adapters/out/persistence/conversations/durable-conversation-store';
+} from '@worker/infrastructure/adapters/out/persistence/conversations/durable-conversation-store';
 import type { ConversationStoreFailure } from '@worker/core/application/ports/conversation-store';
 
 export type ConversationHttpContext = {

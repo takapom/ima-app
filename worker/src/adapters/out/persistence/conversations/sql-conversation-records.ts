@@ -19,13 +19,13 @@ import {
   CreateConversationInputSchema,
   ListConversationsInputSchema,
   ReadConversationMessagesInputSchema,
-} from '@worker/adapters/out/persistence/conversations/conversation-store-input';
+} from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-store-input';
 import {
   initializeConversationStorage,
   storeFailure,
   type ConversationSqlStorage,
   type JsonRow,
-} from '@worker/adapters/out/persistence/conversations/conversation-sql-schema';
+} from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-sql-schema';
 
 import { conversationCardsDeadlines } from '@worker/core/domain/conversations/conversation-card-retention';
 

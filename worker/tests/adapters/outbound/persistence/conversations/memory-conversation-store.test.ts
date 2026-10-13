@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createMemoryConversationStore } from '@worker/adapters/out/persistence/conversations/memory-conversation-store';
+import { createMemoryConversationStore } from '@worker/infrastructure/adapters/out/persistence/conversations/memory-conversation-store';
 import type {
   AppendConversationMessageInput,
   ConversationStore,

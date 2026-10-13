@@ -5,7 +5,7 @@ import {
   createConversationThreadPort,
   prepareConversationExecution,
   type ConversationExecutionObserver,
-} from '@worker/adapters/out/persistence/conversations/durable-conversation-execution';
+} from '@worker/infrastructure/adapters/out/persistence/conversations/durable-conversation-execution';
 import { ConversationExecution } from '@worker/runtime/conversations/conversation-execution';
 import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
 export const createConversationExecution = (

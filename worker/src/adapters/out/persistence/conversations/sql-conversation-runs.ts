@@ -16,7 +16,7 @@ import type { SqlConversationRecords } from '@worker/adapters/out/persistence/co
 import {
   storeFailure,
   type JsonRow,
-} from '@worker/adapters/out/persistence/conversations/conversation-sql-schema';
+} from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-sql-schema';
 
 type Input<K extends keyof ConversationRuns> = Parameters<ConversationRuns[K]>[0];
 export class SqlConversationRuns {

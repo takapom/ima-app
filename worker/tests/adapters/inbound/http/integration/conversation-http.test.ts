@@ -9,7 +9,7 @@ import {
 } from '@ima/contracts';
 import type { ConversationHistoryDO } from '@worker/entrypoints/cloudflare/conversation-history-do';
 import { deriveOwnerScopeRef } from '@worker/infrastructure/adapters/in/http/auth';
-import { conversationOwnerName } from '@worker/adapters/out/persistence/conversations/durable-conversation-store';
+import { conversationOwnerName } from '@worker/infrastructure/adapters/out/persistence/conversations/durable-conversation-store';
 
 const owner = `${'C'.repeat(42)}E`;
 const hasConversations = (

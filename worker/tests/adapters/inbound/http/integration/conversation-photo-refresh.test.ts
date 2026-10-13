@@ -2,7 +2,7 @@ import { env, evictDurableObject, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it, vi } from 'vitest';
 import type { ConversationHistoryDO } from '@worker/entrypoints/cloudflare/conversation-history-do';
 import { deriveOwnerScopeRef } from '@worker/infrastructure/adapters/in/http/auth';
-import { conversationOwnerName } from '@worker/adapters/out/persistence/conversations/durable-conversation-store';
+import { conversationOwnerName } from '@worker/infrastructure/adapters/out/persistence/conversations/durable-conversation-store';
 import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
 import type { ConversationPhotoReader } from '@worker/runtime/ports/conversation-photo';

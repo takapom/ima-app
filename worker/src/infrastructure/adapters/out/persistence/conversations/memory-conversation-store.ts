@@ -19,7 +19,7 @@ import {
   CreateConversationInputSchema,
   ListConversationsInputSchema,
   ReadConversationMessagesInputSchema,
-} from '@worker/adapters/out/persistence/conversations/conversation-store-input';
+} from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-store-input';
 
 type AppendOperation = {
   readonly fingerprint: string;
