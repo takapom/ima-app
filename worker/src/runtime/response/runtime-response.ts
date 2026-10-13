@@ -11,7 +11,7 @@ import { type CommittedResponse } from '@worker/core/application/use-cases/submi
 import {
   type EvidenceLink,
   type ValidatedCard,
-} from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+} from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import { type RetentionMetadata } from '@worker/domain/evidence/retention';
 
 import {

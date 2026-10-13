@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ValidatedMessageResponse } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+import type { ValidatedMessageResponse } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import {
   prepareRuntimePhotos,
   type RuntimePublicResponseDependencies,

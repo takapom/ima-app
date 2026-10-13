@@ -27,10 +27,10 @@ import {
   type ValidatedCard,
   type ValidatedCardsResponse,
   type ValidatedMessageResponse,
-} from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
-import { validateOpening } from '@worker/application/use-cases/submit-response/validation/submit-cards-opening';
+} from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
+import { validateOpening } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-opening';
 
-export type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+export type { SubmitValidationContext } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 
 /**
  * カードが描く項目。観測 ID はモデルに写させず、Core がレジストリから選ぶ。

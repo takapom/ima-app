@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   EvidenceLink,
   ValidatedCardsResponse,
-} from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+} from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import {
   mapCommittedResponseToPublic,

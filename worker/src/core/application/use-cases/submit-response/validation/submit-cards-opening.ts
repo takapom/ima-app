@@ -6,7 +6,7 @@ import {
   type ResolvedObservation,
   type SubmitValidationContext,
   type SubmitValidationIssue,
-} from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+} from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 
 /**
  * 掲載された営業区間のうち、指定時刻を含むものを返す。

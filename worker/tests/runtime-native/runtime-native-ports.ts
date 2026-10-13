@@ -32,7 +32,7 @@ import {
   type RespondPort,
   type RespondPortResult,
 } from '@worker/core/application/ports/submission';
-import { type SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+import { type SubmitValidationContext } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
 
 export const RUNTIME_NATIVE_NOW = '2026-09-10T12:00:00Z';

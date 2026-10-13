@@ -20,7 +20,7 @@ import {
 import type {
   SubmitValidationContext,
   SubmitValidationIssue,
-} from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+} from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 
 /**
  * 1ターンの respond を SubmitApplication へつなぐ材料。

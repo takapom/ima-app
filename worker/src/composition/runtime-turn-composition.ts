@@ -8,7 +8,7 @@ import type { CommitHashPort, CommitPort } from '@worker/core/application/ports/
 import type { CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
 import type { RespondPort } from '@worker/core/application/ports/submission';
-import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+import type { SubmitValidationContext } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import { projectModelContext } from '@worker/core/application/model-context/model-context';
 import { SubmitApplication } from '@worker/core/application/use-cases/submit-response/submit-application';
 import { createRespondPort } from '@worker/core/application/use-cases/submit-response/respond-port';

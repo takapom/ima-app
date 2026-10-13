@@ -1,7 +1,7 @@
 import type {
   EvidenceLink,
   ValidatedCard,
-} from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+} from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 
 const now = '2026-09-10T12:00:00Z';
 

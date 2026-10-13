@@ -22,7 +22,7 @@ import {
   type ValidatedCardsResponse,
   type ValidatedMessageResponse,
   SubmitValidationContextSchema,
-} from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+} from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import {
   validateMessage,
   validateSubmitCards,

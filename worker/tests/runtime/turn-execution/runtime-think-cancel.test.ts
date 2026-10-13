@@ -12,7 +12,7 @@ import type {
   SearchPlacesOutput,
 } from '@worker/core/application/ports/operations';
 import type { Result } from '@worker/domain/result';
-import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+import type { SubmitValidationContext } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
 import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';

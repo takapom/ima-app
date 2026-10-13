@@ -4,7 +4,7 @@ import { AssistantResponseSchema } from '@ima/contracts';
 import {
   type ValidatedCard,
   type ValidatedMessageResponse,
-} from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
+} from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import {
   mapCommittedResponseToPublic,
   RuntimePublicResponseError,
