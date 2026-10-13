@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ConversationExecutionApplication } from '@worker/application/use-cases/conversations/conversation-execution';
+import { ConversationExecutionApplication } from '@worker/core/application/use-cases/conversations/conversation-execution';
 import type {
   ConversationRuns,
   ConversationRunResult,

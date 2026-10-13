@@ -23,7 +23,7 @@ import {
   type ThreadRuntimeTurnResult,
 } from '@worker/runtime/threads/admission';
 import { executeRuntimeThreadTurn } from '@worker/runtime/threads/runtime-thread-turn-execution';
-import { createSessionExpiryGate } from '@worker/application/use-cases/expire-session/expire-session';
+import { createSessionExpiryGate } from '@worker/core/application/use-cases/expire-session/expire-session';
 import { cleanupRuntimeResources } from '@worker/runtime/threads/thread-cleanup';
 import {
   isThreadConflictError,

@@ -8,7 +8,7 @@ import type {
 } from '@worker/runtime/threads/admission';
 import { RuntimeProductionContextReferenceSchema } from '@worker/runtime/context/runtime-production-context-reference';
 import type { ProductionThreadDO } from './runtime-production-worker';
-import { createSessionExpiryGate } from '@worker/application/use-cases/expire-session/expire-session';
+import { createSessionExpiryGate } from '@worker/core/application/use-cases/expire-session/expire-session';
 
 type ProductionTestEnv = Cloudflare.Env & {
   readonly PRODUCTION_THREADS: DurableObjectNamespace<ProductionThreadDO>;
