@@ -3,5 +3,10 @@
   "compilerOptions": {
     "lib": ["ES2022"]
   },
-  "include": ["src/domain/**/*.ts", "src/application/**/*.ts"]
+  "include": [
+    "src/domain/**/*.ts",
+    "src/application/**/*.ts",
+    "src/core/domain/**/*.ts",
+    "src/core/application/**/*.ts"
+  ]
 }

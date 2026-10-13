@@ -130,7 +130,7 @@ export default tseslint.config(
       'apps/mobile/src/{journey,saved-places,preferences,settings,entry}/{components,hooks,state}/**/*.{ts,tsx}',
       'apps/mobile/src/entry/EntryFlow.tsx',
       'apps/mobile/src/ui/Canvas.tsx',
-      'apps/mobile/src/composition/hooks/**/*.{ts,tsx}',
+      'apps/mobile/src/platform/composition/hooks/**/*.{ts,tsx}',
     ],
     rules: {
       'react-hooks/exhaustive-deps': 'error',
@@ -143,7 +143,7 @@ export default tseslint.config(
       'apps/mobile/src/{journey,saved-places,preferences,settings,entry}/{components,hooks,state}/**/*.{ts,tsx}',
       'apps/mobile/src/entry/EntryFlow.tsx',
       'apps/mobile/src/ui/Canvas.tsx',
-      'apps/mobile/src/composition/hooks/**/*.{ts,tsx}',
+      'apps/mobile/src/platform/composition/hooks/**/*.{ts,tsx}',
     ],
     rules: {
       'no-restricted-globals': [
@@ -191,7 +191,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['worker/src/domain/**/*.{ts,tsx}', 'worker/src/application/**/*.{ts,tsx}'],
+    files: [
+      'worker/src/domain/**/*.{ts,tsx}',
+      'worker/src/core/domain/**/*.{ts,tsx}',
+      'worker/src/application/**/*.{ts,tsx}',
+      'worker/src/core/application/**/*.{ts,tsx}',
+    ],
     languageOptions: {
       parserOptions: { projectService: false, project: './worker/tsconfig.business.json' },
     },
@@ -275,7 +280,10 @@ export default tseslint.config(
     },
   },
   {
-    files: ['worker/src/adapters/in/tools/**/*.{ts,tsx}'],
+    files: [
+      'worker/src/adapters/in/tools/**/*.{ts,tsx}',
+      'worker/src/infrastructure/adapters/in/tools/**/*.{ts,tsx}',
+    ],
     rules: {
       'no-restricted-imports': [
         'error',
