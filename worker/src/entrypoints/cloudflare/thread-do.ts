@@ -3,7 +3,7 @@ import { isThreadRuntimeTurnInput } from '@worker/infrastructure/runtime/threads
 import type { ConversationDeliveryScope } from '@worker/infrastructure/runtime/conversations/conversation-delivery';
 import { initializeThreadStorage } from '@worker/infrastructure/adapters/out/persistence/thread/schema';
 import { DurableRuntimeTurnStore } from '@worker/infrastructure/adapters/out/persistence/thread/turn-store';
-import { RuntimeProductionThinkHost } from '@worker/entrypoints/cloudflare/runtime-production-host';
+import { RuntimeProductionThinkHost } from '@worker/platform/entrypoints/cloudflare/runtime-production-host';
 import {
   createRuntimeSavedCandidateResolver,
   runtimeSavedCandidateBindingFor,
