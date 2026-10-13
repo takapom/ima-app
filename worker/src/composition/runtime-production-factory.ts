@@ -11,7 +11,7 @@ import {
   type RuntimeTurnCompositionCoreOptions,
 } from '@worker/composition/runtime-turn-composition';
 import { wrapRuntimeProductionCommit } from '@worker/runtime/context/runtime-production-context';
-import { createFactoryRuntimeContext } from '@worker/runtime/context/runtime-production-context-factory';
+import { createFactoryRuntimeContext } from '@worker/infrastructure/runtime/context/runtime-production-context-factory';
 import { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   harnessContextFor,
@@ -42,7 +42,7 @@ import type {
   RuntimeThinkConnectionOptions,
   RuntimeThinkTurnBuildRequest,
 } from '@worker/runtime/turn-execution/runtime-think-connection';
-import { defaultRuntimeModelContextPolicy } from '@worker/runtime/context/runtime-field-policy';
+import { defaultRuntimeModelContextPolicy } from '@worker/infrastructure/runtime/context/runtime-field-policy';
 import { resolveRuntimeProductionReadCost } from '@worker/composition/runtime-production-read-cost';
 import { createRuntimeProductionPlacePorts } from '@worker/composition/runtime-production-place-ports';
 import { createFactoryContinuation } from '@worker/composition/runtime-production-continuation';

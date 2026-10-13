@@ -14,7 +14,7 @@ import {
   runtimePolicyAllows,
   type RuntimeFieldUsePolicy,
   type RuntimePolicyMode,
-} from '@worker/runtime/context/runtime-field-policy';
+} from '@worker/infrastructure/runtime/context/runtime-field-policy';
 export type PhotoTokenObservationSource = {
   readonly registry: Pick<CandidateObservationRegistryPort, 'readObservation'>;
   readonly scope: RegistryScope;

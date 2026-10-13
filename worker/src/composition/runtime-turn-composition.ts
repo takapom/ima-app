@@ -67,7 +67,7 @@ import {
   clearRuntimeCardSetId,
   registerRuntimeCardSetId,
 } from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
-import { projectRuntimeToolResultForModel } from '@worker/runtime/context/runtime-field-policy';
+import { projectRuntimeToolResultForModel } from '@worker/infrastructure/runtime/context/runtime-field-policy';
 import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-session-config';
 import { searchOutcomeOf } from '@worker/runtime/response/runtime-search-outcome';
 import { createPresentedInputs } from '@worker/core/application/model-context/presented-inputs';
