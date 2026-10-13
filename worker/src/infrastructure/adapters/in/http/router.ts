@@ -10,7 +10,7 @@ import {
   type HttpContext,
   type HttpEnv,
 } from '@worker/infrastructure/adapters/in/http/route-boundary';
-import { threadRouter } from '@worker/adapters/in/http/thread-router';
+import { threadRouter } from '@worker/infrastructure/adapters/in/http/thread-router';
 import {
   attestRouter,
   eventsRouter,

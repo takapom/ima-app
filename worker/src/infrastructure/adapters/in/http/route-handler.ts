@@ -45,7 +45,7 @@ import {
 import {
   handleThreadPlaceWriteRoute,
   isThreadPlaceWriteRoute,
-} from '@worker/adapters/in/http/thread-place-routes';
+} from '@worker/infrastructure/adapters/in/http/thread-place-routes';
 import { ensurePhotoResponse } from '@worker/infrastructure/adapters/in/http/photo-route';
 import { rateLimitedResponse } from '@worker/infrastructure/adapters/in/http/rate-limit-response';
 
