@@ -6,7 +6,7 @@ import {
   handleOwnerApplication,
   type OwnerSavedCandidateResolver,
 } from '@worker/infrastructure/adapters/in/http/owner-application';
-import { createMemoryOwnerStore } from '@worker/adapters/out/persistence/saved-references/memory-owner-store';
+import { createMemoryOwnerStore } from '@worker/infrastructure/adapters/out/persistence/saved-references/memory-owner-store';
 import type { OwnerStore } from '@worker/core/application/ports/owner-store';
 
 const OWNER = 'owner-a';
