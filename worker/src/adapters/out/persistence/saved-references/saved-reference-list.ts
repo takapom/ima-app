@@ -5,7 +5,7 @@ import {
   type SavedPlaceReference,
 } from '@worker/core/domain/candidates/continuity';
 import type { OwnerDecidedPlace } from '@worker/core/application/ports/owner-store';
-import { initializeOwnerDecideStore } from '@worker/adapters/out/persistence/saved-references/decide-store';
+import { initializeOwnerDecideStore } from '@worker/infrastructure/adapters/out/persistence/saved-references/decide-store';
 
 const TABLE_NAME = 'm16_saved_place_reference';
 const MAX_SAVED_LIST = 50;

@@ -7,7 +7,7 @@ import { createDurableCommitPort } from '@worker/adapters/out/persistence/thread
 import { ThreadConversationOutbox } from '@worker/infrastructure/adapters/out/persistence/conversations/thread-conversation-outbox';
 import { SqlConversationRecords } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-records';
 import { SqlConversationRuns } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-runs';
-import { createSqlPhotoReferenceStore } from '@worker/adapters/out/persistence/photo/sql-reference-store';
+import { createSqlPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/sql-reference-store';
 import { createPhotoTokenCodec } from '@worker/adapters/out/security/photo-token-codec';
 import { createPhotoTokenIssuer } from '@worker/adapters/out/security/photo-token-issuer';
 import { cardEvidenceResolver } from '@worker/composition/runtime-production-provider-config';

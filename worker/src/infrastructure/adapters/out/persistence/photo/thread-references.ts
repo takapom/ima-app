@@ -4,7 +4,7 @@ import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters
 import type {
   PhotoReferenceGetResult,
   PhotoReferencePutResult,
-} from '@worker/adapters/out/persistence/photo/rpc';
+} from '@worker/infrastructure/adapters/out/persistence/photo/rpc';
 import {
   PhotoReferenceRecordSchema,
   PhotoTokenError,

@@ -36,13 +36,13 @@ import {
   type ThreadSnapshotResult,
 } from '@worker/runtime/threads/thread-types';
 
-import { createPersistentThreadPhotoReferences } from '@worker/adapters/out/persistence/photo/sql-reference-store';
+import { createPersistentThreadPhotoReferences } from '@worker/infrastructure/adapters/out/persistence/photo/sql-reference-store';
 import type { PhotoReferenceRecord } from '@worker/runtime/ports/photo';
 import type {
   PhotoReferenceGetResult,
   PhotoReferencePutResult,
   PhotoReferenceRpc,
-} from '@worker/adapters/out/persistence/photo/rpc';
+} from '@worker/infrastructure/adapters/out/persistence/photo/rpc';
 import {
   stateOf,
   snapshotFromOperation,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createThreadPhotoReferences } from '@worker/adapters/out/persistence/photo/thread-references';
+import { createThreadPhotoReferences } from '@worker/infrastructure/adapters/out/persistence/photo/thread-references';
 import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/reference-store';
 import type {
   PhotoReferenceLookupScope,

@@ -4,7 +4,7 @@ import { IsoTimestampSchema, OpaqueIdSchema, Text } from '@worker/core/domain/pr
 import {
   decideDurableSavedReference,
   initializeOwnerDecideStore,
-} from '@worker/adapters/out/persistence/saved-references/decide-store';
+} from '@worker/infrastructure/adapters/out/persistence/saved-references/decide-store';
 import {
   createOwnerPrefsStore,
   type OwnerPrefsStore,
