@@ -19,8 +19,8 @@ import {
   telemetryObjectNameForRuntimeTraceMode,
   type RuntimeTurnTraceSink,
 } from '@worker/runtime/tracing/runtime-turn-trace';
-import type { RuntimeModelTraceSink } from '@worker/runtime/tracing/runtime-model-trace';
-import type { RuntimeProviderTraceSink } from '@worker/runtime/tracing/runtime-provider-trace';
+import type { RuntimeModelTraceSink } from '@worker/infrastructure/runtime/tracing/runtime-model-trace';
+import type { RuntimeProviderTraceSink } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace';
 import {
   createDurableTelemetryStore,
   type TelemetryNamespace,

@@ -12,7 +12,7 @@ import {
 import type {
   RuntimeProviderTransportCompletion,
   RuntimeProviderTransportObserver,
-} from '@worker/runtime/tracing/runtime-provider-trace-contract';
+} from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
 
 const request: HotPepperSearchRequest = {
   keyword: '静かなカフェ 恵比寿',

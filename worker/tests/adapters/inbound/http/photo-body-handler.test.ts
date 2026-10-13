@@ -5,7 +5,7 @@ import { createPhotoBodyHandler } from '@worker/infrastructure/adapters/in/http/
 import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/reference-store';
 import { PhotoProviderError } from '@worker/infrastructure/runtime/ports/photo-media';
 import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/out/security/photo-token-codec';
-import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';
+import type { RuntimeProviderTransportObserver } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
 
 const NOW = '2026-09-10T12:00:00.000Z';
 const OWNER = 'owner:photo-test';

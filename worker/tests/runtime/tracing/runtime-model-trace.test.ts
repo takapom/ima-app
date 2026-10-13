@@ -11,7 +11,7 @@ import {
   type RuntimeModelTrace,
   traceRecordForRuntimeModel,
   wrapRuntimeModelTrace,
-} from '@worker/runtime/tracing/runtime-model-trace';
+} from '@worker/infrastructure/runtime/tracing/runtime-model-trace';
 
 type FinishPart = Extract<RuntimeModelGuardStreamPart, { type: 'finish' }>;
 

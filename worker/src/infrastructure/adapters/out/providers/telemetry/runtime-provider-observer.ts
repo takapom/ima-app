@@ -3,13 +3,13 @@ import { HotPepperError } from '@worker/infrastructure/adapters/out/providers/ho
 import type {
   RuntimeProviderTransportCompletion,
   RuntimeProviderTransportObserver,
-} from '@worker/runtime/tracing/runtime-provider-trace-contract';
+} from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
 import {
   emitRuntimeProviderTrace,
   type RuntimeProviderTrace,
   type RuntimeProviderTraceOptions,
   type RuntimeProviderTraceProvider,
-} from '@worker/runtime/tracing/runtime-provider-trace';
+} from '@worker/infrastructure/runtime/tracing/runtime-provider-trace';
 type ProviderError = PhotoProviderError | HotPepperError;
 
 type CallState = {

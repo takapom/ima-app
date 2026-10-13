@@ -11,7 +11,7 @@ import {
   FIXTURE_OPERATIONAL_ENV,
   unusedModel,
 } from './runtime-production-factory-fixtures';
-import type { RuntimeProviderTrace } from '@worker/runtime/tracing/runtime-provider-trace';
+import type { RuntimeProviderTrace } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace';
 
 const testShop = {
   ...place('composition-shop'),

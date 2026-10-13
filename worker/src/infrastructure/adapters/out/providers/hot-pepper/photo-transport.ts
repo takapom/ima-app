@@ -10,7 +10,7 @@ import { HotPepperPhotoUrlSchema } from '@worker/security/photo-resource-policy'
 import {
   beginRuntimeProviderTransportCall,
   completeRuntimeProviderTransportCall,
-} from '@worker/runtime/tracing/runtime-provider-trace-contract';
+} from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
 
 const readImage = async (response: Response, maxBytes: number): Promise<Uint8Array> => {
   const length = Number(response.headers.get('content-length'));

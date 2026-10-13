@@ -13,7 +13,7 @@ import { parseTraceRecord } from '@worker/core/application/ports/telemetry';
 import {
   createBestEffortRuntimeTraceSink,
   type RuntimeTraceSinkFailure,
-} from '@worker/runtime/tracing/runtime-trace-sink';
+} from '@worker/infrastructure/runtime/tracing/runtime-trace-sink';
 
 export type RuntimeModelTrace = {
   readonly ownerScopeRef: string;

@@ -10,8 +10,8 @@ import {
 import {
   createBestEffortRuntimeTraceSink,
   type RuntimeTraceSinkFailure,
-} from '@worker/runtime/tracing/runtime-trace-sink';
-import type { RuntimeProviderTransportProvider } from '@worker/runtime/tracing/runtime-provider-trace-contract';
+} from '@worker/infrastructure/runtime/tracing/runtime-trace-sink';
+import type { RuntimeProviderTransportProvider } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
 
 export type RuntimeProviderTraceProvider = RuntimeProviderTransportProvider;
 

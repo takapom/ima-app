@@ -9,8 +9,8 @@ import {
   traceRecordForRuntimeProvider,
   type RuntimeProviderTrace,
   type RuntimeProviderTraceOptions,
-} from '@worker/runtime/tracing/runtime-provider-trace';
-import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';
+} from '@worker/infrastructure/runtime/tracing/runtime-provider-trace';
+import type { RuntimeProviderTransportObserver } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
 
 const searchRequest: HotPepperSearchRequest = {
   keyword: 'PROVIDER_REQUEST_CANARY quiet cafe',

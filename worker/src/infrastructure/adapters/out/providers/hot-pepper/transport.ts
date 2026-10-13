@@ -12,11 +12,11 @@ import {
 import {
   beginRuntimeProviderTransportCall,
   completeRuntimeProviderTransportCall,
-} from '@worker/runtime/tracing/runtime-provider-trace-contract';
+} from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
 import type {
   RuntimeProviderTransportCall,
   RuntimeProviderTransportObserver,
-} from '@worker/runtime/tracing/runtime-provider-trace-contract';
+} from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
 
 export type HotPepperTransportOptions = {
   /** The composition owner reads this from the Worker secret binding. */

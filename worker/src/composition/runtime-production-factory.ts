@@ -4,7 +4,7 @@ import type { createPlacesSearchContinuation } from '@worker/infrastructure/adap
 import { createLiveOpenAIProvider } from '@worker/infrastructure/adapters/out/providers/openai/model-provider';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/infrastructure/adapters/out/providers/openai/provider-options';
 import { createRuntimeReadAttemptSignalBridge } from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
-import { wrapRuntimeModelTrace } from '@worker/runtime/tracing/runtime-model-trace';
+import { wrapRuntimeModelTrace } from '@worker/infrastructure/runtime/tracing/runtime-model-trace';
 import { createRuntimeProviderTransportObserver } from '@worker/infrastructure/adapters/out/providers/telemetry/runtime-provider-observer';
 import {
   createRuntimeTurnComposition,

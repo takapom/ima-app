@@ -8,7 +8,7 @@ import {
   PhotoProviderError,
   type PhotoMediaTransport,
 } from '@worker/infrastructure/runtime/ports/photo-media';
-import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';
+import type { RuntimeProviderTransportObserver } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace-contract';
 import {
   PhotoTokenError,
   type PhotoHandleClaims,
