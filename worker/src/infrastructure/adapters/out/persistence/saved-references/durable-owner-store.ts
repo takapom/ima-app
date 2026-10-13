@@ -27,7 +27,7 @@ import {
   type SavedReferenceRpcPrefsReadResult,
   type SavedReferenceRpcReadResult,
   type SavedReferenceRpcReplayResult,
-} from '@worker/adapters/out/persistence/saved-references/saved-reference-rpc';
+} from '@worker/infrastructure/adapters/out/persistence/saved-references/saved-reference-rpc';
 
 const invalidInput: { readonly ok: false; readonly code: 'INVALID_INPUT' } = {
   ok: false,

@@ -8,8 +8,8 @@ import {
 import {
   createOwnerPrefsStore,
   type OwnerPrefsStore,
-} from '@worker/adapters/out/persistence/saved-references/prefs-store';
-import { listDurableSavedReferences } from '@worker/adapters/out/persistence/saved-references/saved-reference-list';
+} from '@worker/infrastructure/adapters/out/persistence/saved-references/prefs-store';
+import { listDurableSavedReferences } from '@worker/infrastructure/adapters/out/persistence/saved-references/saved-reference-list';
 import {
   createDurableSavedReferenceStore,
   type DurableSavedReferenceStore,
@@ -26,9 +26,9 @@ import type {
   SavedReferenceRpcReadResult,
   SavedReferenceRpcRegistrationResult,
   SavedReferenceRpcReplayResult,
-} from '@worker/adapters/out/persistence/saved-references/saved-reference-rpc';
-export { createOwnerSavedReferenceRpc } from '@worker/adapters/out/persistence/saved-references/saved-reference-rpc';
-export { savedReferenceOwnerName } from '@worker/adapters/out/persistence/saved-references/saved-reference-rpc';
+} from '@worker/infrastructure/adapters/out/persistence/saved-references/saved-reference-rpc';
+export { createOwnerSavedReferenceRpc } from '@worker/infrastructure/adapters/out/persistence/saved-references/saved-reference-rpc';
+export { savedReferenceOwnerName } from '@worker/infrastructure/adapters/out/persistence/saved-references/saved-reference-rpc';
 export type {
   OwnerSavedReferenceRpc,
   SavedReferenceDOStub,
@@ -41,7 +41,7 @@ export type {
   SavedReferenceRpcReadResult,
   SavedReferenceRpcRegistrationResult,
   SavedReferenceRpcReplayResult,
-} from '@worker/adapters/out/persistence/saved-references/saved-reference-rpc';
+} from '@worker/infrastructure/adapters/out/persistence/saved-references/saved-reference-rpc';
 
 const OWNER_TABLE_NAME = 'm16_saved_reference_owner';
 const OWNER_ROW_ID = 1;

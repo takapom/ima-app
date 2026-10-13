@@ -5,7 +5,7 @@ import {
   createOwnerSavedReferenceRpc,
   savedReferenceOwnerName,
   type SavedReferenceNamespace,
-} from '@worker/adapters/out/persistence/saved-references/saved-reference-do';
+} from '@worker/infrastructure/adapters/out/persistence/saved-references/saved-reference-do';
 
 type TestEnv = Cloudflare.Env & {
   readonly SAVED_REFERENCES: SavedReferenceNamespace;

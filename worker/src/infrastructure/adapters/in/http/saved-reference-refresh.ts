@@ -6,7 +6,7 @@ import {
   createOwnerSavedReferenceRpc,
   type OwnerSavedReferenceRpc,
   type SavedReferenceNamespace,
-} from '@worker/adapters/out/persistence/saved-references/saved-reference-rpc';
+} from '@worker/infrastructure/adapters/out/persistence/saved-references/saved-reference-rpc';
 const AUTHORIZATION_TIMEOUT = new Error('saved-reference-authorization-timeout');
 const AUTHORIZATION_ABORTED = new Error('saved-reference-authorization-aborted');
 const awaitAuthorization = async <T>(

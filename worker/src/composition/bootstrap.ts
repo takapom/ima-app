@@ -42,7 +42,7 @@ import {
   createConfiguredConversationPhotos,
 } from '@worker/composition/bootstrap-photo';
 import { createDurableOwnerStore } from '@worker/infrastructure/adapters/out/persistence/saved-references/durable-owner-store';
-import type { SavedReferenceNamespace } from '@worker/adapters/out/persistence/saved-references/saved-reference-rpc';
+import type { SavedReferenceNamespace } from '@worker/infrastructure/adapters/out/persistence/saved-references/saved-reference-rpc';
 
 export { createApplicationScopeAuthorizer } from '@worker/infrastructure/adapters/in/http/saved-reference-refresh';
 
