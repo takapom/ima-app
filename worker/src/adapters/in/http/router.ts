@@ -1,7 +1,7 @@
 import { conversationRouter } from '@worker/infrastructure/adapters/in/http/conversation-router';
 import { Hono } from 'hono';
 import { REQUEST_ID_HEADER } from '@ima/contracts';
-import { isValidRequestId } from '@worker/adapters/in/http/input';
+import { isValidRequestId } from '@worker/infrastructure/adapters/in/http/input';
 import type { HttpRouterConfig } from '@worker/adapters/in/http/router-config';
 import {
   boundaryErrorResponse,

@@ -9,7 +9,7 @@ import {
   type BoundaryFailure,
 } from '@worker/infrastructure/adapters/in/http/errors';
 import type { AuthenticatedContext } from '@worker/infrastructure/adapters/in/http/auth';
-import { parseJsonBodyWithRaw } from '@worker/adapters/in/http/input';
+import { parseJsonBodyWithRaw } from '@worker/infrastructure/adapters/in/http/input';
 import type {
   ApplicationHandler,
   ApplicationOperation,

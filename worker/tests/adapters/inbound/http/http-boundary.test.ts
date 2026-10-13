@@ -16,7 +16,7 @@ import {
   deriveOwnerScopeRef,
 } from '@worker/infrastructure/adapters/in/http/auth';
 import { toErrorResponse, toPublicError } from '@worker/infrastructure/adapters/in/http/errors';
-import { parseJsonBody } from '@worker/adapters/in/http/input';
+import { parseJsonBody } from '@worker/infrastructure/adapters/in/http/input';
 
 const OWNER_CREDENTIAL = `${'A'.repeat(42)}A`;
 const OTHER_OWNER_CREDENTIAL = `${'A'.repeat(41)}B${'A'}`;

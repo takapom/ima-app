@@ -30,7 +30,7 @@ import { createThreadId } from '@worker/runtime/threads/thread-id';
 import {
   handleOwnerApplication,
   isOwnerApplicationOperation,
-} from '@worker/adapters/in/http/owner-application';
+} from '@worker/infrastructure/adapters/in/http/owner-application';
 
 export type ThreadApplicationNamespace = {
   readonly getByName: (name: string) => RuntimeThreadStub & {

@@ -5,7 +5,7 @@ import type { HandlerContext } from '@worker/infrastructure/adapters/in/http/han
 import {
   handleOwnerApplication,
   type OwnerSavedCandidateResolver,
-} from '@worker/adapters/in/http/owner-application';
+} from '@worker/infrastructure/adapters/in/http/owner-application';
 import { createMemoryOwnerStore } from '@worker/adapters/out/persistence/saved-references/memory-owner-store';
 import type { OwnerStore } from '@worker/core/application/ports/owner-store';
 

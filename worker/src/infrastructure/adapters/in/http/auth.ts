@@ -10,7 +10,7 @@ import {
   REQUEST_ID_HEADER,
 } from '@ima/contracts';
 import type { BoundaryFailure } from '@worker/infrastructure/adapters/in/http/errors';
-import { isValidRequestId } from '@worker/adapters/in/http/input';
+import { isValidRequestId } from '@worker/infrastructure/adapters/in/http/input';
 import type { HandlerContext } from '@worker/infrastructure/adapters/in/http/handler';
 
 export type AuthenticatedContext = Pick<

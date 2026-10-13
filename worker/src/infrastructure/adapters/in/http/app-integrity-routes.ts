@@ -8,7 +8,7 @@ import {
 } from '@ima/contracts';
 import type { AuthenticatedContext } from '@worker/infrastructure/adapters/in/http/auth';
 import { toErrorResponse } from '@worker/infrastructure/adapters/in/http/errors';
-import { parseJsonBodyWithRaw } from '@worker/adapters/in/http/input';
+import { parseJsonBodyWithRaw } from '@worker/infrastructure/adapters/in/http/input';
 import type { MatchedRoute } from '@worker/infrastructure/adapters/in/http/http-route';
 import type { AppIntegrityGate } from '@worker/infrastructure/adapters/in/http/app-integrity-gate';
 
