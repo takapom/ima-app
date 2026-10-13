@@ -7,8 +7,8 @@ import {
 } from '@worker/domain/primitives';
 import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
 
-import { ConversationCardsSchema } from '@worker/domain/conversations/conversation-cards';
-import { retainConversationCards } from '@worker/domain/conversations/conversation-card-retention';
+import { ConversationCardsSchema } from '@worker/core/domain/conversations/conversation-cards';
+import { retainConversationCards } from '@worker/core/domain/conversations/conversation-card-retention';
 
 /** ユーザーが書いた本文。削除まで残す区分であり、assistant がこの方針を自分の生成文へ付けない。 */
 const UserTextSchema = v.strictObject({

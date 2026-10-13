@@ -27,7 +27,7 @@ import {
   type JsonRow,
 } from '@worker/adapters/out/persistence/conversations/conversation-sql-schema';
 
-import { conversationCardsDeadlines } from '@worker/domain/conversations/conversation-card-retention';
+import { conversationCardsDeadlines } from '@worker/core/domain/conversations/conversation-card-retention';
 
 type Input<K extends keyof ConversationStore> = Parameters<ConversationStore[K]>[0];
 type Result<K extends keyof ConversationStore> = Awaited<ReturnType<ConversationStore[K]>>;

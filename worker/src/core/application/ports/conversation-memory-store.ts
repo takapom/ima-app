@@ -1,4 +1,4 @@
-import type { ConversationMemory } from '@worker/domain/conversations/conversation-memory';
+import type { ConversationMemory } from '@worker/core/domain/conversations/conversation-memory';
 import type {
   ConversationScope,
   ConversationStoreFailure,

@@ -1,6 +1,6 @@
-import type { ConversationMemory } from '@worker/domain/conversations/conversation-memory';
-export { ConversationMemorySchema } from '@worker/domain/conversations/conversation-memory';
-export type { ConversationMemory } from '@worker/domain/conversations/conversation-memory';
+import type { ConversationMemory } from '@worker/core/domain/conversations/conversation-memory';
+export { ConversationMemorySchema } from '@worker/core/domain/conversations/conversation-memory';
+export type { ConversationMemory } from '@worker/core/domain/conversations/conversation-memory';
 
 export type ProjectedConversationMemory = Omit<ConversationMemory, 'ownerScopeRef'>;
 

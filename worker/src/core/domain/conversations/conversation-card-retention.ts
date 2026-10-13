@@ -1,4 +1,4 @@
-import type { ConversationCards } from '@worker/domain/conversations/conversation-cards';
+import type { ConversationCards } from '@worker/core/domain/conversations/conversation-cards';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 type Card = ConversationCards['cards']['hero'];
 

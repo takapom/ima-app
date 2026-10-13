@@ -1,5 +1,5 @@
 import { messageDeadline } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
-import type { ConversationPhotoSource } from '@worker/domain/conversations/conversation-cards';
+import type { ConversationPhotoSource } from '@worker/core/domain/conversations/conversation-cards';
 import * as v from 'valibot';
 import type { AssistantResponse } from '@ima/contracts';
 import type { CommitRequest } from '@worker/core/application/ports/commit';
