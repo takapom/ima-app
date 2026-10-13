@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { searchOutcomeOf } from '@worker/runtime/response/runtime-search-outcome';
+import { searchOutcomeOf } from '@worker/infrastructure/runtime/response/runtime-search-outcome';
 
 const searchOutput = (candidates: number, status: 'ok' | 'partial' = 'ok') => ({
   status,

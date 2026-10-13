@@ -37,7 +37,7 @@ import {
 } from '@worker/composition/runtime-hot-pepper-policy';
 import { configuredPhotoTokenCodec } from '@worker/composition/photo-token-configuration';
 import { createPhotoTokenPreparer } from '@worker/infrastructure/runtime/response/photo-token-issuance';
-import { configureRuntimeProductionSession } from '@worker/runtime/retention/runtime-production-session';
+import { configureRuntimeProductionSession } from '@worker/infrastructure/runtime/retention/runtime-production-session';
 import type {
   RuntimeThinkConnectionOptions,
   RuntimeThinkTurnBuildRequest,

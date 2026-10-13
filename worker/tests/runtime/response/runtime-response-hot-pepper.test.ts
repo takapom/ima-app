@@ -7,7 +7,7 @@ import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import {
   mapCommittedResponseToPublic,
   RuntimePublicResponseError,
-} from '@worker/runtime/response/runtime-response';
+} from '@worker/infrastructure/runtime/response/runtime-response';
 import { card, requireCardEvidenceLink } from './runtime-response-card-fixture';
 
 const availableRetention: RetentionMetadata = {

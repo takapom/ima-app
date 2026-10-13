@@ -8,7 +8,7 @@ import {
 import {
   mapCommittedResponseToPublic,
   RuntimePublicResponseError,
-} from '@worker/runtime/response/runtime-response';
+} from '@worker/infrastructure/runtime/response/runtime-response';
 import {
   card,
   cardEvidenceLinks,

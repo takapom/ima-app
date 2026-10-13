@@ -52,7 +52,7 @@ import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtim
 import type {
   RuntimePreparedPhotos,
   RuntimePublicResponseDependencies,
-} from '@worker/runtime/response/runtime-response';
+} from '@worker/infrastructure/runtime/response/runtime-response';
 import { mapPreparedRuntimeResponse } from '@worker/infrastructure/runtime/response/runtime-public-response';
 import {
   modelSource,
@@ -69,7 +69,7 @@ import {
 } from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
 import { projectRuntimeToolResultForModel } from '@worker/infrastructure/runtime/context/runtime-field-policy';
 import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-session-config';
-import { searchOutcomeOf } from '@worker/runtime/response/runtime-search-outcome';
+import { searchOutcomeOf } from '@worker/infrastructure/runtime/response/runtime-search-outcome';
 import { createPresentedInputs } from '@worker/core/application/model-context/presented-inputs';
 import { recordPresentedContext } from '@worker/core/application/model-context/presented-context';
 import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
@@ -78,7 +78,7 @@ import {
   type RuntimeTurnObserver,
 } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
 
-export type { RuntimePublicResponseDependencies } from '@worker/runtime/response/runtime-response';
+export type { RuntimePublicResponseDependencies } from '@worker/infrastructure/runtime/response/runtime-response';
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;
 
 export type RuntimeCompositionModelContext = Omit<ModelContextSource, 'harness'>;

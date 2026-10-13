@@ -13,7 +13,7 @@ import {
   prepareRuntimePhotos,
   type RuntimePreparedPhotos,
   type RuntimePublicResponseDependencies,
-} from '@worker/runtime/response/runtime-response';
+} from '@worker/infrastructure/runtime/response/runtime-response';
 
 export const prepareConversationCommit = async (
   port: CommitPort,

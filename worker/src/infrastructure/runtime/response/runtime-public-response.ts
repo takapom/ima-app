@@ -5,7 +5,7 @@ import {
   type RuntimePhotoTokenResolver,
   type RuntimePublicResponseDependencies,
   type RuntimePublicResponseMetadata,
-} from '@worker/runtime/response/runtime-response';
+} from '@worker/infrastructure/runtime/response/runtime-response';
 
 export const mapPreparedRuntimeResponse = (
   response: CommittedResponse,

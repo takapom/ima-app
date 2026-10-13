@@ -11,12 +11,12 @@ import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention'
 import {
   cloneRuntimeJsonValue,
   isRuntimeJsonValue,
-} from '@worker/runtime/retention/runtime-retention-json';
+} from '@worker/infrastructure/runtime/retention/runtime-retention-json';
 
 export {
   cloneRuntimeJsonValue,
   isRuntimeJsonValue,
-} from '@worker/runtime/retention/runtime-retention-json';
+} from '@worker/infrastructure/runtime/retention/runtime-retention-json';
 
 export const RUNTIME_RETENTION_WITHHELD = '[withheld]' as const;
 

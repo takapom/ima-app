@@ -3,7 +3,7 @@ import type {
   ConversationPhotoSource,
 } from '@worker/core/domain/conversations/conversation-cards';
 import type { CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';
-import type { RuntimeCardEvidenceResolver } from '@worker/runtime/response/runtime-response';
+import type { RuntimeCardEvidenceResolver } from '@worker/infrastructure/runtime/response/runtime-response';
 import type { ConversationMessage } from '@worker/core/domain/conversations/conversation-message';
 
 /** New answers use provider record IDs from validated evidence, never a model-supplied ID. */
