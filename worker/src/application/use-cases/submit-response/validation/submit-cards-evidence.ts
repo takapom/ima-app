@@ -20,8 +20,8 @@ import {
 } from '@worker/domain/places/place-values';
 import { IsoTimestampSchema } from '@worker/domain/primitives';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
-import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
-import type { SubmitIssue } from '@worker/application/ports/submission';
+import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
+import type { SubmitIssue } from '@worker/core/application/ports/submission';
 import type { ReadonlyStoredObservation } from '@worker/domain/candidates/registry';
 
 type PhotoInfo = v.InferOutput<typeof PhotoInfoSchema>;

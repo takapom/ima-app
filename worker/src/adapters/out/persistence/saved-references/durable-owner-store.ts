@@ -15,7 +15,7 @@ import type {
   SavedReferenceOperationOptions,
   SavedReferenceReadResult,
   SavedReferenceReplayResult,
-} from '@worker/application/ports/saved-reference-store';
+} from '@worker/core/application/ports/saved-reference-store';
 import {
   savedReferenceOwnerName,
   type SavedReferenceDOStub,

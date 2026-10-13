@@ -5,7 +5,7 @@ import type {
   ToolExecutionContext,
 } from '@worker/core/application/ports/context';
 import type { DetailField } from '@worker/domain/primitives';
-import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type {
   GetPlaceDetailsInput,
   GetPlaceDetailsOutput,
@@ -22,7 +22,7 @@ import type {
   RespondInvalid,
   RespondPort,
   RespondPortResult,
-} from '@worker/application/ports/submission';
+} from '@worker/core/application/ports/submission';
 
 export const PUBLIC_TOOL_NAMES = ['search_places', 'get_place_details', 'respond'] as const;
 

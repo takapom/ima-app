@@ -5,7 +5,7 @@ import type {
   SavedReferenceReplayResult,
   SavedReferenceReadResult,
   SavedReferenceDeleteResult,
-} from '@worker/application/ports/saved-reference-store';
+} from '@worker/core/application/ports/saved-reference-store';
 
 import * as v from 'valibot';
 import { OpaqueIdSchema, SavedPlaceRefSchema } from '@worker/domain/primitives';
@@ -27,7 +27,7 @@ export type {
   SavedReferenceReplayResult,
   SavedReferenceReadResult,
   SavedReferenceDeleteResult,
-} from '@worker/application/ports/saved-reference-store';
+} from '@worker/core/application/ports/saved-reference-store';
 
 export type DurableSavedReferenceStore = {
   readonly register: (

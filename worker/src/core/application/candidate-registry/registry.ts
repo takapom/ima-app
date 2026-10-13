@@ -20,7 +20,7 @@ import { CandidateIdSchema, IsoTimestampSchema, type CandidateId } from '@worker
 import type {
   CandidateObservationRegistryPort,
   ObservationReplacement,
-} from '@worker/application/ports/registry';
+} from '@worker/core/application/ports/registry';
 import type { ClockPort, RegistryIdPort } from '@worker/core/application/ports/context';
 import {
   assertOpaqueId,

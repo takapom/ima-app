@@ -7,7 +7,7 @@ import type {
   PlaceSearchPort,
   SearchPlacesInput,
 } from '@worker/core/application/ports/operations';
-import type { RespondPort } from '@worker/application/ports/submission';
+import type { RespondPort } from '@worker/core/application/ports/submission';
 import { createPublicToolSet, invokePublicTool } from '@worker/adapters/in/tools';
 import type { ToolBindingDependencies, ToolRuntime } from '@worker/adapters/in/tools';
 import { createToolRegistry } from './registry-fixture';

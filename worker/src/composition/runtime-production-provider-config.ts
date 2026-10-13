@@ -1,4 +1,4 @@
-import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { CapabilitySnapshot, HarnessContext } from '@worker/core/application/ports/context';
 import type { RuntimePublicResponseDependencies } from '@worker/composition/runtime-turn-composition';
 import { productionScopeFor } from '@worker/composition/runtime-production-support';

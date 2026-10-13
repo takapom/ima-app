@@ -6,7 +6,7 @@ import {
   type ModelContextFieldPolicy,
 } from '@worker/core/application/model-context/model-context-policy';
 import { projectModelEvidenceForLlmInput } from '@worker/core/application/model-context/model-evidence';
-import { type CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+import { type CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import { type DetailField } from '@worker/domain/primitives';
 import { type HarnessContext } from '@worker/core/application/ports/context';
 import { type Issue } from '@worker/domain/issue';

@@ -24,7 +24,7 @@ import type {
 import type {
   SavedReferenceDeleteResult,
   SavedReferenceReplayResult,
-} from '@worker/application/ports/saved-reference-store';
+} from '@worker/core/application/ports/saved-reference-store';
 
 export type OwnerApplicationOperation = Extract<
   ApplicationOperation,

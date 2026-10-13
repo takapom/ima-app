@@ -21,7 +21,7 @@ import type {
   SavedReferenceOperationOptions,
   SavedReferenceReadResult,
   SavedReferenceReplayResult,
-} from '@worker/application/ports/saved-reference-store';
+} from '@worker/core/application/ports/saved-reference-store';
 
 const MAX_SAVED_LIST = 50;
 const ExpectedRevisionSchema = v.pipe(v.number(), v.safeInteger(), v.minValue(0));

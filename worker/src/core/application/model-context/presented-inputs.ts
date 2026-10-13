@@ -1,4 +1,4 @@
-import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
 import {
   capRetention,

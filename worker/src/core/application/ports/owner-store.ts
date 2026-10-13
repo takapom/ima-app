@@ -6,7 +6,7 @@ import type {
   SavedReferenceReadResult,
   SavedReferenceRegistrationResult,
   SavedReferenceReplayResult,
-} from '@worker/application/ports/saved-reference-store';
+} from '@worker/core/application/ports/saved-reference-store';
 
 export type {
   SavedReferenceDeleteResult,

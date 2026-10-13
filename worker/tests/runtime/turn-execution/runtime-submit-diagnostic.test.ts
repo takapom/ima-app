@@ -1,4 +1,4 @@
-import type { RespondInvalid } from '@worker/application/ports/submission';
+import type { RespondInvalid } from '@worker/core/application/ports/submission';
 import { describe, expect, it, vi } from 'vitest';
 import {
   observeRuntimeSubmitRejection,

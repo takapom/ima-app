@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import type { AssistantResponse, ThreadTurnRequest } from '@ima/contracts';
 import { AssistantResponseSchema } from '@ima/contracts';
-import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type {
   ModelContextSource,

@@ -1,4 +1,4 @@
-import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import { committedConversationPhotoSources } from '@worker/runtime/conversations/conversation-photo-sources';
 import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';

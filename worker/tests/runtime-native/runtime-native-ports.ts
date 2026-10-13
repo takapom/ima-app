@@ -28,7 +28,10 @@ import {
 } from '@worker/core/application/ports/context';
 import { type RegistryScope } from '@worker/domain/evidence/freshness';
 import { type RespondInput } from '@worker/core/application/ports/model';
-import { type RespondPort, type RespondPortResult } from '@worker/application/ports/submission';
+import {
+  type RespondPort,
+  type RespondPortResult,
+} from '@worker/core/application/ports/submission';
 import { type SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
 

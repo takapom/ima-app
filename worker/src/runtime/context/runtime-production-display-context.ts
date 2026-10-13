@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import type { ThreadTurnRequest } from '@ima/contracts';
-import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
 import { CardSetRecordSchema } from '@worker/domain/candidates/continuity';

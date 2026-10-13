@@ -3,7 +3,7 @@ import type { TurnConfig } from '@cloudflare/think';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type { CandidateRecord } from '@worker/domain/candidates/registry';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
-import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { CommitHashPort, CommitPort } from '@worker/core/application/ports/commit';
 import type { HarnessContext, IdPort } from '@worker/core/application/ports/context';
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';

@@ -12,7 +12,7 @@ import {
   type CardSelection,
   type SubmitCardsInput,
 } from '@worker/core/application/ports/model';
-import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import {
   SubmitValidationContextSchema,
   invalid,

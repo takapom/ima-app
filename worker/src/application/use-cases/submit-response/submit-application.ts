@@ -5,7 +5,7 @@ import {
   OpaqueIdSchema,
   TurnIdSchema,
 } from '@worker/domain/primitives';
-import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { IdPort } from '@worker/core/application/ports/context';
 import {
   CommitPortResultSchema,

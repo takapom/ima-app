@@ -23,8 +23,8 @@ import {
   type RespondInvalid,
   type SubmitIssueSchema,
   type RespondPortResult,
-} from '@worker/application/ports/submission';
-import { type CandidateObservationRegistryPort } from '@worker/application/ports/registry';
+} from '@worker/core/application/ports/submission';
+import { type CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import { type DetailField } from '@worker/domain/primitives';
 import { type Issue, type IssueCode } from '@worker/domain/issue';
 import type {
