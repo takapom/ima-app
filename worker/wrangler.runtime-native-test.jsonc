@@ -11,12 +11,19 @@
       { "name": "PRODUCTION_THREADS", "class_name": "ProductionThreadDO" },
       { "name": "RATE_LIMITS", "class_name": "RateLimitDO" },
       { "name": "TELEMETRY", "class_name": "TelemetryDO" },
+      { "name": "EVAL_THREADS", "class_name": "ScriptedEvalThreadDO" },
     ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["ThreadDO", "ProductionThreadDO", "RateLimitDO", "TelemetryDO"],
+      "new_sqlite_classes": [
+        "ThreadDO",
+        "ProductionThreadDO",
+        "RateLimitDO",
+        "TelemetryDO",
+        "ScriptedEvalThreadDO",
+      ],
     },
   ],
 }

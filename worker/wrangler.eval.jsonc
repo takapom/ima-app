@@ -1,0 +1,18 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  // ローカル評価（`bun run eval`）専用。デプロイしない。秘密値は--env-fileから読む。
+  "name": "ima-api-eval",
+  "main": "tooling/eval/worker.ts",
+  "compatibility_date": "2026-08-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "IMA_RUNTIME_MODE": "live",
+    "IMA_PROVIDER_OPENAI": "true",
+    "IMA_PROVIDER_HOTPEPPER": "true",
+    "IMA_KILL_SWITCH": "false",
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "EVAL_THREADS", "class_name": "EvalThreadDO" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["EvalThreadDO"] }],
+}
