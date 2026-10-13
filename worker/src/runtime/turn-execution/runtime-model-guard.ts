@@ -5,7 +5,7 @@ import {
   type RuntimeBatchAction,
   type RuntimeBatchIssueCode,
   type RuntimeBatchResult,
-} from '@worker/runtime/turn-execution/runtime-batch';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-batch';
 import type {
   RuntimeBudget,
   RuntimeBudgetDenial,

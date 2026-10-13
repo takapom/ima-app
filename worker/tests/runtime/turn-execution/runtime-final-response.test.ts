@@ -3,7 +3,7 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
 } from '@worker/infrastructure/runtime/budget/runtime-budget';
-import { createRuntimeFinalResponseHooks } from '@worker/runtime/turn-execution/runtime-final-response';
+import { createRuntimeFinalResponseHooks } from '@worker/infrastructure/runtime/turn-execution/runtime-final-response';
 
 describe('runtime final-response gate', () => {
   it('enters final-only mode at the reserve boundary and consumes it once', () => {

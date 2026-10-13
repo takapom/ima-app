@@ -2,8 +2,8 @@ import type { RuntimeProviderTraceSink } from '@worker/infrastructure/runtime/tr
 import { createBestEffortRuntimeProviderTraceSink } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace';
 import type { RuntimeModelTraceSink } from '@worker/infrastructure/runtime/tracing/runtime-model-trace';
 import { createBestEffortRuntimeModelTraceSink } from '@worker/infrastructure/runtime/tracing/runtime-model-trace';
-import type { RuntimeTurnTraceSink } from '@worker/runtime/tracing/runtime-turn-trace';
-import { createBestEffortRuntimeTurnTraceSink } from '@worker/runtime/tracing/runtime-turn-trace';
+import type { RuntimeTurnTraceSink } from '@worker/infrastructure/runtime/tracing/runtime-turn-trace';
+import { createBestEffortRuntimeTurnTraceSink } from '@worker/infrastructure/runtime/tracing/runtime-turn-trace';
 import type { RuntimeTraceSinkFailure } from '@worker/infrastructure/runtime/tracing/runtime-trace-sink';
 import type { TelemetryTraceStore } from '@worker/core/application/ports/telemetry';
 

@@ -6,7 +6,7 @@ import {
 } from '@worker/infrastructure/runtime/threads/runtime-production-telemetry';
 import type { RuntimeModelTrace } from '@worker/infrastructure/runtime/tracing/runtime-model-trace';
 import type { RuntimeProviderTrace } from '@worker/infrastructure/runtime/tracing/runtime-provider-trace';
-import type { RuntimeTurnTrace } from '@worker/runtime/tracing/runtime-turn-trace';
+import type { RuntimeTurnTrace } from '@worker/infrastructure/runtime/tracing/runtime-turn-trace';
 
 const turnTrace: RuntimeTurnTrace = {
   ownerScopeRef: 'owner-m26-diagnostic',

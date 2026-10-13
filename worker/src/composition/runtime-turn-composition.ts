@@ -42,7 +42,7 @@ import {
   type RuntimeBeforeToolCallDelegate,
   type RuntimeTurnPortDependencies,
 } from '@worker/runtime/turn-execution/runtime-turn-factory';
-import { createRuntimeFinalResponseHooks } from '@worker/runtime/turn-execution/runtime-final-response';
+import { createRuntimeFinalResponseHooks } from '@worker/infrastructure/runtime/turn-execution/runtime-final-response';
 import type {
   RuntimeModelGuardAcceptance,
   RuntimeModelGuardCallOptions,
