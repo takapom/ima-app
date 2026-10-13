@@ -53,7 +53,7 @@ import type {
   RuntimePreparedPhotos,
   RuntimePublicResponseDependencies,
 } from '@worker/runtime/response/runtime-response';
-import { mapPreparedRuntimeResponse } from '@worker/runtime/response/runtime-public-response';
+import { mapPreparedRuntimeResponse } from '@worker/infrastructure/runtime/response/runtime-public-response';
 import {
   modelSource,
   observationResultIsReusable,

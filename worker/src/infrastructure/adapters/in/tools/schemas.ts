@@ -5,7 +5,7 @@ import {
   SearchPlacesInputSchema,
 } from '@worker/core/application/ports/operations';
 import { RespondInputSchema } from '@worker/core/application/ports/model';
-import type { PublicToolEnvelope } from '@worker/runtime/ports/tool-binding';
+import type { PublicToolEnvelope } from '@worker/infrastructure/runtime/ports/tool-binding';
 import { toolInputValidationError } from '@worker/infrastructure/runtime/model/tool-input-error';
 
 type JsonSchema = Parameters<typeof jsonSchema>[0];

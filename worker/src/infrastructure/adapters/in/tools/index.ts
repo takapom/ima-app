@@ -10,7 +10,7 @@ export {
   projectDetailsResult,
   projectSearchResult,
 } from '@worker/infrastructure/adapters/in/tools/projection';
-export { PUBLIC_TOOL_NAMES } from '@worker/runtime/ports/tool-binding';
+export { PUBLIC_TOOL_NAMES } from '@worker/infrastructure/runtime/ports/tool-binding';
 export type {
   DetailsToolResult,
   DetailsToolEnvelope,
@@ -32,4 +32,4 @@ export type {
   ToolBindingDependencies,
   ToolRuntime,
   ToolRuntimeFactory,
-} from '@worker/runtime/ports/tool-binding';
+} from '@worker/infrastructure/runtime/ports/tool-binding';

@@ -16,7 +16,7 @@ import type {
   SafePlaceFields,
   SafeSearchPlacesOutput,
   SearchToolResult,
-} from '@worker/runtime/ports/tool-binding';
+} from '@worker/infrastructure/runtime/ports/tool-binding';
 import {
   safeObservation,
   type ProjectionRegistry,

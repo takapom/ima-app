@@ -8,7 +8,7 @@ import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtim
 import type { CommitPort, CommitRecord } from '@worker/core/application/ports/commit';
 import type { CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';
 import { prepareRuntimeConversationResponse } from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
-import { mapPreparedRuntimeResponse } from '@worker/runtime/response/runtime-public-response';
+import { mapPreparedRuntimeResponse } from '@worker/infrastructure/runtime/response/runtime-public-response';
 import {
   prepareRuntimePhotos,
   type RuntimePreparedPhotos,

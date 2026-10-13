@@ -7,7 +7,7 @@ import {
   collectPhotoTokenObservations,
   createPhotoTokenPreparer,
   type PhotoDisplayPolicySnapshot,
-} from '@worker/runtime/response/photo-token-issuance';
+} from '@worker/infrastructure/runtime/response/photo-token-issuance';
 import { PhotoTokenError, type PhotoTokenCodec } from '@worker/infrastructure/runtime/ports/photo';
 import type { RuntimePolicyRecord } from '@worker/infrastructure/runtime/context/runtime-field-policy';
 

@@ -20,7 +20,7 @@ import {
   PlaceIdentitySchema,
   PriceInfoSchema,
 } from '@worker/core/domain/places/place-values';
-import type { ModelSafeObservation } from '@worker/runtime/ports/tool-binding';
+import type { ModelSafeObservation } from '@worker/infrastructure/runtime/ports/tool-binding';
 
 export type ProjectionRegistry = Pick<
   CandidateObservationRegistryPort,

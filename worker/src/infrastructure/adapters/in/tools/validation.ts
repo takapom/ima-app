@@ -32,7 +32,7 @@ import type {
   PublicToolName,
   ToolRuntimeFactory,
   ToolRuntime,
-} from '@worker/runtime/ports/tool-binding';
+} from '@worker/infrastructure/runtime/ports/tool-binding';
 
 type SubmitIssue = v.InferOutput<typeof SubmitIssueSchema>;
 

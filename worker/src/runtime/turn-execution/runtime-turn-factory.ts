@@ -22,7 +22,7 @@ import {
   type ToolBindingDependencies,
   type ToolRuntimeFactory,
   type PublicToolName,
-} from '@worker/runtime/ports/tool-binding';
+} from '@worker/infrastructure/runtime/ports/tool-binding';
 import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
 
 const RUNTIME_MAX_RETRIES = 0;

@@ -1,4 +1,4 @@
-import { isPublicToolName } from '@worker/runtime/ports/tool-binding';
+import { isPublicToolName } from '@worker/infrastructure/runtime/ports/tool-binding';
 import { tool, type ToolExecutionOptions } from 'ai';
 import * as v from 'valibot';
 import { matchesDetailsRequest } from '@worker/core/application/ports/operations';
@@ -17,7 +17,7 @@ import type {
   RespondToolEnvelope,
   RespondToolResult,
   ToolBindingDependencies,
-} from '@worker/runtime/ports/tool-binding';
+} from '@worker/infrastructure/runtime/ports/tool-binding';
 import {
   cancellationError,
   invalidOutput,
@@ -374,7 +374,7 @@ export const createPublicToolSet = (dependencies: ToolBindingDependencies): Publ
     }),
   }) satisfies PublicToolSet;
 
-export { isPublicToolName } from '@worker/runtime/ports/tool-binding';
+export { isPublicToolName } from '@worker/infrastructure/runtime/ports/tool-binding';
 
 export const getPublicTool = (
   tools: PublicToolSet,

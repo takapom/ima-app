@@ -20,7 +20,7 @@ import {
   publicOpeningHours,
   publicPhotos,
   publicPrice,
-} from '@worker/runtime/response/runtime-response-values';
+} from '@worker/infrastructure/runtime/response/runtime-response-values';
 
 export type RuntimePublicResponseMetadata = {
   readonly threadId: string;
