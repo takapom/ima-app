@@ -11,7 +11,7 @@ import {
   createDurableAppIntegrityStores,
   type AppIntegrityDO,
   type AppIntegrityNamespace,
-} from '@worker/adapters/out/persistence/security/app-integrity-do';
+} from '@worker/infrastructure/adapters/out/persistence/security/app-integrity-do';
 
 const OWNER_A = `${'A'.repeat(42)}E`;
 const OWNER_B = `${'B'.repeat(42)}E`;

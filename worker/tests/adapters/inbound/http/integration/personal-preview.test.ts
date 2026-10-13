@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createBootstrapAppIntegrityGate } from '@worker/composition/app-integrity-bootstrap';
 import { createHttpRouterConfig, type BootstrapEnv } from '@worker/composition/bootstrap';
 import { personalPreviewEnabled } from '@worker/composition/personal-preview';
-import { DurableRateLimiter } from '@worker/adapters/out/persistence/security/durable-rate-limiter';
+import { DurableRateLimiter } from '@worker/infrastructure/adapters/out/persistence/security/durable-rate-limiter';
 import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import { makeHarness, makeRequest, searchInput, type Harness } from '../router-fixtures';
 

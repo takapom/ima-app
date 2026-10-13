@@ -7,7 +7,7 @@ import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import {
   AppIntegrityDO,
   type AppIntegrityNamespace,
-} from '@worker/adapters/out/persistence/security/app-integrity-do';
+} from '@worker/infrastructure/adapters/out/persistence/security/app-integrity-do';
 import type { AppIntegrityVerifier } from '@worker/core/application/ports/app-integrity';
 import { RateLimitDO, ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 

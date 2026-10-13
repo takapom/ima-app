@@ -8,7 +8,7 @@ import { type AppIntegrityGate } from '@worker/infrastructure/adapters/in/http/a
 import {
   createDurableAppIntegrityStores,
   type AppIntegrityNamespace,
-} from '@worker/adapters/out/persistence/security/app-integrity-do';
+} from '@worker/infrastructure/adapters/out/persistence/security/app-integrity-do';
 import { personalPreviewEnabled } from '@worker/composition/personal-preview';
 
 type BootstrapAppIntegrityEnv = {

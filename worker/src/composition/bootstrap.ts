@@ -1,6 +1,6 @@
 import { createRecordTelemetryEvent } from '@worker/core/application/use-cases/record-telemetry/record-telemetry-event';
 import type { ConversationHistoryNamespace } from '@worker/infrastructure/adapters/out/persistence/conversations/durable-conversation-store';
-import { DurableRateLimiter } from '@worker/adapters/out/persistence/security/durable-rate-limiter';
+import { DurableRateLimiter } from '@worker/infrastructure/adapters/out/persistence/security/durable-rate-limiter';
 import { createThreadApplicationHandler } from '@worker/infrastructure/adapters/in/http/thread-application';
 export { createThreadScopeAuthorizer } from '@worker/infrastructure/adapters/in/http/thread-application';
 import type {
@@ -24,7 +24,7 @@ import {
   createRuntimeApplicationHandler,
   type RuntimeCancellationClassification,
 } from '@worker/infrastructure/adapters/in/http/runtime-handler';
-import type { AppIntegrityNamespace } from '@worker/adapters/out/persistence/security/app-integrity-do';
+import type { AppIntegrityNamespace } from '@worker/infrastructure/adapters/out/persistence/security/app-integrity-do';
 import { createBootstrapAppIntegrityGate } from '@worker/composition/app-integrity-bootstrap';
 import { personalPreviewEnabled } from '@worker/composition/personal-preview';
 import type { AppIntegrityVerifier } from '@worker/core/application/ports/app-integrity';
