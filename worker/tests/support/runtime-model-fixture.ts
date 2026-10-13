@@ -1,5 +1,8 @@
 import type { LanguageModel } from 'ai';
-import type { GetPlaceDetailsInput, SearchPlacesInput } from '@worker/application/ports/operations';
+import type {
+  GetPlaceDetailsInput,
+  SearchPlacesInput,
+} from '@worker/core/application/ports/operations';
 import type { RespondInput } from '@worker/core/application/ports/model';
 import { identityObservationId, observationFor } from './runtime-model-observations';
 

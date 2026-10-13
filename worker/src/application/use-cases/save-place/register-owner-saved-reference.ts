@@ -1,7 +1,7 @@
 import type {
   OwnerReferenceInput,
   OwnerReferenceDependencies,
-} from '@worker/application/ports/owner-candidate';
+} from '@worker/core/application/ports/owner-candidate';
 
 /**
  * owner の保存参照を登録する。

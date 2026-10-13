@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { OwnerStore } from '@worker/application/ports/owner-store';
+import type { OwnerStore } from '@worker/core/application/ports/owner-store';
 import { decideOwnerPlace } from '@worker/application/use-cases/decide-place/decide-owner-place';
 import { registerOwnerSavedReference } from '@worker/application/use-cases/save-place/register-owner-saved-reference';
 import {
   type OwnerReferenceFingerprint,
   type OwnerSavedCandidateResolver,
-} from '@worker/application/ports/owner-candidate';
+} from '@worker/core/application/ports/owner-candidate';
 
 const reference = {
   savedPlaceRef: 'saved-1',

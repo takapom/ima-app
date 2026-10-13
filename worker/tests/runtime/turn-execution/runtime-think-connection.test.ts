@@ -5,7 +5,7 @@ import type {
   PlaceDetailsPort,
   PlaceSearchPort,
   SearchPlacesOutput,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { Result } from '@worker/domain/result';
 import type { RespondPort, RespondPortResult } from '@worker/application/ports/submission';

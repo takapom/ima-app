@@ -1,7 +1,7 @@
 import { isPublicToolName } from '@worker/runtime/ports/tool-binding';
 import { tool, type ToolExecutionOptions } from 'ai';
 import * as v from 'valibot';
-import { matchesDetailsRequest } from '@worker/application/ports/operations';
+import { matchesDetailsRequest } from '@worker/core/application/ports/operations';
 import { type CancellationToken } from '@worker/core/application/ports/context';
 import type {
   DetailsToolResult,

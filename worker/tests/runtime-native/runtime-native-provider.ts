@@ -1,4 +1,4 @@
-import type { GetPlaceDetailsInput } from '@worker/application/ports/operations';
+import type { GetPlaceDetailsInput } from '@worker/core/application/ports/operations';
 import type { RespondInput } from '@worker/core/application/ports/model';
 import {
   modelFor,

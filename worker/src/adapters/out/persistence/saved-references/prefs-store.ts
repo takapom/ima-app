@@ -3,7 +3,7 @@ import { PreferencesSchema, type Preferences } from '@ima/contracts';
 import type {
   OwnerPrefsPutResult,
   OwnerPrefsReadResult,
-} from '@worker/application/ports/owner-store';
+} from '@worker/core/application/ports/owner-store';
 
 const TABLE_NAME = 'owner_prefs';
 const PREFS_SINGLETON = 1;

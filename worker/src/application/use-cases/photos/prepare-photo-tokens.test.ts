@@ -3,7 +3,7 @@ import {
   preparePhotoTokens,
   PhotoTokenPreparationError,
 } from '@worker/application/use-cases/photos/prepare-photo-tokens';
-import type { PhotoTokenIssuer } from '@worker/application/ports/photo-token-issuer';
+import type { PhotoTokenIssuer } from '@worker/core/application/ports/photo-token-issuer';
 
 const context = {
   ownerScopeRef: 'owner',

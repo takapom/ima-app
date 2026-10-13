@@ -1,7 +1,10 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema } from '@worker/domain/primitives';
 import { SavedPlaceRegistrationSchema } from '@worker/domain/candidates/continuity';
-import type { OwnerDecideInput, OwnerDecideResult } from '@worker/application/ports/owner-store';
+import type {
+  OwnerDecideInput,
+  OwnerDecideResult,
+} from '@worker/core/application/ports/owner-store';
 import type {
   DurableSavedReferenceStore,
   SavedReferenceOperationOptions,

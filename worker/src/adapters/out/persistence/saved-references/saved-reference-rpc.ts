@@ -5,7 +5,7 @@ import type {
   OwnerPrefsPutResult,
   OwnerPrefsReadResult,
   OwnerSavedListResult,
-} from '@worker/application/ports/owner-store';
+} from '@worker/core/application/ports/owner-store';
 import type {
   SavedReferenceDeleteResult,
   SavedReferenceOperationOptions,

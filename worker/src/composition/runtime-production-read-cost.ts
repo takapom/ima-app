@@ -1,5 +1,5 @@
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
-import type { GetPlaceDetailsInput } from '@worker/application/ports/operations';
+import type { GetPlaceDetailsInput } from '@worker/core/application/ports/operations';
 import type { HarnessContext } from '@worker/core/application/ports/context';
 import {
   isHotPepperDetailField,

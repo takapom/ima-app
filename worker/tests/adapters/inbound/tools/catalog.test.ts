@@ -12,7 +12,7 @@ import {
   type PlaceSearchPort,
   type SearchPlacesInput,
   type SearchPlacesOutput,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import { type Result } from '@worker/domain/result';
 import { type RespondInput } from '@worker/core/application/ports/model';
 import { type RespondPort, type RespondPortResult } from '@worker/application/ports/submission';

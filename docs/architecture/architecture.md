@@ -127,7 +127,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 | 端末prefs・保存一覧・決定時刻          | SQLiteの投影                       | サーバー再取得で更新し、失敗時のstaleを明示する |
 | 運用イベント                           | `TelemetryDO`                      | 固定項目のみ。本文・秘密・生座標を記録しない    |
 
-[OwnerStore](../../worker/src/application/ports/owner-store.ts)はCoreが所有するasync Port。HTTP AdapterとCore Applicationは[DO Adapter](../../worker/src/adapters/out/persistence/saved-references/durable-owner-store.ts)経由で永続化する。
+[OwnerStore](../../worker/src/core/application/ports/owner-store.ts)はCoreが所有するasync Port。HTTP AdapterとCore Applicationは[DO Adapter](../../worker/src/adapters/out/persistence/saved-references/durable-owner-store.ts)経由で永続化する。
 bindingは`SAVED_REFERENCES`、owner shard名は`saved-reference-owner:{ownerScopeRef}`。ThreadDOへprefsをコピーして独立した正にしない。
 検索bodyのprefsは今夜の上書きであり、暗黙の永続writeにしない。D1 Adapterや汎用Repositoryは必要になるまで追加しない。
 

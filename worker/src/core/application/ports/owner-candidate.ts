@@ -1,4 +1,4 @@
-import type { OwnerStore } from '@worker/application/ports/owner-store';
+import type { OwnerStore } from '@worker/core/application/ports/owner-store';
 
 export type OwnerSavedCandidateResult =
   | {

@@ -1,5 +1,5 @@
 import { PhotoTokenError } from '@worker/runtime/ports/photo';
-import type { PhotoTokenIssuer } from '@worker/application/ports/photo-token-issuer';
+import type { PhotoTokenIssuer } from '@worker/core/application/ports/photo-token-issuer';
 import { collectPhotoTokenObservations as collectEligiblePhotos } from '@worker/application/use-cases/photos/photo-token-observations';
 import {
   preparePhotoTokens,

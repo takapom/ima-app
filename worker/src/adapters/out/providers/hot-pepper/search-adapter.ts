@@ -3,7 +3,7 @@ import {
   SearchPlacesInputSchema,
   SearchPlacesOutputSchema,
   type PlaceSearchPort,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import { type HarnessContext } from '@worker/core/application/ports/context';
 import type { PlacesSearchContinuation } from '@worker/adapters/out/providers/places-search/continuation';
 import type { PlacesSearchCursorBinding } from '@worker/adapters/out/providers/places-search/types';

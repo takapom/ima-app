@@ -4,7 +4,7 @@ import {
   SavedPlaceReferenceSchema,
   type SavedPlaceReference,
 } from '@worker/domain/candidates/continuity';
-import type { OwnerDecidedPlace } from '@worker/application/ports/owner-store';
+import type { OwnerDecidedPlace } from '@worker/core/application/ports/owner-store';
 import { initializeOwnerDecideStore } from '@worker/adapters/out/persistence/saved-references/decide-store';
 
 const TABLE_NAME = 'm16_saved_place_reference';

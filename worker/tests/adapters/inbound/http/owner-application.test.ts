@@ -7,7 +7,7 @@ import {
   type OwnerSavedCandidateResolver,
 } from '@worker/adapters/in/http/owner-application';
 import { createMemoryOwnerStore } from '@worker/adapters/out/persistence/saved-references/memory-owner-store';
-import type { OwnerStore } from '@worker/application/ports/owner-store';
+import type { OwnerStore } from '@worker/core/application/ports/owner-store';
 
 const OWNER = 'owner-a';
 const REQUEST_ID = 'request-1';

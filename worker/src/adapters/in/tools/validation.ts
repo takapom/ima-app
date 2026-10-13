@@ -8,7 +8,7 @@ import {
   type GetPlaceDetailsInput,
   type SearchPlacesInput,
   type SearchPlacesOutput,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import {
   HarnessContextSchema,
   ToolExecutionContextSchema,

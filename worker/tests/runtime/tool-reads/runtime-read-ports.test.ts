@@ -11,7 +11,7 @@ import type {
   PlaceSearchPort,
   SearchPlacesInput,
   SearchPlacesOutput,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import type { Result } from '@worker/domain/result';
 import {
   DEFAULT_RUNTIME_BUDGET,

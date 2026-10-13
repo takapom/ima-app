@@ -7,7 +7,7 @@ import {
   matchesDetailsRequest,
   SearchPlacesInputSchema,
   SearchPlacesOutputSchema,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import { RespondInputSchema, SubmitCardsInputSchema } from '@worker/core/application/ports/model';
 import {
   RespondCommittedSchema,

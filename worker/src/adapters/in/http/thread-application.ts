@@ -1,5 +1,5 @@
-import type { OwnerStore } from '@worker/application/ports/owner-store';
-import type { OwnerSavedCandidateResult } from '@worker/application/ports/owner-candidate';
+import type { OwnerStore } from '@worker/core/application/ports/owner-store';
+import type { OwnerSavedCandidateResult } from '@worker/core/application/ports/owner-candidate';
 import type {
   ApplicationHandler,
   ApplicationOperation,

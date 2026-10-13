@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   GetPlaceDetailsOutput,
   SearchPlacesOutput,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { Observation } from '@worker/domain/evidence/evidence';
 import type { ObservationContext } from '@worker/domain/evidence/freshness';

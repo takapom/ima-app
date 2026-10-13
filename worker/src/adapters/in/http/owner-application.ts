@@ -4,11 +4,11 @@ import {
   type OwnerSavedCandidateResult,
   type OwnerSavedCandidateResolver,
   type OwnerReferenceFingerprint,
-} from '@worker/application/ports/owner-candidate';
+} from '@worker/core/application/ports/owner-candidate';
 export type {
   OwnerSavedCandidateResult,
   OwnerSavedCandidateResolver,
-} from '@worker/application/ports/owner-candidate';
+} from '@worker/core/application/ports/owner-candidate';
 
 import type {
   ApplicationOperation,
@@ -20,7 +20,7 @@ import type {
   OwnerDecideResult,
   OwnerRegisterResult,
   OwnerStore,
-} from '@worker/application/ports/owner-store';
+} from '@worker/core/application/ports/owner-store';
 import type {
   SavedReferenceDeleteResult,
   SavedReferenceReplayResult,

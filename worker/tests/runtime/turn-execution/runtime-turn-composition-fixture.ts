@@ -10,7 +10,7 @@ import type {
   PlaceDetailsPort,
   PlaceSearchPort,
   SearchPlacesOutput,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import type { Result } from '@worker/domain/result';
 import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { JSONValue, TextStreamPart, ToolResultPart, ToolSet } from 'ai';

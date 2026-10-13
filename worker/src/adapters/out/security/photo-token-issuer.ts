@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import type { PhotoTokenIssuer } from '@worker/application/ports/photo-token-issuer';
+import type { PhotoTokenIssuer } from '@worker/core/application/ports/photo-token-issuer';
 import {
   PhotoTokenError,
   PhotoTokenInputSchema,

@@ -5,7 +5,7 @@ import type {
   PlaceSearchPort,
   SearchPlacesInput,
   SearchPlacesOutput,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import type { RespondPort } from '@worker/application/ports/submission';
 import { invokePublicTool } from '@worker/adapters/in/tools';
 import type { ToolBindingDependencies, ToolRuntime } from '@worker/adapters/in/tools';

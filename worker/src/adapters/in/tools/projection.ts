@@ -3,7 +3,7 @@ import type { FieldResult, Result } from '@worker/domain/result';
 import type {
   GetPlaceDetailsOutput,
   SearchPlacesOutput,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { Issue } from '@worker/domain/issue';
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';

@@ -3,7 +3,7 @@ import {
   GetPlaceDetailsInputSchema,
   GetPlaceDetailsOutputSchema,
   type PlaceDetailsPort,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import { type CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import { type ToolExecutionContext } from '@worker/core/application/ports/context';
 import type { PlacesSearchRegistration } from '@worker/adapters/out/providers/places-search/registration';

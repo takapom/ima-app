@@ -1,7 +1,7 @@
 import type {
   OwnerReferenceInput,
   OwnerReferenceDependencies,
-} from '@worker/application/ports/owner-candidate';
+} from '@worker/core/application/ports/owner-candidate';
 
 /**
  * 現在の候補を owner の決定として記録する。

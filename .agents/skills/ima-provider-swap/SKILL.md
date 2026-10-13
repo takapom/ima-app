@@ -10,7 +10,7 @@ Google からHot Pepperへの差し替え（#43）で確立し、徒歩経路・
 
 ## 原則
 
-- **Coreの契約を変えない。** 差し替えは[Port](../../../worker/src/application/ports/operations.ts)の実装を入れ替える作業。`PlaceSearchPort`/`PlaceDetailsPort`の形を変えたくなったら、それはProvider差し替えではなく契約変更として別に扱う。
+- **Coreの契約を変えない。** 差し替えは[Port](../../../worker/src/core/application/ports/operations.ts)の実装を入れ替える作業。`PlaceSearchPort`/`PlaceDetailsPort`の形を変えたくなったら、それはProvider差し替えではなく契約変更として別に扱う。
 - **追加してから撤去する。** 新旧が併存する中間コミットを許し、各コミットでテストが通る状態を保つ。
 - **撤去は葉から幹へ。** 参照が残っている実装を先に消さない。
 - 責務と依存方向は[アーキテクチャ](../../../docs/architecture/architecture.md)、用途別policyは[Providerポリシー](../../../docs/provider-policy.md)に従う。

@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@worker/domain/primitives';
-import type { PhotoTokenIssuer } from '@worker/application/ports/photo-token-issuer';
+import type { PhotoTokenIssuer } from '@worker/core/application/ports/photo-token-issuer';
 /** 写真トークンの発行条件が壊れている。呼び出し側は発行ゼロとして扱わず、準備そのものの失敗として止める。 */
 export class PhotoTokenPreparationError extends Error {
   constructor() {

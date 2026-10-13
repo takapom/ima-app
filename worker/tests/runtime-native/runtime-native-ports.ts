@@ -20,7 +20,7 @@ import {
   type PlaceDetailsPort,
   type PlaceSearchPort,
   type SearchPlacesOutput,
-} from '@worker/application/ports/operations';
+} from '@worker/core/application/ports/operations';
 import {
   type HarnessContext,
   type RegistryIdPort,
