@@ -20,7 +20,7 @@ import type {
 import {
   safeObservation,
   type ProjectionRegistry,
-} from '@worker/adapters/in/tools/projection-evidence';
+} from '@worker/infrastructure/adapters/in/tools/projection-evidence';
 
 const safePortIssue = (error: Issue): Issue => ({
   code: error.code,

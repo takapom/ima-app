@@ -42,7 +42,10 @@ import {
   searchPlacesToolSchema,
   respondToolSchema,
 } from '@worker/adapters/in/tools/schemas';
-import { projectDetailsResult, projectSearchResult } from '@worker/adapters/in/tools/projection';
+import {
+  projectDetailsResult,
+  projectSearchResult,
+} from '@worker/infrastructure/adapters/in/tools/projection';
 
 const invocationOf = (options: ToolExecutionOptions): PublicToolInvocation => ({
   toolCallId: options.toolCallId,

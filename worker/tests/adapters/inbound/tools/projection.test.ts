@@ -10,7 +10,10 @@ import type { PlaceIdentity } from '@worker/core/domain/places/place-values';
 import type { Result } from '@worker/core/domain/result';
 import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
-import { projectDetailsResult, projectSearchResult } from '@worker/adapters/in/tools/projection';
+import {
+  projectDetailsResult,
+  projectSearchResult,
+} from '@worker/infrastructure/adapters/in/tools/projection';
 import { createToolRegistry, toolScope } from './registry-fixture';
 
 const context: HarnessContext = {
