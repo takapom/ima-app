@@ -3,7 +3,7 @@ import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,
   type RuntimeBudgetConfig,
-} from '@worker/runtime/budget/runtime-budget';
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   wrapRuntimeModelGuard,
   type RuntimeModelGuardCallOptions,

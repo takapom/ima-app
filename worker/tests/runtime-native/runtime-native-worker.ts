@@ -4,7 +4,10 @@ import {
   RateLimitDO,
   ThreadDO as ProductionThreadDO,
 } from '@worker/entrypoints/cloudflare/thread-do';
-import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
+import {
+  DEFAULT_RUNTIME_BUDGET,
+  RuntimeBudget,
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/infrastructure/adapters/out/providers/openai/provider-options';
 import { sanitizeRuntimeCompactionSummary } from '@worker/runtime/retention/runtime-retention';
 import {

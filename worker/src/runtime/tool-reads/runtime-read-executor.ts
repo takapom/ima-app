@@ -3,7 +3,7 @@ import type {
   RuntimeBudgetDenial,
   RuntimeReadOperation,
   RuntimeRetryFailure,
-} from '@worker/runtime/budget/runtime-budget';
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 import { RuntimeSingleFlight } from '@worker/runtime/tool-reads/runtime-singleflight';
 
 export type RuntimeReadFailureKind =

@@ -12,7 +12,7 @@ import {
 } from '@worker/composition/runtime-turn-composition';
 import { wrapRuntimeProductionCommit } from '@worker/runtime/context/runtime-production-context';
 import { createFactoryRuntimeContext } from '@worker/runtime/context/runtime-production-context-factory';
-import { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
+import { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   harnessContextFor,
   productionCapabilities,

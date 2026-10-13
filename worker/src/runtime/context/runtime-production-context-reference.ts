@@ -17,7 +17,7 @@ import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention'
 import {
   conversationBodyIsUsable,
   type RetainedHistoryEntry,
-} from '@worker/runtime/context/runtime-conversation-history';
+} from '@worker/infrastructure/runtime/context/runtime-conversation-history';
 
 type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 

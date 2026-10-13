@@ -35,7 +35,7 @@ import {
   responseHistory,
   projectConversationHistory,
   type RetainedHistoryEntry,
-} from '@worker/runtime/context/runtime-conversation-history';
+} from '@worker/infrastructure/runtime/context/runtime-conversation-history';
 
 type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 

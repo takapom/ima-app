@@ -16,7 +16,7 @@ import type { RegistryScope } from '@worker/core/domain/evidence/freshness';
 import type { SubmitValidationContext } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import { IsoTimestampSchema } from '@worker/core/domain/primitives';
 import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
-import { DEFAULT_RUNTIME_BUDGET } from '@worker/runtime/budget/runtime-budget';
+import { DEFAULT_RUNTIME_BUDGET } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
 
 const CURSOR_SECRET = 'PLACES_CURSOR_SECRET';

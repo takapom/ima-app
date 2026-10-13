@@ -6,7 +6,7 @@ import { createHotPepperDetailsAdapter } from '@worker/infrastructure/adapters/o
 import { createPlacesSearchRegistration } from '@worker/infrastructure/adapters/out/providers/places-search/registration';
 import type { createPlacesSearchContinuation } from '@worker/infrastructure/adapters/out/providers/places-search/continuation';
 import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';
-import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
+import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   disabledDetailsPort,
   disabledSearchPort,

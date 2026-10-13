@@ -47,7 +47,7 @@ Dev Clientは`bun run dev:mobile`で起動する。同一マシンのWeb/Simulat
 
 キー不足・無効キー・API障害はエラーになり、固定モデルへ切り替わらない。APIキーなしで固定応答を返す起動経路は設けない。
 
-検索・会話の待機上限は[Workerのターン予算](../../worker/src/runtime/budget/runtime-budget.ts)、[モデル呼び出し](../../worker/src/runtime/turn-execution/runtime-model-guard.ts)、[端末のHTTPクライアント](../../apps/mobile/src/platform/http/client.ts)で管理する。時間切れの診断ログは`kind: "timeout"`、`code: "MODEL_STREAM_TIMEOUT"`となる。待機設定を変更した場合はWorkerとExpoの両方を再起動する。
+検索・会話の待機上限は[Workerのターン予算](../../worker/src/infrastructure/runtime/budget/runtime-budget.ts)、[モデル呼び出し](../../worker/src/runtime/turn-execution/runtime-model-guard.ts)、[端末のHTTPクライアント](../../apps/mobile/src/platform/http/client.ts)で管理する。時間切れの診断ログは`kind: "timeout"`、`code: "MODEL_STREAM_TIMEOUT"`となる。待機設定を変更した場合はWorkerとExpoの両方を再起動する。
 
 `kind: "invalid_tool_input"`はProvider呼出し前のTool引数検証エラー。`fields`に値を含まない契約上の項目名を出し、LLMにも同じ項目名を返して修正を促す。HTTP 200は会話応答の成功を示し、店舗検索やカード提示の成功を保証しない。
 

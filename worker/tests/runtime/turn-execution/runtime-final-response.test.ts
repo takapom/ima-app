@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
+import {
+  DEFAULT_RUNTIME_BUDGET,
+  RuntimeBudget,
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 import { createRuntimeFinalResponseHooks } from '@worker/runtime/turn-execution/runtime-final-response';
 
 describe('runtime final-response gate', () => {

@@ -35,7 +35,7 @@ import type {
   RuntimeBeforeToolCallDelegate,
   RuntimeTurnHandle,
 } from '@worker/runtime/turn-execution/runtime-turn-factory';
-import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
+import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
 
 export type RuntimeThinkMessageInput =
   UIMessage[] | ((currentMessages: UIMessage[]) => UIMessage[] | Promise<UIMessage[]>);

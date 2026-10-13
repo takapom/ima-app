@@ -10,7 +10,7 @@ import type {
   RuntimeBudget,
   RuntimeBudgetDenial,
   RuntimeBudgetResult,
-} from '@worker/runtime/budget/runtime-budget';
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 
 /** AI SDK's public model middleware currently accepts V3 models. */
 export type RuntimeModelGuardModel = Extract<LanguageModel, { specificationVersion: 'v3' }>;

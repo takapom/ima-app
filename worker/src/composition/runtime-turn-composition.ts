@@ -48,7 +48,7 @@ import type {
   RuntimeModelGuardCallOptions,
   RuntimeModelGuardModel,
 } from '@worker/runtime/turn-execution/runtime-model-guard';
-import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
+import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import type {
   RuntimePreparedPhotos,
   RuntimePublicResponseDependencies,

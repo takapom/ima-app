@@ -16,7 +16,10 @@ import type { SubmitValidationContext } from '@worker/core/application/use-cases
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
 import { invokePublicToolEnvelope } from '@worker/infrastructure/adapters/in/tools';
-import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
+import {
+  DEFAULT_RUNTIME_BUDGET,
+  RuntimeBudget,
+} from '@worker/infrastructure/runtime/budget/runtime-budget';
 import {
   createRuntimeThinkConnection,
   type RuntimeThinkConnection,
