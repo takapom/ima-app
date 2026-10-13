@@ -34,7 +34,7 @@ import {
 import type {
   RuntimeBeforeToolCallDelegate,
   RuntimeTurnHandle,
-} from '@worker/runtime/turn-execution/runtime-turn-factory';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-turn-factory';
 import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
 
 export type RuntimeThinkMessageInput =

@@ -1,7 +1,7 @@
 import type { TurnContext } from '@cloudflare/think';
 import type { RespondPort } from '@worker/core/application/ports/submission';
 import { describe, expect, it } from 'vitest';
-import { RuntimeTurnFactoryError } from '@worker/runtime/turn-execution/runtime-turn-factory';
+import { RuntimeTurnFactoryError } from '@worker/infrastructure/runtime/turn-execution/runtime-turn-factory';
 import type {
   RuntimeSubmitRejection,
   RuntimeTurnOutcome,

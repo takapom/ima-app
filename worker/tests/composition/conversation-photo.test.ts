@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createConfiguredConversationPhotos } from '@worker/composition/bootstrap-photo';
+import { createConfiguredConversationPhotos } from '@worker/platform/composition/bootstrap-photo';
 
 const config = {
   HOTPEPPER_API_KEY: 'fixture-key',

@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:test';
 import { describe, expect, it, vi } from 'vitest';
-import { createBootstrapAppIntegrityGate } from '@worker/composition/app-integrity-bootstrap';
+import { createBootstrapAppIntegrityGate } from '@worker/platform/composition/app-integrity-bootstrap';
 import { createHttpRouterConfig, type BootstrapEnv } from '@worker/composition/bootstrap';
 import { personalPreviewEnabled } from '@worker/composition/personal-preview';
 import { DurableRateLimiter } from '@worker/infrastructure/adapters/out/persistence/security/durable-rate-limiter';

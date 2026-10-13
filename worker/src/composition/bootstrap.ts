@@ -25,7 +25,7 @@ import {
   type RuntimeCancellationClassification,
 } from '@worker/infrastructure/adapters/in/http/runtime-handler';
 import type { AppIntegrityNamespace } from '@worker/infrastructure/adapters/out/persistence/security/app-integrity-do';
-import { createBootstrapAppIntegrityGate } from '@worker/composition/app-integrity-bootstrap';
+import { createBootstrapAppIntegrityGate } from '@worker/platform/composition/app-integrity-bootstrap';
 import { personalPreviewEnabled } from '@worker/composition/personal-preview';
 import type { AppIntegrityVerifier } from '@worker/core/application/ports/app-integrity';
 import {
@@ -40,7 +40,7 @@ import type { AppIntegrityGate } from '@worker/infrastructure/adapters/in/http/a
 import {
   createConfiguredPhoto,
   createConfiguredConversationPhotos,
-} from '@worker/composition/bootstrap-photo';
+} from '@worker/platform/composition/bootstrap-photo';
 import { createDurableOwnerStore } from '@worker/infrastructure/adapters/out/persistence/saved-references/durable-owner-store';
 import type { SavedReferenceNamespace } from '@worker/infrastructure/adapters/out/persistence/saved-references/saved-reference-rpc';
 

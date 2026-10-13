@@ -6,7 +6,7 @@ import type {
 import type {
   RuntimeBeforeStepDelegate,
   RuntimeBeforeToolCallDelegate,
-} from '@worker/runtime/turn-execution/runtime-turn-factory';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-turn-factory';
 import type { RuntimeModelGuardCallOptions } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 
 type RuntimeFinalResponseOptions = {

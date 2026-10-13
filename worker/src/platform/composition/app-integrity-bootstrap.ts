@@ -1,5 +1,5 @@
-import { createAppIntegrityGate } from '@worker/composition/app-integrity-gate';
-import { resolveAppIntegrityPolicy } from '@worker/composition/app-integrity-policy';
+import { createAppIntegrityGate } from '@worker/platform/composition/app-integrity-gate';
+import { resolveAppIntegrityPolicy } from '@worker/platform/composition/app-integrity-policy';
 import {
   type AppAttestEnvironment,
   type AppIntegrityVerifier,

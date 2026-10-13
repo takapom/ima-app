@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createAppIntegrityGate } from '@worker/composition/app-integrity-gate';
+import { createAppIntegrityGate } from '@worker/platform/composition/app-integrity-gate';
 import {
   type AppIntegrityChallengeStore,
   type AppIntegrityKey,

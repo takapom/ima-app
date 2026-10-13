@@ -19,7 +19,7 @@ import {
   createRuntimeTurnFactory,
   type RuntimeTurnFactoryOptions,
   type RuntimeTurnPortDependencies,
-} from '@worker/runtime/turn-execution/runtime-turn-factory';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-turn-factory';
 import { createToolRegistry } from '../adapters/inbound/tools/registry-fixture';
 
 /** Reports no walking-route or last-train capability, matching the connected providers. */
