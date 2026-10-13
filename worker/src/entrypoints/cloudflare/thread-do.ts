@@ -14,7 +14,7 @@ import { runtimeThreadBindingFor } from '@worker/runtime/threads/runtime-thread-
 import {
   createDurableCommitPort,
   type DurableCommitPort,
-} from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
+} from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
 import {
   runtimeFailure,
   type ThreadRuntimeCancelResult,

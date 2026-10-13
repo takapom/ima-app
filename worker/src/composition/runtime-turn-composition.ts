@@ -66,7 +66,7 @@ import { observeRuntimeTerminalFormatFailure } from '@worker/runtime/turn-execut
 import {
   clearRuntimeCardSetId,
   registerRuntimeCardSetId,
-} from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
+} from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
 import { projectRuntimeToolResultForModel } from '@worker/runtime/context/runtime-field-policy';
 import { configureRuntimeCompaction } from '@worker/runtime/retention/runtime-session-config';
 import { searchOutcomeOf } from '@worker/runtime/response/runtime-search-outcome';

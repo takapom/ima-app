@@ -12,7 +12,7 @@ import {
   type HotPepperSearchRequest,
 } from '@worker/adapters/out/providers/hot-pepper/types';
 import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
-import type { DurableCommitPort } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
+import type { DurableCommitPort } from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
 import {
   createRuntimeTurnComposition,
   type RuntimePublicResponseDependencies,

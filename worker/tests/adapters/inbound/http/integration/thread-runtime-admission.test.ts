@@ -8,7 +8,7 @@ import type {
   ThreadRuntimeTurnResult,
 } from '@worker/runtime/threads/admission';
 import { runtimeFailure } from '@worker/runtime/threads/admission';
-import { persistRuntimeResult } from '@worker/adapters/out/persistence/thread/result-persistence';
+import { persistRuntimeResult } from '@worker/infrastructure/adapters/out/persistence/thread/result-persistence';
 
 const OWNER_A = 'A'.repeat(42) + 'E';
 const OWNER_B = 'B'.repeat(42) + 'E';

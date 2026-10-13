@@ -1,4 +1,4 @@
-import { initializeDurableCommitTable } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
+import { initializeDurableCommitTable } from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
 
 export const initializeThreadStorage = (storage: DurableObjectStorage): void => {
   storage.sql.exec(`

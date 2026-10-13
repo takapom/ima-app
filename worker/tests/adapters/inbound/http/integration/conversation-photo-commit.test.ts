@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { CommitRequest } from '@worker/core/application/ports/commit';
-import { createDurableCommitPort } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
+import { createDurableCommitPort } from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
 import { ThreadConversationOutbox } from '@worker/infrastructure/adapters/out/persistence/conversations/thread-conversation-outbox';
 import { SqlConversationRecords } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-records';
 import { SqlConversationRuns } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-runs';
