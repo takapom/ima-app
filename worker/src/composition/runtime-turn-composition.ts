@@ -61,7 +61,7 @@ import {
   observedWindow,
   RuntimeTurnCompositionError,
   prepareConversationCommit,
-} from '@worker/composition/runtime-turn-composition-support';
+} from '@worker/platform/composition/runtime-turn-composition-support';
 import { observeRuntimeTerminalFormatFailure } from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
 import {
   clearRuntimeCardSetId,
@@ -135,7 +135,7 @@ export type RuntimeTurnComposition<Response = CommittedResponse> =
     readonly configureSession: (session: Session) => Session;
   };
 
-export { RuntimeTurnCompositionError } from '@worker/composition/runtime-turn-composition-support';
+export { RuntimeTurnCompositionError } from '@worker/platform/composition/runtime-turn-composition-support';
 
 const sameIdentity = (request: RuntimeCompositionTurnRequest, context: HarnessContext): boolean =>
   request.ownerScopeRef === context.ownerScopeRef &&

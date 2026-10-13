@@ -14,7 +14,7 @@ import {
   respondWith,
 } from './runtime-turn-composition-fixture';
 import { denyModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
-import { observedWindow } from '@worker/composition/runtime-turn-composition-support';
+import { observedWindow } from '@worker/platform/composition/runtime-turn-composition-support';
 
 describe('createRuntimeTurnComposition', () => {
   it('keeps model input expiry independent from display and persistence windows', () => {
