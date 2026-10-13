@@ -8,7 +8,7 @@ import type {
 import type {
   DurableSavedReferenceStore,
   SavedReferenceOperationOptions,
-} from '@worker/adapters/out/persistence/saved-references/store';
+} from '@worker/infrastructure/adapters/out/persistence/saved-references/store';
 
 const REFERENCE_TABLE = 'm16_saved_place_reference';
 const OPERATION_TABLE = 'm16_saved_decide_operation';

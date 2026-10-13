@@ -12,7 +12,7 @@ import type {
   SavedReferenceReadResult,
   SavedReferenceRegistrationResult,
   SavedReferenceReplayResult,
-} from '@worker/adapters/out/persistence/saved-references/store';
+} from '@worker/infrastructure/adapters/out/persistence/saved-references/store';
 
 const OWNER_NAME_PREFIX = 'saved-reference-owner:';
 

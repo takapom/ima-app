@@ -14,7 +14,7 @@ import {
   createDurableSavedReferenceStore,
   type DurableSavedReferenceStore,
   type SavedReferenceOperationOptions,
-} from '@worker/adapters/out/persistence/saved-references/store';
+} from '@worker/infrastructure/adapters/out/persistence/saved-references/store';
 import type {
   SavedReferenceOwnerInitResult,
   SavedReferenceOwnerOperationFailure,
