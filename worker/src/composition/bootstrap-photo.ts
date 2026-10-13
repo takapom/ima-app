@@ -5,7 +5,7 @@ import { configuredPhotoTokenCodec } from '@worker/composition/photo-token-confi
 import { createHotPepperPhotoTransport } from '@worker/adapters/out/providers/hot-pepper/photo-transport';
 import { resolveRuntimeOperationalGate } from '@worker/composition/runtime-operational-gate';
 import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
-import { createHotPepperConversationPhotoReader } from '@worker/adapters/out/providers/hot-pepper/conversation-photo-reader';
+import { createHotPepperConversationPhotoReader } from '@worker/infrastructure/adapters/out/providers/hot-pepper/conversation-photo-reader';
 import type { ConversationPhotoReader } from '@worker/runtime/ports/conversation-photo';
 
 export const createConfiguredConversationPhotos = (env: {

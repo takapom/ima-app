@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createHotPepperConversationPhotoReader } from '@worker/adapters/out/providers/hot-pepper/conversation-photo-reader';
+import { createHotPepperConversationPhotoReader } from '@worker/infrastructure/adapters/out/providers/hot-pepper/conversation-photo-reader';
 import { HotPepperError } from '@worker/adapters/out/providers/hot-pepper/types';
 import type { HotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
 import type { PhotoMediaTransport } from '@worker/runtime/ports/photo-media';
