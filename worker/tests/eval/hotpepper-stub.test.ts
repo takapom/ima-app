@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   HotPepperShopWireSchema,
   parseHotPepperResponse,
-} from '@worker/adapters/out/providers/hot-pepper/wire';
-import { HOT_PEPPER_GOURMET_ENDPOINT } from '@worker/adapters/out/providers/hot-pepper/types';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/wire';
+import { HOT_PEPPER_GOURMET_ENDPOINT } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 import { createHotPepperStub } from '../../tooling/eval/hotpepper-stub';
 import { EVAL_SHOP_SETS, evalShopSetFor } from '../../tooling/eval/shops/shop-sets';
 

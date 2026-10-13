@@ -1,4 +1,4 @@
-import type { HotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
+import type { HotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import type { TurnConfig } from '@cloudflare/think';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type { CandidateRecord } from '@worker/core/domain/candidates/registry';

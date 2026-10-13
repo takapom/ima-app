@@ -20,8 +20,8 @@ import {
   createRuntimeReadAttemptSignalBridge,
   createRuntimeReadPorts,
 } from '@worker/runtime/tool-reads/runtime-read-ports';
-import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
-import type { HotPepperSearchRequest } from '@worker/adapters/out/providers/hot-pepper/types';
+import { createHotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
+import type { HotPepperSearchRequest } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 
 const context: HarnessContext = {
   threadId: 'thread-attempt-signal',

@@ -4,8 +4,8 @@ import {
   type HotPepperFacilityValue,
   type HotPepperFieldResult,
   type HotPepperPriceSupplement,
-} from '@worker/adapters/out/providers/hot-pepper/types';
-import type { HotPepperShopWire } from '@worker/adapters/out/providers/hot-pepper/wire';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
+import type { HotPepperShopWire } from '@worker/infrastructure/adapters/out/providers/hot-pepper/wire';
 
 type Normalized<T> = Exclude<HotPepperFieldResult<T>, { readonly status: 'unsupported' }>;
 

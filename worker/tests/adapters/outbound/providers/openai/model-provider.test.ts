@@ -1,7 +1,7 @@
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createLiveOpenAIProvider } from '@worker/adapters/out/providers/openai/model-provider';
+import { createLiveOpenAIProvider } from '@worker/infrastructure/adapters/out/providers/openai/model-provider';
 import {
   ModelProviderConfigurationError,
   OPENAI_API_KEY_NAME,

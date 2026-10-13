@@ -17,8 +17,8 @@ import {
   normalizeHotPepperFacilities,
   normalizeHotPepperPrice,
 } from '@worker/infrastructure/adapters/out/providers/hot-pepper/normalize';
-import { HotPepperError } from '@worker/adapters/out/providers/hot-pepper/types';
-import type { HotPepperShopWire } from '@worker/adapters/out/providers/hot-pepper/wire';
+import { HotPepperError } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
+import type { HotPepperShopWire } from '@worker/infrastructure/adapters/out/providers/hot-pepper/wire';
 import { HotPepperPhotoUrlSchema } from '@worker/security/photo-resource-policy';
 
 /** Optional identity text is omitted rather than emptied, so absence stays distinguishable. */

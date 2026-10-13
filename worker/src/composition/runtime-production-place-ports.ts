@@ -1,6 +1,6 @@
 import type { CandidateObservationRegistry } from '@worker/core/application/candidate-registry/registry';
 import type { PlaceDetailsPort, PlaceSearchPort } from '@worker/core/application/ports/operations';
-import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
+import { createHotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import { createHotPepperSearchAdapter } from '@worker/infrastructure/adapters/out/providers/hot-pepper/search-adapter';
 import { createHotPepperDetailsAdapter } from '@worker/infrastructure/adapters/out/providers/hot-pepper/details-adapter';
 import { createPlacesSearchRegistration } from '@worker/adapters/out/providers/places-search/registration';

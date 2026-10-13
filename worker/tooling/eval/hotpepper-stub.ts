@@ -1,5 +1,5 @@
-import { HOT_PEPPER_GOURMET_ENDPOINT } from '@worker/adapters/out/providers/hot-pepper/types';
-import type { HotPepperShopWire } from '@worker/adapters/out/providers/hot-pepper/wire';
+import { HOT_PEPPER_GOURMET_ENDPOINT } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
+import type { HotPepperShopWire } from '@worker/infrastructure/adapters/out/providers/hot-pepper/wire';
 import type { EvalShopSet } from './shops/shop-sets';
 
 /** ホットペッパーの`range`の値と、公式資料にある半径。 */

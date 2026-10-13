@@ -3,7 +3,7 @@ import { listingTextFor } from '@worker/infrastructure/adapters/out/providers/ho
 import {
   parseHotPepperResponse,
   type HotPepperShopWire,
-} from '@worker/adapters/out/providers/hot-pepper/wire';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/wire';
 import { LISTING_TEXT_MAX_LENGTH } from '@worker/core/domain/places/place-values';
 import { summarizeFieldForModel } from '@worker/core/application/model-context/model-field-summary';
 import { makeFixture, place, read, readInput } from './adapter-fixtures';

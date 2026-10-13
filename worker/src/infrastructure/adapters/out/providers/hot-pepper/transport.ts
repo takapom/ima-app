@@ -4,11 +4,11 @@ import {
   HotPepperError,
   HotPepperSearchRequestSchema,
   type HotPepperSearchRequest,
-} from '@worker/adapters/out/providers/hot-pepper/types';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 import {
   parseHotPepperResponse,
   type HotPepperSearchPage,
-} from '@worker/adapters/out/providers/hot-pepper/wire';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/wire';
 import {
   beginRuntimeProviderTransportCall,
   completeRuntimeProviderTransportCall,

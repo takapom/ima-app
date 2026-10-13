@@ -1,9 +1,9 @@
 import { createRuntimeProviderTransportObserver } from '@worker/adapters/out/providers/telemetry/runtime-provider-observer';
 import { describe, expect, it, vi } from 'vitest';
-import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
-import type { HotPepperSearchRequest } from '@worker/adapters/out/providers/hot-pepper/types';
+import { createHotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
+import type { HotPepperSearchRequest } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
-import { HotPepperError } from '@worker/adapters/out/providers/hot-pepper/types';
+import { HotPepperError } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 import {
   createBestEffortRuntimeProviderTraceSink,
   traceRecordForRuntimeProvider,

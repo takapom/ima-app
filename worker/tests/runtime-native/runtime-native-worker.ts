@@ -10,8 +10,8 @@ import { sanitizeRuntimeCompactionSummary } from '@worker/runtime/retention/runt
 import {
   HotPepperError,
   type HotPepperSearchRequest,
-} from '@worker/adapters/out/providers/hot-pepper/types';
-import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
+import { createHotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import type { DurableCommitPort } from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
 import {
   createRuntimeTurnComposition,

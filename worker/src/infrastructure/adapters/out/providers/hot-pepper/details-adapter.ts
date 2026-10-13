@@ -7,8 +7,8 @@ import {
 import { type CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import { type ToolExecutionContext } from '@worker/core/application/ports/context';
 import type { PlacesSearchRegistration } from '@worker/adapters/out/providers/places-search/registration';
-import type { HotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
-import { HotPepperError } from '@worker/adapters/out/providers/hot-pepper/types';
+import type { HotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
+import { HotPepperError } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 import {
   hotPepperIssue,
   hotPepperProviderIssue,

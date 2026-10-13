@@ -3,12 +3,12 @@ import {
   HOT_PEPPER_GOURMET_ENDPOINT,
   HotPepperError,
   type HotPepperSearchRequest,
-} from '@worker/adapters/out/providers/hot-pepper/types';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 import {
   HOT_PEPPER_MAX_RESPONSE_BYTES,
   createHotPepperTransport,
   type HotPepperTransportOptions,
-} from '@worker/adapters/out/providers/hot-pepper/transport';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import type {
   RuntimeProviderTransportCompletion,
   RuntimeProviderTransportObserver,

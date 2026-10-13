@@ -1,8 +1,8 @@
 import type { ConversationPhotoReader } from '@worker/runtime/ports/conversation-photo';
 import type { PhotoMediaTransport } from '@worker/runtime/ports/photo-media';
 import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
-import type { HotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
-import { HotPepperError } from '@worker/adapters/out/providers/hot-pepper/types';
+import type { HotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
+import { HotPepperError } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 import { HotPepperPhotoUrlSchema } from '@worker/security/photo-resource-policy';
 import * as v from 'valibot';
 

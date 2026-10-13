@@ -7,7 +7,7 @@ import {
 import {
   parseHotPepperResponse,
   type HotPepperShopWire,
-} from '@worker/adapters/out/providers/hot-pepper/wire';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/wire';
 
 const shopFor = (open: string): HotPepperShopWire => {
   const parsed = parseHotPepperResponse({

@@ -8,12 +8,12 @@ import { type HarnessContext } from '@worker/core/application/ports/context';
 import type { PlacesSearchContinuation } from '@worker/adapters/out/providers/places-search/continuation';
 import type { PlacesSearchCursorBinding } from '@worker/adapters/out/providers/places-search/types';
 import type { PlacesSearchRegistration } from '@worker/adapters/out/providers/places-search/registration';
-import type { HotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
+import type { HotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import {
   HotPepperError,
   type HotPepperSearchRequest,
-} from '@worker/adapters/out/providers/hot-pepper/types';
-import type { HotPepperShopWire } from '@worker/adapters/out/providers/hot-pepper/wire';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
+import type { HotPepperShopWire } from '@worker/infrastructure/adapters/out/providers/hot-pepper/wire';
 import {
   hotPepperIssue,
   hotPepperProviderIssue,

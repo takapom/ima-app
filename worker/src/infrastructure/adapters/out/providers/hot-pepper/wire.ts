@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import {
   HotPepperError,
   type HotPepperFailureCode,
-} from '@worker/adapters/out/providers/hot-pepper/types';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 
 const providerText = (maxLength: number) => v.nullable(v.pipe(v.string(), v.maxLength(maxLength)));
 const optionalProviderText = (maxLength: number) => v.optional(providerText(maxLength));

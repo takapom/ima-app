@@ -1,4 +1,4 @@
-import type { HotPepperShopWire } from '@worker/adapters/out/providers/hot-pepper/wire';
+import type { HotPepperShopWire } from '@worker/infrastructure/adapters/out/providers/hot-pepper/wire';
 
 /**
  * ホットペッパーのwire形で書いた架空の店舗。評価結果はディスクに残るため、実在店舗のデータを
