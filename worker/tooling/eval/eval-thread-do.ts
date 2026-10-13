@@ -1,6 +1,6 @@
 import type { AssistantResponse } from '@ima/contracts';
 import { createLiveOpenAIProvider } from '@worker/infrastructure/adapters/out/providers/openai/model-provider';
-import { sessionExpiryAt } from '@worker/composition/runtime-production-support';
+import { sessionExpiryAt } from '@worker/platform/composition/runtime-production-support';
 import { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 import type { RuntimeModelGuardModel } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import type {

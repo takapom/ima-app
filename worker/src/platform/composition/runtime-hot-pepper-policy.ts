@@ -1,6 +1,6 @@
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
-import type { RuntimeProductionOverrides } from '@worker/composition/runtime-production-types';
+import type { RuntimeProductionOverrides } from '@worker/platform/composition/runtime-production-types';
 import type {
   PhotoDisplayPolicySnapshot,
   PhotoTokenObservationSource,
@@ -8,7 +8,7 @@ import type {
 import {
   sessionExpiryAt,
   type ProductionObservationPolicyInput,
-} from '@worker/composition/runtime-production-support';
+} from '@worker/platform/composition/runtime-production-support';
 
 /** Application usage policy for the selected provider; not a claim of provider-side verification. */
 export const hotPepperModelContextPolicy: ModelContextFieldPolicy = {

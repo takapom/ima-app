@@ -1,7 +1,7 @@
 import {
   placesCursorSecret,
   productionSecret,
-} from '@worker/composition/runtime-production-support';
+} from '@worker/platform/composition/runtime-production-support';
 import { isConfiguredSecret } from '@worker/platform/composition/runtime-production-provider-config';
 import { resolveRuntimeOperationalGate } from '@worker/platform/composition/runtime-operational-gate';
 

@@ -16,13 +16,13 @@ import {
   defaultProductionObservationPolicy,
   productionClockPort,
   productionSecret,
-} from '@worker/composition/runtime-production-support';
-import type { ProductionIds } from '@worker/composition/runtime-production-support';
+} from '@worker/platform/composition/runtime-production-support';
+import type { ProductionIds } from '@worker/platform/composition/runtime-production-support';
 import type { RuntimeProductionProviderAvailability } from '@worker/platform/composition/runtime-production-provider-config';
 import type {
   ProductionBuildInput,
   RuntimeProductionOverrides,
-} from '@worker/composition/runtime-production-types';
+} from '@worker/platform/composition/runtime-production-types';
 
 export type RuntimeProductionPlacePorts = {
   readonly search: PlaceSearchPort;

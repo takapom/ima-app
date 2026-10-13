@@ -5,7 +5,7 @@ import {
   isHotPepperDetailField,
   hotPepperObservationContext,
 } from '@worker/infrastructure/adapters/out/providers/hot-pepper/place-observations';
-import { productionScopeFor } from '@worker/composition/runtime-production-support';
+import { productionScopeFor } from '@worker/platform/composition/runtime-production-support';
 import type {
   RuntimeReadCost,
   RuntimeReadCostRequest,

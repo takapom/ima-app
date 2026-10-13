@@ -25,7 +25,7 @@ import {
   ProductionIds,
   productionScopeFor,
   validationContextFor,
-} from '@worker/composition/runtime-production-support';
+} from '@worker/platform/composition/runtime-production-support';
 import {
   capabilitiesWithProviders,
   cardEvidenceResolver,
@@ -43,7 +43,7 @@ import type {
   RuntimeThinkTurnBuildRequest,
 } from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import { defaultRuntimeModelContextPolicy } from '@worker/infrastructure/runtime/context/runtime-field-policy';
-import { resolveRuntimeProductionReadCost } from '@worker/composition/runtime-production-read-cost';
+import { resolveRuntimeProductionReadCost } from '@worker/platform/composition/runtime-production-read-cost';
 import { createRuntimeProductionPlacePorts } from '@worker/platform/composition/runtime-production-place-ports';
 import { createFactoryContinuation } from '@worker/platform/composition/runtime-production-continuation';
 import { resolveRuntimeOperationalAdmission } from '@worker/platform/composition/runtime-operational-admission';
@@ -53,14 +53,14 @@ import type {
   RuntimeProductionConnectionOptions,
   RuntimeProductionOverrides,
   RuntimeProductionTurnPlan,
-} from '@worker/composition/runtime-production-types';
+} from '@worker/platform/composition/runtime-production-types';
 
 export type {
   ProductionBuildInput,
   RuntimeProductionConnectionOptions,
   RuntimeProductionOverrides,
   RuntimeProductionTurnPlan,
-} from '@worker/composition/runtime-production-types';
+} from '@worker/platform/composition/runtime-production-types';
 const defaultPlan = (
   input: ProductionBuildInput,
   env: unknown,

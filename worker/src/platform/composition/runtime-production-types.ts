@@ -16,7 +16,7 @@ import type {
   RuntimePublicResponseDependencies,
 } from '@worker/composition/runtime-turn-composition';
 import type { RuntimeProductionContextPersistence } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
-import type { ProductionRetentionSource } from '@worker/composition/runtime-production-support';
+import type { ProductionRetentionSource } from '@worker/platform/composition/runtime-production-support';
 import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
 import type { RuntimeModelGuardModel } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import type { RuntimeTurnObserver } from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';

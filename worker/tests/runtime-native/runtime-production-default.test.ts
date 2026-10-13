@@ -4,7 +4,7 @@ import { AssistantResponseSchema } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_RUNTIME_BUDGET } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/infrastructure/adapters/out/providers/openai/provider-options';
-import { sessionExpiryAt } from '@worker/composition/runtime-production-support';
+import { sessionExpiryAt } from '@worker/platform/composition/runtime-production-support';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,

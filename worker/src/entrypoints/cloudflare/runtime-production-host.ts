@@ -7,7 +7,7 @@ import {
   createRuntimeProductionConnectionOptions,
   type RuntimeProductionOverrides,
 } from '@worker/platform/composition/runtime-production-factory';
-import { sessionExpiryAt } from '@worker/composition/runtime-production-support';
+import { sessionExpiryAt } from '@worker/platform/composition/runtime-production-support';
 import { createDurableRuntimeContextPersistence } from '@worker/infrastructure/runtime/threads/runtime-context-persistence';
 import type { RuntimeProductionContextReference } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 import { createRuntimeRetentionAlarmCapability } from '@worker/infrastructure/runtime/threads/runtime-retention-alarm';
