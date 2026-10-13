@@ -4,40 +4,40 @@ module.exports = {
       name: 'worker-runtime-no-adapters-or-composition',
       severity: 'error',
       from: {
-        path: '^worker/src/(?:infrastructure/)?runtime/',
+        path: '^worker/src/infrastructure/runtime/',
       },
       to: {
-        path: '^worker/src/(?:(?:infrastructure/)?adapters|(?:platform/)?composition|(?:platform/)?entrypoints)/',
+        path: '^worker/src/(?:infrastructure/adapters|platform/composition|platform/entrypoints)/',
       },
     },
     {
       name: 'worker-outbound-no-inbound',
       severity: 'error',
       from: {
-        path: '^worker/src/(?:infrastructure/)?adapters/out/',
+        path: '^worker/src/infrastructure/adapters/out/',
       },
       to: {
-        path: '^worker/src/(?:infrastructure/)?adapters/in/',
+        path: '^worker/src/infrastructure/adapters/in/',
       },
     },
     {
       name: 'worker-adapters-no-composition',
       severity: 'error',
       from: {
-        path: '^worker/src/(?:infrastructure/)?adapters/',
+        path: '^worker/src/infrastructure/adapters/',
       },
       to: {
-        path: '^worker/src/(?:platform/)?(?:composition|entrypoints)(?:/|$)',
+        path: '^worker/src/platform/(?:composition|entrypoints)(?:/|$)',
       },
     },
     {
       name: 'worker-tools-no-outbound',
       severity: 'error',
       from: {
-        path: '^worker/src/(?:infrastructure/)?adapters/in/tools/',
+        path: '^worker/src/infrastructure/adapters/in/tools/',
       },
       to: {
-        path: '^worker/src/(?:infrastructure/)?adapters/out/',
+        path: '^worker/src/infrastructure/adapters/out/',
       },
     },
     {
@@ -97,7 +97,7 @@ module.exports = {
       name: 'cloudflare-workers-only-worker',
       severity: 'error',
       from: {
-        pathNot: '^worker/(?!src/(?:core/)?(?:domain|application)(?:/|$))',
+        pathNot: '^worker/(?!src/core/(?:domain|application)(?:/|$))',
       },
       to: {
         path: '^cloudflare:workers$',
@@ -147,7 +147,7 @@ module.exports = {
       name: 'business-contracts-independent',
       severity: 'error',
       from: {
-        path: '^worker/src/(?:core/)?(?:domain|application)/',
+        path: '^worker/src/core/(?:domain|application)/',
       },
       to: {
         path: '^packages/contracts(?:/|$)',
@@ -157,10 +157,10 @@ module.exports = {
       name: 'business-only-inner',
       severity: 'error',
       from: {
-        path: '^worker/src/(?:core/)?(?:domain|application)/',
+        path: '^worker/src/core/(?:domain|application)/',
       },
       to: {
-        path: '^(?:apps/mobile(?:/|$)|worker/(?!src/(?:core/)?(?:domain|application)(?:/|$)))',
+        path: '^(?:apps/mobile(?:/|$)|worker/(?!src/core/(?:domain|application)(?:/|$)))',
       },
     },
     {
@@ -209,7 +209,7 @@ module.exports = {
       name: 'business-no-runtime-sdk',
       severity: 'error',
       from: {
-        path: '^worker/src/(?:core/)?(?:domain|application)/',
+        path: '^worker/src/core/(?:domain|application)/',
       },
       to: {
         path: '(^|/)(?:cloudflare|wrangler|expo|react-native|ai|@ai-sdk|@cloudflare|workers-ai-provider)(/|$)',
@@ -230,27 +230,27 @@ module.exports = {
       name: 'domain-only-domain',
       severity: 'error',
       from: {
-        path: '^worker/src/(?:core/)?domain/',
+        path: '^worker/src/core/domain/',
       },
       to: {
-        path: '^worker/src/(?!(?:core/)?domain(?:/|$))',
+        path: '^worker/src/(?!core/domain(?:/|$))',
       },
     },
     {
       name: 'ports-only-domain-ports',
       severity: 'error',
       from: {
-        path: '^worker/src/(?:core/)?application/ports/',
+        path: '^worker/src/core/application/ports/',
       },
       to: {
-        path: '^worker/src/(?!(?:core/)?domain(?:/|$)|(?:core/)?application/ports(?:/|$))',
+        path: '^worker/src/(?!core/domain(?:/|$)|core/application/ports(?:/|$))',
       },
     },
     {
       name: 'business-external-dependencies',
       severity: 'error',
       from: {
-        path: '^worker/src/(?:core/)?(?:domain|application)/',
+        path: '^worker/src/core/(?:domain|application)/',
       },
       to: {
         path: '(^|/)node_modules/',

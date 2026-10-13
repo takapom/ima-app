@@ -5,22 +5,30 @@
 iPhoneアプリとCloudflare Workerの2デプロイ面を持つモジュラーモノリス。フロントはUI・hooks/state・services、バックエンドの業務判断はヘキサゴナル構成とする。
 
 ```mermaid
-flowchart LR
+flowchart TB
   Mobile[apps/mobile] --> Contracts[packages/contracts]
-  Worker[worker/src: HTTP・Runtime・Adapter] --> Contracts
-  Worker --> Application[worker/src/application・ports]
-  Application --> Domain[worker/src/domain]
+  Domain[core/domain]
+  Application[core/application]
+  Runtime[infrastructure/runtime]
+  Adapters[infrastructure/adapters]
+  Composition[platform/composition]
+  Entrypoints[platform/entrypoints]
+  Policy[policy/security]
+  Entrypoints --> Composition --> Adapters --> Application --> Domain
+  Composition --> Runtime --> Application
+  Adapters & Runtime --> Contracts
+  Policy --> Adapters & Runtime
 ```
 
 矢印はコードの依存方向。workspaceは`apps/mobile`、`packages/contracts`、`worker`の3つ。CoreはWorker内のDomain・Application・Portsを指す責務名であり、独立packageではない。Coreとcontractsは相互依存しない。
 
-| 配置                                    | 責務                                              |
-| --------------------------------------- | ------------------------------------------------- |
-| `apps/mobile`                           | UI・hooks/state・services、HTTP・SQLite・位置情報 |
-| `packages/contracts`                    | 公開HTTP DTO・描画型・検証schema                  |
-| `worker/src/domain`・`application`      | SDK・HTTP・永続化方式に依存しない業務判断とPort   |
-| `worker/src/runtime`・`adapters`        | SDK実行、HTTP/Tool入力変換、Provider・Storage接続 |
-| `worker/src/entrypoints`・`composition` | 起動と環境設定、具象Adapterの生成・注入           |
+| 配置                                             | 責務                                              |
+| ------------------------------------------------ | ------------------------------------------------- |
+| `apps/mobile`                                    | UI・hooks/state・services、HTTP・SQLite・位置情報 |
+| `packages/contracts`                             | 公開HTTP DTO・描画型・検証schema                  |
+| `worker/src/core/domain`・`application`          | SDK・HTTP・永続化方式に依存しない業務判断とPort   |
+| `worker/src/infrastructure/runtime`・`adapters`  | SDK実行、HTTP/Tool入力変換、Provider・Storage接続 |
+| `worker/src/platform/entrypoints`・`composition` | 起動と環境設定、具象Adapterの生成・注入           |
 
 package外からは公開exportsを使う。型import・再exportでも境界を迂回しない。内部参照は`@worker/`・`@mobile/`・`@contracts/`、workspace間は`@ima/contracts`を使う。対応先は[共通TypeScript設定](../../tsconfig.base.json)を正とする。テスト補助・tooling・設定・assetには相対パスを使う。
 Core内部はApplication→Ports/Domain、Ports→Domainの方向を守る。SDK、直接I/O、環境変数、直接の時計・乱数をCoreへ持ち込まず、必要な値やPortを注入する。
@@ -35,14 +43,10 @@ apps/mobile/src/              # 機能ごとのUI・hooks/state・servicesとpla
 packages/contracts/src/
 worker/
 ├── src/
-│   ├── domain/
-│   ├── application/          # ports/を含む
-│   ├── runtime/
-│   ├── security/
-│   ├── adapters/in/          # http/・tools/
-│   ├── adapters/out/         # providers/・persistence/・security/
-│   ├── entrypoints/cloudflare/
-│   └── composition/
+│   ├── core/{domain,application}/  # application/ports/を含む
+│   ├── infrastructure/{runtime,adapters}/  # in/http・in/tools、out/providers・persistence・security
+│   ├── platform/{composition,entrypoints/cloudflare}/
+│   └── policy/security/     # HTTPレート制限契約・写真取得先の許可条件
 ├── tests/
 ├── tooling/                  # 開発用Worker（dev/）と評価用Worker（eval/）
 ├── cloudflare.config.ts      # デプロイするWorkerの設定（cf）
@@ -50,29 +54,29 @@ worker/
 └── wrangler*.jsonc           # ローカル開発とテスト用のWorker設定
 ```
 
-WorkerのAdapterは`worker/src/adapters/`へ集約する。`in/http`はHTTP入口、`in/tools`はLLMのTool入口。`out/providers`はHot Pepper・OpenAIの接続と変換、`out/persistence`はDO・SQL・メモリストアの具体実装、`out/security`は写真トークンの署名実装を持つ。テストも`worker/tests/adapters/`で同じ分類を使い、HTTP配下の`integration/`はworkerdで実行する。
+WorkerのAdapterは`worker/src/infrastructure/adapters/`へ集約する。`in/http`はHTTP入口、`in/tools`はLLMのTool入口。`out/providers`はHot Pepper・OpenAIの接続と変換、`out/persistence`はDO・SQL・メモリストアの具体実装、`out/security`は写真トークンの署名実装を持つ。テストも`worker/tests/adapters/`で同じ分類を使い、HTTP配下の`integration/`はworkerdで実行する。
 
-CoreのPortは`worker/src/application/ports/`に置く。Telemetryの内部記録契約・記録手順・保持/集計はApplication、公開イベントの入力変換はHTTP Adapter、SDK計測はRuntimeが担う。OwnerStoreと保存参照の契約もCoreが所有し、保存・決定の手順は`src/application/saved-references/`が担う。HTTP Adapterは公開DTOとエラーの変換を担当する。実行基盤固有のPortは`src/runtime/ports/`や`src/security/`が所有し、Coreの業務Portと区別する。
+CoreのPortは`worker/src/core/application/ports/`に置く。Telemetryの内部記録契約・記録手順・保持/集計はApplication、公開イベントの入力変換はHTTP Adapter、SDK計測はRuntimeが担う。OwnerStoreと保存参照の契約もCoreが所有し、保存・決定の手順は`core/application/`配下のuse-casesが担う。HTTP Adapterは公開DTOとエラーの変換を担当する。実行基盤固有のPortは`infrastructure/runtime/ports/`が所有し、横断ポリシー契約は`policy/security/`が所有する。Coreの業務Portと区別する。
 
-Adapterの生成・注入は`src/composition/`が担当する。App Integrityの発行・登録・検証手順とStore/VerifierのPortはApplication、HTTP解釈は入力Adapter、乱数生成は出力Adapterが担当する。RuntimeからAdapter・composition・entrypointsへの逆依存、Adapterからcomposition・entrypointsへの逆依存を禁止する。出力Adapterから入力Adapter、Toolから出力Adapterへの直接依存も禁止し、Toolと永続化の実装はPort経由で注入する。
+Adapterの生成・注入は`platform/composition/`が担当する。App Integrityの発行・登録・検証手順とStore/VerifierのPortはApplication、HTTP解釈は入力Adapter、乱数生成は出力Adapterが担当する。RuntimeからAdapter・composition・entrypointsへの逆依存、Adapterからcomposition・entrypointsへの逆依存を禁止する。出力Adapterから入力Adapter、Toolから出力Adapterへの直接依存も禁止し、Toolと永続化の実装はPort経由で注入する。
 
-| Worker内の配置                    | 責務                                                                                                                                   |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/domain/`・`src/application/` | SDK・HTTP・永続化方式に依存しない業務判断とPort                                                                                        |
-| `src/runtime/`                    | SDKを使ったturn実行、キャンセル、予算、文脈のSDK変換・保持フック・公開応答変換。`model/`はモデル文脈・プロンプト、`threads/`は実行管理 |
-| `src/adapters/`                   | HTTP・Toolの入力変換と、Provider・永続化・署名の具体実装。SQLによるturn管理は`out/persistence/thread/`                                 |
-| `src/entrypoints/cloudflare/`     | WorkerとThreadDOの起動・プラットフォーム接続。DOのbinding名とmigrationは維持する                                                       |
-| `src/composition/`                | 環境設定を読み、Portと具象Adapter・Runtimeを組み立てる                                                                                 |
-| `src/security/`                   | HTTPレート制限の契約・写真取得先の許可条件                                                                                             |
+| Worker内の配置                      | 責務                                                                                                                                   |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `core/domain/`・`core/application/` | SDK・HTTP・永続化方式に依存しない業務判断とPort                                                                                        |
+| `infrastructure/runtime/`           | SDKを使ったturn実行、キャンセル、予算、文脈のSDK変換・保持フック・公開応答変換。`model/`はモデル文脈・プロンプト、`threads/`は実行管理 |
+| `infrastructure/adapters/`          | HTTP・Toolの入力変換と、Provider・永続化・署名の具体実装。SQLによるturn管理は`out/persistence/thread/`                                 |
+| `platform/entrypoints/cloudflare/`  | WorkerとThreadDOの起動・プラットフォーム接続。DOのbinding名とmigrationは維持する                                                       |
+| `platform/composition/`             | 環境設定を読み、Portと具象Adapter・Runtimeを組み立てる                                                                                 |
+| `policy/security/`                  | HTTPレート制限の契約・写真取得先の許可条件                                                                                             |
 
 | 配置                                    | 探す対象                                                                                                                                                                                                                       |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Core `application/`                     | `model-context`はモデル入力・項目要約・提示情報に基づく保持条件、`candidate-registry`は候補・観測の登録、`ports`はCoreのPort、`use-cases`は応答確定・保存/決定・会話実行・写真token発行・App Integrity・イベント記録・失効処理 |
-| Worker `src/runtime/`                   | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・計測は各フォルダ                                                                                      |
+| Worker `infrastructure/runtime/`        | `tool-reads`は読み取りToolの実行制御、`turn-execution`はturn実行、`threads`はThread実行管理。予算・文脈・保持・公開応答・計測は各フォルダ                                                                                      |
 | Mobile `journey/services/`・`platform/` | `platform/http`はHTTPとその契約、`journey/services/conversations`は会話操作・復元、`composition`は起動時の組み立て、`saved-places`は保存店。SQLは`sqlite`、位置取得は`location`                                                |
 | Mobile 機能ごとの`components/`          | `candidates`は候補カード、`conditions`は条件入力、`response`は応答の表示状態、`saved-places`は保存店UI、`entry`は起動時のスプラッシュと入口の分岐。表示文言・表示用変換は`presentation`                                        |
 
-Coreの単体テストは`worker/src/`の対象実装の近くに置く。Workerのテストは`worker/tests/`に集約し、`adapters/`・`runtime/`・`security/`はInfrastructureの対応モジュール、`src/composition/`は組み立て処理を検証する。実LLMのローカル起動入口や、promptfooで使う評価用Workerなどの開発用コードは`worker/tooling/`に置き、`worker/src/`から参照しない。テスト専用fixtureを公開exportsへ追加しない。配置変更だけで既存の公開入口や責務・依存方向を変更しない。
+Coreの単体テストは`worker/src/core/`の対象実装の近くに置く。Workerのテストは`worker/tests/`に集約し、`tests/adapters/`・`tests/runtime/`・`tests/security/`はInfrastructureの対応モジュール、`tests/composition/`は組み立て処理を検証する。実LLMのローカル起動入口や、promptfooで使う評価用Workerなどの開発用コードは`worker/tooling/`に置き、`worker/src/`から参照しない。テスト専用fixtureを公開exportsへ追加しない。配置変更だけで既存の公開入口や責務・依存方向を変更しない。
 
 ## 実行とデータの流れ
 
@@ -97,7 +101,7 @@ flowchart TD
   Port --> Store[SavedReferenceDO: owner状態]
 ```
 
-compositionが具象Adapterを構成する。現在はHot Pepperの検索・詳細AdapterをCoreのPlaceSearchPort/PlaceDetailsPortへ注入し、店舗IDで候補を登録する。地域名はkeyword、現在地は緯度経度とrangeへ変換し、営業時間は掲載文のまま渡す。GoogleのPlaces/Routes/Photos接続は持たない。営業未確認の許容は`src/composition/`で組み立ててCoreの確定検証へ明示する。公開DTOとCore内部型の変換はWorkerが所有する。
+compositionが具象Adapterを構成する。現在はHot Pepperの検索・詳細AdapterをCoreのPlaceSearchPort/PlaceDetailsPortへ注入し、店舗IDで候補を登録する。地域名はkeyword、現在地は緯度経度とrangeへ変換し、営業時間は掲載文のまま渡す。GoogleのPlaces/Routes/Photos接続は持たない。営業未確認の許容は`platform/composition/`で組み立ててCoreの確定検証へ明示する。公開DTOとCore内部型の変換はWorkerが所有する。
 ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Portと同一の層にしない。
 
 店舗写真は検索・詳細Adapterが`photo.pc`のURLを観測として登録し、Applicationが検証済みカードの写真根拠から表示・保存可否と期限を決め、発行Portを通して署名Adapterがowner・端末・期限に紐づくtokenを発行する。既存の`GET /v1/photos/:token`が認証・期限検証後にHot Pepperの画像CDNから取得し、Mobileの写真表示部品へ渡す。画像本体をLLMや永続ストレージへ渡さない。履歴では会話に属する店舗参照を保持し、会話認証付きの写真経路から現在写真を取得する。Threadや提案時の保持期限は延長せず、公開履歴には再取得できる候補IDだけを渡す。詳細は[履歴の現在写真](../devlop/contracts.md#履歴の現在写真)を正とする。
@@ -131,7 +135,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 bindingは`SAVED_REFERENCES`、owner shard名は`saved-reference-owner:{ownerScopeRef}`。ThreadDOへprefsをコピーして独立した正にしない。
 検索bodyのprefsは今夜の上書きであり、暗黙の永続writeにしない。D1 Adapterや汎用Repositoryは必要になるまで追加しない。
 
-会話の長期IDと期限付きThreadのIDを分ける。Threadが失効しても同じ会話へ新Threadを紐づけ、候補・観測IDは移植しない。会話Store・run・memoryのPortは`application/ports`、SQLite実装は`adapters/out/persistence/conversations`、開始・中断・結果回収の手順は`application/use-cases/conversations`、Thread RPCは`adapters/out/persistence/conversations`、公開応答の受け渡しは`runtime/conversations`が担う。
+会話の長期IDと期限付きThreadのIDを分ける。Threadが失効しても同じ会話へ新Threadを紐づけ、候補・観測IDは移植しない。会話Store・run・memoryのPortは`core/application/ports`、SQLite実装は`infrastructure/adapters/out/persistence/conversations`、開始・中断・結果回収の手順は`core/application/use-cases/conversations`、Thread RPCは`infrastructure/adapters/out/persistence/conversations`、公開応答の受け渡しは`infrastructure/runtime/conversations`が担う。
 発言＋run受付、回答＋run完了はそれぞれ会話DO内で原子的に保存する。Threadの確定結果と未配送記録を同じトランザクションに含め、再照会・alarmで履歴へ冪等配送する。実行成否不明の生成を再実行せず、上限時間で中断を記録する。
 モデル入力は受理した発言より前の直近履歴と、古いユーザー発言の抜粋要約。要約は元メッセージID・範囲・版を持つ派生データで、全会話を網羅する意味要約ではない。Provider生結果や古い事実を新しい根拠にしない。
 会話削除は本文・要約・タイトルを除去して削除印を残す。関連Threadの削除失敗は本文を含まないキューで再試行する。端末SQLiteはowner/endpoint別キャッシュであり、サーバーが正を持つ。一覧の更新日時＋IDの降順で最新3会話の保持可能な全発言をキャッシュする。閲覧だけで順番を変えず、上位外の会話は開くたびにサーバーから取得する。画面とSQLiteの読み書きは50発言単位に分け、全件のキャッシュ取得は画面表示と独立して行う。全sequenceと取得終了時のrevision確認が揃った場合だけキャッシュを完全と扱う。復元時はサーバーのrevisionを確認し、一致する完全キャッシュから読み、変更されていれば再取得する。通信失敗による部分キャッシュを完全な履歴とみなさない。起動・期限到達時の端末内cleanupは100発言ずつ処理し、UIへ制御を返しながら期限切れ本文を全件除去する。

@@ -15,19 +15,19 @@ function countedSource(count, newline, trailingNewline, line) {
 const lintCases = [
   {
     name: 'no-explicit-any',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: 'export const invalidValue: any = 1;\n',
     rule: '@typescript-eslint/no-explicit-any',
   },
   {
     name: 'no-floating-promises',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: 'export function invalidPromise(): void { Promise.resolve(1); }\n',
     rule: '@typescript-eslint/no-floating-promises',
   },
   {
     name: 'switch-exhaustiveness',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source:
       [
         "type Event = { type: 'created' } | { type: 'deleted' };",
@@ -55,26 +55,26 @@ const lintCases = [
   },
   {
     name: 'allowed-typed-code',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source:
       'export async function validPromise(): Promise<number> {\n  return await Promise.resolve(1);\n}\n',
     rule: null,
   },
   {
     name: 'max-lines-499-lf-no-eof',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: countedSource(499, '\n', false, (index) => `export const line${index} = ${index};`),
     rule: null,
   },
   {
     name: 'max-lines-500-crlf-comments',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: countedSource(500, '\r\n', true, () => '// counted comment'),
     rule: null,
   },
   {
     name: 'max-lines-501-crlf-blank-comments',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: countedSource(501, '\r\n', true, (index) =>
       index % 2 === 0 ? '// counted comment' : '',
     ),
@@ -82,37 +82,37 @@ const lintCases = [
   },
   {
     name: 'business-clock-input-is-allowed',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: 'export const parsedInput = (input: string): number => Date.parse(input);\n',
     rule: null,
   },
   {
     name: 'business-now-is-forbidden',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: 'export const invalidClock = Date.now();\n',
     rule: 'no-restricted-properties',
   },
   {
     name: 'business-current-time-constructor-is-forbidden',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: 'export const invalidClock = new Date();\n',
     rule: 'no-restricted-syntax',
   },
   {
     name: 'business-global-fetch-is-forbidden',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: "export const invalidNetworkCall = () => globalThis.fetch('/private');\n",
     rule: 'no-restricted-syntax',
   },
   {
     name: 'business-timer-is-forbidden',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: 'export const invalidTimer = () => setTimeout(() => undefined, 1);\n',
     rule: 'no-restricted-syntax',
   },
   {
     name: 'business-node-io',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: "import fs from 'node:fs';\nexport { fs };\n",
     rule: 'no-restricted-imports',
   },
@@ -130,13 +130,13 @@ const lintCases = [
   },
   {
     name: 'worker-provider-sdk',
-    directory: 'worker/src/adapters/in/tools',
+    directory: 'worker/src/infrastructure/adapters/in/tools',
     source: "import { generateText } from 'ai';\nexport { generateText };\n",
     rule: 'no-restricted-imports',
   },
   {
     name: 'allowed-business-code',
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: 'export const allowedCoreValue = 1;\n',
     rule: null,
   },
@@ -154,7 +154,7 @@ const lintCases = [
   },
   {
     name: 'allowed-worker-code',
-    directory: 'worker/src/adapters/in/tools',
+    directory: 'worker/src/infrastructure/adapters/in/tools',
     source: 'export const allowedToolValue = 1;\n',
     rule: null,
   },
@@ -200,7 +200,7 @@ function runLint(testCase) {
 
 function runTypecheck() {
   const testCase = {
-    directory: 'worker/src/application',
+    directory: 'worker/src/core/application',
     source: 'const invalidType: string = 42;\nexport { invalidType };\n',
   };
   const { temporaryDirectory } = writeTemporaryFixture(testCase);

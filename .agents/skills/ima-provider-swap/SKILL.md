@@ -20,9 +20,9 @@ Google からHot Pepperへの差し替え（#43）で確立し、徒歩経路・
 各段階を1コミット以上に分け、`<type>(<scope>): <変更> (#<sub-issue番号>)`で実在番号を付ける。
 
 1. **policy定義** — 用途別の利用範囲と保持期限を決める。実装より先に境界を固定する。
-2. **新Adapter追加** — `worker/src/adapters/out/providers/<provider>/`にPort実装とHTTPを置く。既存経路は触らない。業務層へSDK・環境変数・直接I/Oを持ち込まない。
+2. **新Adapter追加** — `worker/src/infrastructure/adapters/out/providers/<provider>/`にPort実装とHTTPを置く。既存経路は触らない。業務層へSDK・環境変数・直接I/Oを持ち込まない。
 3. **構成を能力に絞る** — [composition](../../../worker/src/platform/composition)で新Providerが提供できる能力を宣言する。提供しない機能は停止側に倒す。
-4. **実行経路の切替** — `worker/src/composition/`の注入先を新Adapterへ向ける。旧実装はまだ残す。
+4. **実行経路の切替** — `worker/src/platform/composition/`の注入先を新Adapterへ向ける。旧実装はまだ残す。
 5. **テスト更新** — Adapterの単体テストとSDK/DO統合テストの入力・期待値を新形式へ揃える。
 6. **旧実装の撤去** — 合成経路 → Adapter → HTTP → 専用型 → 応答の正規化、の順に消す。1段ごとにコミットする。
 7. **UI側の停止** — 接続しなくなった条件入力・表示をmobileから外す。存在しない機能を操作できる状態で残さない。

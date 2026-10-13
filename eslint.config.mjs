@@ -191,12 +191,7 @@ export default tseslint.config(
     },
   },
   {
-    files: [
-      'worker/src/domain/**/*.{ts,tsx}',
-      'worker/src/core/domain/**/*.{ts,tsx}',
-      'worker/src/application/**/*.{ts,tsx}',
-      'worker/src/core/application/**/*.{ts,tsx}',
-    ],
+    files: ['worker/src/core/domain/**/*.{ts,tsx}', 'worker/src/core/application/**/*.{ts,tsx}'],
     languageOptions: {
       parserOptions: { projectService: false, project: './worker/tsconfig.business.json' },
     },
@@ -280,10 +275,7 @@ export default tseslint.config(
     },
   },
   {
-    files: [
-      'worker/src/adapters/in/tools/**/*.{ts,tsx}',
-      'worker/src/infrastructure/adapters/in/tools/**/*.{ts,tsx}',
-    ],
+    files: ['worker/src/infrastructure/adapters/in/tools/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
