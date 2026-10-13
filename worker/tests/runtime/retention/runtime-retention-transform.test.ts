@@ -7,7 +7,7 @@ import {
   type RuntimeRetentionTransformOptions,
   type RuntimeRetentionToolOutputProjection,
   type RuntimeRetentionTransformReport,
-} from '@worker/runtime/retention/runtime-retention-transform';
+} from '@worker/infrastructure/runtime/retention/runtime-retention-transform';
 
 const CANARY = `provider-secret-${crypto.randomUUID()}`;
 type TestTools = {

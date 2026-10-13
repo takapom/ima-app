@@ -31,7 +31,7 @@ import {
   type RuntimeRetentionEphemeralToolResult,
   type RuntimeRetentionScopeIdentity,
 } from '@worker/runtime/retention/runtime-retention';
-import { createRuntimeRetentionTransform } from '@worker/runtime/retention/runtime-retention-transform';
+import { createRuntimeRetentionTransform } from '@worker/infrastructure/runtime/retention/runtime-retention-transform';
 import {
   createRuntimeReadPorts,
   type RuntimeReadAttemptSignalBridge,
