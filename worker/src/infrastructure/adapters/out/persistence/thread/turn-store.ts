@@ -8,7 +8,7 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import type {
   RuntimeThreadBinding,
   RuntimeTurnStore,

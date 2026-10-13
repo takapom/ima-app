@@ -19,7 +19,7 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import { searchInput, searchResponse } from '../adapters/inbound/http/router-fixtures';
 
 const ownerScopeRef = 'owner-bootstrap-runtime';

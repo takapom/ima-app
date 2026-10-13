@@ -6,7 +6,7 @@ import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
   ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 
 export type RuntimeThreadBinding = {
   readonly threadId: string;

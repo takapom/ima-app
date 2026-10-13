@@ -10,7 +10,7 @@ import {
   runtimeFailure,
   type ThreadRuntimeFailureCode,
   type ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 
 const runtimeErrorCode = (error: RuntimeThinkConnectionError): ThreadRuntimeFailureCode => {
   switch (error.code) {

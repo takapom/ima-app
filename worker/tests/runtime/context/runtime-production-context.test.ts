@@ -10,7 +10,7 @@ import {
   RuntimeProductionContextLimitError,
   RuntimeProductionDisplayContextError,
 } from '@worker/infrastructure/runtime/context/runtime-production-display-context';
-import { runtimeResultForError } from '@worker/runtime/threads/controller-errors';
+import { runtimeResultForError } from '@worker/infrastructure/runtime/threads/controller-errors';
 
 const scope: RegistryScope = { ownerScopeRef: 'context-owner', threadId: 'context-thread' };
 

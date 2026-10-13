@@ -3,7 +3,7 @@ import type {
   ThreadRuntimeTurnInput,
   ThreadRuntimeTarget,
   ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import { threadRuntimeResultFromNative } from '@worker/runtime/threads/native-result';
 import type {
   RuntimeThinkTurnRequest,

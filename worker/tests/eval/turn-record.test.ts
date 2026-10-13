@@ -7,7 +7,7 @@ import {
   type RetentionMetadata,
 } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import type { ThreadRuntimeTurnResult } from '@worker/runtime/threads/admission';
+import type { ThreadRuntimeTurnResult } from '@worker/infrastructure/runtime/threads/admission';
 import { EvalCaseSchema, EvalTurnRecordSchema } from '../../tooling/eval/eval-contract';
 import {
   evalLocationFor,

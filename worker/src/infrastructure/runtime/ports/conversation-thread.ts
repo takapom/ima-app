@@ -6,7 +6,7 @@ import type {
   ThreadRuntimeTurnInput,
   ThreadRuntimeTurnResult,
   ThreadRuntimeCancelResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import type {
   ConversationDelivery,
   ConversationDeliveryScope,

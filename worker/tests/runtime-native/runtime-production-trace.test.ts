@@ -5,7 +5,7 @@ import type { TelemetryDO } from '@worker/infrastructure/adapters/out/persistenc
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import { RUNTIME_PRODUCTION_NOW, type ProductionThreadDO } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {

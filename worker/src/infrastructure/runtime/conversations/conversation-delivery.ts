@@ -7,7 +7,7 @@ import {
   retainConversationPart,
   type ConversationMessageInput,
 } from '@worker/core/domain/conversations/conversation-message';
-import type { ThreadRuntimeTarget } from '@worker/runtime/threads/admission';
+import type { ThreadRuntimeTarget } from '@worker/infrastructure/runtime/threads/admission';
 import { OpaqueIdSchema } from '@worker/core/domain/primitives';
 
 export const ConversationDeliveryScopeSchema = v.strictObject({

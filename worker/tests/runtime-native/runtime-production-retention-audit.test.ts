@@ -11,7 +11,7 @@ import {
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import type { ProductionThreadDO } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {

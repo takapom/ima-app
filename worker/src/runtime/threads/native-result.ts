@@ -6,7 +6,7 @@ import {
   runtimeFailure,
   type ThreadRuntimeFailureCode,
   type ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 
 /**
  * Classifies a denied model step into the fixed boundary vocabulary. The guard code itself stays

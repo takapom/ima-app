@@ -8,7 +8,7 @@ import { sessionExpiryAt } from '@worker/composition/runtime-production-support'
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import type { ProductionThreadDO, RuntimeProductionReport } from './runtime-production-worker';
 
 type ProductionTestEnv = Cloudflare.Env & {

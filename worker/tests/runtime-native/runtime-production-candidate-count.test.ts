@@ -6,7 +6,7 @@ import type { ProductionThreadDO } from './runtime-production-worker';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 
 type ProductionTestEnv = Cloudflare.Env & {
   PRODUCTION_THREADS: DurableObjectNamespace<ProductionThreadDO>;

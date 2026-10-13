@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import {
   createRuntimeRetentionAlarmCapability,
   RUNTIME_RETENTION_ALARM_TABLE,

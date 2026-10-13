@@ -1,4 +1,4 @@
-import type { ThreadRuntimeTarget } from '@worker/runtime/threads/admission';
+import type { ThreadRuntimeTarget } from '@worker/infrastructure/runtime/threads/admission';
 
 type LifecycleRuntimeRow = Pick<
   ThreadRuntimeTarget,

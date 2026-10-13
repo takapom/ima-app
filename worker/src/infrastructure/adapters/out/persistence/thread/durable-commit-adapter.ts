@@ -10,7 +10,7 @@ import {
   type CommitRequest,
 } from '@worker/core/application/ports/commit';
 import { CardSetIdSchema } from '@worker/core/domain/primitives';
-import type { ThreadRuntimeTarget } from '@worker/runtime/threads/admission';
+import type { ThreadRuntimeTarget } from '@worker/infrastructure/runtime/threads/admission';
 
 type ThreadStateRow = {
   readonly thread_id: string;

@@ -13,8 +13,8 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
-import { runtimeResultForError } from '@worker/runtime/threads/controller-errors';
+} from '@worker/infrastructure/runtime/threads/admission';
+import { runtimeResultForError } from '@worker/infrastructure/runtime/threads/controller-errors';
 
 export type ThreadRuntimeControllerOptions = {
   readonly store: RuntimeTurnStore;

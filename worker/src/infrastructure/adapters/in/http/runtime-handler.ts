@@ -25,7 +25,7 @@ import {
   type ThreadRuntimeTarget,
   type ThreadRuntimeTurnInput,
   type ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import type { ThreadSnapshotResult } from '@worker/runtime/threads/thread-types';
 
 /** Structural RPC surface keeps this adapter independent of the concrete DO implementation. */

@@ -30,7 +30,7 @@ import { RuntimeThinkHost } from '@worker/entrypoints/cloudflare/runtime-host';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 
 type RuntimeRetentionAnchorRow = { readonly thread_created_at: string };
 type RuntimeTelemetryEnv = {

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import { RuntimeProductionContextReferenceSchema } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
 import type { ProductionThreadDO } from './runtime-production-worker';
 import { createSessionExpiryGate } from '@worker/core/application/use-cases/expire-session/expire-session';

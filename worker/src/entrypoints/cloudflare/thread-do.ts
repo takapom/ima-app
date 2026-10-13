@@ -1,5 +1,5 @@
 import { ThreadConversationOutbox } from '@worker/infrastructure/adapters/out/persistence/conversations/thread-conversation-outbox';
-import { isThreadRuntimeTurnInput } from '@worker/runtime/threads/admission';
+import { isThreadRuntimeTurnInput } from '@worker/infrastructure/runtime/threads/admission';
 import type { ConversationDeliveryScope } from '@worker/infrastructure/runtime/conversations/conversation-delivery';
 import { initializeThreadStorage } from '@worker/infrastructure/adapters/out/persistence/thread/schema';
 import { DurableRuntimeTurnStore } from '@worker/infrastructure/adapters/out/persistence/thread/turn-store';
@@ -9,7 +9,7 @@ import {
   runtimeSavedCandidateBindingFor,
   type RuntimeSavedCandidateResult,
 } from '@worker/runtime/threads/runtime-saved-candidate-rpc';
-import { ThreadRuntimeController } from '@worker/runtime/threads/controller';
+import { ThreadRuntimeController } from '@worker/infrastructure/runtime/threads/controller';
 import { runtimeThreadBindingFor } from '@worker/runtime/threads/runtime-thread-binding';
 import {
   createDurableCommitPort,
@@ -21,7 +21,7 @@ import {
   type ThreadRuntimeReplayResult,
   type ThreadRuntimeResponseMetadata,
   type ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import { executeRuntimeThreadTurn } from '@worker/runtime/threads/runtime-thread-turn-execution';
 import { createSessionExpiryGate } from '@worker/core/application/use-cases/expire-session/expire-session';
 import { cleanupRuntimeResources } from '@worker/runtime/threads/thread-cleanup';

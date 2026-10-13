@@ -2,7 +2,7 @@ import type { AssistantResponse, LocationSnapshot } from '@ima/contracts';
 import type {
   ThreadRuntimeTurnInput,
   ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import type { EvalCase, EvalToolCall, EvalTurnRecord } from './eval-contract';
 import type {
   RuntimeSubmitRejection,

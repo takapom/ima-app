@@ -9,7 +9,7 @@ import type { RuntimeNativeScenario } from './runtime-native-provider';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 
 type NativeTestEnv = Cloudflare.Env & {
   THREADS: DurableObjectNamespace<ThreadDO>;

@@ -7,7 +7,7 @@ import { conversationResponseDeadline } from '@worker/infrastructure/runtime/con
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnResult,
-} from '@worker/runtime/threads/admission';
+} from '@worker/infrastructure/runtime/threads/admission';
 import {
   ConversationDeliveryScopeSchema,
   messageFromConversationResponse,
