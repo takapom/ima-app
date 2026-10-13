@@ -7,7 +7,7 @@ import type {
   RuntimeBeforeStepDelegate,
   RuntimeBeforeToolCallDelegate,
 } from '@worker/runtime/turn-execution/runtime-turn-factory';
-import type { RuntimeModelGuardCallOptions } from '@worker/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelGuardCallOptions } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 
 type RuntimeFinalResponseOptions = {
   readonly budget: RuntimeBudget;

@@ -2,7 +2,7 @@ import type { ThreadTurnRequest } from '@ima/contracts';
 import type { CommitPort } from '@worker/core/application/ports/commit';
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
-import type { RuntimeModelGuardModel } from '@worker/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelGuardModel } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 
 /** These composition tests call tools directly and must not execute a model. */
 export const unusedModel: RuntimeModelGuardModel = {

@@ -12,7 +12,7 @@ import {
   type RuntimeModelGuardModel,
   type RuntimeModelGuardStreamPart,
   wrapRuntimeModelGuard,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 
 const usage = {
   inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },

@@ -5,7 +5,7 @@ import {
   wrapRuntimeModelGuard,
   type RuntimeModelGuardModel,
   type RuntimeModelGuardStreamPart,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 
 const parts: RuntimeModelGuardStreamPart[] = [
   { type: 'tool-call', toolCallId: 'search-call', toolName: 'search_places', input: '{}' },

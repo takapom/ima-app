@@ -1,7 +1,7 @@
 import type {
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import { EvalThreadDO } from '../../tooling/eval/eval-thread-do';
 
 /** 発話にこの印があると、受け取ったimaのシステムプロンプトの先頭をanswerで返す。 */

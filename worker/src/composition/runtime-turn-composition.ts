@@ -47,7 +47,7 @@ import type {
   RuntimeModelGuardAcceptance,
   RuntimeModelGuardCallOptions,
   RuntimeModelGuardModel,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtime-budget';
 import type {
   RuntimePreparedPhotos,

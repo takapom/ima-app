@@ -30,7 +30,7 @@ import {
   type RuntimeModelGuardCallOptions,
   type RuntimeModelGuardErrorCode,
   type RuntimeModelGuardOptions,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import type {
   RuntimeBeforeToolCallDelegate,
   RuntimeTurnHandle,

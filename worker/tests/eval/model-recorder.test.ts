@@ -5,7 +5,7 @@ import type {
   RuntimeModelGuardGenerateResult,
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import { createEvalModelRecorder } from '../../tooling/eval/model-recorder';
 import { EvalVariantNotAppliedError } from '../../tooling/eval/variants';
 

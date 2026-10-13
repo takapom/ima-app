@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { AssistantResponseSchema } from '@ima/contracts';
-import type { RuntimeModelGuardErrorCode } from '@worker/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelGuardErrorCode } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import type { RuntimeThinkTurnResult as NativeRuntimeTurnResult } from '@worker/runtime/turn-execution/runtime-think-connection';
 import {
   runtimeFailure,

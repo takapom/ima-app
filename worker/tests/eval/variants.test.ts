@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MODEL_SYSTEM_PROMPT } from '@worker/infrastructure/runtime/model/system-prompt';
-import type { RuntimeModelGuardCallOptions } from '@worker/runtime/turn-execution/runtime-model-guard';
+import type { RuntimeModelGuardCallOptions } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import {
   applySystemPrompt,
   applyToolDescriptions,

@@ -29,7 +29,7 @@ import { createRuntimeTurnComposition } from '@worker/composition/runtime-turn-c
 import type {
   RuntimeModelGuardModel,
   RuntimeModelGuardStreamPart,
-} from '@worker/runtime/turn-execution/runtime-model-guard';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import { createToolRegistry, toolScope } from '../../adapters/inbound/tools/registry-fixture';
 
 const NOW = '2026-09-10T00:00:00Z';

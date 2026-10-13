@@ -11,7 +11,7 @@ import type {
   ToolSet,
 } from 'ai';
 import { APICallError, InvalidToolInputError } from 'ai';
-import { isRuntimeModelGuardError } from '@worker/runtime/turn-execution/runtime-model-guard';
+import { isRuntimeModelGuardError } from '@worker/infrastructure/runtime/turn-execution/runtime-model-guard';
 import * as v from 'valibot';
 import { IsoTimestampSchema } from '@worker/core/domain/primitives';
 import {
