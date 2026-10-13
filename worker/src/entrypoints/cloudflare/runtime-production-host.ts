@@ -6,7 +6,7 @@ import { IsoTimestampSchema } from '@worker/core/domain/primitives';
 import {
   createRuntimeProductionConnectionOptions,
   type RuntimeProductionOverrides,
-} from '@worker/composition/runtime-production-factory';
+} from '@worker/platform/composition/runtime-production-factory';
 import { sessionExpiryAt } from '@worker/composition/runtime-production-support';
 import { createDurableRuntimeContextPersistence } from '@worker/infrastructure/runtime/threads/runtime-context-persistence';
 import type { RuntimeProductionContextReference } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';

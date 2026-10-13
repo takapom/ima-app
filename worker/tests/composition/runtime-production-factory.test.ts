@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRuntimeProductionConnectionOptions } from '@worker/composition/runtime-production-factory';
+import { createRuntimeProductionConnectionOptions } from '@worker/platform/composition/runtime-production-factory';
 import { readOnlyCommit, NOW, unusedModel } from './runtime-production-factory-fixtures';
 
 const live = {

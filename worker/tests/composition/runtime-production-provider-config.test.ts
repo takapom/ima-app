@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { capabilitiesWithProviders } from '@worker/composition/runtime-production-provider-config';
+import { capabilitiesWithProviders } from '@worker/platform/composition/runtime-production-provider-config';
 import { harnessContextFor } from '@worker/composition/runtime-production-support';
 import { buildRequest } from './runtime-production-factory-fixtures';
 

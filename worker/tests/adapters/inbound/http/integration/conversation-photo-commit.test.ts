@@ -10,7 +10,7 @@ import { SqlConversationRuns } from '@worker/infrastructure/adapters/out/persist
 import { createSqlPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/sql-reference-store';
 import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/out/security/photo-token-codec';
 import { createPhotoTokenIssuer } from '@worker/infrastructure/adapters/out/security/photo-token-issuer';
-import { cardEvidenceResolver } from '@worker/composition/runtime-production-provider-config';
+import { cardEvidenceResolver } from '@worker/platform/composition/runtime-production-provider-config';
 import { createPhotoTokenPreparer } from '@worker/infrastructure/runtime/response/photo-token-issuance';
 import {
   NOW,

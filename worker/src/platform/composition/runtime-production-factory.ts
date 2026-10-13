@@ -30,7 +30,7 @@ import {
   capabilitiesWithProviders,
   cardEvidenceResolver,
   type RuntimeProductionProviderAvailability,
-} from '@worker/composition/runtime-production-provider-config';
+} from '@worker/platform/composition/runtime-production-provider-config';
 import {
   hotPepperRuntimePolicy,
   hotPepperPhotoDisplayPolicy,
@@ -44,7 +44,7 @@ import type {
 } from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection';
 import { defaultRuntimeModelContextPolicy } from '@worker/infrastructure/runtime/context/runtime-field-policy';
 import { resolveRuntimeProductionReadCost } from '@worker/composition/runtime-production-read-cost';
-import { createRuntimeProductionPlacePorts } from '@worker/composition/runtime-production-place-ports';
+import { createRuntimeProductionPlacePorts } from '@worker/platform/composition/runtime-production-place-ports';
 import { createFactoryContinuation } from '@worker/platform/composition/runtime-production-continuation';
 import { resolveRuntimeOperationalAdmission } from '@worker/platform/composition/runtime-operational-admission';
 import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
