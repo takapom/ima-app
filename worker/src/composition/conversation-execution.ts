@@ -1,5 +1,5 @@
-import type { ConversationRuns } from '@worker/application/ports/conversation-runs';
-import type { ConversationMemoryStore } from '@worker/application/ports/conversation-memory-store';
+import type { ConversationRuns } from '@worker/core/application/ports/conversation-runs';
+import type { ConversationMemoryStore } from '@worker/core/application/ports/conversation-memory-store';
 import { ConversationExecutionApplication } from '@worker/application/use-cases/conversations/conversation-execution';
 import {
   createConversationThreadPort,

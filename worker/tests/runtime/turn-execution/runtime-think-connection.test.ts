@@ -6,7 +6,7 @@ import type {
   PlaceSearchPort,
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
-import type { HarnessContext } from '@worker/application/ports/context';
+import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { Result } from '@worker/domain/result';
 import type { RespondPort, RespondPortResult } from '@worker/application/ports/submission';
 import type { ThreadTurnRequest } from '@ima/contracts';

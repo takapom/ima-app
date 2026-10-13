@@ -27,7 +27,7 @@ import {
 import type { AppIntegrityNamespace } from '@worker/adapters/out/persistence/security/app-integrity-do';
 import { createBootstrapAppIntegrityGate } from '@worker/composition/app-integrity-bootstrap';
 import { personalPreviewEnabled } from '@worker/composition/personal-preview';
-import type { AppIntegrityVerifier } from '@worker/application/ports/app-integrity';
+import type { AppIntegrityVerifier } from '@worker/core/application/ports/app-integrity';
 import {
   createBestEffortEventsSink,
   createTelemetryEventsSink,

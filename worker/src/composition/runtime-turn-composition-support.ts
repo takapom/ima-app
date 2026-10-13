@@ -1,11 +1,11 @@
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import { committedConversationPhotoSources } from '@worker/runtime/conversations/conversation-photo-sources';
-import type { HarnessContext } from '@worker/application/ports/context';
+import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
 import type { ObservationContext } from '@worker/domain/evidence/freshness';
 import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
 import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
-import type { CommitPort, CommitRecord } from '@worker/application/ports/commit';
+import type { CommitPort, CommitRecord } from '@worker/core/application/ports/commit';
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
 import { prepareRuntimeConversationResponse } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
 import { mapPreparedRuntimeResponse } from '@worker/runtime/response/runtime-public-response';

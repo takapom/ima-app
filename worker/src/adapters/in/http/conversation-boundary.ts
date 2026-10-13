@@ -15,7 +15,7 @@ import {
   conversationOwnerName,
   type ConversationApiRpc,
 } from '@worker/adapters/out/persistence/conversations/durable-conversation-store';
-import type { ConversationStoreFailure } from '@worker/application/ports/conversation-store';
+import type { ConversationStoreFailure } from '@worker/core/application/ports/conversation-store';
 
 export type ConversationHttpContext = {
   readonly http: HttpContext;

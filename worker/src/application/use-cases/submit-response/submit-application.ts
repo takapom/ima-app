@@ -6,7 +6,7 @@ import {
   TurnIdSchema,
 } from '@worker/domain/primitives';
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
-import type { IdPort } from '@worker/application/ports/context';
+import type { IdPort } from '@worker/core/application/ports/context';
 import {
   CommitPortResultSchema,
   type CommitConflict,
@@ -16,7 +16,7 @@ import {
   type CommitReferences,
   type CommitRecord,
   CommitRecordSchema,
-} from '@worker/application/ports/commit';
+} from '@worker/core/application/ports/commit';
 import {
   type SubmitValidationIssue,
   type ValidatedCardsResponse,

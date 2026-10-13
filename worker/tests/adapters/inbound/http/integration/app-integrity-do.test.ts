@@ -6,7 +6,7 @@ import { createAppIntegrityGate } from '@worker/composition/app-integrity-gate';
 import {
   type AppIntegrityKey,
   type AppIntegrityNonce,
-} from '@worker/application/ports/app-integrity';
+} from '@worker/core/application/ports/app-integrity';
 import {
   createDurableAppIntegrityStores,
   type AppIntegrityDO,

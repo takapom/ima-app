@@ -3,7 +3,7 @@ import type {
   ConversationScope,
   ConversationStore,
   ConversationStoreFailure,
-} from '@worker/application/ports/conversation-store';
+} from '@worker/core/application/ports/conversation-store';
 import {
   conversationTitleFromUserText,
   type Conversation,

@@ -1,4 +1,4 @@
-import type { ConversationStoreFailure } from '@worker/application/ports/conversation-store';
+import type { ConversationStoreFailure } from '@worker/core/application/ports/conversation-store';
 
 export type ConversationSqlStorage = Pick<DurableObjectStorage, 'sql' | 'transactionSync'>;
 export type JsonRow = { readonly body: string };

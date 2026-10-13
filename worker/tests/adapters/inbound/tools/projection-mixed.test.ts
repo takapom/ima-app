@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { HarnessContext } from '@worker/application/ports/context';
+import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { Result } from '@worker/domain/result';
 import type { SearchPlacesOutput } from '@worker/application/ports/operations';
 import { projectSearchResult } from '@worker/adapters/in/tools/projection';

@@ -2,7 +2,7 @@ import type {
   AppAttestEnvironment,
   AppIntegrityEnforcement,
   AppIntegrityPolicy,
-} from '@worker/application/ports/app-integrity';
+} from '@worker/core/application/ports/app-integrity';
 export const resolveAppIntegrityPolicy = (input: {
   readonly deploymentEnvironment?: string;
   readonly environment?: string;

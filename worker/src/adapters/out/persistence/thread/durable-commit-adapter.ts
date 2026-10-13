@@ -8,7 +8,7 @@ import {
   type CommitPortResult,
   type CommitRecord,
   type CommitRequest,
-} from '@worker/application/ports/commit';
+} from '@worker/core/application/ports/commit';
 import { CardSetIdSchema } from '@worker/domain/primitives';
 import type { ThreadRuntimeTarget } from '@worker/runtime/threads/admission';
 

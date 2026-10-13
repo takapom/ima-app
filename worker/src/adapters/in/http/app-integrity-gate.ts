@@ -12,7 +12,7 @@ import type {
   AppIntegrityDecision,
   AppIntegrityOwner,
   AppIntegrityNonce,
-} from '@worker/application/ports/app-integrity';
+} from '@worker/core/application/ports/app-integrity';
 import type { AppIntegrityApplication } from '@worker/application/use-cases/app-integrity/app-integrity';
 import { appIntegrityRequestHash } from '@worker/adapters/in/http/app-integrity-request-proof';
 export type AppIntegrityRoute =

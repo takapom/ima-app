@@ -8,7 +8,7 @@ import {
   SearchPlacesInputSchema,
   SearchPlacesOutputSchema,
 } from '@worker/application/ports/operations';
-import { RespondInputSchema, SubmitCardsInputSchema } from '@worker/application/ports/model';
+import { RespondInputSchema, SubmitCardsInputSchema } from '@worker/core/application/ports/model';
 import {
   RespondCommittedSchema,
   RespondPortInputSchema,
@@ -17,7 +17,7 @@ import {
 import {
   LocationContextSchema,
   ToolExecutionContextSchema,
-} from '@worker/application/ports/context';
+} from '@worker/core/application/ports/context';
 
 const search = {
   mode: 'search',

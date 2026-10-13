@@ -1,5 +1,5 @@
 import type { RespondInvalid } from '@worker/application/ports/submission';
-import type { RespondKind } from '@worker/application/ports/model';
+import type { RespondKind } from '@worker/core/application/ports/model';
 
 /**
  * A rejected respond is the one failure a user sees only as "no answer": the model is

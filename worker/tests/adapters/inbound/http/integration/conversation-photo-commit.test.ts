@@ -2,7 +2,7 @@ import { env, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it, vi } from 'vitest';
 import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
-import type { CommitRequest } from '@worker/application/ports/commit';
+import type { CommitRequest } from '@worker/core/application/ports/commit';
 import { createDurableCommitPort } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
 import { ThreadConversationOutbox } from '@worker/adapters/out/persistence/conversations/thread-conversation-outbox';
 import { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';

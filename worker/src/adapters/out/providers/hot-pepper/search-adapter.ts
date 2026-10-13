@@ -4,7 +4,7 @@ import {
   SearchPlacesOutputSchema,
   type PlaceSearchPort,
 } from '@worker/application/ports/operations';
-import { type HarnessContext } from '@worker/application/ports/context';
+import { type HarnessContext } from '@worker/core/application/ports/context';
 import type { PlacesSearchContinuation } from '@worker/adapters/out/providers/places-search/continuation';
 import type { PlacesSearchCursorBinding } from '@worker/adapters/out/providers/places-search/types';
 import type { PlacesSearchRegistration } from '@worker/adapters/out/providers/places-search/registration';
@@ -20,7 +20,7 @@ import {
   registerHotPepperField,
   type HotPepperDetailField,
 } from '@worker/adapters/out/providers/hot-pepper/place-observations';
-import type { ToolExecutionContext } from '@worker/application/ports/context';
+import type { ToolExecutionContext } from '@worker/core/application/ports/context';
 
 type SearchOptions = {
   readonly transport: HotPepperTransport;

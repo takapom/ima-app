@@ -7,8 +7,8 @@ import * as v from 'valibot';
 import { CandidateStatusSchema, type CandidateStatus } from '@worker/domain/candidates/registry';
 import { CardSetRecordSchema, type CardSetRecord } from '@worker/domain/candidates/continuity';
 import { CandidateIdSchema, OpaqueIdSchema, Text, TurnIdSchema } from '@worker/domain/primitives';
-import type { HarnessContext } from '@worker/application/ports/context';
-import { HarnessContextSchema } from '@worker/application/ports/context';
+import type { HarnessContext } from '@worker/core/application/ports/context';
+import { HarnessContextSchema } from '@worker/core/application/ports/context';
 import { ModelContextError } from '@worker/core/application/model-context/model-context-errors';
 import {
   ModelEvidenceSourceSchema,

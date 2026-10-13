@@ -10,8 +10,8 @@ import type {
   ConversationRuns,
   ConversationRunResult,
   ConversationRunScope,
-} from '@worker/application/ports/conversation-runs';
-import type { ConversationScope } from '@worker/application/ports/conversation-store';
+} from '@worker/core/application/ports/conversation-runs';
+import type { ConversationScope } from '@worker/core/application/ports/conversation-store';
 import type { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
 import {
   storeFailure,

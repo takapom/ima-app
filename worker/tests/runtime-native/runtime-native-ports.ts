@@ -12,7 +12,7 @@ import {
   type CommitPort,
   type CommitPortResult,
   type CommitRequest,
-} from '@worker/application/ports/commit';
+} from '@worker/core/application/ports/commit';
 import { type FieldResult, type Result } from '@worker/domain/result';
 import {
   type GetPlaceDetailsInput,
@@ -25,9 +25,9 @@ import {
   type HarnessContext,
   type RegistryIdPort,
   type ToolExecutionContext,
-} from '@worker/application/ports/context';
+} from '@worker/core/application/ports/context';
 import { type RegistryScope } from '@worker/domain/evidence/freshness';
-import { type RespondInput } from '@worker/application/ports/model';
+import { type RespondInput } from '@worker/core/application/ports/model';
 import { type RespondPort, type RespondPortResult } from '@worker/application/ports/submission';
 import { type SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';

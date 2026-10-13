@@ -4,7 +4,7 @@ import type {
   GetPlaceDetailsOutput,
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
-import type { HarnessContext } from '@worker/application/ports/context';
+import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { Issue } from '@worker/domain/issue';
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type {

@@ -10,7 +10,7 @@ import {
   type AppIntegrityChallengeStore,
   type AppIntegrityNonce,
   type AppIntegrityKey,
-} from '@worker/application/ports/app-integrity';
+} from '@worker/core/application/ports/app-integrity';
 import { makeHarness, makeRequest, requestId, searchInput, turnInput } from './router-fixtures';
 
 const NOW = '2026-09-10T00:00:00.000Z';

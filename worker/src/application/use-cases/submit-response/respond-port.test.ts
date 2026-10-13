@@ -3,14 +3,14 @@ import type {
   CancellationToken,
   IdPort,
   ToolExecutionContext,
-} from '@worker/application/ports/context';
+} from '@worker/core/application/ports/context';
 import type {
   CommitHashPort,
   CommitPort,
   CommitPortResult,
   CommitRecord,
   CommitRequest,
-} from '@worker/application/ports/commit';
+} from '@worker/core/application/ports/commit';
 import {
   CommitAdapterError,
   SubmitApplication,

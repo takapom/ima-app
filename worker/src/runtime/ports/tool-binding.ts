@@ -3,7 +3,7 @@ import type {
   CancellationToken,
   HarnessContext,
   ToolExecutionContext,
-} from '@worker/application/ports/context';
+} from '@worker/core/application/ports/context';
 import type { DetailField } from '@worker/domain/primitives';
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import type {
@@ -17,7 +17,7 @@ import type {
 import type { Issue } from '@worker/domain/issue';
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type { Result } from '@worker/domain/result';
-import type { RespondInput } from '@worker/application/ports/model';
+import type { RespondInput } from '@worker/core/application/ports/model';
 import type {
   RespondInvalid,
   RespondPort,

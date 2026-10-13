@@ -1,4 +1,4 @@
-import type { CommitHashPort } from '@worker/application/ports/commit';
+import type { CommitHashPort } from '@worker/core/application/ports/commit';
 import type { ObservationRegistration } from '@worker/domain/candidates/registry';
 import { describe, expect, it, vi } from 'vitest';
 import {

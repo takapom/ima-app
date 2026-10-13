@@ -5,7 +5,7 @@ import {
   type PlaceDetailsPort,
 } from '@worker/application/ports/operations';
 import { type CandidateObservationRegistryPort } from '@worker/application/ports/registry';
-import { type ToolExecutionContext } from '@worker/application/ports/context';
+import { type ToolExecutionContext } from '@worker/core/application/ports/context';
 import type { PlacesSearchRegistration } from '@worker/adapters/out/providers/places-search/registration';
 import type { HotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
 import { HotPepperError } from '@worker/adapters/out/providers/hot-pepper/types';

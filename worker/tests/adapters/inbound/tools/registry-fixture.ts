@@ -1,6 +1,6 @@
 import { CandidateObservationRegistry } from '@worker/core/application/candidate-registry/registry';
 import type { CandidateRegistration } from '@worker/domain/candidates/registry';
-import type { ClockPort, RegistryIdPort } from '@worker/application/ports/context';
+import type { ClockPort, RegistryIdPort } from '@worker/core/application/ports/context';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
 
 export const toolScope: RegistryScope = {

@@ -14,7 +14,7 @@ import type {
   HandlerContext,
 } from '@worker/adapters/in/http/handler';
 import type { MatchedRoute } from '@worker/adapters/in/http/http-route';
-import type { CancellationToken } from '@worker/application/ports/context';
+import type { CancellationToken } from '@worker/core/application/ports/context';
 import * as v from 'valibot';
 
 export type ThreadPlaceWriteRoute = Extract<

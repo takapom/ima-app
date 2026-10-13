@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createAppIntegrityApplication } from '@worker/application/use-cases/app-integrity/app-integrity';
-import type { AppIntegrityNonce } from '@worker/application/ports/app-integrity';
+import type { AppIntegrityNonce } from '@worker/core/application/ports/app-integrity';
 
 const owner = { ownerScopeRef: 'owner-a', deviceId: 'device-a' };
 const now = '2026-09-10T00:00:00.000Z';

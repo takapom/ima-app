@@ -3,12 +3,12 @@ import { ConversationExecutionApplication } from '@worker/application/use-cases/
 import type {
   ConversationRuns,
   ConversationRunResult,
-} from '@worker/application/ports/conversation-runs';
+} from '@worker/core/application/ports/conversation-runs';
 import type {
   ConversationThreadPort,
   ConversationTurnExecutor,
-} from '@worker/application/ports/conversation-execution';
-import type { ConversationMemoryStore } from '@worker/application/ports/conversation-memory-store';
+} from '@worker/core/application/ports/conversation-execution';
+import type { ConversationMemoryStore } from '@worker/core/application/ports/conversation-memory-store';
 import type { ConversationRun } from '@worker/domain/conversations/conversation-run';
 
 const now = '2026-09-10T00:00:00.000Z';

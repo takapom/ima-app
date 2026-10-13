@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { HarnessContext, ToolExecutionContext } from '@worker/application/ports/context';
+import type { HarnessContext, ToolExecutionContext } from '@worker/core/application/ports/context';
 import type {
   PlaceDetailsPort,
   PlaceSearchPort,

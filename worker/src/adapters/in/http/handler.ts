@@ -26,7 +26,7 @@ import type {
   SavedReferenceResponseSchema,
   ThreadPathSchema,
 } from '@ima/contracts';
-import type { CancellationToken } from '@worker/application/ports/context';
+import type { CancellationToken } from '@worker/core/application/ports/context';
 
 export type LifecycleCommand = v.InferOutput<typeof LifecycleCommandSchema>;
 export type LifecycleResponse = v.InferOutput<typeof LifecycleResponseSchema>;

@@ -21,7 +21,7 @@ import type {
   CandidateObservationRegistryPort,
   ObservationReplacement,
 } from '@worker/application/ports/registry';
-import type { ClockPort, RegistryIdPort } from '@worker/application/ports/context';
+import type { ClockPort, RegistryIdPort } from '@worker/core/application/ports/context';
 import {
   assertOpaqueId,
   assertScope,

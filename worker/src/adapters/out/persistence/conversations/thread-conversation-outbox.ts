@@ -2,7 +2,7 @@ import { messageDeadline } from '@worker/adapters/out/persistence/conversations/
 import type { ConversationPhotoSource } from '@worker/domain/conversations/conversation-cards';
 import * as v from 'valibot';
 import type { AssistantResponse } from '@ima/contracts';
-import type { CommitRequest } from '@worker/application/ports/commit';
+import type { CommitRequest } from '@worker/core/application/ports/commit';
 import { conversationResponseDeadline } from '@worker/runtime/conversations/conversation-response-deadline';
 import type {
   ThreadRuntimeTarget,

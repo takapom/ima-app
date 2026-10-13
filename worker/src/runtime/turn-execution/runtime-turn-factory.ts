@@ -6,9 +6,9 @@ import type {
   TurnConfig,
   TurnContext,
 } from '@cloudflare/think';
-import type { HarnessContext, IdPort } from '@worker/application/ports/context';
+import type { HarnessContext, IdPort } from '@worker/core/application/ports/context';
 import type { RespondInvalid, RespondPort } from '@worker/application/ports/submission';
-import type { RespondKind } from '@worker/application/ports/model';
+import type { RespondKind } from '@worker/core/application/ports/model';
 import {
   observeRuntimeSubmitRejection,
   observeRuntimeTurnOutcome,

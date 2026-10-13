@@ -2,7 +2,7 @@ import type {
   CancellationToken,
   HarnessContext,
   ToolExecutionContext,
-} from '@worker/application/ports/context';
+} from '@worker/core/application/ports/context';
 import type {
   GetPlaceDetailsInput,
   GetPlaceDetailsOutput,

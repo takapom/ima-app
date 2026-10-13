@@ -7,8 +7,11 @@ import {
   SafeIntegerSchema,
   Text,
 } from '@worker/domain/primitives';
-import type { CancellationToken, ToolExecutionContext } from '@worker/application/ports/context';
-import { RespondInputSchema } from '@worker/application/ports/model';
+import type {
+  CancellationToken,
+  ToolExecutionContext,
+} from '@worker/core/application/ports/context';
+import { RespondInputSchema } from '@worker/core/application/ports/model';
 
 export const RespondPortInputSchema = RespondInputSchema;
 export type RespondPortInput = v.InferOutput<typeof RespondPortInputSchema>;

@@ -5,7 +5,7 @@ import type {
   ObservationRegistration,
   ReadonlyStoredObservation,
 } from '@worker/domain/candidates/registry';
-import type { ClockPort } from '@worker/application/ports/context';
+import type { ClockPort } from '@worker/core/application/ports/context';
 
 /**
  * The adapter receives callbacks instead of a registry object. The Host owns the

@@ -8,7 +8,7 @@ import {
 import { projectModelEvidenceForLlmInput } from '@worker/core/application/model-context/model-evidence';
 import { type CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import { type DetailField } from '@worker/domain/primitives';
-import { type HarnessContext } from '@worker/application/ports/context';
+import { type HarnessContext } from '@worker/core/application/ports/context';
 import { type Issue } from '@worker/domain/issue';
 import { type Observation } from '@worker/domain/evidence/evidence';
 import { type ReadonlyStoredObservation } from '@worker/domain/candidates/registry';

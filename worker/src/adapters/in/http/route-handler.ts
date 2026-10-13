@@ -26,7 +26,7 @@ import type {
   ApplicationResult,
   HandlerContext,
 } from '@worker/adapters/in/http/handler';
-import type { CancellationToken } from '@worker/application/ports/context';
+import type { CancellationToken } from '@worker/core/application/ports/context';
 import type { MatchedRoute } from '@worker/adapters/in/http/http-route';
 import {
   DEFAULT_JSON_BODY_LIMIT_BYTES,

@@ -8,8 +8,8 @@ import type {
   ExecutionBudget,
   HarnessContext,
   RegistryIdPort,
-} from '@worker/application/ports/context';
-import type { CommitHashPort } from '@worker/application/ports/commit';
+} from '@worker/core/application/ports/context';
+import type { CommitHashPort } from '@worker/core/application/ports/commit';
 import type { ObservationRegistration } from '@worker/domain/candidates/registry';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';

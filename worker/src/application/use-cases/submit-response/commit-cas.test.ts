@@ -6,7 +6,7 @@ import type {
   CommitPortResult,
   CommitRecord,
   CommitRequest,
-} from '@worker/application/ports/commit';
+} from '@worker/core/application/ports/commit';
 import { SubmitApplication } from '@worker/application/use-cases/submit-response/submit-application';
 import { makeFixture } from '@worker/application/use-cases/submit-response/tests/submit-cards-fixtures';
 

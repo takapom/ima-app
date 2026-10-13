@@ -4,7 +4,7 @@ import type { ConversationMessageInput } from '@worker/domain/conversations/conv
 import type {
   ConversationScope,
   ConversationStoreFailure,
-} from '@worker/application/ports/conversation-store';
+} from '@worker/core/application/ports/conversation-store';
 
 export type AcceptConversationRun = ConversationScope & {
   readonly runId: string;

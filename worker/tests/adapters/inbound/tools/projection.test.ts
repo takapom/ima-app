@@ -3,7 +3,7 @@ import type {
   GetPlaceDetailsOutput,
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
-import type { HarnessContext } from '@worker/application/ports/context';
+import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { Observation } from '@worker/domain/evidence/evidence';
 import type { ObservationContext } from '@worker/domain/evidence/freshness';
 import type { PlaceIdentity } from '@worker/domain/places/place-values';

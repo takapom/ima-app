@@ -1,4 +1,4 @@
-import type { ConversationRunScope } from '@worker/application/ports/conversation-runs';
+import type { ConversationRunScope } from '@worker/core/application/ports/conversation-runs';
 import type { ConversationMemory } from '@worker/domain/conversations/conversation-memory';
 import type { ConversationMessageInput } from '@worker/domain/conversations/conversation-message';
 export type ConversationThreadScope = ConversationRunScope & { readonly threadId: string };

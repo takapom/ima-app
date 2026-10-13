@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { asSchema, type ToolExecutionOptions } from 'ai';
-import type { CancellationToken, HarnessContext } from '@worker/application/ports/context';
+import type { CancellationToken, HarnessContext } from '@worker/core/application/ports/context';
 import type {
   GetPlaceDetailsInput,
   PlaceDetailsPort,

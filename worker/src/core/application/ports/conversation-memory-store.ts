@@ -2,7 +2,7 @@ import type { ConversationMemory } from '@worker/domain/conversations/conversati
 import type {
   ConversationScope,
   ConversationStoreFailure,
-} from '@worker/application/ports/conversation-store';
+} from '@worker/core/application/ports/conversation-store';
 
 export type ConversationMemoryStore = {
   loadMemory(

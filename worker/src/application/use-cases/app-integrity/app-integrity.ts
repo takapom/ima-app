@@ -15,7 +15,7 @@ import type {
   AppIntegrityAssertion,
   AppIntegrityEnrollment,
   AppIntegrityRequestProof,
-} from '@worker/application/ports/app-integrity';
+} from '@worker/core/application/ports/app-integrity';
 const NONCE_TTL_MS = 5 * 60 * 1_000;
 const KEY_REF_MAX_LENGTH = 2_048;
 

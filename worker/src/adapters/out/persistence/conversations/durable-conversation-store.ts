@@ -2,9 +2,9 @@ import type { AssistantResponse, ConversationTurnRequest } from '@ima/contracts'
 import type {
   ConversationRunScope,
   ConversationRunResult,
-} from '@worker/application/ports/conversation-runs';
-import type { ConversationStore } from '@worker/application/ports/conversation-store';
-import type { ConversationRuns } from '@worker/application/ports/conversation-runs';
+} from '@worker/core/application/ports/conversation-runs';
+import type { ConversationStore } from '@worker/core/application/ports/conversation-store';
+import type { ConversationRuns } from '@worker/core/application/ports/conversation-runs';
 
 export type ConversationHistoryRpc = ConversationStore & ConversationRuns;
 export type ConversationApiRpc = ConversationHistoryRpc & {

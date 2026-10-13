@@ -6,7 +6,10 @@ import type {
   CommitApplicationResult,
 } from '@worker/application/use-cases/submit-response/submit-application';
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
-import type { CancellationToken, ToolExecutionContext } from '@worker/application/ports/context';
+import type {
+  CancellationToken,
+  ToolExecutionContext,
+} from '@worker/core/application/ports/context';
 import {
   RespondPortInputSchema,
   type RespondPort,

@@ -11,7 +11,7 @@ import {
   SubmitCardsInputSchema,
   type CardSelection,
   type SubmitCardsInput,
-} from '@worker/application/ports/model';
+} from '@worker/core/application/ports/model';
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import {
   SubmitValidationContextSchema,

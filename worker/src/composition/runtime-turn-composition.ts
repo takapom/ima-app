@@ -3,8 +3,8 @@ import type { PrepareStepContext, Session, TurnConfig } from '@cloudflare/think'
 import type { JSONValue, ToolSet } from 'ai';
 import type { AssistantResponse } from '@ima/contracts';
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
-import type { ClockPort, HarnessContext, IdPort } from '@worker/application/ports/context';
-import type { CommitHashPort, CommitPort } from '@worker/application/ports/commit';
+import type { ClockPort, HarnessContext, IdPort } from '@worker/core/application/ports/context';
+import type { CommitHashPort, CommitPort } from '@worker/core/application/ports/commit';
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
 import type { RespondPort } from '@worker/application/ports/submission';

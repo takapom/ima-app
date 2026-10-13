@@ -1,6 +1,6 @@
 import type { AssistantResponse } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import type { CommitRecord } from '@worker/application/ports/commit';
+import type { CommitRecord } from '@worker/core/application/ports/commit';
 import {
   NOW,
   RecordingCommit,

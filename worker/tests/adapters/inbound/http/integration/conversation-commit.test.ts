@@ -1,7 +1,7 @@
 import { env, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import type { AssistantResponse } from '@ima/contracts';
-import type { CommitRequest } from '@worker/application/ports/commit';
+import type { CommitRequest } from '@worker/core/application/ports/commit';
 import { createDurableCommitPort } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
 import { ThreadConversationOutbox } from '@worker/adapters/out/persistence/conversations/thread-conversation-outbox';
 import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';

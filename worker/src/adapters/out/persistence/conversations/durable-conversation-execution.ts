@@ -6,8 +6,8 @@ import {
   type ConversationTurnRequest,
   type ThreadTurnRequest,
 } from '@ima/contracts';
-import type { ConversationRunScope } from '@worker/application/ports/conversation-runs';
-import type { ConversationThreadPort } from '@worker/application/ports/conversation-execution';
+import type { ConversationRunScope } from '@worker/core/application/ports/conversation-runs';
+import type { ConversationThreadPort } from '@worker/core/application/ports/conversation-execution';
 import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
 import type { PreparedConversationExecution } from '@worker/runtime/conversations/conversation-execution';
 import type { ThreadRuntimeFailureCode } from '@worker/runtime/threads/admission';

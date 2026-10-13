@@ -7,8 +7,8 @@ import type {
   SearchPlacesInput,
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
-import type { HarnessContext, ToolExecutionContext } from '@worker/application/ports/context';
-import type { RespondInput } from '@worker/application/ports/model';
+import type { HarnessContext, ToolExecutionContext } from '@worker/core/application/ports/context';
+import type { RespondInput } from '@worker/core/application/ports/model';
 import type { RespondPortResult, RespondPort } from '@worker/application/ports/submission';
 import {
   DEFAULT_RUNTIME_BUDGET,

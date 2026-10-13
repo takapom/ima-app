@@ -15,9 +15,9 @@ import {
   type CancellationToken,
   type HarnessContext,
   type ToolExecutionContext,
-} from '@worker/application/ports/context';
+} from '@worker/core/application/ports/context';
 import { ResultSchema, type Result } from '@worker/domain/result';
-import { RespondInputSchema, type RespondInput } from '@worker/application/ports/model';
+import { RespondInputSchema, type RespondInput } from '@worker/core/application/ports/model';
 import {
   RespondPortResultSchema,
   type RespondInvalid,

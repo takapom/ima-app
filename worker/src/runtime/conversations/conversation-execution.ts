@@ -1,6 +1,6 @@
 import type { ConversationTurnRequest } from '@ima/contracts';
-import type { ConversationRunScope } from '@worker/application/ports/conversation-runs';
-import type { ConversationTurnExecutor } from '@worker/application/ports/conversation-execution';
+import type { ConversationRunScope } from '@worker/core/application/ports/conversation-runs';
+import type { ConversationTurnExecutor } from '@worker/core/application/ports/conversation-execution';
 import type { ConversationExecutionApplication } from '@worker/application/use-cases/conversations/conversation-execution';
 export type PreparedConversationExecution = {
   readonly run: ConversationTurnExecutor;

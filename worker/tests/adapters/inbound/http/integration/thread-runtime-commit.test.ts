@@ -1,6 +1,6 @@
 import { env, runInDurableObject } from 'cloudflare:test';
 import type { AssistantResponse } from '@ima/contracts';
-import type { CommitRequest, CommitPortResult } from '@worker/application/ports/commit';
+import type { CommitRequest, CommitPortResult } from '@worker/core/application/ports/commit';
 import { describe, expect, it } from 'vitest';
 import { createDurableCommitPort } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
 import { persistRuntimeResult } from '@worker/adapters/out/persistence/thread/result-persistence';

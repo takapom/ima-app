@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import type { UIMessage } from 'ai';
-import type { ClockPort } from '@worker/application/ports/context';
+import type { ClockPort } from '@worker/core/application/ports/context';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import {
   IsoTimestampSchema,

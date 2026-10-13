@@ -1,4 +1,4 @@
-import type { AppIntegrityNonceGenerator } from '@worker/application/ports/app-integrity';
+import type { AppIntegrityNonceGenerator } from '@worker/core/application/ports/app-integrity';
 const base64Url = (bytes: Uint8Array): string => {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);

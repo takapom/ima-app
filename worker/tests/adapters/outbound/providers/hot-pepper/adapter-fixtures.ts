@@ -4,7 +4,7 @@ import type {
   HarnessContext,
   RegistryIdPort,
   ToolExecutionContext,
-} from '@worker/application/ports/context';
+} from '@worker/core/application/ports/context';
 import type { GetPlaceDetailsInput } from '@worker/application/ports/operations';
 import { CandidateObservationRegistry as Registry } from '@worker/core/application/candidate-registry/registry';
 import { createHotPepperDetailsAdapter } from '@worker/adapters/out/providers/hot-pepper/details-adapter';

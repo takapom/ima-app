@@ -1,4 +1,4 @@
-import type { ConversationScope } from '@worker/application/ports/conversation-store';
+import type { ConversationScope } from '@worker/core/application/ports/conversation-store';
 import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
 import { ConversationScopeSchema } from '@worker/adapters/out/persistence/conversations/conversation-store-input';
 import * as v from 'valibot';

@@ -1,13 +1,13 @@
-import type { ConversationMemoryStore } from '@worker/application/ports/conversation-memory-store';
+import type { ConversationMemoryStore } from '@worker/core/application/ports/conversation-memory-store';
 import type {
   ConversationRuns,
   ConversationRunResult,
   ConversationRunScope,
-} from '@worker/application/ports/conversation-runs';
+} from '@worker/core/application/ports/conversation-runs';
 import type {
   ConversationThreadPort,
   ConversationTurnExecutor,
-} from '@worker/application/ports/conversation-execution';
+} from '@worker/core/application/ports/conversation-execution';
 
 /** 1回の AI 応答生成を開始するときの入力。会話の revision と clientMessageId で二重実行を防ぐ。 */
 export type ConversationExecutionInput = {

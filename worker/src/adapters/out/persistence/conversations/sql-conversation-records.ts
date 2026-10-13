@@ -3,7 +3,7 @@ import { withConversationPhotoSources } from '@worker/runtime/conversations/conv
 import type {
   ConversationScope,
   ConversationStore,
-} from '@worker/application/ports/conversation-store';
+} from '@worker/core/application/ports/conversation-store';
 import {
   ConversationSchema,
   conversationTitleFromUserText,

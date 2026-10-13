@@ -1,5 +1,5 @@
 import type { ThreadTurnRequest } from '@ima/contracts';
-import type { CommitPort } from '@worker/application/ports/commit';
+import type { CommitPort } from '@worker/core/application/ports/commit';
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import type { RuntimeModelGuardModel } from '@worker/runtime/turn-execution/runtime-model-guard';

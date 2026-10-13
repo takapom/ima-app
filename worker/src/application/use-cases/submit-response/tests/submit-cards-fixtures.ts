@@ -1,6 +1,6 @@
 import { CandidateObservationRegistry } from '@worker/core/application/candidate-registry/registry';
-import type { ClockPort, RegistryIdPort } from '@worker/application/ports/context';
-import type { CardSelection, SubmitCardsInput } from '@worker/application/ports/model';
+import type { ClockPort, RegistryIdPort } from '@worker/core/application/ports/context';
+import type { CardSelection, SubmitCardsInput } from '@worker/core/application/ports/model';
 import type { CandidateId, IsoTimestamp } from '@worker/domain/primitives';
 import type { ObservationContext, RegistryScope } from '@worker/domain/evidence/freshness';
 import type {

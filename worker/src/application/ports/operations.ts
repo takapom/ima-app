@@ -22,7 +22,7 @@ import type {
   CancellationToken,
   HarnessContext,
   ToolExecutionContext,
-} from '@worker/application/ports/context';
+} from '@worker/core/application/ports/context';
 
 const CurrentLocationAreaSchema = v.strictObject({
   kind: v.literal('current_location'),

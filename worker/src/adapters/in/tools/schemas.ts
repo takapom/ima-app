@@ -4,7 +4,7 @@ import {
   GetPlaceDetailsInputSchema,
   SearchPlacesInputSchema,
 } from '@worker/application/ports/operations';
-import { RespondInputSchema } from '@worker/application/ports/model';
+import { RespondInputSchema } from '@worker/core/application/ports/model';
 import type { PublicToolEnvelope } from '@worker/runtime/ports/tool-binding';
 import { toolInputValidationError } from '@worker/runtime/model/tool-input-error';
 

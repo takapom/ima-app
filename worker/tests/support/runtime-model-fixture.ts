@@ -1,6 +1,6 @@
 import type { LanguageModel } from 'ai';
 import type { GetPlaceDetailsInput, SearchPlacesInput } from '@worker/application/ports/operations';
-import type { RespondInput } from '@worker/application/ports/model';
+import type { RespondInput } from '@worker/core/application/ports/model';
 import { identityObservationId, observationFor } from './runtime-model-observations';
 
 export type RuntimeGateScenario = 'invalid' | 'search' | 'message' | 'empty-final' | 'read-submit';
