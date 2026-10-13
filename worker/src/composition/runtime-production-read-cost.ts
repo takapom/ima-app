@@ -4,7 +4,7 @@ import type { HarnessContext } from '@worker/core/application/ports/context';
 import {
   isHotPepperDetailField,
   hotPepperObservationContext,
-} from '@worker/adapters/out/providers/hot-pepper/place-observations';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/place-observations';
 import { productionScopeFor } from '@worker/composition/runtime-production-support';
 import type {
   RuntimeReadCost,

@@ -19,7 +19,7 @@ import {
   hotPepperProviderIssue,
   registerHotPepperField,
   type HotPepperDetailField,
-} from '@worker/adapters/out/providers/hot-pepper/place-observations';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/place-observations';
 import type { ToolExecutionContext } from '@worker/core/application/ports/context';
 
 type SearchOptions = {

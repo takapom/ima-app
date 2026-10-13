@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listingTextFor } from '@worker/adapters/out/providers/hot-pepper/place-observations';
+import { listingTextFor } from '@worker/infrastructure/adapters/out/providers/hot-pepper/place-observations';
 import {
   parseHotPepperResponse,
   type HotPepperShopWire,

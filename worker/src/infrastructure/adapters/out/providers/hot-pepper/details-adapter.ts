@@ -15,7 +15,7 @@ import {
   hotPepperObservationContext,
   isHotPepperDetailField,
   registerHotPepperField,
-} from '@worker/adapters/out/providers/hot-pepper/place-observations';
+} from '@worker/infrastructure/adapters/out/providers/hot-pepper/place-observations';
 
 export const createHotPepperDetailsAdapter = (options: {
   readonly transport: HotPepperTransport;
