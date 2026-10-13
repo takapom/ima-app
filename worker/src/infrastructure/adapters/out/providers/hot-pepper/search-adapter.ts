@@ -6,7 +6,7 @@ import {
 } from '@worker/core/application/ports/operations';
 import { type HarnessContext } from '@worker/core/application/ports/context';
 import type { PlacesSearchContinuation } from '@worker/infrastructure/adapters/out/providers/places-search/continuation';
-import type { PlacesSearchCursorBinding } from '@worker/adapters/out/providers/places-search/types';
+import type { PlacesSearchCursorBinding } from '@worker/infrastructure/adapters/out/providers/places-search/types';
 import type { PlacesSearchRegistration } from '@worker/infrastructure/adapters/out/providers/places-search/registration';
 import type { HotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import {

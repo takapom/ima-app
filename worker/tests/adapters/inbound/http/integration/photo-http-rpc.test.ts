@@ -4,7 +4,7 @@ import { deriveOwnerScopeRef } from '@worker/infrastructure/adapters/in/http/aut
 import { createHttpRouterConfig, createThreadScopeAuthorizer } from '@worker/composition/bootstrap';
 import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import { createPhotoReferenceStoreResolver } from '@worker/infrastructure/adapters/out/persistence/photo/rpc';
-import { createPhotoTokenCodec } from '@worker/adapters/out/security/photo-token-codec';
+import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/out/security/photo-token-codec';
 import type { TelemetryDO } from '@worker/infrastructure/adapters/out/persistence/telemetry/telemetry-do';
 import type { RateLimitDO, ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
 

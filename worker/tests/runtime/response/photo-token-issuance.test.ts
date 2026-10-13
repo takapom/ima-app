@@ -1,4 +1,4 @@
-import { createPhotoTokenIssuer } from '@worker/adapters/out/security/photo-token-issuer';
+import { createPhotoTokenIssuer } from '@worker/infrastructure/adapters/out/security/photo-token-issuer';
 import { preparePhotoTokens } from '@worker/core/application/use-cases/photos/prepare-photo-tokens';
 import { describe, expect, it, vi } from 'vitest';
 import type { CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';

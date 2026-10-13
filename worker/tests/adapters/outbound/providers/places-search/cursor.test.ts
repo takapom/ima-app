@@ -6,7 +6,7 @@ import {
 import type {
   PlacesSearchCursorBinding,
   PlacesSearchCursorState,
-} from '@worker/adapters/out/providers/places-search/types';
+} from '@worker/infrastructure/adapters/out/providers/places-search/types';
 
 const binding = (): PlacesSearchCursorBinding => ({
   ownerScopeRef: 'owner-places',

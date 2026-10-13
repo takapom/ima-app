@@ -3,7 +3,7 @@ import { deriveOwnerScopeRef } from '@worker/infrastructure/adapters/in/http/aut
 import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import { createPhotoBodyHandler } from '@worker/infrastructure/adapters/in/http/photo-body-handler';
 import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/reference-store';
-import { createPhotoTokenCodec } from '@worker/adapters/out/security/photo-token-codec';
+import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/out/security/photo-token-codec';
 import { makeHarness, makeRequest, ownerCredential } from './router-fixtures';
 
 const NOW = '2026-09-10T12:00:00.000Z';

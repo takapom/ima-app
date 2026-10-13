@@ -1,5 +1,5 @@
 import { createConversationExecution } from '@worker/composition/conversation-execution';
-import { conversationFingerprint } from '@worker/adapters/out/security/conversation-fingerprint';
+import { conversationFingerprint } from '@worker/infrastructure/adapters/out/security/conversation-fingerprint';
 import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
 import { ConversationDeletions } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-deletions';
 import { conversationResponseDeadline } from '@worker/runtime/conversations/conversation-response-deadline';

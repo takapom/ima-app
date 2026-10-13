@@ -1,4 +1,4 @@
-import { createPhotoTokenCodec } from '@worker/adapters/out/security/photo-token-codec';
+import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/out/security/photo-token-codec';
 import {
   createPhotoReferenceStoreResolver,
   type PhotoReferenceRpc,

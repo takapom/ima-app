@@ -2,7 +2,7 @@ import type {
   PlacesSearchCursorBinding,
   PlacesSearchCursorResolution,
   PlacesSearchCursorState,
-} from '@worker/adapters/out/providers/places-search/types';
+} from '@worker/infrastructure/adapters/out/providers/places-search/types';
 
 export const PLACES_SEARCH_CURSOR_TTL_MS = 5 * 60 * 1_000;
 /** v2 dropped openNow from the binding (#54); v1 tokens are rejected as invalid. */

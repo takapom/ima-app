@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { createPhotoTokenIssuer } from '@worker/adapters/out/security/photo-token-issuer';
+import { createPhotoTokenIssuer } from '@worker/infrastructure/adapters/out/security/photo-token-issuer';
 import type { PhotoTokenCodec } from '@worker/runtime/ports/photo';
 
 it('rejects an untrusted photo URL before invoking signing or storage', async () => {

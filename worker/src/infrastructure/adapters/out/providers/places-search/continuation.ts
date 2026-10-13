@@ -5,7 +5,7 @@ import {
 import type {
   PlacesSearchCursorBinding,
   PlacesSearchCursorState,
-} from '@worker/adapters/out/providers/places-search/types';
+} from '@worker/infrastructure/adapters/out/providers/places-search/types';
 
 export type PlacesSearchContinuationResolution =
   | {

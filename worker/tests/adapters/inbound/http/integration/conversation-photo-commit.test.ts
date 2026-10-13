@@ -8,8 +8,8 @@ import { ThreadConversationOutbox } from '@worker/infrastructure/adapters/out/pe
 import { SqlConversationRecords } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-records';
 import { SqlConversationRuns } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-runs';
 import { createSqlPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/sql-reference-store';
-import { createPhotoTokenCodec } from '@worker/adapters/out/security/photo-token-codec';
-import { createPhotoTokenIssuer } from '@worker/adapters/out/security/photo-token-issuer';
+import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/out/security/photo-token-codec';
+import { createPhotoTokenIssuer } from '@worker/infrastructure/adapters/out/security/photo-token-issuer';
 import { cardEvidenceResolver } from '@worker/composition/runtime-production-provider-config';
 import { createPhotoTokenPreparer } from '@worker/runtime/response/photo-token-issuance';
 import {

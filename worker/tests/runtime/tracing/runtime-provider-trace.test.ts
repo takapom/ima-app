@@ -1,4 +1,4 @@
-import { createRuntimeProviderTransportObserver } from '@worker/adapters/out/providers/telemetry/runtime-provider-observer';
+import { createRuntimeProviderTransportObserver } from '@worker/infrastructure/adapters/out/providers/telemetry/runtime-provider-observer';
 import { describe, expect, it, vi } from 'vitest';
 import { createHotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import type { HotPepperSearchRequest } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';

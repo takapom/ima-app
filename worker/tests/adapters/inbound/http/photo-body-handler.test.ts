@@ -4,7 +4,7 @@ import type { HandlerContext } from '@worker/infrastructure/adapters/in/http/han
 import { createPhotoBodyHandler } from '@worker/infrastructure/adapters/in/http/photo-body-handler';
 import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/reference-store';
 import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
-import { createPhotoTokenCodec } from '@worker/adapters/out/security/photo-token-codec';
+import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/out/security/photo-token-codec';
 import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';
 
 const NOW = '2026-09-10T12:00:00.000Z';
