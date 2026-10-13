@@ -1,4 +1,4 @@
-import { OPENAI_REASONING_EFFORT } from '@worker/adapters/out/providers/openai/provider-config';
+import { OPENAI_REASONING_EFFORT } from '@worker/infrastructure/adapters/out/providers/openai/provider-config';
 
 /**
  * Request-scoped options passed to AI SDK's OpenAI Responses model.

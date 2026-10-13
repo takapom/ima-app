@@ -114,7 +114,7 @@ ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Port�
 - 保存禁止・不明な本文はSDK永続化とlive cacheの前に置換する。Tool結果は当該turnへの一時入力に使う。許可された会話本文は既存のThreadDOコンテキストへ期限付きで保持し、各turnと再起動後に期限を検証してモデル文脈へ戻す。由来不明のcompaction summaryは保持しない。
 - 再起動後の再送は同じ確定IDと許可された参照だけで成立させ、保存禁止本文の完全復元を約束しない。
 
-設定・停止時にfixtureへ暗黙に切り替えない。Provider/model設定は[OpenAI Adapter](../../worker/src/adapters/out/providers/openai)、組立ては[runtime-production-factory.ts](../../worker/src/composition/runtime-production-factory.ts)、保存前処理は[runtime-retention.ts](../../worker/src/runtime/retention/runtime-retention.ts)を参照する。
+設定・停止時にfixtureへ暗黙に切り替えない。Provider/model設定は[OpenAI Adapter](../../worker/src/infrastructure/adapters/out/providers/openai)、組立ては[runtime-production-factory.ts](../../worker/src/composition/runtime-production-factory.ts)、保存前処理は[runtime-retention.ts](../../worker/src/runtime/retention/runtime-retention.ts)を参照する。
 
 ## データの正と保存境界
 

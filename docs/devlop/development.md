@@ -20,7 +20,7 @@ PLACES_CURSOR_SECRET=16バイト以上のランダムな秘密値
 
 [ホットペッパーWebサービス](https://webservice.recruit.co.jp/register)でAPIキーを取得する。カーソル署名値は例として `openssl rand -hex 32` で生成できる。キー変更後はWorkerを再起動する。
 
-次のコマンドは実OpenAI APIとホットペッパーAPIを使用する。モデルは[既存のモデル設定](../../worker/src/adapters/out/providers/openai/provider-config.ts)に従い、API利用料が発生する。
+次のコマンドは実OpenAI APIとホットペッパーAPIを使用する。モデルは[既存のモデル設定](../../worker/src/infrastructure/adapters/out/providers/openai/provider-config.ts)に従い、API利用料が発生する。
 
 ```sh
 bun run dev:worker:llm

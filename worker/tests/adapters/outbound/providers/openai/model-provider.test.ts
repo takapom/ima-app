@@ -7,7 +7,7 @@ import {
   OPENAI_API_KEY_NAME,
   OPENAI_MODEL_NAME,
   OPENAI_REASONING_EFFORT,
-} from '@worker/adapters/out/providers/openai/provider-config';
+} from '@worker/infrastructure/adapters/out/providers/openai/provider-config';
 
 const API_KEY = 'sk-provider-test-only';
 

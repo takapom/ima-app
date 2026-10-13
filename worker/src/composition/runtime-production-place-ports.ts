@@ -3,8 +3,8 @@ import type { PlaceDetailsPort, PlaceSearchPort } from '@worker/core/application
 import { createHotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import { createHotPepperSearchAdapter } from '@worker/infrastructure/adapters/out/providers/hot-pepper/search-adapter';
 import { createHotPepperDetailsAdapter } from '@worker/infrastructure/adapters/out/providers/hot-pepper/details-adapter';
-import { createPlacesSearchRegistration } from '@worker/adapters/out/providers/places-search/registration';
-import type { createPlacesSearchContinuation } from '@worker/adapters/out/providers/places-search/continuation';
+import { createPlacesSearchRegistration } from '@worker/infrastructure/adapters/out/providers/places-search/registration';
+import type { createPlacesSearchContinuation } from '@worker/infrastructure/adapters/out/providers/places-search/continuation';
 import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';
 import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
 import {

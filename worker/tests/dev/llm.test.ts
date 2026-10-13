@@ -7,7 +7,7 @@ import {
 } from '@ima/contracts';
 import * as v from 'valibot';
 import { describe, expect, it, vi } from 'vitest';
-import { OPENAI_MODEL_NAME } from '@worker/adapters/out/providers/openai/provider-config';
+import { OPENAI_MODEL_NAME } from '@worker/infrastructure/adapters/out/providers/openai/provider-config';
 import { place } from '../adapters/outbound/providers/hot-pepper/adapter-fixtures';
 import { requestInput } from '../composition/runtime-production-factory-fixtures';
 import { withDevCors } from '../../tooling/dev/cors';

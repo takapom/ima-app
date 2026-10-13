@@ -5,7 +5,7 @@ import {
   ThreadDO as ProductionThreadDO,
 } from '@worker/entrypoints/cloudflare/thread-do';
 import { DEFAULT_RUNTIME_BUDGET, RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
-import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/adapters/out/providers/openai/provider-options';
+import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/infrastructure/adapters/out/providers/openai/provider-options';
 import { sanitizeRuntimeCompactionSummary } from '@worker/runtime/retention/runtime-retention';
 import {
   HotPepperError,

@@ -8,7 +8,7 @@ import type { CommitHashPort, CommitPort } from '@worker/core/application/ports/
 import type { HarnessContext, IdPort } from '@worker/core/application/ports/context';
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type { PlaceDetailsPort, PlaceSearchPort } from '@worker/core/application/ports/operations';
-import type { PlacesSearchObservationPolicy } from '@worker/adapters/out/providers/places-search/registration';
+import type { PlacesSearchObservationPolicy } from '@worker/infrastructure/adapters/out/providers/places-search/registration';
 import type { RuntimeReadAttemptSignalBridge } from '@worker/runtime/tool-reads/runtime-read-ports';
 import type {
   RuntimeCompositionModelContext,

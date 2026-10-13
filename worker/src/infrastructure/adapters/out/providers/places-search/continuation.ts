@@ -1,7 +1,7 @@
 import {
   PLACES_SEARCH_CURSOR_TTL_MS,
   type PlacesSearchCursorStore,
-} from '@worker/adapters/out/providers/places-search/cursor';
+} from '@worker/infrastructure/adapters/out/providers/places-search/cursor';
 import type {
   PlacesSearchCursorBinding,
   PlacesSearchCursorState,

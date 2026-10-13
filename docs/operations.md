@@ -6,13 +6,13 @@
 実環境の設定名と安全な初期値は[.dev.vars.example](../.dev.vars.example)、[.env.example](../.env.example)、[mobile環境例](../apps/mobile/.env.example)、[Worker設定](../worker/cloudflare.config.ts)、[EAS設定](../apps/mobile/eas.json)で管理する。
 実secret、アカウントID、署名資格は追跡ファイルやコマンド引数へ書かない。Worker secretを端末の公開環境変数へ入れない。
 
-| 区分           | 必要な設定・確認                                                                                                                                                                                      |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Worker         | `IMA_ENV`、`IMA_RUNTIME_MODE`、`APP_TOKEN`、対象modeのDO binding/exports                                                                                                                              |
-| モデル         | `OPENAI_API_KEY`。モデル名とProvider optionsは[model設定](../worker/src/adapters/out/providers/openai/provider-config.ts)と[options](../worker/src/adapters/out/providers/openai/provider-options.ts) |
-| 店舗検索・詳細 | `HOTPEPPER_API_KEY`、`PLACES_CURSOR_SECRET`                                                                                                                                                           |
-| 端末・配布     | HTTPS endpoint、実bundle ID、EAS project、Apple署名、App Attest                                                                                                                                       |
-| 有効化         | Provider flags、用途別policy、実アカウント・API・課金・許諾の検収                                                                                                                                     |
+| 区分           | 必要な設定・確認                                                                                                                                                                                                                    |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Worker         | `IMA_ENV`、`IMA_RUNTIME_MODE`、`APP_TOKEN`、対象modeのDO binding/exports                                                                                                                                                            |
+| モデル         | `OPENAI_API_KEY`。モデル名とProvider optionsは[model設定](../worker/src/infrastructure/adapters/out/providers/openai/provider-config.ts)と[options](../worker/src/infrastructure/adapters/out/providers/openai/provider-options.ts) |
+| 店舗検索・詳細 | `HOTPEPPER_API_KEY`、`PLACES_CURSOR_SECRET`                                                                                                                                                                                         |
+| 端末・配布     | HTTPS endpoint、実bundle ID、EAS project、Apple署名、App Attest                                                                                                                                                                     |
+| 有効化         | Provider flags、用途別policy、実アカウント・API・課金・許諾の検収                                                                                                                                                                   |
 
 キーやflagだけで利用可能と判定しない。runtime factoryはモデル・ホットペッパーの停止flagとsecret、用途別policyを確認する。詳細は[アーキテクチャ](architecture/architecture.md)と[Providerポリシー](provider-policy.md)を参照する。
 

@@ -1,8 +1,8 @@
 import { createPhotoTokenIssuer } from '@worker/adapters/out/security/photo-token-issuer';
 import { CandidateObservationRegistry } from '@worker/core/application/candidate-registry/registry';
-import type { createPlacesSearchContinuation } from '@worker/adapters/out/providers/places-search/continuation';
+import type { createPlacesSearchContinuation } from '@worker/infrastructure/adapters/out/providers/places-search/continuation';
 import { createLiveOpenAIProvider } from '@worker/infrastructure/adapters/out/providers/openai/model-provider';
-import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/adapters/out/providers/openai/provider-options';
+import { OPENAI_PROVIDER_REQUEST_OPTIONS } from '@worker/infrastructure/adapters/out/providers/openai/provider-options';
 import { createRuntimeReadAttemptSignalBridge } from '@worker/runtime/tool-reads/runtime-read-ports';
 import { wrapRuntimeModelTrace } from '@worker/runtime/tracing/runtime-model-trace';
 import { createRuntimeProviderTransportObserver } from '@worker/adapters/out/providers/telemetry/runtime-provider-observer';

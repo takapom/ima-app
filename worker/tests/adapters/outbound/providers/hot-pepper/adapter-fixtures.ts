@@ -12,7 +12,7 @@ import { createHotPepperTransport } from '@worker/infrastructure/adapters/out/pr
 import {
   createPlacesSearchRegistration,
   type PlacesSearchObservationPolicy,
-} from '@worker/adapters/out/providers/places-search/registration';
+} from '@worker/infrastructure/adapters/out/providers/places-search/registration';
 
 export const NOW = '2026-09-10T02:00:00.000Z';
 export const SCOPE = { ownerScopeRef: 'owner-details', threadId: 'thread-details' } as const;

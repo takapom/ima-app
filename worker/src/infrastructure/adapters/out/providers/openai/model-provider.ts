@@ -3,11 +3,11 @@ import type { LanguageModel } from 'ai';
 import {
   resolveOpenAIModelConfig,
   type ModelProviderConfig,
-} from '@worker/adapters/out/providers/openai/provider-config';
+} from '@worker/infrastructure/adapters/out/providers/openai/provider-config';
 import {
   OPENAI_PROVIDER_REQUEST_OPTIONS,
   type OpenAIProviderRequestOptions,
-} from '@worker/adapters/out/providers/openai/provider-options';
+} from '@worker/infrastructure/adapters/out/providers/openai/provider-options';
 
 /** AI SDK 6 accepts model specification v3 providers from the compatible OpenAI package. */
 export type OpenAIResponsesModel = Extract<LanguageModel, { specificationVersion: 'v3' }>;

@@ -11,7 +11,7 @@ import { ObservationSchema } from '@worker/core/domain/evidence/evidence';
 import { type HarnessContext } from '@worker/core/application/ports/context';
 import { type Issue } from '@worker/core/domain/issue';
 import { type ObservationContext } from '@worker/core/domain/evidence/freshness';
-import type { PlacesSearchRegistration } from '@worker/adapters/out/providers/places-search/registration';
+import type { PlacesSearchRegistration } from '@worker/infrastructure/adapters/out/providers/places-search/registration';
 import {
   hotPepperSourceFor,
   normalizeHotPepperFacilities,
