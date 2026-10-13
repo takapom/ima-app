@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { AnyObservationSchema } from '@worker/domain/evidence/evidence';
+import { AnyObservationSchema } from '@worker/core/domain/evidence/evidence';
 import {
   contextKeyForObservation,
   matchesObservationContext,
@@ -7,7 +7,7 @@ import {
   ObservationContextSchema,
   RegistryScopeSchema,
   type RegistryScope,
-} from '@worker/domain/evidence/freshness';
+} from '@worker/core/domain/evidence/freshness';
 import {
   RegistryError,
   type CandidateRecord,

@@ -6,7 +6,7 @@ import {
   ObservationIdSchema,
   Text,
 } from '@worker/domain/primitives';
-import { ObservationContextSchema } from '@worker/domain/evidence/freshness';
+import { ObservationContextSchema } from '@worker/core/domain/evidence/freshness';
 import { RetentionMetadataSchema } from '@worker/domain/evidence/retention';
 
 /**

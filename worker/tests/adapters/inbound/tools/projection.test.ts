@@ -4,8 +4,8 @@ import type {
   SearchPlacesOutput,
 } from '@worker/core/application/ports/operations';
 import type { HarnessContext } from '@worker/core/application/ports/context';
-import type { Observation } from '@worker/domain/evidence/evidence';
-import type { ObservationContext } from '@worker/domain/evidence/freshness';
+import type { Observation } from '@worker/core/domain/evidence/evidence';
+import type { ObservationContext } from '@worker/core/domain/evidence/freshness';
 import type { PlaceIdentity } from '@worker/domain/places/place-values';
 import type { Result } from '@worker/domain/result';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';

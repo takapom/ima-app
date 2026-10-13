@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
 import { SqlConversationRuns } from '@worker/adapters/out/persistence/conversations/sql-conversation-runs';
 import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
-import type { ConversationMessageInput } from '@worker/domain/conversations/conversation-message';
+import type { ConversationMessageInput } from '@worker/core/domain/conversations/conversation-message';
 
 const hasThreads = (
   value: unknown,

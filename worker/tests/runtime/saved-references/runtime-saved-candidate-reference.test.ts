@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
-import type { RegistryScope } from '@worker/domain/evidence/freshness';
+import type { RegistryScope } from '@worker/core/domain/evidence/freshness';
 import {
   candidateIdentityForReference,
   parseRuntimeProductionContextReference,

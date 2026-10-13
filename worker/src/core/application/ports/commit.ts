@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { RegistryScopeSchema, type RegistryScope } from '@worker/domain/evidence/freshness';
+import { RegistryScopeSchema, type RegistryScope } from '@worker/core/domain/evidence/freshness';
 import {
   CandidateIdSchema,
   NonNegativeSafeIntegerSchema,

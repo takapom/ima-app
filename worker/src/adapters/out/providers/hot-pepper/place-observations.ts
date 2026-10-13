@@ -7,10 +7,10 @@ import {
   PlaceIdentitySchema,
   PriceInfoSchema,
 } from '@worker/domain/places/place-values';
-import { ObservationSchema } from '@worker/domain/evidence/evidence';
+import { ObservationSchema } from '@worker/core/domain/evidence/evidence';
 import { type HarnessContext } from '@worker/core/application/ports/context';
 import { type Issue } from '@worker/domain/issue';
-import { type ObservationContext } from '@worker/domain/evidence/freshness';
+import { type ObservationContext } from '@worker/core/domain/evidence/freshness';
 import type { PlacesSearchRegistration } from '@worker/adapters/out/providers/places-search/registration';
 import {
   hotPepperSourceFor,

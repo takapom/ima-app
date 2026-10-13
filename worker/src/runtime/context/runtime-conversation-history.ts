@@ -5,7 +5,7 @@ import {
   type ModelHistoryEntry,
 } from '@worker/core/application/model-context/model-context';
 import { RetentionMetadataSchema, type RetentionMetadata } from '@worker/domain/evidence/retention';
-import { type RegistryScope } from '@worker/domain/evidence/freshness';
+import { type RegistryScope } from '@worker/core/domain/evidence/freshness';
 import { isRuntimeRetentionWindowOpen } from '@worker/runtime/retention/runtime-retention';
 
 export type RetainedHistoryEntry = ModelHistoryEntry & {

@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
-import type { RegistryScope } from '@worker/domain/evidence/freshness';
+import type { RegistryScope } from '@worker/core/domain/evidence/freshness';
 import { CardSetRecordSchema } from '@worker/core/domain/candidates/continuity';
 
 type CardSetSource = NonNullable<ModelContextSource['cardSet']>;

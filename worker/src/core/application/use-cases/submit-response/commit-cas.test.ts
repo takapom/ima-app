@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RegistryScope } from '@worker/domain/evidence/freshness';
+import type { RegistryScope } from '@worker/core/domain/evidence/freshness';
 import type {
   CommitHashPort,
   CommitPort,

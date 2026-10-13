@@ -1,8 +1,11 @@
-import type { Conversation, ConversationCursor } from '@worker/domain/conversations/conversation';
+import type {
+  Conversation,
+  ConversationCursor,
+} from '@worker/core/domain/conversations/conversation';
 import type {
   ConversationMessage,
   ConversationMessageInput,
-} from '@worker/domain/conversations/conversation-message';
+} from '@worker/core/domain/conversations/conversation-message';
 
 export type ConversationStoreFailure = {
   readonly ok: false;

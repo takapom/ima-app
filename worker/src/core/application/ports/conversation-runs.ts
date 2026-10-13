@@ -1,6 +1,6 @@
-import type { Conversation } from '@worker/domain/conversations/conversation';
-import type { ConversationRun } from '@worker/domain/conversations/conversation-run';
-import type { ConversationMessageInput } from '@worker/domain/conversations/conversation-message';
+import type { Conversation } from '@worker/core/domain/conversations/conversation';
+import type { ConversationRun } from '@worker/core/domain/conversations/conversation-run';
+import type { ConversationMessageInput } from '@worker/core/domain/conversations/conversation-message';
 import type {
   ConversationScope,
   ConversationStoreFailure,

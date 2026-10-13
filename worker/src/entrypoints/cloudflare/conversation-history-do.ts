@@ -5,7 +5,7 @@ import { ConversationDeletions } from '@worker/adapters/out/persistence/conversa
 import { conversationResponseDeadline } from '@worker/runtime/conversations/conversation-response-deadline';
 import { SqlConversationMemory } from '@worker/adapters/out/persistence/conversations/sql-conversation-memory';
 import type { ConversationMemoryStore } from '@worker/core/application/ports/conversation-memory-store';
-import { ConversationRunSchema } from '@worker/domain/conversations/conversation-run';
+import { ConversationRunSchema } from '@worker/core/domain/conversations/conversation-run';
 import {
   ConversationTurnRequestSchema,
   type AssistantResponse,

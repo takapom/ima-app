@@ -8,11 +8,11 @@ import {
   conversationTitleFromUserText,
   type Conversation,
   type ConversationCursor,
-} from '@worker/domain/conversations/conversation';
+} from '@worker/core/domain/conversations/conversation';
 import {
   retainConversationMessage,
   type ConversationMessage,
-} from '@worker/domain/conversations/conversation-message';
+} from '@worker/core/domain/conversations/conversation-message';
 import {
   AppendConversationMessageInputSchema,
   ConversationScopeSchema,

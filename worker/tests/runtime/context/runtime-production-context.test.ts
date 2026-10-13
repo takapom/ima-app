@@ -2,7 +2,7 @@ import type { AssistantResponse, ThreadTurnRequest } from '@ima/contracts';
 import { CandidateObservationRegistry } from '@worker/core/application/candidate-registry/registry';
 import { denyModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import { type RegistryIdPort } from '@worker/core/application/ports/context';
-import { type RegistryScope } from '@worker/domain/evidence/freshness';
+import { type RegistryScope } from '@worker/core/domain/evidence/freshness';
 import { describe, expect, it } from 'vitest';
 import { createRuntimeProductionContextStore } from '@worker/runtime/context/runtime-production-context';
 import type { RuntimeProductionContextReference } from '@worker/runtime/context/runtime-production-context-reference';

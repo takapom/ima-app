@@ -1,4 +1,4 @@
-import type { RegistryScope } from '@worker/domain/evidence/freshness';
+import type { RegistryScope } from '@worker/core/domain/evidence/freshness';
 import {
   parseRuntimeProductionContextReference,
   type RuntimeProductionContextPersistence,

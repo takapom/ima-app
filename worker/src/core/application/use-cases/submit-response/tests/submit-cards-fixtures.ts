@@ -2,7 +2,7 @@ import { CandidateObservationRegistry } from '@worker/core/application/candidate
 import type { ClockPort, RegistryIdPort } from '@worker/core/application/ports/context';
 import type { CardSelection, SubmitCardsInput } from '@worker/core/application/ports/model';
 import type { CandidateId, IsoTimestamp } from '@worker/domain/primitives';
-import type { ObservationContext, RegistryScope } from '@worker/domain/evidence/freshness';
+import type { ObservationContext, RegistryScope } from '@worker/core/domain/evidence/freshness';
 import type {
   ObservationRegistration,
   RegistryJsonValue,

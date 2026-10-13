@@ -5,7 +5,7 @@ import {
   contextKeyForObservation,
   type ObservationContext,
   type RegistryScope,
-} from '@worker/domain/evidence/freshness';
+} from '@worker/core/domain/evidence/freshness';
 import {
   RegistryError,
   type CandidateRegistration,

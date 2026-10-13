@@ -9,7 +9,7 @@ import type {
   ConversationTurnExecutor,
 } from '@worker/core/application/ports/conversation-execution';
 import type { ConversationMemoryStore } from '@worker/core/application/ports/conversation-memory-store';
-import type { ConversationRun } from '@worker/domain/conversations/conversation-run';
+import type { ConversationRun } from '@worker/core/domain/conversations/conversation-run';
 
 const now = '2026-09-10T00:00:00.000Z';
 const scope = { ownerScopeRef: 'owner', conversationId: 'conversation', runId: 'run' };

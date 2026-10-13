@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import type { Session } from '@cloudflare/think';
 import type { CommitPort } from '@worker/core/application/ports/commit';
-import type { RegistryScope } from '@worker/domain/evidence/freshness';
+import type { RegistryScope } from '@worker/core/domain/evidence/freshness';
 import { IsoTimestampSchema } from '@worker/domain/primitives';
 import {
   createRuntimeProductionConnectionOptions,

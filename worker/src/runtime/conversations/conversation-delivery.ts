@@ -6,7 +6,7 @@ import {
   ConversationMessageInputSchema,
   retainConversationPart,
   type ConversationMessageInput,
-} from '@worker/domain/conversations/conversation-message';
+} from '@worker/core/domain/conversations/conversation-message';
 import type { ThreadRuntimeTarget } from '@worker/runtime/threads/admission';
 import { OpaqueIdSchema } from '@worker/domain/primitives';
 

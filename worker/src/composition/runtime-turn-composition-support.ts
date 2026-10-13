@@ -2,7 +2,7 @@ import type { CandidateObservationRegistryPort } from '@worker/core/application/
 import { committedConversationPhotoSources } from '@worker/runtime/conversations/conversation-photo-sources';
 import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
-import type { ObservationContext } from '@worker/domain/evidence/freshness';
+import type { ObservationContext } from '@worker/core/domain/evidence/freshness';
 import type { RuntimeRetentionContext } from '@worker/runtime/retention/runtime-retention';
 import type { RuntimeBudget } from '@worker/runtime/budget/runtime-budget';
 import type { CommitPort, CommitRecord } from '@worker/core/application/ports/commit';

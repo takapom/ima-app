@@ -7,7 +7,7 @@ import {
   conversationPhotoSources,
   withConversationPhotoSources,
 } from '@worker/runtime/conversations/conversation-photo-sources';
-import { retainConversationMessage as serverRetain } from '@worker/domain/conversations/conversation-message';
+import { retainConversationMessage as serverRetain } from '@worker/core/domain/conversations/conversation-message';
 import {
   retainConversationMessage as clientRetain,
   conversationMessageDeadline,

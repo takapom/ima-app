@@ -4,8 +4,8 @@ import {
   ConversationRunSchema,
   runIsPending,
   type ConversationRun,
-} from '@worker/domain/conversations/conversation-run';
-import { ConversationMessageInputSchema } from '@worker/domain/conversations/conversation-message';
+} from '@worker/core/domain/conversations/conversation-run';
+import { ConversationMessageInputSchema } from '@worker/core/domain/conversations/conversation-message';
 import type {
   ConversationRuns,
   ConversationRunResult,

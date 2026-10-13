@@ -1,6 +1,6 @@
 import * as v from 'valibot';
-import type { Observation, SourceRef } from '@worker/domain/evidence/evidence';
-import type { ObservationContext, RegistryScope } from '@worker/domain/evidence/freshness';
+import type { Observation, SourceRef } from '@worker/core/domain/evidence/evidence';
+import type { ObservationContext, RegistryScope } from '@worker/core/domain/evidence/freshness';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import { OpaqueIdSchema, Text } from '@worker/domain/primitives';
 import type { CandidateId, IsoTimestamp, ObservationId, OpaqueId } from '@worker/domain/primitives';

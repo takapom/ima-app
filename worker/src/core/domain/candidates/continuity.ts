@@ -8,7 +8,7 @@ import {
   Text,
 } from '@worker/domain/primitives';
 import type { CandidateId, CardSetId, OpaqueId } from '@worker/domain/primitives';
-import { RegistryScopeSchema, type RegistryScope } from '@worker/domain/evidence/freshness';
+import { RegistryScopeSchema, type RegistryScope } from '@worker/core/domain/evidence/freshness';
 
 /** 保存参照の登録入力。owner に紐づく Provider 識別子だけで、Provider の本文は入れない。 */
 export const SavedPlaceRegistrationSchema = v.strictObject({

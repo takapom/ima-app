@@ -49,7 +49,7 @@
 
 会話へ保存するユーザー原文は、回答や探索sessionの期限を継承させず、削除まで保持する。回答にはこの区分を付与しない。生成文と店舗情報には上記の保持条件を適用し、保存前と利用前に本文を失効させる。期限切れとポリシーによる非表示を区別し、失効後はメッセージの順序と許可された参照だけを残す。
 
-初期タイトルは最初のユーザー原文から作る。モデル入力用の要約や端末キャッシュにも元データの保持条件を継承し、本文を別形式へ移して期限を延長しない。型と入力検証は[会話モデル](../worker/src/domain/conversations/conversation.ts)と[メッセージモデル](../worker/src/domain/conversations/conversation-message.ts)を正とする。
+初期タイトルは最初のユーザー原文から作る。モデル入力用の要約や端末キャッシュにも元データの保持条件を継承し、本文を別形式へ移して期限を延長しない。型と入力検証は[会話モデル](../worker/src/core/domain/conversations/conversation.ts)と[メッセージモデル](../worker/src/core/domain/conversations/conversation-message.ts)を正とする。
 
 ## 必須条件と検収
 

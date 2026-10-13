@@ -4,7 +4,7 @@ import {
   type ConversationMemory,
 } from '@worker/core/application/model-context/conversation-memory';
 import type { ConversationMemoryStore } from '@worker/core/application/ports/conversation-memory-store';
-import { ConversationMessageSchema } from '@worker/domain/conversations/conversation-message';
+import { ConversationMessageSchema } from '@worker/core/domain/conversations/conversation-message';
 import type { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
 import { storeFailure } from '@worker/adapters/out/persistence/conversations/conversation-sql-schema';
 

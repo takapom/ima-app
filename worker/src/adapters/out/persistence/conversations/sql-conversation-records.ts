@@ -7,12 +7,12 @@ import type {
 import {
   ConversationSchema,
   conversationTitleFromUserText,
-} from '@worker/domain/conversations/conversation';
+} from '@worker/core/domain/conversations/conversation';
 import {
   ConversationMessageSchema,
   retainConversationMessage,
   type ConversationMessage,
-} from '@worker/domain/conversations/conversation-message';
+} from '@worker/core/domain/conversations/conversation-message';
 import {
   AppendConversationMessageInputSchema,
   ConversationScopeSchema,

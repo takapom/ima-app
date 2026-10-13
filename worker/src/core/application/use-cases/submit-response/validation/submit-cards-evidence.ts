@@ -1,12 +1,12 @@
 import * as v from 'valibot';
-import { type SourceRef } from '@worker/domain/evidence/evidence';
+import { type SourceRef } from '@worker/core/domain/evidence/evidence';
 import {
   contextKeyForObservation,
   matchesObservationContext,
   observationFreshness,
   ObservationContextSchema,
   RegistryScopeSchema,
-} from '@worker/domain/evidence/freshness';
+} from '@worker/core/domain/evidence/freshness';
 import {
   ContactInfoSchema,
   FacilitiesInfoSchema,

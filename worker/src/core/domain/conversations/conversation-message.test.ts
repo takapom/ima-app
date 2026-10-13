@@ -3,11 +3,11 @@ import * as v from 'valibot';
 import {
   ConversationMessageInputSchema,
   retainConversationPart,
-} from '@worker/domain/conversations/conversation-message';
+} from '@worker/core/domain/conversations/conversation-message';
 import {
   ConversationSchema,
   conversationTitleFromUserText,
-} from '@worker/domain/conversations/conversation';
+} from '@worker/core/domain/conversations/conversation';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 
 const expiresAt = '2026-09-21T20:00:00.000Z';

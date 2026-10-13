@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@worker/domain/primitives';
-import { ConversationCursorSchema } from '@worker/domain/conversations/conversation';
-import { ConversationMessageInputSchema } from '@worker/domain/conversations/conversation-message';
+import { ConversationCursorSchema } from '@worker/core/domain/conversations/conversation';
+import { ConversationMessageInputSchema } from '@worker/core/domain/conversations/conversation-message';
 
 export const ConversationScopeSchema = v.strictObject({
   ownerScopeRef: OpaqueIdSchema,

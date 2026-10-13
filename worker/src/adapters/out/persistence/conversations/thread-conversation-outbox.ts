@@ -18,7 +18,7 @@ import {
 import {
   ConversationMessageInputSchema,
   retainConversationPart,
-} from '@worker/domain/conversations/conversation-message';
+} from '@worker/core/domain/conversations/conversation-message';
 
 /** Written inside the reference commit transaction; only retention-approved message parts persist. */
 export class ThreadConversationOutbox {

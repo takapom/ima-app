@@ -24,7 +24,7 @@ import {
 import type { HttpEnv } from '@worker/adapters/in/http/route-boundary';
 import { HttpBoundaryError } from '@worker/adapters/in/http/errors';
 import { conversationFingerprint } from '@worker/adapters/out/security/conversation-fingerprint';
-import type { Conversation } from '@worker/domain/conversations/conversation';
+import type { Conversation } from '@worker/core/domain/conversations/conversation';
 import type { ConversationRunResult } from '@worker/core/application/ports/conversation-runs';
 
 export const conversationRouter = new Hono<HttpEnv>();

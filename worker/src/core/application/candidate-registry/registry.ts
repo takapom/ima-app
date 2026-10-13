@@ -4,7 +4,7 @@ import {
   matchesObservationContext,
   observationFreshness,
   type RegistryScope,
-} from '@worker/domain/evidence/freshness';
+} from '@worker/core/domain/evidence/freshness';
 import {
   CandidateRegistrationSchema,
   RegistryError,

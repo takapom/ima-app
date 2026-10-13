@@ -7,7 +7,7 @@ import type {
   ReadonlyStoredObservation,
   StoredObservation,
 } from '@worker/core/domain/candidates/registry';
-import type { RegistryScope } from '@worker/domain/evidence/freshness';
+import type { RegistryScope } from '@worker/core/domain/evidence/freshness';
 import type { CandidateId, ObservationId } from '@worker/domain/primitives';
 
 export type ObservationReplacement = {

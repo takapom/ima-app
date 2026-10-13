@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { CandidateObservationRegistry } from '@worker/core/application/candidate-registry/registry';
-import { ObservationSchema, type Observation } from '@worker/domain/evidence/evidence';
+import { ObservationSchema, type Observation } from '@worker/core/domain/evidence/evidence';
 import { OpeningHoursSchema, PlaceIdentitySchema } from '@worker/domain/places/place-values';
 import { type CandidateId } from '@worker/domain/primitives';
 import {
@@ -26,7 +26,7 @@ import {
   type RegistryIdPort,
   type ToolExecutionContext,
 } from '@worker/core/application/ports/context';
-import { type RegistryScope } from '@worker/domain/evidence/freshness';
+import { type RegistryScope } from '@worker/core/domain/evidence/freshness';
 import { type RespondInput } from '@worker/core/application/ports/model';
 import {
   type RespondPort,

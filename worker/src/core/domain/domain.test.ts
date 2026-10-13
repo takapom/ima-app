@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as v from 'valibot';
 import { AnyFieldResultSchema, FieldResultSchema, ResultSchema } from '@worker/domain/result';
-import { AnyObservationSchema, ObservationSchema } from '@worker/domain/evidence/evidence';
+import { AnyObservationSchema, ObservationSchema } from '@worker/core/domain/evidence/evidence';
 import {
   CandidateIdSchema,
   HttpsUrlSchema,
