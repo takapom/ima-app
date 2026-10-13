@@ -7,7 +7,7 @@ import {
 } from '@worker/core/application/use-cases/photos/prepare-photo-tokens';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';
-import type { ReadonlyStoredObservation } from '@worker/domain/candidates/registry';
+import type { ReadonlyStoredObservation } from '@worker/core/domain/candidates/registry';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
 import type { RuntimePhotoTokenPreparer } from '@worker/runtime/response/runtime-response';
 import {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateSubmitCards } from '@worker/application/use-cases/submit-response/validation/submit-cards';
+import { validateSubmitCards } from '@worker/core/application/use-cases/submit-response/validation/submit-cards';
 import {
   addObservation,
   makeFixture,

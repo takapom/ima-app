@@ -10,7 +10,7 @@ import type {
   RegistryIdPort,
 } from '@worker/core/application/ports/context';
 import type { CommitHashPort } from '@worker/core/application/ports/commit';
-import type { ObservationRegistration } from '@worker/domain/candidates/registry';
+import type { ObservationRegistration } from '@worker/core/domain/candidates/registry';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
 import type { SubmitValidationContext } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';

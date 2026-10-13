@@ -1,9 +1,9 @@
 import * as v from 'valibot';
-import type { CardSetRecord } from '@worker/domain/candidates/continuity';
+import type { CardSetRecord } from '@worker/core/domain/candidates/continuity';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
 import type { ModelEvidenceSource } from '@worker/core/application/model-context/model-evidence';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
-import { CardSetRecordSchema } from '@worker/domain/candidates/continuity';
+import { CardSetRecordSchema } from '@worker/core/domain/candidates/continuity';
 import {
   DetailFieldSchema,
   IsoTimestampSchema,

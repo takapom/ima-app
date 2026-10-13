@@ -6,7 +6,7 @@ import type {
   CandidateRegistration,
   ObservationRegistration,
   RegistryJsonValue,
-} from '@worker/domain/candidates/registry';
+} from '@worker/core/domain/candidates/registry';
 
 class FixedClock implements ClockPort {
   now(): string {

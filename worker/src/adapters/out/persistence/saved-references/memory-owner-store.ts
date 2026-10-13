@@ -5,7 +5,7 @@ import {
   SavedPlaceRegistrationSchema,
   SavedPlaceReferenceSchema,
   type SavedPlaceReference,
-} from '@worker/domain/candidates/continuity';
+} from '@worker/core/domain/candidates/continuity';
 import type {
   OwnerDecideInput,
   OwnerDecideResult,

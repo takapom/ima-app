@@ -2,7 +2,7 @@ import { createPhotoTokenIssuer } from '@worker/adapters/out/security/photo-toke
 import { preparePhotoTokens } from '@worker/core/application/use-cases/photos/prepare-photo-tokens';
 import { describe, expect, it, vi } from 'vitest';
 import type { CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';
-import type { ReadonlyStoredObservation } from '@worker/domain/candidates/registry';
+import type { ReadonlyStoredObservation } from '@worker/core/domain/candidates/registry';
 import {
   collectPhotoTokenObservations,
   createPhotoTokenPreparer,

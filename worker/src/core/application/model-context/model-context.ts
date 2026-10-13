@@ -4,8 +4,11 @@ import {
   type ProjectedConversationMemory,
 } from '@worker/core/application/model-context/conversation-memory';
 import * as v from 'valibot';
-import { CandidateStatusSchema, type CandidateStatus } from '@worker/domain/candidates/registry';
-import { CardSetRecordSchema, type CardSetRecord } from '@worker/domain/candidates/continuity';
+import {
+  CandidateStatusSchema,
+  type CandidateStatus,
+} from '@worker/core/domain/candidates/registry';
+import { CardSetRecordSchema, type CardSetRecord } from '@worker/core/domain/candidates/continuity';
 import { CandidateIdSchema, OpaqueIdSchema, Text, TurnIdSchema } from '@worker/domain/primitives';
 import type { HarnessContext } from '@worker/core/application/ports/context';
 import { HarnessContextSchema } from '@worker/core/application/ports/context';

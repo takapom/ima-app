@@ -3,7 +3,7 @@ import type { ThreadTurnRequest } from '@ima/contracts';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
-import { CardSetRecordSchema } from '@worker/domain/candidates/continuity';
+import { CardSetRecordSchema } from '@worker/core/domain/candidates/continuity';
 
 type CardSetSource = NonNullable<ModelContextSource['cardSet']>;
 type LegacyStage = () => CardSetSource | null;

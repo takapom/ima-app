@@ -1,5 +1,5 @@
 import type { PreferencesContext as Preferences } from '@worker/core/application/ports/context';
-import type { SavedPlaceReference } from '@worker/domain/candidates/continuity';
+import type { SavedPlaceReference } from '@worker/core/domain/candidates/continuity';
 import type {
   SavedReferenceDeleteResult,
   SavedReferenceOperationOptions,

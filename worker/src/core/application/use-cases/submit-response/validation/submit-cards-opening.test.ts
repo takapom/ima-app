@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
 import { OpeningHoursSchema } from '@worker/domain/places/place-values';
-import { validateSubmitCards } from '@worker/application/use-cases/submit-response/validation/submit-cards';
+import { validateSubmitCards } from '@worker/core/application/use-cases/submit-response/validation/submit-cards';
 import { openIntervalAt } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-opening';
 import {
   makeFixture,

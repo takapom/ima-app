@@ -6,7 +6,7 @@ import { type CandidateId } from '@worker/domain/primitives';
 import {
   type CandidateRegistration,
   type RegistryJsonValue,
-} from '@worker/domain/candidates/registry';
+} from '@worker/core/domain/candidates/registry';
 import {
   type CommitHashPort,
   type CommitPort,

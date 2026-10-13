@@ -15,7 +15,7 @@ import {
   type ObservationReuseResult,
   type ReadonlyStoredObservation,
   type StoredObservation,
-} from '@worker/domain/candidates/registry';
+} from '@worker/core/domain/candidates/registry';
 import { CandidateIdSchema, IsoTimestampSchema, type CandidateId } from '@worker/domain/primitives';
 import type {
   CandidateObservationRegistryPort,

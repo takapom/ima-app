@@ -6,9 +6,9 @@ import type { ObservationContext, RegistryScope } from '@worker/domain/evidence/
 import type {
   ObservationRegistration,
   RegistryJsonValue,
-} from '@worker/domain/candidates/registry';
+} from '@worker/core/domain/candidates/registry';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
-import type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards';
+import type { SubmitValidationContext } from '@worker/core/application/use-cases/submit-response/validation/submit-cards';
 
 export const now = '2026-09-10T12:00:00Z';
 export const scope: RegistryScope = { ownerScopeRef: 'owner-1', threadId: 'thread-1' };

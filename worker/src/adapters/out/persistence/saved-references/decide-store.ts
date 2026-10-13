@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema } from '@worker/domain/primitives';
-import { SavedPlaceRegistrationSchema } from '@worker/domain/candidates/continuity';
+import { SavedPlaceRegistrationSchema } from '@worker/core/domain/candidates/continuity';
 import type {
   OwnerDecideInput,
   OwnerDecideResult,

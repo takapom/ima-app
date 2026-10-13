@@ -3,7 +3,7 @@ import { IsoTimestampSchema } from '@worker/domain/primitives';
 import {
   SavedPlaceReferenceSchema,
   type SavedPlaceReference,
-} from '@worker/domain/candidates/continuity';
+} from '@worker/core/domain/candidates/continuity';
 import type { OwnerDecidedPlace } from '@worker/core/application/ports/owner-store';
 import { initializeOwnerDecideStore } from '@worker/adapters/out/persistence/saved-references/decide-store';
 

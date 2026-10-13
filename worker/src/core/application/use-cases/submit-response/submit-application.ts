@@ -26,7 +26,7 @@ import {
 import {
   validateMessage,
   validateSubmitCards,
-} from '@worker/application/use-cases/submit-response/validation/submit-cards';
+} from '@worker/core/application/use-cases/submit-response/validation/submit-cards';
 
 /** コミット後の revision が安全整数を超えないよう、要求時点の値を一つ手前までに限る。 */
 const CommitExpectedRevisionSchema = v.pipe(

@@ -1,5 +1,5 @@
 import type { JSONValue } from 'ai';
-import type { ObservationRegistration } from '@worker/domain/candidates/registry';
+import type { ObservationRegistration } from '@worker/core/domain/candidates/registry';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import { denyModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import { describe, expect, it } from 'vitest';

@@ -1,4 +1,4 @@
-import type { CandidateRecord } from '@worker/domain/candidates/registry';
+import type { CandidateRecord } from '@worker/core/domain/candidates/registry';
 import type {
   RuntimeGateModel,
   RuntimeGateModelCallOptions,

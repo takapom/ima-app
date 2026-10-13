@@ -10,7 +10,7 @@ import {
   RegistryError,
   type CandidateRegistration,
   type ObservationRegistration,
-} from '@worker/domain/candidates/registry';
+} from '@worker/core/domain/candidates/registry';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 
 class FixedClock implements ClockPort {

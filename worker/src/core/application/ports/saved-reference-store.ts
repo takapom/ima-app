@@ -1,4 +1,4 @@
-import type { SavedPlaceReference } from '@worker/domain/candidates/continuity';
+import type { SavedPlaceReference } from '@worker/core/domain/candidates/continuity';
 
 export type SavedReferenceIdFactory = {
   readonly nextSavedPlaceRef: () => string;

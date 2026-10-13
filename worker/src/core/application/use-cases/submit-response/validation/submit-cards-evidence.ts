@@ -22,7 +22,7 @@ import { IsoTimestampSchema } from '@worker/domain/primitives';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { SubmitIssue } from '@worker/core/application/ports/submission';
-import type { ReadonlyStoredObservation } from '@worker/domain/candidates/registry';
+import type { ReadonlyStoredObservation } from '@worker/core/domain/candidates/registry';
 
 type PhotoInfo = v.InferOutput<typeof PhotoInfoSchema>;
 type FacilitiesInfo = v.InferOutput<typeof FacilitiesInfoSchema>;

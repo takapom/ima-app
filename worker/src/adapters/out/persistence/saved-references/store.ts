@@ -13,7 +13,7 @@ import {
   SavedPlaceReferenceSchema,
   SavedPlaceRegistrationSchema,
   type SavedPlaceReference,
-} from '@worker/domain/candidates/continuity';
+} from '@worker/core/domain/candidates/continuity';
 
 const TABLE_NAME = 'm16_saved_place_reference';
 const USED_REF_TABLE_NAME = 'm16_saved_place_reference_used';

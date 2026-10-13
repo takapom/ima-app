@@ -1,7 +1,7 @@
 import type { HotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
 import type { TurnConfig } from '@cloudflare/think';
 import type { ThreadTurnRequest } from '@ima/contracts';
-import type { CandidateRecord } from '@worker/domain/candidates/registry';
+import type { CandidateRecord } from '@worker/core/domain/candidates/registry';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { CommitHashPort, CommitPort } from '@worker/core/application/ports/commit';

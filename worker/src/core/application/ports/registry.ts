@@ -6,7 +6,7 @@ import type {
   ObservationReuseResult,
   ReadonlyStoredObservation,
   StoredObservation,
-} from '@worker/domain/candidates/registry';
+} from '@worker/core/domain/candidates/registry';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
 import type { CandidateId, ObservationId } from '@worker/domain/primitives';
 

@@ -4,7 +4,7 @@ import type {
   CandidateRegistration,
   ObservationRegistration,
   ReadonlyStoredObservation,
-} from '@worker/domain/candidates/registry';
+} from '@worker/core/domain/candidates/registry';
 import type { ClockPort } from '@worker/core/application/ports/context';
 
 /**

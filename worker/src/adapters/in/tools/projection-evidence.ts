@@ -11,7 +11,7 @@ import { type DetailField } from '@worker/domain/primitives';
 import { type HarnessContext } from '@worker/core/application/ports/context';
 import { type Issue } from '@worker/domain/issue';
 import { type Observation } from '@worker/domain/evidence/evidence';
-import { type ReadonlyStoredObservation } from '@worker/domain/candidates/registry';
+import { type ReadonlyStoredObservation } from '@worker/core/domain/candidates/registry';
 import {
   ContactInfoSchema,
   FacilitiesInfoSchema,
