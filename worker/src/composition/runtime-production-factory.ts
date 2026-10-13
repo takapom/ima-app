@@ -34,8 +34,8 @@ import {
 import {
   hotPepperRuntimePolicy,
   hotPepperPhotoDisplayPolicy,
-} from '@worker/composition/runtime-hot-pepper-policy';
-import { configuredPhotoTokenCodec } from '@worker/composition/photo-token-configuration';
+} from '@worker/platform/composition/runtime-hot-pepper-policy';
+import { configuredPhotoTokenCodec } from '@worker/platform/composition/photo-token-configuration';
 import { createPhotoTokenPreparer } from '@worker/infrastructure/runtime/response/photo-token-issuance';
 import { configureRuntimeProductionSession } from '@worker/infrastructure/runtime/retention/runtime-production-session';
 import type {
@@ -45,8 +45,8 @@ import type {
 import { defaultRuntimeModelContextPolicy } from '@worker/infrastructure/runtime/context/runtime-field-policy';
 import { resolveRuntimeProductionReadCost } from '@worker/composition/runtime-production-read-cost';
 import { createRuntimeProductionPlacePorts } from '@worker/composition/runtime-production-place-ports';
-import { createFactoryContinuation } from '@worker/composition/runtime-production-continuation';
-import { resolveRuntimeOperationalAdmission } from '@worker/composition/runtime-operational-admission';
+import { createFactoryContinuation } from '@worker/platform/composition/runtime-production-continuation';
+import { resolveRuntimeOperationalAdmission } from '@worker/platform/composition/runtime-operational-admission';
 import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
 import type {
   ProductionBuildInput,

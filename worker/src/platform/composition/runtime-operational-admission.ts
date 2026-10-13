@@ -3,7 +3,7 @@ import {
   productionSecret,
 } from '@worker/composition/runtime-production-support';
 import { isConfiguredSecret } from '@worker/composition/runtime-production-provider-config';
-import { resolveRuntimeOperationalGate } from '@worker/composition/runtime-operational-gate';
+import { resolveRuntimeOperationalGate } from '@worker/platform/composition/runtime-operational-gate';
 
 export type RuntimeOperationalAdmissionInput = {
   readonly env: unknown;

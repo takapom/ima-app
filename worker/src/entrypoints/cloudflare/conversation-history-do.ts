@@ -1,4 +1,4 @@
-import { createConversationExecution } from '@worker/composition/conversation-execution';
+import { createConversationExecution } from '@worker/platform/composition/conversation-execution';
 import { conversationFingerprint } from '@worker/infrastructure/adapters/out/security/conversation-fingerprint';
 import type { ConversationThreadNamespace } from '@worker/infrastructure/runtime/ports/conversation-thread';
 import { ConversationDeletions } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-deletions';

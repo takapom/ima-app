@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   resolveRuntimeOperationalGate,
   type RuntimeProviderCapability,
-} from '@worker/composition/runtime-operational-gate';
+} from '@worker/platform/composition/runtime-operational-gate';
 
 const providerCapabilities: readonly RuntimeProviderCapability[] = [
   'openai',

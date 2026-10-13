@@ -16,7 +16,7 @@ import {
   operationalCapabilityMode,
   operationalFlagEnabled,
   resolveOperationalFlags,
-} from '@worker/composition/operational-flags';
+} from '@worker/platform/composition/operational-flags';
 import {
   aggregateTelemetryTraces,
   filterTelemetryRetention,

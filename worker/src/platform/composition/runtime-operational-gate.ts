@@ -4,7 +4,7 @@ import {
   type OperationalFlagName,
   type OperationalFlags,
   type OperationalMode,
-} from '@worker/composition/operational-flags';
+} from '@worker/platform/composition/operational-flags';
 
 /** Provider capabilities which can initiate an external or paid operation. */
 export type RuntimeProviderCapability = Exclude<

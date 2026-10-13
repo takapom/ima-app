@@ -2,7 +2,7 @@ import {
   createHttpRouterConfig,
   createThreadScopeAuthorizer,
   type BootstrapEnv,
-} from '@worker/composition/bootstrap';
+} from '@worker/platform/composition/bootstrap';
 import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import {
   AppIntegrityDO,

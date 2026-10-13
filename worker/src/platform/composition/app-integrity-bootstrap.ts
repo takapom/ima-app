@@ -9,7 +9,7 @@ import {
   createDurableAppIntegrityStores,
   type AppIntegrityNamespace,
 } from '@worker/infrastructure/adapters/out/persistence/security/app-integrity-do';
-import { personalPreviewEnabled } from '@worker/composition/personal-preview';
+import { personalPreviewEnabled } from '@worker/platform/composition/personal-preview';
 
 type BootstrapAppIntegrityEnv = {
   readonly APP_INTEGRITY?: AppIntegrityNamespace;

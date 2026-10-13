@@ -26,7 +26,7 @@ import {
 } from '@worker/infrastructure/adapters/in/http/runtime-handler';
 import type { AppIntegrityNamespace } from '@worker/infrastructure/adapters/out/persistence/security/app-integrity-do';
 import { createBootstrapAppIntegrityGate } from '@worker/platform/composition/app-integrity-bootstrap';
-import { personalPreviewEnabled } from '@worker/composition/personal-preview';
+import { personalPreviewEnabled } from '@worker/platform/composition/personal-preview';
 import type { AppIntegrityVerifier } from '@worker/core/application/ports/app-integrity';
 import {
   createBestEffortEventsSink,

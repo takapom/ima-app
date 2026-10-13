@@ -103,7 +103,7 @@ DOクラスの作成・削除・改名は[Worker設定](../worker/cloudflare.con
 
 EASはdevelopment（Simulator/Dev Client）、internal（staging）、external（production）のprofileを使う。build時のbundle ID・project ID・endpointが欠ければ拒否する。profileの存在を署名や実機成功の証明にしない。
 
-障害時は[flags](../worker/src/composition/operational-flags.ts)の対象Providerを停止し、必要なら`IMA_KILL_SWITCH=true`を適用する。未指定・不正なProvider flagは停止側。不正なkill switchは停止側だが、未指定のkill switchはfalseという互換既定があるため、環境設定に明示する。
+障害時は[flags](../worker/src/platform/composition/operational-flags.ts)の対象Providerを停止し、必要なら`IMA_KILL_SWITCH=true`を適用する。未指定・不正なProvider flagは停止側。不正なkill switchは停止側だが、未指定のkill switchはfalseという互換既定があるため、環境設定に明示する。
 停止後に実際の外部呼出し停止を確認し、fixtureへ暗黙に切り替えない。
 
 復旧では対象環境のWorker version履歴から既知の版へ戻し、health、認証、DO migration互換性、保存期限、Provider停止状態を再確認する。migration `v7`（`JourneyDatasetDO`の削除）を含む版より前へは戻さない。改修後の版が保存したthread文脈には旧版が必須とした項目（`savedPlaceRefs`・`originalTurns`・`basis`）がなく、旧版では文脈が読めずに破棄される。DOを手作業で削除して復旧扱いにせず、データ変更が必要なら後方互換migrationを検証する。

@@ -10,7 +10,7 @@ import type { RuntimeBudget } from '@worker/infrastructure/runtime/budget/runtim
 import {
   disabledDetailsPort,
   disabledSearchPort,
-} from '@worker/composition/runtime-disabled-provider-ports';
+} from '@worker/platform/composition/runtime-disabled-provider-ports';
 import {
   capProductionObservationPolicy,
   defaultProductionObservationPolicy,

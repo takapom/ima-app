@@ -1,7 +1,10 @@
 import { env } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import { deriveOwnerScopeRef } from '@worker/infrastructure/adapters/in/http/auth';
-import { createHttpRouterConfig, createThreadScopeAuthorizer } from '@worker/composition/bootstrap';
+import {
+  createHttpRouterConfig,
+  createThreadScopeAuthorizer,
+} from '@worker/platform/composition/bootstrap';
 import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import { createPhotoReferenceStoreResolver } from '@worker/infrastructure/adapters/out/persistence/photo/rpc';
 import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/out/security/photo-token-codec';
