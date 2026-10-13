@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createMemoryPhotoReferenceStore } from '@worker/adapters/out/persistence/photo/reference-store';
+import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/reference-store';
 import { createPhotoTokenCodec } from '@worker/adapters/out/security/photo-token-codec';
 import {
   PhotoTokenError,

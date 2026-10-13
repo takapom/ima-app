@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema, OpaqueIdSchema } from '@ima/contracts';
-import { createMemoryPhotoReferenceStore } from '@worker/adapters/out/persistence/photo/reference-store';
+import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/reference-store';
 import type {
   PhotoReferenceGetResult,
   PhotoReferencePutResult,

@@ -1,6 +1,6 @@
 import type { Lifecycle } from 'agents/lifecycle';
 import { createThreadPhotoReferences } from '@worker/adapters/out/persistence/photo/thread-references';
-import { createMemoryPhotoReferenceStore } from '@worker/adapters/out/persistence/photo/reference-store';
+import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/reference-store';
 import * as v from 'valibot';
 import {
   PhotoReferenceRecordSchema,

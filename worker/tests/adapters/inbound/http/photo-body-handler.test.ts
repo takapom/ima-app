@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { HttpBoundaryError } from '@worker/infrastructure/adapters/in/http/errors';
 import type { HandlerContext } from '@worker/infrastructure/adapters/in/http/handler';
 import { createPhotoBodyHandler } from '@worker/infrastructure/adapters/in/http/photo-body-handler';
-import { createMemoryPhotoReferenceStore } from '@worker/adapters/out/persistence/photo/reference-store';
+import { createMemoryPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/reference-store';
 import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
 import { createPhotoTokenCodec } from '@worker/adapters/out/security/photo-token-codec';
 import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';

@@ -19,7 +19,7 @@ import { OpaqueIdSchema } from '@worker/core/domain/primitives';
 import type { ConversationStore } from '@worker/core/application/ports/conversation-store';
 import type { ConversationRuns } from '@worker/core/application/ports/conversation-runs';
 import { SqlConversationRecords } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-records';
-import { SqlConversationRuns } from '@worker/adapters/out/persistence/conversations/sql-conversation-runs';
+import { SqlConversationRuns } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-runs';
 import { storeFailure } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-sql-schema';
 
 type StoreInput<K extends keyof ConversationStore> = Parameters<ConversationStore[K]>[0];
