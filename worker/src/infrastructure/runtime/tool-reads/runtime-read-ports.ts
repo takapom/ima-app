@@ -24,7 +24,7 @@ import type {
   RuntimeBudget,
   RuntimeBudgetDenial,
 } from '@worker/infrastructure/runtime/budget/runtime-budget';
-import { RuntimeSingleFlightError } from '@worker/runtime/tool-reads/runtime-singleflight';
+import { RuntimeSingleFlightError } from '@worker/infrastructure/runtime/tool-reads/runtime-singleflight';
 
 export type RuntimeReadCost = {
   readonly costUnits: number;

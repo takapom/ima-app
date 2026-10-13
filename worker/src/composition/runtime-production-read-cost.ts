@@ -9,7 +9,7 @@ import { productionScopeFor } from '@worker/composition/runtime-production-suppo
 import type {
   RuntimeReadCost,
   RuntimeReadCostRequest,
-} from '@worker/runtime/tool-reads/runtime-read-ports';
+} from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
 
 const detailsProviderCost = (
   input: GetPlaceDetailsInput,

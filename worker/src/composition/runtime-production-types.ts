@@ -9,7 +9,7 @@ import type { HarnessContext, IdPort } from '@worker/core/application/ports/cont
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type { PlaceDetailsPort, PlaceSearchPort } from '@worker/core/application/ports/operations';
 import type { PlacesSearchObservationPolicy } from '@worker/infrastructure/adapters/out/providers/places-search/registration';
-import type { RuntimeReadAttemptSignalBridge } from '@worker/runtime/tool-reads/runtime-read-ports';
+import type { RuntimeReadAttemptSignalBridge } from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
 import type {
   RuntimeCompositionModelContext,
   RuntimeCompositionValidationContext,

@@ -4,7 +4,7 @@ import type {
   RuntimeReadOperation,
   RuntimeRetryFailure,
 } from '@worker/infrastructure/runtime/budget/runtime-budget';
-import { RuntimeSingleFlight } from '@worker/runtime/tool-reads/runtime-singleflight';
+import { RuntimeSingleFlight } from '@worker/infrastructure/runtime/tool-reads/runtime-singleflight';
 
 export type RuntimeReadFailureKind =
   'timeout' | 'transport' | 'server' | 'rate_limited' | 'argument' | 'reference';

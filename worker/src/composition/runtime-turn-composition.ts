@@ -36,7 +36,7 @@ import {
   createRuntimeReadPorts,
   type RuntimeReadAttemptSignalBridge,
   type RuntimeReadCostResolver,
-} from '@worker/runtime/tool-reads/runtime-read-ports';
+} from '@worker/infrastructure/runtime/tool-reads/runtime-read-ports';
 import {
   createRuntimeTurnFactory,
   type RuntimeBeforeToolCallDelegate,
