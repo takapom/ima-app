@@ -21,7 +21,7 @@ import type {
 import {
   projectRuntimeCurrentTurnMessages,
   type RuntimeRetentionModelProjectionOptions,
-} from '@worker/runtime/retention/runtime-retention-model';
+} from '@worker/infrastructure/runtime/retention/runtime-retention-model';
 import {
   captureRuntimeEphemeralToolCall,
   captureRuntimeEphemeralToolResult,

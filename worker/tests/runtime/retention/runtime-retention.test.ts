@@ -18,7 +18,7 @@ import {
   type RuntimeRetentionEphemeralToolCall,
   type RuntimeRetentionEphemeralToolResult,
 } from '@worker/runtime/retention/runtime-retention';
-import { projectRuntimeCurrentTurnMessages } from '@worker/runtime/retention/runtime-retention-model';
+import { projectRuntimeCurrentTurnMessages } from '@worker/infrastructure/runtime/retention/runtime-retention-model';
 
 const NOW = '2026-09-10T00:00:00Z';
 const RANDOM_CANARY = 'runtime-retention-secret-7f2a';
