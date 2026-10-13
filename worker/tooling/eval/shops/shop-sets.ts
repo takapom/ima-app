@@ -1,0 +1,237 @@
+import type { HotPepperShopWire } from '@worker/adapters/out/providers/hot-pepper/wire';
+
+/**
+ * ホットペッパーのwire形で書いた架空の店舗。評価結果はディスクに残るため、実在店舗のデータを
+ * ここに置いてはいけない。そのことが一目で分かるよう、店名はすべて「架空」で始める。
+ */
+export type EvalShopSet = {
+  /** 位置情報が取得できるケースで、ユーザーがいる地点。 */
+  readonly origin: { readonly lat: number; readonly lng: number };
+  readonly shops: readonly HotPepperShopWire[];
+};
+
+type ShopInput = {
+  readonly id: string;
+  readonly name: string;
+  readonly address: string;
+  readonly lat: number;
+  readonly lng: number;
+  readonly station: string;
+  readonly genre: string;
+  readonly catchText: string;
+  readonly open: string;
+  readonly close: string;
+  readonly budget: string;
+  readonly average: string;
+  readonly nonSmoking: string;
+  readonly privateRoom: string;
+  readonly wifi: string;
+};
+
+const shop = (input: ShopInput): HotPepperShopWire => ({
+  id: input.id,
+  name: input.name,
+  address: input.address,
+  lat: input.lat,
+  lng: input.lng,
+  open: input.open,
+  close: input.close,
+  budget: { code: null, name: input.budget, average: input.average, budget_memo: null },
+  genre: { code: null, name: input.genre },
+  // 本番の正規化はhotpepper.jpのURLだけを出典として認める。実在しないID（EVAL…）のページで、取得もしない。
+  urls: { pc: `https://www.hotpepper.jp/str${input.id}/`, mobile: null },
+  photo: null,
+  catch: input.catchText,
+  access: `${input.station}駅から徒歩圏内`,
+  station_name: input.station,
+  wifi: input.wifi,
+  non_smoking: input.nonSmoking,
+  private_room: input.privateRoom,
+  parking: 'なし',
+  other_memo: null,
+  shop_detail_memo: null,
+});
+
+/** 渋谷駅が起点。恵比寿の店は約1.5km離れていて、1000m圏の外にある。 */
+const shibuyaEbisu: EvalShopSet = {
+  origin: { lat: 35.658, lng: 139.7016 },
+  shops: [
+    shop({
+      id: 'EVAL0001',
+      name: '架空 甘味処 こもれび',
+      address: '東京都渋谷区道玄坂2-1-1',
+      lat: 35.6575,
+      lng: 139.699,
+      station: '渋谷',
+      genre: 'カフェ・スイーツ',
+      catchText: '季節の和パフェと抹茶。ソファ席でゆっくり',
+      open: '月～日: 11:00～21:00 （L.O. 20:30）',
+      close: '不定休',
+      budget: '～1000円',
+      average: '900円',
+      nonSmoking: '全面禁煙',
+      privateRoom: 'なし',
+      wifi: 'あり',
+    }),
+    shop({
+      id: 'EVAL0002',
+      name: '架空 珈琲店 ひだまり',
+      address: '東京都渋谷区宇田川町3-2-1',
+      lat: 35.661,
+      lng: 139.6985,
+      station: '渋谷',
+      genre: 'カフェ・スイーツ',
+      catchText: '自家焙煎コーヒーと手作りケーキ',
+      open: '月～土: 9:00～22:00 日: 9:00～20:00',
+      close: 'なし',
+      budget: '～1000円',
+      average: '800円',
+      nonSmoking: '全面禁煙',
+      privateRoom: 'なし',
+      wifi: 'あり',
+    }),
+    shop({
+      id: 'EVAL0003',
+      name: '架空 パティスリー 月と星',
+      address: '東京都渋谷区神南1-4-2',
+      lat: 35.6635,
+      lng: 139.7005,
+      station: '渋谷',
+      genre: 'カフェ・スイーツ',
+      catchText: 'イートインできる焼き菓子とタルトの店',
+      open: '月～日: 10:00～20:00',
+      close: '水曜日',
+      budget: '1001～1500円',
+      average: '1300円',
+      nonSmoking: '全面禁煙',
+      privateRoom: 'なし',
+      wifi: 'なし',
+    }),
+    shop({
+      id: 'EVAL0004',
+      name: '架空 居酒屋 灯',
+      address: '東京都渋谷区道玄坂1-5-3',
+      lat: 35.6568,
+      lng: 139.6975,
+      station: '渋谷',
+      genre: '居酒屋',
+      catchText: '個室で地酒と炉端焼き',
+      open: '月～日: 17:00～翌1:00 （L.O. 24:00）',
+      close: 'なし',
+      budget: '3001～4000円',
+      average: '3500円',
+      nonSmoking: '一部禁煙',
+      privateRoom: 'あり',
+      wifi: 'なし',
+    }),
+    shop({
+      id: 'EVAL0005',
+      name: '架空 ラーメン 一番星',
+      address: '東京都渋谷区渋谷1-8-8',
+      lat: 35.6595,
+      lng: 139.703,
+      station: '渋谷',
+      genre: 'ラーメン',
+      catchText: '鶏白湯ラーメンと深夜営業',
+      open: '月～日: 11:00～翌3:00',
+      close: 'なし',
+      budget: '～1000円',
+      average: '1000円',
+      nonSmoking: '全面禁煙',
+      privateRoom: 'なし',
+      wifi: 'なし',
+    }),
+    shop({
+      id: 'EVAL0006',
+      name: '架空 焼肉 炭火亭',
+      address: '東京都渋谷区桜丘町2-3-4',
+      lat: 35.656,
+      lng: 139.702,
+      station: '渋谷',
+      genre: '焼肉・ホルモン',
+      catchText: '七輪で焼く黒毛和牛',
+      open: '月～日: 17:00～23:30',
+      close: '火曜日',
+      budget: '5001～7000円',
+      average: '6000円',
+      nonSmoking: '一部禁煙',
+      privateRoom: 'あり',
+      wifi: 'なし',
+    }),
+    shop({
+      id: 'EVAL0007',
+      name: '架空 和食 ことのは',
+      address: '東京都渋谷区渋谷2-6-1',
+      lat: 35.66,
+      lng: 139.706,
+      station: '渋谷',
+      genre: '和食',
+      catchText: '出汁にこだわる季節の小鉢と土鍋ご飯',
+      open: '月～土: 18:00～23:00',
+      close: '日曜日',
+      budget: '4001～5000円',
+      average: '4500円',
+      nonSmoking: '全面禁煙',
+      privateRoom: 'あり',
+      wifi: 'なし',
+    }),
+    shop({
+      id: 'EVAL0008',
+      name: '架空 ダイニングバー 夜長',
+      address: '東京都渋谷区恵比寿南1-2-3',
+      lat: 35.646,
+      lng: 139.7095,
+      station: '恵比寿',
+      genre: 'ダイニングバー・バル',
+      catchText: '静かなカウンターでクラフトジン',
+      open: '月～土: 18:00～翌2:00',
+      close: '日曜日',
+      budget: '3001～4000円',
+      average: '3500円',
+      nonSmoking: '全面禁煙',
+      privateRoom: 'なし',
+      wifi: 'あり',
+    }),
+    shop({
+      id: 'EVAL0009',
+      name: '架空 ワインバー 灯台',
+      address: '東京都渋谷区恵比寿西1-9-1',
+      lat: 35.6475,
+      lng: 139.708,
+      station: '恵比寿',
+      genre: 'バー・カクテル',
+      catchText: 'にぎやかな立ち飲みワインバー',
+      open: '月～日: 16:00～24:00',
+      close: 'なし',
+      budget: '2001～3000円',
+      average: '2500円',
+      nonSmoking: '一部禁煙',
+      privateRoom: 'なし',
+      wifi: 'なし',
+    }),
+    shop({
+      id: 'EVAL0010',
+      name: '架空 カフェ 青い窓',
+      address: '東京都渋谷区恵比寿4-1-5',
+      lat: 35.647,
+      lng: 139.711,
+      station: '恵比寿',
+      genre: 'カフェ・スイーツ',
+      catchText: '大きな窓のある静かな喫茶',
+      open: '月～日: 8:00～19:00',
+      close: 'なし',
+      budget: '～1000円',
+      average: '900円',
+      nonSmoking: '全面禁煙',
+      privateRoom: 'なし',
+      wifi: 'あり',
+    }),
+  ],
+};
+
+export const EVAL_SHOP_SETS: Readonly<Record<string, EvalShopSet>> = {
+  'shibuya-ebisu': shibuyaEbisu,
+};
+
+export const evalShopSetFor = (name: string): EvalShopSet | undefined =>
+  Object.hasOwn(EVAL_SHOP_SETS, name) ? EVAL_SHOP_SETS[name] : undefined;

@@ -23,6 +23,7 @@ export const baseFiles = {
   'worker/src/adapters/out/providers/provider.ts': 'export const provider = true;\n',
   'worker/src/composition/factory.ts': 'export const factory = true;\n',
   'worker/src/composition/bootstrap.ts': 'export const bootstrap = true;\n',
+  'worker/tooling/eval/stub.ts': 'export const stub = true;\n',
   'worker/src/application/ports/owner-store.ts': 'export type OwnerStore = { read(): void };\n',
   'worker/src/application/ports/saved-reference-store.ts':
     'export type StoreResult = { ok: boolean };\n',
@@ -33,6 +34,17 @@ export const baseFiles = {
 };
 
 export const cases = [
+  {
+    name: 'worker-source-cannot-import-tooling',
+    target: 'worker/src/composition/eval.ts',
+    source: "import '../../tooling/eval/stub.js';\n",
+    rule: 'worker-src-no-tooling',
+  },
+  {
+    name: 'tooling-may-import-worker-source',
+    target: 'worker/tooling/eval/worker.ts',
+    source: "import '@worker/composition/factory.js';\n",
+  },
   {
     name: 'runtime-cannot-import-input-adapter',
     target: 'worker/src/runtime/turn.ts',

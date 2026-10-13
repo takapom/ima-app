@@ -41,6 +41,17 @@ module.exports = {
       },
     },
     {
+      name: 'worker-src-no-tooling',
+      comment: 'worker/tooling の開発用・評価用の入口は配布物に含めない。',
+      severity: 'error',
+      from: {
+        path: '^worker/src/',
+      },
+      to: {
+        path: '^worker/tooling/',
+      },
+    },
+    {
       name: 'no-circular',
       severity: 'error',
       from: {
