@@ -15,7 +15,7 @@ import {
   CommitAdapterError,
   SubmitApplication,
 } from '@worker/application/use-cases/submit-response/submit-application';
-import { createRespondPort } from '@worker/application/use-cases/submit-response/respond-port';
+import { createRespondPort } from '@worker/core/application/use-cases/submit-response/respond-port';
 import {
   makeFixture,
   makeInput,
