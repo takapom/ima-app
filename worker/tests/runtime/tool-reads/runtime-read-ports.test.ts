@@ -23,7 +23,7 @@ import {
   type RuntimeReadCostRequest,
   type RuntimeReadPortOptions,
 } from '@worker/runtime/tool-reads/runtime-read-ports';
-import { runtimeFor } from '@worker/adapters/in/tools/validation';
+import { runtimeFor } from '@worker/infrastructure/adapters/in/tools/validation';
 
 const budgetConfig = (overrides: Partial<RuntimeBudgetConfig> = {}): RuntimeBudgetConfig => ({
   ...DEFAULT_RUNTIME_BUDGET,

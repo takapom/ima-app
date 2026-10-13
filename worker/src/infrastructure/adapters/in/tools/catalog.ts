@@ -36,12 +36,12 @@ import {
   respondInvalid,
   unsupportedDetailField,
   upstreamError,
-} from '@worker/adapters/in/tools/validation';
+} from '@worker/infrastructure/adapters/in/tools/validation';
 import {
   getPlaceDetailsToolSchema,
   searchPlacesToolSchema,
   respondToolSchema,
-} from '@worker/adapters/in/tools/schemas';
+} from '@worker/infrastructure/adapters/in/tools/schemas';
 import {
   projectDetailsResult,
   projectSearchResult,

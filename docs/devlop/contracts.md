@@ -10,7 +10,7 @@
 | prefs・保存一覧・決定          | [owner-http.ts](../../packages/contracts/src/owner-http.ts)、[saved-reference-http.ts](../../packages/contracts/src/saved-reference-http.ts) |
 | HTTPルートとmethod             | [router.ts](../../worker/src/infrastructure/adapters/in/http/router.ts)の`app.route()`から機能別Honoルーターへ辿る                           |
 | 認証・所有者scope              | [auth.ts](../../worker/src/infrastructure/adapters/in/http/auth.ts)                                                                          |
-| モデル向け3操作                | [tools](../../worker/src/adapters/in/tools)、[Core Ports](../../worker/src/core/application/ports)                                           |
+| モデル向け3操作                | [tools](../../worker/src/infrastructure/adapters/in/tools)、[Core Ports](../../worker/src/core/application/ports)                            |
 
 ## HTTPの利用手順
 

@@ -7,7 +7,7 @@ import {
 import {
   getPlaceDetailsToolSchema,
   searchPlacesToolSchema,
-} from '@worker/adapters/in/tools/schemas';
+} from '@worker/infrastructure/adapters/in/tools/schemas';
 
 const CANARY = 'SECRET_INPUT_CANARY';
 const input = {

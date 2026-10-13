@@ -1,7 +1,7 @@
 import { createConversationExecution } from '@worker/composition/conversation-execution';
 import { conversationFingerprint } from '@worker/adapters/out/security/conversation-fingerprint';
 import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
-import { ConversationDeletions } from '@worker/adapters/out/persistence/conversations/conversation-deletions';
+import { ConversationDeletions } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-deletions';
 import { conversationResponseDeadline } from '@worker/runtime/conversations/conversation-response-deadline';
 import { SqlConversationMemory } from '@worker/adapters/out/persistence/conversations/sql-conversation-memory';
 import type { ConversationMemoryStore } from '@worker/core/application/ports/conversation-memory-store';
