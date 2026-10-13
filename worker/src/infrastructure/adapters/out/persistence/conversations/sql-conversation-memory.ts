@@ -5,7 +5,7 @@ import {
 } from '@worker/core/application/model-context/conversation-memory';
 import type { ConversationMemoryStore } from '@worker/core/application/ports/conversation-memory-store';
 import { ConversationMessageSchema } from '@worker/core/domain/conversations/conversation-message';
-import type { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
+import type { SqlConversationRecords } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-records';
 import { storeFailure } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-sql-schema';
 
 const bytes = (value: unknown): number =>

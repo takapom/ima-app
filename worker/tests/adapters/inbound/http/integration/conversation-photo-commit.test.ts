@@ -5,7 +5,7 @@ import type { CandidateObservationRegistryPort } from '@worker/core/application/
 import type { CommitRequest } from '@worker/core/application/ports/commit';
 import { createDurableCommitPort } from '@worker/adapters/out/persistence/thread/durable-commit-adapter';
 import { ThreadConversationOutbox } from '@worker/adapters/out/persistence/conversations/thread-conversation-outbox';
-import { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
+import { SqlConversationRecords } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-records';
 import { SqlConversationRuns } from '@worker/adapters/out/persistence/conversations/sql-conversation-runs';
 import { createSqlPhotoReferenceStore } from '@worker/adapters/out/persistence/photo/sql-reference-store';
 import { createPhotoTokenCodec } from '@worker/adapters/out/security/photo-token-codec';

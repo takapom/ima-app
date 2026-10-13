@@ -2,7 +2,7 @@ import type { ConversationScope } from '@worker/core/application/ports/conversat
 import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
 import { ConversationScopeSchema } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-store-input';
 import * as v from 'valibot';
-import type { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
+import type { SqlConversationRecords } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-records';
 import { storeFailure } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-sql-schema';
 
 /** A content-free deletion queue survives transport failure after the conversation is tombstoned. */

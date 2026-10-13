@@ -3,7 +3,7 @@ import { conversationFingerprint } from '@worker/adapters/out/security/conversat
 import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
 import { ConversationDeletions } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-deletions';
 import { conversationResponseDeadline } from '@worker/runtime/conversations/conversation-response-deadline';
-import { SqlConversationMemory } from '@worker/adapters/out/persistence/conversations/sql-conversation-memory';
+import { SqlConversationMemory } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-memory';
 import type { ConversationMemoryStore } from '@worker/core/application/ports/conversation-memory-store';
 import { ConversationRunSchema } from '@worker/core/domain/conversations/conversation-run';
 import {
@@ -18,7 +18,7 @@ import * as v from 'valibot';
 import { OpaqueIdSchema } from '@worker/core/domain/primitives';
 import type { ConversationStore } from '@worker/core/application/ports/conversation-store';
 import type { ConversationRuns } from '@worker/core/application/ports/conversation-runs';
-import { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
+import { SqlConversationRecords } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-records';
 import { SqlConversationRuns } from '@worker/adapters/out/persistence/conversations/sql-conversation-runs';
 import { storeFailure } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-sql-schema';
 

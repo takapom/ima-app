@@ -1,9 +1,9 @@
 import { env, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
-import { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';
+import { SqlConversationRecords } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-records';
 import { SqlConversationRuns } from '@worker/adapters/out/persistence/conversations/sql-conversation-runs';
-import { SqlConversationMemory } from '@worker/adapters/out/persistence/conversations/sql-conversation-memory';
+import { SqlConversationMemory } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-memory';
 import { ThreadConversationOutbox } from '@worker/adapters/out/persistence/conversations/thread-conversation-outbox';
 import type { RetentionMetadata } from '@ima/contracts';
 
