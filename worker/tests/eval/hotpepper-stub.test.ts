@@ -23,9 +23,12 @@ const names = (page: Awaited<ReturnType<typeof search>>) => page.shops.map((shop
 
 describe('evaluation shop sets', () => {
   it('holds only fictional shops in the production wire shape', () => {
+    // 店舗IDはセットをまたいでも重ならない。
+    const ids = Object.values(EVAL_SHOP_SETS).flatMap((shopSet) =>
+      shopSet.shops.map((shop) => shop.id),
+    );
+    expect(new Set(ids).size).toBe(ids.length);
     for (const shopSet of Object.values(EVAL_SHOP_SETS)) {
-      const ids = shopSet.shops.map((shop) => shop.id);
-      expect(new Set(ids).size).toBe(ids.length);
       for (const shop of shopSet.shops) {
         expect(v.safeParse(HotPepperShopWireSchema, shop).success).toBe(true);
         expect(shop.name.startsWith('架空 ')).toBe(true);
@@ -105,6 +108,34 @@ describe('createHotPepperStub', () => {
     await expect(search({ lat: String(set.origin.lat), range: '3' })).rejects.toMatchObject({
       code: 'INVALID_REQUEST',
     });
+  });
+
+  it('answers every search with a server error for the provider-down set', async () => {
+    const down = evalShopSetFor('provider-down');
+    if (down === undefined) throw new Error('provider-down shop set is missing');
+    const url = new URL(HOT_PEPPER_GOURMET_ENDPOINT);
+    url.searchParams.set('keyword', 'カフェ');
+    expect((await createHotPepperStub(down)(url.toString())).status).toBe(503);
+  });
+
+  it('finds the many izakaya of the Shinjuku set by area name', async () => {
+    const shinjuku = evalShopSetFor('shinjuku');
+    if (shinjuku === undefined) throw new Error('shinjuku shop set is missing');
+    const url = new URL(HOT_PEPPER_GOURMET_ENDPOINT);
+    url.searchParams.set('keyword', '居酒屋 新宿');
+    const page = parseHotPepperResponse(
+      await (await createHotPepperStub(shinjuku)(url.toString())).json(),
+    );
+    // 指示を混ぜた店（EVAL1006）も、居酒屋として検索結果に現れる。
+    expect(page.shops.map((shop) => shop.id)).toEqual([
+      'EVAL1001',
+      'EVAL1002',
+      'EVAL1003',
+      'EVAL1004',
+      'EVAL1005',
+      'EVAL1006',
+      'EVAL1012',
+    ]);
   });
 
   it('refuses every request outside the Gourmet Search endpoint', async () => {

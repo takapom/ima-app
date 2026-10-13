@@ -110,5 +110,9 @@ export const createHotPepperStub =
     ) {
       return Promise.resolve(new Response(null, { status: 404 }));
     }
+    // 取得に失敗するケースでは、本物の障害と同じくサーバーエラーを返す。
+    if (set.providerUnavailable === true) {
+      return Promise.resolve(new Response(null, { status: 503 }));
+    }
     return Promise.resolve(Response.json(searchEvalShops(set.shops, url.searchParams)));
   };
