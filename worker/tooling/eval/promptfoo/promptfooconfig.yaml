@@ -1,0 +1,90 @@
+# 本番と同じターンを実モデルと合成店舗で実行する疎通用の評価（#87）。
+# 実行はリポジトリのルートで `bun run eval`。OpenAIの利用料が発生する。
+description: ima. 疎通用の評価
+
+# `production`は本番のシステムプロンプトをそのまま使う。案を比べるときは
+# `file://prompts/案.txt` のように並べる（ファイルの中の {{ }} はpromptfooのテンプレートとして展開される）。
+prompts:
+  - production
+
+providers:
+  - id: file://provider.ts
+    label: ima-turn
+    config:
+      workerDir: worker
+      envFile: .dev.vars.llm
+      port: 8791
+
+evaluateOptions:
+  # 同時実行を絞り、OpenAIの利用量と待ち時間を抑える。
+  maxConcurrency: 2
+
+defaultTest:
+  vars:
+    shopSet: shibuya-ebisu
+    # JSTの土曜20:00。掲載営業時間の読み方を実行ごとに揃える。
+    now: '2026-10-10T11:00:00.000Z'
+
+tests:
+  - description: 現在地あり・地名なし → 聞き返さずに現在地周辺を探して提案する
+    vars:
+      location: available
+      turns: 近くで甘いもの食べたい
+    assert:
+      - type: javascript
+        value: file://assertions.ts:committed
+        metric: 確定
+      - type: javascript
+        value: file://assertions.ts:firstSearchUsesCurrentLocation
+        metric: 場所の扱い
+      - type: javascript
+        value: file://assertions.ts:kindIs
+        config:
+          kind: propose
+        metric: 応答の種別
+
+  - description: 位置情報なし・地名なし → 現在地で検索せず、地名を尋ねる
+    vars:
+      location: denied
+      turns: カフェ行きたい
+    assert:
+      - type: javascript
+        value: file://assertions.ts:committed
+        metric: 確定
+      - type: javascript
+        value: file://assertions.ts:neverSearchesCurrentLocation
+        metric: 場所の扱い
+      - type: javascript
+        value: file://assertions.ts:kindIs
+        config:
+          kind: ask
+        metric: 応答の種別
+
+  - description: 地名あり → その地名で探して提案する
+    vars:
+      location: available
+      turns: 恵比寿で静かめのバーに行きたい
+    assert:
+      - type: javascript
+        value: file://assertions.ts:committed
+        metric: 確定
+      - type: javascript
+        value: file://assertions.ts:searchesNamedArea
+        metric: 場所の扱い
+      - type: javascript
+        value: file://assertions.ts:kindIs
+        config:
+          kind: propose
+        metric: 応答の種別
+
+  - description: 該当する店がない → カードを出さずに状況を伝える
+    vars:
+      location: denied
+      turns: 札幌でスープカレーが食べたい
+    assert:
+      - type: javascript
+        value: file://assertions.ts:committed
+        metric: 確定
+      - type: javascript
+        value: file://assertions.ts:noCards
+        metric: 無理に提案しない

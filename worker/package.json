@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "cf dev --persist-to .wrangler/state",
     "dev:llm": "wrangler dev --config wrangler.dev.jsonc --env-file .dev.vars.llm --local --port 8787",
-    "typecheck": "tsc -p tsconfig.business.json --noEmit && tsc --noEmit && tsc -p tsconfig.tests.json --noEmit && tsc -p tooling/tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.business.json --noEmit && tsc --noEmit && tsc -p tsconfig.tests.json --noEmit && tsc -p tooling/tsconfig.json --noEmit && tsc -p tooling/eval/promptfoo/tsconfig.json --noEmit",
     "build": "cf deploy --dry-run"
   },
   "dependencies": {

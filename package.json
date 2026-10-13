@@ -34,7 +34,9 @@
     "test:runtime-production-http": "vitest run --config vitest.runtime-production-http.config.ts",
     "test:dev-worker": "vitest run --config vitest.dev.config.ts",
     "build": "bun run scripts/run-workspaces.mjs build",
-    "commit-size": "node scripts/check-commit-size.mjs"
+    "commit-size": "node scripts/check-commit-size.mjs",
+    "eval": "PROMPTFOO_DISABLE_TELEMETRY=1 PROMPTFOO_DISABLE_UPDATE=1 PROMPTFOO_DISABLE_SHARING=1 PROMPTFOO_DISABLE_REMOTE_GENERATION=true WRANGLER_SEND_METRICS=false bunx promptfoo@0.123.1 eval -c worker/tooling/eval/promptfoo/promptfooconfig.yaml --no-cache",
+    "eval:view": "PROMPTFOO_DISABLE_TELEMETRY=1 PROMPTFOO_DISABLE_UPDATE=1 PROMPTFOO_DISABLE_SHARING=1 PROMPTFOO_DISABLE_REMOTE_GENERATION=true bunx promptfoo@0.123.1 view"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.22.0",
