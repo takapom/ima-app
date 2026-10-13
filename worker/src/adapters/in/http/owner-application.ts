@@ -1,4 +1,4 @@
-import { registerOwnerSavedReference } from '@worker/application/use-cases/save-place/register-owner-saved-reference';
+import { registerOwnerSavedReference } from '@worker/core/application/use-cases/save-place/register-owner-saved-reference';
 import { decideOwnerPlace } from '@worker/core/application/use-cases/decide-place/decide-owner-place';
 import {
   type OwnerSavedCandidateResult,

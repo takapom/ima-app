@@ -6,7 +6,7 @@ import {
   type TelemetryResultCode,
 } from '@worker/core/application/ports/telemetry';
 import type { TelemetryEventFailure } from '@worker/core/application/ports/telemetry';
-import type { RecordTelemetryEvent } from '@worker/application/use-cases/record-telemetry/record-telemetry-event';
+import type { RecordTelemetryEvent } from '@worker/core/application/use-cases/record-telemetry/record-telemetry-event';
 
 export type TelemetryEventContext = { readonly ownerScopeRef: string };
 export interface TelemetryEventsSink {

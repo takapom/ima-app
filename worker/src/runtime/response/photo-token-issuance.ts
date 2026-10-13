@@ -4,7 +4,7 @@ import { collectPhotoTokenObservations as collectEligiblePhotos } from '@worker/
 import {
   preparePhotoTokens,
   PhotoTokenPreparationError,
-} from '@worker/application/use-cases/photos/prepare-photo-tokens';
+} from '@worker/core/application/use-cases/photos/prepare-photo-tokens';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
 import type { ReadonlyStoredObservation } from '@worker/domain/candidates/registry';

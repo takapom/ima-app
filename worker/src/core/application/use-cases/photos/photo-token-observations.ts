@@ -4,7 +4,7 @@ import type { CandidateObservationRegistryPort } from '@worker/core/application/
 import type { CommittedResponse } from '@worker/application/use-cases/submit-response/submit-application';
 import type { ReadonlyStoredObservation } from '@worker/domain/candidates/registry';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
-import type { PhotoTokenObservation } from '@worker/application/use-cases/photos/prepare-photo-tokens';
+import type { PhotoTokenObservation } from '@worker/core/application/use-cases/photos/prepare-photo-tokens';
 /**
  * コミット済み応答から写真観測を読む入口。
  * 表示可否と保存可否は観測ごとに決め、モデル入力や永続化方針から流用しない。

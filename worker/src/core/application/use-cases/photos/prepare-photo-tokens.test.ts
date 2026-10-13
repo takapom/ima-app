@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   preparePhotoTokens,
   PhotoTokenPreparationError,
-} from '@worker/application/use-cases/photos/prepare-photo-tokens';
+} from '@worker/core/application/use-cases/photos/prepare-photo-tokens';
 import type { PhotoTokenIssuer } from '@worker/core/application/ports/photo-token-issuer';
 
 const context = {

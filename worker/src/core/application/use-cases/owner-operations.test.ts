@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { OwnerStore } from '@worker/core/application/ports/owner-store';
 import { decideOwnerPlace } from '@worker/core/application/use-cases/decide-place/decide-owner-place';
-import { registerOwnerSavedReference } from '@worker/application/use-cases/save-place/register-owner-saved-reference';
+import { registerOwnerSavedReference } from '@worker/core/application/use-cases/save-place/register-owner-saved-reference';
 import {
   type OwnerReferenceFingerprint,
   type OwnerSavedCandidateResolver,

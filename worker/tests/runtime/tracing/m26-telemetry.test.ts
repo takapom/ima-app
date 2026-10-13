@@ -1,4 +1,4 @@
-import { createRecordTelemetryEvent } from '@worker/application/use-cases/record-telemetry/record-telemetry-event';
+import { createRecordTelemetryEvent } from '@worker/core/application/use-cases/record-telemetry/record-telemetry-event';
 import { describe, expect, it, vi } from 'vitest';
 import { EventsRequestSchema } from '@ima/contracts';
 import * as v from 'valibot';
