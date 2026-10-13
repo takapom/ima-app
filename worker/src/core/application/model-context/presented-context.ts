@@ -4,7 +4,7 @@ import {
   type ProjectedModelContext,
 } from '@worker/core/application/model-context/model-context';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
-import type { PresentedInputs } from '@worker/application/model-context/presented-inputs';
+import type { PresentedInputs } from '@worker/core/application/model-context/presented-inputs';
 
 /**
  * Records the context the model receives in one step. Only what the projection passes on counts:

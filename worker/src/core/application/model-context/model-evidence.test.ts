@@ -3,7 +3,7 @@ import { projectModelContext } from '@worker/core/application/model-context/mode
 import {
   projectModelEvidence,
   projectModelEvidenceForLlmInput,
-} from '@worker/application/model-context/model-evidence';
+} from '@worker/core/application/model-context/model-evidence';
 
 /** The field is denied for persistence/display, while this unit explicitly permits LLM input. */
 const LLM_INPUT_ONLY_RETENTION = {

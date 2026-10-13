@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
-import { createPresentedInputs } from '@worker/application/model-context/presented-inputs';
+import { createPresentedInputs } from '@worker/core/application/model-context/presented-inputs';
 import {
   createToolRegistry,
   otherThreadScope,

@@ -7,12 +7,12 @@ import type {
   ModelContextSource,
   ModelHistoryEntry,
 } from '@worker/core/application/model-context/model-context';
-import type { ModelEvidenceSource } from '@worker/application/model-context/model-evidence';
+import type { ModelEvidenceSource } from '@worker/core/application/model-context/model-evidence';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import { CardSetRecordSchema } from '@worker/domain/candidates/continuity';
 import { DetailFieldSchema } from '@worker/domain/primitives';
-import { ModelEvidenceSourceSchema } from '@worker/application/model-context/model-evidence';
+import { ModelEvidenceSourceSchema } from '@worker/core/application/model-context/model-evidence';
 import type { RuntimeThinkComposition } from '@worker/runtime/turn-execution/runtime-think-connection';
 import {
   referenceSnapshotFor,
