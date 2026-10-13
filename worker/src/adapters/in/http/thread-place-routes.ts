@@ -5,7 +5,7 @@ import {
   SavedReferenceCreateResponseSchema,
 } from '@ima/contracts';
 import { toErrorResponse, type BoundaryFailure } from '@worker/adapters/in/http/errors';
-import type { AuthenticatedContext } from '@worker/adapters/in/http/auth';
+import type { AuthenticatedContext } from '@worker/infrastructure/adapters/in/http/auth';
 import { parseJsonBodyWithRaw } from '@worker/adapters/in/http/input';
 import type {
   ApplicationHandler,

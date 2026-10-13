@@ -6,7 +6,7 @@ import {
   SavedReferenceListResponseSchema,
 } from '@ima/contracts';
 import type { CancellationToken } from '@worker/core/application/ports/context';
-import type { AuthenticatedContext } from '@worker/adapters/in/http/auth';
+import type { AuthenticatedContext } from '@worker/infrastructure/adapters/in/http/auth';
 import { toErrorResponse } from '@worker/adapters/in/http/errors';
 import type {
   ApplicationHandler,

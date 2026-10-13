@@ -10,8 +10,11 @@ import {
   REQUEST_ID_HEADER,
   RequestHeadersSchema,
 } from '@ima/contracts';
-import type { AuthenticationResult } from '@worker/adapters/in/http/auth';
-import { authenticateRequest, deriveOwnerScopeRef } from '@worker/adapters/in/http/auth';
+import type { AuthenticationResult } from '@worker/infrastructure/adapters/in/http/auth';
+import {
+  authenticateRequest,
+  deriveOwnerScopeRef,
+} from '@worker/infrastructure/adapters/in/http/auth';
 import { toErrorResponse, toPublicError } from '@worker/adapters/in/http/errors';
 import { parseJsonBody } from '@worker/adapters/in/http/input';
 

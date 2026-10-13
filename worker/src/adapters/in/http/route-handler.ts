@@ -19,7 +19,7 @@ import {
   toErrorResponse,
   type BoundaryFailure,
 } from '@worker/adapters/in/http/errors';
-import type { AuthenticatedContext } from '@worker/adapters/in/http/auth';
+import type { AuthenticatedContext } from '@worker/infrastructure/adapters/in/http/auth';
 import { parseJsonBodyWithRaw } from '@worker/adapters/in/http/input';
 import type {
   ApplicationOperation,
@@ -37,7 +37,7 @@ import { authorizeAppIntegrity } from '@worker/infrastructure/adapters/in/http/a
 import {
   handleAppIntegrityHttpRoute,
   isAppIntegrityHttpRoute,
-} from '@worker/adapters/in/http/app-integrity-routes';
+} from '@worker/infrastructure/adapters/in/http/app-integrity-routes';
 import { handleOwnerHttpRoute, isOwnerHttpRoute } from '@worker/adapters/in/http/owner-routes';
 import {
   handleThreadPlaceWriteRoute,

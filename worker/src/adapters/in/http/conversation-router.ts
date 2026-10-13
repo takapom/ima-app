@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { publicConversationMessage } from '@worker/runtime/conversations/conversation-photo-sources';
-import { conversationPhotoRoute } from '@worker/adapters/in/http/conversation-photo-route';
+import { conversationPhotoRoute } from '@worker/infrastructure/adapters/in/http/conversation-photo-route';
 import { streamSSE } from 'hono/streaming';
 import * as v from 'valibot';
 import {
@@ -20,7 +20,7 @@ import {
   conversationJson,
   positiveQuery,
   type ConversationHttpContext,
-} from '@worker/adapters/in/http/conversation-boundary';
+} from '@worker/infrastructure/adapters/in/http/conversation-boundary';
 import type { HttpEnv } from '@worker/adapters/in/http/route-boundary';
 import { HttpBoundaryError } from '@worker/adapters/in/http/errors';
 import { conversationFingerprint } from '@worker/adapters/out/security/conversation-fingerprint';

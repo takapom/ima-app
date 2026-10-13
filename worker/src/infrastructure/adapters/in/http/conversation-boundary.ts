@@ -1,6 +1,9 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema, OpaqueIdSchema } from '@ima/contracts';
-import { authenticateRequest, type AuthenticatedContext } from '@worker/adapters/in/http/auth';
+import {
+  authenticateRequest,
+  type AuthenticatedContext,
+} from '@worker/infrastructure/adapters/in/http/auth';
 import { HttpBoundaryError, toErrorResponse } from '@worker/adapters/in/http/errors';
 import {
   invalidRequest,

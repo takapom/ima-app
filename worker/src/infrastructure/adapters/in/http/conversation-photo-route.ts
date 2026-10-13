@@ -2,7 +2,7 @@ import {
   conversationRoute,
   conversationFailure,
   positiveQuery,
-} from '@worker/adapters/in/http/conversation-boundary';
+} from '@worker/infrastructure/adapters/in/http/conversation-boundary';
 import { conversationPhotoSources } from '@worker/runtime/conversations/conversation-photo-sources';
 import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
 import { photoProviderFailure } from '@worker/adapters/in/http/photo-body-handler';
