@@ -4,7 +4,7 @@ import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnResult,
 } from '@worker/infrastructure/runtime/threads/admission';
-import { threadRuntimeResultFromNative } from '@worker/runtime/threads/native-result';
+import { threadRuntimeResultFromNative } from '@worker/infrastructure/runtime/threads/native-result';
 import type {
   RuntimeThinkTurnRequest,
   RuntimeThinkTurnResult,

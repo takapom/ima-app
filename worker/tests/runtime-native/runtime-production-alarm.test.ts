@@ -7,7 +7,7 @@ import type {
 import {
   createRuntimeRetentionAlarmCapability,
   RUNTIME_RETENTION_ALARM_TABLE,
-} from '@worker/runtime/threads/runtime-retention-alarm';
+} from '@worker/infrastructure/runtime/threads/runtime-retention-alarm';
 import { sessionExpiryAt } from '@worker/composition/runtime-production-support';
 import type { ProductionThreadDO } from './runtime-production-worker';
 

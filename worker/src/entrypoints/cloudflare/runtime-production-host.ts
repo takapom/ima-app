@@ -8,9 +8,9 @@ import {
   type RuntimeProductionOverrides,
 } from '@worker/composition/runtime-production-factory';
 import { sessionExpiryAt } from '@worker/composition/runtime-production-support';
-import { createDurableRuntimeContextPersistence } from '@worker/runtime/threads/runtime-context-persistence';
+import { createDurableRuntimeContextPersistence } from '@worker/infrastructure/runtime/threads/runtime-context-persistence';
 import type { RuntimeProductionContextReference } from '@worker/infrastructure/runtime/context/runtime-production-context-reference';
-import { createRuntimeRetentionAlarmCapability } from '@worker/runtime/threads/runtime-retention-alarm';
+import { createRuntimeRetentionAlarmCapability } from '@worker/infrastructure/runtime/threads/runtime-retention-alarm';
 import type { RuntimeThinkConnectionOptions } from '@worker/runtime/turn-execution/runtime-think-connection';
 import {
   emitRuntimeTurnTrace,
@@ -25,7 +25,7 @@ import {
   createDurableTelemetryStore,
   type TelemetryNamespace,
 } from '@worker/infrastructure/adapters/out/persistence/telemetry/telemetry-do';
-import { createRuntimeProductionTelemetrySinks } from '@worker/runtime/threads/runtime-production-telemetry';
+import { createRuntimeProductionTelemetrySinks } from '@worker/infrastructure/runtime/threads/runtime-production-telemetry';
 import { RuntimeThinkHost } from '@worker/entrypoints/cloudflare/runtime-host';
 import type {
   ThreadRuntimeTarget,

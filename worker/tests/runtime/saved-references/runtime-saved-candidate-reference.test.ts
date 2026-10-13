@@ -10,7 +10,7 @@ import {
 import {
   resolveRuntimeSavedCandidate,
   type RuntimeSavedCandidateResult,
-} from '@worker/runtime/threads/runtime-saved-candidate-rpc';
+} from '@worker/infrastructure/runtime/threads/runtime-saved-candidate-rpc';
 
 const scope: RegistryScope = { ownerScopeRef: 'saved-owner', threadId: 'saved-thread' };
 const snapshot = {

@@ -8,9 +8,9 @@ import {
   createRuntimeSavedCandidateResolver,
   runtimeSavedCandidateBindingFor,
   type RuntimeSavedCandidateResult,
-} from '@worker/runtime/threads/runtime-saved-candidate-rpc';
+} from '@worker/infrastructure/runtime/threads/runtime-saved-candidate-rpc';
 import { ThreadRuntimeController } from '@worker/infrastructure/runtime/threads/controller';
-import { runtimeThreadBindingFor } from '@worker/runtime/threads/runtime-thread-binding';
+import { runtimeThreadBindingFor } from '@worker/infrastructure/runtime/threads/runtime-thread-binding';
 import {
   createDurableCommitPort,
   type DurableCommitPort,
