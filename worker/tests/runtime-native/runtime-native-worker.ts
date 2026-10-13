@@ -1,9 +1,9 @@
 import type { Session } from '@cloudflare/think';
-import production from '@worker/entrypoints/cloudflare/worker';
+import production from '@worker/platform/entrypoints/cloudflare/worker';
 import {
   RateLimitDO,
   ThreadDO as ProductionThreadDO,
-} from '@worker/entrypoints/cloudflare/thread-do';
+} from '@worker/platform/entrypoints/cloudflare/thread-do';
 import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,

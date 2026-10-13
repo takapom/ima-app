@@ -1,6 +1,6 @@
 import { env, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it, vi } from 'vitest';
-import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
+import type { ThreadDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { CommitRequest } from '@worker/core/application/ports/commit';
 import { createDurableCommitPort } from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';

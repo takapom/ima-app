@@ -9,7 +9,7 @@ import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
 import { createPhotoReferenceStoreResolver } from '@worker/infrastructure/adapters/out/persistence/photo/rpc';
 import { createPhotoTokenCodec } from '@worker/infrastructure/adapters/out/security/photo-token-codec';
 import type { TelemetryDO } from '@worker/infrastructure/adapters/out/persistence/telemetry/telemetry-do';
-import type { RateLimitDO, ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
+import type { RateLimitDO, ThreadDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 
 type PhotoHttpEnv = Cloudflare.Env & {
   readonly APP_TOKEN: string;

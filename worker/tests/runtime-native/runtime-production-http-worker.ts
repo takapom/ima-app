@@ -4,7 +4,7 @@ import {
   type BootstrapEnv,
 } from '@worker/platform/composition/bootstrap';
 import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
-import { RateLimitDO } from '@worker/entrypoints/cloudflare/thread-do';
+import { RateLimitDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 import { TelemetryDO } from '@worker/infrastructure/adapters/out/persistence/telemetry/telemetry-do';
 import { SavedReferenceDO } from '@worker/infrastructure/adapters/out/persistence/saved-references/saved-reference-do';
 import { ProductionThreadDO, RUNTIME_PRODUCTION_NOW } from './runtime-production-worker';

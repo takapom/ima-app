@@ -1,6 +1,6 @@
 import { env, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
+import type { ThreadDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 import { SqlConversationRecords } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-records';
 import { SqlConversationRuns } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-runs';
 import { SqlConversationMemory } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-memory';

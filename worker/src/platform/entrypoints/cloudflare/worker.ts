@@ -5,7 +5,7 @@ import {
   type BootstrapEnv,
 } from '@worker/platform/composition/bootstrap';
 import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
-import { RateLimitDO, ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
+import { RateLimitDO, ThreadDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 import { TelemetryDO } from '@worker/infrastructure/adapters/out/persistence/telemetry/telemetry-do';
 import { AppIntegrityDO } from '@worker/infrastructure/adapters/out/persistence/security/app-integrity-do';
 

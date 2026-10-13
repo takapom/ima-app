@@ -1,5 +1,9 @@
-import type { RateLimiter } from '@worker/security/rate-limit';
-export type { RateLimitRequest, RateLimitResult, RateLimiter } from '@worker/security/rate-limit';
+import type { RateLimiter } from '@worker/policy/security/rate-limit';
+export type {
+  RateLimitRequest,
+  RateLimitResult,
+  RateLimiter,
+} from '@worker/policy/security/rate-limit';
 import type * as v from 'valibot';
 import type {
   EventsRequest,

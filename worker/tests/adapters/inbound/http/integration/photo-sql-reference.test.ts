@@ -1,6 +1,6 @@
 import { env, runInDurableObject } from 'cloudflare:test';
 import { expect, it } from 'vitest';
-import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
+import type { ThreadDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 import { createSqlPhotoReferenceStore } from '@worker/infrastructure/adapters/out/persistence/photo/sql-reference-store';
 
 it('restores photo handles after reconstruction, isolates owners/devices and deletes at expiry', async () => {

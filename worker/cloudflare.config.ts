@@ -65,7 +65,7 @@ export default defineConfig(({ mode }) => {
       name,
       compatibilityDate: '2026-08-22',
       compatibilityFlags: ['nodejs_compat'],
-      entrypoint: 'src/entrypoints/cloudflare/worker.ts',
+      entrypoint: 'src/platform/entrypoints/cloudflare/worker.ts',
       workersDev: true,
       observability: { enabled: true, headSamplingRate: 1 },
       env: {

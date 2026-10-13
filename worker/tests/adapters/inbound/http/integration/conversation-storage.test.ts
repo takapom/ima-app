@@ -2,7 +2,7 @@ import { env, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import { SqlConversationRecords } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-records';
 import { SqlConversationRuns } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-runs';
-import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
+import type { ThreadDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 import type { ConversationMessageInput } from '@worker/core/domain/conversations/conversation-message';
 
 const hasThreads = (

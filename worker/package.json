@@ -5,8 +5,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/entrypoints/cloudflare/worker.ts",
-      "default": "./src/entrypoints/cloudflare/worker.ts"
+      "types": "./src/platform/entrypoints/cloudflare/worker.ts",
+      "default": "./src/platform/entrypoints/cloudflare/worker.ts"
     }
   },
   "scripts": {

@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/wrangler/config-schema.json",
   "name": "ima-api-worker-test",
-  "main": "src/entrypoints/cloudflare/worker.ts",
+  "main": "src/platform/entrypoints/cloudflare/worker.ts",
   "compatibility_date": "2026-08-22",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {

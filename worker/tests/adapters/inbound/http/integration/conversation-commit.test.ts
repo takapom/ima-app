@@ -4,7 +4,7 @@ import type { AssistantResponse } from '@ima/contracts';
 import type { CommitRequest } from '@worker/core/application/ports/commit';
 import { createDurableCommitPort } from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
 import { ThreadConversationOutbox } from '@worker/infrastructure/adapters/out/persistence/conversations/thread-conversation-outbox';
-import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
+import type { ThreadDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 
 const hasThreads = (
   value: unknown,

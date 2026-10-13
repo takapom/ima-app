@@ -15,7 +15,7 @@ import {
   type HttpRouterConfig,
   type ResourceScopeAuthorizer,
 } from '@worker/infrastructure/adapters/in/http/router';
-import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
+import type { ThreadDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 import type {
   RateLimitConfig,
   RateLimitDO,

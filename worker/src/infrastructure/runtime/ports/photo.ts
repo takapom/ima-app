@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@ima/contracts';
-import { HotPepperPhotoUrlSchema } from '@worker/security/photo-resource-policy';
+import { HotPepperPhotoUrlSchema } from '@worker/policy/security/photo-resource-policy';
 
 export const PHOTO_TOKEN_TTL_SECONDS = 30 * 60;
 

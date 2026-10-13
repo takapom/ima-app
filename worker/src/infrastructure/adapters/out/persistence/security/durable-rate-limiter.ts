@@ -1,4 +1,4 @@
-import type { RateLimiter } from '@worker/security/rate-limit';
+import type { RateLimiter } from '@worker/policy/security/rate-limit';
 import type {
   RateLimitDO,
   RateLimitConfig,

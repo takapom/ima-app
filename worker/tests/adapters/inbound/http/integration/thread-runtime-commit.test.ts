@@ -4,7 +4,7 @@ import type { CommitRequest, CommitPortResult } from '@worker/core/application/p
 import { describe, expect, it } from 'vitest';
 import { createDurableCommitPort } from '@worker/infrastructure/adapters/out/persistence/thread/durable-commit-adapter';
 import { persistRuntimeResult } from '@worker/infrastructure/adapters/out/persistence/thread/result-persistence';
-import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
+import type { ThreadDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 import type { ThreadRuntimeTarget } from '@worker/infrastructure/runtime/threads/admission';
 
 type TestEnv = Cloudflare.Env & { THREADS: DurableObjectNamespace<ThreadDO> };

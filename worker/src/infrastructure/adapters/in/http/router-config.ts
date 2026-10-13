@@ -1,6 +1,6 @@
 import type { ConversationHistoryNamespace } from '@worker/infrastructure/adapters/out/persistence/conversations/durable-conversation-store';
 import type { ConversationPhotoReader } from '@worker/infrastructure/runtime/ports/conversation-photo';
-import type { RateLimiter } from '@worker/security/rate-limit';
+import type { RateLimiter } from '@worker/policy/security/rate-limit';
 import type { AuthConfig } from '@worker/infrastructure/adapters/in/http/auth';
 import type { BoundaryFailure } from '@worker/infrastructure/adapters/in/http/errors';
 import type { HandlerDependencies } from '@worker/infrastructure/adapters/in/http/handler';

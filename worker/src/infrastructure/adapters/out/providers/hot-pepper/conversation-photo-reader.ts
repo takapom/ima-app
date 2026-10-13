@@ -3,7 +3,7 @@ import type { PhotoMediaTransport } from '@worker/infrastructure/runtime/ports/p
 import { PhotoProviderError } from '@worker/infrastructure/runtime/ports/photo-media';
 import type { HotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import { HotPepperError } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
-import { HotPepperPhotoUrlSchema } from '@worker/security/photo-resource-policy';
+import { HotPepperPhotoUrlSchema } from '@worker/policy/security/photo-resource-policy';
 import * as v from 'valibot';
 
 export const createHotPepperConversationPhotoReader = (

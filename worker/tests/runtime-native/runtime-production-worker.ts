@@ -1,7 +1,7 @@
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import { DEFAULT_RUNTIME_BUDGET } from '@worker/infrastructure/runtime/budget/runtime-budget';
-import { ThreadDO as ProductionThreadDOBase } from '@worker/entrypoints/cloudflare/thread-do';
+import { ThreadDO as ProductionThreadDOBase } from '@worker/platform/entrypoints/cloudflare/thread-do';
 import {
   modelForProduction,
   runtimeTurnUsesLlmOnlyPolicy,

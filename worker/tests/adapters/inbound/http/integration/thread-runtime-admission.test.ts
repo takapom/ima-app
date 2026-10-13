@@ -1,7 +1,7 @@
 import { env, runInDurableObject } from 'cloudflare:test';
 import type { AssistantResponse } from '@ima/contracts';
 import { describe, expect, it } from 'vitest';
-import type { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
+import type { ThreadDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnInput,

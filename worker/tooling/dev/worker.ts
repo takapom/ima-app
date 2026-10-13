@@ -1,5 +1,5 @@
-import production from '@worker/entrypoints/cloudflare/worker';
-import { RateLimitDO } from '@worker/entrypoints/cloudflare/thread-do';
+import production from '@worker/platform/entrypoints/cloudflare/worker';
+import { RateLimitDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 import { TelemetryDO } from '@worker/infrastructure/adapters/out/persistence/telemetry/telemetry-do';
 import { withDevCors } from './cors';
 
@@ -10,7 +10,7 @@ const fetch: ProductionFetch = (request, env, executionContext) => {
   return withDevCors(request, env, handler);
 };
 
-export { ThreadDO } from '@worker/entrypoints/cloudflare/thread-do';
+export { ThreadDO } from '@worker/platform/entrypoints/cloudflare/thread-do';
 export { RateLimitDO, TelemetryDO };
 export default { fetch } satisfies { fetch: ProductionFetch };
 
