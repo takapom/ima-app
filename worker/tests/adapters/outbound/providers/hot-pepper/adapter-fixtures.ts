@@ -1,4 +1,4 @@
-import type { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
+import type { CandidateObservationRegistry } from '@worker/core/application/candidate-registry/registry';
 import type {
   ClockPort,
   HarnessContext,
@@ -6,7 +6,7 @@ import type {
   ToolExecutionContext,
 } from '@worker/application/ports/context';
 import type { GetPlaceDetailsInput } from '@worker/application/ports/operations';
-import { CandidateObservationRegistry as Registry } from '@worker/application/candidate-registry/registry';
+import { CandidateObservationRegistry as Registry } from '@worker/core/application/candidate-registry/registry';
 import { createHotPepperDetailsAdapter } from '@worker/adapters/out/providers/hot-pepper/details-adapter';
 import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
 import {

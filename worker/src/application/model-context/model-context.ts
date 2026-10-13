@@ -2,14 +2,14 @@ import {
   ConversationMemorySchema,
   projectConversationMemory,
   type ProjectedConversationMemory,
-} from '@worker/application/model-context/conversation-memory';
+} from '@worker/core/application/model-context/conversation-memory';
 import * as v from 'valibot';
 import { CandidateStatusSchema, type CandidateStatus } from '@worker/domain/candidates/registry';
 import { CardSetRecordSchema, type CardSetRecord } from '@worker/domain/candidates/continuity';
 import { CandidateIdSchema, OpaqueIdSchema, Text, TurnIdSchema } from '@worker/domain/primitives';
 import type { HarnessContext } from '@worker/application/ports/context';
 import { HarnessContextSchema } from '@worker/application/ports/context';
-import { ModelContextError } from '@worker/application/model-context/model-context-errors';
+import { ModelContextError } from '@worker/core/application/model-context/model-context-errors';
 import {
   ModelEvidenceSourceSchema,
   projectModelEvidenceForLlmInput,
@@ -20,8 +20,8 @@ import {
   ModelContextFieldPolicySchema,
   modelContextFieldAllowed,
   modelEvidenceFieldDecision,
-} from '@worker/application/model-context/model-context-policy';
-import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+} from '@worker/core/application/model-context/model-context-policy';
+import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 
 export {
   evaluateModelEvidenceAvailability,
@@ -42,13 +42,13 @@ export {
   ModelContextFieldPolicySchema,
   modelContextFieldAllowed,
   modelEvidenceFieldDecision,
-} from '@worker/application/model-context/model-context-policy';
+} from '@worker/core/application/model-context/model-context-policy';
 export type {
   ModelContextFieldDecision,
   ModelContextFieldPolicy,
-} from '@worker/application/model-context/model-context-policy';
-export { ModelContextError } from '@worker/application/model-context/model-context-errors';
-export type { ModelContextErrorCode } from '@worker/application/model-context/model-context-errors';
+} from '@worker/core/application/model-context/model-context-policy';
+export { ModelContextError } from '@worker/core/application/model-context/model-context-errors';
+export type { ModelContextErrorCode } from '@worker/core/application/model-context/model-context-errors';
 
 /** A quoted utterance. Generated text carries no citations; its retention is tracked by the harness. */
 /** Replaces a card name the model input policy denies; the name was then not shown. */

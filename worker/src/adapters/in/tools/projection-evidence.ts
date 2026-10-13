@@ -4,7 +4,7 @@ import {
   modelContextFieldAllowed,
   modelEvidenceFieldDecision,
   type ModelContextFieldPolicy,
-} from '@worker/application/model-context/model-context-policy';
+} from '@worker/core/application/model-context/model-context-policy';
 import { projectModelEvidenceForLlmInput } from '@worker/application/model-context/model-evidence';
 import { type CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import { type DetailField } from '@worker/domain/primitives';

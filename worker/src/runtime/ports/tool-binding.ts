@@ -15,7 +15,7 @@ import type {
   SearchPlacesOutput,
 } from '@worker/application/ports/operations';
 import type { Issue } from '@worker/domain/issue';
-import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type { Result } from '@worker/domain/result';
 import type { RespondInput } from '@worker/application/ports/model';
 import type {

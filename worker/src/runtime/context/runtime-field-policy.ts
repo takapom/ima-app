@@ -16,7 +16,7 @@ import {
   modelEvidenceFieldDecision,
   type ModelContextFieldDecision,
   type ModelContextFieldPolicy,
-} from '@worker/application/model-context/model-context-policy';
+} from '@worker/core/application/model-context/model-context-policy';
 
 export type RuntimePolicyMode = 'fixture' | 'live';
 export type RuntimeFieldUse = 'llm_input' | 'display' | 'persistence';

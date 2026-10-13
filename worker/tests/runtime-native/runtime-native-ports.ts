@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
+import { CandidateObservationRegistry } from '@worker/core/application/candidate-registry/registry';
 import { ObservationSchema, type Observation } from '@worker/domain/evidence/evidence';
 import { OpeningHoursSchema, PlaceIdentitySchema } from '@worker/domain/places/place-values';
 import { type CandidateId } from '@worker/domain/primitives';

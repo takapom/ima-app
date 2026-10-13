@@ -6,7 +6,7 @@ import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import type { CandidateObservationRegistryPort } from '@worker/application/ports/registry';
 import type { CommitHashPort, CommitPort } from '@worker/application/ports/commit';
 import type { HarnessContext, IdPort } from '@worker/application/ports/context';
-import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type { PlaceDetailsPort, PlaceSearchPort } from '@worker/application/ports/operations';
 import type { PlacesSearchObservationPolicy } from '@worker/adapters/out/providers/places-search/registration';
 import type { RuntimeReadAttemptSignalBridge } from '@worker/runtime/tool-reads/runtime-read-ports';

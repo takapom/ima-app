@@ -1,4 +1,4 @@
-import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import type { RuntimeProductionOverrides } from '@worker/composition/runtime-production-types';
 import type {

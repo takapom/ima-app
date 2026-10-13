@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import {
   ConversationMemorySchema,
   type ConversationMemory,
-} from '@worker/application/model-context/conversation-memory';
+} from '@worker/core/application/model-context/conversation-memory';
 import type { ConversationMemoryStore } from '@worker/application/ports/conversation-memory-store';
 import { ConversationMessageSchema } from '@worker/domain/conversations/conversation-message';
 import type { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';

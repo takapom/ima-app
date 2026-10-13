@@ -9,7 +9,7 @@ import type { ObservationContext } from '@worker/domain/evidence/freshness';
 import type { PlaceIdentity } from '@worker/domain/places/place-values';
 import type { Result } from '@worker/domain/result';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
-import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import { projectDetailsResult, projectSearchResult } from '@worker/adapters/in/tools/projection';
 import { createToolRegistry, toolScope } from './registry-fixture';
 

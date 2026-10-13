@@ -1,4 +1,4 @@
-import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type { RetentionMetadata } from '@worker/domain/evidence/retention';
 import { DEFAULT_RUNTIME_BUDGET } from '@worker/runtime/budget/runtime-budget';
 import { ThreadDO as ProductionThreadDOBase } from '@worker/entrypoints/cloudflare/thread-do';

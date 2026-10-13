@@ -13,7 +13,7 @@ import {
   RecordingCommit,
   respondWith,
 } from './runtime-turn-composition-fixture';
-import { denyModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import { denyModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import { observedWindow } from '@worker/composition/runtime-turn-composition-support';
 
 describe('createRuntimeTurnComposition', () => {

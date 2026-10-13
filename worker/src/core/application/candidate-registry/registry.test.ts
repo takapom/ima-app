@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
+import { CandidateObservationRegistry } from '@worker/core/application/candidate-registry/registry';
 import type { ClockPort, RegistryIdPort } from '@worker/application/ports/context';
 import {
   contextKeyForObservation,

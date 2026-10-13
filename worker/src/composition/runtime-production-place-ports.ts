@@ -1,4 +1,4 @@
-import type { CandidateObservationRegistry } from '@worker/application/candidate-registry/registry';
+import type { CandidateObservationRegistry } from '@worker/core/application/candidate-registry/registry';
 import type { PlaceDetailsPort, PlaceSearchPort } from '@worker/application/ports/operations';
 import { createHotPepperTransport } from '@worker/adapters/out/providers/hot-pepper/transport';
 import { createHotPepperSearchAdapter } from '@worker/adapters/out/providers/hot-pepper/search-adapter';

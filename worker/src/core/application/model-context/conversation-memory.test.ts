@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   projectConversationMemory,
   type ConversationMemory,
-} from '@worker/application/model-context/conversation-memory';
+} from '@worker/core/application/model-context/conversation-memory';
 
 const memory: ConversationMemory = {
   ownerScopeRef: 'owner-a',

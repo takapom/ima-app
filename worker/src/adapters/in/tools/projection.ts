@@ -6,7 +6,7 @@ import type {
 } from '@worker/application/ports/operations';
 import type { HarnessContext } from '@worker/application/ports/context';
 import type { Issue } from '@worker/domain/issue';
-import type { ModelContextFieldPolicy } from '@worker/application/model-context/model-context-policy';
+import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
 import type {
   DetailsFieldValue,
   DetailsToolResult,

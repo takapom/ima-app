@@ -1,4 +1,4 @@
-import type { ConversationMemory } from '@worker/application/model-context/conversation-memory';
+import type { ConversationMemory } from '@worker/core/application/model-context/conversation-memory';
 import { RuntimeThinkConnectionError } from '@worker/runtime/turn-execution/runtime-think-connection-errors';
 export {
   RuntimeThinkConnectionError,

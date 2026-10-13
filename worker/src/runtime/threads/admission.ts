@@ -1,7 +1,7 @@
 import {
   ConversationMemorySchema,
   type ConversationMemory,
-} from '@worker/application/model-context/conversation-memory';
+} from '@worker/core/application/model-context/conversation-memory';
 import * as v from 'valibot';
 import {
   AssistantResponseSchema,
