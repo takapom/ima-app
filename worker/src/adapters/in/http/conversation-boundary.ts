@@ -9,7 +9,7 @@ import {
 } from '@worker/adapters/in/http/route-boundary';
 import { DEFAULT_JSON_BODY_LIMIT_BYTES } from '@worker/adapters/in/http/router-config';
 import { parseJsonBodyWithRaw } from '@worker/adapters/in/http/input';
-import { authorizeAppIntegrity } from '@worker/adapters/in/http/app-integrity-authorization';
+import { authorizeAppIntegrity } from '@worker/infrastructure/adapters/in/http/app-integrity-authorization';
 import { rateLimitedResponse } from '@worker/adapters/in/http/rate-limit-response';
 import {
   conversationOwnerName,

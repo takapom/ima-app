@@ -4,7 +4,7 @@ import type { RateLimiter } from '@worker/security/rate-limit';
 import type { AuthConfig } from '@worker/adapters/in/http/auth';
 import type { BoundaryFailure } from '@worker/adapters/in/http/errors';
 import type { HandlerDependencies } from '@worker/adapters/in/http/handler';
-import type { AppIntegrityGate } from '@worker/adapters/in/http/app-integrity-gate';
+import type { AppIntegrityGate } from '@worker/infrastructure/adapters/in/http/app-integrity-gate';
 
 export const DEFAULT_JSON_BODY_LIMIT_BYTES = 32 * 1024;
 

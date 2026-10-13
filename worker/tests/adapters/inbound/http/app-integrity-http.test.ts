@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { deriveOwnerScopeRef } from '@worker/adapters/in/http/auth';
 import { routeRequest } from '@worker/adapters/in/http/router';
 import { createAppIntegrityGate } from '@worker/composition/app-integrity-gate';
-import { type AppIntegrityGate } from '@worker/adapters/in/http/app-integrity-gate';
+import { type AppIntegrityGate } from '@worker/infrastructure/adapters/in/http/app-integrity-gate';
 import {
   type AppIntegrityKeyStore,
   type AppIntegrityChallengeStore,

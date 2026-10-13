@@ -5,7 +5,7 @@ import {
   NonNegativeFiniteNumberSchema,
   NonNegativeSafeIntegerSchema,
   Text,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 
 /** 掲載文の最大長。画面には出さず、雰囲気の推測材料として渡す文の上限。 */
 export const LISTING_TEXT_MAX_LENGTH = 600;

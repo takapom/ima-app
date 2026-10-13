@@ -4,7 +4,7 @@ import {
   OpaqueIdSchema,
   RevisionSchema,
   Text,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 
 import { ConversationCardsSchema } from '@worker/core/domain/conversations/conversation-cards';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { JSONValue } from 'ai';
-import type { DetailField } from '@worker/domain/primitives';
+import type { DetailField } from '@worker/core/domain/primitives';
 import {
   defaultRuntimeModelContextPolicy,
   defaultRuntimeModelProjectionPolicy,

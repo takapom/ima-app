@@ -1,6 +1,6 @@
 import type { JSONValue } from 'ai';
 import * as v from 'valibot';
-import { CandidateIdSchema, type DetailField } from '@worker/domain/primitives';
+import { CandidateIdSchema, type DetailField } from '@worker/core/domain/primitives';
 import {
   ContactInfoSchema,
   FacilitiesInfoSchema,
@@ -8,7 +8,7 @@ import {
   PhotoInfoSchema,
   PlaceIdentitySchema,
   PriceInfoSchema,
-} from '@worker/domain/places/place-values';
+} from '@worker/core/domain/places/place-values';
 import { IssueCodeSchema } from '@worker/core/domain/issue';
 import { summarizeFieldForModel } from '@worker/core/application/model-context/model-field-summary';
 import {

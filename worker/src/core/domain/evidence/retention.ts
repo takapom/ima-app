@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { HttpsUrlSchema, IsoTimestampSchema, Text } from '@worker/domain/primitives';
+import { HttpsUrlSchema, IsoTimestampSchema, Text } from '@worker/core/domain/primitives';
 
 /** 表示用の出典。保持期限の計算には使わず、クレジットの文言とリンクだけを持つ。 */
 export const AttributionSchema = v.strictObject({

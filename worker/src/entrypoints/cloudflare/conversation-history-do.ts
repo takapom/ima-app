@@ -15,7 +15,7 @@ import type { ConversationRunScope } from '@worker/core/application/ports/conver
 import type { ConversationExecution } from '@worker/runtime/conversations/conversation-execution';
 import { DurableObject } from 'cloudflare:workers';
 import * as v from 'valibot';
-import { OpaqueIdSchema } from '@worker/domain/primitives';
+import { OpaqueIdSchema } from '@worker/core/domain/primitives';
 import type { ConversationStore } from '@worker/core/application/ports/conversation-store';
 import type { ConversationRuns } from '@worker/core/application/ports/conversation-runs';
 import { SqlConversationRecords } from '@worker/adapters/out/persistence/conversations/sql-conversation-records';

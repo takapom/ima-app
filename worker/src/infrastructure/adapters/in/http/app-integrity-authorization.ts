@@ -3,7 +3,7 @@ import type { AuthenticatedContext } from '@worker/adapters/in/http/auth';
 import type {
   AppIntegrityGate,
   AppIntegrityRoute,
-} from '@worker/adapters/in/http/app-integrity-gate';
+} from '@worker/infrastructure/adapters/in/http/app-integrity-gate';
 
 type AuthorizedRoute = { readonly kind: AppIntegrityRoute };
 

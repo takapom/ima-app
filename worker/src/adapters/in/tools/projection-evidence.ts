@@ -7,7 +7,7 @@ import {
 } from '@worker/core/application/model-context/model-context-policy';
 import { projectModelEvidenceForLlmInput } from '@worker/core/application/model-context/model-evidence';
 import { type CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
-import { type DetailField } from '@worker/domain/primitives';
+import { type DetailField } from '@worker/core/domain/primitives';
 import { type HarnessContext } from '@worker/core/application/ports/context';
 import { type Issue } from '@worker/core/domain/issue';
 import { type Observation } from '@worker/core/domain/evidence/evidence';
@@ -19,7 +19,7 @@ import {
   PhotoInfoSchema,
   PlaceIdentitySchema,
   PriceInfoSchema,
-} from '@worker/domain/places/place-values';
+} from '@worker/core/domain/places/place-values';
 import type { ModelSafeObservation } from '@worker/runtime/ports/tool-binding';
 
 export type ProjectionRegistry = Pick<

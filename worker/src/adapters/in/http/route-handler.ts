@@ -33,7 +33,7 @@ import {
   type HttpRouterConfig,
   type ResourceReference,
 } from '@worker/adapters/in/http/router-config';
-import { authorizeAppIntegrity } from '@worker/adapters/in/http/app-integrity-authorization';
+import { authorizeAppIntegrity } from '@worker/infrastructure/adapters/in/http/app-integrity-authorization';
 import {
   handleAppIntegrityHttpRoute,
   isAppIntegrityHttpRoute,

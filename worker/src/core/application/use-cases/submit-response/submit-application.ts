@@ -4,7 +4,7 @@ import {
   NonNegativeSafeIntegerSchema,
   OpaqueIdSchema,
   TurnIdSchema,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { IdPort } from '@worker/core/application/ports/context';
 import {

@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { OpaqueIdSchema } from '@worker/domain/primitives';
+import { OpaqueIdSchema } from '@worker/core/domain/primitives';
 import type {
   OwnerDecideInput,
   OwnerDecideResult,

@@ -1,5 +1,5 @@
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
-import { sessionExpiryAt } from '@worker/domain/threads/session-expiry';
+import { sessionExpiryAt } from '@worker/core/domain/threads/session-expiry';
 import {
   createRuntimeProductionContextStore,
   type RuntimeProductionContextStore,

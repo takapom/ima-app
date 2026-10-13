@@ -6,7 +6,7 @@ import {
   PhotoInfoSchema,
   PlaceIdentitySchema,
   PriceInfoSchema,
-} from '@worker/domain/places/place-values';
+} from '@worker/core/domain/places/place-values';
 import { ObservationSchema } from '@worker/core/domain/evidence/evidence';
 import { type HarnessContext } from '@worker/core/application/ports/context';
 import { type Issue } from '@worker/core/domain/issue';

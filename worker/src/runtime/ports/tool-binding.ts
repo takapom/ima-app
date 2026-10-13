@@ -4,7 +4,7 @@ import type {
   HarnessContext,
   ToolExecutionContext,
 } from '@worker/core/application/ports/context';
-import type { DetailField } from '@worker/domain/primitives';
+import type { DetailField } from '@worker/core/domain/primitives';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type {
   GetPlaceDetailsInput,
@@ -16,7 +16,7 @@ import type {
 } from '@worker/core/application/ports/operations';
 import type { Issue } from '@worker/core/domain/issue';
 import type { ModelContextFieldPolicy } from '@worker/core/application/model-context/model-context-policy';
-import type { Result } from '@worker/domain/result';
+import type { Result } from '@worker/core/domain/result';
 import type { RespondInput } from '@worker/core/application/ports/model';
 import type {
   RespondInvalid,

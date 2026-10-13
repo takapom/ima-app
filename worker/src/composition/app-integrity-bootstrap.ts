@@ -4,7 +4,7 @@ import {
   type AppAttestEnvironment,
   type AppIntegrityVerifier,
 } from '@worker/core/application/ports/app-integrity';
-import { type AppIntegrityGate } from '@worker/adapters/in/http/app-integrity-gate';
+import { type AppIntegrityGate } from '@worker/infrastructure/adapters/in/http/app-integrity-gate';
 import {
   createDurableAppIntegrityStores,
   type AppIntegrityNamespace,

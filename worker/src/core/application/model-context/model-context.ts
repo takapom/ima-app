@@ -9,7 +9,12 @@ import {
   type CandidateStatus,
 } from '@worker/core/domain/candidates/registry';
 import { CardSetRecordSchema, type CardSetRecord } from '@worker/core/domain/candidates/continuity';
-import { CandidateIdSchema, OpaqueIdSchema, Text, TurnIdSchema } from '@worker/domain/primitives';
+import {
+  CandidateIdSchema,
+  OpaqueIdSchema,
+  Text,
+  TurnIdSchema,
+} from '@worker/core/domain/primitives';
 import type { HarnessContext } from '@worker/core/application/ports/context';
 import { HarnessContextSchema } from '@worker/core/application/ports/context';
 import { ModelContextError } from '@worker/core/application/model-context/model-context-errors';

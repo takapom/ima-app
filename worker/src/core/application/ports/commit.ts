@@ -9,7 +9,7 @@ import {
   RevisionSchema,
   SchemaVersionSchema,
   Text,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 
 export const CommitReferencesSchema = v.strictObject({
   candidateIds: v.pipe(

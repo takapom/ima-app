@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { IsoTimestampSchema, OpaqueIdSchema } from '@worker/domain/primitives';
+import { IsoTimestampSchema, OpaqueIdSchema } from '@worker/core/domain/primitives';
 import {
   ConversationRunSchema,
   runIsPending,

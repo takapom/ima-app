@@ -8,7 +8,7 @@ import type {
 } from '@worker/core/application/ports/saved-reference-store';
 
 import * as v from 'valibot';
-import { OpaqueIdSchema, SavedPlaceRefSchema } from '@worker/domain/primitives';
+import { OpaqueIdSchema, SavedPlaceRefSchema } from '@worker/core/domain/primitives';
 import {
   SavedPlaceReferenceSchema,
   SavedPlaceRegistrationSchema,

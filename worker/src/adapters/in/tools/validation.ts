@@ -16,7 +16,7 @@ import {
   type HarnessContext,
   type ToolExecutionContext,
 } from '@worker/core/application/ports/context';
-import { ResultSchema, type Result } from '@worker/domain/result';
+import { ResultSchema, type Result } from '@worker/core/domain/result';
 import { RespondInputSchema, type RespondInput } from '@worker/core/application/ports/model';
 import {
   RespondPortResultSchema,
@@ -25,7 +25,7 @@ import {
   type RespondPortResult,
 } from '@worker/core/application/ports/submission';
 import { type CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
-import { type DetailField } from '@worker/domain/primitives';
+import { type DetailField } from '@worker/core/domain/primitives';
 import { type Issue, type IssueCode } from '@worker/core/domain/issue';
 import type {
   PublicToolInvocation,

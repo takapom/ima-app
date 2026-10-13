@@ -10,7 +10,7 @@ import type {
   SearchPlacesInput,
   SearchPlacesOutput,
 } from '@worker/core/application/ports/operations';
-import type { Result } from '@worker/domain/result';
+import type { Result } from '@worker/core/domain/result';
 import {
   DEFAULT_RUNTIME_BUDGET,
   RuntimeBudget,

@@ -4,7 +4,7 @@ import {
   OpaqueIdSchema,
   RevisionSchema,
   Text,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 
 /**
  * 過去の発言の引用。現在の候補や Tool 引数の根拠にはしない。

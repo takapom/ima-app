@@ -5,7 +5,7 @@ import {
   OpaqueIdSchema,
   RevisionSchema,
   Text,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 import {
   PlaceIdentitySchema,
@@ -14,7 +14,7 @@ import {
   PhotoAttributionSchema,
   ContactInfoSchema,
   FacilitiesInfoSchema,
-} from '@worker/domain/places/place-values';
+} from '@worker/core/domain/places/place-values';
 
 /** カード表示用の出典。クレジットを生成文の中へ埋め込まない。 */
 const Attribution = v.strictObject({

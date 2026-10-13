@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@worker/domain/primitives';
+import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@worker/core/domain/primitives';
 import { ConversationCursorSchema } from '@worker/core/domain/conversations/conversation';
 import { ConversationMessageInputSchema } from '@worker/core/domain/conversations/conversation-message';
 

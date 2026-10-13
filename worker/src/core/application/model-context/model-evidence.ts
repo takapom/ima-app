@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { DetailFieldSchema } from '@worker/domain/primitives';
+import { DetailFieldSchema } from '@worker/core/domain/primitives';
 import {
   RetentionMetadataSchema,
   type RetentionMetadata,
@@ -13,14 +13,14 @@ import {
   PhotoInfoSchema,
   PlaceIdentitySchema,
   PriceInfoSchema,
-} from '@worker/domain/places/place-values';
+} from '@worker/core/domain/places/place-values';
 import {
   CandidateIdSchema,
   IsoTimestampSchema,
   ObservationIdSchema,
   OpaqueIdSchema,
   type DetailField,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 import { ModelContextError } from '@worker/core/application/model-context/model-context-errors';
 
 export const ModelEvidenceSourceSchema = v.strictObject({

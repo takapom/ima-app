@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { OpaqueIdSchema, RevisionSchema } from '@worker/domain/primitives';
+import { OpaqueIdSchema, RevisionSchema } from '@worker/core/domain/primitives';
 import { type RegistryScope } from '@worker/core/domain/evidence/freshness';
 import {
   candidateIdentityForReference,

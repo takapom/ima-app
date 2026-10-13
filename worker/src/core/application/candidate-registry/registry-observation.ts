@@ -17,7 +17,11 @@ import {
   type StoredObservation,
 } from '@worker/core/domain/candidates/registry';
 import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
-import { IsoTimestampSchema, OpaqueIdSchema, type CandidateId } from '@worker/domain/primitives';
+import {
+  IsoTimestampSchema,
+  OpaqueIdSchema,
+  type CandidateId,
+} from '@worker/core/domain/primitives';
 
 export type ObservationPreparationDependencies = {
   readonly candidateFor: (candidateId: CandidateId) => Readonly<CandidateRecord> | undefined;

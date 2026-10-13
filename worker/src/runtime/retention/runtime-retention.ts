@@ -6,7 +6,7 @@ import {
   OpaqueIdSchema,
   ThreadIdSchema,
   TurnIdSchema,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 import {
   cloneRuntimeJsonValue,

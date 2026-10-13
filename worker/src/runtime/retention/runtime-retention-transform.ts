@@ -13,7 +13,7 @@ import type {
 import { APICallError, InvalidToolInputError } from 'ai';
 import { isRuntimeModelGuardError } from '@worker/runtime/turn-execution/runtime-model-guard';
 import * as v from 'valibot';
-import { IsoTimestampSchema } from '@worker/domain/primitives';
+import { IsoTimestampSchema } from '@worker/core/domain/primitives';
 import {
   safeToolInputValidationMessage,
   toolInputInvalidFields,

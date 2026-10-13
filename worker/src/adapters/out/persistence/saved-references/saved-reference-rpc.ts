@@ -1,4 +1,4 @@
-import { OpaqueIdSchema } from '@worker/domain/primitives';
+import { OpaqueIdSchema } from '@worker/core/domain/primitives';
 import * as v from 'valibot';
 import type {
   OwnerDecideResult,

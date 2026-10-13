@@ -6,7 +6,7 @@ import {
   RevisionSchema,
   SafeIntegerSchema,
   Text,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 import type {
   CancellationToken,
   ToolExecutionContext,

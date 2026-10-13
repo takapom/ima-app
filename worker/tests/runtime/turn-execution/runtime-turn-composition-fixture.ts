@@ -11,7 +11,7 @@ import type {
   PlaceSearchPort,
   SearchPlacesOutput,
 } from '@worker/core/application/ports/operations';
-import type { Result } from '@worker/domain/result';
+import type { Result } from '@worker/core/domain/result';
 import type { SubmitValidationContext } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
 import type { JSONValue, TextStreamPart, ToolResultPart, ToolSet } from 'ai';
 import { invokePublicToolEnvelope } from '@worker/adapters/in/tools';

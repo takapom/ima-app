@@ -1,4 +1,4 @@
-import { OpeningHoursSchema, type OpeningHours } from '@worker/domain/places/place-values';
+import { OpeningHoursSchema, type OpeningHours } from '@worker/core/domain/places/place-values';
 import {
   issue,
   parseObservationValue,

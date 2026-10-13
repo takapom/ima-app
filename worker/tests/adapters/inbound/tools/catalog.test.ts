@@ -13,7 +13,7 @@ import {
   type SearchPlacesInput,
   type SearchPlacesOutput,
 } from '@worker/core/application/ports/operations';
-import { type Result } from '@worker/domain/result';
+import { type Result } from '@worker/core/domain/result';
 import { type RespondInput } from '@worker/core/application/ports/model';
 import {
   type RespondPort,

@@ -1,12 +1,12 @@
 import * as v from 'valibot';
-import { Text } from '@worker/domain/primitives';
+import { Text } from '@worker/core/domain/primitives';
 import {
   FacilitiesInfoSchema,
   OpeningHoursSchema,
   PlaceIdentitySchema,
   PhotoInfoSchema,
   PriceInfoSchema,
-} from '@worker/domain/places/place-values';
+} from '@worker/core/domain/places/place-values';
 import {
   SubmitCardsInputSchema,
   type CardSelection,

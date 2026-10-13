@@ -11,7 +11,7 @@ import type {
   SearchPlacesInput,
   SearchPlacesOutput,
 } from '@worker/core/application/ports/operations';
-import type { Result } from '@worker/domain/result';
+import type { Result } from '@worker/core/domain/result';
 
 const disabledProviderIssue = (path: string) => ({
   code: 'MISSING_CONTEXT' as const,

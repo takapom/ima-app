@@ -2,8 +2,13 @@ import * as v from 'valibot';
 import type { Observation, SourceRef } from '@worker/core/domain/evidence/evidence';
 import type { ObservationContext, RegistryScope } from '@worker/core/domain/evidence/freshness';
 import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
-import { OpaqueIdSchema, Text } from '@worker/domain/primitives';
-import type { CandidateId, IsoTimestamp, ObservationId, OpaqueId } from '@worker/domain/primitives';
+import { OpaqueIdSchema, Text } from '@worker/core/domain/primitives';
+import type {
+  CandidateId,
+  IsoTimestamp,
+  ObservationId,
+  OpaqueId,
+} from '@worker/core/domain/primitives';
 
 /** 候補に写した営業状態。掲載営業時間から営業中を推測して operational にしない。 */
 export const CandidateStatusSchema = v.picklist([

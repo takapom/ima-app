@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { ObservationSchema } from '@worker/core/domain/evidence/evidence';
 import { IssueSchema } from '@worker/core/domain/issue';
-import { Text } from '@worker/domain/primitives';
+import { Text } from '@worker/core/domain/primitives';
 
 /**
  * 1項目の取得結果。known は観測が付いているときだけ使い、unknown、unsupported、not_applicable、error は別状態のまま残す。

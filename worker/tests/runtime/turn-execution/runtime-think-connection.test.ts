@@ -7,7 +7,7 @@ import type {
   SearchPlacesOutput,
 } from '@worker/core/application/ports/operations';
 import type { HarnessContext } from '@worker/core/application/ports/context';
-import type { Result } from '@worker/domain/result';
+import type { Result } from '@worker/core/domain/result';
 import type { RespondPort, RespondPortResult } from '@worker/core/application/ports/submission';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type { UIMessage } from 'ai';

@@ -17,8 +17,8 @@ import {
   type OpeningHours,
   type PlaceIdentity,
   type PriceInfo,
-} from '@worker/domain/places/place-values';
-import { IsoTimestampSchema } from '@worker/domain/primitives';
+} from '@worker/core/domain/places/place-values';
+import { IsoTimestampSchema } from '@worker/core/domain/primitives';
 import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { SubmitIssue } from '@worker/core/application/ports/submission';

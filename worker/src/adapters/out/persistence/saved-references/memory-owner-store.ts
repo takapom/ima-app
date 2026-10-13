@@ -1,6 +1,10 @@
 import * as v from 'valibot';
 import { PreferencesSchema, type Preferences } from '@ima/contracts';
-import { IsoTimestampSchema, OpaqueIdSchema, SavedPlaceRefSchema } from '@worker/domain/primitives';
+import {
+  IsoTimestampSchema,
+  OpaqueIdSchema,
+  SavedPlaceRefSchema,
+} from '@worker/core/domain/primitives';
 import {
   SavedPlaceRegistrationSchema,
   SavedPlaceReferenceSchema,

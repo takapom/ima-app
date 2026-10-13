@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { IsoTimestampSchema } from '@worker/domain/primitives';
+import { IsoTimestampSchema } from '@worker/core/domain/primitives';
 import type {
   AppIntegrityEnforcement,
   AppAttestEnvironment,

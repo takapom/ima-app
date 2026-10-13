@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { NonNegativeSafeIntegerSchema, Text } from '@worker/domain/primitives';
+import { NonNegativeSafeIntegerSchema, Text } from '@worker/core/domain/primitives';
 
 /**
  * 失敗を分岐する固定コード。再試行可否や欠落の種類を message の文面から推測しない。

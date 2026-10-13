@@ -5,7 +5,7 @@ import {
   SafeIntegerSchema,
   Text,
   ThreadIdSchema,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 
 /** 位置の改訂。取得時と違う位置改訂を、同じ場所の事実として再利用しない。 */
 export const LocationRevisionSchema = v.pipe(SafeIntegerSchema, v.minValue(0));

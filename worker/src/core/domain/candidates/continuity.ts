@@ -6,8 +6,8 @@ import {
   SavedPlaceRefSchema,
   SafeIntegerSchema,
   Text,
-} from '@worker/domain/primitives';
-import type { CandidateId, CardSetId, OpaqueId } from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
+import type { CandidateId, CardSetId, OpaqueId } from '@worker/core/domain/primitives';
 import { RegistryScopeSchema, type RegistryScope } from '@worker/core/domain/evidence/freshness';
 
 /** 保存参照の登録入力。owner に紐づく Provider 識別子だけで、Provider の本文は入れない。 */

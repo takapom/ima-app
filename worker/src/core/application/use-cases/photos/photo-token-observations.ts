@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { PhotoInfoSchema } from '@worker/domain/places/place-values';
+import { PhotoInfoSchema } from '@worker/core/domain/places/place-values';
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
 import type { CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';
 import type { ReadonlyStoredObservation } from '@worker/core/domain/candidates/registry';

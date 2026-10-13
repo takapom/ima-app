@@ -5,7 +5,7 @@ import {
   IsoTimestampSchema,
   ObservationIdSchema,
   Text,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 import { ObservationContextSchema } from '@worker/core/domain/evidence/freshness';
 import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 

@@ -1,6 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import * as v from 'valibot';
-import { IsoTimestampSchema, OpaqueIdSchema, Text } from '@worker/domain/primitives';
+import { IsoTimestampSchema, OpaqueIdSchema, Text } from '@worker/core/domain/primitives';
 import {
   decideDurableSavedReference,
   initializeOwnerDecideStore,

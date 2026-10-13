@@ -36,7 +36,7 @@ import {
   createDurableTelemetryStore,
   type TelemetryNamespace,
 } from '@worker/adapters/out/persistence/telemetry/telemetry-do';
-import type { AppIntegrityGate } from '@worker/adapters/in/http/app-integrity-gate';
+import type { AppIntegrityGate } from '@worker/infrastructure/adapters/in/http/app-integrity-gate';
 import {
   createConfiguredPhoto,
   createConfiguredConversationPhotos,

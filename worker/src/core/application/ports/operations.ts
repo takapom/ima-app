@@ -7,9 +7,9 @@ import {
   OpaqueIdSchema,
   SafeIntegerSchema,
   Text,
-} from '@worker/domain/primitives';
-import { FieldResultSchema } from '@worker/domain/result';
-import type { Result } from '@worker/domain/result';
+} from '@worker/core/domain/primitives';
+import { FieldResultSchema } from '@worker/core/domain/result';
+import type { Result } from '@worker/core/domain/result';
 import {
   OpeningHoursSchema,
   PlaceIdentitySchema,
@@ -17,7 +17,7 @@ import {
   PhotoInfoSchema,
   ContactInfoSchema,
   FacilitiesInfoSchema,
-} from '@worker/domain/places/place-values';
+} from '@worker/core/domain/places/place-values';
 import type {
   CancellationToken,
   HarnessContext,

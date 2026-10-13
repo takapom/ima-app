@@ -5,8 +5,8 @@ import {
   PhotoInfoSchema,
   PlaceIdentitySchema,
   PriceInfoSchema,
-} from '@worker/domain/places/place-values';
-import type { DetailField } from '@worker/domain/primitives';
+} from '@worker/core/domain/places/place-values';
+import type { DetailField } from '@worker/core/domain/primitives';
 
 type FieldSummaryValue =
   | string

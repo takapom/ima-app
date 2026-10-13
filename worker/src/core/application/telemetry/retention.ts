@@ -1,4 +1,4 @@
-import { IsoTimestampSchema } from '@worker/domain/primitives';
+import { IsoTimestampSchema } from '@worker/core/domain/primitives';
 import * as v from 'valibot';
 
 export const TELEMETRY_RETENTION_MS = 7 * 24 * 60 * 60 * 1_000;

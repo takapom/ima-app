@@ -4,7 +4,7 @@ import {
   OpaqueIdSchema,
   RevisionSchema,
   Text,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 
 /**
  * owner に属する会話。期限付き thread とは別IDで、thread が失効しても会話は残る。

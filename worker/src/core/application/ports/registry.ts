@@ -8,7 +8,7 @@ import type {
   StoredObservation,
 } from '@worker/core/domain/candidates/registry';
 import type { RegistryScope } from '@worker/core/domain/evidence/freshness';
-import type { CandidateId, ObservationId } from '@worker/domain/primitives';
+import type { CandidateId, ObservationId } from '@worker/core/domain/primitives';
 
 export type ObservationReplacement = {
   /** The new immutable observation to publish after the expected observations are checked. */

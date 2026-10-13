@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@worker/domain/primitives';
+import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@worker/core/domain/primitives';
 
 /**
  * ユーザー発言1件に対する回答生成の進行。会話の保存単位であり、Thread の中身そのものではない。

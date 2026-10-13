@@ -1,4 +1,4 @@
-import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@worker/domain/primitives';
+import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@worker/core/domain/primitives';
 import * as v from 'valibot';
 
 export const TelemetryEventNameSchema = v.picklist([

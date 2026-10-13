@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { CandidateIdSchema, Text } from '@worker/domain/primitives';
+import { CandidateIdSchema, Text } from '@worker/core/domain/primitives';
 
 /**
  * Card facts are attached by the Core from the registry; the model only picks and explains.

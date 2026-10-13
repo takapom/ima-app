@@ -1,5 +1,5 @@
-import type { DetailField } from '@worker/domain/primitives';
-import type { FieldResult, Result } from '@worker/domain/result';
+import type { DetailField } from '@worker/core/domain/primitives';
+import type { FieldResult, Result } from '@worker/core/domain/result';
 import type {
   GetPlaceDetailsOutput,
   SearchPlacesOutput,

@@ -5,7 +5,7 @@ import {
 import {
   createAppIntegrityHttpGate,
   type AppIntegrityGate,
-} from '@worker/adapters/in/http/app-integrity-gate';
+} from '@worker/infrastructure/adapters/in/http/app-integrity-gate';
 import { webCryptoNonceGenerator } from '@worker/adapters/out/security/app-integrity-nonce';
 export const createAppIntegrityGate = (
   input: Omit<AppIntegrityOptions, 'nonceGenerator'>,

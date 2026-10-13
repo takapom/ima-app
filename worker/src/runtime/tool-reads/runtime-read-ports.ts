@@ -12,7 +12,7 @@ import type {
   SearchPlacesOutput,
 } from '@worker/core/application/ports/operations';
 import type { Issue } from '@worker/core/domain/issue';
-import type { Result } from '@worker/domain/result';
+import type { Result } from '@worker/core/domain/result';
 import {
   RuntimeReadExecutor,
   RuntimeReadFailure,

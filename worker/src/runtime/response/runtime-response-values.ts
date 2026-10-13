@@ -1,6 +1,10 @@
 import type { PhotoInfo } from '@ima/contracts';
 import type { ValidatedCard } from '@worker/core/application/use-cases/submit-response/validation/submit-cards-evidence';
-import type { OpeningHours, PlaceIdentity, PriceInfo } from '@worker/domain/places/place-values';
+import type {
+  OpeningHours,
+  PlaceIdentity,
+  PriceInfo,
+} from '@worker/core/domain/places/place-values';
 
 type CorePhotoInfo = NonNullable<ValidatedCard['photos']>;
 type CoreFacilitiesInfo = NonNullable<ValidatedCard['facilities']>;

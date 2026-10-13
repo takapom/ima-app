@@ -1,8 +1,8 @@
 import * as v from 'valibot';
 import { CandidateObservationRegistry } from '@worker/core/application/candidate-registry/registry';
 import { ObservationSchema, type Observation } from '@worker/core/domain/evidence/evidence';
-import { OpeningHoursSchema, PlaceIdentitySchema } from '@worker/domain/places/place-values';
-import { type CandidateId } from '@worker/domain/primitives';
+import { OpeningHoursSchema, PlaceIdentitySchema } from '@worker/core/domain/places/place-values';
+import { type CandidateId } from '@worker/core/domain/primitives';
 import {
   type CandidateRegistration,
   type RegistryJsonValue,
@@ -13,7 +13,7 @@ import {
   type CommitPortResult,
   type CommitRequest,
 } from '@worker/core/application/ports/commit';
-import { type FieldResult, type Result } from '@worker/domain/result';
+import { type FieldResult, type Result } from '@worker/core/domain/result';
 import {
   type GetPlaceDetailsInput,
   type GetPlaceDetailsOutput,

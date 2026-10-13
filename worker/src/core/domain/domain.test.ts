@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import * as v from 'valibot';
-import { AnyFieldResultSchema, FieldResultSchema, ResultSchema } from '@worker/domain/result';
+import { AnyFieldResultSchema, FieldResultSchema, ResultSchema } from '@worker/core/domain/result';
 import { AnyObservationSchema, ObservationSchema } from '@worker/core/domain/evidence/evidence';
 import {
   CandidateIdSchema,
   HttpsUrlSchema,
   IsoTimestampSchema,
   RevisionSchema,
-} from '@worker/domain/primitives';
+} from '@worker/core/domain/primitives';
 import { IssueSchema } from '@worker/core/domain/issue';
 import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 
