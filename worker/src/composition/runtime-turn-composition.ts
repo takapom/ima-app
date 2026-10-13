@@ -62,7 +62,7 @@ import {
   RuntimeTurnCompositionError,
   prepareConversationCommit,
 } from '@worker/composition/runtime-turn-composition-support';
-import { observeRuntimeTerminalFormatFailure } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
+import { observeRuntimeTerminalFormatFailure } from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
 import {
   clearRuntimeCardSetId,
   registerRuntimeCardSetId,
@@ -76,7 +76,7 @@ import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import {
   runtimeTurnObserverWriters,
   type RuntimeTurnObserver,
-} from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
 
 export type { RuntimePublicResponseDependencies } from '@worker/infrastructure/runtime/response/runtime-response';
 export type RuntimeCompositionTurnRequest = RuntimeThinkTurnBuildRequest;

@@ -14,7 +14,7 @@ import {
   observeRuntimeTurnOutcome,
   type RuntimeSubmitRejectionWriter,
   type RuntimeTurnOutcomeWriter,
-} from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
 import {
   isPublicToolName,
   PUBLIC_TOOL_NAMES,

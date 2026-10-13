@@ -7,7 +7,7 @@ import type { EvalCase, EvalToolCall, EvalTurnRecord } from './eval-contract';
 import type {
   RuntimeSubmitRejection,
   RuntimeTurnOutcome,
-} from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
 import type { EvalModelRecording } from './model-recorder';
 
 export const EVAL_OWNER_SCOPE_REF = 'eval-owner';

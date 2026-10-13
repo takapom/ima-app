@@ -1,7 +1,7 @@
 import type { TurnContext } from '@cloudflare/think';
 import type { ToolExecutionContext } from '@worker/core/application/ports/context';
 import { describe, expect, it, vi } from 'vitest';
-import type { RuntimeTurnOutcome } from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
+import type { RuntimeTurnOutcome } from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
 import {
   NOW,
   allowRetention,

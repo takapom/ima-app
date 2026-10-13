@@ -6,7 +6,7 @@ import type { RuntimeModelGuardModel } from '@worker/infrastructure/runtime/turn
 import type {
   RuntimeSubmitRejection,
   RuntimeTurnOutcome,
-} from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
 import type { EvalCase, EvalFailure, EvalRunResult, EvalTurnRecord } from './eval-contract';
 import { createHotPepperStub } from './hotpepper-stub';
 import { createEvalModelRecorder } from './model-recorder';

@@ -6,7 +6,7 @@ import {
   runtimeTurnObserverWriters,
   type RuntimeSubmitRejection,
   type RuntimeTurnOutcome,
-} from '@worker/runtime/turn-execution/runtime-submit-diagnostic';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-submit-diagnostic';
 
 const invalid: RespondInvalid = {
   status: 'invalid',

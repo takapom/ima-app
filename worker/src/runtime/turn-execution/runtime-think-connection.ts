@@ -1,10 +1,10 @@
 import type { ConversationMemory } from '@worker/core/application/model-context/conversation-memory';
-import { RuntimeThinkConnectionError } from '@worker/runtime/turn-execution/runtime-think-connection-errors';
+import { RuntimeThinkConnectionError } from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection-errors';
 export {
   RuntimeThinkConnectionError,
   isRuntimeThinkConnectionError,
   type RuntimeThinkConnectionErrorCode,
-} from '@worker/runtime/turn-execution/runtime-think-connection-errors';
+} from '@worker/infrastructure/runtime/turn-execution/runtime-think-connection-errors';
 import type {
   PrepareStepContext,
   SaveMessagesOptions,
