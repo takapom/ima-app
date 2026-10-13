@@ -1,14 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  committed,
-  firstSearchUsesCurrentLocation,
-  kindIs,
-  neverSearchesCurrentLocation,
-  noCards,
-  searchesNamedArea,
-} from '../../tooling/eval/promptfoo/assertions';
-import type { EvalRunResult, EvalTurnRecord } from '../../tooling/eval/eval-contract';
-import {
   evalCaseFrom,
   evaluationErrorOf,
   parseToolDescriptions,
@@ -16,6 +7,7 @@ import {
   renderEvalRun,
   tokenUsageOf,
 } from '../../tooling/eval/promptfoo/provider-support';
+import { evalTurn as turn } from './eval-turn-fixture';
 
 const vars = {
   shopSet: 'shibuya-ebisu',
@@ -23,45 +15,6 @@ const vars = {
   location: 'available',
   turns: '近くで甘いもの食べたい\n\n  もう少し静かなところは？  ',
 };
-
-const turn = (overrides: Partial<EvalTurnRecord> = {}): EvalTurnRecord => ({
-  userText: '近くで甘いもの食べたい',
-  runStatus: 'completed',
-  failureCode: null,
-  committed: true,
-  kind: 'propose',
-  messages: ['近くのこちらです。'],
-  cards: [{ name: '架空 甘味処 こもれび', why: '和パフェの掲載があります', diff: null }],
-  searchOutcome: null,
-  toolCalls: [
-    {
-      name: 'search_places',
-      args: {
-        input: { query: 'スイーツ', area: { kind: 'current_location', radiusMeters: 1000 } },
-      },
-      result: { status: 'ok', code: null, candidates: 3, issues: [] },
-    },
-    {
-      name: 'respond',
-      args: { input: { kind: 'propose' } },
-      result: { status: 'committed', code: null, candidates: null, issues: [] },
-    },
-  ],
-  toolResultsMatched: true,
-  modelCalls: [
-    { ms: 900, inputTokens: 1200, outputTokens: 80, toolNames: ['search_places'], failure: null },
-    { ms: 1100, inputTokens: 1800, outputTokens: 120, toolNames: ['respond'], failure: null },
-  ],
-  respondMissing: [],
-  respondRejections: [],
-  evalError: null,
-  ...overrides,
-});
-
-const contextOf = (run: EvalRunResult, config?: Record<string, unknown>) => ({
-  providerResponse: { metadata: { evalRun: run } },
-  ...(config === undefined ? {} : { config }),
-});
 
 describe('evalCaseFrom', () => {
   it('splits turns by line and keeps the production prompt by default', () => {
@@ -202,48 +155,5 @@ describe('evaluationErrorOf', () => {
         turns: [turn({ committed: false, kind: null, evalError: 'SYSTEM_PROMPT_NOT_FOUND' })],
       }),
     ).toContain('システムプロンプト案を適用できませんでした');
-  });
-});
-
-describe('assertions', () => {
-  const run = { turns: [turn()] };
-
-  it('passes on the recorded behavior', () => {
-    expect(committed('', contextOf(run)).pass).toBe(true);
-    expect(kindIs('', contextOf(run, { kind: 'propose' })).pass).toBe(true);
-    expect(firstSearchUsesCurrentLocation('', contextOf(run)).pass).toBe(true);
-  });
-
-  it('fails when the behavior differs from the expectation', () => {
-    expect(kindIs('', contextOf(run, { kind: 'ask' }))).toMatchObject({
-      pass: false,
-      reason: '期待 ask・実際 propose',
-    });
-    expect(neverSearchesCurrentLocation('', contextOf(run)).pass).toBe(false);
-    expect(searchesNamedArea('', contextOf(run)).pass).toBe(false);
-    expect(noCards('', contextOf(run)).pass).toBe(false);
-    const uncommitted = { turns: [turn({ committed: false, kind: null, runStatus: 'failed' })] };
-    expect(committed('', contextOf(uncommitted)).pass).toBe(false);
-  });
-
-  it('does not count a turn that did nothing because it failed as avoiding the mistake', () => {
-    const failed = {
-      turns: [
-        turn({ committed: false, kind: null, runStatus: 'failed', cards: [], toolCalls: [] }),
-      ],
-    };
-    expect(neverSearchesCurrentLocation('', contextOf(failed)).pass).toBe(false);
-    expect(noCards('', contextOf(failed)).pass).toBe(false);
-    const answered = { turns: [turn({ kind: 'ask', cards: [], toolCalls: [] })] };
-    expect(neverSearchesCurrentLocation('', contextOf(answered)).pass).toBe(true);
-    expect(noCards('', contextOf(answered)).pass).toBe(true);
-  });
-
-  it('fails without a valid record or expectation instead of passing silently', () => {
-    expect(committed('', {}).pass).toBe(false);
-    expect(committed('', { providerResponse: { metadata: { evalRun: { turns: [] } } } }).pass).toBe(
-      false,
-    );
-    expect(kindIs('', contextOf(run)).pass).toBe(false);
   });
 });
