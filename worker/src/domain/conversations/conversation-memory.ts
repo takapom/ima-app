@@ -6,7 +6,10 @@ import {
   Text,
 } from '@worker/domain/primitives';
 
-/** Quotations of past speech, never evidence for current candidates or tool arguments. */
+/**
+ * 過去の発言の引用。現在の候補や Tool 引数の根拠にはしない。
+ * summary は extractive_v1 の抜粋で、会話全体の意味要約ではない。本文を別形式へ移して期限を延ばさない。
+ */
 export const ConversationMemorySchema = v.strictObject({
   ownerScopeRef: OpaqueIdSchema,
   conversationId: OpaqueIdSchema,

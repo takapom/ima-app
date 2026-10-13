@@ -33,23 +33,26 @@ import { validateOpening } from '@worker/application/use-cases/submit-response/v
 export type { SubmitValidationContext } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 
 /**
- * Fields a card renders. The Core selects their observations from the registry instead of the
- * model copying observation IDs: each candidate passes the same `resolveObservation` checks
- * (scope, candidate, context, freshness, retention, reuse) and the newest valid one wins.
+ * カードが描く項目。観測 ID はモデルに写させず、Core がレジストリから選ぶ。
+ * 各候補は同じ解決を通り、範囲、候補、文脈、鮮度、保持、再利用を満たす最新の観測を使う。
  */
 const CARD_FIELDS = ['identity', 'opening_hours', 'price', 'photos', 'facilities'] as const;
 type CardField = (typeof CARD_FIELDS)[number];
 
-/** A card cannot be committed without these; the other fields are simply left off the card. */
+/** これがないカードは確定できない。価格、写真、設備は無くてもカードから省く。 */
 const REQUIRED_CARD_FIELDS: readonly CardField[] = ['identity', 'opening_hours'];
 
 type AttachedCardObservations = {
   readonly byField: Map<KnownObservationField, ResolvedObservation>;
   readonly evidenceIds: readonly string[];
-  /** The newest rejected observation per field, reported when a required field has none. */
+  /** 必須フィールドが使えないときに報告する、フィールド別の最新 reject 理由。 */
   readonly rejected: ReadonlyMap<CardField, SubmitValidationIssue>;
 };
 
+/**
+ * レジストリ上の観測を項目ごとに1件へ絞る。
+ * 新しい取得時刻から試し、最初に解決できた観測を採用する。
+ */
 const attachCardObservations = (
   candidateId: string,
   path: string,
@@ -85,6 +88,10 @@ const attachCardObservations = (
   return { byField, evidenceIds, rejected };
 };
 
+/**
+ * 1枚のカードを検証する。
+ * 未登録と除外済みの候補は観測を見ずに拒否する。休業中の店は確定しない。掲載文から営業中とは判断しない。
+ */
 const validateCandidate = (
   selection: CardSelection,
   index: number,
@@ -219,6 +226,10 @@ const parseContext = (context: unknown): SubmitValidationResult<SubmitValidation
     : invalid(issue('INVALID_ARGUMENT', 'context', 'submit validation context is invalid'));
 };
 
+/**
+ * 提案をカード応答として検証する。
+ * 同じ候補の重複は拒否し、全カードが通ったときだけカードを置き換える応答にする。根拠 ID はモデルから受け取らない。
+ */
 export function validateSubmitCards(
   input: unknown,
   context: unknown,
@@ -272,6 +283,10 @@ const MessageInputSchema = v.strictObject({
   message: Text(300),
 });
 
+/**
+ * 質問または回答を検証する。
+ * カードは維持する。kind は診断と評価のために残し、公開 DTO へは出さない。
+ */
 export function validateMessage(
   input: unknown,
   context: unknown,

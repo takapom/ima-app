@@ -3,6 +3,10 @@ import { ObservationSchema } from '@worker/domain/evidence/evidence';
 import { IssueSchema } from '@worker/domain/issue';
 import { Text } from '@worker/domain/primitives';
 
+/**
+ * 1項目の取得結果。known は観測が付いているときだけ使い、unknown、unsupported、not_applicable、error は別状態のまま残す。
+ * 値が無い項目を推測で known にしない。同じ observationId を複数の根拠として数えない。
+ */
 export const FieldResultSchema = <T extends v.GenericSchema>(value: T) =>
   v.variant('status', [
     v.pipe(
@@ -32,8 +36,13 @@ type FieldResultOutput<T> = v.InferOutput<
 >;
 export type FieldResult<T> = FieldResultOutput<T>;
 
+/** 項目の value 型がまだ決まっていないとき用の FieldResult スキーマ。 */
 export const AnyFieldResultSchema = FieldResultSchema(v.unknown());
 
+/**
+ * 一連の処理の成否。ok と partial は data を伴い、error は Issue だけで data を持たない。
+ * partial は一部の失敗を全体の成功に見せない状態であり、warnings を消して ok と同じ結果にしない。
+ */
 export const ResultSchema = <T extends v.GenericSchema>(data: T) =>
   v.union([
     v.strictObject({

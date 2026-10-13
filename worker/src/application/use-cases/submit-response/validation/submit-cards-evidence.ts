@@ -28,8 +28,7 @@ type PhotoInfo = v.InferOutput<typeof PhotoInfoSchema>;
 type FacilitiesInfo = v.InferOutput<typeof FacilitiesInfoSchema>;
 
 /**
- * Conditions supplied by the Harness/Application. They are deliberately separate from model
- * input so the model cannot disable the current-time opening check.
+ * Harness/Application が供給する検証条件。モデル入力と分離し、現時刻営業チェックを無効化させない。
  */
 export const SubmitValidationContextSchema = v.pipe(
   v.strictObject({
@@ -57,11 +56,13 @@ const KnownObservationFieldSchema = v.picklist([
   'contact',
   'facilities',
 ]);
+/** カードと詳細が扱う観測項目。contact は接続中の Provider に無いため、モデル向けスキーマには出さない。 */
 export type KnownObservationField = v.InferOutput<typeof KnownObservationFieldSchema>;
 
 const knownObservationField = (field: string): field is KnownObservationField =>
   v.safeParse(KnownObservationFieldSchema, field).success;
 
+/** 確定を拒否する1件の理由。修復と診断が同じ code を読めるよう、Port の SubmitIssue に揃える。 */
 export type SubmitValidationIssue = {
   code: SubmitIssue['code'];
   path: string | null;
@@ -71,6 +72,7 @@ export type SubmitValidationIssue = {
   missingFields: string[];
 };
 
+/** 確定応答が観測へ残すリンク。値そのものではなく、出典と保持条件を運ぶ。 */
 export type EvidenceLink = {
   observationId: string;
   candidateId: string;
@@ -79,6 +81,7 @@ export type EvidenceLink = {
   retention: RetentionMetadata;
 };
 
+/** レジストリの観測から組み立てた1枚のカード。価格、写真、設備は観測が使えなければ null。 */
 export type ValidatedCard = {
   candidateId: string;
   identity: PlaceIdentity;
@@ -91,6 +94,7 @@ export type ValidatedCard = {
   diff: string | null;
 };
 
+/** カードを置き換える確定応答。hero は必須で、alts は検証済みの残り。 */
 export type ValidatedCardsResponse = {
   presentation: 'replace';
   message: readonly string[];
@@ -98,27 +102,31 @@ export type ValidatedCardsResponse = {
   alts: readonly ValidatedCard[];
 };
 
-/** `kind` separates a question from an answer for telemetry and evaluation; both keep cards. */
+/** 質問と回答の区別。テレメトリと評価が kind を使い、どちらも画面のカードは残す。公開 DTO へは出さない。 */
 export type ValidatedMessageResponse = {
   presentation: 'keep';
   kind: 'ask' | 'answer';
   message: string;
 };
 
+/** 検証の成否。失敗理由は先頭から上限件数にし、モデルへの修復入力が際限なく増えないようにする。 */
 export type SubmitValidationResult<T> =
   | { status: 'valid'; response: T }
   | { status: 'invalid'; issues: readonly SubmitValidationIssue[] };
 
+/** このターンで使ってよい観測と、その出典リンク。 */
 export type ResolvedObservation = {
   observation: ReadonlyStoredObservation;
   evidence: EvidenceLink;
 };
 
+/** 失敗結果を作る。返す課題は先頭から上限件数にし、修復入力が際限なく増えないようにする。 */
 export const invalid = (...issues: SubmitValidationIssue[]): SubmitValidationResult<never> => ({
   status: 'invalid',
   issues: issues.slice(0, 8),
 });
 
+/** 1件の拒否理由。候補と観測 ID は、特定できたときだけ付ける。 */
 export const issue = (
   code: SubmitIssue['code'],
   path: string | null,
@@ -152,6 +160,7 @@ const observationSchema = (field: KnownObservationField): v.GenericSchema => {
   }
 };
 
+/** 観測値をスキーマで読む。壊れた値は undefined にし、呼び出し側が項目ごとの拒否へ分ける。 */
 export const parseObservationValue = <TSchema extends v.GenericSchema>(
   observation: ReadonlyStoredObservation,
   schema: TSchema,
@@ -160,6 +169,7 @@ export const parseObservationValue = <TSchema extends v.GenericSchema>(
   return parsed.success ? parsed.output : undefined;
 };
 
+/** セッション、鮮度、表示の各期限のうち、設定されているものは現在時刻より後である必要がある。null の境界はこの判定では失効にしない。 */
 const isRetentionUsable = (observation: ReadonlyStoredObservation, now: string): boolean => {
   const retention = observation.retention;
   const boundaries = [retention.sessionExpiresAt, retention.freshUntil, retention.displayUntil];
@@ -168,6 +178,10 @@ const isRetentionUsable = (observation: ReadonlyStoredObservation, now: string):
   );
 };
 
+/**
+ * 1つの observation ID が、今の turn でカードの根拠として使えるか調べる。
+ * 使えない理由（未登録・別候補・期限切れなど）は issue に載せて返す。
+ */
 export const resolveObservation = (
   id: string,
   candidateId: string | null,

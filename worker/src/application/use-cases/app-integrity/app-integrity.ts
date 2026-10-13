@@ -18,14 +18,21 @@ import type {
 } from '@worker/application/ports/app-integrity';
 const NONCE_TTL_MS = 5 * 60 * 1_000;
 const KEY_REF_MAX_LENGTH = 2_048;
+
+/**
+ * 端末の App Attest を owner と device に束ねる手順。
+ * Apple の検証とストア実装は Port のままにし、nonce の寿命、鍵登録、認可、失効の判断だけを持つ。
+ */
 export type AppIntegrityApplication = {
   readonly enforcement: AppIntegrityEnforcement;
   readonly environment: AppAttestEnvironment;
+  /** 一度きりの challenge を発行する。発行不能は例外にし、検証拒否と再試行を混ぜない。 */
   readonly issueNonce: (input: {
     readonly ownerScopeRef: string;
     readonly deviceId: string;
     readonly now: string;
   }) => Promise<AppIntegrityNonce>;
+  /** attestation を検証して鍵を登録する。nonce は検証の前に消費し、同じ challenge の再送を登録成功にしない。 */
   readonly enroll: (input: {
     readonly ownerScopeRef: string;
     readonly deviceId: string;
@@ -35,6 +42,7 @@ export type AppIntegrityApplication = {
     | { readonly registered: true }
     | { readonly registered: false; readonly code: AppIntegrityFailureCode }
   >;
+  /** 保護された要求の assertion を検証し、counter が進んだときだけ許可する。無効化と対象外の経路は assertion なしで通す。 */
   readonly authorize: (input: {
     readonly protected: boolean;
     readonly hasAssertion: boolean;
@@ -44,9 +52,14 @@ export type AppIntegrityApplication = {
     readonly proof: AppIntegrityRequestProof;
     readonly now: string;
   }) => Promise<AppIntegrityDecision>;
+  /** 登録済み鍵を失効する。鍵ストアが無い構成では false を返し、失効できたことにしない。 */
   readonly revoke: (input: AppIntegrityOwner & { readonly keyId: string }) => Promise<boolean>;
 };
 
+/**
+ * createAppIntegrityApplication に渡す Port と方針。
+ * nonce の寿命は呼び出し側が既定より延ばせず、上限は NONCE_TTL_MS で切る。
+ */
 export type AppIntegrityOptions = {
   readonly nonceGenerator: AppIntegrityNonceGenerator;
   readonly enforcement: AppIntegrityEnforcement;
@@ -66,6 +79,7 @@ const timestampMs = (value: string): number => {
 const validKeyRef = (value: string): boolean =>
   value.length > 0 && value.length <= KEY_REF_MAX_LENGTH;
 
+/** ストア障害は検証拒否と分け、STORE_UNAVAILABLE に閉じる。 */
 const invalidStore = (): AppIntegrityDecision => ({
   allowed: false,
   code: 'STORE_UNAVAILABLE',
@@ -76,6 +90,10 @@ const failure = (code: AppIntegrityFailureCode): AppIntegrityDecision => ({
   code,
 });
 
+/**
+ * enforcement と注入 Port から App Integrity 手順を組み立てる。
+ * 時刻と乱数は引数で受け、enforcement に応じて fail-closed する。
+ */
 export const createAppIntegrityApplication = (
   input: AppIntegrityOptions,
 ): AppIntegrityApplication => {

@@ -1,5 +1,13 @@
+/**
+ * セッション失効後の後始末を一度だけ走らせる関門。
+ * 期限切れなら true。時計やアンカーの例外も期限切れとして扱い、残った実行状態を残さない。
+ */
 export type SessionExpiryGate = (onCleanupComplete?: () => void) => Promise<boolean>;
 
+/**
+ * 失効判定と後始末を組み立てる。
+ * 後始末の失敗は完了にせず、次の呼び出しで同じ経路を残す。写真の消去は文脈の消去が失敗しても試みる。
+ */
 export const createSessionExpiryGate = (input: {
   readonly isExpired: () => boolean;
   readonly readScope: () =>
@@ -17,8 +25,7 @@ export const createSessionExpiryGate = (input: {
     try {
       expired = input.isExpired();
     } catch {
-      // A broken clock/anchor is fail-closed. Run the same cleanup path so an invalid
-      // durable anchor cannot leave retained runtime state behind while alarms retry.
+      /** 時計異常は fail-closed。無効 anchor でも掃除経路は走らせる。 */
       expired = true;
     }
     if (!expired) return false;
@@ -26,7 +33,7 @@ export const createSessionExpiryGate = (input: {
       try {
         onCleanupComplete?.();
       } catch {
-        // A durable completion marker that cannot be written must be retried.
+        /** 完了マーカー書き込み失敗時は再試行させる。 */
         return true;
       }
       return true;
@@ -41,7 +48,7 @@ export const createSessionExpiryGate = (input: {
     try {
       await input.cleanupRuntime();
     } catch {
-      // Expiry remains fail-closed when SDK cleanup needs a platform retry.
+      /** SDK 掃除が要リトライなら期限処理も fail-closed のまま。 */
       cleanupSucceeded = false;
     }
     try {

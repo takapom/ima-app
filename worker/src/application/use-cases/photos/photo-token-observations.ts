@@ -5,17 +5,26 @@ import type { CommittedResponse } from '@worker/application/use-cases/submit-res
 import type { ReadonlyStoredObservation } from '@worker/domain/candidates/registry';
 import type { RegistryScope } from '@worker/domain/evidence/freshness';
 import type { PhotoTokenObservation } from '@worker/application/use-cases/photos/prepare-photo-tokens';
+/**
+ * コミット済み応答から写真観測を読む入口。
+ * 表示可否と保存可否は観測ごとに決め、モデル入力や永続化方針から流用しない。
+ */
 export type PhotoTokenEvidenceSource = {
   readonly registry: Pick<CandidateObservationRegistryPort, 'readObservation'>;
   readonly scope: RegistryScope;
   readonly now: string;
-  /** Capability is explicit; an omitted/false gate must never issue photo handles. */
+  /** 写真ハンドルを出してよいか。偽なら発行用の観測を空にする。 */
   readonly photosEnabled: boolean;
-  /** Display policy is resolved per observation and is independent from model/persistence policy. */
+  /** この観測を永続参照へ残してよいか。表示可否とは別に決める。 */
   readonly persistenceAllowedFor: (source: ReadonlyStoredObservation) => boolean;
+  /** この観測を表示トークンへ写してよいか。保存可否やモデル入力からは決めない。 */
   readonly displayAllowedFor: (source: ReadonlyStoredObservation) => boolean;
 };
 
+/**
+ * 表示窓が開いているか。
+ * 取得時刻から、鮮度、provider、セッション、表示の各期限の手前までを開いているとみなす。時刻が読めない観測は表示しない。
+ */
 const isPhotoDisplayWindowOpen = (source: ReadonlyStoredObservation, now: string): boolean => {
   if (source.retention.displayPolicyStatus !== 'available') return false;
   if (source.retention.displayUntil === null) return false;
@@ -44,7 +53,10 @@ const isPhotoDisplayWindowOpen = (source: ReadonlyStoredObservation, now: string
   );
 };
 
-/** Reads only the committed cards' photo evidence; provider references stay inside this boundary. */
+/**
+ * コミット済みカードの写真根拠だけを読む。provider の参照はこの境界の外へ出さない。
+ * カードを置き換えない応答には、写真トークンも作らない。
+ */
 export const collectPhotoTokenObservations = (
   response: CommittedResponse,
   input: PhotoTokenEvidenceSource,

@@ -3,7 +3,10 @@ import type {
   OwnerReferenceDependencies,
 } from '@worker/application/ports/owner-candidate';
 
-/** A decision resolves the current candidate; the store atomically records identity and decision. */
+/**
+ * 現在の候補を owner の決定として記録する。
+ * 店の実体は渡さず、解決した provider と recordRef だけをストアの1回の decide に任せる。身元と決定時刻はそこでまとめて残る。
+ */
 export const decideOwnerPlace = async (
   input: OwnerReferenceInput & { readonly decidedAt: string },
   dependencies: OwnerReferenceDependencies,

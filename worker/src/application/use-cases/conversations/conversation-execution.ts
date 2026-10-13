@@ -9,6 +9,7 @@ import type {
   ConversationTurnExecutor,
 } from '@worker/application/ports/conversation-execution';
 
+/** 1回の AI 応答生成を開始するときの入力。会話の revision と clientMessageId で二重実行を防ぐ。 */
 export type ConversationExecutionInput = {
   readonly scope: ConversationRunScope;
   readonly expectedRevision: number;
@@ -16,7 +17,10 @@ export type ConversationExecutionInput = {
   readonly previousThreadId: string | null;
 };
 
-/** Owns run progression; SDK execution, transport payloads and DO RPC stay behind ports. */
+/**
+ * 会話の1 run（ユーザー1発言に対する AI 処理）の状態を進める。
+ * DB・SDK・DO との通信は port に任せ、ここでは start → 実行 → complete/fail の順序だけ決める。
+ */
 export class ConversationExecutionApplication {
   constructor(
     private readonly options: {
@@ -27,6 +31,10 @@ export class ConversationExecutionApplication {
     },
   ) {}
 
+  /**
+   * スレッド側に届いている応答があれば run を completed に更新する。
+   * 成功または会話削除（NOT_FOUND）のときだけ配送 ack を送る。それ以外は ack せず再試行可能にする。
+   */
   async reconcile(scope: ConversationRunScope): Promise<ConversationRunResult> {
     const result = await this.options.store.readRun(scope);
     if (!result.ok || result.run.threadId === null) return result;
@@ -39,12 +47,15 @@ export class ConversationExecutionApplication {
       message: delivery.message,
       inputFingerprint: delivery.inputFingerprint,
     });
-    // A deleted conversation also consumes the outbox; a transient conflict must remain retryable.
     if (completed.ok || completed.code === 'NOT_FOUND')
       await this.options.threads.acknowledgeDelivery(target);
     return completed;
   }
 
+  /**
+   * 進行中の turn を止める。
+   * スレッドへ cancel を渡したあとにもう一度 reconcile し、配送済みの完了を中断失敗で上書きしない。
+   */
   async cancel(scope: ConversationRunScope): Promise<ConversationRunResult> {
     const result = await this.reconcile(scope);
     if (!result.ok || (result.run.status !== 'accepted' && result.run.status !== 'running'))
@@ -67,6 +78,11 @@ export class ConversationExecutionApplication {
     return this.options.store.fail({ ...scope, now: this.options.now(), interrupted: true });
   }
 
+  /**
+   * accepted の run だけを running にして実行する。
+   * 直前スレッドが無効なら run 専用のスレッドを作り、候補をリセットするかは実行側へ渡す。
+   * 受付時の revision と clientMessageId が食い違うときは実行せず、受付の取り違えとして落とす。
+   */
   async execute(
     input: ConversationExecutionInput,
     run: ConversationTurnExecutor,

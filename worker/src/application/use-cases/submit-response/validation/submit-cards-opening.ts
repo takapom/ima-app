@@ -8,6 +8,10 @@ import {
   type SubmitValidationIssue,
 } from '@worker/application/use-cases/submit-response/validation/submit-cards-evidence';
 
+/**
+ * 掲載された営業区間のうち、指定時刻を含むものを返す。
+ * endAt が null の区間は、終端を置かなかった区間として開始以降を含む。
+ */
 export const openIntervalAt = (
   hours: OpeningHours,
   instant: string,
@@ -21,8 +25,8 @@ export const openIntervalAt = (
 };
 
 /**
- * Checks the listed opening hours at the server's current time. A listing that does not state
- * whether the shop is open is accepted only when the Harness explicitly allows unknown opening.
+ * サーバの現在時刻で、掲載された営業を確認する。
+ * 営業していると掲載されていない店は、Harness が不明な営業を明示的に許したときだけ通す。掲載文から営業中を補わない。
  */
 export const validateOpening = (
   candidateId: string,
@@ -31,7 +35,7 @@ export const validateOpening = (
   observations: Map<KnownObservationField, ResolvedObservation>,
 ): SubmitValidationIssue[] => {
   const opening = observations.get('opening_hours');
-  // A missing observation is reported by the card's required-field check.
+  /** 観測欠落はカード必須フィールド検証側が報告する。 */
   if (opening === undefined) return [];
   const observationId = opening.observation.observationId;
   const hours = parseObservationValue(opening.observation, OpeningHoursSchema);

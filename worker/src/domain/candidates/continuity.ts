@@ -10,7 +10,7 @@ import {
 import type { CandidateId, CardSetId, OpaqueId } from '@worker/domain/primitives';
 import { RegistryScopeSchema, type RegistryScope } from '@worker/domain/evidence/freshness';
 
-/** A saved reference contains only an owner-scoped provider identity, never provider payload. */
+/** 保存参照の登録入力。owner に紐づく Provider 識別子だけで、Provider の本文は入れない。 */
 export const SavedPlaceRegistrationSchema = v.strictObject({
   ownerScopeRef: OpaqueIdSchema,
   provider: Text(80),
@@ -18,6 +18,7 @@ export const SavedPlaceRegistrationSchema = v.strictObject({
 });
 export type SavedPlaceRegistration = v.InferOutput<typeof SavedPlaceRegistrationSchema>;
 
+/** 保存済みの店舗参照。再取得の識別子であり、店名・住所・写真・生成文は持たない。 */
 export const SavedPlaceReferenceSchema = v.strictObject({
   savedPlaceRef: SavedPlaceRefSchema,
   ownerScopeRef: OpaqueIdSchema,
@@ -26,6 +27,10 @@ export const SavedPlaceReferenceSchema = v.strictObject({
 });
 export type SavedPlaceReference = v.InferOutput<typeof SavedPlaceReferenceSchema>;
 
+/**
+ * カード集合の1枠。並びの0が hero、以降が alt。
+ * 順序と役割が食い違う枠は受け取らない。
+ */
 export const CardSetEntrySchema = v.strictObject({
   candidateId: CandidateIdSchema,
   displayOrder: v.pipe(SafeIntegerSchema, v.minValue(0), v.maxValue(2)),
@@ -33,6 +38,10 @@ export const CardSetEntrySchema = v.strictObject({
 });
 export type CardSetEntry = v.InferOutput<typeof CardSetEntrySchema>;
 
+/**
+ * 1回の AI 応答で出したカード集合の記録（会話に残す表示データ ConversationCards とは別物）。
+ * hero/alt の順序・選択・除外の整合を v.check で検証する。
+ */
 export const CardSetRecordSchema = v.pipe(
   v.strictObject({
     cardSetId: CardSetIdSchema,
@@ -62,6 +71,10 @@ export const CardSetRecordSchema = v.pipe(
     );
   }, 'card set order and selection state are inconsistent'),
 );
+/**
+ * 検証済みのカード集合レコード。entries 等は readonly。
+ * 履歴表示用。新しい turn で「この候補を使ってよい」という権限の代わりにはならない。
+ */
 export type CardSetRecord = {
   readonly cardSetId: CardSetId;
   readonly scope: RegistryScope;

@@ -28,11 +28,16 @@ import {
   validateSubmitCards,
 } from '@worker/application/use-cases/submit-response/validation/submit-cards';
 
+/** コミット後の revision が安全整数を超えないよう、要求時点の値を一つ手前までに限る。 */
 const CommitExpectedRevisionSchema = v.pipe(
   NonNegativeSafeIntegerSchema,
   v.maxValue(Number.MAX_SAFE_INTEGER - 1),
 );
 
+/**
+ * 応答確定の要求。scope、turn、期待 revision、冪等キーを束ねる。
+ * 期待 revision はコミット前の値である。
+ */
 export const CommitApplicationRequestSchema = v.strictObject({
   scope: RegistryScopeSchema,
   turnId: TurnIdSchema,
@@ -41,8 +46,10 @@ export const CommitApplicationRequestSchema = v.strictObject({
 });
 export type CommitApplicationRequest = v.InferOutput<typeof CommitApplicationRequestSchema>;
 
+/** 検証を通過した確定応答。replace はカードの置き換え、keep は質問または回答でカードを残す。 */
 export type CommittedResponse = ValidatedCardsResponse | ValidatedMessageResponse;
 
+/** commit の結果。invalid（検証 NG）・committed（成功）・conflict（revision 競合）の3種。 */
 export type CommitApplicationResult =
   | { status: 'invalid'; issues: readonly SubmitValidationIssue[] }
   | { status: 'committed'; receipt: CommitReceipt }
@@ -70,6 +77,10 @@ const invalidRequest = (): CommitApplicationResult => ({
   ],
 });
 
+/**
+ * コミット用 Port が契約外の値を返した。
+ * 検証失敗に混ぜると、壊れた保存を確定成功に見せてしまう。
+ */
 export class CommitAdapterError extends Error {
   readonly code = 'COMMIT_ADAPTER_INVALID';
 
@@ -79,6 +90,7 @@ export class CommitAdapterError extends Error {
   }
 }
 
+/** アダプタ契約の破れは検証エラーにせず、成功扱いにできない例外にする。 */
 const schemaFailure = (message: string): never => {
   throw new CommitAdapterError(message);
 };
@@ -90,10 +102,13 @@ const addUnique = (target: Set<string>, values: readonly string[]): void => {
   for (const value of values) target.add(value);
 };
 
+/**
+ * レシートに載せる候補と観測の参照。
+ * 生成文は観測を引用しない。カードを置き換える応答だけが、カードの事実から観測 ID を集める。
+ */
 const referencesFor = (response: CommittedResponse): CommitReferences => {
   const candidateIds = new Set<string>();
   const observationIds = new Set<string>();
-  // Generated text cites nothing; only card facts reference observations.
   if (response.presentation === 'replace') {
     const cards = [response.hero, ...response.alts];
     addUnique(
@@ -114,8 +129,8 @@ const responseKey = (scope: RegistryScope, turnId: string, responseId: string): 
   `${scope.ownerScopeRef}\u0000${scope.threadId}\u0000${turnId}\u0000${responseId}`;
 
 /**
- * Validates model output, records a reference-only CAS receipt, and keeps the assembled response
- * in memory for the current turn. The optional preparation hook keeps transport mapping outside Core.
+ * AI の respond 結果を検証し、thread の revision を CAS で更新する。
+ * 検証済み応答は turn 終了までメモリに置く（永続 DB に本文を丸ごと保存しない）。
  */
 export class SubmitApplication {
   private readonly ephemeralResponses = new Map<string, EphemeralResponse>();
@@ -131,6 +146,7 @@ export class SubmitApplication {
     ) => void | Promise<void>,
   ) {}
 
+  /** カード提案を検証して確定する。要求と検証文脈の scope が食い違うときは確定しない。 */
   commitCards(
     input: unknown,
     context: unknown,
@@ -151,6 +167,7 @@ export class SubmitApplication {
     return this.commitResponse(validation.response, parsedRequest.output);
   }
 
+  /** 質問または回答を検証して確定する。カードは置き換えず、観測参照もレシートに載せない。 */
   commitMessage(
     input: unknown,
     context: unknown,
@@ -170,6 +187,7 @@ export class SubmitApplication {
     return this.commitResponse(validation.response, parsedRequest.output);
   }
 
+  /** 当ターンのメモリから確定応答を返す。破棄済みターンは返さない。 */
   getCommittedResponse(
     scope: RegistryScope,
     turnId: string,
@@ -180,6 +198,7 @@ export class SubmitApplication {
     return response === undefined ? undefined : structuredClone(response);
   }
 
+  /** ターンのメモリ上の応答を捨て、以後の取得を拒否する。永続化したレシートは消さない。 */
   clearTurn(scope: RegistryScope, turnId: string): void {
     this.disposedTurns.add(turnKey(scope, turnId));
     const prefix = `${scope.ownerScopeRef}\u0000${scope.threadId}\u0000${turnId}\u0000`;
@@ -200,6 +219,11 @@ export class SubmitApplication {
     return this.commitWithDigest(response, request, references, canonical);
   }
 
+  /**
+   * レシートが要求と一致するときだけ、当ターンのメモリへ載せる。
+   * 準備中にターンが破棄されたら衝突として返す。破棄がコミット成功のあとなら、レシートは返すがメモリには残さない。
+   * 再送のレシートは既存の responseId を持つので、新規 ID の一致は初回だけ要求する。
+   */
   private async commitWithDigest(
     response: CommittedResponse,
     request: CommitApplicationRequest,

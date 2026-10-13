@@ -1,4 +1,7 @@
-/** Returns the first 05:00 JST after the supplied server timestamp. */
+/**
+ * 渡されたサーバー時刻より後の最初の JST 05:00。同時刻は翌日にする。
+ * ホストのローカル日付では切らない。解釈できない時刻は例外にし、既存 session の期限を延ばす計算には使わない。
+ */
 export const sessionExpiryAt = (serverNow: string): string => {
   const utcMs = Date.parse(serverNow);
   if (!Number.isFinite(utcMs)) throw new Error('RUNTIME_PRODUCTION_CLOCK');

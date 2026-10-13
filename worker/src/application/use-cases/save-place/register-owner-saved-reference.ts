@@ -3,7 +3,11 @@ import type {
   OwnerReferenceDependencies,
 } from '@worker/application/ports/owner-candidate';
 
-/** Replay precedes candidate resolution so retries do not require the original live candidate. */
+/**
+ * owner の保存参照を登録する。
+ * 再送は候補の解決より先に照合する。元の候補がもうライブでなくても、同じ指紋の保存を返せるようにするため。
+ * ストアへ残すのは provider と recordRef だけで、店名・住所・写真は埋め込まない。
+ */
 export const registerOwnerSavedReference = async (
   input: OwnerReferenceInput,
   dependencies: OwnerReferenceDependencies,

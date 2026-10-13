@@ -5,11 +5,15 @@ import {
   type TelemetryEventStore,
   type TelemetryEventFailure,
 } from '@worker/application/ports/telemetry';
+/** テレメトリ1件を owner スコープ付きで永続化する関数型。 */
 export type RecordTelemetryEvent = (
   record: TelemetryEventRecord,
   ownerScopeRef: string,
 ) => Promise<void>;
-/** Only an internal allowlisted record reaches the store. Persistence failures remain observable. */
+/**
+ * 許可リストを通過した記録だけをストアへ書く。
+ * 形式不正は記録せず戻る。書き込み失敗は呼び出し側へ投げ直し、成功したことにしない。
+ */
 export const createRecordTelemetryEvent =
   (
     store: TelemetryEventStore,

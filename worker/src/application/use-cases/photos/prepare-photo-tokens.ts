@@ -1,16 +1,18 @@
 import * as v from 'valibot';
 import { IsoTimestampSchema, OpaqueIdSchema, RevisionSchema } from '@worker/domain/primitives';
 import type { PhotoTokenIssuer } from '@worker/application/ports/photo-token-issuer';
+/** 写真トークンの発行条件が壊れている。呼び出し側は発行ゼロとして扱わず、準備そのものの失敗として止める。 */
 export class PhotoTokenPreparationError extends Error {
   constructor() {
     super('Invalid photo token context');
     this.name = 'PhotoTokenPreparationError';
   }
 }
+/** カードの写真根拠から切り出した、1枚分の発行判断。photoRef は公開 DTO へ出さない。 */
 export type PhotoTokenObservation = {
   readonly candidateId: string;
   readonly photoRef: string;
-  /** The source observation may be projected only while its display policy allows it. */
+  /** 表示方針が許すあいだだけトークンへ写す。観測が残っていても表示不可なら発行しない。 */
   readonly displayAllowed: boolean;
   readonly persistUntil?: string | null;
   readonly sessionExpiresAt: string;
@@ -18,23 +20,25 @@ export type PhotoTokenObservation = {
   readonly providerExpiresAt: string | null;
 };
 
+/** トークンへ焼き込む発行文脈。後続の写真 GET で期限を延ばさない。 */
 export type PhotoTokenPreissueContext = {
   readonly ownerScopeRef: string;
   readonly threadId: string;
-  /** The request turn that produced the response; photo GETs may occur in another UI turn. */
+  /** 応答を作ったターン。写真の GET は別の UI ターンで起きうる。 */
   readonly sourceTurnId: string;
-  /** Input target revision; public response metadata is the post-commit revision. */
+  /** 入力時点の対象 revision。コミット後の公開 revision とは別の値としてトークンに残す。 */
   readonly sourceRevision: number;
   readonly deviceId: string;
   readonly now: string;
 };
 
+/** 公開 DTO の同期変換が引く、発行済み写真トークン。 */
 export type PreparedPhotoTokens = {
   readonly issuedCount: number;
   readonly withheldCount: number;
-  /** Returns only server-issued tokens; provider photo references never escape this lookup. */
+  /** サーバが発行したトークンだけを返す。provider の写真参照はこの引き当てから出ない。 */
   readonly resolve: (candidateId: string, photoRef: string) => string | undefined;
-  /** Only tokens whose reference mappings were approved for durable storage. */
+  /** 永続保存を認められた参照対応のトークンだけを返す。表示専用のトークンを履歴ストアへ渡さない。 */
   readonly resolvePersistent: (candidateId: string, photoRef: string) => string | undefined;
 };
 
@@ -74,6 +78,10 @@ type PreparedObservation = {
   readonly persist: boolean;
 };
 
+/**
+ * 1件の観測を発行可能な期限へ畳む。
+ * 表示不可、期限の解釈不能、すでに切れている観測は発行しない。表示トークンは 30 分を超えて延ばさない。
+ */
 const prepareObservation = (
   observation: PhotoTokenObservation,
   nowMilliseconds: number,
@@ -106,7 +114,10 @@ const prepareObservation = (
   };
 };
 
-/** Issues all currently observed photos before the synchronous public DTO mapper runs. */
+/**
+ * 観測中の写真を、公開 DTO の同期変換より前にまとめて発行する。
+ * 同じ候補と写真が食い違うときは発行せず、期限と保存可否は厳しい側へ寄せる。
+ */
 export const preparePhotoTokens = async (
   issuer: PhotoTokenIssuer,
   observations: readonly PhotoTokenObservation[],
