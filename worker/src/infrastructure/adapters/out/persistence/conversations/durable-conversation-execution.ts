@@ -8,7 +8,7 @@ import {
 } from '@ima/contracts';
 import type { ConversationRunScope } from '@worker/core/application/ports/conversation-runs';
 import type { ConversationThreadPort } from '@worker/core/application/ports/conversation-execution';
-import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
+import type { ConversationThreadNamespace } from '@worker/infrastructure/runtime/ports/conversation-thread';
 import type { PreparedConversationExecution } from '@worker/infrastructure/runtime/conversations/conversation-execution';
 import type { ThreadRuntimeFailureCode } from '@worker/runtime/threads/admission';
 export type ConversationExecutionObserver = {

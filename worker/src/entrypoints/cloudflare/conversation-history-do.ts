@@ -1,8 +1,8 @@
 import { createConversationExecution } from '@worker/composition/conversation-execution';
 import { conversationFingerprint } from '@worker/infrastructure/adapters/out/security/conversation-fingerprint';
-import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
+import type { ConversationThreadNamespace } from '@worker/infrastructure/runtime/ports/conversation-thread';
 import { ConversationDeletions } from '@worker/infrastructure/adapters/out/persistence/conversations/conversation-deletions';
-import { conversationResponseDeadline } from '@worker/runtime/conversations/conversation-response-deadline';
+import { conversationResponseDeadline } from '@worker/infrastructure/runtime/conversations/conversation-response-deadline';
 import { SqlConversationMemory } from '@worker/infrastructure/adapters/out/persistence/conversations/sql-conversation-memory';
 import type { ConversationMemoryStore } from '@worker/core/application/ports/conversation-memory-store';
 import { ConversationRunSchema } from '@worker/core/domain/conversations/conversation-run';

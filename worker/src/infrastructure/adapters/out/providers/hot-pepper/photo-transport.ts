@@ -5,7 +5,7 @@ import {
   PhotoContentTypeSchema,
   PhotoProviderError,
   type PhotoMediaTransport,
-} from '@worker/runtime/ports/photo-media';
+} from '@worker/infrastructure/runtime/ports/photo-media';
 import { HotPepperPhotoUrlSchema } from '@worker/security/photo-resource-policy';
 import {
   beginRuntimeProviderTransportCall,

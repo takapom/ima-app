@@ -1,4 +1,4 @@
-import type { PhotoMedia } from '@worker/runtime/ports/photo-media';
+import type { PhotoMedia } from '@worker/infrastructure/runtime/ports/photo-media';
 
 /** Refreshes current photos independently from historical proposal/Thread retention. */
 export interface ConversationPhotoReader {

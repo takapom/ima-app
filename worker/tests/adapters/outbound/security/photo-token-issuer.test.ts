@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import { createPhotoTokenIssuer } from '@worker/infrastructure/adapters/out/security/photo-token-issuer';
-import type { PhotoTokenCodec } from '@worker/runtime/ports/photo';
+import type { PhotoTokenCodec } from '@worker/infrastructure/runtime/ports/photo';
 
 it('rejects an untrusted photo URL before invoking signing or storage', async () => {
   const issue = vi.fn<PhotoTokenCodec['issue']>(() => Promise.resolve('token'));

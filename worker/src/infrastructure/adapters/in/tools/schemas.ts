@@ -6,7 +6,7 @@ import {
 } from '@worker/core/application/ports/operations';
 import { RespondInputSchema } from '@worker/core/application/ports/model';
 import type { PublicToolEnvelope } from '@worker/runtime/ports/tool-binding';
-import { toolInputValidationError } from '@worker/runtime/model/tool-input-error';
+import { toolInputValidationError } from '@worker/infrastructure/runtime/model/tool-input-error';
 
 type JsonSchema = Parameters<typeof jsonSchema>[0];
 type WireSchema = Exclude<JsonSchema, PromiseLike<unknown> | (() => unknown)>;

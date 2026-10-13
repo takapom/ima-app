@@ -4,7 +4,7 @@ import {
   positiveQuery,
 } from '@worker/infrastructure/adapters/in/http/conversation-boundary';
 import { conversationPhotoSources } from '@worker/infrastructure/runtime/conversations/conversation-photo-sources';
-import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
+import { PhotoProviderError } from '@worker/infrastructure/runtime/ports/photo-media';
 import { photoProviderFailure } from '@worker/infrastructure/adapters/in/http/photo-body-handler';
 import { HttpBoundaryError, toErrorResponse } from '@worker/infrastructure/adapters/in/http/errors';
 import { ConversationPhotoResponseSchema } from '@ima/contracts';

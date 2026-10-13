@@ -1,4 +1,4 @@
-import { MODEL_SYSTEM_PROMPT } from '@worker/runtime/model/system-prompt';
+import { MODEL_SYSTEM_PROMPT } from '@worker/infrastructure/runtime/model/system-prompt';
 import type { RuntimeModelGuardCallOptions } from '@worker/runtime/turn-execution/runtime-model-guard';
 import type { EvalCase, EvalToolDescriptions, EvalTurnRecord } from './eval-contract';
 

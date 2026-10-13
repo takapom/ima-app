@@ -1,4 +1,4 @@
-import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
+import { PhotoProviderError } from '@worker/infrastructure/runtime/ports/photo-media';
 import { HotPepperError } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 import type {
   RuntimeProviderTransportCompletion,

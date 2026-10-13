@@ -3,7 +3,7 @@ import type { ConversationPhotoSource } from '@worker/core/domain/conversations/
 import * as v from 'valibot';
 import type { AssistantResponse } from '@ima/contracts';
 import type { CommitRequest } from '@worker/core/application/ports/commit';
-import { conversationResponseDeadline } from '@worker/runtime/conversations/conversation-response-deadline';
+import { conversationResponseDeadline } from '@worker/infrastructure/runtime/conversations/conversation-response-deadline';
 import type {
   ThreadRuntimeTarget,
   ThreadRuntimeTurnResult,

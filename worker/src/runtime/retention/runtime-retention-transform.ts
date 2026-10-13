@@ -17,7 +17,7 @@ import { IsoTimestampSchema } from '@worker/core/domain/primitives';
 import {
   safeToolInputValidationMessage,
   toolInputInvalidFields,
-} from '@worker/runtime/model/tool-input-error';
+} from '@worker/infrastructure/runtime/model/tool-input-error';
 import {
   cloneRuntimeJsonValue,
   isRuntimeJsonValue,

@@ -6,7 +6,7 @@ import {
   type PhotoReferenceRecord,
   type PhotoReferenceStore,
   type PhotoReferenceStoreResolver,
-} from '@worker/runtime/ports/photo';
+} from '@worker/infrastructure/runtime/ports/photo';
 
 export type PhotoReferencePutResult =
   | { readonly ok: true }

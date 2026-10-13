@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { env } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import { MODEL_SYSTEM_PROMPT } from '@worker/runtime/model/system-prompt';
+import { MODEL_SYSTEM_PROMPT } from '@worker/infrastructure/runtime/model/system-prompt';
 import evalWorker, { type EvalWorkerEnv } from '../../tooling/eval/worker';
 import {
   EvalFailureSchema,

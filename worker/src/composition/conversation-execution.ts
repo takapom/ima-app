@@ -7,7 +7,7 @@ import {
   type ConversationExecutionObserver,
 } from '@worker/infrastructure/adapters/out/persistence/conversations/durable-conversation-execution';
 import { ConversationExecution } from '@worker/infrastructure/runtime/conversations/conversation-execution';
-import type { ConversationThreadNamespace } from '@worker/runtime/ports/conversation-thread';
+import type { ConversationThreadNamespace } from '@worker/infrastructure/runtime/ports/conversation-thread';
 export const createConversationExecution = (
   options: ConversationExecutionObserver & {
     readonly store: ConversationRuns & ConversationMemoryStore;

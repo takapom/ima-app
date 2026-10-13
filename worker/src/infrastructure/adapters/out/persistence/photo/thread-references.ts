@@ -10,7 +10,7 @@ import {
   PhotoTokenError,
   type PhotoReferenceRecord,
   type PhotoReferenceStoreWithClear,
-} from '@worker/runtime/ports/photo';
+} from '@worker/infrastructure/runtime/ports/photo';
 
 const MAX_TTL_MILLISECONDS = 30 * 60 * 1_000;
 const HandleSchema = v.pipe(v.string(), v.length(22));

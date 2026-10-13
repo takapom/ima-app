@@ -1,5 +1,5 @@
 import { wrapLanguageModel } from 'ai';
-import { toolInputInvalidFields } from '@worker/runtime/model/tool-input-error';
+import { toolInputInvalidFields } from '@worker/infrastructure/runtime/model/tool-input-error';
 import type {
   RuntimeModelGuardCallOptions,
   RuntimeModelGuardGenerateResult,

@@ -6,7 +6,7 @@ import { createHotPepperPhotoTransport } from '@worker/infrastructure/adapters/o
 import { resolveRuntimeOperationalGate } from '@worker/composition/runtime-operational-gate';
 import { createHotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import { createHotPepperConversationPhotoReader } from '@worker/infrastructure/adapters/out/providers/hot-pepper/conversation-photo-reader';
-import type { ConversationPhotoReader } from '@worker/runtime/ports/conversation-photo';
+import type { ConversationPhotoReader } from '@worker/infrastructure/runtime/ports/conversation-photo';
 
 export const createConfiguredConversationPhotos = (env: {
   readonly HOTPEPPER_API_KEY?: string;

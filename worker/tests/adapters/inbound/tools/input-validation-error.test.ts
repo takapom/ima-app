@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   safeToolInputValidationMessage,
   toolInputInvalidFields,
-} from '@worker/runtime/model/tool-input-error';
+} from '@worker/infrastructure/runtime/model/tool-input-error';
 import {
   getPlaceDetailsToolSchema,
   searchPlacesToolSchema,

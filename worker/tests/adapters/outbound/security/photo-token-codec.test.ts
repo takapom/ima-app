@@ -5,7 +5,7 @@ import {
   PhotoTokenError,
   type PhotoReferenceStoreWithClear,
   type PhotoTokenInput,
-} from '@worker/runtime/ports/photo';
+} from '@worker/infrastructure/runtime/ports/photo';
 
 const NOW = '2026-09-10T12:00:00.000Z';
 const SECRET = 'photo-token-fixture-secret';

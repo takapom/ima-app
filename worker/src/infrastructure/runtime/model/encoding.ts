@@ -1,6 +1,6 @@
 import type { ModelMessage } from 'ai';
 import type { ProjectedModelContext } from '@worker/core/application/model-context/model-context';
-import { MODEL_SYSTEM_PROMPT } from '@worker/runtime/model/system-prompt';
+import { MODEL_SYSTEM_PROMPT } from '@worker/infrastructure/runtime/model/system-prompt';
 import {
   summarizeFieldForModel,
   type ModelFieldSummary,

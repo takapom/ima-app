@@ -4,8 +4,8 @@ import type { ConversationHistoryDO } from '@worker/entrypoints/cloudflare/conve
 import { deriveOwnerScopeRef } from '@worker/infrastructure/adapters/in/http/auth';
 import { conversationOwnerName } from '@worker/infrastructure/adapters/out/persistence/conversations/durable-conversation-store';
 import { routeRequest } from '@worker/infrastructure/adapters/in/http/router';
-import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
-import type { ConversationPhotoReader } from '@worker/runtime/ports/conversation-photo';
+import { PhotoProviderError } from '@worker/infrastructure/runtime/ports/photo-media';
+import type { ConversationPhotoReader } from '@worker/infrastructure/runtime/ports/conversation-photo';
 import { ConversationMessageSchema } from '@worker/core/domain/conversations/conversation-message';
 import type { RetentionMetadata } from '@worker/core/domain/evidence/retention';
 import { makeHarness, makeRequest, ownerCredential } from '../router-fixtures';

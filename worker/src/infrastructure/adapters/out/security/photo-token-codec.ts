@@ -10,7 +10,7 @@ import {
   type PhotoTokenCodec,
   type PhotoTokenExpectedScope,
   type PhotoTokenInput,
-} from '@worker/runtime/ports/photo';
+} from '@worker/infrastructure/runtime/ports/photo';
 
 const TOKEN_VERSION = 'p1';
 const TOKEN_SEGMENT_COUNT = 3;

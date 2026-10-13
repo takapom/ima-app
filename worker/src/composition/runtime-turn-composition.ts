@@ -12,7 +12,7 @@ import type { SubmitValidationContext } from '@worker/core/application/use-cases
 import { projectModelContext } from '@worker/core/application/model-context/model-context';
 import { SubmitApplication } from '@worker/core/application/use-cases/submit-response/submit-application';
 import { createRespondPort } from '@worker/core/application/use-cases/submit-response/respond-port';
-import { encodeModelContext } from '@worker/runtime/model/encoding';
+import { encodeModelContext } from '@worker/infrastructure/runtime/model/encoding';
 import type {
   RuntimeThinkComposition,
   RuntimeThinkPersistMessages,

@@ -37,7 +37,7 @@ import {
 } from '@worker/runtime/threads/thread-types';
 
 import { createPersistentThreadPhotoReferences } from '@worker/infrastructure/adapters/out/persistence/photo/sql-reference-store';
-import type { PhotoReferenceRecord } from '@worker/runtime/ports/photo';
+import type { PhotoReferenceRecord } from '@worker/infrastructure/runtime/ports/photo';
 import type {
   PhotoReferenceGetResult,
   PhotoReferencePutResult,

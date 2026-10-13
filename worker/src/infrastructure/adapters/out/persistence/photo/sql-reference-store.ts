@@ -6,7 +6,7 @@ import {
   PhotoReferenceRecordSchema,
   PhotoTokenError,
   type PhotoReferenceStoreWithClear,
-} from '@worker/runtime/ports/photo';
+} from '@worker/infrastructure/runtime/ports/photo';
 
 /** Only signed-handle mappings are durable. Image bytes never enter SQLite. */
 export const createSqlPhotoReferenceStore = (

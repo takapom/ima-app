@@ -5,7 +5,7 @@ import type {
   PhotoReferenceLookupScope,
   PhotoReferenceRecord,
   PhotoReferenceStoreWithClear,
-} from '@worker/runtime/ports/photo';
+} from '@worker/infrastructure/runtime/ports/photo';
 
 const NOW = '2026-09-10T12:00:00.000Z';
 const HANDLE = 'h'.repeat(22);

@@ -4,14 +4,17 @@ import type {
   PhotoBodyHandler,
   PhotoPath,
 } from '@worker/infrastructure/adapters/in/http/handler';
-import { PhotoProviderError, type PhotoMediaTransport } from '@worker/runtime/ports/photo-media';
+import {
+  PhotoProviderError,
+  type PhotoMediaTransport,
+} from '@worker/infrastructure/runtime/ports/photo-media';
 import type { RuntimeProviderTransportObserver } from '@worker/runtime/tracing/runtime-provider-trace-contract';
 import {
   PhotoTokenError,
   type PhotoHandleClaims,
   type PhotoTokenCodec,
   type PhotoTransportTraceIdentity,
-} from '@worker/runtime/ports/photo';
+} from '@worker/infrastructure/runtime/ports/photo';
 
 const tokenFailure = (error: PhotoTokenError): HttpBoundaryError => {
   switch (error.code) {

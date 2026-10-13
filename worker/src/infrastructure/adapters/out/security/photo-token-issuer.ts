@@ -4,7 +4,7 @@ import {
   PhotoTokenError,
   PhotoTokenInputSchema,
   type PhotoTokenCodec,
-} from '@worker/runtime/ports/photo';
+} from '@worker/infrastructure/runtime/ports/photo';
 /** Provider references and signing failures are interpreted only at this boundary. */
 export const createPhotoTokenIssuer = (codec: PhotoTokenCodec): PhotoTokenIssuer => ({
   async issue(input, now) {

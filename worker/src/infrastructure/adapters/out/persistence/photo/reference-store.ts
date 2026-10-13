@@ -6,7 +6,7 @@ import {
   type PhotoReferenceRecord,
   type PhotoReferenceLookupScope,
   type PhotoReferenceStoreWithClear,
-} from '@worker/runtime/ports/photo';
+} from '@worker/infrastructure/runtime/ports/photo';
 
 const DEFAULT_MAX_ENTRIES = 256;
 

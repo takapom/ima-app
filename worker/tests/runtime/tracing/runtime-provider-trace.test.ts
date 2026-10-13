@@ -2,7 +2,7 @@ import { createRuntimeProviderTransportObserver } from '@worker/infrastructure/a
 import { describe, expect, it, vi } from 'vitest';
 import { createHotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import type { HotPepperSearchRequest } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
-import { PhotoProviderError } from '@worker/runtime/ports/photo-media';
+import { PhotoProviderError } from '@worker/infrastructure/runtime/ports/photo-media';
 import { HotPepperError } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 import {
   createBestEffortRuntimeProviderTraceSink,
