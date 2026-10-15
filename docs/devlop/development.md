@@ -61,6 +61,7 @@ Dev Clientは`bun run dev:mobile`で起動する。同一マシンのWeb/Simulat
 bun run eval                 # 全ケースを1回ずつ実行。OpenAIの利用料が発生する（モデルとLLM採点）
 bun run eval --repeat 3      # 揺らぎを見るため、各ケースを3回実行する
 bun run eval:view            # 結果をブラウザで見る
+bun run eval --output /tmp/ima-eval-result.json  # 実行と同時に結果をJSONへ出力する（利用料は通常の実行と同じ）
 ```
 
 - APIキーは上記の`worker/.dev.vars.llm`の`OPENAI_API_KEY`を使う。LLM採点のため、promptfooも同じファイルを読む。ホットペッパーのキーは使わず、店舗は[合成店舗](../../worker/tooling/eval/shops/shop-sets.ts)だけを返す。実在店舗のデータを評価データに加えない。
@@ -71,12 +72,40 @@ bun run eval:view            # 結果をブラウザで見る
 - 結果の`metadata.evalRun`に、ターンごとのTool呼び出し・引数・結果、step数、修復回数、確定の有無、トークン数、モデル呼び出しの所要時間が残る。
 - promptfoo（[package.json](../../package.json)でバージョン固定）はテレメトリ・更新確認・共有を無効にして実行し、結果はローカルの`~/.promptfoo`に保存する。`promptfoo share`は使わない。
 
+### 保存済みの結果をCLIで読む
+
+保存済みの結果は、ブラウザ・評価用Worker・APIキーなしで読める。次の3コマンドはモデルを再実行せず、利用料も発生しない。いずれもpromptfoo公式の`list evals`・`show eval`・`export eval`を同じ固定版と設定で呼び、引数と終了コードをそのまま伝える。
+
+```sh
+bun run eval:list -n 10 --ids-only                               # 保存済み評価のIDを新しい順に表示する
+bun run eval:show <evalId>                                       # 指定した評価の概要を表で見る
+bun run eval:export <evalId> --output /tmp/ima-eval-result.json  # 指定した評価の全記録をJSONへ出力する
+```
+
+1. `eval:list`で対象を選び、以降は明示的なeval IDを使う。ID省略時の最新や`latest`は、別の実行と取り違えるため記録・比較に使わない。
+2. `eval:show`で概要を見る。表は25行までで、超えた行は`... N more rows not shown ...`として省略され、各セルの文章も100文字で切り詰められる。表に出ない行・文章を「存在しない」と判断せず、JSONで確認する。
+3. `eval:export`でリポジトリ外の一時ファイルへJSONを保存し、次の場所を読む。
+
+| JSONの場所                                | 確認する内容                                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `evalId` / `results.stats`                | 実行の識別と、PASS・FAIL・ERRORの件数・トークン数・所要時間の集計                                 |
+| `results.results[]`                       | ケースごとの`testIdx`・`testCase`・`success`・`failureReason`・`error`・`latencyMs`・`tokenUsage` |
+| 各行の`gradingResult.componentResults[]`  | 判定項目ごとの`assertion.metric`・`score`・`pass`・`reason`                                       |
+| 各行の`response.output`                   | 回答とTool記録の表示用テキスト                                                                    |
+| 各行の`response.metadata.evalRun.turns[]` | 応答種別・確定の有無・Tool呼び出しと結果・モデル呼び出し（step）・修復の構造化記録                |
+
+- FAILとERRORは`failureReason`で分ける（`0`はなし、`1`は判定による不合格のFAIL、`2`はERROR）。`error`はFAILでも判定理由が入るため、有無でERRORと判断しない。
+- 行全体のPASSと「スコア:」は分けて読む。`weight: 0`の項目は`score`が0でも行の`success`は変わらず、項目の`pass`も`true`になり得る。スコアは各項目の`score`と`reason`で読む。
+- ERRORの行は`gradingResult`が`null`、`response`が`error`だけになることがあり、`tokenUsage`は計測値がなくても0で記録される。欠けた記録や0を「Tool呼び出し0回」「トークン0」「成功」と読み替えない。`response.metadata.evalRun`が残っていればそれを読む。
+- 既存の保存結果では集計スコアと個別スコアが一致しない箇所があるため、現時点では`componentResults`の値と理由を併せて読む。原因の調査と修正は[Issue #88](https://github.com/takapom/ima-app/issues/88)で扱う。
+- JSONは合成店舗の評価結果を手元で読むために使う。出力はリポジトリ外に置いてコミットせず、本文・Tool引数を丸ごとログやIssueへ転載しない。共有する証跡はID・合否・集計・未測定の項目に絞る。
+
 ### 改善サイクルと採否の基準
 
 1. 現行版の基準値を`--repeat 3`で取り、対象のIssueに記録する。記録は実行日時・コミット・モデル・ケース数・repeat・指標ごとの通過率・トークン数・費用とし、応答の本文・座標・キーは含めない。
 2. 失敗したケースを読み、原因を分ける。判断の誤りはプロンプト、引数の拒否や修復はTool設計、step不足は予算や無駄な呼び出しを疑う。
 3. 仮説を1つだけ立てて案を作る。システムプロンプトの案は評価設定の`prompts`にファイルを並べ、Toolのdescriptionの案は同じProviderを`label`と`toolDescriptionsFile`（`search_places`・`get_place_details`・`respond`をキーにしたJSON）を変えて並べる。
-4. 現行版と案を、同じケース・同じrepeatで実行し、`bun run eval:view`で指標ごとに比べる。
+4. 現行版と案を、同じケース・同じrepeatで実行し、`bun run eval:view`、またはeval IDを指定した`eval:export`のJSONで指標ごとに比べる。
 5. 「ゲート:」の通過率がどれも現行版を下回らず、狙った「スコア:」が上がったときだけ採用する。ERRORが残る実行は比べずにやり直す。
 6. 直した失敗を評価ケースに加え、本番ログ（`turn_outcome`・`respond_invalid`）で見つけた失敗の型も合成店舗で再現してケースに加える。
 

@@ -36,7 +36,10 @@
     "build": "bun run scripts/run-workspaces.mjs build",
     "commit-size": "node scripts/check-commit-size.mjs",
     "eval": "PROMPTFOO_DISABLE_TELEMETRY=1 PROMPTFOO_DISABLE_UPDATE=1 PROMPTFOO_DISABLE_SHARING=1 PROMPTFOO_DISABLE_REMOTE_GENERATION=true WRANGLER_SEND_METRICS=false bunx promptfoo@0.123.1 eval -c worker/tooling/eval/promptfoo/promptfooconfig.yaml --env-file worker/.dev.vars.llm --no-cache",
-    "eval:view": "PROMPTFOO_DISABLE_TELEMETRY=1 PROMPTFOO_DISABLE_UPDATE=1 PROMPTFOO_DISABLE_SHARING=1 PROMPTFOO_DISABLE_REMOTE_GENERATION=true bunx promptfoo@0.123.1 view"
+    "eval:view": "PROMPTFOO_DISABLE_TELEMETRY=1 PROMPTFOO_DISABLE_UPDATE=1 PROMPTFOO_DISABLE_SHARING=1 PROMPTFOO_DISABLE_REMOTE_GENERATION=true bunx promptfoo@0.123.1 view",
+    "eval:list": "PROMPTFOO_DISABLE_TELEMETRY=1 PROMPTFOO_DISABLE_UPDATE=1 PROMPTFOO_DISABLE_SHARING=1 PROMPTFOO_DISABLE_REMOTE_GENERATION=true bunx promptfoo@0.123.1 list evals",
+    "eval:show": "PROMPTFOO_DISABLE_TELEMETRY=1 PROMPTFOO_DISABLE_UPDATE=1 PROMPTFOO_DISABLE_SHARING=1 PROMPTFOO_DISABLE_REMOTE_GENERATION=true bunx promptfoo@0.123.1 show eval",
+    "eval:export": "PROMPTFOO_DISABLE_TELEMETRY=1 PROMPTFOO_DISABLE_UPDATE=1 PROMPTFOO_DISABLE_SHARING=1 PROMPTFOO_DISABLE_REMOTE_GENERATION=true bunx promptfoo@0.123.1 export eval"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.22.0",
