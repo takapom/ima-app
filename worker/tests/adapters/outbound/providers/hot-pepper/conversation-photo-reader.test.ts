@@ -50,4 +50,13 @@ describe('current conversation photos', () => {
     await expect(reader.read('J123')).rejects.toMatchObject({ code: 'TIMEOUT' });
     expect(read).not.toHaveBeenCalled();
   });
+  it('rejects a shop id outside the photo reference before any provider call', async () => {
+    const { reader, search, read } = make();
+    await expect(reader.read('shop-1')).rejects.toMatchObject({ code: 'INVALID_REQUEST' });
+    await expect(reader.read(`J${'1'.repeat(128)}`)).rejects.toMatchObject({
+      code: 'INVALID_REQUEST',
+    });
+    expect(search).not.toHaveBeenCalled();
+    expect(read).not.toHaveBeenCalled();
+  });
 });
