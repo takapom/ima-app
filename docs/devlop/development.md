@@ -71,6 +71,16 @@ bun run eval:view            # 結果をブラウザで見る
 - 結果の`metadata.evalRun`に、ターンごとのTool呼び出し・引数・結果、step数、修復回数、確定の有無、トークン数、モデル呼び出しの所要時間が残る。
 - promptfoo（[package.json](../../package.json)でバージョン固定）はテレメトリ・更新確認・共有を無効にして実行し、結果はローカルの`~/.promptfoo`に保存する。`promptfoo share`は使わない。
 
+### 起動失敗の診断
+
+起動待ちは既定120秒。失敗後は次のケースで起動し直すため、ケースごとに再待機が発生し得る。起動エラーが続く場合は評価を中断し、評価プロセスの停止を確認してから、`worker`ディレクトリで次を実行する。
+
+```sh
+bunx wrangler dev --config wrangler.eval.jsonc --env-file .dev.vars.llm --local --ip 127.0.0.1 --port 8791 --show-interactive-dev-session=false
+```
+
+評価結果には起動エラーの固定説明・エラーコード・終了コード・待機上限だけを返し、生のstderrは保存しない。診断出力は手元で確認し、promptfooの結果やIssueへ転載しない。確認後は手動起動したWorkerを停止してから評価を再実行する。
+
 ### 改善サイクルと採否の基準
 
 1. 現行版の基準値を`--repeat 3`で取り、対象のIssueに記録する。記録は実行日時・コミット・モデル・ケース数・repeat・指標ごとの通過率・トークン数・費用とし、応答の本文・座標・キーは含めない。
