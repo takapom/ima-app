@@ -131,7 +131,10 @@ describe('current photos of durable conversation history', () => {
       Date.parse(tomorrow) + 30 * 60_000,
     );
     expect([...new Uint8Array(await result.arrayBuffer())]).toEqual([1, 2, 3]);
-    expect(read).toHaveBeenCalledWith('J123456', expect.any(AbortSignal));
+    expect(read).toHaveBeenCalledWith(
+      { provider: 'hotpepper', recordRef: 'J123456' },
+      expect.any(AbortSignal),
+    );
     expect(await stub.read(scope)).toEqual(original);
     const expired = await routeRequest(makeRequest(messagesUrl), {
       ...config,

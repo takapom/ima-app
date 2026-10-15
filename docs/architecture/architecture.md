@@ -106,7 +106,7 @@ flowchart TD
 compositionが具象Adapterを構成する。現在はHot Pepperの検索・詳細AdapterをCoreのPlaceSearchPort/PlaceDetailsPortへ注入し、店舗IDで候補を登録する。地域名はkeyword、現在地は緯度経度とrangeへ変換し、営業時間は掲載文のまま渡す。GoogleのPlaces/Routes/Photos接続は持たない。営業未確認の許容は`platform/composition/`で組み立ててCoreの確定検証へ明示する。公開DTOとCore内部型の変換はWorkerが所有する。
 ToolはLLM向け入力Adapterであり、Provider呼出しやCoreの出力Portと同一の層にしない。
 
-店舗写真は検索・詳細Adapterが`photo.pc`のURLを観測として登録し、Applicationが検証済みカードの写真根拠から表示・保存可否と期限を決め、発行Portを通して署名Adapterがowner・端末・期限に紐づくtokenを発行する。既存の`GET /v1/photos/:token`が認証・期限検証後にHot Pepperの画像CDNから取得し、Mobileの写真表示部品へ渡す。画像本体をLLMや永続ストレージへ渡さない。履歴では会話に属する店舗参照を保持し、会話認証付きの写真経路から現在写真を取得する。Threadや提案時の保持期限は延長せず、公開履歴には再取得できる候補IDだけを渡す。詳細は[履歴の現在写真](../devlop/contracts.md#履歴の現在写真)を正とする。
+店舗写真は検索・詳細Adapterが`photo.pc`のURLを観測として登録し、Applicationが検証済みカードの写真根拠から表示・保存可否と期限を決め、発行Portを通して署名Adapterがowner・端末・期限に紐づくtokenを発行する。既存の`GET /v1/photos/:token`が認証・期限検証後にHot Pepperの画像CDNから取得し、Mobileの写真表示部品へ渡す。画像本体をLLMや永続ストレージへ渡さない。履歴では会話に属する店舗参照を保持し、会話認証付きの写真経路から現在写真を取得する。参照は候補IDとProvider店舗識別の組で、店舗ID形式と正規店舗URLの解釈はHot Pepper Adapterが持つ。Compositionが対応するProviderを選び、Providerと店舗IDを一緒に写真取得へ渡す。未対応・不正・停止は外部呼出しの前に拒む。`photoSources`がない旧履歴の補完は永続化Adapterが、保存と表示が許可され全保持期限内の正規リンクに限って行う。Threadや提案時の保持期限は延長せず、公開履歴には再取得できる候補IDだけを渡す。詳細は[履歴の現在写真](../devlop/contracts.md#履歴の現在写真)を正とする。
 
 ## ランタイムの制約
 
@@ -147,5 +147,4 @@ bindingは`SAVED_REFERENCES`、owner shard名は`saved-reference-owner:{ownerSco
 
 Coreの単体試験はCore、HTTP/SDK/DO/Provider統合試験はWorker、端末試験はmobileに置く。
 依存の静的検査は[dependency-cruiser設定](../../.dependency-cruiser.cjs)とmanifest検査で行う。
-保存前制御・3操作限定・確定1回は実SDK/DOのfixtureで検証し、実APIや実機の成功とは区別する。
-実行手順は[開発](../devlop/development.md)と[運用](../operations.md)を参照する。
+保存前制御・3操作限定・確定1回は実SDK/DOのfixtureで検証し、実APIや実機の成功とは区別する。実行手順は[開発](../devlop/development.md)と[運用](../operations.md)を参照する。

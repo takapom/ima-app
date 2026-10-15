@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { AssistantCardsResponse } from '@contracts/index';
 import { parseConversationMessage } from '@contracts/index';
+import { withLegacyConversationPhotoSources } from '@worker/infrastructure/adapters/out/persistence/conversations/legacy-conversation-photo-sources';
 import { messageFromConversationResponse } from '@worker/infrastructure/runtime/conversations/conversation-delivery';
 import {
   publicConversationMessage,
   conversationPhotoSources,
-  withConversationPhotoSources,
 } from '@worker/infrastructure/runtime/conversations/conversation-photo-sources';
 import { retainConversationMessage as serverRetain } from '@worker/core/domain/conversations/conversation-message';
 import {
@@ -88,7 +88,16 @@ describe('historical card retention across server and client', () => {
     if (value.cards.hero.facts.identity.status !== 'known') throw new Error('FIXTURE');
     value.cards.hero.facts.identity.value.sourceUrl =
       'https://www.hotpepper.jp/strJ000123456/?vos=example';
-    const record = message(value);
+    const delivered = message(value);
+    const deliveredCard = delivered.message.parts.find((part) => part.kind === 'card_set');
+    if (deliveredCard?.kind !== 'card_set') throw new Error('CARD_MISSING');
+    expect(deliveredCard.photoSources).toBeUndefined();
+    const record = withLegacyConversationPhotoSources(delivered, now);
+    expect(record.createdAt).toBe(delivered.createdAt);
+    const completedCard = record.message.parts.find((part) => part.kind === 'card_set');
+    if (completedCard?.kind !== 'card_set') throw new Error('CARD_MISSING');
+    expect(completedCard.revision).toBe(deliveredCard.revision);
+    expect(completedCard.cards).toEqual(deliveredCard.cards);
     const expired = serverRetain(record, expiry);
     expect(JSON.stringify(expired)).toContain('J000123456');
     expect(JSON.stringify(expired)).not.toContain('店舗の名前');
@@ -108,21 +117,23 @@ describe('historical card retention across server and client', () => {
     if (value.cards.hero.facts.identity.status !== 'known') throw new Error('FIXTURE');
     value.cards.hero.facts.identity.value.sourceUrl = 'https://www.hotpepper.jp/strJ000123456/';
     const legacy = message(value);
-    for (const part of legacy.message.parts) if (part.kind === 'card_set') delete part.photoSources;
-
-    expect(conversationPhotoSources({ cards: value.cards })).toEqual([]);
-    const migrated = withConversationPhotoSources(legacy, now);
+    const card = legacy.message.parts.find((part) => part.kind === 'card_set');
+    if (card?.kind !== 'card_set') throw new Error('CARD_MISSING');
+    delete card.photoSources;
+    expect(conversationPhotoSources(card)).toEqual([]);
+    const migrated = withLegacyConversationPhotoSources(legacy, now);
+    expect(migrated.createdAt).toBe(legacy.createdAt);
     expect(JSON.stringify(migrated)).toContain('J000123456');
     expect(JSON.stringify(serverRetain(migrated, expiry))).toContain('J000123456');
 
-    const tooLate = serverRetain(withConversationPhotoSources(legacy, expiry), expiry);
+    const tooLate = serverRetain(withLegacyConversationPhotoSources(legacy, expiry), expiry);
     expect(JSON.stringify(tooLate)).not.toContain('J000123456');
     expect(publicConversationMessage(tooLate).message.parts).not.toContainEqual(
       expect.objectContaining({ photoCandidateIds: ['shop'] }),
     );
-    expect(JSON.stringify(messageFromConversationResponse(value, 'answer', expiry))).not.toContain(
-      'J000123456',
-    );
+    const delivered = messageFromConversationResponse(value, 'answer', now);
+    const deliveredCard = delivered.parts.find((part) => part.kind === 'card_set');
+    expect(deliveredCard?.kind === 'card_set' ? deliveredCard.photoSources : true).toBeUndefined();
   });
   it.each([
     'https://evil.test/strJ123/',
@@ -135,7 +146,36 @@ describe('historical card retention across server and client', () => {
     const value = response();
     if (value.cards.hero.facts.identity.status !== 'known') throw new Error('FIXTURE');
     value.cards.hero.facts.identity.value.sourceUrl = url;
-    expect(conversationPhotoSources({ cards: value.cards }, now)).toEqual([]);
+    const completed = withLegacyConversationPhotoSources(message(value), now);
+    for (const part of completed.message.parts) {
+      if (part.kind === 'card_set') expect(part.photoSources).toBeUndefined();
+    }
+  });
+  it('keeps a saved photo source and does not revive one from a card set reference', () => {
+    const value = response();
+    if (value.cards.hero.facts.identity.status !== 'known') throw new Error('FIXTURE');
+    value.cards.hero.facts.identity.value.sourceUrl = 'https://www.hotpepper.jp/strJ000123456/';
+    const legacy = message(value);
+    for (const part of legacy.message.parts) {
+      if (part.kind === 'card_set') {
+        part.photoSources = [{ candidateId: 'shop', provider: 'example', recordRef: 'kept' }];
+      }
+    }
+    expect(withLegacyConversationPhotoSources(legacy, now).message.parts).toContainEqual(
+      expect.objectContaining({
+        photoSources: [{ candidateId: 'shop', provider: 'example', recordRef: 'kept' }],
+      }),
+    );
+    const referenceOnly = {
+      ...legacy,
+      message: {
+        ...legacy.message,
+        parts: [{ kind: 'card_set_reference' as const, threadId: 'thread', cardSetId: 'cards' }],
+      },
+    };
+    expect(withLegacyConversationPhotoSources(referenceOnly, now).message.parts).toEqual(
+      referenceOnly.message.parts,
+    );
   });
   it('round trips display facts and reasons without treating freshness expiry as display expiry', () => {
     const record = message();

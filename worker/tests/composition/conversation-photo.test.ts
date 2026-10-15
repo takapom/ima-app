@@ -32,7 +32,10 @@ describe('configured history photos', () => {
         new Response(new Uint8Array([1]), { headers: { 'content-type': 'image/jpeg' } }),
       );
     vi.stubGlobal('fetch', fetcher);
-    const result = await createConfiguredConversationPhotos(config).read('J123');
+    const result = await createConfiguredConversationPhotos(config).read({
+      provider: 'hotpepper',
+      recordRef: 'J123',
+    });
     expect(result?.contentType).toBe('image/jpeg');
     expect(fetcher).toHaveBeenCalledTimes(2);
     await result?.body.cancel();
@@ -44,7 +47,21 @@ describe('configured history photos', () => {
   ])('fails closed without calling the provider when stopped', async (env) => {
     const fetcher = vi.fn<typeof fetch>();
     vi.stubGlobal('fetch', fetcher);
-    await expect(createConfiguredConversationPhotos(env).read('J123')).rejects.toThrow();
+    await expect(
+      createConfiguredConversationPhotos(env).read({ provider: 'hotpepper', recordRef: 'J123' }),
+    ).rejects.toThrow();
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it.each([
+    { provider: 'example', recordRef: 'J123' },
+    { provider: 'hotpepper', recordRef: 'shop-1' },
+    { provider: 'hotpepper', recordRef: `J${'1'.repeat(128)}` },
+  ])('rejects $recordRef from $provider before calling the provider', async (source) => {
+    const fetcher = vi.fn<typeof fetch>();
+    vi.stubGlobal('fetch', fetcher);
+    await expect(createConfiguredConversationPhotos(config).read(source)).rejects.toMatchObject({
+      code: 'INVALID_REQUEST',
+    });
     expect(fetcher).not.toHaveBeenCalled();
   });
 });

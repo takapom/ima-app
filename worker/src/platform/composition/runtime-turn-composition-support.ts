@@ -1,4 +1,5 @@
 import type { CandidateObservationRegistryPort } from '@worker/core/application/ports/registry';
+import { isHotPepperPhotoIdentity } from '@worker/infrastructure/adapters/out/providers/hot-pepper/conversation-photo-reference';
 import { committedConversationPhotoSources } from '@worker/infrastructure/runtime/conversations/conversation-photo-sources';
 import type { HarnessContext } from '@worker/core/application/ports/context';
 import type { ModelContextSource } from '@worker/core/application/model-context/model-context';
@@ -35,7 +36,11 @@ export const prepareConversationCommit = async (
     port,
     record,
     () => mapPreparedRuntimeResponse(response, dependencies, metadata, photos?.resolvePersistent),
-    committedConversationPhotoSources(response, dependencies.resolveCardEvidence),
+    committedConversationPhotoSources(
+      response,
+      dependencies.resolveCardEvidence,
+      isHotPepperPhotoIdentity,
+    ),
   );
   return photos;
 };

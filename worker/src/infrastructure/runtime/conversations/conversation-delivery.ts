@@ -1,5 +1,4 @@
 import * as v from 'valibot';
-import { conversationPhotoSources } from '@worker/infrastructure/runtime/conversations/conversation-photo-sources';
 import type { ConversationPhotoSource } from '@worker/core/domain/conversations/conversation-cards';
 import { AssistantResponseSchema, type AssistantResponse } from '@ima/contracts';
 import {
@@ -23,9 +22,6 @@ export const messageFromConversationResponse = (
   sources?: readonly ConversationPhotoSource[],
 ): ConversationMessageInput => {
   const parsed = v.parse(AssistantResponseSchema, response);
-  const photoSources =
-    sources ??
-    (parsed.kind === 'cards' ? conversationPhotoSources({ cards: parsed.cards }, now) : []);
 
   return v.parse(ConversationMessageInputSchema, {
     messageId,
@@ -47,9 +43,8 @@ export const messageFromConversationResponse = (
                 cardSetId: parsed.cardSetId,
                 revision: parsed.revision,
                 cards: parsed.cards,
-                ...(sources === undefined && photoSources.length === 0
-                  ? {}
-                  : { photoSources: [...photoSources] }),
+                /** 掲載URLから店舗IDを補うと、新しい応答が旧履歴の移行経路に戻る。 */
+                ...(sources === undefined ? {} : { photoSources: [...sources] }),
                 photosExpireAt: photoDeadline(parsed),
               },
               now,

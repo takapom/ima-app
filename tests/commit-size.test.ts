@@ -7,12 +7,30 @@ import { describe, expect, it, afterEach } from 'vitest';
 const checker = resolve('scripts/check-commit-size.mjs');
 const temporaryDirectories: string[] = [];
 
+/**
+ * 監視デーモンと署名プログラムは、一時リポジトリの clone を検査の前に止める。
+ * 行数の合否とは別なので待たない。
+ */
+const gitEnv = (() => {
+  const count = Number(process.env.GIT_CONFIG_COUNT ?? '0');
+  const start = Number.isInteger(count) && count >= 0 ? count : 0;
+  return {
+    ...process.env,
+    GIT_TERMINAL_PROMPT: '0',
+    GIT_CONFIG_COUNT: String(start + 2),
+    [`GIT_CONFIG_KEY_${start}`]: 'core.fsmonitor',
+    [`GIT_CONFIG_VALUE_${start}`]: 'false',
+    [`GIT_CONFIG_KEY_${start + 1}`]: 'commit.gpgsign',
+    [`GIT_CONFIG_VALUE_${start + 1}`]: 'false',
+  };
+})();
+
 function git(repo: string, args: string[], input?: string) {
   const result = spawnSync('git', args, {
     cwd: repo,
     encoding: 'utf8',
     input,
-    env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+    env: gitEnv,
   });
   if (result.status !== 0) {
     throw new Error(`git ${args.join(' ')} failed: ${result.stderr}`);
@@ -55,7 +73,7 @@ function check(repoDirectory: string, args: string[]) {
   return spawnSync(process.execPath, [checker, ...args], {
     cwd: repoDirectory,
     encoding: 'utf8',
-    env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+    env: gitEnv,
   });
 }
 
@@ -193,7 +211,9 @@ describe('check-commit-size', () => {
     commitFile(source, 'history.txt', 1, 'history');
     const clone = mkdtempSync(join(tmpdir(), 'ima-commit-size-shallow-'));
     temporaryDirectories.push(clone);
-    execFileSync('git', ['clone', '--quiet', '--depth=1', `file://${source}`, clone]);
+    execFileSync('git', ['clone', '--quiet', '--depth=1', `file://${source}`, clone], {
+      env: gitEnv,
+    });
     const result = check(clone, ['--commit', 'HEAD']);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('non-shallow');
