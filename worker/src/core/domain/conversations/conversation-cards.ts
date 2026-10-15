@@ -1,10 +1,15 @@
 import * as v from 'valibot';
 import {
+  ProviderRecordIdentitySchema,
+  type ProviderRecordIdentity,
+} from '@worker/core/domain/candidates/registry';
+import {
   HttpsUrlSchema,
   IsoTimestampSchema,
   OpaqueIdSchema,
   RevisionSchema,
   Text,
+  type CandidateId,
 } from '@worker/core/domain/primitives';
 import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 import {
@@ -56,6 +61,16 @@ const text = (max: number) =>
  * 1枚の表示カード。identity から listingText を外すのは、掲載文をカードの事実として見せないため。
  * why と diff はモデルの生成文であり、店舗事実の観測ではない。
  */
+/** 候補と、再取得に使う Provider 側の店舗識別。接続できる Provider かはここでは決めない。 */
+export const ConversationPhotoSourceSchema = v.strictObject({
+  candidateId: OpaqueIdSchema,
+  provider: ProviderRecordIdentitySchema.entries.provider,
+  recordRef: ProviderRecordIdentitySchema.entries.recordRef,
+});
+export type ConversationPhotoSource = ProviderRecordIdentity & {
+  readonly candidateId: CandidateId;
+};
+
 const Card = v.strictObject({
   candidateId: OpaqueIdSchema,
   facts: v.strictObject({
@@ -95,21 +110,8 @@ export const ConversationCardsSchema = v.strictObject({
   cardSetId: OpaqueIdSchema,
   revision: RevisionSchema,
   photosExpireAt: v.nullable(IsoTimestampSchema),
-  /** 本文の期限後も残るホットペッパーの店舗参照。会話の削除と一緒に除く。画像本体や観測期限の延長には使わない。 */
-  photoSources: v.optional(
-    v.pipe(
-      v.array(
-        v.strictObject({
-          candidateId: OpaqueIdSchema,
-          provider: v.literal('hotpepper'),
-          recordRef: v.pipe(v.string(), v.regex(/^J[0-9]+$/), v.maxLength(128)),
-        }),
-      ),
-      v.maxLength(3),
-    ),
-  ),
+  /** 本文の期限後も残す再取得用の店舗参照。会話の削除と一緒に除く。画像本体や観測期限の延長には使わない。 */
+  photoSources: v.optional(v.pipe(v.array(ConversationPhotoSourceSchema), v.maxLength(3))),
   cards: v.strictObject({ hero: Card, alts: v.pipe(v.array(Card), v.maxLength(2)) }),
 });
 export type ConversationCards = v.InferOutput<typeof ConversationCardsSchema>;
-/** 履歴から現在写真を取り直すための店舗参照。画像本体や過去の観測期限は持たない。 */
-export type ConversationPhotoSource = NonNullable<ConversationCards['photoSources']>[number];

@@ -1,7 +1,7 @@
 import type { ConversationPhotoReader } from '@worker/infrastructure/runtime/ports/conversation-photo';
 import type { PhotoMediaTransport } from '@worker/infrastructure/runtime/ports/photo-media';
 import { PhotoProviderError } from '@worker/infrastructure/runtime/ports/photo-media';
-import { isHotPepperPhotoRecordRef } from '@worker/infrastructure/adapters/out/providers/hot-pepper/conversation-photo-reference';
+import { isHotPepperPhotoIdentity } from '@worker/infrastructure/adapters/out/providers/hot-pepper/conversation-photo-reference';
 import type { HotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import { HotPepperError } from '@worker/infrastructure/adapters/out/providers/hot-pepper/types';
 import { HotPepperPhotoUrlSchema } from '@worker/policy/security/photo-resource-policy';
@@ -11,9 +11,10 @@ export const createHotPepperConversationPhotoReader = (
   transport: HotPepperTransport,
   images: PhotoMediaTransport,
 ): ConversationPhotoReader => ({
-  async read(recordRef, signal) {
-    /** 形式外のIDを検索へ渡すと、入力異常が掲載終了の null と区別できなくなる。 */
-    if (!isHotPepperPhotoRecordRef(recordRef)) throw new PhotoProviderError('INVALID_REQUEST');
+  async read(source, signal) {
+    /** 別Providerの店舗IDを検索へ渡すと、未対応が掲載終了の null に見える。 */
+    if (!isHotPepperPhotoIdentity(source)) throw new PhotoProviderError('INVALID_REQUEST');
+    const recordRef = source.recordRef;
     try {
       const page = await transport.search({ id: [recordRef], count: 1 }, signal);
       const shop = page.shops.find((entry) => entry.id === recordRef);

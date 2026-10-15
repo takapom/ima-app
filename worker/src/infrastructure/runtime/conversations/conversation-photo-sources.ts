@@ -1,42 +1,64 @@
+import type { ProviderRecordIdentity } from '@worker/core/domain/candidates/registry';
 import type {
   ConversationCards,
   ConversationPhotoSource,
 } from '@worker/core/domain/conversations/conversation-cards';
-import type { CommittedResponse } from '@worker/core/application/use-cases/submit-response/submit-application';
 import type { RuntimeCardEvidenceResolver } from '@worker/infrastructure/runtime/response/runtime-response';
 import type { ConversationMessage } from '@worker/core/domain/conversations/conversation-message';
 
-/** New answers use provider record IDs from validated evidence, never a model-supplied ID. */
+type ConversationPhotoSourceCard = {
+  readonly candidateId: string;
+  readonly evidenceIds: readonly string[];
+};
+
+type ConversationPhotoSourceResponse =
+  | { readonly presentation: 'keep' }
+  | {
+      readonly presentation: 'replace';
+      readonly hero: ConversationPhotoSourceCard;
+      readonly alts: readonly ConversationPhotoSourceCard[];
+    };
+
+/** 接続中のProviderが写真再取得に受け付ける店舗識別か。形式の知識は呼び出し側が渡す。 */
+export type ConversationPhotoIdentityAcceptance = (identity: ProviderRecordIdentity) => boolean;
+
+const sameIdentity = (left: ProviderRecordIdentity, right: ProviderRecordIdentity): boolean =>
+  left.provider === right.provider && left.recordRef === right.recordRef;
+
+/** 生成文やモデルが返したURLから店舗IDを作ると、検証済み根拠以外が参照になる。 */
 export const committedConversationPhotoSources = (
-  response: CommittedResponse,
+  response: ConversationPhotoSourceResponse,
   resolve: RuntimeCardEvidenceResolver | undefined,
+  acceptsIdentity: ConversationPhotoIdentityAcceptance,
 ): ConversationPhotoSource[] => {
   if (response.presentation === 'keep' || resolve === undefined) return [];
   return [response.hero, ...response.alts].flatMap((card) => {
-    const links = card.evidenceIds
-      .map((id) => resolve(card.candidateId, id))
-      .filter(
-        (link) =>
-          link?.field === 'identity' &&
-          link.candidateId === card.candidateId &&
-          link.retention.retentionDecision === 'allow' &&
-          link.retention.restoreMode === 'full',
-      );
-    const ids = [
-      ...new Set(
-        links.flatMap(
-          (link) =>
-            link?.sources
-              .filter(
-                (source) =>
-                  source.provider === 'hotpepper' && /^J[0-9]{1,127}$/.test(source.recordRef),
-              )
-              .map((source) => source.recordRef) ?? [],
-        ),
-      ),
-    ];
-    return ids.length === 1 && ids[0] !== undefined
-      ? [{ candidateId: card.candidateId, provider: 'hotpepper' as const, recordRef: ids[0] }]
+    const identities: ProviderRecordIdentity[] = [];
+    for (const evidenceId of card.evidenceIds) {
+      const link = resolve(card.candidateId, evidenceId);
+      if (
+        link?.field !== 'identity' ||
+        link.candidateId !== card.candidateId ||
+        link.retention.retentionDecision !== 'allow' ||
+        link.retention.restoreMode !== 'full'
+      )
+        continue;
+      for (const source of link.sources) {
+        const identity = { provider: source.provider, recordRef: source.recordRef };
+        if (!acceptsIdentity(identity)) continue;
+        if (identities.some((current) => sameIdentity(current, identity))) continue;
+        identities.push(identity);
+      }
+    }
+    const identity = identities[0];
+    return identities.length === 1 && identity !== undefined
+      ? [
+          {
+            candidateId: card.candidateId,
+            provider: identity.provider,
+            recordRef: identity.recordRef,
+          },
+        ]
       : [];
   });
 };

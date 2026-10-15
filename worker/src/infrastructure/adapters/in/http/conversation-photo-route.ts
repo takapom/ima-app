@@ -35,7 +35,7 @@ export const conversationPhotoRoute = conversationRoute([], async (context) => {
   if (reader === undefined)
     throw new HttpBoundaryError({ status: 502, code: 'PROVIDER_UNAVAILABLE' });
   try {
-    const media = await reader.read(source.recordRef, context.http.req.raw.signal);
+    const media = await reader.read(source, context.http.req.raw.signal);
     if (media === null)
       return toErrorResponse(context.auth.requestId, { status: 404, code: 'NOT_FOUND' });
     // Deletion during external I/O must not publish a photo for a deleted conversation.

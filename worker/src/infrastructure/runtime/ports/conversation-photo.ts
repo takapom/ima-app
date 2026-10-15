@@ -1,6 +1,7 @@
+import type { ProviderRecordIdentity } from '@worker/core/domain/candidates/registry';
 import type { PhotoMedia } from '@worker/infrastructure/runtime/ports/photo-media';
 
-/** Refreshes current photos independently from historical proposal/Thread retention. */
+/** 履歴の現在写真。提案やThreadの保持期限とは別に取り直す。 */
 export interface ConversationPhotoReader {
-  read(recordRef: string, signal?: AbortSignal): Promise<PhotoMedia | null>;
+  read(source: ProviderRecordIdentity, signal?: AbortSignal): Promise<PhotoMedia | null>;
 }
