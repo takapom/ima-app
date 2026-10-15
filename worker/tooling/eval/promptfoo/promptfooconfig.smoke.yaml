@@ -1,0 +1,34 @@
+description: ima. 評価基盤の疎通確認（実モデル・LLM採点なし）
+
+prompts:
+  - production
+
+providers:
+  - id: file://provider.ts
+    label: 現行
+    config:
+      workerDir: worker
+      envFile: .dev.vars.llm
+      port: 8791
+
+evaluateOptions:
+  maxConcurrency: 2
+  repeat: 1
+
+defaultTest:
+  vars:
+    shopSet: shibuya-ebisu
+    now: '2026-10-10T11:00:00.000Z'
+  assert:
+    - type: javascript
+      value: file://assertions.ts:committed
+      metric: ゲート:確定
+    - type: javascript
+      value: file://assertions.ts:noOpenNowClaim
+      metric: ゲート:断定しない
+    - type: javascript
+      value: file://scores.ts:noRepairs
+      metric: スコア:修復なし
+      weight: 0
+
+tests: file://cases/*.yaml

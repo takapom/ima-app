@@ -37,6 +37,8 @@
       metric: ゲート:場所の扱い
 
 - description: 地名あり・現在地もあり → 現在地より地名を優先して探す
+  metadata:
+    smoke: true
   vars:
     location: available
     turns: 恵比寿でカフェ

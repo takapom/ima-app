@@ -45,6 +45,8 @@
       metric: ゲート:質問は1つ
 
 - description: 該当店なし（札幌） → カードを出さずに状況を伝える
+  metadata:
+    smoke: true
   vars:
     location: denied
     turns: 札幌でスープカレーが食べたい
