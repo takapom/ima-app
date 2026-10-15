@@ -63,91 +63,12 @@ export const committedConversationPhotoSources = (
   });
 };
 
-/** Only canonical provider links emitted in saved cards can become durable shop references. */
-const legacyPhotoSource = (card: ConversationCards['cards']['hero']): ConversationPhotoSource[] => {
-  const identity = card.facts.identity;
-  if (identity.status !== 'known' || identity.value.sourceUrl === null) return [];
-  if (
-    identity.evidence.some(
-      ({ retention }) =>
-        retention.retentionDecision !== 'allow' ||
-        retention.restoreMode !== 'full' ||
-        retention.policyStatus !== 'available',
-    )
-  )
-    return [];
-  try {
-    const url = new URL(identity.value.sourceUrl);
-    const id = /^\/str(J[0-9]{1,127})\/$/.exec(url.pathname)?.[1];
-    if (
-      url.protocol !== 'https:' ||
-      url.hostname !== 'www.hotpepper.jp' ||
-      url.port !== '' ||
-      url.username !== '' ||
-      url.password !== '' ||
-      id === undefined
-    )
-      return [];
-    return [{ candidateId: card.candidateId, provider: 'hotpepper' as const, recordRef: id }];
-  } catch {
-    return [];
-  }
-};
-
-const mayMigrateLegacySourceAt = (
-  card: ConversationCards['cards']['hero'],
-  now: string,
-): boolean => {
-  const current = Date.parse(now);
-  const identity = card.facts.identity;
-  if (identity.status !== 'known') return false;
-  return identity.evidence.every(({ retention }) => {
-    const deadlines = [
-      retention.sessionExpiresAt,
-      retention.displayUntil,
-      retention.retentionUntil,
-      retention.deletionScheduledAt,
-    ].filter((value): value is string => value !== null);
-    return (
-      retention.retentionDecision === 'allow' &&
-      retention.restoreMode === 'full' &&
-      retention.policyStatus === 'available' &&
-      retention.displayPolicyStatus === 'available' &&
-      retention.retentionUntil !== null &&
-      retention.deletionScheduledAt !== null &&
-      deadlines.every((deadline) => current < Date.parse(deadline))
-    );
-  });
-};
-
+/** 保存済み参照だけを返す。掲載URLからの補完は永続化の読み出しが行う。 */
 export const conversationPhotoSources = (
-  part: Pick<ConversationCards, 'cards' | 'photoSources'>,
-  now?: string,
-): ConversationPhotoSource[] =>
-  part.photoSources ??
-  (now === undefined
-    ? []
-    : [part.cards.hero, ...part.cards.alts]
-        .filter((card) => mayMigrateLegacySourceAt(card, now))
-        .flatMap(legacyPhotoSource));
+  part: Pick<ConversationCards, 'photoSources'>,
+): readonly ConversationPhotoSource[] => part.photoSources ?? [];
 
-/** Upgrade older snapshots before retention removes their source links. */
-export const withConversationPhotoSources = (
-  record: ConversationMessage,
-  now: string,
-): ConversationMessage => ({
-  ...record,
-  message: {
-    ...record.message,
-    parts: record.message.parts.map((part) => {
-      if (part.kind !== 'card_set') return part;
-      const sources = conversationPhotoSources(part, now);
-      return sources.length > 0 ? { ...part, photoSources: sources } : part;
-    }),
-  },
-});
-
-/** Refresh lookups stay server-side; clients address photos by conversation/sequence/candidate. */
+/** 再取得の候補IDだけを公開する。内部の店舗参照は履歴の応答に載せない。 */
 export const publicConversationMessage = (record: ConversationMessage) => ({
   ...record,
   message: {
