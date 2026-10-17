@@ -1,0 +1,4 @@
+interface:
+  display_name: "Impeccable · ima-app"
+  short_description: "ima-appのExpo UIを現行仕様に沿って設計・レビュー・改善する"
+  default_prompt: "$impeccable を使い、ima-appの対象画面を現行仕様と既存テーマに沿って改善してください。"
