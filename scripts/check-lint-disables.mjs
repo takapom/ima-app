@@ -8,6 +8,7 @@ export function parseSourceFileList(output) {
     .filter(Boolean)
     .filter((file) => !file.startsWith('.claude/skills/'))
     .filter((file) => !file.startsWith('.codex/skills/'))
+    .filter((file) => !file.startsWith('.cursor/skills/'))
     .filter((file) => existsSync(file))
     .filter((file) => file !== 'scripts/check-lint-disables.mjs');
 }

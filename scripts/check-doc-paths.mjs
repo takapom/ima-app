@@ -10,6 +10,7 @@ const allowedPaths = new Set([
   'CLAUDE.md',
   'README.md',
   '.codex/AGENTS.md',
+  '.cursor/skills/AGENTS.md',
   'docs/architecture/architecture.md',
   'docs/devlop/contracts.md',
   'docs/devlop/development.md',
@@ -18,7 +19,7 @@ const allowedPaths = new Set([
 ]);
 const allowedPatterns = [/^docs\/[a-z0-9-]+\.md$/, /^\.agents\/skills\/[a-z0-9-]+\/SKILL\.md$/];
 const skillDocumentPattern =
-  /^\.(?:claude|codex)\/skills\/[a-z0-9-]+\/(?:(?:SKILL|README|AGENTS|TRADEMARK)\.md|(?:reference|references|rules)\/[a-z0-9_-]+\.md)$/;
+  /^\.(?:claude|codex|cursor)\/skills\/[a-z0-9-]+\/(?:(?:SKILL|README|AGENTS|TRADEMARK)\.md|(?:reference|references|rules)\/[a-z0-9_-]+\.md)$/;
 const maxDocumentLines = 150;
 
 export function isAllowedDocumentPath(path) {

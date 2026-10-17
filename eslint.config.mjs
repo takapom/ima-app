@@ -5,6 +5,7 @@ import tseslint from 'typescript-eslint';
 const ignored = [
   '.claude/**',
   '.codex/skills/**',
+  '.cursor/skills/**',
   '**/node_modules/**',
   '**/.expo/**',
   '**/.wrangler/**',

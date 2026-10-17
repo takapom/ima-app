@@ -45,6 +45,12 @@ describe('document path gate', () => {
     ['.codex/skills/example/references/example.md', 0],
     ['.codex/skills/example/progress.md', 1],
     ['.codex/progress.md', 1],
+    ['.cursor/skills/AGENTS.md', 0],
+    ['.cursor/skills/example/SKILL.md', 0],
+    ['.cursor/skills/example/TRADEMARK.md', 0],
+    ['.cursor/skills/example/references/example.md', 0],
+    ['.cursor/skills/example/progress.md', 1],
+    ['.cursor/progress.md', 1],
     ['docs/architecture.md', 0],
     ['docs/architecture/architecture.md', 0],
     ['docs/devlop/contracts.md', 0],
@@ -76,7 +82,7 @@ describe('document path gate', () => {
     expect(result.stderr).toContain('docs/product.md: 151 lines (max 150)');
   });
 
-  it.each(['.claude', '.codex'])(
+  it.each(['.claude', '.codex', '.cursor'])(
     'allows long %s skill references while still validating their links',
     (agentDirectory) => {
       const root = temporaryRoot();
