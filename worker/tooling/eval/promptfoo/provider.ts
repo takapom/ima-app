@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import process from 'node:process';
+import { setTimeout as sleep } from 'node:timers/promises';
 import * as v from 'valibot';
 import {
   EvalFailureSchema,
@@ -18,13 +19,7 @@ import {
   tokenUsageOf,
 } from './provider-support';
 
-/**
- * promptfooのカスタムProvider。評価用Workerを`wrangler dev --local`で1度だけ起動し、
- * ケースごとに`POST /turns`を呼ぶ。Workerが使うAPIキーはwranglerが--env-fileから読む。
- * （LLM採点のため、promptfoo自体も同じenvファイルを読むが、このProviderはキーを参照しない。）
- *
- * promptfooを依存に加えないため、Provider契約のうち使う部分の型だけをここに写す。
- */
+/** promptfooを依存に加えないため、Provider契約のうち使う部分の型だけをここに写す。 */
 type ProviderOptions = { readonly id?: string; readonly config?: unknown };
 type CallApiContext = { readonly vars?: Record<string, unknown> };
 type ProviderResponse = {
@@ -55,8 +50,6 @@ const ProviderConfigSchema = v.object({
 });
 type ProviderConfig = v.InferOutput<typeof ProviderConfigSchema>;
 
-const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
-
 type RunningWorker = { readonly child: ChildProcess; readonly ready: Promise<string> };
 
 let running: RunningWorker | undefined;
@@ -71,9 +64,12 @@ const hasExited = (child: ChildProcess): boolean =>
   child.exitCode !== null || child.signalCode !== null;
 
 /** 起動待ちの間は接続できないため、読めなければundefinedを返して再試行させる。 */
-const readHealth = async (baseUrl: string): Promise<EvalHealth | undefined> => {
+const readHealth = async (
+  baseUrl: string,
+  signal: AbortSignal,
+): Promise<EvalHealth | undefined> => {
   try {
-    const response = await fetch(`${baseUrl}/health`);
+    const response = await fetch(`${baseUrl}/health`, { signal });
     const parsed = v.safeParse(EvalHealthSchema, await response.json());
     return parsed.success ? parsed.output : undefined;
   } catch {
@@ -86,28 +82,50 @@ const waitUntilReady = async (
   child: ChildProcess,
   instance: string,
   config: ProviderConfig,
-  stderr: () => string,
 ): Promise<string> => {
-  const deadline = Date.now() + config.readyTimeoutMs;
-  while (Date.now() < deadline) {
-    if (hasExited(child)) {
-      throw new Error(
-        `評価用Workerが起動中に終了しました（ポート${config.port}が使用中の可能性があります）。\n${stderr()}`,
-      );
-    }
-    const health = await readHealth(baseUrl);
-    // 前回の実行で残った別のプロセスが同じポートで答えても、今回の起動とは扱わない。
-    if (health !== undefined && health.instance === instance) {
-      if (!health.modelKeyConfigured) {
-        throw new Error('OPENAI_API_KEYが未設定です。envファイルに設定してください。');
-      }
-      return baseUrl;
-    }
-    await sleep(500);
-  }
-  throw new Error(
-    `評価用Workerが${config.readyTimeoutMs}ms以内に起動しませんでした。\n${stderr()}`,
+  const controller = new AbortController();
+  let startupFailure: Error | undefined;
+  const abort = (error: Error): void => {
+    startupFailure ??= error;
+    controller.abort();
+  };
+  child.once('error', (error: NodeJS.ErrnoException) => {
+    /** messageにはパスや引数が入るため、起動失敗の識別には固定のcodeだけを使う。 */
+    const code = ['ENOENT', 'EACCES', 'EAGAIN', 'EMFILE', 'ENFILE'].includes(error.code ?? '')
+      ? error.code
+      : 'UNKNOWN';
+    abort(new Error(`評価用Workerを起動できませんでした（${code}）。`));
+  });
+  const timer = setTimeout(
+    () => abort(new Error(`評価用Workerが${config.readyTimeoutMs}ms以内に起動しませんでした。`)),
+    config.readyTimeoutMs,
   );
+  try {
+    while (!controller.signal.aborted) {
+      if (hasExited(child)) {
+        throw new Error(
+          `評価用Workerが起動中に終了しました（終了コード${child.exitCode ?? 'なし'}、signal ${child.signalCode ?? 'なし'}）。`,
+        );
+      }
+      const health = await readHealth(baseUrl, controller.signal);
+      controller.signal.throwIfAborted();
+      /** 前回のプロセスが同じポートで応答しても、今回の起動とは扱わない。 */
+      if (health !== undefined && health.instance === instance) {
+        if (!health.modelKeyConfigured) {
+          throw new Error('OPENAI_API_KEYが未設定です。envファイルに設定してください。');
+        }
+        return baseUrl;
+      }
+      await sleep(500, undefined, { signal: controller.signal });
+    }
+    throw startupFailure ?? new Error('評価用Workerの起動待ちが中断されました。');
+  } catch (error: unknown) {
+    throw (
+      startupFailure ?? (error instanceof Error ? error : new Error('起動待ちに失敗しました。'))
+    );
+  } finally {
+    clearTimeout(timer);
+  }
 };
 
 const ensureWorker = (config: ProviderConfig): Promise<string> => {
@@ -141,29 +159,22 @@ const ensureWorker = (config: ProviderConfig): Promise<string> => {
     ],
     {
       cwd: workerDir,
-      // 起動ログは捨て、失敗時の手がかりとしてstderrの末尾だけを残す。
-      stdio: ['ignore', 'ignore', 'pipe'],
+      /** 起動ログには秘密値やProvider内容が含まれうるため、評価結果へ転載しない。 */
+      stdio: 'ignore',
       env: { ...process.env, WRANGLER_SEND_METRICS: 'false' },
     },
   );
-  let stderrTail = '';
-  child.stderr?.setEncoding('utf8');
-  child.stderr?.on('data', (chunk: string) => {
-    stderrTail = (stderrTail + chunk).slice(-4_000);
-  });
-  const ready = waitUntilReady(
-    `http://127.0.0.1:${config.port}`,
-    child,
-    instance,
-    config,
-    () => stderrTail,
-  );
+  const ready = waitUntilReady(`http://127.0.0.1:${config.port}`, child, instance, config);
   running = { child, ready };
   // 途中で落ちたWorkerを起動済みとして使い続けず、次のケースで起動し直す。
   child.once('exit', () => {
     if (running?.child === child) running = undefined;
   });
-  ready.catch(stopWorker);
+  ready.catch(() => {
+    /** 古い起動待ちの失敗で、後続ケースが起動した別のWorkerを停止しない。 */
+    child.kill();
+    if (running?.child === child) running = undefined;
+  });
   return ready;
 };
 

@@ -3,6 +3,8 @@
 # 全ケースに共通する判定（確定・断定しない・LLM採点など）は promptfooconfig.yaml の defaultTest にある。
 
 - description: 現在地あり・地名なし → 甘いものを現在地周辺で探して提案する
+  metadata:
+    smoke: true
   vars:
     location: available
     turns: 近くで甘いもの食べたい
@@ -108,6 +110,8 @@
       weight: 0
 
 - description: 位置情報を拒否・地名なし → 現在地で検索せず、地名を1つ尋ねる
+  metadata:
+    smoke: true
   vars:
     location: denied
     turns: カフェ行きたい
