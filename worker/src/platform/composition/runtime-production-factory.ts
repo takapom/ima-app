@@ -20,7 +20,6 @@ import {
   productionClockPort,
   productionHash,
   productionMonotonicNow,
-  productionPlacesEnabled,
   productionRetentionFor,
   ProductionIds,
   productionScopeFor,
@@ -195,10 +194,7 @@ const makeOptions = (
       request.serverNow,
       fixedSessionExpiresAt,
     );
-    const placesEnabled = productionPlacesEnabled({
-      prepareTurn: overrides.prepareTurn,
-      ...(overrides.placesEnabled === undefined ? {} : { placesEnabled: overrides.placesEnabled }),
-    });
+    const placesEnabled = overrides.placesEnabled ?? false;
     const providerAvailability = { placesEnabled };
     const context = harnessContextFor(request, runtimeInput, request.serverNow, {
       capabilities: capabilitiesWithProviders(
@@ -213,35 +209,31 @@ const makeOptions = (
       context,
       attemptSignalBridge: bridge,
     };
-    const prepared = overrides.prepareTurn?.(buildInput);
     const budget = new RuntimeBudget({
       startedAtMs: monotonicNow(),
       now: monotonicNow,
       ...(request.signal === undefined ? {} : { signal: request.signal }),
       ...(request.isStale === undefined ? {} : { isStale: request.isStale }),
     });
-    const plan =
-      prepared ??
-      (continuation === undefined && providerAvailability.placesEnabled
-        ? (() => {
-            throw new Error('RUNTIME_PRODUCTION_PLACES_UNCONFIGURED');
-          })()
-        : defaultPlan(
-            buildInput,
-            input.env,
-            clock,
-            monotonicNow,
-            overrides,
-            ids,
-            registry,
-            continuation,
-            areaByCandidate,
-            contextSetup.contextStore,
-            turnRetention,
-            fixedSessionExpiresAt,
-            budget,
-            providerAvailability,
-          ));
+    if (continuation === undefined && providerAvailability.placesEnabled) {
+      throw new Error('RUNTIME_PRODUCTION_PLACES_UNCONFIGURED');
+    }
+    const plan = defaultPlan(
+      buildInput,
+      input.env,
+      clock,
+      monotonicNow,
+      overrides,
+      ids,
+      registry,
+      continuation,
+      areaByCandidate,
+      contextSetup.contextStore,
+      turnRetention,
+      fixedSessionExpiresAt,
+      budget,
+      providerAvailability,
+    );
     const model =
       overrides.modelTraceSink === undefined
         ? plan.model
@@ -311,13 +303,9 @@ export const createRuntimeProductionConnectionOptions = (
   const monotonicNow = overrides.monotonicNow ?? productionMonotonicNow;
   const admission = resolveRuntimeOperationalAdmission({
     env: input.env,
-    hasPrepareTurn: overrides.prepareTurn !== undefined,
-    hasModelOverride: overrides.prepareTurn !== undefined || overrides.modelForTurn !== undefined,
+    hasModelOverride: overrides.modelForTurn !== undefined,
     hasFetcher: overrides.fetcher !== undefined,
-    placesRequested: productionPlacesEnabled({
-      prepareTurn: overrides.prepareTurn,
-      placesEnabled: overrides.placesEnabled ?? true,
-    }),
+    placesRequested: overrides.placesEnabled ?? true,
     ...(overrides.hotPepperApiKey === undefined
       ? {}
       : { hotPepperApiKeyOverride: overrides.hotPepperApiKey }),
@@ -328,13 +316,10 @@ export const createRuntimeProductionConnectionOptions = (
   if (admission === undefined) return undefined;
   const ids = new ProductionIds();
   const registry = new CandidateObservationRegistry(productionClockPort(clock), ids);
-  const continuation =
-    overrides.prepareTurn === undefined
-      ? createFactoryContinuation({
-          secret: admission.placesCursorSecret,
-          now: overrides.epochNow ?? Date.now,
-        })
-      : undefined;
+  const continuation = createFactoryContinuation({
+    secret: admission.placesCursorSecret,
+    now: overrides.epochNow ?? Date.now,
+  });
   const resolvedOverrides: RuntimeProductionOverrides = {
     ...overrides,
     placesEnabled: admission.placesEnabled,

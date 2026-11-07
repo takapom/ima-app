@@ -81,15 +81,11 @@ export const createRuntimeProductionPlacePorts = (input: {
   });
   const apiKey =
     input.overrides.hotPepperApiKey ?? productionSecret(input.env, 'HOTPEPPER_API_KEY');
-  const transport =
-    input.overrides.hotPepperTransport ??
-    createHotPepperTransport({
-      ...(apiKey === undefined ? {} : { apiKey }),
-      ...(input.overrides.fetcher === undefined ? {} : { fetcher: input.overrides.fetcher }),
-      ...(input.providerTraceObserver === undefined
-        ? {}
-        : { observer: input.providerTraceObserver }),
-    });
+  const transport = createHotPepperTransport({
+    ...(apiKey === undefined ? {} : { apiKey }),
+    ...(input.overrides.fetcher === undefined ? {} : { fetcher: input.overrides.fetcher }),
+    ...(input.providerTraceObserver === undefined ? {} : { observer: input.providerTraceObserver }),
+  });
   const search = createHotPepperSearchAdapter({
     transport,
     registration: replacing(registration),

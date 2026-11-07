@@ -7,7 +7,6 @@ import { resolveRuntimeOperationalGate } from '@worker/platform/composition/runt
 
 export type RuntimeOperationalAdmissionInput = {
   readonly env: unknown;
-  readonly hasPrepareTurn: boolean;
   readonly hasModelOverride: boolean;
   readonly hasFetcher: boolean;
   readonly placesRequested: boolean;
@@ -33,7 +32,6 @@ export const resolveRuntimeOperationalAdmission = (
   if (operational.mode === 'fixture' && !input.hasModelOverride) return undefined;
   if (
     operational.mode === 'fixture' &&
-    !input.hasPrepareTurn &&
     !input.hasFetcher &&
     operational.enabled('hotpepper') &&
     input.placesRequested
@@ -48,9 +46,7 @@ export const resolveRuntimeOperationalAdmission = (
   const openAiKey = isConfiguredSecret(productionSecret(input.env, 'OPENAI_API_KEY'));
   const modelReady = openAiKey || (operational.mode === 'fixture' && input.hasModelOverride);
   const portsReady =
-    input.hasPrepareTurn ||
-    !placesEnabled ||
-    (isConfiguredSecret(placesKey) && isConfiguredSecret(cursorSecret));
+    !placesEnabled || (isConfiguredSecret(placesKey) && isConfiguredSecret(cursorSecret));
   if (!modelReady || !portsReady) return undefined;
 
   return {

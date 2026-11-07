@@ -1,4 +1,3 @@
-import type { HotPepperTransport } from '@worker/infrastructure/adapters/out/providers/hot-pepper/transport';
 import type { TurnConfig } from '@cloudflare/think';
 import type { ThreadTurnRequest } from '@ima/contracts';
 import type { CandidateRecord } from '@worker/core/domain/candidates/registry';
@@ -52,8 +51,6 @@ export type RuntimeProductionTurnPlan = {
 
 export type RuntimeProductionOverrides = {
   readonly hotPepperApiKey?: string;
-  readonly hotPepperTransport?: HotPepperTransport;
-  readonly prepareTurn?: (input: ProductionBuildInput) => RuntimeProductionTurnPlan;
   readonly modelForTurn?: RuntimeModelGuardModel;
   /** Optional Worker-owned sink for one trace record per actual SDK model call. */
   readonly modelTraceSink?: RuntimeModelTraceSink;

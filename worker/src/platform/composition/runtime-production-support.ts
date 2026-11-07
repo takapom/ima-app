@@ -17,7 +17,6 @@ import type { SubmitValidationContext } from '@worker/core/application/use-cases
 import { IsoTimestampSchema } from '@worker/core/domain/primitives';
 import { RetentionMetadataSchema } from '@worker/core/domain/evidence/retention';
 import { DEFAULT_RUNTIME_BUDGET } from '@worker/infrastructure/runtime/budget/runtime-budget';
-import type { RuntimeRetentionContext } from '@worker/infrastructure/runtime/retention/runtime-retention';
 
 const CURSOR_SECRET = 'PLACES_CURSOR_SECRET';
 
@@ -214,16 +213,6 @@ export const productionRetentionFor = (
     : boundProductionRetention(parsed.output, fixedSessionExpiresAt);
 };
 
-/** Provider capability is a separate Host gate; retention controls each field's data use. */
-export const productionPlacesEnabled = (options: {
-  readonly prepareTurn?: unknown;
-  /** Separate capability gate; retention policy controls data use, not tool availability. */
-  readonly placesEnabled?: boolean;
-}): boolean => {
-  if (options.placesEnabled !== undefined) return options.placesEnabled;
-  return options.prepareTurn !== undefined;
-};
-
 export type ProductionContextOptions = {
   readonly locationRevision?: number;
   readonly capabilities?: CapabilitySnapshot;
@@ -294,5 +283,3 @@ export const productionScopeFor = (context: HarnessContext): RegistryScope => ({
   ownerScopeRef: context.ownerScopeRef,
   threadId: context.threadId,
 });
-
-export type ProductionRetention = RuntimeRetentionContext['retention'];
