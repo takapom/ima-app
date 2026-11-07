@@ -1,5 +1,4 @@
 import {
-  parseSearchResponse,
   parseThreadSnapshot,
   type AssistantResponse,
   type ThreadReadResponse,
@@ -35,18 +34,6 @@ const rejected = (
 
 const threadMismatch = (expected: string, actual: string) =>
   `response thread ${actual} does not match state thread ${expected}`;
-
-export const applySearchResponseJson = (
-  state: AssistantResponseState,
-  input: unknown,
-): ResponseApplyResult => {
-  const parsed = parseSearchResponse(input);
-  if (!parsed.success) return rejected(state, parsed.issues);
-  if (parsed.data.response.threadId !== state.threadId) {
-    return rejected(state, [threadMismatch(state.threadId, parsed.data.response.threadId)]);
-  }
-  return accepted(applyAssistantResponse(state, parsed.data.response));
-};
 
 const fullResponseFromRecord = (
   snapshot: ThreadReadResponse,

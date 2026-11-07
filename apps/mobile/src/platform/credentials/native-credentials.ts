@@ -359,8 +359,3 @@ export const createSecureStoreCredentialStore = (options: {
 
   return { scope, load, save, delete: remove, provider };
 };
-
-export const createSecureStoreCredentialProvider = (options: {
-  readonly authority: NativeCredentialAuthority;
-  readonly secureStore?: NativeCredentialStoreClient;
-}): NativeCredentialProvider => createSecureStoreCredentialStore(options).provider;
