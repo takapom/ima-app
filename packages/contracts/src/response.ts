@@ -84,7 +84,6 @@ export const PhotoResponseDescriptorSchema = v.strictObject({
   contentType: v.picklist(['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
   expiresAt: IsoTimestampSchema,
 });
-export const PhotoResponseSchema = PhotoResponseDescriptorSchema;
 export type PhotoBinaryResponse = {
   descriptor: v.InferOutput<typeof PhotoResponseDescriptorSchema>;
   body: Uint8Array;

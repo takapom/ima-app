@@ -60,7 +60,6 @@ export const APP_VERSION_HEADER = 'X-App-Version' as const;
 export const APP_ATTEST_KEY_ID_HEADER = 'X-App-Attest-KeyId' as const;
 export const APP_ATTEST_ASSERTION_HEADER = 'X-App-Attest-Assert' as const;
 export const APP_ATTEST_NONCE_HEADER = 'X-App-Attest-Nonce' as const;
-export const OWNER_CREDENTIAL_BYTES = 32 as const;
 export const OWNER_CREDENTIAL_BASE64URL_LENGTH = 43 as const;
 
 export const OwnerCredentialHeaderSchema = v.pipe(
@@ -458,9 +457,3 @@ export const RouteContracts = {
     successStatus: 204,
   },
 } as const;
-
-export const RequestMetaSchema = v.strictObject({
-  schemaVersion: SchemaVersionSchema,
-  requestId: RequestIdSchema,
-  receivedAt: IsoTimestampSchema,
-});
