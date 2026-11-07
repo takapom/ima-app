@@ -118,7 +118,7 @@ bunx wrangler dev --config wrangler.eval.jsonc --env-file .dev.vars.llm --local 
 独自lintは既存の規則で検出できない違反がある場合に限って追加する。文書の配置は[check-doc-paths](../../scripts/check-doc-paths.mjs)が許可する入口に限る。
 `.claude/skills/`・`.codex/skills/`のスキル資産はアプリ用の整形・lint・行数・disable理由検査から除外する。スキル文書は製品文書の行数上限を適用せず、配置・リンクを検査する。
 
-手書きコード・テスト・設定は空行・コメント込み500行以内。Markdown、lockfile、明示した生成物はファイル行数制限から除外する。コミットの追加＋削除は文書・テスト・生成物も含め2,000行以内とし、必要な試験の切り離しや圧縮で回避しない。
+手書きコード・テスト・設定は空行・コメント込み500行以内。Markdown、lockfile、明示した生成物はファイル行数制限から除外する。コミットの追加＋削除は文書・テスト・生成物も含め2,000行以内とし、必要な試験の切り離しや圧縮で回避しない。ただし、リポジトリ直下の`.agents/skills/`・`.claude/skills/`・`.codex/skills/`・`.cursor/skills/`内のファイル完全削除だけは、バイナリを含めコミット差分量検査から除外し、件数を出力する。追加・更新・移動先の追加や、それ以外のパスには適用しない。
 
 [quality CI](../../.github/workflows/quality.yml)はmainへのpushで品質検査と各コミットの行数検査を実行する構成。[config dry-run CI](../../.github/workflows/config-dry-run.yml)はdev/staging/productionの設定を検査する。定義の存在を、GitHub上での成功や保護設定の証明にしない。
 ローカルhookは補助であり、必要なら`git config core.hooksPath .githooks`で有効にする。hookは`commit-size`と`bun run check`を実行し、CIは全ゲートを実行する。

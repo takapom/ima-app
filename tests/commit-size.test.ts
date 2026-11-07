@@ -206,6 +206,133 @@ describe('check-commit-size', () => {
     expect(result.stderr).toContain('unknown line bytes');
   });
 
+  it.each(['.agents', '.claude', '.codex', '.cursor'])(
+    '%s のスキル資産整理を妨げず、完全削除だけを例外にする',
+    (agentDirectory) => {
+      const directory = repo();
+      const skillDirectory = join(directory, agentDirectory, 'skills', 'retired');
+      mkdirSync(skillDirectory, { recursive: true });
+      writeFileSync(join(skillDirectory, 'SKILL.md'), content(2001));
+      writeFileSync(join(skillDirectory, 'template.pptx'), Uint8Array.from([0, 1, 2, 255]));
+      const base = commit(directory, '削除前');
+      rmSync(skillDirectory, { recursive: true });
+      git(directory, ['add', '--all']);
+
+      const staged = check(directory, ['--staged']);
+      expect(staged.status).toBe(0);
+      expect(staged.stdout).toContain('additions=0 deletions=0 total=0');
+      expect(staged.stdout).toContain('excluded-skill-deletions=2');
+
+      const head = commit(directory, '不要スキルを削除');
+      mkdirSync(skillDirectory, { recursive: true });
+      writeFileSync(join(skillDirectory, 'SKILL.md'), '未stageの復元\n');
+      for (const args of [
+        ['--commit', head],
+        ['--range', base, head],
+      ]) {
+        const result = check(directory, args);
+        expect(result.status).toBe(0);
+        expect(result.stdout).toContain('excluded-skill-deletions=2');
+      }
+    },
+  );
+
+  it.each(['.agents', '.claude', '.codex', '.cursor'])(
+    '%s のスキル追加や更新は削除例外で上限を回避できない',
+    (agentDirectory) => {
+      const directory = repo();
+      const path = `${agentDirectory}/skills/active/SKILL.md`;
+      const base = commitFile(directory, path, 2001, '既存スキル');
+      const added = check(directory, ['--commit', base, '--root']);
+      expect(added.status).toBe(1);
+      expect(added.stderr).toContain('total=2001');
+
+      writeFileSync(join(directory, path), '置き換え\n');
+      git(directory, ['add', '--all']);
+      const updated = check(directory, ['--staged']);
+      expect(updated.status).toBe(1);
+      expect(updated.stderr).toContain('total=2002');
+    },
+  );
+
+  it.each(['addition', 'update', 'rename'])(
+    'スキルのバイナリは %s を削除と誤認して許可しない',
+    (operation) => {
+      const directory = repo();
+      const path = '.codex/skills/active/template.pptx';
+      mkdirSync(join(directory, '.codex/skills/active'), { recursive: true });
+      writeFileSync(join(directory, path), Uint8Array.from([0, 1, 2, 255]));
+      const base = commit(directory, '既存バイナリ');
+      let args = ['--commit', base, '--root'];
+      if (operation === 'update') {
+        writeFileSync(join(directory, path), Uint8Array.from([0, 3, 4, 255]));
+        git(directory, ['add', '--all']);
+        args = ['--staged'];
+      } else if (operation === 'rename') {
+        git(directory, ['mv', path, '.codex/skills/active/renamed.pptx']);
+        args = ['--staged'];
+      }
+      const result = check(directory, args);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('unknown line bytes');
+    },
+  );
+
+  it.each([
+    'worker/source.ts',
+    '.codex/config.json',
+    '.codex/skills-other/SKILL.md',
+    'worker/.codex/skills/local/SKILL.md',
+  ])('%s の削除はスキル資産の例外を適用しない', (path) => {
+    const directory = repo();
+    commitFile(directory, path, 2001, '削除前');
+    rmSync(join(directory, path));
+    git(directory, ['add', '--all']);
+    const result = check(directory, ['--staged']);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('total=2001');
+  });
+
+  it('大量のスキル削除が同じコミット内のコード変更を免除しない', () => {
+    const directory = repo();
+    const skill = '.codex/skills/retired/SKILL.md';
+    commitFile(directory, skill, 2001, '削除前');
+    rmSync(join(directory, skill));
+    writeFileSync(join(directory, 'source.ts'), content(2001));
+    git(directory, ['add', '--all']);
+    const result = check(directory, ['--staged']);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('excluded-skill-deletions=1');
+    expect(result.stderr).toContain('total=2001');
+    const head = commit(directory, 'スキル削除とコード変更');
+    expect(check(directory, ['--commit', head]).status).toBe(1);
+  });
+
+  it('スキル以外のバイナリ削除にはレビューを要求する', () => {
+    const directory = repo();
+    const path = join(directory, 'image.bin');
+    writeFileSync(path, Uint8Array.from([0, 1, 2, 255]));
+    commit(directory, '削除前');
+    rmSync(path);
+    git(directory, ['add', '--all']);
+    const result = check(directory, ['--staged']);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('image.bin');
+    expect(result.stderr).toContain('unknown line bytes');
+  });
+
+  it('未stageのスキル削除でstage済みの更新を免除しない', () => {
+    const directory = repo();
+    const path = '.codex/skills/active/SKILL.md';
+    commitFile(directory, path, 2001, '既存スキル');
+    writeFileSync(join(directory, path), '置き換え\n');
+    git(directory, ['add', '--all']);
+    rmSync(join(directory, path));
+    const result = check(directory, ['--staged']);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('total=2002');
+  });
+
   it('rejects shallow history before checking a commit', () => {
     const source = repo();
     commitFile(source, 'history.txt', 1, 'history');

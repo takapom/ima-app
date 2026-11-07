@@ -83,32 +83,48 @@ function parseNumstat(output) {
   return records;
 }
 
-function diffFor(base, commit, cwd) {
-  const result = git(['diff', '--numstat', '-z', '--no-renames', base, commit, '--'], cwd);
-  return parseNumstat(result.stdout);
+function diffRecords(revisions, cwd) {
+  const args = ['diff', '-z', '--no-renames'];
+  const result = git([...args, '--numstat', ...revisions, '--'], cwd);
+  const deletions = git([...args, '--name-only', '--diff-filter=D', ...revisions, '--'], cwd);
+  const deletedPaths = new Set(deletions.stdout.split('\0').filter(Boolean));
+  return parseNumstat(result.stdout).map((record) => ({
+    ...record,
+    excludedSkillDeletion:
+      /^\.(?:agents|claude|codex|cursor)\/skills\//.test(record.path) &&
+      deletedPaths.has(record.path),
+  }));
 }
 
 function stagedDiff(cwd) {
-  const result = git(['diff', '--cached', '--numstat', '-z', '--no-renames', '--'], cwd);
-  return parseNumstat(result.stdout);
+  return diffRecords(['--cached'], cwd);
 }
 
 function summarize(records) {
   let added = 0n;
   let deleted = 0n;
+  let excludedSkillDeletions = 0;
   const binaries = [];
   for (const record of records) {
+    if (record.excludedSkillDeletion) {
+      excludedSkillDeletions++;
+      continue;
+    }
     if (record.binary) binaries.push(record.path);
     else {
       added += record.added;
       deleted += record.deleted;
     }
   }
-  return { added, deleted, total: added + deleted, binaries };
+  return { added, deleted, total: added + deleted, binaries, excludedSkillDeletions };
 }
 
 function formatSummary(label, summary) {
-  return `${label}: additions=${summary.added} deletions=${summary.deleted} total=${summary.total}`;
+  const excluded =
+    summary.excludedSkillDeletions > 0
+      ? ` excluded-skill-deletions=${summary.excludedSkillDeletions}`
+      : '';
+  return `${label}: additions=${summary.added} deletions=${summary.deleted} total=${summary.total}${excluded}`;
 }
 
 function checkSummary(label, summary, failures) {
@@ -186,6 +202,9 @@ function help() {
   node scripts/check-commit-size.mjs --range BASE HEAD [--root]
 
 Checks every changed path, including docs, lockfiles, and generated files.
+Complete file deletions under root .agents/skills/, .claude/skills/,
+.codex/skills/, and .cursor/skills/ are excluded, including binary deletions.
+Skill additions, modifications, and rename destinations are still checked.
 The 2,000-line limit is applied independently to each commit in a range;
 additions and deletions are summed within that commit. Binary numstat records
 have no line count and fail closed with a path requiring review. --root permits
@@ -202,7 +221,7 @@ function inspectCommit(commit, cwd, allowRoot) {
   }
   return {
     commit,
-    summary: summarize(diffFor(parents[0] ?? EMPTY_TREE, commit, cwd)),
+    summary: summarize(diffRecords([parents[0] ?? EMPTY_TREE, commit], cwd)),
   };
 }
 
