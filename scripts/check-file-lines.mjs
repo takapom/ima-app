@@ -54,7 +54,6 @@ export function findFileLineViolations(root = process.cwd()) {
       const relativePath = relative(root, path);
       if (
         relativePath === '.codex/skills' ||
-        relativePath === '.cursor/skills' ||
         generatedDirectories.has(relativePath) ||
         entry.isSymbolicLink()
       ) {

@@ -49,7 +49,7 @@ describe('file line quality gate', () => {
     ['.claude/skills/example/scripts/bundle.js', 501, 0],
     ['.codex/skills/example/scripts/bundle.js', 501, 0],
     ['.codex/config.json', 501, 1],
-    ['.cursor/skills/example/scripts/bundle.js', 501, 0],
+    ['.cursor/skills/example/scripts/bundle.js', 501, 1],
     ['.cursor/config.json', 501, 1],
     ['worker/skills/source.ts', 501, 1],
   ])('%s with %i lines returns status %i', (file, count, status) => {
@@ -77,7 +77,7 @@ describe('eslint disable quality gate', () => {
     const root = temporaryRoot();
     execFileSync('git', ['init', '--quiet'], { cwd: root });
     const directive = ['eslint', 'disable'].join('-');
-    for (const agentDirectory of ['.claude', '.codex', '.cursor']) {
+    for (const agentDirectory of ['.claude', '.codex']) {
       const skillDirectory = join(root, agentDirectory, 'skills/example');
       mkdirSync(skillDirectory, { recursive: true });
       writeFileSync(join(skillDirectory, 'example.js'), `// ${directive}\n`);
