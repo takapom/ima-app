@@ -52,5 +52,4 @@ export interface CandidateObservationRegistryPort {
     observationIds: readonly string[],
   ): boolean;
   evaluateObservationReuse(query: ObservationReuseQuery): ObservationReuseResult;
-  findReusableObservation(query: ObservationReuseQuery): ReadonlyStoredObservation | undefined;
 }

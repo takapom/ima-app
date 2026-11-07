@@ -11,7 +11,6 @@ import {
   Text,
   TurnIdSchema,
 } from '@worker/core/domain/primitives';
-import type { CandidateIdSchema } from '@worker/core/domain/primitives';
 
 const LocationCoordinatesSchema = v.strictObject({
   lat: v.pipe(FiniteNumberSchema, v.minValue(-90), v.maxValue(90)),
@@ -119,8 +118,3 @@ export interface RegistryIdPort extends IdPort {
 export interface ClockPort {
   now(): string;
 }
-
-export type RegisteredCandidate = {
-  candidateId: v.InferOutput<typeof CandidateIdSchema>;
-  scopeRef: v.InferOutput<typeof OpaqueIdSchema>;
-};

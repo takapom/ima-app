@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { RegistryScopeSchema, type RegistryScope } from '@worker/core/domain/evidence/freshness';
+import { RegistryScopeSchema } from '@worker/core/domain/evidence/freshness';
 import {
   CandidateIdSchema,
   NonNegativeSafeIntegerSchema,
@@ -91,5 +91,3 @@ export interface CommitPort {
    */
   commit(request: CommitRequest): CommitPortResult | Promise<CommitPortResult>;
 }
-
-export type CommitScope = RegistryScope;

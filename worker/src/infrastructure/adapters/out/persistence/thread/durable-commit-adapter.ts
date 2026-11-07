@@ -10,7 +10,6 @@ import {
   type CommitRequest,
 } from '@worker/core/application/ports/commit';
 import { CardSetIdSchema } from '@worker/core/domain/primitives';
-import type { ThreadRuntimeTarget } from '@worker/infrastructure/runtime/threads/admission';
 
 type ThreadStateRow = {
   readonly thread_id: string;
@@ -119,21 +118,6 @@ export const initializeDurableCommitTable = (storage: DurableObjectStorage): voi
     )
   `);
 };
-
-/** Test-only compatibility CAS; production finalization uses the Durable CommitPort transaction. */
-export const advanceThreadRevision = (
-  storage: DurableObjectStorage,
-  target: ThreadRuntimeTarget,
-  responseRevision: number,
-): boolean =>
-  responseRevision === target.revision + 1 &&
-  storage.sql.exec(
-    'UPDATE thread_state SET revision = ? WHERE singleton = 1 AND thread_id = ? AND owner_scope_ref = ? AND revision = ? AND active = 1 AND deleted = 0',
-    responseRevision,
-    target.threadId,
-    target.ownerScopeRef,
-    target.revision,
-  ).rowsWritten === 1;
 
 const conflict = (code: 'IDEMPOTENCY_CONFLICT' | 'STALE_REVISION'): CommitPortResult => ({
   status: 'conflict',

@@ -33,7 +33,6 @@ import type { ModelContextFieldPolicy } from '@worker/core/application/model-con
 
 export {
   evaluateModelEvidenceAvailability,
-  evaluateModelEvidenceAvailabilityForLlmInput,
   ModelEvidenceSourceSchema,
   projectModelEvidence,
   projectModelEvidenceForLlmInput,

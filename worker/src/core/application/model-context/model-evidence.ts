@@ -115,11 +115,6 @@ export const evaluateModelEvidenceAvailability = (
   input: ModelEvidenceAvailabilityInput,
 ): ModelEvidenceAvailability => evaluateModelEvidenceAvailabilityForUse(input, 'legacy');
 
-/** Model input keeps source freshness and session/deletion bounds independent of storage/display. */
-export const evaluateModelEvidenceAvailabilityForLlmInput = (
-  input: ModelEvidenceAvailabilityInput,
-): ModelEvidenceAvailability => evaluateModelEvidenceAvailabilityForUse(input, 'llm_input');
-
 export type ModelEvidence =
   | {
       readonly status: 'known';

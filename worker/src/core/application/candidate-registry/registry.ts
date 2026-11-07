@@ -346,11 +346,6 @@ export class CandidateObservationRegistry implements CandidateObservationRegistr
     return { status: 'reusable', observation: selected };
   }
 
-  findReusableObservation(query: ObservationReuseQuery): ReadonlyStoredObservation | undefined {
-    const result = this.evaluateObservationReuse(query);
-    return result.status === 'reusable' ? result.observation : undefined;
-  }
-
   private requireCandidate(
     scope: RegistryScope,
     candidateId: CandidateId,
